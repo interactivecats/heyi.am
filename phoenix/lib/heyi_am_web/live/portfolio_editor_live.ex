@@ -95,9 +95,16 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
     {:noreply, assign(socket, :visitor_mode, !socket.assigns.visitor_mode)}
   end
 
-  def handle_event("update_profile", %{"field" => field, "value" => value}, socket) do
+  @allowed_profile_fields ~w(name bio)
+
+  def handle_event("update_profile", %{"field" => field, "value" => value}, socket)
+      when field in @allowed_profile_fields do
     profile = Map.put(socket.assigns.profile, String.to_existing_atom(field), value)
     {:noreply, assign(socket, :profile, profile)}
+  end
+
+  def handle_event("update_profile", _params, socket) do
+    {:noreply, socket}
   end
 
   def handle_event("toggle_project_visibility", %{"id" => id_str}, socket) do

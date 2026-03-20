@@ -192,15 +192,16 @@ defmodule HeyiAmWeb.ProjectEditorLive do
                       &times;
                     </button>
                   </span>
-                  <button
-                    type="button"
-                    class="project-editor__tag-add"
-                    phx-click={
-                      Phoenix.LiveView.JS.dispatch("project-editor:add-tag", to: "#tag-input")
-                    }
-                  >
-                    +
-                  </button>
+                  <form phx-submit="add_tag" class="project-editor__tag-form">
+                    <input
+                      type="text"
+                      name="tag"
+                      placeholder="Add tag..."
+                      class="project-editor__tag-input"
+                      autocomplete="off"
+                      phx-mounted={Phoenix.LiveView.JS.focus()}
+                    />
+                  </form>
                 </div>
               </div>
 

@@ -1712,14 +1712,23 @@ body {
   color: var(--error);
 }
 
-.project-editor__tag-add {
-  background: none;
-  border: none;
-  color: var(--primary);
-  cursor: pointer;
-  font-size: 1.125rem;
-  line-height: 1;
-  padding: 0.25rem;
+.project-editor__tag-form {
+  display: inline-flex;
+}
+
+.project-editor__tag-input {
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  padding: 0.25rem 0.5rem;
+  width: 6rem;
+  color: var(--on-surface);
+}
+
+.project-editor__tag-input::placeholder {
+  color: var(--outline);
 }
 
 .project-editor__repo-status {
