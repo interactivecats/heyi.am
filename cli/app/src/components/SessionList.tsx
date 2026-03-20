@@ -21,6 +21,7 @@ interface Session {
 interface Project {
   name: string;
   sessionCount: number;
+  description: string;
 }
 
 /* ==========================================================================
@@ -38,18 +39,14 @@ const MOCK_SESSIONS: Session[] = [
     status: 'published',
     projectName: 'auth-service',
     rawLog: [
-      '$ claude "refactor the JWT middleware to handle refresh tokens"',
-      '> Reading src/middleware/auth.ts...',
-      '> Found 3 files referencing token validation',
-      '> Proposing changes to src/middleware/auth.ts',
-      '+ Added refreshToken() handler',
-      '+ Updated validateToken() to check expiry',
-      '+ Added token rotation logic',
-      '> Running tests... 14 passed, 0 failed',
-      '$ claude "add rate limiting to the refresh endpoint"',
-      '> Adding rate limiter middleware...',
-      '+ Created src/middleware/rateLimit.ts',
-      '> All tests passing. Session complete.',
+      '> The existing auth was frankencode',
+      '> three different token systems',
+      '> layered on top of each other',
+      '...',
+      '[AI] I can help patch the existing system',
+      '> No. Tear it all out. Start fresh.',
+      '...',
+      '[309 tests passing]',
     ],
   },
   {
@@ -62,14 +59,14 @@ const MOCK_SESSIONS: Session[] = [
     status: 'draft',
     projectName: 'auth-service',
     rawLog: [
-      '$ claude "create an abstraction layer for OAuth2 providers"',
+      '> create an abstraction layer for OAuth2 providers',
       '> Analyzing existing OAuth implementation...',
       '> Found hardcoded Google OAuth in auth.controller.ts',
       '> Proposing provider interface pattern',
-      '+ Created src/providers/OAuthProvider.ts',
-      '+ Implemented GoogleProvider extends OAuthProvider',
-      '+ Implemented GitHubProvider extends OAuthProvider',
-      '> Running tests... 22 passed, 0 failed',
+      '[AI] Created src/providers/OAuthProvider.ts',
+      '[AI] Implemented GoogleProvider extends OAuthProvider',
+      '...',
+      '[22 tests passing]',
     ],
   },
   {
@@ -82,14 +79,14 @@ const MOCK_SESSIONS: Session[] = [
     status: 'published',
     projectName: 'data-pipeline',
     rawLog: [
-      '$ claude "set up an ETL pipeline for our Kafka event stream"',
+      '> set up an ETL pipeline for our Kafka event stream',
       '> Reading existing consumer setup...',
       '> Found src/consumers/eventConsumer.ts',
-      '> Proposing transform layer architecture',
-      '+ Created src/transforms/EventTransformer.ts',
-      '+ Added batch processing with configurable window',
-      '+ Created src/sinks/PostgresSink.ts',
-      '> Tests: 18 passed. Pipeline throughput: 12k events/sec.',
+      '[AI] Proposing transform layer architecture',
+      '[AI] Created src/transforms/EventTransformer.ts',
+      '> Added batch processing with configurable window',
+      '...',
+      '[18 tests passing]',
     ],
   },
   {
@@ -102,13 +99,13 @@ const MOCK_SESSIONS: Session[] = [
     status: 'draft',
     projectName: 'ui-components',
     rawLog: [
-      '$ claude "build an accessible dropdown with keyboard nav"',
-      '> Creating Dropdown component with ARIA attributes...',
-      '+ Added role="listbox" and aria-activedescendant',
-      '+ Implemented arrow key navigation',
-      '+ Added Home/End key support',
-      '+ Focus trap and Escape to close',
-      '> Running a11y audit... 0 violations found.',
+      '> build an accessible dropdown with keyboard nav',
+      '[AI] Creating Dropdown component with ARIA attributes...',
+      '[AI] Added role="listbox" and aria-activedescendant',
+      '> Implemented arrow key navigation',
+      '> Added Home/End key support',
+      '...',
+      '[0 a11y violations]',
     ],
   },
   {
@@ -121,14 +118,13 @@ const MOCK_SESSIONS: Session[] = [
     status: 'archived',
     projectName: 'api-gateway',
     rawLog: [
-      '$ claude "add zod validation to all API routes"',
+      '> add zod validation to all API routes',
       '> Scanning route definitions in src/routes/...',
       '> Found 14 route handlers without input validation',
-      '> Proposing validation middleware pattern',
-      '+ Created src/middleware/validate.ts',
-      '+ Added schemas for all 14 routes',
-      '+ Standardized error response format',
-      '> Tests: 31 passed, 0 failed. Coverage: 94%.',
+      '[AI] Proposing validation middleware pattern',
+      '[AI] Created src/middleware/validate.ts',
+      '...',
+      '[31 tests passing, coverage: 94%]',
     ],
   },
   {
@@ -141,23 +137,22 @@ const MOCK_SESSIONS: Session[] = [
     status: 'published',
     projectName: 'data-pipeline',
     rawLog: [
-      '$ claude "optimize the batch insert — we are dropping events at peak"',
+      '> optimize the batch insert — dropping events at peak',
       '> Profiling current insert path...',
       '> Bottleneck: individual INSERTs in a loop',
-      '> Proposing bulk INSERT with UNNEST',
-      '+ Rewrote sink to use pg COPY protocol',
-      '+ Added connection pooling (pool size: 10)',
-      '+ Added backpressure signaling to consumer',
-      '> Throughput improved from 12k to 48k events/sec.',
+      '[AI] Proposing bulk INSERT with UNNEST',
+      '[AI] Rewrote sink to use pg COPY protocol',
+      '...',
+      '[Throughput: 12k → 48k events/sec]',
     ],
   },
 ];
 
 const MOCK_PROJECTS: Project[] = [
-  { name: 'auth-service', sessionCount: 2 },
-  { name: 'data-pipeline', sessionCount: 2 },
-  { name: 'ui-components', sessionCount: 1 },
-  { name: 'api-gateway', sessionCount: 1 },
+  { name: 'auth-service', sessionCount: 2, description: 'JWT auth and OAuth provider layer' },
+  { name: 'data-pipeline', sessionCount: 2, description: 'Event stream ETL and ingestion' },
+  { name: 'ui-components', sessionCount: 1, description: 'Accessible component library' },
+  { name: 'api-gateway', sessionCount: 1, description: 'Request validation and routing' },
 ];
 
 /* ==========================================================================
@@ -166,18 +161,11 @@ const MOCK_PROJECTS: Project[] = [
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 }
 
 function formatDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes}m`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  return `${minutes} min`;
 }
 
 /* ==========================================================================
@@ -186,11 +174,11 @@ function formatDuration(minutes: number): string {
 
 export function SessionList() {
   const navigate = useNavigate();
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState<string | null>(
+    MOCK_PROJECTS.length > 0 ? MOCK_PROJECTS[0].name : null,
+  );
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
-  // For testing empty state, use the mock data.
-  // In production this would come from a data-fetching layer.
   const sessions = MOCK_SESSIONS;
   const projects = MOCK_PROJECTS;
   const isEmpty = sessions.length === 0;
@@ -203,43 +191,121 @@ export function SessionList() {
     ? sessions.find((s) => s.id === selectedSessionId) ?? null
     : null;
 
+  const activeProject = selectedProject
+    ? projects.find((p) => p.name === selectedProject) ?? null
+    : null;
+
+  const totalSessions = selectedProject
+    ? filteredSessions.length
+    : sessions.length;
+
   /* ---------- Empty state ---------- */
 
   if (isEmpty) {
     return (
       <AppShell title="Sessions">
-        <div style={{ padding: 'var(--spacing-8)' }}>
-          <div className="card" data-testid="setup-banner">
-            <p className="label" style={{ marginBottom: 'var(--spacing-2)' }}>
-              Setup
-            </p>
-            <p style={{ fontSize: '0.875rem', color: 'var(--on-surface)' }}>
+        <div style={{ padding: 'var(--spacing-6)' }}>
+          {/* Setup banner */}
+          <div
+            style={{
+              background: 'var(--tertiary-fixed)',
+              padding: 'var(--spacing-4) var(--spacing-6)',
+              borderRadius: 'var(--radius-sm)',
+              marginBottom: 'var(--spacing-8)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-3)',
+            }}
+            data-testid="setup-banner"
+          >
+            <span style={{ color: 'var(--tertiary)', fontWeight: 600, fontSize: '1rem' }}>&#9888;</span>
+            <span style={{ fontSize: '0.875rem', color: 'var(--tertiary)' }}>
               Add your Anthropic API key to enable AI summaries
-            </p>
+            </span>
             <button
               type="button"
               className="btn btn-secondary"
-              style={{ marginTop: 'var(--spacing-4)' }}
+              style={{ marginLeft: 'auto', fontSize: '0.75rem', padding: '4px 12px' }}
               onClick={() => navigate('/settings')}
             >
-              Go to settings
+              Settings
             </button>
           </div>
 
+          {/* Empty state */}
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              minHeight: '24rem',
+              padding: 'var(--spacing-20) 0',
               textAlign: 'center',
             }}
           >
-            <h2 className="app-main__title">No sessions found</h2>
-            <p className="app-main__subtitle">
-              Start a Claude Code session and come back here to browse it
+            <div
+              style={{
+                width: '64px',
+                height: '64px',
+                background: 'var(--surface-container-low)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 'var(--spacing-6)',
+                color: 'var(--on-surface-variant)',
+                fontSize: '1.5rem',
+              }}
+            >
+              &#128196;
+            </div>
+            <h2
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '1.5rem',
+                fontWeight: 700,
+                marginBottom: 'var(--spacing-3)',
+              }}
+            >
+              No sessions found
+            </h2>
+            <p
+              style={{
+                fontSize: '0.9375rem',
+                color: 'var(--on-surface-variant)',
+                maxWidth: '400px',
+                lineHeight: 1.6,
+              }}
+            >
+              Claude Code sessions from{' '}
+              <code
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.8125rem',
+                  background: 'var(--surface-container-low)',
+                  padding: '2px 6px',
+                  borderRadius: 'var(--radius-sm)',
+                }}
+              >
+                ~/.claude/projects
+              </code>{' '}
+              will appear here.
             </p>
+            <div style={{ marginTop: 'var(--spacing-8)' }}>
+              <code
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.8125rem',
+                  color: 'var(--on-surface-variant)',
+                  background: 'var(--surface-container-low)',
+                  padding: 'var(--spacing-3) var(--spacing-5)',
+                  borderRadius: 'var(--radius-sm)',
+                  display: 'inline-block',
+                }}
+              >
+                $ claude  # start a session first
+              </code>
+            </div>
           </div>
         </div>
       </AppShell>
@@ -248,52 +314,54 @@ export function SessionList() {
 
   /* ---------- Sidebar ---------- */
 
+  const publishedCount = sessions.filter((s) => s.status === 'published').length;
+  const enhancedCount = sessions.filter((s) => s.status !== 'draft').length;
+
   const sidebarContent = (
-    <div className="app-sidebar__section">
-      <p className="app-sidebar__label">Projects</p>
-      <ul className="app-sidebar__list">
-        <li>
-          <button
-            type="button"
-            className={`app-sidebar__item${selectedProject === null ? ' app-sidebar__item--active' : ''}`}
-            onClick={() => {
-              setSelectedProject(null);
-              setSelectedSessionId(null);
-            }}
-          >
-            <span className="app-sidebar__dot" />
-            All Projects
-          </button>
-        </li>
-        {projects.map((project) => (
-          <li key={project.name}>
-            <button
-              type="button"
-              className={`app-sidebar__item${selectedProject === project.name ? ' app-sidebar__item--active' : ''}`}
-              onClick={() => {
-                setSelectedProject(project.name);
-                setSelectedSessionId(null);
-              }}
-            >
-              <span className="app-sidebar__dot" />
-              {project.name}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <>
+      <div className="app-sidebar__section">
+        <p className="app-sidebar__label">Projects</p>
+        <ul className="app-sidebar__list">
+          {projects.map((project) => (
+            <li key={project.name}>
+              <button
+                type="button"
+                className={`app-sidebar__item${selectedProject === project.name ? ' app-sidebar__item--active' : ''}`}
+                onClick={() => {
+                  setSelectedProject(project.name);
+                  setSelectedSessionId(null);
+                }}
+              >
+                <span className="app-sidebar__dot" />
+                {project.name}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="app-sidebar__section">
+        <p className="app-sidebar__label">Stats</p>
+        <div
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '0.75rem',
+            color: 'var(--on-surface-variant)',
+            lineHeight: 2,
+          }}
+        >
+          <div>
+            Sessions: <strong style={{ color: 'var(--on-surface)' }}>{sessions.length}</strong>
+          </div>
+          <div>
+            Enhanced: <strong style={{ color: 'var(--on-surface)' }}>{enhancedCount}</strong>
+          </div>
+          <div>
+            Published: <strong style={{ color: 'var(--on-surface)' }}>{publishedCount}</strong>
+          </div>
+        </div>
+      </div>
+    </>
   );
-
-  /* ---------- Bottom bar ---------- */
-
-  const bottomBar = selectedSession ? (
-    <a
-      href={`/session/${selectedSession.id}/enhance`}
-      className="btn btn-primary btn--lg btn--full"
-    >
-      Enhance with AI
-    </a>
-  ) : undefined;
 
   /* ---------- Main content ---------- */
 
@@ -302,123 +370,228 @@ export function SessionList() {
       title="Sessions"
       showSidebar
       sidebarContent={sidebarContent}
-      bottomBar={bottomBar}
     >
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 340px', gap: 'var(--spacing-8)', padding: 'var(--spacing-8)' }}>
         {/* Session list column */}
-        <div style={{ flex: 3, overflowY: 'auto', minWidth: 0 }}>
-          <div className="app-main__header">
-            <div>
-              <h1 className="app-main__title">Browse Sessions</h1>
-              <p className="app-main__subtitle">
-                {selectedProject ? (
-                  <>
-                    Showing <span className="chip">{selectedProject}</span>
-                  </>
-                ) : (
-                  `${sessions.length} sessions across ${projects.length} projects`
-                )}
-              </p>
-            </div>
-          </div>
+        <div>
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '1.75rem',
+              fontWeight: 700,
+              marginBottom: 'var(--spacing-1)',
+            }}
+          >
+            {activeProject ? activeProject.name : 'All Sessions'}
+          </h2>
+          <p
+            style={{
+              fontSize: '0.875rem',
+              color: 'var(--on-surface-variant)',
+              marginBottom: 'var(--spacing-6)',
+            }}
+          >
+            {totalSessions} sessions
+            {activeProject ? ` \u00b7 ${activeProject.description}` : ''}
+          </p>
 
+          {/* Search */}
           <div
             style={{
               display: 'flex',
-              flexDirection: 'column',
+              alignItems: 'center',
               gap: 'var(--spacing-2)',
-              padding: '0 var(--spacing-8) var(--spacing-8)',
+              background: 'var(--surface-container-lowest)',
+              padding: 'var(--spacing-3) var(--spacing-4)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid rgba(194, 199, 208, 0.15)',
+              marginBottom: 'var(--spacing-6)',
             }}
           >
-            {filteredSessions.map((session) => (
-              <button
-                key={session.id}
-                type="button"
-                className={`session-card${selectedSessionId === session.id ? ' session-card--selected' : ''}`}
-                onClick={() => setSelectedSessionId(session.id)}
-                style={{ textAlign: 'start' }}
-              >
-                <div className="session-card__identity">
-                  <div className="session-card__title">{session.title}</div>
-                  <div className="session-card__date">
-                    {formatDate(session.date)}
-                  </div>
-                </div>
-                <div className="session-card__metrics">
-                  <span className="session-card__metric">
-                    {formatDuration(session.durationMinutes)}
-                  </span>
-                  <span className="session-card__metric">
-                    {session.turns} turns
-                  </span>
-                  <span className="session-card__metric">
-                    {session.linesOfCode} loc
-                  </span>
-                </div>
-                <div className="session-card__status">
-                  <span className={`badge badge--${session.status}`}>
-                    {session.status}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Raw log preview column */}
-        <div
-          style={{
-            flex: 2,
-            minWidth: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            padding: 'var(--spacing-6)',
-          }}
-        >
-          {selectedSession ? (
-            <div className="raw-log" style={{ flex: 1 }}>
-              <div className="raw-log__header">
-                <span className="raw-log__header-label">Raw Session Log</span>
-                <div className="raw-log__dots">
-                  <span className="raw-log__dot raw-log__dot--red" />
-                  <span className="raw-log__dot raw-log__dot--yellow" />
-                  <span className="raw-log__dot raw-log__dot--blue" />
-                </div>
-              </div>
-              <div className="raw-log__content">
-                {selectedSession.rawLog.map((line, i) => (
-                  <div className="raw-log__line" key={i}>
-                    <span className="raw-log__line-num">{i + 1}</span>
-                    <span className="raw-log__line-text">{line}</span>
-                  </div>
-                ))}
-                <div className="raw-log__line">
-                  <span className="raw-log__line-num">
-                    {selectedSession.rawLog.length + 1}
-                  </span>
-                  <span className="raw-log__line-text">
-                    <span className="raw-log__cursor" />
-                  </span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div
+            <span style={{ color: 'var(--on-surface-variant)', fontSize: '0.875rem' }}>&#128269;</span>
+            <input
+              className="input"
               style={{
-                flex: 1,
-                display: 'flex',
+                border: 'none',
+                outline: 'none',
+                background: 'none',
+                padding: 0,
+                boxShadow: 'none',
+                fontFamily: 'var(--font-body)',
+                fontSize: '0.875rem',
+                color: 'var(--on-surface)',
+                width: '100%',
+              }}
+              placeholder="Search sessions..."
+              readOnly
+            />
+          </div>
+
+          {/* Table header */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 120px 100px 40px',
+              padding: 'var(--spacing-3) var(--spacing-4)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.6875rem',
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              color: 'var(--on-surface-variant)',
+              background: 'var(--surface-container-low)',
+              borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
+            }}
+          >
+            <span>Session</span>
+            <span>Duration</span>
+            <span>Status</span>
+            <span></span>
+          </div>
+
+          {/* Session rows */}
+          {filteredSessions.map((session, i) => (
+            <button
+              key={session.id}
+              type="button"
+              onClick={() => setSelectedSessionId(session.id)}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 120px 100px 40px',
                 alignItems: 'center',
-                justifyContent: 'center',
+                padding: 'var(--spacing-5) var(--spacing-4)',
+                background: selectedSessionId === session.id
+                  ? 'var(--surface-container-low)'
+                  : 'var(--surface-container-lowest)',
+                cursor: 'pointer',
+                border: 'none',
+                borderTop: i > 0 ? '1px solid rgba(194, 199, 208, 0.15)' : 'none',
+                textAlign: 'start',
+                width: '100%',
+                fontFamily: 'inherit',
               }}
             >
-              <p
-                className="label"
-                style={{ textAlign: 'center' }}
+              <div>
+                <div
+                  style={{
+                    fontWeight: 600,
+                    fontSize: '0.9375rem',
+                    marginBottom: '2px',
+                    color: 'var(--on-surface)',
+                  }}
+                >
+                  {session.title}
+                </div>
+                <div
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.6875rem',
+                    color: 'var(--on-surface-variant)',
+                  }}
+                >
+                  {formatDate(session.date)} &middot; {session.turns} turns
+                </div>
+              </div>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.75rem',
+                  color: 'var(--on-surface-variant)',
+                }}
               >
-                Select a session to preview its raw log
-              </p>
-            </div>
-          )}
+                {formatDuration(session.durationMinutes)}
+              </span>
+              <span className={`chip chip--${session.status}`}>
+                {session.status.toUpperCase()}
+              </span>
+              <span
+                style={{
+                  color: 'var(--primary)',
+                  fontSize: '1.25rem',
+                  textAlign: 'center',
+                }}
+              >
+                &#8594;
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Preview panel */}
+        <div
+          style={{
+            background: 'var(--surface-container-low)',
+            borderRadius: 'var(--radius-sm)',
+            padding: 'var(--spacing-5)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.6875rem',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'var(--on-surface-variant)',
+              marginBottom: 'var(--spacing-4)',
+              textAlign: 'center',
+            }}
+          >
+            Raw Session Log Preview
+          </div>
+          <div className="terminal" style={{ flex: 1, minHeight: '260px' }}>
+            {selectedSession ? (
+              <>
+                {selectedSession.rawLog.map((line, i) => (
+                  <div key={i} style={{ lineHeight: 1.8 }}>
+                    {line.startsWith('[AI]') ? (
+                      <><span style={{ color: '#60a5fa' }}>{line.substring(0, 4)}</span>{line.substring(4)}</>
+                    ) : line.startsWith('>') ? (
+                      <><span style={{ color: '#34d399' }}>&gt;</span>{line.substring(1)}</>
+                    ) : line === '...' ? (
+                      <span style={{ color: 'rgba(255,255,255,0.3)' }}>...</span>
+                    ) : line.startsWith('[') ? (
+                      <span style={{ color: '#34d399', fontWeight: 600 }}>{line}</span>
+                    ) : (
+                      <span>{line}</span>
+                    )}
+                  </div>
+                ))}
+                <div style={{ lineHeight: 1.8 }}>
+                  <span className="raw-log__cursor" />
+                </div>
+              </>
+            ) : (
+              <div style={{ color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>
+                Select a session to preview
+              </div>
+            )}
+          </div>
+          <a
+            href={selectedSession ? `/session/${selectedSession.id}/enhance` : '#'}
+            className="btn btn-primary btn--lg btn--full"
+            style={{
+              marginTop: 'var(--spacing-4)',
+              justifyContent: 'center',
+              pointerEvents: selectedSession ? 'auto' : 'none',
+              opacity: selectedSession ? 1 : 0.5,
+            }}
+          >
+            Enhance with AI
+          </a>
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.625rem',
+              color: 'var(--on-surface-variant)',
+              textAlign: 'center',
+              marginTop: 'var(--spacing-2)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}
+          >
+            Requires API key
+          </div>
         </div>
       </div>
     </AppShell>

@@ -723,6 +723,29 @@
 
 .chip--primary {
   color: var(--primary);
+  background: rgba(8, 68, 113, 0.08);
+}
+
+.chip--published,
+.chip--sealed {
+  background: var(--secondary-container);
+  color: var(--secondary);
+  font-weight: 600;
+}
+
+.chip--draft {
+  background: var(--tertiary-fixed);
+  color: var(--tertiary);
+}
+
+.chip--archived {
+  background: var(--surface-container-highest);
+  color: var(--on-surface-variant);
+}
+
+.chip--success {
+  background: var(--secondary-container);
+  color: var(--secondary);
 }
 
 /* ==========================================================================

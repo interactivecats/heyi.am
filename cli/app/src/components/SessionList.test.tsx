@@ -4,18 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { SessionList } from './SessionList';
 
-/**
- * SessionList uses internal mock data by default.
- * To test the empty state we need to override the data.
- * Since the component currently uses hardcoded mock data,
- * we test the populated state directly and test the empty state
- * by rendering the EmptySessionList variant (exported for testing).
- *
- * For now, we test the populated flow since mocks are inline.
- * Empty state tests validate the component structure via a
- * separate wrapper approach — we re-export an empty variant below.
- */
-
 function renderSessionList() {
   return render(
     <MemoryRouter>
@@ -25,61 +13,61 @@ function renderSessionList() {
 }
 
 describe('SessionList — populated state', () => {
-  it('renders the "Browse Sessions" heading', () => {
+  it('renders the selected project name as heading', () => {
     renderSessionList();
-    expect(screen.getByText('Browse Sessions')).toBeInTheDocument();
+    // First project is selected by default — appears in both sidebar and heading
+    const matches = screen.getAllByText('auth-service');
+    expect(matches.length).toBeGreaterThanOrEqual(2); // sidebar + heading
   });
 
   it('renders project list in sidebar', () => {
     renderSessionList();
     expect(screen.getByText('Projects')).toBeInTheDocument();
-    expect(screen.getByText('All Projects')).toBeInTheDocument();
-    expect(screen.getByText('auth-service')).toBeInTheDocument();
     expect(screen.getByText('data-pipeline')).toBeInTheDocument();
     expect(screen.getByText('ui-components')).toBeInTheDocument();
     expect(screen.getByText('api-gateway')).toBeInTheDocument();
   });
 
-  it('renders session cards with titles', () => {
+  it('renders sidebar stats section', () => {
+    renderSessionList();
+    expect(screen.getByText('Stats')).toBeInTheDocument();
+    expect(screen.getByText(/Sessions:/)).toBeInTheDocument();
+    expect(screen.getByText(/Published:/)).toBeInTheDocument();
+  });
+
+  it('renders session rows with titles', () => {
     renderSessionList();
     expect(
       screen.getByText('Refactor JWT middleware to support refresh tokens'),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText('Build ETL pipeline for event stream processing'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Implement accessible dropdown component'),
-    ).toBeInTheDocument();
   });
 
-  it('renders session metrics (duration, turns, loc)', () => {
+  it('renders table column headers', () => {
     renderSessionList();
-    // JWT middleware session: 47m, 23 turns, 312 loc
-    expect(screen.getByText('47m')).toBeInTheDocument();
-    expect(screen.getByText('23 turns')).toBeInTheDocument();
-    expect(screen.getByText('312 loc')).toBeInTheDocument();
+    expect(screen.getByText('Session')).toBeInTheDocument();
+    expect(screen.getByText('Duration')).toBeInTheDocument();
+    expect(screen.getByText('Status')).toBeInTheDocument();
   });
 
-  it('renders status badges', () => {
+  it('renders session duration in "X min" format', () => {
     renderSessionList();
-    const badges = screen.getAllByText('published');
-    expect(badges.length).toBeGreaterThanOrEqual(1);
-    const draftBadges = screen.getAllByText('draft');
-    expect(draftBadges.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('47 min')).toBeInTheDocument();
+  });
+
+  it('renders status chips', () => {
+    renderSessionList();
+    expect(screen.getByText('PUBLISHED')).toBeInTheDocument();
+    expect(screen.getByText('DRAFT')).toBeInTheDocument();
+  });
+
+  it('renders search input', () => {
+    renderSessionList();
+    expect(screen.getByPlaceholderText('Search sessions...')).toBeInTheDocument();
   });
 
   it('clicking a project filters sessions to that project', async () => {
     const user = userEvent.setup();
     renderSessionList();
-
-    // All 6 sessions are visible initially
-    expect(
-      screen.getByText('Refactor JWT middleware to support refresh tokens'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Build ETL pipeline for event stream processing'),
-    ).toBeInTheDocument();
 
     // Click "ui-components" project
     await user.click(screen.getByText('ui-components'));
@@ -92,93 +80,41 @@ describe('SessionList — populated state', () => {
     expect(
       screen.queryByText('Refactor JWT middleware to support refresh tokens'),
     ).not.toBeInTheDocument();
-    expect(
-      screen.queryByText('Build ETL pipeline for event stream processing'),
-    ).not.toBeInTheDocument();
   });
 
-  it('clicking "All Projects" shows all sessions again', async () => {
+  it('clicking a session shows its raw log in preview', async () => {
     const user = userEvent.setup();
     renderSessionList();
 
-    // Filter to ui-components
-    await user.click(screen.getByText('ui-components'));
-    expect(
-      screen.queryByText('Refactor JWT middleware to support refresh tokens'),
-    ).not.toBeInTheDocument();
-
-    // Click All Projects
-    await user.click(screen.getByText('All Projects'));
-    expect(
-      screen.getByText('Refactor JWT middleware to support refresh tokens'),
-    ).toBeInTheDocument();
-  });
-
-  it('clicking a session selects it and shows raw log preview', async () => {
-    const user = userEvent.setup();
-    renderSessionList();
-
-    // No raw log visible initially
-    expect(screen.queryByText('Raw Session Log')).not.toBeInTheDocument();
-    expect(
-      screen.getByText('Select a session to preview its raw log'),
-    ).toBeInTheDocument();
-
-    // Click the JWT middleware session
+    // Click a session
     await user.click(
       screen.getByText('Refactor JWT middleware to support refresh tokens'),
     );
 
-    // Raw log panel should appear
-    expect(screen.getByText('Raw Session Log')).toBeInTheDocument();
-    // Check a log line is visible
+    // Raw log content should appear in the terminal
     expect(
-      screen.getByText(
-        '$ claude "refactor the JWT middleware to handle refresh tokens"',
-      ),
+      screen.getByText(/The existing auth was frankencode/),
     ).toBeInTheDocument();
   });
 
-  it('shows "Enhance with AI" button when a session is selected', async () => {
-    const user = userEvent.setup();
+  it('renders "Enhance with AI" button in preview panel', () => {
     renderSessionList();
-
-    // No enhance button initially
-    expect(screen.queryByText('Enhance with AI')).not.toBeInTheDocument();
-
-    // Select a session
-    await user.click(
-      screen.getByText('Refactor JWT middleware to support refresh tokens'),
-    );
-
-    // Now the CTA should appear
-    const enhanceLink = screen.getByText('Enhance with AI');
+    const enhanceLink = screen.getByText(/Enhance with AI/);
     expect(enhanceLink).toBeInTheDocument();
-    expect(enhanceLink.closest('a')).toHaveAttribute(
-      'href',
-      '/session/ses-001/enhance',
-    );
   });
 
-  it('does not show bottom bar when no session is selected', () => {
+  it('renders "Requires API key" subtitle under enhance button', () => {
     renderSessionList();
-    expect(screen.queryByText('Enhance with AI')).not.toBeInTheDocument();
+    expect(screen.getByText('Requires API key')).toBeInTheDocument();
   });
 
-  it('shows selected project name as a chip in the subtitle', async () => {
-    const user = userEvent.setup();
+  it('renders preview panel header', () => {
     renderSessionList();
-
-    await user.click(screen.getByText('auth-service'));
-
-    // The subtitle should show the project name in a chip
-    const chip = screen.getByText('auth-service', { selector: '.chip' });
-    expect(chip).toBeInTheDocument();
+    expect(screen.getByText('Raw Session Log Preview')).toBeInTheDocument();
   });
 
-  it('formats duration correctly for sessions over an hour', () => {
+  it('shows project description in subtitle when project is selected', () => {
     renderSessionList();
-    // ETL pipeline session: 89 minutes = 1h 29m
-    expect(screen.getByText('1h 29m')).toBeInTheDocument();
+    expect(screen.getByText(/JWT auth and OAuth provider layer/)).toBeInTheDocument();
   });
 });
