@@ -1,5 +1,8 @@
 import Config
 
+# Only in tests, remove the complexity from the password hashing algorithm
+config :bcrypt_elixir, :log_rounds, 1
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used
@@ -25,6 +28,11 @@ config :heyi_am, HeyiAm.Mailer, adapter: Swoosh.Adapters.Test
 
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
+
+# Dummy GitHub OAuth config for test
+config :ueberauth, Ueberauth.Strategy.Github.OAuth,
+  client_id: "test_client_id",
+  client_secret: "test_client_secret"
 
 # Print only warnings and errors during test
 config :logger, level: :warning

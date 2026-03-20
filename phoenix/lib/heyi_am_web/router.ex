@@ -1,6 +1,8 @@
 defmodule HeyiAmWeb.Router do
   use HeyiAmWeb, :router
 
+  import HeyiAmWeb.UserAuth
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -8,6 +10,7 @@ defmodule HeyiAmWeb.Router do
     plug :put_root_layout, html: {HeyiAmWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :fetch_current_scope_for_user
   end
 
   pipeline :api do
@@ -40,5 +43,52 @@ defmodule HeyiAmWeb.Router do
       live_dashboard "/dashboard", metrics: HeyiAmWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
+  end
+
+  ## OAuth routes
+
+  scope "/auth", HeyiAmWeb do
+    pipe_through :browser
+
+    get "/:provider", OAuthController, :request
+    get "/:provider/callback", OAuthController, :callback
+  end
+
+  ## Authentication routes
+
+  scope "/", HeyiAmWeb do
+    pipe_through [:browser, :redirect_if_user_is_authenticated]
+
+    get "/users/register", UserRegistrationController, :new
+    post "/users/register", UserRegistrationController, :create
+  end
+
+  scope "/", HeyiAmWeb do
+    pipe_through [:browser, :require_authenticated_user]
+
+    live_session :authenticated, on_mount: [{HeyiAmWeb.UserAuth, :ensure_authenticated}] do
+      live "/onboarding/username", ClaimUsernameLive
+      live "/onboarding/vibe", VibePickerLive
+    end
+
+    get "/users/settings", UserSettingsController, :edit
+    put "/users/settings", UserSettingsController, :update
+    get "/users/settings/confirm-email/:token", UserSettingsController, :confirm_email
+  end
+
+  scope "/", HeyiAmWeb do
+    pipe_through [:browser]
+
+    get "/users/log-in", UserSessionController, :new
+    get "/users/log-in/:token", UserSessionController, :confirm
+    post "/users/log-in", UserSessionController, :create
+    delete "/users/log-out", UserSessionController, :delete
+  end
+
+  # Portfolio — catch-all, must be last
+  scope "/", HeyiAmWeb do
+    pipe_through :browser
+
+    get "/:username", PortfolioController, :show
   end
 end

@@ -32,7 +32,7 @@ heyi.am turns AI coding sessions into evidence-backed developer portfolios. Two 
 - [x] **Phase 2** — CLI: Session Browser (3/3)
 - [x] **Phase 3** — CLI: Session Detail & Enhancement (3/3)
 - [ ] **Phase 4** — CLI: Editor & Publishing (0/5)
-- [ ] **Phase 5** — Web: Landing, Auth & Onboarding (0/6)
+- [x] **Phase 5** — Web: Landing, Auth & Onboarding (6/6)
 - [ ] **Phase 6** — Web: Portfolio Editor (0/3)
 - [ ] **Phase 7** — Web: Public Pages (0/5)
 - [ ] **Phase 8** — Session Templates (0/5)
@@ -197,55 +197,48 @@ Single `EnhanceFlow.tsx` with `Phase` state machine (`'analyzing' | 'questions' 
 
 ## Phase 5: Web — Landing, Auth & Onboarding
 
-### Task 5.1 — Landing Page
+### Task 5.0 — Auth Foundation ✅
+**Files:** `phoenix/lib/heyi_am/accounts.ex`, `phoenix/lib/heyi_am/accounts/user.ex`, migrations
+
+Fresh `mix phx.gen.auth Accounts User users`. Clean migration for profile fields (username, display_name, bio, avatar_url, github_id, github_url, location, status, portfolio_layout, portfolio_accent). User schema with `profile_changeset/2`, `username_changeset/2` (3-39 chars, lowercase alphanumeric + hyphens), `github_changeset/2`. GitHub OAuth via ueberauth + ueberauth_github — `OAuthController` at `/auth/github`, `find_or_create_from_github/1` matches on `github_id` only. 162 tests passing.
+
+### Task 5.1 — Landing Page ✅
 **Screen 14**
 **Files:** `phoenix/lib/heyi_am_web/controllers/page_html/home.html.heex`
 
-- Hero with terminal visual
-- Feature cards (CLI Ingestion, AI Enhancement, Cryptographic Sealing)
-- Featured Takes + AI Collaboration bars
-- Dark dual-audience section
-- CTA: "Publish your first session"
+Built full landing page with `public_shell`: hero with terminal visual, 3 feature cards (CLI Ingestion, AI Enhancement, Cryptographic Sealing), Featured Takes with 4 mock session cards, AI Collaboration Profile bars, dark dual-audience section, bottom CTA with install command. All hardcoded placeholder content. Responsive grid classes added to app.css.
 
-### Task 5.2 — Sign Up Page
+### Task 5.2 — Sign Up Page ✅
 **Screen 15**
-**Files:** Auth controller templates
+**Files:** `phoenix/lib/heyi_am_web/controllers/user_registration_html/new.html.heex`
 
-- Email + password form
-- GitHub OAuth button
-
-### Task 5.3 — Log In Page
+### Task 5.3 — Log In Page ✅
 **Screen 16**
-**Files:** Auth controller templates
+**Files:** `phoenix/lib/heyi_am_web/controllers/user_session_html/new.html.heex`
 
-- Email + password + GitHub OAuth
+Auth pages styled with `public_shell`, centered `.auth-card` layout, GitHub OAuth button with SVG icon, "or" divider, design system typography and colors. Login supports magic link, email+password, and GitHub OAuth. Confirm page also styled.
 
-### Task 5.4 — Claim Username
+### Task 5.4 — Claim Username ✅
 **Screen 17**
 **Mockup image:** `mockups/new/claim_your_name/screen.png`
 **Mockup HTML:** `mockups/new/claim_your_name/code.html`
-**Files:** `phoenix/lib/heyi_am_web/live/user_live/set_username.ex`
+**Files:** `phoenix/lib/heyi_am_web/live/onboarding/claim_username_live.ex`
 
-- 3-column: live feed | main form | protocol note
-- "Pick your permanent URL" + heyi.am/[input] + AVAILABLE badge
-- "Claim & Continue" CTA
+LiveView at `/onboarding/username` with `live_session :authenticated`. 3-column layout: mock live feed, form with live AVAILABLE/TAKEN badge via phx-change, protocol note. Redirects to vibe picker on claim. Route guard redirects to portfolio if username already set.
 
-### Task 5.5 — Portfolio: Empty State
+### Task 5.5 — Portfolio: Empty State ✅
 **Screen 18**
-**Files:** `phoenix/lib/heyi_am_web/controllers/portfolio_html/show.html.heex`
+**Files:** `phoenix/lib/heyi_am_web/controllers/portfolio_html/show.html.heex`, `portfolio_controller.ex`
 
-- Name + bio placeholder
-- "No sessions yet. Publish your first: $ heyiam open"
+`/:username` route with `PortfolioController`. Template-aware rendering via `tpl-{layout}` CSS class from user's `portfolio_layout` field. Shows user info + terminal install commands. 404 for unknown usernames.
 
-### Task 5.6 — Vibe Picker
+### Task 5.6 — Vibe Picker ✅
 **Screen 19**
 **Mockup image:** `mockups/new/workbench_vibe_picker/screen.png`
 **Mockup HTML:** `mockups/new/workbench_vibe_picker/code.html`
-**Files:** `phoenix/lib/heyi_am_web/live/portfolio_live.ex`
+**Files:** `phoenix/lib/heyi_am_web/live/onboarding/vibe_picker_live.ex`
 
-- 6 template cards (3×2) with previews
-- Live preview sidebar
-- "SAVE & DEPLOY" CTA
+LiveView at `/onboarding/vibe`. 6 template cards in grid with live preview panel. "Save & Deploy" saves `portfolio_layout` to user and redirects to portfolio. Reusable in Phase 6 portfolio editor.
 
 ---
 

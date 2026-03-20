@@ -20,6 +20,13 @@ if System.get_env("PHX_SERVER") do
   config :heyi_am, HeyiAmWeb.Endpoint, server: true
 end
 
+# GitHub OAuth — required in prod, optional in dev/test
+if client_id = System.get_env("GITHUB_CLIENT_ID") do
+  config :ueberauth, Ueberauth.Strategy.Github.OAuth,
+    client_id: client_id,
+    client_secret: System.get_env("GITHUB_CLIENT_SECRET")
+end
+
 config :heyi_am, HeyiAmWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 

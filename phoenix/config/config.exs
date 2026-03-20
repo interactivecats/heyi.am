@@ -7,6 +7,19 @@
 # General application configuration
 import Config
 
+config :heyi_am, :scopes,
+  user: [
+    default: true,
+    module: HeyiAm.Accounts.Scope,
+    assign_key: :current_scope,
+    access_path: [:user, :id],
+    schema_key: :user_id,
+    schema_type: :id,
+    schema_table: :users,
+    test_data_fixture: HeyiAm.AccountsFixtures,
+    test_setup_helper: :register_and_log_in_user
+  ]
+
 config :heyi_am,
   ecto_repos: [HeyiAm.Repo],
   generators: [timestamp_type: :utc_datetime]
@@ -48,6 +61,12 @@ config :esbuild,
   css: [
     args: ~w(css/app.css --bundle --outdir=../priv/static/assets/css),
     cd: Path.expand("../assets", __DIR__)
+  ]
+
+# Configure Ueberauth for GitHub OAuth
+config :ueberauth, Ueberauth,
+  providers: [
+    github: {Ueberauth.Strategy.Github, [default_scope: "user:email"]}
   ]
 
 # Use Jason for JSON parsing in Phoenix

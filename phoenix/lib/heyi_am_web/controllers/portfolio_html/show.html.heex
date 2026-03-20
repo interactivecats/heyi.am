@@ -1,0 +1,33 @@
+<div class={"portfolio-page tpl-#{@portfolio_layout}"}>
+  <header class="portfolio-hero">
+    <h1 class="display-md"><%= @portfolio_user.display_name || @portfolio_user.username %></h1>
+    <%= if @portfolio_user.bio do %>
+      <p class="body-lg" style="color: var(--on-surface-variant); margin-block-start: var(--spacing-2);">
+        <%= @portfolio_user.bio %>
+      </p>
+    <% end %>
+    <%= if @portfolio_user.location do %>
+      <p class="body-sm" style="color: var(--on-surface-variant); margin-block-start: var(--spacing-1);">
+        <%= @portfolio_user.location %>
+      </p>
+    <% end %>
+  </header>
+
+  <section class="portfolio-empty-state">
+    <p class="body-lg" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-6);">
+      No sessions yet. Publish your first:
+    </p>
+    <div class="terminal" style="max-width: 28rem; margin-inline: auto; text-align: start;">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <span class="terminal-dot terminal-dot--red"></span>
+          <span class="terminal-dot terminal-dot--yellow"></span>
+          <span class="terminal-dot terminal-dot--green"></span>
+        </div>
+      </div>
+      <div class="terminal-line"><span class="terminal-prompt">$</span> npm i -g @anthropic/heyiam</div>
+      <div class="terminal-line"><span class="terminal-prompt">$</span> heyiam open</div>
+      <div class="terminal-line"><span class="terminal-prompt">$</span> <span class="terminal-cursor"></span></div>
+    </div>
+  </section>
+</div>

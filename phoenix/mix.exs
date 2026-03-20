@@ -40,6 +40,7 @@ defmodule HeyiAm.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:bcrypt_elixir, "~> 3.0"},
       {:phoenix, "~> 1.8.5"},
       {:phoenix_ecto, "~> 4.5"},
       {:ecto_sql, "~> 3.13"},
@@ -57,7 +58,9 @@ defmodule HeyiAm.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
-      {:esbuild, "~> 0.10.0", runtime: Mix.env() == :dev}
+      {:esbuild, "~> 0.10.0", runtime: Mix.env() == :dev},
+      {:ueberauth, "~> 0.10"},
+      {:ueberauth_github, "~> 0.8"}
     ]
   end
 
