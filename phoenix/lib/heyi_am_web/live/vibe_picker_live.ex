@@ -34,7 +34,7 @@ defmodule HeyiAmWeb.VibePickerLive do
     user = socket.assigns.user
     selected = socket.assigns.selected
 
-    case Accounts.update_user_profile(user, %{portfolio_layout: normalize_layout(selected)}) do
+    case Accounts.update_user_profile(user, %{portfolio_layout: selected}) do
       {:ok, user} ->
         path = if user.username, do: "/#{user.username}", else: "/"
         {:noreply, push_navigate(socket, to: path)}
@@ -43,13 +43,6 @@ defmodule HeyiAmWeb.VibePickerLive do
         {:noreply, put_flash(socket, :error, "Could not save template.")}
     end
   end
-
-  # Map display IDs to DB values
-  defp normalize_layout("neon-night"), do: "verbose"
-  defp normalize_layout("campfire"), do: "timeline"
-  defp normalize_layout("terminal"), do: "minimal"
-  defp normalize_layout("brutalist"), do: "editorial"
-  defp normalize_layout(other), do: other
 
   @impl true
   def render(assigns) do

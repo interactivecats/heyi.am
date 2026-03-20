@@ -164,7 +164,7 @@ defmodule HeyiAm.Accounts.User do
     |> validate_length(:bio, max: 500)
     |> validate_length(:location, max: 100)
     |> validate_length(:status, max: 100)
-    |> validate_inclusion(:portfolio_layout, ~w(editorial minimal verbose timeline))
+    |> validate_inclusion(:portfolio_layout, ~w(editorial terminal minimal brutalist campfire neon-night))
   end
 
   @doc """
