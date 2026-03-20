@@ -28,8 +28,8 @@ heyi.am turns AI coding sessions into evidence-backed developer portfolios. Two 
 ## Progress
 
 - [x] **Phase 0** — Archive & Cleanup (3/3)
-- [ ] **Phase 1** — Design System & Shared Components (0/5)
-- [ ] **Phase 2** — CLI: Session Browser (0/3)
+- [x] **Phase 1** — Design System & Shared Components (4/5) — Task 1.5 skipped (already done)
+- [x] **Phase 2** — CLI: Session Browser (3/3)
 - [ ] **Phase 3** — CLI: Session Detail & Enhancement (0/3)
 - [ ] **Phase 4** — CLI: Editor & Publishing (0/5)
 - [ ] **Phase 5** — Web: Landing, Auth & Onboarding (0/6)
@@ -70,76 +70,57 @@ Create fresh Phoenix app and CLI app with correct naming:
 
 ## Phase 1: Design System & Shared Components
 
-### Task 1.1 — Phoenix CSS Rewrite
+### Task 1.1 — Phoenix CSS Rewrite ✅
 **Screen ref:** All screens (design foundation)
-**Files:** `phoenix/assets/css/app.css` → rewrite from scratch
+**Files:** `phoenix/assets/css/app.css` (1,414 lines, 25KB bundled)
 **Source:** `mockups/full/DESIGN.md`
 
-Build new CSS from the DESIGN.md spec:
-- Tokens: Seal Blue (#084471), 5-tier surface system, ghost borders
-- Tonal layering (no 1px solid separators for sectioning)
-- Radii: 0.125rem / 0.25rem / 0.375rem (tight, not rounded)
-- Fonts: Space Grotesk (display), Inter (body), IBM Plex Mono (mono/labels)
-- Shared component classes: `.topbar`, `.sidebar`, `.btn`, `.chip`, `.card`, `.label-mono`, `.stats-grid`, `.stat-card`, `.terminal`, `.exec-path`
+Built complete CSS from DESIGN.md spec: tokens, 5-tier surface system, ghost borders, typography scale (15 classes), 20+ component classes (topbar, sidebar, buttons, chips, cards, stats grid, terminal, exec-path, dev-take, data tables, badges, glass bar, layouts, utilities). esbuild asset pipeline configured (0.25.4 binary). Google Fonts loaded in root.html.heex.
 
-### Task 1.2 — CLI CSS Rewrite
+### Task 1.2 — CLI CSS Rewrite ✅
 **Screen ref:** All CLI screens
-**Files:** `cli/app/src/App.css` → rewrite to match Phoenix tokens
+**Files:** `cli/app/src/App.css`, `cli/app/src/index.css`
 
-Same tokens as Phoenix CSS. Shared visual language across CLI and web.
+Same tokens as Phoenix. Component classes: `.app-shell`, `.app-header`, `.app-sidebar`, `.session-card`, `.raw-log`, `.enhance-flow`, `.editor-panel`, `.btn`, `.chip`, `.stats-grid`, `.terminal`, `.exec-path`, `.badge`, `.glass-panel`, `.card`. Google Fonts in `index.html`.
 
-### Task 1.3 — Phoenix App Shell Component
+### Task 1.3 — Phoenix App Shell Component ✅
 **Screen ref:** Screens 14, 23-27 (public shell), Screens 20-22 (editor shell)
-**Files:** New `phoenix/lib/heyi_am_web/components/app_shell.ex`
+**Files:** `phoenix/lib/heyi_am_web/components/app_shell.ex`
 
-Two variants:
-- **Public**: topbar (logo left, nav tabs center, status right), no sidebar, centered max-width content
-- **Editor**: topbar (logo + nav + save/deploy), left sidebar (project tree), content area
+Two function components: `public_shell/1` (light topbar, centered content, nav slots) and `editor_shell/1` (dark topbar, sidebar slot, action buttons). Imported globally via HeyiAmWeb html_helpers. 14 component tests passing.
 
-### Task 1.4 — CLI App Shell Component
+### Task 1.4 — CLI App Shell Component ✅
 **Screen ref:** Screens 1-13
-**Files:** New `cli/app/src/components/AppShell.tsx`
+**Files:** `cli/app/src/components/AppShell.tsx`
 
-Consistent header: "heyiam" logo, back navigation, auth indicator, settings gear.
+React component with header (logo, back arrow, title, auth dot, settings gear), optional sidebar, main content, optional glassmorphism bottom bar. 14 tests passing (Vitest + React Testing Library).
 
-### Task 1.5 — Rename CLI from `ccs` to `heyiam`
-**Screen ref:** All CLI screens
-**Files:** `cli/src/index.ts`, `cli/package.json`, `cli/src/server.ts`, all references
-
-Rename CLI command, binary, and all internal references.
+### Task 1.5 — Rename CLI from `ccs` to `heyiam` ✅ (pre-existing)
+Already done — `cli/package.json` has `"name": "heyiam"` and `"bin": { "heyiam": ... }`.
 
 ---
 
 ## Phase 2: CLI — Session Browser
 
-### Task 2.1 — Session Browser: Empty State
+### Task 2.1 — Session Browser: Empty State ✅
 **Screen 1**
 **Files:** `cli/app/src/components/SessionList.tsx`
 
-- App shell with "heyiam" logo + settings gear
-- Setup banner: "Add your Anthropic API key to enable AI summaries"
-- Empty state: "No sessions found"
+App shell with "heyiam" logo + settings gear. Setup banner card prompting for API key with link to settings. Centered "No sessions found" empty state. React Router added for navigation between views. 12 component tests.
 
-### Task 2.2 — Session Browser: With Projects
+### Task 2.2 — Session Browser: With Projects ✅
 **Screen 2**
 **Mockup image:** `mockups/new/session_browser/screen.png`
 **Mockup HTML:** `mockups/new/session_browser/code.html`
 **Files:** `cli/app/src/components/SessionList.tsx`
 
-- Left sidebar: project list with colored dots
-- Main: session cards (title, duration, turns, LOC, date)
-- Right panel: raw session log preview terminal
-- Bottom: "Enhance with AI" CTA
-- Project dropdown for mobile/filtering
+Three-panel layout: project sidebar with colored dots and "All Projects" filter, session card list (title, date, duration, turns, LOC, status badge), raw log preview terminal with blinking cursor. "Enhance with AI" CTA in glassmorphism bottom bar (visible only when session selected). Mock data: 4 projects, 6 sessions.
 
-### Task 2.3 — Settings Page
+### Task 2.3 — Settings Page ✅
 **Screen 4**
 **Files:** `cli/app/src/components/Settings.tsx`
 
-- API key input (stored locally, never sent to server)
-- Auth status (connected / not / username)
-- Machine token display
-- `heyiam login` instructions
+Three sections: API Configuration (password input with show/hide toggle), Authentication (status badge, username, `heyiam login` terminal block), Machine Identity (Ed25519 token + SHA256 fingerprint). Back navigation to home. Settings-specific CSS added to App.css. 11 component tests.
 
 ---
 
