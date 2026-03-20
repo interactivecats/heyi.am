@@ -1,0 +1,45 @@
+<.public_shell current_page="Verify">
+  <:nav_item href={~p"/s/#{@session.token}"} label="Session" />
+  <:nav_item href="#" label="Verify" />
+
+  <div class="challenge-submitted">
+    <header class="challenge-submitted-header">
+      <span class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-4); display: block;">
+        Session Verification
+      </span>
+      <h1 class="headline-lg">{@session.title}</h1>
+    </header>
+
+    <div class="challenge-seal-card" style="margin-block-start: var(--spacing-8);">
+      <div class="challenge-seal-details">
+        <div style="margin-block-end: var(--spacing-4);">
+          <span class="label-sm">Content Hash</span>
+          <code class="challenge-hash-display">{@verification.hash}</code>
+        </div>
+
+        <div style="margin-block-end: var(--spacing-4);">
+          <span class="label-sm">Signature Status</span>
+          <span class={"label-md " <> if(@verification.signature_status == "verified", do: "challenge-verified", else: "challenge-unverified")}>
+            {String.upcase(@verification.signature_status)}
+          </span>
+        </div>
+
+        <div :if={@verification.recorded_at} style="margin-block-end: var(--spacing-4);">
+          <span class="label-sm">Recorded At</span>
+          <span class="body-sm">{Calendar.strftime(@verification.recorded_at, "%Y-%m-%d %H:%M:%S UTC")}</span>
+        </div>
+
+        <div :if={@verification.verified_at}>
+          <span class="label-sm">Verified At</span>
+          <span class="body-sm">{Calendar.strftime(@verification.verified_at, "%Y-%m-%d %H:%M:%S UTC")}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="challenge-submitted-actions" style="margin-block-start: var(--spacing-8);">
+      <a href={~p"/s/#{@session.token}"} class="btn btn-secondary">
+        View Session
+      </a>
+    </div>
+  </div>
+</.public_shell>

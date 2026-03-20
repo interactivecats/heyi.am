@@ -1,0 +1,59 @@
+<.public_shell current_page="Challenge">
+  <:nav_item href={~p"/challenges/#{@challenge.slug}/compare"} label="Responses" />
+  <:nav_item href="#" label="Deep Dive" />
+  <:status>
+    <span :if={@response.sealed?} class="chip chip--primary">SEALED</span>
+  </:status>
+
+  <%!-- Challenge Banner --%>
+  <div class="challenge-deep-dive-banner">
+    <div class="challenge-deep-dive-banner-info">
+      <span class="label-sm" style="color: var(--primary);">{@challenge.title}</span>
+      <h2 class="headline-md">{@response.title}</h2>
+    </div>
+    <div class="challenge-deep-dive-nav">
+      <a :if={@prev_response} href={~p"/challenges/#{@challenge.slug}/responses/#{@prev_response.token}"} class="btn btn-ghost btn-sm">
+        &larr; Prev
+      </a>
+      <a :if={@next_response} href={~p"/challenges/#{@challenge.slug}/responses/#{@next_response.token}"} class="btn btn-ghost btn-sm">
+        Next &rarr;
+      </a>
+    </div>
+  </div>
+
+  <%!-- Case Study Content (simplified mock for now) --%>
+  <div class="challenge-deep-dive-content">
+    <div class="stats-strip">
+      <div class="stat-card">
+        <span class="stat-card-label">Duration</span>
+        <span class="stat-card-value stat-card-value--sm">{@response.duration_minutes}m</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card-label">Turns</span>
+        <span class="stat-card-value stat-card-value--sm">{@response.turns}</span>
+      </div>
+    </div>
+
+    <section class="dev-take">
+      <h3 class="dev-take-heading">The Developer Take</h3>
+      <p class="dev-take-body">{@response.dev_take}</p>
+    </section>
+
+    <%!-- Seal verification --%>
+    <div class="challenge-seal-card" style="margin-block-start: var(--spacing-8);">
+      <div class="challenge-seal-details">
+        <span class="label-sm">Trust Hash</span>
+        <code class="challenge-hash-display">{@response.hash}</code>
+        <span :if={@response.sealed?} class="label-sm" style="color: var(--secondary);">Verified</span>
+        <span :if={!@response.sealed?} class="label-sm" style="color: var(--tertiary);">Unverified</span>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Back to comparison --%>
+  <div style="margin-block-start: var(--spacing-8); text-align: center;">
+    <a href={~p"/challenges/#{@challenge.slug}/compare"} class="btn btn-secondary">
+      Back to All Responses
+    </a>
+  </div>
+</.public_shell>

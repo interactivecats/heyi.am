@@ -23,10 +23,13 @@ defmodule HeyiAmWeb.Router do
     get "/", PageController, :home
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", HeyiAmWeb do
-  #   pipe_through :api
-  # end
+  # API routes for CLI publish and verification
+  scope "/api", HeyiAmWeb do
+    pipe_through :api
+
+    post "/sessions", ShareApiController, :create
+    get "/sessions/:token/verify", ShareApiController, :verify
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:heyi_am, :dev_routes) do
@@ -83,6 +86,11 @@ defmodule HeyiAmWeb.Router do
     get "/users/settings", UserSettingsController, :edit
     put "/users/settings", UserSettingsController, :update
     get "/users/settings/confirm-email/:token", UserSettingsController, :confirm_email
+
+    # Challenge management (authenticated)
+    resources "/challenges", ChallengeController, only: [:new, :create]
+    get "/challenges/:slug/compare", ChallengeController, :compare
+    get "/challenges/:slug/responses/:token", ChallengeController, :deep_dive
   end
 
   scope "/", HeyiAmWeb do
@@ -93,12 +101,22 @@ defmodule HeyiAmWeb.Router do
     delete "/users/log-out", UserSessionController, :delete
   end
 
+  # Challenge public pages — before portfolio catch-all
+  scope "/challenges", HeyiAmWeb do
+    pipe_through :browser
+
+    get "/:slug", ChallengeController, :show
+    get "/:slug/progress", ChallengeController, :in_progress
+    get "/:slug/submitted", ChallengeController, :submitted
+  end
+
   # Shared session pages — before portfolio catch-all
   scope "/s", HeyiAmWeb do
     pipe_through :browser
 
     get "/:token", ShareController, :show
     get "/:token/transcript", ShareController, :transcript
+    get "/:token/verify", ShareController, :verify
   end
 
   # Portfolio — catch-all, must be last

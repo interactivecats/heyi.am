@@ -295,15 +295,7 @@ defmodule HeyiAmWeb.CoreComponents do
     """
   end
 
-  # Helper used by inputs to generate form errors
-  defp error(assigns) do
-    ~H"""
-    <p class="mt-1.5 flex gap-2 items-center text-sm text-error">
-      <.icon name="hero-exclamation-circle" class="size-5" />
-      {render_slot(@inner_block)}
-    </p>
-    """
-  end
+  # error/1 component defined below (after icon/1)
 
   @doc """
   Renders a header with title.
@@ -442,6 +434,19 @@ defmodule HeyiAmWeb.CoreComponents do
   def icon(%{name: "hero-" <> _} = assigns) do
     ~H"""
     <span class={[@name, @class]} />
+    """
+  end
+
+  @doc """
+  Generates a generic error message.
+  """
+  slot :inner_block, required: true
+
+  def error(assigns) do
+    ~H"""
+    <p class="label-sm" style="color: var(--error, #dc2626);">
+      {render_slot(@inner_block)}
+    </p>
     """
   end
 

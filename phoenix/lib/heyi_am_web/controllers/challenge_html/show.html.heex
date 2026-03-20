@@ -1,0 +1,55 @@
+<.public_shell current_page="Challenge">
+  <:nav_item href="/" label="Home" />
+  <:nav_item href="#" label="Challenge" />
+  <:status>
+    <span :if={@challenge.status == "active"} class="chip chip--primary">ACTIVE</span>
+    <span :if={@challenge.status == "closed"} class="chip chip--muted">CLOSED</span>
+  </:status>
+
+  <div class="challenge-landing">
+    <header class="challenge-landing-header">
+      <div class="challenge-landing-meta">
+        <span class="chip chip--primary">{String.upcase(@challenge.slug)}</span>
+        <span :if={HeyiAm.Challenges.Challenge.has_access_code?(@challenge)} class="chip chip--muted">
+          Private Challenge
+        </span>
+      </div>
+      <h1 class="display-sm">{@challenge.title}</h1>
+      <div :if={@challenge.problem_statement} class="challenge-problem-statement body-lg" style="color: var(--on-surface-variant); border-inline-start: 2px solid var(--outline-variant); padding-inline-start: var(--spacing-6);">
+        {@challenge.problem_statement}
+      </div>
+    </header>
+
+    <%!-- Challenge Details --%>
+    <div class="challenge-details">
+      <div :if={@challenge.time_limit_minutes} class="challenge-detail-card">
+        <span class="label-sm">Time Limit</span>
+        <span class="headline-md">{@challenge.time_limit_minutes} min</span>
+      </div>
+      <div :if={@challenge.evaluation_criteria != []} class="challenge-criteria">
+        <span class="label-sm" style="margin-block-end: var(--spacing-3);">Requirements</span>
+        <div class="challenge-criteria-grid">
+          <div :for={criterion <- @challenge.evaluation_criteria} class="challenge-criterion">
+            <span class="body-sm">{criterion["name"] || criterion["label"]}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%!-- CTA --%>
+    <div :if={@challenge.status == "active"} class="challenge-cta">
+      <a href={~p"/challenges/#{@challenge.slug}/progress"} class="btn btn-primary challenge-begin-btn">
+        Begin Challenge
+      </a>
+      <p class="body-sm" style="color: var(--on-surface-variant); margin-block-start: var(--spacing-3);">
+        You'll receive a CLI command to run locally. Your session will be recorded and sealed.
+      </p>
+    </div>
+    <div :if={@challenge.status == "closed"} class="challenge-closed-notice">
+      <p class="body-md" style="color: var(--on-surface-variant);">This challenge is no longer accepting responses.</p>
+    </div>
+    <div :if={@challenge.status == "draft"} class="challenge-draft-notice">
+      <p class="body-md" style="color: var(--on-surface-variant);">This challenge is not yet active.</p>
+    </div>
+  </div>
+</.public_shell>

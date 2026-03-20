@@ -1,0 +1,81 @@
+<.public_shell current_page="Challenge">
+  <:nav_item href={~p"/challenges/#{@challenge.slug}"} label="Challenge" />
+  <:nav_item href="#" label="Responses" />
+
+  <div class="challenge-compare">
+    <header class="challenge-compare-header">
+      <div>
+        <div class="challenge-compare-meta">
+          <span class="chip chip--primary">{String.upcase(@challenge.slug)}</span>
+        </div>
+        <h1 class="display-sm" style="margin-block: var(--spacing-4);">{@challenge.title}</h1>
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          {@challenge.problem_statement}
+        </p>
+      </div>
+    </header>
+
+    <%!-- Filter bar --%>
+    <div class="challenge-compare-toolbar">
+      <h2 class="headline-sm">
+        Responses <span style="color: var(--outline-variant); font-weight: 300; margin-inline-start: var(--spacing-2);">{length(@responses)} Sessions</span>
+      </h2>
+      <div class="challenge-compare-filters">
+        <span class="chip chip--muted">Unbiased View</span>
+      </div>
+    </div>
+
+    <%!-- Response Table --%>
+    <div class="challenge-compare-table-wrap">
+      <table class="challenge-compare-table">
+        <thead>
+          <tr>
+            <th class="label-sm">Session Detail</th>
+            <th class="label-sm">Developer Take</th>
+            <th class="label-sm">Metrics</th>
+            <th class="label-sm">Trust Hash</th>
+            <th class="label-sm" style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr :for={response <- @responses}>
+            <td>
+              <div class="headline-sm" style="color: var(--primary);">{response.title}</div>
+              <span class="label-sm" style="color: var(--on-surface-variant);">{response.token}</span>
+            </td>
+            <td>
+              <p class="body-sm" style="color: var(--on-surface-variant); max-width: 20rem;">
+                "{response.dev_take}"
+              </p>
+            </td>
+            <td>
+              <div style="display: flex; flex-direction: column; gap: var(--spacing-1);">
+                <span class="label-sm">{response.duration_minutes}m</span>
+                <span class="label-sm">{response.turns} Turns</span>
+              </div>
+            </td>
+            <td>
+              <div class="challenge-hash-badge">
+                <span :if={response.sealed?} class="challenge-hash-dot challenge-hash-dot--sealed"></span>
+                <span :if={!response.sealed?} class="challenge-hash-dot"></span>
+                <span class="label-sm">{response.hash}</span>
+              </div>
+            </td>
+            <td style="text-align: right;">
+              <a href={~p"/challenges/#{@challenge.slug}/responses/#{response.token}"} class="challenge-case-study-link label-sm">
+                Case Study
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <%!-- Disclaimer --%>
+    <div class="challenge-disclaimer">
+      <p class="body-sm">
+        <strong>Evaluation Protocol:</strong> This view presents raw evidentiary data from candidate sessions. Rankings are suppressed to prevent algorithmic bias.
+      </p>
+    </div>
+  </div>
+</.public_shell>
