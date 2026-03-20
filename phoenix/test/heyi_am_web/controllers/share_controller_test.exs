@@ -72,6 +72,63 @@ defmodule HeyiAmWeb.ShareControllerTest do
     end
   end
 
+  describe "template rendering" do
+    test "defaults to editorial template", %{conn: conn} do
+      conn = get(conn, ~p"/s/test-token")
+      html = html_response(conn, 200)
+      assert html =~ "tpl-editorial"
+      assert html =~ "Editorial Documentation"
+    end
+
+    test "template query param overrides to terminal", %{conn: conn} do
+      conn = get(conn, ~p"/s/test-token?template=terminal")
+      html = html_response(conn, 200)
+      assert html =~ "tpl-terminal"
+      assert html =~ "Terminal Session"
+      refute html =~ "tpl-editorial"
+    end
+
+    test "template query param overrides to minimal", %{conn: conn} do
+      conn = get(conn, ~p"/s/test-token?template=minimal")
+      html = html_response(conn, 200)
+      assert html =~ "tpl-minimal"
+    end
+
+    test "template query param overrides to brutalist", %{conn: conn} do
+      conn = get(conn, ~p"/s/test-token?template=brutalist")
+      html = html_response(conn, 200)
+      assert html =~ "tpl-brutalist"
+      assert html =~ "chip--inverted"
+      assert html =~ "SESSION ID:"
+    end
+
+    test "template query param overrides to campfire", %{conn: conn} do
+      conn = get(conn, ~p"/s/test-token?template=campfire")
+      html = html_response(conn, 200)
+      assert html =~ "tpl-campfire"
+      assert html =~ "Your Take"
+    end
+
+    test "template query param overrides to neon-night", %{conn: conn} do
+      conn = get(conn, ~p"/s/test-token?template=neon-night")
+      html = html_response(conn, 200)
+      assert html =~ "tpl-neon-night"
+      assert html =~ "System Optimized"
+    end
+
+    test "invalid template name falls back to editorial", %{conn: conn} do
+      conn = get(conn, ~p"/s/test-token?template=nonexistent")
+      html = html_response(conn, 200)
+      assert html =~ "tpl-editorial"
+    end
+
+    test "empty template param falls back to editorial", %{conn: conn} do
+      conn = get(conn, ~p"/s/test-token?template=")
+      html = html_response(conn, 200)
+      assert html =~ "tpl-editorial"
+    end
+  end
+
   describe "GET /s/:token/transcript" do
     test "renders transcript page with turns", %{conn: conn} do
       conn = get(conn, ~p"/s/test-token/transcript")

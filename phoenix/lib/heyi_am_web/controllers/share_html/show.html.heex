@@ -5,15 +5,26 @@
     <span :if={@session[:sealed?]} class="chip chip--primary">SEALED</span>
   </:status>
 
+  <%!-- Template scope wraps the entire case study --%>
+  <div class={"tpl-#{@portfolio_layout}"}>
   <%!-- Case Study Layout --%>
-  <div class={"case-study-layout tpl-#{@portfolio_layout}"}>
+  <div class="case-study-layout">
     <%!-- Main Column --%>
     <div class="case-study-main">
       <%!-- Header: chip + session ID + title --%>
-      <div>
+      <div class="case-study-header">
         <div class="case-study-meta" style="margin-block-end: var(--spacing-4);">
-          <span class="chip chip--primary">Editorial Documentation</span>
-          <span class="label-mono">ID: {@session.token}</span>
+          <span class={"chip " <> if(@portfolio_layout == "brutalist", do: "chip--inverted", else: "chip--primary")}>
+            {case @portfolio_layout do
+              "terminal" -> "Terminal Session"
+              "minimal" -> "Session"
+              "brutalist" -> "SESSION ID: #{String.upcase(String.slice(@session.token, 0..5))}"
+              "campfire" -> "Session #{String.slice(@session.token, 0..5)}"
+              "neon-night" -> "System Optimized"
+              _ -> "Editorial Documentation"
+            end}
+          </span>
+          <span :if={@portfolio_layout != "brutalist"} class="label-mono">ID: {@session.token}</span>
         </div>
         <h1 class="case-study-title">{@session.title}</h1>
       </div>
@@ -40,7 +51,9 @@
 
       <%!-- Developer Take --%>
       <section class="dev-take">
-        <h3 class="dev-take-heading">The Developer Take</h3>
+        <h3 class="dev-take-heading">
+          {if @portfolio_layout == "campfire", do: "Your Take", else: "The Developer Take"}
+        </h3>
         <p class="dev-take-body">{@session.dev_take}</p>
       </section>
 
@@ -121,7 +134,7 @@
   </div>
 
   <%!-- Full-width sections below the 2-column layout --%>
-  <div style="max-width: var(--content-max-width); margin-inline: auto; padding: 0 var(--spacing-8) var(--spacing-8);">
+  <div class="case-study-below" style="max-width: var(--content-max-width); margin-inline: auto; padding: 0 var(--spacing-8) var(--spacing-8);">
     <%!-- Highlights --%>
     <section style="margin-block-end: var(--spacing-6);">
       <span class="label-mono" style="display: block; margin-block-end: var(--spacing-3);">Highlights</span>
@@ -183,5 +196,6 @@
         </p>
       </div>
     </details>
+  </div>
   </div>
 </.public_shell>

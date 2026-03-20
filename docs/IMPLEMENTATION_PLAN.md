@@ -36,7 +36,7 @@ heyi.am turns AI coding sessions into evidence-backed developer portfolios. Two 
 - [x] **Phase 6** — Web: Portfolio Editor (3/3)
 - [x] **Phase 7** — Web: Public Pages (4/4, 7.5 deferred to Phase 12)
 - [x] **Phase 8** — CLI Backend & Parser (12/12) — scaffold, parser, LOC, analyzer, AI enhance, auth, subagent hierarchy, fork/join timeline
-- [ ] **Phase 9** — Session Templates (0/5)
+- [x] **Phase 9** — Session Templates (5/5) — per-session template field, ShareController wiring, conditional markup, 5 CSS templates
 - [ ] **Phase 10** — Interview / Challenge Flow (0/6)
 - [ ] **Phase 11** — Edge Cases & Mobile (0/6)
 - [ ] **Phase 12** — Backend & Data Model extras (0/4)
@@ -473,39 +473,35 @@ SVG-based fork/join timeline visualization:
 
 ## Phase 9: Session Templates
 
-### Task 9.1 — Terminal Template
-**Screen 28**
-**Mockup image:** `mockups/new/templates/session_template_terminal_v2/screen.png`
-**Mockup HTML:** `mockups/new/templates/session_template_terminal_v2/code.html`
-**Files:** `phoenix/assets/css/app.css` (template overrides)
+### Task 9.0 — Template Wiring & Schema ✅
+**Files:** `phoenix/lib/heyi_am_web/controllers/share_controller.ex`, `phoenix/lib/heyi_am_web/controllers/share_html/show.html.heex`, `phoenix/test/heyi_am_web/controllers/share_controller_test.exs`
 
-- Full dark bg, green monospace, terminal command execution path, file staging, status bento
+Renamed mock session `vibe` → `template` field. Added `resolve_template/1` with fallback chain (session.template → "editorial"). Added `?template=` query param override for visual testing. Added `.chip--inverted` global class. Conditional markup in show.html.heex for template-aware chip labels and heading variants. 8 new controller tests (16 total). 220 full suite passing.
 
-### Task 9.2 — Minimal Template
-**Screen 29**
-**Mockup image:** `mockups/new/templates/session_template_minimal/screen.png`
-**Mockup HTML:** `mockups/new/templates/session_template_minimal/code.html`
+### Task 9.1 — Terminal Template ✅
+**Files:** `phoenix/assets/css/app.css` (lines 3141-3420)
 
-- White, max whitespace, large prose take, numbered path, terminal at bottom
+`.tpl-terminal`: #0c0f10 dark bg, #7ee787 terminal green, all-mono font. Dev take as block comment (`/* ... */`), exec path as flat log lines, glass-style dark stat cards. All scoped under `.tpl-terminal`.
 
-### Task 9.3 — Brutalist Template
-**Screen 30**
-**Mockup image:** `mockups/new/templates/session_template_brutalist/screen.png`
-**Mockup HTML:** `mockups/new/templates/session_template_brutalist/code.html`
+### Task 9.2 — Minimal Template ✅
+**Files:** `phoenix/assets/css/app.css` (lines 3422-3698)
 
-- B&W only, thick borders, zero radius, ALL CAPS, photo grid placeholders
+`.tpl-minimal`: Single-column 42rem centered layout. 5rem section gaps. Stats as inline text (no cards). Dev take as large light prose (1.5rem, weight 300). No timeline spine. Near-invisible meta.
 
-### Task 9.4 — Campfire Template
-**Mockup image:** `mockups/new/templates/session_template_campfire/screen.png`
-**Mockup HTML:** `mockups/new/templates/session_template_campfire/code.html`
+### Task 9.3 — Brutalist Template ✅
+**Files:** `phoenix/assets/css/app.css` (lines 4209-4484)
 
-- Warm solarized palette, 2-col with "The Spark" narrative, params table, image gallery
+`.tpl-brutalist`: B&W only, zero radius everywhere, 3px thick borders, 8px offset shadows. ALL CAPS text-transform. 8px left border on title. Inverted skill chips. Decorative corner squares on dev-take.
 
-### Task 9.5 — Neon Night Template
-**Mockup image:** `mockups/new/templates/session_template_neon_night/screen.png`
-**Mockup HTML:** `mockups/new/templates/session_template_neon_night/code.html`
+### Task 9.4 — Campfire Template ✅
+**Files:** `phoenix/assets/css/app.css` (lines 3961-4207)
 
-- Dark navy, cyan/magenta, gradient quotes, tool usage bars, card-grid execution path
+`.tpl-campfire`: Solarized warm cream #fdf6e3 bg. Amber #b58900 accents. Space Grotesk at 700 weight. Warm-tinted surfaces. Italic dev take with #586e75 left border. Warm dark terminal (#1e1c18). Solid rgba backgrounds (no glassmorphism).
+
+### Task 9.5 — Neon Night Template ✅
+**Files:** `phoenix/assets/css/app.css` (lines 3700-3959)
+
+`.tpl-neon-night`: Pure black bg, cyan #00E5FF primary, magenta #FF2D7B secondary. Glass-style dark panels (rgba 0.03/0.05). Magenta-accented dev take. Cyan exec path cards with hover borders. No text-shadow glows — vivid colors + 1px borders for neon feel.
 
 ---
 

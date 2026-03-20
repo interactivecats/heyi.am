@@ -13,7 +13,7 @@ defmodule HeyiAmWeb.ShareController do
     recorded_at: ~U[2026-03-12 14:02:00Z],
     verified_at: ~U[2026-03-12 14:49:00Z],
     sealed?: false,
-    vibe: "editorial",
+    template: "editorial",
     language: "Elixir",
     tools: ["Elixir", "Phoenix", "PostgreSQL"],
     skills: ["Elixir", "Phoenix", "Authentication", "Security", "Database Migration"],
@@ -131,25 +131,45 @@ defmodule HeyiAmWeb.ShareController do
     }
   ]
 
-  def show(conn, %{"token" => token}) do
+  @valid_templates MapSet.new(~w(editorial terminal minimal brutalist campfire neon-night))
+
+  defp resolve_template(session) do
+    template = Map.get(session, :template, "editorial")
+
+    if MapSet.member?(@valid_templates, template),
+      do: template,
+      else: "editorial"
+  end
+
+  def show(conn, %{"token" => token} = params) do
     session = Map.put(@mock_session, :token, token)
+
+    template =
+      case params["template"] do
+        t when is_binary(t) and t != "" ->
+          if MapSet.member?(@valid_templates, t), do: t, else: resolve_template(session)
+
+        _ ->
+          resolve_template(session)
+      end
 
     render(conn, :show,
       session: session,
       page_title: session.title,
-      portfolio_layout: "editorial"
+      portfolio_layout: template
     )
   end
 
   def transcript(conn, %{"token" => token}) do
     session = Map.put(@mock_session, :token, token)
+    template = resolve_template(session)
 
     render(conn, :transcript,
       session: session,
       transcript: @mock_transcript,
       skipped_turns: 72,
       page_title: "Transcript — #{session.title}",
-      portfolio_layout: "editorial"
+      portfolio_layout: template
     )
   end
 end
