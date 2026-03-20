@@ -34,12 +34,12 @@ heyi.am turns AI coding sessions into evidence-backed developer portfolios. Two 
 - [x] **Phase 4** — CLI: Editor & Publishing (5/5)
 - [x] **Phase 5** — Web: Landing, Auth & Onboarding (6/6)
 - [x] **Phase 6** — Web: Portfolio Editor (3/3)
-- [x] **Phase 7** — Web: Public Pages (4/4, 7.5 deferred to Phase 11)
-- [ ] **Phase 8** — Backend & Data Model (0/6)
-- [ ] **Phase 9** — CLI ↔ Web Integration (0/6)
-- [ ] **Phase 10** — Session Templates (0/5)
-- [ ] **Phase 11** — Interview / Challenge Flow (0/6)
-- [ ] **Phase 12** — Edge Cases & Mobile (0/6)
+- [x] **Phase 7** — Web: Public Pages (4/4, 7.5 deferred to Phase 12)
+- [ ] **Phase 8** — CLI Backend & Parser (0/7) — scaffold `heyiam` command, parser with pluggable architecture, LOC, analyzer, AI enhance, auth
+- [ ] **Phase 9** — Session Templates (0/5)
+- [ ] **Phase 10** — Interview / Challenge Flow (0/6)
+- [ ] **Phase 11** — Edge Cases & Mobile (0/6)
+- [ ] **Phase 12** — Backend & Data Model extras (0/4)
 
 ---
 
@@ -335,109 +335,94 @@ LiveView at `/onboarding/vibe`. 6 template cards in grid with live preview panel
 
 ---
 
-## Phase 8: Backend & Data Model
+## Phase 8: CLI Backend & Parser
 
-### Task 8.1 — LOC Computation
-**Files:** `cli/src/parser.ts`
+The CLI frontend (Phases 2-4) renders React components with mock data. This phase builds the real backend: the `heyiam` command, Express server, session parser, analyzer, LOC computation, and publish API. Without this, the CLI cannot be installed or read real `~/.claude/projects/` sessions.
 
-Extract LOC from Write/Edit tool calls. Compute lines added/removed per file.
+### Task 8.1 — CLI Scaffold & `heyiam` Command
+**Files:** `cli/package.json`, `cli/src/index.ts`, `cli/tsconfig.json`, `cli/src/server.ts`
 
-### Task 8.2 — Pluggable Parser Architecture
-**Files:** `cli/src/parsers/claude-parser.ts`, `cli/src/parsers/types.ts`
+Set up the CLI as an installable command:
+- `package.json` with `"bin": { "heyiam": "./dist/index.js" }`, build script, TypeScript config
+- `cli/src/index.ts` — entry point: parses CLI args (`heyiam open`, `heyiam login`, `heyiam publish`)
+- `heyiam open` — builds React app, starts Express server, opens browser
+- `heyiam login` — device auth flow (stub for now)
+- `heyiam publish --token <token>` — publish from CLI (stub for now)
+- `npm link` should make `heyiam` available globally
 
-Create `SessionAnalysis` interface. Extract Claude Code parser. Prepare for cursor + codex parsers.
+### Task 8.2 — Server & API Routes
+**Files:** `cli/src/server.ts`
 
-### Task 8.3 — Pin/Highlight Data Model
-**Files:** Share schema + new migration
+Express server that serves the built React app and exposes API routes:
+- `GET /api/projects` — list all projects from `~/.claude/projects/`
+- `GET /api/projects/:project/sessions` — list sessions for a project
+- `GET /api/projects/:project/sessions/:id` — load full session with parsed analysis
+- `POST /api/publish` — publish session to heyi.am
+- `GET /api/auth/status` — check auth state
 
-Add `pinned_turns` and `highlighted_steps` fields.
+### Task 8.3 — Parser Interface & Claude Code Parser
+**Files:** `cli/src/parsers/types.ts`, `cli/src/parsers/claude.ts`, `cli/src/parsers/claude.test.ts`, `cli/src/parsers/index.ts`
 
-### Task 8.4 — Session Auto-Add to Portfolio
-**Files:** `phoenix/lib/heyi_am/shares.ex`
+Define a tool-agnostic `SessionAnalysis` interface, then implement the Claude Code parser as the first concrete parser. Future parsers (Cursor, Codex, Gemini, Antigravity) slot in by implementing the same interface.
 
-Auto-create portfolio entry on publish (default ON).
+**`cli/src/parsers/types.ts`** — shared interface:
+- `SessionAnalysis`: turns, tool_calls, files_touched, duration, loc_stats, raw_entries
+- `SessionParser`: `{ detect(path): boolean, parse(path): SessionAnalysis }`
+- `SessionSource`: `"claude" | "cursor" | "codex" | "gemini" | "antigravity"`
 
-### Task 8.5 — Project Growth Data
-**Files:** `phoenix/lib/heyi_am/projects.ex`
+**`cli/src/parsers/claude.ts`** — Claude Code `.jsonl` parser:
+- Read JSONL entries, filter by type (user/assistant/system)
+- Extract turns (user↔assistant pairs), compute turn count
+- Extract tool calls (name, input, result) from `tool_use` content blocks
+- Compute duration from first/last timestamps
+- Extract files touched from Write/Edit/Read tool calls
+- `detect()`: checks for `~/.claude/projects/` path structure
 
-Compute cumulative LOC, file heatmap, session overlap for project visualizations.
+**`cli/src/parsers/index.ts`** — registry:
+- Auto-detect session source from path/format
+- Route to correct parser
+- Extensible: add new parsers by registering them
 
-### Task 8.6 — AI Collaboration Profile
-**Files:** `phoenix/lib/heyi_am/profiles.ex`
+### Task 8.4 — LOC Computation
+**Files:** `cli/src/parsers/claude.ts` (extends Task 8.3)
 
-Compute per-developer metrics from aggregated session data.
+Add `computeLocStats(entries)` function:
+- Scan `tool_use` content blocks for `Write` and `Edit` tool names
+- **Write**: count lines in `input.content`; track per-file to detect overwrites
+- **Edit**: count lines in `input.new_string` (added) and `input.old_string` (removed)
+- Return `{ loc_added, loc_removed, loc_changed, files_changed }`
+- Deduplicate multiple writes to same file path (last write wins)
 
----
+### Task 8.5 — Session Analyzer
+**Files:** `cli/src/analyzer.ts`, `cli/src/analyzer.test.ts`
 
-## Phase 9: CLI ↔ Web Integration
+Higher-level analysis that feeds the UI:
+- Skills extraction (from tool names, file extensions, framework patterns)
+- Execution path (ordered sequence of major actions)
+- Tool breakdown (counts per tool type)
+- Context detection (git branch, project type)
 
-### Task 9.1 — Share API: Create & Read
-**Files:** `phoenix/lib/heyi_am_web/controllers/share_api_controller.ex`, `phoenix/lib/heyi_am_web/router.ex`
+### Task 8.6 — AI Enhancement Integration
+**Files:** `cli/src/summarize.ts`, `cli/src/summarize.test.ts`
 
-JSON API endpoints for the CLI to publish sessions:
-- `POST /api/shares` — create a share (accepts session JSON payload, Ed25519 signature)
-- `GET /api/shares/:id` — retrieve a share by ID
-- Authentication via bearer token (user session token or machine token)
-- Validates payload structure, stores raw session data + enhanced fields
-- Returns share URL on success
+Connect to Anthropic API for session enhancement:
+- Generate title, developer take, refined skills
+- Anti-fluff question generation (3 targeted questions from session context)
+- Streaming response support for progressive UI updates
 
-### Task 9.2 — Device Auth Flow (RFC 8628)
-**Files:** `phoenix/lib/heyi_am/device_auth.ex`, `phoenix/lib/heyi_am_web/controllers/device_auth_controller.ex`, new migration
+### Task 8.7 — Auth & Publish Flow
+**Files:** `cli/src/auth.ts`, `cli/src/machine-key.ts`
 
-Device authorization for CLI login (`heyiam login`):
-- `POST /api/device/code` — generate device code + user code
-- `GET /device` — web page where user enters the code
-- `POST /api/device/token` — CLI polls until user approves
-- Device codes expire after 15 minutes
-- On approval, return a long-lived machine token for the CLI
-
-### Task 9.3 — CLI Publish: Real API Integration
-**Files:** `cli/src/api.ts`, `cli/src/server.ts`, `cli/app/src/components/SessionEditorPage.tsx`
-
-Replace mock publish animation with real API calls:
-- Read machine token from `~/.config/heyiam/auth.json`
-- POST session payload to `/api/shares` with auth header
-- Sign payload with Ed25519 keypair (generate on first publish, store locally)
-- Stream terminal animation while request is in-flight
-- Handle errors: auth expired, network failure, validation errors
-- On success: display real share URL
-
-### Task 9.4 — CLI Session Ingestion: Real Parser
-**Files:** `cli/src/parsers/claude-parser.ts`, `cli/src/parsers/types.ts`, `cli/src/server.ts`
-
-Replace `MOCK_SESSIONS` with real session file reading:
-- Scan `~/.claude/projects/` for JSONL session files
-- Parse Claude Code session format → `Session` structs
-- Extract: turns, tool calls, files changed, duration, LOC (from Write/Edit calls)
-- Group sessions by project directory
-- Watch for new sessions and update the browser via SSE/WebSocket
-
-### Task 9.5 — CLI Enhance: Real AI Enhancement
-**Files:** `cli/app/src/components/EnhanceFlow.tsx`, `cli/src/enhance.ts`
-
-Replace mock enhancement with real Anthropic API calls:
-- Read API key from local settings
-- Send session context to Claude API with structured prompt
-- Stream responses: title, skills, execution path, developer questions
-- Parse structured output into `Session` fields
-- Anti-fluff questions generated from actual session content
-- Save enhanced data locally before publish
-
-### Task 9.6 — Portfolio Sync: Sessions → Web
-**Files:** `phoenix/lib/heyi_am/shares.ex`, `phoenix/lib/heyi_am/projects.ex`
-
-Wire published shares into portfolio:
-- On share creation, auto-create portfolio entry (linked to user)
-- Auto-assign to project based on project directory or user selection
-- Portfolio editor reads real shares/projects from database
-- Public portfolio page queries real data instead of mock assigns
-- Project page computes real growth charts from session LOC data
+- Machine key generation (Ed25519)
+- Auth status check against heyi.am API
+- Session signing and publish payload construction
+- `heyiam login` device auth flow
 
 ---
 
-## Phase 10: Session Templates
+## Phase 9: Session Templates
 
-### Task 10.1 — Terminal Template
+### Task 9.1 — Terminal Template
 **Screen 28**
 **Mockup image:** `mockups/new/templates/session_template_terminal_v2/screen.png`
 **Mockup HTML:** `mockups/new/templates/session_template_terminal_v2/code.html`
@@ -445,27 +430,27 @@ Wire published shares into portfolio:
 
 - Full dark bg, green monospace, terminal command execution path, file staging, status bento
 
-### Task 10.2 — Minimal Template
+### Task 9.2 — Minimal Template
 **Screen 29**
 **Mockup image:** `mockups/new/templates/session_template_minimal/screen.png`
 **Mockup HTML:** `mockups/new/templates/session_template_minimal/code.html`
 
 - White, max whitespace, large prose take, numbered path, terminal at bottom
 
-### Task 10.3 — Brutalist Template
+### Task 9.3 — Brutalist Template
 **Screen 30**
 **Mockup image:** `mockups/new/templates/session_template_brutalist/screen.png`
 **Mockup HTML:** `mockups/new/templates/session_template_brutalist/code.html`
 
 - B&W only, thick borders, zero radius, ALL CAPS, photo grid placeholders
 
-### Task 10.4 — Campfire Template
+### Task 9.4 — Campfire Template
 **Mockup image:** `mockups/new/templates/session_template_campfire/screen.png`
 **Mockup HTML:** `mockups/new/templates/session_template_campfire/code.html`
 
 - Warm solarized palette, 2-col with "The Spark" narrative, params table, image gallery
 
-### Task 10.5 — Neon Night Template
+### Task 9.5 — Neon Night Template
 **Mockup image:** `mockups/new/templates/session_template_neon_night/screen.png`
 **Mockup HTML:** `mockups/new/templates/session_template_neon_night/code.html`
 
@@ -473,9 +458,9 @@ Wire published shares into portfolio:
 
 ---
 
-## Phase 11: Interview / Challenge Flow
+## Phase 10: Interview / Challenge Flow
 
-### Task 11.1 — Create a Challenge
+### Task 10.1 — Create a Challenge
 **Screen 33**
 **Mockup image:** `mockups/new/create_a_challenge/screen.png`
 **Mockup HTML:** `mockups/new/create_a_challenge/code.html`
@@ -485,7 +470,7 @@ Wire published shares into portfolio:
 - Live candidate preview panel
 - "Generate Link" CTA
 
-### Task 11.2 — Challenge Landing (Candidate)
+### Task 10.2 — Challenge Landing (Candidate)
 **Screen 34**
 **Files:** Challenge templates
 
@@ -493,19 +478,19 @@ Wire published shares into portfolio:
 - Time limit, sealed notice, access code input
 - "Begin Challenge" CTA
 
-### Task 11.3 — Challenge In Progress
+### Task 10.3 — Challenge In Progress
 **Screen 35**
 
 - Split: requirements left, live terminal right
 - Timer, "heyiam publish --challenge"
 
-### Task 11.4 — Challenge Submitted
+### Task 10.4 — Challenge Submitted
 **Screen 36**
 
 - "Response Sealed & Submitted"
 - Ed25519 hash, immutability notice
 
-### Task 11.5 — Comparison View (Manager)
+### Task 10.5 — Comparison View (Manager)
 **Screen 37**
 **Mockup image:** `mockups/new/interview_comparison_view/screen.png`
 **Mockup HTML:** `mockups/new/interview_comparison_view/code.html`
@@ -515,7 +500,7 @@ Wire published shares into portfolio:
 - Table: session detail, metrics, AI profile, trust hash
 - Evidence disclaimer
 
-### Task 11.6 — Candidate Deep Dive
+### Task 10.6 — Candidate Deep Dive
 **Screen 38**
 
 - Full case study with challenge banner
@@ -523,26 +508,50 @@ Wire published shares into portfolio:
 
 ---
 
-## Phase 12: Edge Cases & Mobile
+## Phase 11: Edge Cases & Mobile
 
-### Task 12.1 — 404 Page
+### Task 11.1 — 404 Page
 **Screen 31**
 **Files:** `phoenix/lib/heyi_am_web/controllers/error_html.ex`
 
-### Task 12.2 — Deleted/Expired Session
+### Task 11.2 — Deleted/Expired Session
 **Screen 32**
 
-### Task 12.3 — Mobile: Session Case Study
+### Task 11.3 — Mobile: Session Case Study
 **Screen 39** — Responsive CSS at 375px
 
-### Task 12.4 — Mobile: Portfolio
+### Task 11.4 — Mobile: Portfolio
 **Screen 40** — Responsive at 375px
 
-### Task 12.5 — Mobile: Session Browser
+### Task 11.5 — Mobile: Session Browser
 **Screen 41** — Project dropdown, sticky bottom CTA
 
-### Task 12.6 — Mobile: Challenge Landing
+### Task 11.6 — Mobile: Challenge Landing
 **Screen 42** — Stacked requirements, full-width CTA
+
+---
+
+## Phase 12: Backend & Data Model
+
+### Task 12.1 — Pin/Highlight Data Model
+**Files:** Share schema + new migration
+
+Add `pinned_turns` and `highlighted_steps` fields.
+
+### Task 12.2 — Session Auto-Add to Portfolio
+**Files:** `phoenix/lib/heyi_am/shares.ex`
+
+Auto-create portfolio entry on publish (default ON).
+
+### Task 12.3 — Project Growth Data
+**Files:** `phoenix/lib/heyi_am/projects.ex`
+
+Compute cumulative LOC, file heatmap, session overlap for project visualizations.
+
+### Task 12.4 — AI Collaboration Profile
+**Files:** `phoenix/lib/heyi_am/profiles.ex`
+
+Compute per-developer metrics from aggregated session data.
 
 ---
 
@@ -550,18 +559,18 @@ Wire published shares into portfolio:
 
 ### Dependencies
 - **Phase 1** (Foundation) → blocks everything
-- **Phases 2-4** (CLI) → can run in parallel with Phases 5-7 (Web)
-- **Phase 8** (Backend) → do after Phase 7, provides real schemas
-- **Phase 9** (Integration) → depends on Phases 4, 5, 8; connects CLI to real API and replaces all mock data
-- **Phase 10** (Templates) → depends on Phase 7.1 (session page)
-- **Phase 11** (Interview) → depends on Phases 7.1 + 8.3
-- **Phase 12** (Mobile) → depends on Phases 7.1, 7.2
+- **Phases 2-4** (CLI frontend) → can run in parallel with Phases 5-7 (Web)
+- **Phase 8** (CLI backend) → blocks CLI from working with real data; depends on Phases 2-4 for the UI it serves
+- **Phase 9** (Templates) → depends on Phase 7.1 (session page structure)
+- **Phase 10** (Interview) → depends on Phases 7.1 + 12.1
+- **Phase 11** (Mobile) → depends on Phases 7.1, 7.2
+- **Phase 12** (Backend extras) → slot in as frontend phases need them
 
 ### Suggested Team Split
-- **Dev A**: Phase 1 → Phase 2 → Phase 3 → Phase 4 (CLI end-to-end)
+- **Dev A**: Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 8 (CLI end-to-end)
 - **Dev B**: Phase 1 → Phase 5 → Phase 6 (Web auth + editor)
-- **Dev C**: Phase 1 → Phase 7 → Phase 8 (Public pages + templates)
-- **Phase 9-11**: Assign after core phases ship
+- **Dev C**: Phase 1 → Phase 7 → Phase 9 (Public pages + templates)
+- **Phase 10-12**: Assign after core phases ship
 
 ### Per-Phase Requirements
 1. **Tests first, tests always**: Every new function, endpoint, component, and behavior must have tests before the task is considered complete. Write tests as you build, not after. Unit tests for pure logic, integration tests for I/O boundaries. If you modify existing code, update or add tests to cover the changed behavior. No exceptions — untested code is unfinished code.
