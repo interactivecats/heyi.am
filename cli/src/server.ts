@@ -173,7 +173,7 @@ export function createApp() {
   return app;
 }
 
-export function startServer(port: number = 3457): Promise<Server> {
+export function startServer(port: number = 17845): Promise<Server> {
   const app = createApp();
   return new Promise((resolve) => {
     const server = app.listen(port, () => {

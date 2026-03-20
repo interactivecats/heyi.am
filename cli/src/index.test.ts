@@ -29,7 +29,7 @@ describe('CLI commands', () => {
     const openCmd = program.commands.find((c) => c.name() === 'open');
     const portOpt = openCmd!.options.find((o) => o.long === '--port');
     expect(portOpt).toBeDefined();
-    expect(portOpt!.defaultValue).toBe('3457');
+    expect(portOpt!.defaultValue).toBe('17845');
   });
 
   it('open command accepts --no-open option', () => {
