@@ -30,7 +30,7 @@ heyi.am turns AI coding sessions into evidence-backed developer portfolios. Two 
 - [x] **Phase 0** — Archive & Cleanup (3/3)
 - [x] **Phase 1** — Design System & Shared Components (4/5) — Task 1.5 skipped (already done)
 - [x] **Phase 2** — CLI: Session Browser (3/3)
-- [ ] **Phase 3** — CLI: Session Detail & Enhancement (0/3)
+- [x] **Phase 3** — CLI: Session Detail & Enhancement (3/3)
 - [ ] **Phase 4** — CLI: Editor & Publishing (0/5)
 - [ ] **Phase 5** — Web: Landing, Auth & Onboarding (0/6)
 - [ ] **Phase 6** — Web: Portfolio Editor (0/3)
@@ -126,37 +126,26 @@ Three sections: API Configuration (password input with show/hide toggle), Authen
 
 ## Phase 3: CLI — Session Detail & Enhancement
 
-### Task 3.1 — Session Detail: Raw View
+### Task 3.1 — Session Detail: Raw View ✅
 **Screen 3**
 **Mockup image:** `mockups/new/public_case_study/screen.png` (similar layout, CLI variant)
 **Files:** `cli/app/src/components/SessionDetail.tsx`, `cli/app/src/components/SharePreview.tsx`
 
-- Title, stats grid (duration, turns, files, LOC)
-- Skills chips, context block
-- Execution path (steps with type badges)
-- Collapsibles: tool breakdown bar chart, turn timeline, files changed
-- Actions: "Enhance with AI" + "Edit & Publish"
+Built single-column centered layout (max-width 56rem) matching interactive prototype Screen 3. Stats grid (duration, turns, files changed, LOC), context block, skills chips, execution path with timeline spine, collapsible sections (tool breakdown bar chart, turn timeline, files changed). Two action buttons: "Enhance with AI" + "Edit & Publish". Extended Session data model with rich fields (executionPath, toolBreakdown, filesChanged, turnTimeline, skills, context, developerTake) in `types.ts` + `mock-data.ts`. SharePreview built as standalone reusable case study renderer. 12 SessionDetail tests, 13 SharePreview tests.
 
-### Task 3.2 — Enhance: No API Key Error
+### Task 3.2 — Enhance: No API Key Error ✅
 **Screen 5**
 **Files:** `cli/app/src/components/SessionDetail.tsx` (conditional)
 
-- Error message + link to settings
-- "Publish without enhancement" fallback
+Implemented as inline banner (per product decision — not a separate screen as shown in interactive prototype). `hasApiKey` prop on SessionDetail (default true). When false and user clicks "Enhance with AI", shows `.setup-banner` error with link to Settings + "publish without enhancement" link to editor. 3 tests covering error show/hide behavior.
 
-### Task 3.3 — Enhance: Interactive Flow (4 phases)
+### Task 3.3 — Enhance: Interactive Flow (4 phases) ✅
 **Screen 6** (JS-interactive: phases advance on click)
 **Mockup image:** `mockups/new/enhancement_view/screen.png`
 **Mockup HTML:** `mockups/new/enhancement_view/code.html`
-**Files:** New `cli/app/src/components/EnhanceFlow.tsx`
+**Files:** `cli/app/src/components/EnhanceFlow.tsx`
 
-Single screen, 4 phases:
-- **Phase 1**: Spinner — "Reading your session... Analyzing 77 turns"
-- **Phase 2**: AI-generated questions — 3 targeted questions with textarea inputs, skip option
-- **Phase 3**: Streaming — title, skills, execution path appearing progressively
-- **Phase 4**: Done — full results with Q&A summary baked in, "Edit & Publish →"
-
-Left panel throughout: raw session log + AI processing feed
+Single `EnhanceFlow.tsx` with `Phase` state machine (`'analyzing' | 'questions' | 'streaming' | 'done'`). Two-column split: dark raw log panel (left, persists) + phase-dependent right panel. Phase 1: pulsing status + AI feed lines revealed progressively, auto-advances after 2s. Phase 2: 3 context-aware questions with textareas (suggested answers as placeholders), skip/unskip per question, "Continue" button. Phase 3: case study items stream in with fade transition (title → skills → steps → take), auto-advances to done. Phase 4: complete results + Q&A summary + "Edit & Publish" / "Discard" actions. Breadcrumb nav at top. 404 handling. 12 tests with fake timers covering all phase transitions.
 
 ---
 
