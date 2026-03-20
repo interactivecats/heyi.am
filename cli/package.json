@@ -11,7 +11,9 @@
     "dev": "npx concurrently \"npm:dev:api\" \"npm:dev:app\"",
     "dev:api": "tsx watch src/server.ts",
     "dev:app": "cd app && npm run dev",
-    "test": "cd app && npx vitest run"
+    "test": "vitest run && cd app && npx vitest run",
+    "test:backend": "vitest run",
+    "test:frontend": "cd app && npx vitest run"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.79.0",
@@ -24,8 +26,11 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^22.0.0",
+    "@types/supertest": "^7.2.0",
     "concurrently": "^9.2.1",
+    "supertest": "^7.2.2",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.0"
   }
 }
