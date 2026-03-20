@@ -1,0 +1,302 @@
+<div class={"page-wrap tpl-#{@template}"} style={"--accent:var(--#{@accent});--accent-bg:var(--#{@accent}-bg)"}>
+  <%!-- Top Nav --%>
+  <div class="top-nav">
+    <a href="/" class="logo">heyi<b>.</b>am</a>
+    <button
+      class="nav-btn"
+      onclick="navigator.clipboard.writeText(window.location.href);this.textContent='Copied!';setTimeout(()=>this.textContent='Copy link',2000)"
+    >
+      Copy link
+    </button>
+  </div>
+
+  <%!-- Back link --%>
+  <a href={if @share.user, do: "/#{@share.user.username}", else: "/"} class="back-link">
+    &larr; {if @share.user,
+      do: "#{@share.user.display_name || @share.user.username}'s portfolio",
+      else: "Back"}
+  </a>
+
+  <%!-- 2-Column Layout --%>
+  <div class="layout-2col">
+    <%!-- Main Column --%>
+    <div class="layout-2col__main">
+      <%!-- Hero --%>
+      <section class="share-hero">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <span class="share-ref">SESS-{String.slice(@share.token, 0, 8) |> String.upcase()}</span>
+          <%= if @share.sealed_at do %>
+            <span class="sealed-badge">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+              SEALED
+            </span>
+          <% end %>
+        </div>
+
+        <h1>{@share.title}</h1>
+
+        <div class="meta-row" style="margin-top:16px;">
+          <span class="chip chip--brand">{@share.source_tool || "Claude Code"}</span>
+          <%= if @share.session_month do %>
+            <span class="chip chip--muted">{@share.session_month}</span>
+          <% end %>
+        </div>
+      </section>
+
+      <%!-- Stats Grid --%>
+      <div class="stats-grid" style="margin:24px 0;">
+        <%= if @share.duration_minutes do %>
+          <div class="stats-grid__item">
+            <div class="stats-grid__item-value">{@share.duration_minutes}</div>
+            <div class="stats-grid__item-label">minutes</div>
+          </div>
+        <% end %>
+        <%= if @total_turns do %>
+          <div class="stats-grid__item">
+            <div class="stats-grid__item-value">{@total_turns}</div>
+            <div class="stats-grid__item-label">turns</div>
+          </div>
+        <% end %>
+        <%= if length(@files_changed) > 0 do %>
+          <div class="stats-grid__item">
+            <div class="stats-grid__item-value">{length(@files_changed)}</div>
+            <div class="stats-grid__item-label">files</div>
+          </div>
+        <% end %>
+        <%= if @tool_call_count > 0 do %>
+          <div class="stats-grid__item">
+            <div class="stats-grid__item-value">{@tool_call_count}</div>
+            <div class="stats-grid__item-label">tool calls</div>
+          </div>
+        <% end %>
+      </div>
+
+      <%!-- Developer's Take (elevated card) --%>
+      <%= if @share.developer_take do %>
+        <div class="take-card" style="margin:24px 0;">
+          <div class="dev-take" style="margin:0;border-radius:0;background:none;border-left:3px solid var(--accent);padding:0 0 0 20px;">
+            <p>{@share.developer_take}</p>
+            <cite>&mdash; Developer's take
+              <%= if @share.sealed_at do %>
+                <span class="sealed-badge" style="margin-left:8px;font-size:10px;">sealed</span>
+              <% end %>
+            </cite>
+          </div>
+        </div>
+      <% end %>
+
+      <%!-- Context --%>
+      <%= if @share.context do %>
+        <div class="context-line">
+          <strong>Built to solve:</strong> {@share.context}
+        </div>
+      <% end %>
+
+      <%!-- Applied Skills --%>
+      <div class="skills-line" style="margin:16px 0 24px;">
+        <%= for skill <- (@share.skills || []) do %>
+          <span class="skill-tag">{skill}</span>
+        <% end %>
+      </div>
+
+      <%!-- Session Questions --%>
+      <%= if is_map(@share.session_questions) and map_size(@share.session_questions) > 0 do %>
+        <div class="session-questions">
+          <h3>Developer Q&amp;A</h3>
+          <%= for {question, answer} <- @share.session_questions do %>
+            <div class="sq-item">
+              <div class="sq-question">{question}</div>
+              <div class="sq-answer">{answer}</div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%!-- Hero image --%>
+      <%= if @share.hero_image_url do %>
+        <div class="hero-image">
+          <img src={@share.hero_image_url} alt="Screenshot of the result" loading="lazy" />
+        </div>
+      <% end %>
+
+      <%= if @share.result_url do %>
+        <div style="margin:32px 0;">
+          <a href={@share.result_url} target="_blank" rel="noopener" class="btn-secondary">
+            View the result &rarr;
+          </a>
+        </div>
+      <% end %>
+    </div>
+
+    <%!-- Sidebar --%>
+    <div class="layout-2col__sidebar">
+      <%!-- Execution Path (timeline) --%>
+      <%= if length(@steps) > 0 do %>
+        <div style="margin-bottom:32px;">
+          <div class="section-label">
+            <span>EXECUTION PATH</span>
+          </div>
+
+          <div class="exec-timeline">
+            <%= for {step, idx} <- Enum.with_index(@steps) do %>
+              <% color = Enum.at(@colors, rem(idx, length(@colors))) %>
+              <div class="exec-timeline__step">
+                <div class="exec-timeline__dot" style={"background:var(--#{color}-bg);color:var(--#{color})"}>
+                  {String.pad_leading("#{idx + 1}", 2, "0")}
+                </div>
+                <div class="step-body">
+                  <%= if step["type"] do %>
+                    <span class={"step-type-badge step-type-badge--#{step["type"]}"}>{step["type"]}</span>
+                  <% end %>
+                  <div class="step-title">{step["title"]}</div>
+                  <div class="step-desc">{step["body"] || step["description"]}</div>
+                  <%= if step["insight"] || step["keyTakeaway"] do %>
+                    <div class="step-insight">
+                      {step["insight"] || step["keyTakeaway"]}
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <%!-- Terminal Panel (raw log preview) --%>
+      <%= if length(@prompts) > 0 do %>
+        <div class="terminal-panel">
+          <div class="terminal-panel__header">
+            <span style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;font-weight:600;color:rgba(255,255,255,0.4);">Session Log</span>
+            <div class="terminal-panel__dots">
+              <div class="terminal-panel__dot" style="background:#f9507a;"></div>
+              <div class="terminal-panel__dot" style="background:#f59e0b;"></div>
+              <div class="terminal-panel__dot" style="background:#06b6a0;"></div>
+            </div>
+          </div>
+          <%= for {prompt, idx} <- Enum.with_index(Enum.take(@prompts, 5)) do %>
+            <div style={"opacity:#{1.0 - idx * 0.12};margin-bottom:6px;"}>
+              <span style="color:rgba(255,255,255,0.3);">&gt;</span>
+              <span style="color:rgba(255,255,255,0.7);">{String.slice(prompt["text"] || "", 0, 60)}{if String.length(prompt["text"] || "") > 60, do: "...", else: ""}</span>
+            </div>
+          <% end %>
+          <a href={"/s/#{@share.token}/transcript"} style="display:block;margin-top:12px;font-size:11px;color:var(--brand);text-decoration:none;">
+            View Full Trace &rarr;
+          </a>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%!-- Full-width sections below --%>
+  <div style="max-width:1200px;margin:0 auto;padding:0 48px;">
+    <%!-- Highlights --%>
+    <%= if length(@highlights) > 0 do %>
+      <hr class="divider" />
+      <div class="section-label">
+        <span>HIGHLIGHTS</span>
+      </div>
+      <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;margin-bottom:32px;">
+        <%= for hl <- @highlights do %>
+          <div style="padding:18px 22px;border:1px solid var(--ghost-border);border-radius:var(--radius-lg);min-width:260px;flex:1;">
+            <div class={"chip chip--#{hl["type"] || "violet"}"} style="margin-bottom:10px;">{hl["type"] || "Notable"}</div>
+            <div style="font-family:var(--font-display);font-size:15px;font-weight:600;margin-bottom:4px;">{hl["title"]}</div>
+            <div style="font-family:var(--font-body);font-size:14px;color:var(--gray);line-height:1.6;">{hl["description"]}</div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <hr class="divider" />
+
+    <%!-- Collapsible Sections --%>
+
+    <%!-- Tool Breakdown --%>
+    <%= if map_size(@tool_usage) > 0 do %>
+      <div class="more">
+        <details>
+          <summary>Tool breakdown <span class="arr">&rarr;</span></summary>
+          <div class="more-body">
+            <% max_count = @tool_usage |> Enum.map(fn {_, v} -> v["count"] || 0 end) |> Enum.max(fn -> 1 end) |> max(1) %>
+            <%= for {tool, info} <- Enum.sort_by(@tool_usage, fn {_, v} -> -(v["count"] || 0) end) do %>
+              <div class="tool-bar-row">
+                <span class="tool-bar-label">{String.downcase(tool)}</span>
+                <div class="tool-bar-track">
+                  <div class="tool-bar-fill" style={"width:#{round((info["count"] || 0) / max_count * 100)}%"}></div>
+                </div>
+                <span class="tool-bar-count">{info["count"] || 0}</span>
+              </div>
+            <% end %>
+          </div>
+        </details>
+      </div>
+    <% end %>
+
+    <%!-- Turn Timeline --%>
+    <%= if length(@prompts) > 0 do %>
+      <div class="more">
+        <details>
+          <summary>Turn timeline <span class="arr">&rarr;</span></summary>
+          <div class="more-body">
+            <%= for {prompt, idx} <- Enum.with_index(Enum.take(@prompts, 20)) do %>
+              <div class="turn-row">
+                <span class="turn-num">{idx + 1}</span>
+                <span class="turn-prompt">{String.slice(prompt["text"] || "", 0, 120)}{if String.length(prompt["text"] || "") > 120, do: "...", else: ""}</span>
+                <%= if is_list(prompt["tools"]) and length(prompt["tools"]) > 0 do %>
+                  <div class="turn-tools">
+                    <%= for tool <- Enum.take(prompt["tools"], 3) do %>
+                      <span class="chip chip--muted">{tool}</span>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </details>
+      </div>
+    <% end %>
+
+    <%!-- Files Changed --%>
+    <%= if length(@files_changed) > 0 do %>
+      <div class="more">
+        <details>
+          <summary>Files changed ({length(@files_changed)}) <span class="arr">&rarr;</span></summary>
+          <div class="more-body">
+            <%= for file <- @files_changed do %>
+              <div class="file-row">
+                <span class="file-path">{file["path"]}</span>
+                <span class="file-count">{file["count"] || 1}x</span>
+              </div>
+            <% end %>
+          </div>
+        </details>
+      </div>
+    <% end %>
+
+    <%!-- Full Narrative --%>
+    <%= if @share.narrative do %>
+      <div class="more">
+        <details>
+          <summary>Full narrative <span class="arr">&rarr;</span></summary>
+          <div class="more-body">
+            <%= for paragraph <- String.split(@share.narrative, "\n\n") do %>
+              <p>{paragraph}</p>
+            <% end %>
+          </div>
+        </details>
+      </div>
+    <% end %>
+
+    <%!-- Transcript Link --%>
+    <%= if length(@prompts) > 0 do %>
+      <div style="text-align:center;margin:32px 0;">
+        <a href={"/s/#{@share.token}/transcript"} class="btn-secondary">
+          View Transcript &rarr;
+        </a>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="page-footer">
+    <a href="/">heyi.am</a>
+  </div>
+</div>

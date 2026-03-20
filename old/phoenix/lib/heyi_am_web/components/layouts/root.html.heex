@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content={get_csrf_token()} />
+    <.live_title default="heyi.am">
+      {assigns[:page_title]}
+    </.live_title>
+    <%= if assigns[:og_title] do %>
+      <meta property="og:title" content={assigns[:og_title]} />
+      <meta property="og:type" content="article" />
+    <% end %>
+    <%= if assigns[:og_description] do %>
+      <meta property="og:description" content={assigns[:og_description]} />
+      <meta name="description" content={assigns[:og_description]} />
+    <% end %>
+    <%= if assigns[:og_image] do %>
+      <meta property="og:image" content={assigns[:og_image]} />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:image" content={assigns[:og_image]} />
+    <% else %>
+      <meta name="twitter:card" content="summary" />
+    <% end %>
+    <%= if assigns[:og_url] do %>
+      <meta property="og:url" content={assigns[:og_url]} />
+    <% end %>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
+    <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
+    </script>
+  </head>
+  <body>
+    {@inner_content}
+  </body>
+</html>

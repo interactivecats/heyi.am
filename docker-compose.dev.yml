@@ -1,0 +1,90 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: heyi_am_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - heyi_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: heyi_admin
+      MINIO_ROOT_PASSWORD: heyi_secret_key
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - heyi_minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio-setup:
+    image: minio/minio
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: /bin/sh
+    command: >
+      -c "
+      mc alias set local http://minio:9000 heyi_admin heyi_secret_key &&
+      mc mb --ignore-existing local/heyi-public &&
+      mc anonymous set download local/heyi-public &&
+      echo 'Bucket ready'
+      "
+
+  phoenix:
+    image: hexpm/elixir:1.18.2-erlang-27.2.4-alpine-3.21.3
+    working_dir: /app
+    command: >
+      sh -c "
+      apk add --no-cache git build-base &&
+      mix local.hex --force &&
+      mix local.rebar --force &&
+      mix deps.get &&
+      mix ecto.create &&
+      mix ecto.migrate &&
+      mix phx.server
+      "
+    environment:
+      MIX_ENV: dev
+      DATABASE_URL: ecto://postgres:postgres@postgres:5432/heyi_am_dev
+      PHX_HOST: localhost
+      PHX_IP: "0.0.0.0"
+      SECRET_KEY_BASE: dev-only-not-for-production-at-least-64-chars-long-xxxxxxxxxxxxxxxxxx
+      # S3/MinIO — internal endpoint for uploads, external URL for public access
+      S3_ENDPOINT: http://minio:9000
+      AWS_ACCESS_KEY_ID: heyi_admin
+      AWS_SECRET_ACCESS_KEY: heyi_secret_key
+      S3_BUCKET: heyi-public
+      STORAGE_PUBLIC_URL: http://localhost:9000/heyi-public
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./phoenix:/app
+      - phoenix_build:/app/_build
+      - phoenix_deps:/app/deps
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-setup:
+        condition: service_completed_successfully
+
+volumes:
+  heyi_pgdata:
+  heyi_minio:
+  phoenix_build:
+  phoenix_deps:

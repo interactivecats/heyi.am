@@ -1,0 +1,111 @@
+<div class={"page-wrap tpl-#{@user.portfolio_layout || "editorial"}"} style={"--accent:var(--#{@user.portfolio_accent || "violet"});--accent-bg:var(--#{@user.portfolio_accent || "violet"}-bg)"}>
+  <%!-- Top Nav --%>
+  <div class="top-nav" style="max-width:1200px;margin:0 auto;padding:0 48px;">
+    <a href="/" class="logo">heyi<b>.</b>am</a>
+    <a href={"/" <> @user.username} class="nav-btn">Back to portfolio</a>
+  </div>
+
+  <div style="max-width:1200px;margin:0 auto;padding:0 48px;">
+    <%!-- Breadcrumb --%>
+    <div style="display:flex;align-items:center;gap:8px;margin:24px 0 8px;font-family:var(--font-mono);font-size:11px;">
+      <a href={"/" <> @user.username} style="color:var(--brand);text-decoration:none;">{@user.display_name || @user.username}</a>
+      <span style="color:var(--light);">/</span>
+      <span style="color:var(--light);">{@project.display_name || @project.project_key}</span>
+    </div>
+
+    <%!-- Project Title --%>
+    <div class="proj-header">
+      <div class="project-page-title">{@project.display_name || @project.project_key}</div>
+      <%= if @project.description do %>
+        <p class="project-page-desc">{@project.description}</p>
+      <% end %>
+    </div>
+
+    <%!-- Stats Grid (4-col cards) --%>
+    <div class="stats-grid" style="margin:24px 0;">
+      <div class="stats-grid__item">
+        <div class="stats-grid__item-value">{length(@shares)}</div>
+        <div class="stats-grid__item-label">sessions</div>
+      </div>
+      <%= if @total_hours > 0 do %>
+        <div class="stats-grid__item">
+          <div class="stats-grid__item-value">{@total_hours}</div>
+          <div class="stats-grid__item-label">hours</div>
+        </div>
+      <% end %>
+      <%= if @total_turns > 0 do %>
+        <div class="stats-grid__item">
+          <div class="stats-grid__item-value">{@total_turns}</div>
+          <div class="stats-grid__item-label">turns</div>
+        </div>
+      <% end %>
+      <%= if @total_tool_calls > 0 do %>
+        <div class="stats-grid__item">
+          <div class="stats-grid__item-value">{@total_tool_calls}</div>
+          <div class="stats-grid__item-label">tool calls</div>
+        </div>
+      <% end %>
+    </div>
+
+    <%!-- Skills --%>
+    <%= if length(@skills) > 0 do %>
+      <div class="skills-line" style="margin:16px 0 24px;">
+        <%= for skill <- @skills do %>
+          <span class="skill-tag">{skill}</span>
+        <% end %>
+      </div>
+    <% end %>
+
+    <hr class="divider" />
+
+    <%!-- Sessions --%>
+    <%= if length(@shares) > 0 do %>
+      <div class="section-label">
+        <span>SESSIONS</span>
+        <span>{length(@shares)} case studies</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
+        <%= for share <- @shares do %>
+          <a href={"/s/#{share.token}"} style="text-decoration:none;color:inherit;display:block;">
+            <div style="background:var(--surface-card);border:1px solid var(--ghost-border);border-radius:var(--radius-md);padding:20px;transition:border-color 200ms;">
+              <div class="session-card__title">{share.title}</div>
+              <div class="session-card__meta">
+                <%= if share.duration_minutes do %>
+                  <span>{share.duration_minutes} min</span>
+                  <span class="sep">&middot;</span>
+                <% end %>
+                <%= if share.turn_count do %>
+                  <span>{share.turn_count} turns</span>
+                  <span class="sep">&middot;</span>
+                <% end %>
+                <%= if share.session_month do %>
+                  <span>{share.session_month}</span>
+                <% end %>
+              </div>
+              <%= if share.developer_take do %>
+                <div class="session-card__quote">"{share.developer_take}"</div>
+              <% end %>
+              <%= if share.sealed_at do %>
+                <div style="margin-top:8px;">
+                  <span class="sealed-badge" style="font-size:10px;">
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    sealed
+                  </span>
+                </div>
+              <% end %>
+            </div>
+          </a>
+        <% end %>
+      </div>
+    <% else %>
+      <div style="padding:64px 0;text-align:center;color:var(--light);font-family:var(--font-body);font-size:15px;">
+        No sessions shared yet.
+      </div>
+    <% end %>
+  </div>
+
+  <div class="page-footer">
+    <a href="/">heyi.am</a>
+  </div>
+</div>

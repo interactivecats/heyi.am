@@ -1,0 +1,80 @@
+<div class="page-wrap">
+  <div class="top-nav">
+    <a href="/" class="logo">heyi<b>.</b>am</a>
+    <div class="nav-links">
+      <a href="/" class="nav-btn">Back</a>
+    </div>
+  </div>
+
+  <div style="max-width:640px;margin:48px auto;">
+    <div style="margin-bottom:32px;">
+      <span class="section-label">Create Challenge</span>
+      <h1 style="font-family:var(--font-display);font-size:32px;font-weight:700;margin-top:8px;">
+        Define the problem
+      </h1>
+      <p style="color:var(--gray);margin-top:8px;">
+        Set the engineering parameters. Candidates respond with their own heyi.am sessions.
+      </p>
+    </div>
+
+    <.form :let={f} for={@changeset} action={~p"/challenges"} style="display:flex;flex-direction:column;gap:24px;">
+      <%!-- Problem Statement --%>
+      <div>
+        <label style="display:block;font-family:var(--font-mono);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--gray);margin-bottom:8px;">
+          Problem Statement <span style="color:var(--brand);">*</span>
+        </label>
+        <textarea
+          name={f[:description].name}
+          rows="8"
+          placeholder="E.g. Build a resilient message queue using the provided primitives..."
+          style="width:100%;background:var(--surface-low);border:1px solid var(--ghost-border);border-radius:var(--radius-md);padding:12px 16px;font-family:var(--font-body);font-size:14px;color:var(--ink);resize:vertical;"
+        ><%= f[:description].value %></textarea>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--light);text-transform:uppercase;">Markdown supported</span>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--light);text-transform:uppercase;">Required</span>
+        </div>
+      </div>
+
+      <%!-- Posted By --%>
+      <div>
+        <label style="display:block;font-family:var(--font-mono);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--gray);margin-bottom:8px;">
+          Posted By <span style="color:var(--light);font-weight:400;">(optional)</span>
+        </label>
+        <input
+          type="text"
+          name={f[:posted_by].name}
+          value={f[:posted_by].value}
+          placeholder="E.g. Lead Eng @ Infra team"
+          style="width:100%;background:var(--surface-low);border:1px solid var(--ghost-border);border-radius:var(--radius-md);padding:10px 16px;font-family:var(--font-body);font-size:14px;color:var(--ink);"
+        />
+      </div>
+
+      <%!-- Access Code --%>
+      <div style="background:var(--surface-low);border-radius:var(--radius-md);padding:16px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <span style="font-family:var(--font-mono);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--gray);">
+            Access Code Protection
+          </span>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--light);text-transform:uppercase;">(optional)</span>
+        </div>
+        <p style="font-size:13px;color:var(--gray);margin-bottom:12px;">
+          Set a code to restrict who can view this challenge.
+        </p>
+        <input
+          type="text"
+          name={f[:access_code].name}
+          value={f[:access_code].value}
+          placeholder="Leave blank for public"
+          style="width:100%;background:var(--surface-card);border:1px solid var(--ghost-border);border-radius:var(--radius-md);padding:10px 16px;font-family:var(--font-mono);font-size:13px;color:var(--ink);"
+        />
+      </div>
+
+      <%!-- Submit --%>
+      <div style="display:flex;gap:12px;margin-top:8px;">
+        <button type="submit" class="btn-primary" style="flex:1;justify-content:center;">
+          Create Challenge
+        </button>
+      </div>
+    </.form>
+  </div>
+</div>

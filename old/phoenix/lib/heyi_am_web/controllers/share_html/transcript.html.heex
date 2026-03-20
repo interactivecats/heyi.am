@@ -1,0 +1,121 @@
+<div class={"page-wrap tpl-#{@template}"} style={"--accent:var(--#{@accent});--accent-bg:var(--#{@accent}-bg)"}>
+  <%!-- Top Nav --%>
+  <div class="top-nav">
+    <a href="/" class="logo">heyi<b>.</b>am</a>
+    <button
+      class="nav-btn"
+      onclick="navigator.clipboard.writeText(window.location.href);this.textContent='Copied!';setTimeout(()=>this.textContent='Copy link',2000)"
+    >
+      Copy link
+    </button>
+  </div>
+
+  <%!-- Back link --%>
+  <a href={"/s/#{@share.token}"} class="back-link">
+    &larr; Back to session
+  </a>
+
+  <%!-- Header --%>
+  <section class="share-hero">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <span class="share-ref">SESS-{String.slice(@share.token, 0, 8) |> String.upcase()}</span>
+      <%= if @share.sealed_at do %>
+        <span class="sealed-badge">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          SEALED
+        </span>
+      <% end %>
+    </div>
+
+    <h1 style="font-size:clamp(22px, 4vw, 32px);">Full Session: {@share.title}</h1>
+
+    <div class="meta-row" style="margin-top:16px;">
+      <span class="chip chip--brand">{@share.source_tool || "Claude Code"}</span>
+      <%= if length(@prompts) > 0 do %>
+        <span class="chip chip--muted">{length(@prompts)} turns</span>
+      <% end %>
+      <%= if length(@decisions) > 0 do %>
+        <span class="chip chip--rose">{length(@decisions)} critical decisions</span>
+      <% end %>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <%!-- Transcript --%>
+  <div class="section-label">
+    <span>TRANSCRIPT</span>
+  </div>
+
+  <div class="transcript">
+    <%= for {prompt, idx} <- Enum.with_index(@prompts) do %>
+      <%!-- User prompt --%>
+      <div class="transcript-turn transcript-turn--user">
+        <div class="transcript-avatar transcript-avatar--user">
+          <span>DEV</span>
+        </div>
+        <div class="transcript-bubble transcript-bubble--user">
+          <div class="transcript-meta">
+            <span>Turn {idx + 1}</span>
+          </div>
+          <p class="transcript-text">{prompt["text"] || ""}</p>
+          <%= if is_list(prompt["tools"]) and length(prompt["tools"]) > 0 do %>
+            <div class="transcript-tools">
+              <%= for tool <- prompt["tools"] do %>
+                <span class="chip chip--muted">{tool}</span>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%!-- Tool response indicator --%>
+      <%= if is_list(prompt["tools"]) and length(prompt["tools"]) > 0 do %>
+        <div class="transcript-turn transcript-turn--ai">
+          <div class="transcript-avatar transcript-avatar--ai">
+            <span>AI</span>
+          </div>
+          <div class="transcript-bubble transcript-bubble--ai">
+            <div class="transcript-meta">
+              <span>Response</span>
+            </div>
+            <p class="transcript-text" style="color:var(--gray);">
+              Used {length(prompt["tools"])} tool{if length(prompt["tools"]) != 1, do: "s", else: ""}: {Enum.join(prompt["tools"], ", ")}
+            </p>
+          </div>
+        </div>
+      <% end %>
+
+      <%!-- Critical decision callout if this turn matches a decision beat --%>
+      <%= if idx < length(@decisions) do %>
+        <% decision = Enum.at(@decisions, idx) %>
+        <%= if decision do %>
+          <div class="transcript-decision">
+            <div class="transcript-decision-inner">
+              <div class="transcript-decision-label">
+                <span class={"step-type-badge step-type-badge--#{decision["type"]}"}>{decision["type"]}</span>
+                <span style="font-family:var(--font-mono);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--accent);">Critical Decision</span>
+              </div>
+              <p class="transcript-decision-title">{decision["title"]}</p>
+              <%= if decision["body"] do %>
+                <p class="transcript-decision-body">{decision["body"]}</p>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <%= if length(@prompts) == 0 do %>
+      <div style="text-align:center;padding:48px 0;color:var(--gray);">
+        <p>No transcript data available for this session.</p>
+      </div>
+    <% end %>
+  </div>
+
+  <hr class="divider" />
+
+  <div class="page-footer">
+    <a href="/">heyi.am</a>
+  </div>
+</div>

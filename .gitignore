@@ -1,0 +1,33 @@
+# Phoenix
+phoenix/_build/
+phoenix/deps/
+phoenix/priv/static/assets/
+phoenix/.elixir_ls/
+
+# Node
+cli/node_modules/
+cli/app/node_modules/
+cli/dist/
+cli/app/dist/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+
+# Docker
+heyi_pgdata/
+heyi_minio/
+
+# teamrc sync state
+.teamrc/
+
+# AI tool state
+.claude/
+.agent/
+.agents/
+.codex/
+.cursor/
+.gemini/
