@@ -131,7 +131,7 @@ defmodule HeyiAmWeb.ShareController do
     }
   ]
 
-  @valid_templates MapSet.new(~w(editorial terminal minimal brutalist campfire neon-night))
+  @valid_templates MapSet.new(HeyiAm.Shares.Share.valid_templates())
 
   defp resolve_template(session) do
     template = Map.get(session, :template, "editorial")
@@ -141,23 +141,32 @@ defmodule HeyiAmWeb.ShareController do
       else: "editorial"
   end
 
+  @gone_tokens MapSet.new(~w(deleted expired removed))
+
   def show(conn, %{"token" => token} = params) do
-    session = Map.put(@mock_session, :token, token)
+    if MapSet.member?(@gone_tokens, token) do
+      conn
+      |> put_status(:gone)
+      |> put_view(HeyiAmWeb.ShareHTML)
+      |> render(:gone, token: token)
+    else
+      session = Map.put(@mock_session, :token, token)
 
-    template =
-      case params["template"] do
-        t when is_binary(t) and t != "" ->
-          if MapSet.member?(@valid_templates, t), do: t, else: resolve_template(session)
+      template =
+        case params["template"] do
+          t when is_binary(t) and t != "" ->
+            if MapSet.member?(@valid_templates, t), do: t, else: resolve_template(session)
 
-        _ ->
-          resolve_template(session)
-      end
+          _ ->
+            resolve_template(session)
+        end
 
-    render(conn, :show,
-      session: session,
-      page_title: session.title,
-      portfolio_layout: template
-    )
+      render(conn, :show,
+        session: session,
+        page_title: session.title,
+        portfolio_layout: template
+      )
+    end
   end
 
   def transcript(conn, %{"token" => token}) do
@@ -170,6 +179,36 @@ defmodule HeyiAmWeb.ShareController do
       skipped_turns: 72,
       page_title: "Transcript — #{session.title}",
       portfolio_layout: template
+    )
+  end
+
+  def verify(conn, %{"token" => token}) do
+    session = Map.put(@mock_session, :token, token)
+
+    # Build verification from Signature module using mock session as a map
+    content_hash = HeyiAm.Signature.content_hash(session)
+    signed = HeyiAm.Signature.signed?(session)
+    verified = HeyiAm.Signature.verify(session) == :ok
+
+    signature_status =
+      cond do
+        verified -> "verified"
+        signed -> "invalid"
+        true -> "unverified"
+      end
+
+    verification = %{
+      token: token,
+      hash: content_hash,
+      signature_status: signature_status,
+      recorded_at: session.recorded_at,
+      verified_at: session[:verified_at]
+    }
+
+    render(conn, :verify,
+      session: session,
+      verification: verification,
+      page_title: "Verify — #{session.title}"
     )
   end
 end

@@ -1,14 +1,18 @@
 defmodule HeyiAmWeb.ErrorHTMLTest do
   use HeyiAmWeb.ConnCase, async: true
 
-  # Bring render_to_string/4 for testing custom views
-  import Phoenix.Template, only: [render_to_string: 4]
+  test "renders 404.html with custom template via endpoint" do
+    conn = get(build_conn(), "/nonexistent-route-that-will-404")
+    html = html_response(conn, 404)
 
-  test "renders 404.html" do
-    assert render_to_string(HeyiAmWeb.ErrorHTML, "404", "html", []) == "Not Found"
+    assert html =~ "404"
+    assert html =~ "Page not found"
+    assert html =~ "Back to Home"
+    assert html =~ "heyi.am"
   end
 
-  test "renders 500.html" do
+  test "renders 500.html as plain text" do
+    import Phoenix.Template, only: [render_to_string: 4]
     assert render_to_string(HeyiAmWeb.ErrorHTML, "500", "html", []) == "Internal Server Error"
   end
 end

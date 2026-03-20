@@ -129,6 +129,27 @@ defmodule HeyiAmWeb.ShareControllerTest do
     end
   end
 
+  describe "gone session page" do
+    test "renders gone page for deleted token", %{conn: conn} do
+      conn = get(conn, ~p"/s/deleted")
+      html = html_response(conn, 410)
+
+      assert html =~ "Session Removed"
+      assert html =~ "This session has been removed by its owner"
+      assert html =~ "Token: deleted"
+      assert html =~ "Back to Home"
+      assert html =~ "heyi.am"
+    end
+
+    test "renders gone page for expired token", %{conn: conn} do
+      conn = get(conn, ~p"/s/expired")
+      html = html_response(conn, 410)
+
+      assert html =~ "Session Removed"
+      assert html =~ "Token: expired"
+    end
+  end
+
   describe "GET /s/:token/transcript" do
     test "renders transcript page with turns", %{conn: conn} do
       conn = get(conn, ~p"/s/test-token/transcript")
@@ -179,6 +200,24 @@ defmodule HeyiAmWeb.ShareControllerTest do
       conn = get(conn, ~p"/s/test-token/transcript")
       html = html_response(conn, 200)
       assert html =~ "77 turns total"
+    end
+  end
+
+  describe "GET /s/:token/verify" do
+    test "renders verification page with hash and status", %{conn: conn} do
+      conn = get(conn, ~p"/s/test-token/verify")
+      html = html_response(conn, 200)
+      assert html =~ "Session Verification"
+      assert html =~ "Content Hash"
+      assert html =~ "sha256:"
+      assert html =~ "Signature Status"
+      assert html =~ "UNVERIFIED"
+    end
+
+    test "includes link back to session", %{conn: conn} do
+      conn = get(conn, ~p"/s/my-token/verify")
+      html = html_response(conn, 200)
+      assert html =~ "/s/my-token"
     end
   end
 end
