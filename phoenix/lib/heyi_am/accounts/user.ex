@@ -120,8 +120,23 @@ defmodule HeyiAm.Accounts.User do
   end
 
   @doc """
+  A changeset for registration with email + password, auto-confirmed.
+  """
+  def registration_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:email, :password])
+    |> validate_email(validate_unique: true)
+    |> validate_password(hash_password: true)
+    |> confirm_changeset()
+  end
+
+  @doc """
   Confirms the account by setting `confirmed_at`.
   """
+  def confirm_changeset(%Ecto.Changeset{} = changeset) do
+    put_change(changeset, :confirmed_at, DateTime.utc_now(:second))
+  end
+
   def confirm_changeset(user) do
     now = DateTime.utc_now(:second)
     change(user, confirmed_at: now)

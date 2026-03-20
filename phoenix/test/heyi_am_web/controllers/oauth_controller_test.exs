@@ -55,7 +55,7 @@ defmodule HeyiAmWeb.OAuthControllerTest do
     end
 
     test "does not auto-link by email — returns error for email collision", %{conn: conn} do
-      {:ok, _email_user} = Accounts.register_user(%{email: "shared@example.com"})
+      {:ok, _email_user} = Accounts.register_user(%{email: "shared@example.com", password: "validpassword1"})
 
       auth = github_auth(77777, "shared@example.com", "GitHub User")
 

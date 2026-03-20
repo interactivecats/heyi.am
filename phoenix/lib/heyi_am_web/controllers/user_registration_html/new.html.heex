@@ -11,9 +11,7 @@
         <h1 class="headline-lg" style="margin-block-end: var(--spacing-2);">Create your account</h1>
         <p class="body-sm" style="color: var(--on-surface-variant);">
           Already registered?
-          <a href={~p"/users/log-in"} class="auth-link">
-            <span style="color: var(--primary); font-weight: 600;">Log in</span>
-          </a>
+          <a href={~p"/users/log-in"} style="color: var(--primary); font-weight: 600; text-decoration: none;">Log in</a>
         </p>
       </div>
 
@@ -43,6 +41,20 @@
               phx-mounted={JS.focus()}
             />
             <p :for={msg <- Enum.map(f[:email].errors, &HeyiAmWeb.CoreComponents.translate_error/1)} class="auth-error">{msg}</p>
+          </div>
+
+          <div class="auth-field">
+            <label for="user_password" class="auth-label">Password</label>
+            <input
+              type="password"
+              name={f[:password].name}
+              id="user_password"
+              class={["auth-input", f[:password].errors != [] && "auth-input--error"]}
+              autocomplete="new-password"
+              placeholder="At least 12 characters"
+              required
+            />
+            <p :for={msg <- Enum.map(f[:password].errors, &HeyiAmWeb.CoreComponents.translate_error/1)} class="auth-error">{msg}</p>
           </div>
 
           <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;" phx-disable-with="Creating account...">
