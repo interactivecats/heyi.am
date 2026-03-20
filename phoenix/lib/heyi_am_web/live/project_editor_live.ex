@@ -106,6 +106,13 @@ defmodule HeyiAmWeb.ProjectEditorLive do
     {:noreply, assign(socket, :project, project)}
   end
 
+  def handle_event("reorder", %{"ids" => ids}, socket) do
+    session_map = Map.new(socket.assigns.project.sessions, &{&1.id, &1})
+    reordered = Enum.map(ids, &Map.fetch!(session_map, &1))
+    project = %{socket.assigns.project | sessions: reordered}
+    {:noreply, assign(socket, :project, project)}
+  end
+
   def handle_event("update_form", _params, socket) do
     {:noreply, socket}
   end
@@ -229,13 +236,15 @@ defmodule HeyiAmWeb.ProjectEditorLive do
             </div>
           </header>
 
-          <div class="stack stack--md">
+          <div class="stack stack--md" id="session-sortable" phx-hook="Sortable">
             <div
               :for={session <- @project.sessions}
               class={session_card_classes(session)}
               data-session-id={session.id}
+              data-sort-id={session.id}
+              draggable="true"
             >
-              <div class="project-editor__session-drag">&#x2630;</div>
+              <div class="project-editor__session-drag drag-handle">&#x2630;</div>
               <div class="project-editor__session-content">
                 <div class="project-editor__session-identity">
                   <p class="label-sm" style="color: var(--primary);">SESSION_ID: {session.id}</p>

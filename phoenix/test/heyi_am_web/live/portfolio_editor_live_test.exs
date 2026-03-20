@@ -206,6 +206,26 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
     end
   end
 
+  describe "session reorder within expanded project" do
+    test "reorder event changes session order", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/testuser/edit")
+
+      # Expand project 1
+      view |> element("button[phx-click='toggle_project'][phx-value-id='1']") |> render_click()
+
+      # Reverse the session order (original: 1, 2, 3)
+      html = render_hook(view, "reorder", %{"ids" => ["3", "2", "1"]})
+
+      # Verify reversed order by position in HTML
+      pos_3 = :binary.match(html, "Refactoring Event Loop") |> elem(0)
+      pos_2 = :binary.match(html, "WASM Memory Isolation") |> elem(0)
+      pos_1 = :binary.match(html, "Initial Architectural") |> elem(0)
+
+      assert pos_3 < pos_2
+      assert pos_2 < pos_1
+    end
+  end
+
   describe "session controls within expanded project" do
     test "toggle_session_visibility switches public/private", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/testuser/edit")

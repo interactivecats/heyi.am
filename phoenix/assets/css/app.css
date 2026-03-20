@@ -1428,6 +1428,14 @@ body {
   cursor: grabbing;
 }
 
+[data-sort-id].dragging {
+  opacity: 0.4;
+}
+
+[data-sort-id] {
+  transition: transform 0.15s ease;
+}
+
 
 /* ── Landing Page ── */
 .landing-features-grid {

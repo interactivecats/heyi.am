@@ -145,6 +145,23 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
     {:noreply, assign(socket, :projects, projects)}
   end
 
+  def handle_event("reorder", %{"ids" => ids}, socket) do
+    expanded_id = socket.assigns.expanded_project
+
+    projects =
+      Enum.map(socket.assigns.projects, fn project ->
+        if project.id == expanded_id do
+          session_map = Map.new(project.sessions, &{to_string(&1.id), &1})
+          reordered = Enum.map(ids, &Map.fetch!(session_map, &1))
+          %{project | sessions: reordered}
+        else
+          project
+        end
+      end)
+
+    {:noreply, assign(socket, :projects, projects)}
+  end
+
   def handle_event("toggle_session_featured", %{"id" => id_str}, socket) do
     id = String.to_integer(id_str)
 
@@ -313,7 +330,7 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
                 </button>
 
                 <%!-- Session list (expanded) --%>
-                <div :if={@expanded_project == project.id} class="pe-session-list">
+                <div :if={@expanded_project == project.id} class="pe-session-list" id={"session-sortable-#{project.id}"} phx-hook="Sortable">
                   <%= if project.sessions == [] do %>
                     <div class="pe-empty-sessions">
                       <p class="body-sm" style="color: var(--outline);">Ready for a new exploration?</p>
@@ -326,6 +343,8 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
                         session.featured && "pe-session-row--featured",
                         session.status == :draft && "pe-session-row--draft"
                       ]}
+                      data-sort-id={session.id}
+                      draggable="true"
                     >
                       <span :if={!@visitor_mode} class="pe-control-btn drag-handle" style="font-size: 0.75rem;">
                         drag_indicator

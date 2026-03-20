@@ -149,6 +149,23 @@ defmodule HeyiAmWeb.ProjectEditorLiveTest do
     end
   end
 
+  describe "session reorder" do
+    test "reorder event changes session order", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @editor_path)
+
+      # Original order: 0x82A1, 0x9F4B, 0x112C — reverse it
+      html = render_hook(view, "reorder", %{"ids" => ["0x112C", "0x9F4B", "0x82A1"]})
+
+      # Verify the new order by checking positions in rendered HTML
+      pos_112c = :binary.match(html, "0x112C") |> elem(0)
+      pos_9f4b = :binary.match(html, "0x9F4B") |> elem(0)
+      pos_82a1 = :binary.match(html, "0x82A1") |> elem(0)
+
+      assert pos_112c < pos_9f4b
+      assert pos_9f4b < pos_82a1
+    end
+  end
+
   describe "save" do
     test "save event triggers flash", %{conn: conn} do
       {:ok, view, _html} = live(conn, @editor_path)

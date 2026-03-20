@@ -245,11 +245,11 @@ LiveView at `/onboarding/vibe`. 6 template cards in grid with live preview panel
 
 ## Phase 6: Web — Portfolio Editor
 
-### Task 6.1 — Portfolio Editor: Overview
+### Task 6.1 — Portfolio Editor: Overview ✅
 **Screen 20**
 **Mockup image:** `mockups/new/portfolio_editor_wysiwyg_2/screen.png`
 **Mockup HTML:** `mockups/new/portfolio_editor_wysiwyg_2/code.html`
-**Files:** `phoenix/lib/heyi_am_web/live/portfolio_live.ex`
+**Files:** `phoenix/lib/heyi_am_web/live/portfolio_editor_live.ex`
 
 - Editor shell with left sidebar (project list, nav)
 - WYSIWYG hero (inline-editable name, bio)
@@ -257,23 +257,24 @@ LiveView at `/onboarding/vibe`. 6 template cards in grid with live preview panel
 - Expertise ledger (categorized skill bars)
 - Bottom dock: template + accent + "View as Visitor"
 
-### Task 6.2 — Portfolio Editor: Project Expanded
+### Task 6.2 — Portfolio Editor: Project Expanded ✅
 **Screen 21**
-**Files:** `phoenix/lib/heyi_am_web/live/portfolio_live.ex`
+**Files:** `phoenix/lib/heyi_am_web/live/portfolio_editor_live.ex`
 
 - Session list per project
 - Toggle: in portfolio / not (default ON for newly published)
-- Drag reorder
+- Drag reorder via native HTML5 drag-and-drop + Sortable LiveView hook
 
-### Task 6.3 — Project Editor (New Page)
+### Task 6.3 — Project Editor (New Page) ✅
 **Screen 22**
 **Mockup image:** `mockups/new/project_editor_project_alpha/screen.png`
 **Mockup HTML:** `mockups/new/project_editor_project_alpha/code.html`
-**Files:** New `phoenix/lib/heyi_am_web/live/project_editor_live.ex`
+**Files:** `phoenix/lib/heyi_am_web/live/project_editor_live.ex`
 
 - Left sidebar: project nav
 - Main left: Project Definition — title, description, taxonomy tags
 - Main right: Session Management — list with reorder + visibility
+- Drag reorder via shared Sortable hook (`phoenix/assets/js/app.js`)
 
 ---
 
