@@ -9,7 +9,7 @@ function renderWithRoute(sessionId: string, props?: Partial<SessionEditorPagePro
   return render(
     <MemoryRouter initialEntries={[`/session/${sessionId}/edit`]}>
       <Routes>
-        <Route path="/session/:id/edit" element={<SessionEditorPage {...props} />} />
+        <Route path="/session/:id/edit" element={<SessionEditorPage sessions={MOCK_SESSIONS} {...props} />} />
         <Route path="/" element={<div>Home</div>} />
         <Route path="/session/:id" element={<div>Detail Page</div>} />
       </Routes>

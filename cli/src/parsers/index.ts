@@ -1,7 +1,7 @@
-import { readdir } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { join, basename, dirname } from "node:path";
 import { homedir } from "node:os";
-import { claudeParser } from "./claude.js";
+import { claudeParser, mapAgentRole } from "./claude.js";
 import type { SessionParser, SessionAnalysis } from "./types.js";
 
 export type { SessionAnalysis, SessionParser, SessionSource, ToolCall, LocStats, RawEntry } from "./types.js";
@@ -114,7 +114,21 @@ async function collectSubagents(
     if (!file.name.endsWith(".jsonl") || file.isDirectory()) continue;
     const fullPath = join(subagentsDir, file.name);
     const sessionId = file.name.replace(/\.jsonl$/, "");
-    await tryAddSession(fullPath, sessionId, projectDir, true, children, parentSessionId);
+
+    // Try to read .meta.json for agent type/role
+    const metaPath = join(subagentsDir, file.name.replace(/\.jsonl$/, ".meta.json"));
+    let agentRole: string | undefined;
+    try {
+      const metaRaw = await readFile(metaPath, "utf-8");
+      const meta = JSON.parse(metaRaw) as { agentType?: string };
+      if (meta.agentType) {
+        agentRole = mapAgentRole(meta.agentType);
+      }
+    } catch {
+      // No meta.json or malformed — role will be undefined
+    }
+
+    await tryAddSession(fullPath, sessionId, projectDir, true, children, parentSessionId, agentRole);
   }
   return children;
 }
@@ -126,12 +140,16 @@ async function tryAddSession(
   isSubagent: boolean,
   out: SessionMeta[],
   parentSessionId?: string,
+  agentRole?: string,
 ): Promise<void> {
   for (const parser of parsers) {
     if (await parser.detect(fullPath)) {
       const meta: SessionMeta = { path: fullPath, source: parser.name, sessionId, projectDir, isSubagent };
       if (parentSessionId) {
         meta.parentSessionId = parentSessionId;
+      }
+      if (agentRole) {
+        meta.agentRole = agentRole;
       }
       out.push(meta);
       break;

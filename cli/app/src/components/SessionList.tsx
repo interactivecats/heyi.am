@@ -1,11 +1,14 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { AppShell } from './AppShell';
-import type { Session, Project } from '../types';
+import type { Session, Project, ChildSessionSummary } from '../types';
 import { MOCK_SESSIONS, MOCK_PROJECTS } from '../mock-data';
+import { useSessionsContext } from '../SessionsContext';
 
 export type { Session, Project };
 export { MOCK_SESSIONS, MOCK_PROJECTS };
+
+const MAX_VISIBLE_CHILDREN = 5;
 
 /* ==========================================================================
    Helpers
@@ -18,18 +21,6 @@ function formatDate(iso: string): string {
 
 function formatDuration(minutes: number): string {
   return `${minutes} min`;
-}
-
-function deriveProjects(sessions: Session[]): Project[] {
-  const map = new Map<string, number>();
-  for (const s of sessions) {
-    map.set(s.projectName, (map.get(s.projectName) ?? 0) + 1);
-  }
-  return Array.from(map.entries()).map(([name, count]) => ({
-    name,
-    sessionCount: count,
-    description: '',
-  }));
 }
 
 /* ==========================================================================
@@ -80,34 +71,76 @@ interface SessionListProps {
 }
 
 export function SessionList({
-  sessions = MOCK_SESSIONS,
+  sessions: sessionsProp,
   projects: projectsProp,
 }: SessionListProps = {}) {
   const navigate = useNavigate();
-  const projects = projectsProp ?? (sessions === MOCK_SESSIONS ? MOCK_PROJECTS : deriveProjects(sessions));
+  const ctx = useSessionsContext();
 
-  const [selectedProject, setSelectedProject] = useState<string | null>(
-    projects.length > 0 ? projects[0].name : null,
-  );
+  const usingApi = sessionsProp == null;
+  const projects = projectsProp ?? ctx.projects;
+  const allSessions = sessionsProp ?? ctx.sessions;
+
+  // Track which project is selected in the sidebar
+  const [selectedDirName, setSelectedDirName] = useState<string | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set());
+  const [expandedMore, setExpandedMore] = useState<Set<string>>(new Set());
 
-  const isEmpty = sessions.length === 0;
+  const toggleExpanded = useCallback((sessionId: string) => {
+    setExpandedParents((prev) => {
+      const next = new Set(prev);
+      if (next.has(sessionId)) next.delete(sessionId);
+      else next.add(sessionId);
+      return next;
+    });
+  }, []);
 
-  const filteredSessions = selectedProject
-    ? sessions.filter((s) => s.projectName === selectedProject)
-    : sessions;
+  const toggleMore = useCallback((sessionId: string) => {
+    setExpandedMore((prev) => {
+      const next = new Set(prev);
+      if (next.has(sessionId)) next.delete(sessionId);
+      else next.add(sessionId);
+      return next;
+    });
+  }, []);
 
-  const selectedSession = selectedSessionId
-    ? sessions.find((s) => s.id === selectedSessionId) ?? null
-    : null;
+  // Auto-select first project when projects load
+  useEffect(() => {
+    if (projects.length > 0 && selectedDirName == null) {
+      setSelectedDirName(projects[0].dirName);
+    }
+  }, [projects, selectedDirName]);
 
-  const activeProject = selectedProject
-    ? projects.find((p) => p.name === selectedProject) ?? null
-    : null;
+  // When project changes in API mode, tell context to lazy-load its sessions
+  useEffect(() => {
+    if (usingApi && selectedDirName) {
+      ctx.selectProject(selectedDirName);
+      setSelectedSessionId(null);
+    }
+  }, [usingApi, selectedDirName]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ---------- Empty state ---------- */
+  // In prop mode, filter sessions locally by project name.
+  // In API mode, context already returns sessions for the active project.
+  const sessions = usingApi
+    ? allSessions
+    : selectedDirName
+      ? allSessions.filter((s) => s.projectName === selectedDirName)
+      : allSessions;
 
-  if (isEmpty) {
+  // Loading projects
+  if (usingApi && ctx.loading) {
+    return (
+      <AppShell title="Sessions">
+        <div style={{ padding: 'var(--spacing-6)', textAlign: 'center' }}>
+          <p className="text-body">Loading projects...</p>
+        </div>
+      </AppShell>
+    );
+  }
+
+  // No projects at all
+  if (projects.length === 0 && allSessions.length === 0) {
     return (
       <AppShell title="Sessions">
         <div style={{ padding: 'var(--spacing-6)' }}>
@@ -153,10 +186,20 @@ export function SessionList({
     );
   }
 
-  /* ---------- Sidebar ---------- */
+  // Selected session can be a parent or a child (matched by id or child sessionId)
+  const selectedSession = selectedSessionId
+    ? sessions.find((s) => s.id === selectedSessionId) ?? null
+    : null;
+  const isSelectedChild = selectedSessionId != null && selectedSession == null;
+  const selectedChildParent = isSelectedChild
+    ? sessions.find((s) => s.children?.some((c) => c.sessionId === selectedSessionId)) ?? null
+    : null;
 
-  const publishedCount = sessions.filter((s) => s.status === 'published').length;
-  const enhancedCount = sessions.filter((s) => s.status !== 'draft').length;
+  const activeProject = selectedDirName
+    ? projects.find((p) => p.dirName === selectedDirName) ?? null
+    : null;
+
+  /* ---------- Sidebar ---------- */
 
   const sidebarContent = (
     <>
@@ -164,17 +207,15 @@ export function SessionList({
         <p className="app-sidebar__label">Projects</p>
         <ul className="app-sidebar__list">
           {projects.map((project) => (
-            <li key={project.name}>
+            <li key={project.dirName}>
               <button
                 type="button"
-                className={`app-sidebar__item${selectedProject === project.name ? ' app-sidebar__item--active' : ''}`}
-                onClick={() => {
-                  setSelectedProject(project.name);
-                  setSelectedSessionId(null);
-                }}
+                className={`app-sidebar__item${selectedDirName === project.dirName ? ' app-sidebar__item--active' : ''}`}
+                onClick={() => setSelectedDirName(project.dirName)}
               >
                 <span className="app-sidebar__dot" />
-                {project.name}
+                <span style={{ flex: 1 }}>{project.name}</span>
+                <span className="label-mono" style={{ opacity: 0.5 }}>{project.sessionCount}</span>
               </button>
             </li>
           ))}
@@ -184,14 +225,15 @@ export function SessionList({
         <p className="app-sidebar__label">Stats</p>
         <div className="sidebar-stats">
           <div>Sessions: <strong>{sessions.length}</strong></div>
-          <div>Enhanced: <strong>{enhancedCount}</strong></div>
-          <div>Published: <strong>{publishedCount}</strong></div>
+          <div>Published: <strong>{sessions.filter((s) => s.status === 'published').length}</strong></div>
         </div>
       </div>
     </>
   );
 
   /* ---------- Main content ---------- */
+
+  const isLoadingSessions = usingApi && ctx.loadingSessions;
 
   return (
     <AppShell
@@ -206,8 +248,9 @@ export function SessionList({
             {activeProject ? activeProject.name : 'All Sessions'}
           </h2>
           <p className="session-browser__subtitle">
-            {filteredSessions.length} sessions
-            {activeProject?.description ? ` \u00b7 ${activeProject.description}` : ''}
+            {isLoadingSessions
+              ? 'Loading sessions...'
+              : `${sessions.length} sessions`}
           </p>
 
           <div className="session-browser__search">
@@ -226,37 +269,148 @@ export function SessionList({
             <span></span>
           </div>
 
-          {filteredSessions.map((session) => (
-            <button
-              key={session.id}
-              type="button"
-              className={`session-browser__row${selectedSessionId === session.id ? ' session-browser__row--selected' : ''}`}
-              onClick={() => setSelectedSessionId(session.id)}
-            >
-              <div>
-                <div className="session-browser__row-title">{session.title}</div>
-                <div className="session-browser__row-meta">
-                  {formatDate(session.date)} &middot; {session.turns} turns
+          {isLoadingSessions ? (
+            <div style={{ padding: 'var(--spacing-6)', textAlign: 'center', opacity: 0.5 }}>
+              Parsing session files...
+            </div>
+          ) : sessions.length === 0 ? (
+            <div style={{ padding: 'var(--spacing-6)', textAlign: 'center', opacity: 0.5 }}>
+              No sessions in this project
+            </div>
+          ) : (
+            sessions.map((session) => {
+              const hasChildren = (session.childCount ?? 0) > 0;
+              const isExpanded = expandedParents.has(session.id);
+              const children = session.children ?? [];
+              const showAll = expandedMore.has(session.id);
+              const visibleChildren = showAll ? children : children.slice(0, MAX_VISIBLE_CHILDREN);
+              const hiddenCount = children.length - MAX_VISIBLE_CHILDREN;
+
+              return (
+                <div key={session.id}>
+                  {/* Parent row */}
+                  <button
+                    type="button"
+                    className={`session-browser__row${hasChildren ? ' session-browser__row--parent' : ''}${selectedSessionId === session.id ? ' session-browser__row--selected' : ''}`}
+                    onClick={() => setSelectedSessionId(session.id)}
+                    data-testid={hasChildren ? 'parent-row' : undefined}
+                  >
+                    <div>
+                      <div className="session-browser__row-title">
+                        {hasChildren && (
+                          <span
+                            className="session-browser__disclosure"
+                            onClick={(e) => { e.stopPropagation(); toggleExpanded(session.id); }}
+                            data-testid="disclosure-toggle"
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); toggleExpanded(session.id); } }}
+                          >
+                            {isExpanded ? '\u25BE' : '\u25B8'}
+                          </span>
+                        )}
+                        {session.title}
+                      </div>
+                      <div className="session-browser__row-meta">
+                        {formatDate(session.date)} &middot; {session.turns} turns
+                        {hasChildren && (
+                          <>
+                            {' '}&middot;{' '}
+                            <span className="session-browser__agent-count" data-testid="agent-count">
+                              {session.childCount} agent{session.childCount === 1 ? '' : 's'}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <span className="session-browser__row-duration">
+                      {formatDuration(session.durationMinutes)}
+                    </span>
+                    <span className={`chip chip--${session.status}`}>
+                      {session.status.toUpperCase()}
+                    </span>
+                    <span className="session-browser__row-arrow">&#8594;</span>
+                  </button>
+
+                  {/* Child rows */}
+                  {hasChildren && isExpanded && (
+                    <div data-testid="children-container">
+                      {visibleChildren.map((child: ChildSessionSummary) => (
+                        <button
+                          key={child.sessionId}
+                          type="button"
+                          className={`session-browser__row session-browser__row--child${selectedSessionId === child.sessionId ? ' session-browser__row--selected' : ''}`}
+                          onClick={() => setSelectedSessionId(child.sessionId)}
+                          data-testid="child-row"
+                        >
+                          <div className="session-browser__connector" />
+                          <div>
+                            <div className="session-browser__row-title">
+                              {child.role && (
+                                <span className="session-browser__child-role" data-testid="child-role">
+                                  {child.role}
+                                </span>
+                              )}
+                              {child.title ?? child.sessionId}
+                            </div>
+                            {(child.durationMinutes != null || child.linesOfCode != null) && (
+                              <div className="session-browser__row-meta">
+                                {child.durationMinutes != null && `${child.durationMinutes} min`}
+                                {child.durationMinutes != null && child.linesOfCode != null && ' \u00B7 '}
+                                {child.linesOfCode != null && `${child.linesOfCode} LOC`}
+                              </div>
+                            )}
+                          </div>
+                          <span className="session-browser__row-duration" />
+                          <span />
+                          <span />
+                        </button>
+                      ))}
+                      {!showAll && hiddenCount > 0 && (
+                        <button
+                          type="button"
+                          className="session-browser__expand-more"
+                          onClick={() => toggleMore(session.id)}
+                          data-testid="expand-more"
+                        >
+                          ... {hiddenCount} more agent{hiddenCount === 1 ? '' : 's'}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
-              <span className="session-browser__row-duration">
-                {formatDuration(session.durationMinutes)}
-              </span>
-              <span className={`chip chip--${session.status}`}>
-                {session.status.toUpperCase()}
-              </span>
-              <span className="session-browser__row-arrow">&#8594;</span>
-            </button>
-          ))}
+              );
+            })
+          )}
         </div>
 
         {/* Preview panel */}
         <div className="session-browser__preview">
           <div className="session-browser__preview-label">
-            Raw Session Log Preview
+            {selectedSession && (selectedSession.childCount ?? 0) > 0
+              ? 'Orchestration Summary'
+              : isSelectedChild
+                ? 'Agent Session Preview'
+                : 'Raw Session Log Preview'}
           </div>
           <div className="terminal session-browser__preview-terminal">
-            {selectedSession ? (
+            {selectedSession && (selectedSession.childCount ?? 0) > 0 ? (
+              <div data-testid="orchestration-preview">
+                <div className="terminal-line">
+                  <span className="terminal-line--prompt">Delegation</span>
+                </div>
+                {(selectedSession.children ?? []).map((child: ChildSessionSummary) => (
+                  <div key={child.sessionId} className="terminal-line">
+                    <span className="terminal-line--success">
+                      {child.role ? child.role.toUpperCase() : 'AGENT'}
+                    </span>
+                    {' '}{child.title ?? child.sessionId}
+                    {child.linesOfCode != null && ` — ${child.linesOfCode} LOC`}
+                    {child.durationMinutes != null && `, ${child.durationMinutes} min`}
+                  </div>
+                ))}
+              </div>
+            ) : selectedSession ? (
               <>
                 {selectedSession.rawLog.map((line, i) => (
                   <LogLine key={i} line={line} />
@@ -265,14 +419,18 @@ export function SessionList({
                   <span className="raw-log__cursor" />
                 </div>
               </>
+            ) : isSelectedChild && selectedChildParent ? (
+              <div className="terminal-line--dim" style={{ fontStyle: 'italic' }}>
+                Agent session — open full detail to view log
+              </div>
             ) : (
               <div className="terminal-line--dim" style={{ fontStyle: 'italic' }}>
                 Select a session to preview
               </div>
             )}
           </div>
-          <a
-            href={selectedSession ? `/session/${selectedSession.id}/enhance` : '#'}
+          <Link
+            to={selectedSession ? `/session/${selectedSession.id}` : '#'}
             className="btn btn-primary btn--lg btn--full"
             style={{
               marginTop: 'var(--spacing-4)',
@@ -281,10 +439,22 @@ export function SessionList({
               opacity: selectedSession ? 1 : 0.5,
             }}
           >
+            View Summary
+          </Link>
+          <Link
+            to={selectedSession ? `/session/${selectedSession.id}/enhance` : '#'}
+            className="btn btn-secondary btn--full"
+            style={{
+              marginTop: 'var(--spacing-2)',
+              justifyContent: 'center',
+              pointerEvents: selectedSession ? 'auto' : 'none',
+              opacity: selectedSession ? 1 : 0.5,
+            }}
+          >
             Enhance with AI
-          </a>
+          </Link>
           <div className="session-browser__enhance-subtitle">
-            Requires API key
+            Enhancement requires API key
           </div>
         </div>
       </div>

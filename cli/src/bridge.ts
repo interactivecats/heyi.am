@@ -10,9 +10,12 @@ import type {
 } from "./parsers/types.js";
 import type {
   SessionAnalysis as AnalyzerInput,
+  Session,
   ParsedTurn,
   ParsedFileChange,
 } from "./analyzer.js";
+import { analyzeSession } from "./analyzer.js";
+import { parseSession, type SessionMeta } from "./parsers/index.js";
 
 export interface BridgeOptions {
   sessionId: string;
@@ -30,11 +33,16 @@ export function bridgeToAnalyzer(
   const title = extractTitle(parsed.raw_entries);
   const rawLog = extractRawLog(parsed.raw_entries);
 
+  const wallClockMinutes = parsed.wall_clock_ms > 0
+    ? Math.round(parsed.wall_clock_ms / 60_000)
+    : undefined;
+
   return {
     id: opts.sessionId,
     title,
     date: parsed.start_time ?? new Date().toISOString(),
     durationMinutes: Math.round(parsed.duration_ms / 60_000),
+    ...(wallClockMinutes != null ? { wallClockMinutes } : {}),
     projectName: opts.projectName,
     turns,
     filesChanged,
@@ -180,4 +188,68 @@ function extractRawLog(entries: RawEntry[]): string[] {
     }
   }
   return log;
+}
+
+/**
+ * Deduplicate worktree clones: agents with same role and start time within
+ * 60 seconds are considered duplicates. Keep the one with more turns.
+ */
+function deduplicateChildren(children: Session[]): Session[] {
+  const seen = new Map<string, Session>();
+  for (const child of children) {
+    const startMin = Math.floor(new Date(child.date).getTime() / 60000);
+    const key = `${child.agentRole ?? 'agent'}::${startMin}`;
+    const existing = seen.get(key);
+    if (!existing || child.turns > existing.turns) {
+      seen.set(key, child);
+    }
+  }
+  return [...seen.values()];
+}
+
+/** Parse, bridge, and analyze each child session. Attaches results to parent. */
+export async function bridgeChildSessions(
+  parentMeta: SessionMeta,
+  projectName: string,
+): Promise<Session[]> {
+  if (!parentMeta.children || parentMeta.children.length === 0) return [];
+
+  const results: Session[] = [];
+  for (const child of parentMeta.children) {
+    try {
+      const parsed = await parseSession(child.path);
+      const input = bridgeToAnalyzer(parsed, {
+        sessionId: child.sessionId,
+        projectName,
+        agentRole: parsed.agent_role ?? child.agentRole,
+        parentSessionId: parentMeta.sessionId,
+      });
+      results.push(analyzeSession(input));
+    } catch {
+      // Skip children that fail to parse
+    }
+  }
+  return deduplicateChildren(results);
+}
+
+/** Lightweight child summary for list endpoints — no full parse needed. */
+export interface ChildSessionSummary {
+  sessionId: string;
+  role?: string;
+  title?: string;
+  durationMinutes?: number;
+  linesOfCode?: number;
+}
+
+/** Compute aggregated stats from fully-parsed child sessions. */
+export function aggregateChildStats(children: Session[]): {
+  totalLoc: number;
+  totalDurationMinutes: number;
+  agentCount: number;
+} {
+  return {
+    totalLoc: children.reduce((sum, c) => sum + c.linesOfCode, 0),
+    totalDurationMinutes: children.reduce((sum, c) => sum + c.durationMinutes, 0),
+    agentCount: children.length,
+  };
 }

@@ -3,162 +3,220 @@ import cors from 'cors';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Server } from 'node:http';
+import { listSessions, parseSession, type SessionMeta } from './parsers/index.js';
+import { bridgeToAnalyzer, bridgeChildSessions, aggregateChildStats, type ChildSessionSummary } from './bridge.js';
+import { analyzeSession, type Session } from './analyzer.js';
+import { checkAuthStatus } from './auth.js';
+import { summarizeSession, createSSEHandler } from './summarize.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Server-side stub data (mirrors the frontend mock-data structure)
-interface Project {
+// Derive a human-readable project name from the encoded directory name.
+// "-Users-ben-Dev-heyi-am" → "heyi-am"
+// "-Users-ben-Dev-agent-sync" → "agent-sync"
+// Heuristic: find "Dev-" prefix and take everything after it.
+// Falls back to last path-like segment.
+function displayNameFromDir(dirName: string): string {
+  // Try to find a Dev- boundary (common pattern)
+  const devIdx = dirName.indexOf('-Dev-');
+  if (devIdx !== -1) {
+    return dirName.slice(devIdx + 5); // everything after "-Dev-"
+  }
+  // Fallback: last hyphen-separated segment
+  const segments = dirName.split('-').filter(Boolean);
+  return segments.length > 0 ? segments[segments.length - 1] : dirName;
+}
+
+interface ProjectInfo {
   name: string;
+  dirName: string;
   sessionCount: number;
-  description: string;
+  sessions: SessionMeta[];
 }
 
-interface Session {
-  id: string;
-  title: string;
-  date: string;
-  durationMinutes: number;
-  turns: number;
-  linesOfCode: number;
-  toolCalls: number;
-  status: string;
-  projectName: string;
-  sessionRef?: string;
-  context?: string;
-  developerTake?: string;
-  skills?: string[];
-  executionPath?: Array<{ stepNumber: number; title: string; description: string; type?: string }>;
-  toolBreakdown?: Array<{ tool: string; count: number }>;
-  filesChanged?: Array<{ path: string; additions: number; deletions: number }>;
-  turnTimeline?: Array<{ timestamp: string; type: string; content: string }>;
-  rawLog?: string[];
+async function getProjects(basePath?: string): Promise<ProjectInfo[]> {
+  const allSessions = await listSessions(basePath);
+
+  // Group by projectDir (set by the scanner)
+  const byDir = new Map<string, SessionMeta[]>();
+  for (const s of allSessions) {
+    const existing = byDir.get(s.projectDir) ?? [];
+    existing.push(s);
+    byDir.set(s.projectDir, existing);
+  }
+
+  return [...byDir.entries()].map(([dirName, sessions]) => ({
+    name: displayNameFromDir(dirName),
+    dirName,
+    sessionCount: sessions.length,
+    sessions,
+  }));
 }
 
-const PROJECTS: Project[] = [
-  { name: 'auth-service', sessionCount: 2, description: 'JWT auth and OAuth provider layer' },
-  { name: 'data-pipeline', sessionCount: 2, description: 'Event stream ETL and ingestion' },
-  { name: 'ui-components', sessionCount: 1, description: 'Accessible component library' },
-  { name: 'api-gateway', sessionCount: 1, description: 'Request validation and routing' },
-];
+async function loadSession(sessionPath: string, projectName: string, sessionId: string): Promise<Session> {
+  const parsed = await parseSession(sessionPath);
+  const analyzerInput = bridgeToAnalyzer(parsed, { sessionId, projectName });
+  return analyzeSession(analyzerInput);
+}
 
-const SESSIONS: Session[] = [
-  {
-    id: 'ses-001',
-    title: 'Refactor JWT middleware to support refresh tokens',
-    date: '2026-03-18T14:32:00Z',
-    durationMinutes: 47,
-    turns: 23,
-    linesOfCode: 312,
-    toolCalls: 90,
-    status: 'published',
-    projectName: 'auth-service',
-    sessionRef: 'REF_AUTH_042',
-    context: 'Legacy auth used symmetric HS256 with single-token expiry.',
-    skills: ['Node.js', 'JWT Security', 'Ed25519', 'Redis'],
-  },
-  {
-    id: 'ses-002',
-    title: 'Add OAuth2 provider abstraction layer',
-    date: '2026-03-17T09:15:00Z',
-    durationMinutes: 63,
-    turns: 31,
-    linesOfCode: 487,
-    toolCalls: 72,
-    status: 'draft',
-    projectName: 'auth-service',
-    sessionRef: 'REF_AUTH_041',
-    context: 'Hardcoded Google OAuth in auth.controller.ts.',
-    skills: ['TypeScript', 'OAuth2', 'Design Patterns'],
-  },
-  {
-    id: 'ses-003',
-    title: 'Build ETL pipeline for event stream processing',
-    date: '2026-03-16T11:00:00Z',
-    durationMinutes: 89,
-    turns: 42,
-    linesOfCode: 634,
-    toolCalls: 118,
-    status: 'published',
-    projectName: 'data-pipeline',
-    sessionRef: 'REF_DATA_017',
-    context: 'Kafka event stream had no transform layer.',
-    skills: ['Kafka', 'ETL', 'PostgreSQL', 'Batch Processing'],
-  },
-  {
-    id: 'ses-004',
-    title: 'Implement accessible dropdown component',
-    date: '2026-03-15T16:20:00Z',
-    durationMinutes: 34,
-    turns: 18,
-    linesOfCode: 198,
-    toolCalls: 41,
-    status: 'draft',
-    projectName: 'ui-components',
-    context: 'Design system needed an accessible dropdown.',
-    skills: ['React', 'Accessibility', 'ARIA', 'CSS'],
-  },
-  {
-    id: 'ses-005',
-    title: 'Add request validation and error serialization',
-    date: '2026-03-14T13:45:00Z',
-    durationMinutes: 52,
-    turns: 27,
-    linesOfCode: 401,
-    toolCalls: 65,
-    status: 'archived',
-    projectName: 'api-gateway',
-    context: '14 route handlers had no input validation.',
-    skills: ['Zod', 'Express', 'Error Handling', 'TypeScript'],
-  },
-  {
-    id: 'ses-006',
-    title: 'Optimize batch insert performance',
-    date: '2026-03-13T10:10:00Z',
-    durationMinutes: 71,
-    turns: 35,
-    linesOfCode: 289,
-    toolCalls: 84,
-    status: 'published',
-    projectName: 'data-pipeline',
-    sessionRef: 'REF_DATA_016',
-    context: 'Event ingestion dropping events at peak load.',
-    skills: ['PostgreSQL', 'Performance', 'COPY Protocol'],
-  },
-];
-
-export function createApp() {
+export function createApp(sessionsBasePath?: string) {
   const app = express();
 
   app.use(cors());
   app.use(express.json());
 
-  // API routes
-  app.get('/api/projects', (_req: Request, res: Response) => {
-    res.json({ projects: PROJECTS });
-  });
-
-  app.get('/api/projects/:project/sessions', (req: Request, res: Response) => {
-    const { project } = req.params;
-    const sessions = SESSIONS.filter((s) => s.projectName === project);
-    res.json({ sessions });
-  });
-
-  app.get('/api/projects/:project/sessions/:id', (req: Request, res: Response) => {
-    const { project, id } = req.params;
-    const session = SESSIONS.find((s) => s.projectName === project && s.id === id);
-    if (!session) {
-      res.status(404).json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } });
-      return;
+  // API routes — wired to real parser pipeline
+  app.get('/api/projects', async (_req: Request, res: Response) => {
+    try {
+      const projects = await getProjects(sessionsBasePath);
+      res.json({
+        projects: projects.map((p) => ({
+          name: p.name,
+          dirName: p.dirName,
+          sessionCount: p.sessionCount,
+          description: '',
+        })),
+      });
+    } catch (err) {
+      res.status(500).json({ error: { code: 'SCAN_FAILED', message: (err as Error).message } });
     }
-    res.json({ session });
+  });
+
+  app.get('/api/projects/:project/sessions', async (req: Request, res: Response) => {
+    try {
+      const { project } = req.params;
+      const projects = await getProjects(sessionsBasePath);
+      const proj = projects.find((p) => p.name === project || p.dirName === project);
+      if (!proj) {
+        res.json({ sessions: [] });
+        return;
+      }
+
+      // Return parent sessions only — children are lightweight summaries (no full parse).
+      // Deduplicate worktree clones: multiple agents with same role are counted once.
+      const sessions = await Promise.all(
+        proj.sessions.map(async (meta) => {
+          try {
+            const session = await loadSession(meta.path, proj.name, meta.sessionId);
+            // Deduplicate children by role (worktree agents create duplicates)
+            const seenRoles = new Set<string>();
+            const children: ChildSessionSummary[] = [];
+            for (const c of meta.children ?? []) {
+              const role = c.agentRole ?? c.sessionId;
+              if (seenRoles.has(role)) continue;
+              seenRoles.add(role);
+              children.push({ sessionId: c.sessionId, role: c.agentRole });
+            }
+            const childCount = children.length;
+            return { ...session, childCount, children: childCount > 0 ? children : undefined };
+          } catch {
+            return null;
+          }
+        }),
+      );
+
+      res.json({ sessions: sessions.filter(Boolean) });
+    } catch (err) {
+      res.status(500).json({ error: { code: 'LIST_FAILED', message: (err as Error).message } });
+    }
+  });
+
+  app.get('/api/projects/:project/sessions/:id', async (req: Request, res: Response) => {
+    try {
+      const { project, id } = req.params;
+      const projects = await getProjects(sessionsBasePath);
+      const proj = projects.find((p) => p.name === project || p.dirName === project);
+      if (!proj) {
+        res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });
+        return;
+      }
+
+      const meta = proj.sessions.find((s) => s.sessionId === id);
+      if (!meta) {
+        res.status(404).json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } });
+        return;
+      }
+
+      const session = await loadSession(meta.path, proj.name, meta.sessionId);
+
+      // Fully parse and attach child sessions
+      const childSessions = await bridgeChildSessions(meta, proj.name);
+      const aggregated = childSessions.length > 0 ? aggregateChildStats(childSessions) : undefined;
+
+      res.json({
+        session: {
+          ...session,
+          ...(childSessions.length > 0 ? { childSessions, isOrchestrated: true } : {}),
+          ...(aggregated ? { aggregatedStats: aggregated } : {}),
+        },
+      });
+    } catch (err) {
+      res.status(500).json({ error: { code: 'PARSE_FAILED', message: (err as Error).message } });
+    }
+  });
+
+  // Enhance endpoints — AI-powered session summarization
+  app.post('/api/projects/:project/sessions/:id/enhance', async (req: Request, res: Response) => {
+    try {
+      const { project, id } = req.params;
+      const projects = await getProjects(sessionsBasePath);
+      const proj = projects.find((p) => p.name === project || p.dirName === project);
+      if (!proj) {
+        res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });
+        return;
+      }
+
+      const meta = proj.sessions.find((s) => s.sessionId === id);
+      if (!meta) {
+        res.status(404).json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } });
+        return;
+      }
+
+      const session = await loadSession(meta.path, proj.name, meta.sessionId);
+      const result = await summarizeSession(session);
+      res.json({ result });
+    } catch (err) {
+      res.status(500).json({ error: { code: 'ENHANCE_FAILED', message: (err as Error).message } });
+    }
+  });
+
+  app.get('/api/projects/:project/sessions/:id/enhance/stream', async (req: Request, res: Response) => {
+    try {
+      const { project, id } = req.params;
+      const projects = await getProjects(sessionsBasePath);
+      const proj = projects.find((p) => p.name === project || p.dirName === project);
+      if (!proj) {
+        res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });
+        return;
+      }
+
+      const meta = proj.sessions.find((s) => s.sessionId === id);
+      if (!meta) {
+        res.status(404).json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } });
+        return;
+      }
+
+      const session = await loadSession(meta.path, proj.name, meta.sessionId);
+      const handler = createSSEHandler(session);
+      await handler(req, res);
+    } catch (err) {
+      res.status(500).json({ error: { code: 'STREAM_FAILED', message: (err as Error).message } });
+    }
   });
 
   app.post('/api/publish', (_req: Request, res: Response) => {
     res.json({ status: 'stub', message: 'Publish coming soon' });
   });
 
-  app.get('/api/auth/status', (_req: Request, res: Response) => {
-    res.json({ authenticated: false, message: 'Auth coming soon' });
+  app.get('/api/auth/status', async (_req: Request, res: Response) => {
+    try {
+      const status = await checkAuthStatus(
+        process.env.HEYIAM_API_URL ?? 'https://heyi.am',
+      );
+      res.json(status);
+    } catch {
+      res.json({ authenticated: false });
+    }
   });
 
   // Serve React app static files

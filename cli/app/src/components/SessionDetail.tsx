@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import type { Session } from '../types';
-import { MOCK_SESSIONS } from '../mock-data';
 import { AppShell } from './AppShell';
+import { useSessionsContext } from '../SessionsContext';
+import { AgentTimeline } from './AgentTimeline';
+import { fetchSession } from '../api';
 
 interface SessionDetailProps {
   /** Whether an API key is configured. Defaults to true. */
@@ -23,9 +25,47 @@ export function SessionDetail({
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [showApiKeyError, setShowApiKeyError] = useState(false);
+  const [fullSession, setFullSession] = useState<Session | null>(null);
+  const [loadingFull, setLoadingFull] = useState(false);
+  const ctx = useSessionsContext();
 
-  const sessionList = sessions ?? MOCK_SESSIONS;
-  const session = sessionList.find((s) => s.id === id);
+  const sessionList = sessions ?? ctx.sessions;
+  const listSession = sessionList.find((s) => s.id === id);
+
+  // Fetch the full session detail (includes childSessions, richer data)
+  useEffect(() => {
+    if (sessions != null) return; // test mode — use props directly
+    if (!listSession) return;
+
+    let cancelled = false;
+    setLoadingFull(true);
+
+    fetchSession(listSession.projectName, listSession.id)
+      .then((full) => {
+        if (!cancelled) setFullSession(full);
+      })
+      .catch(() => {
+        // Fall back to list data if detail fetch fails
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingFull(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [listSession?.id, listSession?.projectName, sessions]);
+
+  // Use full session if available, otherwise fall back to list data
+  const session = fullSession ?? listSession ?? (sessions ? sessions.find((s) => s.id === id) : null);
+
+  if ((sessions == null && ctx.loading) || (!session && loadingFull)) {
+    return (
+      <AppShell title="Loading..." onBack={() => navigate('/')}>
+        <div style={{ padding: 'var(--spacing-6)', textAlign: 'center' }}>
+          <p className="text-body">Loading session...</p>
+        </div>
+      </AppShell>
+    );
+  }
 
   if (session == null) {
     return (
@@ -78,7 +118,23 @@ export function SessionDetail({
         <div className="stats-grid">
           <div className="stat-card">
             <div className="stat-card__value">{session.durationMinutes}m</div>
-            <div className="stat-card__label">Duration</div>
+            <div className="stat-card__label">
+              Active Time
+              {session.wallClockMinutes != null && session.wallClockMinutes !== session.durationMinutes && (
+                <span style={{
+                  display: 'block',
+                  fontSize: '0.625rem',
+                  color: 'var(--on-surface-variant)',
+                  fontFamily: 'var(--font-mono)',
+                  marginTop: '2px',
+                }}>
+                  over {session.wallClockMinutes >= 60
+                    ? `${Math.floor(session.wallClockMinutes / 60)}h ${session.wallClockMinutes % 60}m`
+                    : `${session.wallClockMinutes}m`
+                  }
+                </span>
+              )}
+            </div>
           </div>
           <div className="stat-card">
             <div className="stat-card__value">{session.turns}</div>
@@ -95,6 +151,76 @@ export function SessionDetail({
             <div className="stat-card__label">LOC</div>
           </div>
         </div>
+
+        {/* Agent Timeline (orchestrated sessions) */}
+        {session.isOrchestrated && session.childSessions && session.childSessions.length > 0 && (
+          <section className="session-detail__section" aria-label="Agent Timeline">
+            <span className="label label--primary">Agent Timeline</span>
+            <div style={{ marginTop: 'var(--spacing-3)', overflow: 'auto' }}>
+              <AgentTimeline session={session} variant="full" />
+            </div>
+          </section>
+        )}
+
+        {/* Agent Contributions (orchestrated sessions) */}
+        {session.childSessions && session.childSessions.length > 0 && (
+          <section className="session-detail__section" aria-label="Agent Contributions">
+            <span className="label label--primary">
+              Agent Contributions ({session.childSessions.length} agents)
+            </span>
+            <div className="agent-contributions" style={{ marginTop: 'var(--spacing-3)' }}>
+              {session.childSessions.map((child) => (
+                <div
+                  key={child.id}
+                  className="agent-contributions__row"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: 'var(--spacing-4)',
+                    padding: 'var(--spacing-2) 0',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.6875rem',
+                      color: 'var(--primary)',
+                      textTransform: 'uppercase',
+                      minWidth: '8rem',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {child.agentRole ?? 'agent'}
+                  </span>
+                  <span style={{ flex: 1, color: 'var(--on-surface-variant)' }}>
+                    {child.title}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.75rem',
+                      minWidth: '5rem',
+                      textAlign: 'right',
+                    }}
+                  >
+                    {child.linesOfCode} LOC
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.75rem',
+                      minWidth: '4rem',
+                      textAlign: 'right',
+                      color: 'var(--on-surface-variant)',
+                    }}
+                  >
+                    {child.durationMinutes}m
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Context */}
         {session.context != null && session.context.length > 0 && (

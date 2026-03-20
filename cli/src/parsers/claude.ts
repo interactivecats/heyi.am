@@ -104,21 +104,47 @@ function countTurns(entries: RawEntry[]): number {
   return turns;
 }
 
+/** Max gap between consecutive entries before it's considered a break (5 min). */
+const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
+
 function computeDuration(entries: RawEntry[]): {
   duration_ms: number;
+  wall_clock_ms: number;
   start_time: string | null;
   end_time: string | null;
 } {
-  let start: string | null = null;
-  let end: string | null = null;
+  const timestamps: number[] = [];
+  let startStr: string | null = null;
+  let endStr: string | null = null;
+
   for (const entry of entries) {
     if (!entry.timestamp) continue;
-    if (!start) start = entry.timestamp;
-    end = entry.timestamp;
+    if (!startStr) startStr = entry.timestamp;
+    endStr = entry.timestamp;
+    timestamps.push(new Date(entry.timestamp).getTime());
   }
-  if (!start || !end) return { duration_ms: 0, start_time: null, end_time: null };
-  const ms = new Date(end).getTime() - new Date(start).getTime();
-  return { duration_ms: Math.max(0, ms), start_time: start, end_time: end };
+
+  if (timestamps.length < 2 || !startStr || !endStr) {
+    return { duration_ms: 0, wall_clock_ms: 0, start_time: startStr, end_time: endStr };
+  }
+
+  const wallClock = timestamps[timestamps.length - 1] - timestamps[0];
+
+  // Sum only active segments (gaps under threshold)
+  let activeMs = 0;
+  for (let i = 1; i < timestamps.length; i++) {
+    const gap = timestamps[i] - timestamps[i - 1];
+    if (gap < IDLE_THRESHOLD_MS) {
+      activeMs += gap;
+    }
+  }
+
+  return {
+    duration_ms: Math.max(activeMs, 0),
+    wall_clock_ms: Math.max(wallClock, 0),
+    start_time: startStr,
+    end_time: endStr,
+  };
 }
 
 export function computeLocStats(entries: RawEntry[]): LocStats {
@@ -240,7 +266,7 @@ async function parse(path: string): Promise<SessionAnalysis> {
   const toolCalls = extractToolCalls(entries);
   const filesTouched = extractFilesTouched(toolCalls);
   const turns = countTurns(entries);
-  const { duration_ms, start_time, end_time } = computeDuration(entries);
+  const { duration_ms, wall_clock_ms, start_time, end_time } = computeDuration(entries);
   const loc_stats = computeLocStats(entries);
 
   return {
@@ -249,6 +275,7 @@ async function parse(path: string): Promise<SessionAnalysis> {
     tool_calls: toolCalls,
     files_touched: filesTouched,
     duration_ms,
+    wall_clock_ms,
     loc_stats,
     raw_entries: entries,
     start_time,

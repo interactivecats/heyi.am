@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import type { Session, ExecutionStep } from '../types';
-import { MOCK_SESSIONS } from '../mock-data';
+import type { Session } from '../types';
 import { AppShell } from './AppShell';
+import { useSessionsContext } from '../SessionsContext';
+import { enhanceSession } from '../api';
+import type { EnhancementResult, EnhancementStep as ApiStep } from '../api';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -23,60 +25,16 @@ interface AiFeedLine {
   tag?: string;
 }
 
+interface StreamItem {
+  type: 'title' | 'skills' | 'step' | 'take' | 'context';
+  content: string;
+  skills?: string[];
+  step?: ApiStep;
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function generateQuestions(session: Session): Question[] {
-  const questions: Question[] = [];
-  const steps = session.executionPath ?? [];
-
-  if (steps.length >= 2) {
-    questions.push({
-      id: 1,
-      text: `Why did you choose to "${steps[0].title}" before "${steps[1].title}"?`,
-      suggestedAnswer: `The ${steps[0].title.toLowerCase()} step was a prerequisite — without understanding the existing state, the implementation would have been guesswork.`,
-      answer: '',
-      skipped: false,
-    });
-  } else {
-    questions.push({
-      id: 1,
-      text: 'What was the first thing you checked before making changes?',
-      suggestedAnswer: 'I started by reading the existing code to understand what was already there.',
-      answer: '',
-      skipped: false,
-    });
-  }
-
-  if (session.context != null && session.context.length > 0) {
-    questions.push({
-      id: 2,
-      text: `What wasn't working about the existing setup? You mentioned: "${session.context.slice(0, 80)}..."`,
-      suggestedAnswer: 'The main pain point was maintainability — the existing approach worked but was fragile and hard to extend.',
-      answer: '',
-      skipped: false,
-    });
-  } else {
-    questions.push({
-      id: 2,
-      text: 'What problem were you solving in this session?',
-      suggestedAnswer: 'The existing implementation needed improvement for maintainability and performance.',
-      answer: '',
-      skipped: false,
-    });
-  }
-
-  questions.push({
-    id: 3,
-    text: 'What would you do differently next time?',
-    suggestedAnswer: 'I would write the tests first — the implementation evolved faster than the test coverage.',
-    answer: '',
-    skipped: false,
-  });
-
-  return questions;
-}
 
 function buildAiFeedLines(session: Session): AiFeedLine[] {
   return [
@@ -89,33 +47,38 @@ function buildAiFeedLines(session: Session): AiFeedLine[] {
   ];
 }
 
-function buildStreamedItems(session: Session): StreamItem[] {
+function resultToStreamItems(result: EnhancementResult): StreamItem[] {
   const items: StreamItem[] = [];
 
-  items.push({ type: 'title', content: session.title });
+  items.push({ type: 'title', content: result.title });
 
-  if (session.skills != null && session.skills.length > 0) {
-    items.push({ type: 'skills', content: session.skills.join(', '), skills: session.skills });
+  if (result.context) {
+    items.push({ type: 'context', content: result.context });
   }
 
-  if (session.executionPath != null) {
-    for (const step of session.executionPath) {
-      items.push({ type: 'step', content: step.title, step });
-    }
+  if (result.skills.length > 0) {
+    items.push({ type: 'skills', content: result.skills.join(', '), skills: result.skills });
   }
 
-  if (session.developerTake != null) {
-    items.push({ type: 'take', content: session.developerTake });
+  for (const step of result.executionSteps) {
+    items.push({ type: 'step', content: step.title, step });
+  }
+
+  if (result.developerTake) {
+    items.push({ type: 'take', content: result.developerTake });
   }
 
   return items;
 }
 
-interface StreamItem {
-  type: 'title' | 'skills' | 'step' | 'take';
-  content: string;
-  skills?: string[];
-  step?: ExecutionStep;
+function resultToQuestions(result: EnhancementResult): Question[] {
+  return result.questions.map((q, i) => ({
+    id: i + 1,
+    text: q.text,
+    suggestedAnswer: q.suggestedAnswer,
+    answer: '',
+    skipped: false,
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -184,20 +147,29 @@ function RawLogPanel({
   );
 }
 
-function AnalyzingPanel({ session }: { session: Session }) {
+function AnalyzingPanel({ session, error }: { session: Session; error?: string }) {
   return (
     <div className="editor-panel__draft-content">
       <div className="card">
         <div className="enhance-flow__status">
           <span className="enhance-flow__status-dot" />
-          Reading your session...
+          {error ? 'Enhancement failed' : 'Reading your session...'}
         </div>
-        <p
-          className="text-body"
-          style={{ marginTop: 'var(--spacing-4)' }}
-        >
-          Analyzing {session.turns} turns across {session.durationMinutes} minutes.
-        </p>
+        {error ? (
+          <p
+            className="text-body"
+            style={{ marginTop: 'var(--spacing-4)', color: 'var(--color-error, #dc2626)' }}
+          >
+            {error}
+          </p>
+        ) : (
+          <p
+            className="text-body"
+            style={{ marginTop: 'var(--spacing-4)' }}
+          >
+            Analyzing {session.turns} turns across {session.durationMinutes} minutes.
+          </p>
+        )}
       </div>
     </div>
   );
@@ -296,6 +268,16 @@ function StreamingPanel({
           );
         }
 
+        if (item.type === 'context') {
+          return (
+            <div className={className} key={i} style={{ marginTop: 'var(--spacing-3)' }}>
+              <p className="text-body" style={{ color: 'var(--color-text-secondary)' }}>
+                {item.content}
+              </p>
+            </div>
+          );
+        }
+
         if (item.type === 'skills' && item.skills != null) {
           return (
             <div
@@ -335,7 +317,7 @@ function StreamingPanel({
                   </span>
                   <p className="exec-path__step-title">{item.step.title}</p>
                   <p className="exec-path__step-desc">
-                    {item.step.description}
+                    {item.step.body}
                   </p>
                 </div>
               </div>
@@ -401,6 +383,16 @@ function DonePanel({
           );
         }
 
+        if (item.type === 'context') {
+          return (
+            <div key={i} style={{ marginTop: 'var(--spacing-3)' }}>
+              <p className="text-body" style={{ color: 'var(--color-text-secondary)' }}>
+                {item.content}
+              </p>
+            </div>
+          );
+        }
+
         if (item.type === 'skills' && item.skills != null) {
           return (
             <div
@@ -438,7 +430,7 @@ function DonePanel({
                   </span>
                   <p className="exec-path__step-title">{item.step.title}</p>
                   <p className="exec-path__step-desc">
-                    {item.step.description}
+                    {item.step.body}
                   </p>
                 </div>
               </div>
@@ -518,28 +510,31 @@ interface EnhanceFlowProps {
 export function EnhanceFlow({ sessions }: EnhanceFlowProps = {}) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const ctx = useSessionsContext();
 
-  const sessionList = sessions ?? MOCK_SESSIONS;
+  const sessionList = sessions ?? ctx.sessions;
   const session = sessionList.find((s) => s.id === id);
 
   const [phase, setPhase] = useState<Phase>('analyzing');
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [enhanceError, setEnhanceError] = useState<string>();
   const [feedLines] = useState<AiFeedLine[]>(
     session != null ? buildAiFeedLines(session) : [],
   );
   const [visibleFeedCount, setVisibleFeedCount] = useState(0);
-  const [streamItems] = useState<StreamItem[]>(
-    session != null ? buildStreamedItems(session) : [],
-  );
+  const [streamItems, setStreamItems] = useState<StreamItem[]>([]);
   const [visibleStreamCount, setVisibleStreamCount] = useState(0);
 
-  // Phase 1: auto-advance after revealing feed lines, then wait 2s
+  const enhanceCalledRef = useRef(false);
+
+  // Phase 1: call the real enhance API, animate feed lines while waiting
   useEffect(() => {
     if (phase !== 'analyzing' || session == null) return;
+    if (enhanceCalledRef.current) return;
+    enhanceCalledRef.current = true;
 
+    // Animate feed lines while API call runs
     const feedTimers: ReturnType<typeof setTimeout>[] = [];
-
-    // Reveal feed lines one by one at 300ms intervals
     for (let i = 0; i < feedLines.length; i++) {
       feedTimers.push(
         setTimeout(() => {
@@ -548,26 +543,33 @@ export function EnhanceFlow({ sessions }: EnhanceFlowProps = {}) {
       );
     }
 
-    // Auto-advance to questions after all feed lines + 2s
-    const advanceTimer = setTimeout(() => {
-      setQuestions(generateQuestions(session));
-      setPhase('questions');
-    }, feedLines.length * 300 + 2000);
+    enhanceSession(session.projectName, session.id)
+      .then((result) => {
+        setQuestions(resultToQuestions(result));
+        setStreamItems(resultToStreamItems(result));
+        setVisibleFeedCount(feedLines.length);
+        setTimeout(() => {
+          setPhase('questions');
+        }, 500);
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Enhancement failed';
+        setEnhanceError(message);
+      });
 
     return () => {
       for (const t of feedTimers) clearTimeout(t);
-      clearTimeout(advanceTimer);
     };
   }, [phase, session, feedLines.length]);
 
-  // Phase 3: stream items one by one
+  // Phase 3: reveal stream items progressively
   useEffect(() => {
     if (phase !== 'streaming') return;
 
     const timers: ReturnType<typeof setTimeout>[] = [];
 
     for (let i = 0; i < streamItems.length; i++) {
-      const delay = (i + 1) * 400; // 400ms between items
+      const delay = (i + 1) * 400;
       timers.push(
         setTimeout(() => {
           setVisibleStreamCount(i + 1);
@@ -575,7 +577,6 @@ export function EnhanceFlow({ sessions }: EnhanceFlowProps = {}) {
       );
     }
 
-    // Auto-advance to done after all items revealed + 500ms
     const doneTimer = setTimeout(() => {
       setPhase('done');
     }, streamItems.length * 400 + 500);
@@ -609,6 +610,17 @@ export function EnhanceFlow({ sessions }: EnhanceFlowProps = {}) {
     navigate(`/session/${id}`);
   }, [navigate, id]);
 
+  // Loading guard
+  if (sessions == null && ctx.loading) {
+    return (
+      <AppShell title="Enhance" onBack={() => { navigate('/'); }}>
+        <div style={{ padding: 'var(--spacing-6)', textAlign: 'center' }}>
+          <p className="text-body">Loading session...</p>
+        </div>
+      </AppShell>
+    );
+  }
+
   // 404 guard
   if (session == null) {
     return (
@@ -641,7 +653,7 @@ export function EnhanceFlow({ sessions }: EnhanceFlowProps = {}) {
           visibleFeedCount={visibleFeedCount}
         />
         <div className="editor-panel__draft">
-          {phase === 'analyzing' && <AnalyzingPanel session={session} />}
+          {phase === 'analyzing' && <AnalyzingPanel session={session} error={enhanceError} />}
           {phase === 'questions' && (
             <QuestionsPanel
               questions={questions}

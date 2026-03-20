@@ -23,6 +23,8 @@ export interface SessionAnalysis {
   title: string;               // first prompt or summarized
   date: string;                // ISO timestamp
   durationMinutes: number;
+  /** Wall-clock minutes (first to last timestamp, includes idle) */
+  wallClockMinutes?: number;
   projectName: string;
   turns: ParsedTurn[];
   filesChanged: ParsedFileChange[];
@@ -62,7 +64,10 @@ export interface Session {
   id: string;
   title: string;
   date: string;
+  /** Active time in minutes (excludes idle gaps) */
   durationMinutes: number;
+  /** Wall-clock time in minutes (first to last timestamp) */
+  wallClockMinutes?: number;
   turns: number;
   linesOfCode: number;
   status: 'draft' | 'enhanced' | 'published' | 'archived';
@@ -348,6 +353,7 @@ export function analyzeSession(analysis: SessionAnalysis): Session {
     title: analysis.title,
     date: analysis.date,
     durationMinutes: analysis.durationMinutes,
+    ...(analysis.wallClockMinutes != null ? { wallClockMinutes: analysis.wallClockMinutes } : {}),
     turns: analysis.turns.length,
     linesOfCode: computeLinesOfCode(analysis.filesChanged),
     status: 'draft',

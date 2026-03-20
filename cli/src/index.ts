@@ -20,11 +20,26 @@ program
   .option('--no-open', 'Start server without opening browser')
   .action(async (opts) => {
     const port = parseInt(opts.port, 10);
-    await startServer(port);
-    console.log(`heyiam server running at http://localhost:${port}`);
+    const server = await startServer(port);
+    const url = `http://localhost:${port}`;
+    console.log(`\nheyiam running at ${url}`);
+    console.log('Press Ctrl+C to stop\n');
     if (opts.open) {
-      await open(`http://localhost:${port}`);
+      await open(url);
     }
+
+    // Keep the process alive until Ctrl+C
+    const shutdown = () => {
+      console.log('\nShutting down...');
+      server.close(() => process.exit(0));
+      // Force exit after 3s if connections hang
+      setTimeout(() => process.exit(0), 3000);
+    };
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+
+    // Block forever — the event loop stays alive because the server is listening
+    await new Promise(() => {});
   });
 
 const API_BASE = process.env.HEYIAM_API_URL ?? 'https://heyi.am';
@@ -109,11 +124,14 @@ program.action(async () => {
 
 export { program };
 
-// Only run if this is the entry point (not imported for testing)
-const isDirectRun = process.argv[1] && (
-  process.argv[1].endsWith('/dist/index.js') ||
-  process.argv[1].endsWith('/src/index.ts')
-);
+// Only run if this is the entry point (not imported for testing).
+// When installed via npm link, process.argv[1] is the symlink path
+// (e.g., ~/.nvm/.../bin/heyiam), so we resolve it to check the real path.
+import { realpathSync } from 'node:fs';
+
+const resolvedArgv = process.argv[1] ? realpathSync(process.argv[1]) : '';
+const isDirectRun = resolvedArgv.endsWith('/dist/index.js') ||
+  resolvedArgv.endsWith('/src/index.ts');
 
 if (isDirectRun) {
   program.parseAsync(process.argv);

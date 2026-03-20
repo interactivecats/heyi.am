@@ -35,7 +35,7 @@ heyi.am turns AI coding sessions into evidence-backed developer portfolios. Two 
 - [x] **Phase 5** — Web: Landing, Auth & Onboarding (6/6)
 - [x] **Phase 6** — Web: Portfolio Editor (3/3)
 - [x] **Phase 7** — Web: Public Pages (4/4, 7.5 deferred to Phase 12)
-- [ ] **Phase 8** — CLI Backend & Parser (0/7) — scaffold `heyiam` command, parser with pluggable architecture, LOC, analyzer, AI enhance, auth
+- [x] **Phase 8** — CLI Backend & Parser (12/12) — scaffold, parser, LOC, analyzer, AI enhance, auth, subagent hierarchy, fork/join timeline
 - [ ] **Phase 9** — Session Templates (0/5)
 - [ ] **Phase 10** — Interview / Challenge Flow (0/6)
 - [ ] **Phase 11** — Edge Cases & Mobile (0/6)
@@ -339,7 +339,7 @@ LiveView at `/onboarding/vibe`. 6 template cards in grid with live preview panel
 
 The CLI frontend (Phases 2-4) renders React components with mock data. This phase builds the real backend: the `heyiam` command, Express server, session parser, analyzer, LOC computation, and publish API. Without this, the CLI cannot be installed or read real `~/.claude/projects/` sessions.
 
-### Task 8.1 — CLI Scaffold & `heyiam` Command
+### Task 8.1 — CLI Scaffold & `heyiam` Command ✅
 **Files:** `cli/package.json`, `cli/src/index.ts`, `cli/tsconfig.json`, `cli/src/server.ts`
 
 Set up the CLI as an installable command:
@@ -350,7 +350,7 @@ Set up the CLI as an installable command:
 - `heyiam publish --token <token>` — publish from CLI (stub for now)
 - `npm link` should make `heyiam` available globally
 
-### Task 8.2 — Server & API Routes
+### Task 8.2 — Server & API Routes ✅
 **Files:** `cli/src/server.ts`
 
 Express server that serves the built React app and exposes API routes:
@@ -360,7 +360,7 @@ Express server that serves the built React app and exposes API routes:
 - `POST /api/publish` — publish session to heyi.am
 - `GET /api/auth/status` — check auth state
 
-### Task 8.3 — Parser Interface & Claude Code Parser
+### Task 8.3 — Parser Interface & Claude Code Parser ✅
 **Files:** `cli/src/parsers/types.ts`, `cli/src/parsers/claude.ts`, `cli/src/parsers/claude.test.ts`, `cli/src/parsers/index.ts`
 
 Define a tool-agnostic `SessionAnalysis` interface, then implement the Claude Code parser as the first concrete parser. Future parsers (Cursor, Codex, Gemini, Antigravity) slot in by implementing the same interface.
@@ -383,7 +383,7 @@ Define a tool-agnostic `SessionAnalysis` interface, then implement the Claude Co
 - Route to correct parser
 - Extensible: add new parsers by registering them
 
-### Task 8.4 — LOC Computation
+### Task 8.4 — LOC Computation ✅
 **Files:** `cli/src/parsers/claude.ts` (extends Task 8.3)
 
 Add `computeLocStats(entries)` function:
@@ -393,7 +393,7 @@ Add `computeLocStats(entries)` function:
 - Return `{ loc_added, loc_removed, loc_changed, files_changed }`
 - Deduplicate multiple writes to same file path (last write wins)
 
-### Task 8.5 — Session Analyzer
+### Task 8.5 — Session Analyzer ✅
 **Files:** `cli/src/analyzer.ts`, `cli/src/analyzer.test.ts`
 
 Higher-level analysis that feeds the UI:
@@ -402,7 +402,7 @@ Higher-level analysis that feeds the UI:
 - Tool breakdown (counts per tool type)
 - Context detection (git branch, project type)
 
-### Task 8.6 — AI Enhancement Integration
+### Task 8.6 — AI Enhancement Integration ✅
 **Files:** `cli/src/summarize.ts`, `cli/src/summarize.test.ts`
 
 Connect to Anthropic API for session enhancement:
@@ -410,13 +410,64 @@ Connect to Anthropic API for session enhancement:
 - Anti-fluff question generation (3 targeted questions from session context)
 - Streaming response support for progressive UI updates
 
-### Task 8.7 — Auth & Publish Flow
+### Task 8.7 — Auth & Publish Flow ✅
 **Files:** `cli/src/auth.ts`, `cli/src/machine-key.ts`
 
 - Machine key generation (Ed25519)
 - Auth status check against heyi.am API
 - Session signing and publish payload construction
 - `heyiam login` device auth flow
+
+### Task 8.8 — Subagent Data Model ✅
+**Files:** `cli/app/src/types.ts`, `cli/src/parsers/types.ts`, `cli/src/analyzer.ts`
+**Spec:** `docs/SUBAGENT_PRODUCT_SPEC.md`
+
+Extend `Session` and parser types for parent→child hierarchy:
+- `Session` gains: `childSessions?: Session[]`, `parentSessionId?: string`, `agentRole?: string`
+- `SessionAnalysis` (parser output) gains: `agent_role?: string`, `parent_session_id?: string`
+- `SessionMeta` gains: `parentSessionId?: string`, `agentRole?: string`
+- Analyzer's `SessionAnalysis` input type gains: `childSessions`, `agentRole`
+
+### Task 8.9 — Parser: Child Session Detection & Linking ✅
+**Files:** `cli/src/parsers/claude.ts`, `cli/src/parsers/index.ts`, `cli/src/parsers/claude.test.ts`
+
+Detect subagent sessions and link to parents:
+- `listSessions()` links children to parents: child's path contains parent's session ID in directory structure (`{parentId}/subagents/{childId}.jsonl`)
+- Extract `agentRole` from parent session's `Agent` tool call (`input.subagent_type` field) or from child's first entry (`agentId` field)
+- `SessionMeta` carries `parentSessionId` so server can build hierarchy without re-parsing
+- Only return **parent sessions** from `listSessions()` by default; children accessible via parent
+
+### Task 8.10 — Server: Hierarchical Session API ✅
+**Files:** `cli/src/server.ts`, `cli/src/bridge.ts`
+
+Wire parent→child through the API:
+- `GET /api/projects/:project/sessions` returns parent sessions only, each with `childCount` and `children` summary (role, title, LOC, duration — no full parse)
+- `GET /api/projects/:project/sessions/:id` returns full session with `childSessions` populated (full parse of children)
+- Bridge maps child parser output into child `Session` objects with `agentRole` and `parentSessionId`
+- Aggregated stats on parent: total LOC/duration "across N agents"
+
+### Task 8.11 — CLI: Session Browser with Agent Hierarchy ✅
+**Files:** `cli/app/src/components/SessionList.tsx`, `cli/app/src/App.css`
+**Design ref:** `docs/SUBAGENT_UX_SPEC.md` § Session Browser
+
+- Parent rows show "N agents" badge after turn count in metadata
+- Disclosure triangle (▸/▾) expands to show child rows
+- Child rows: indented with role label (`FRONTEND-DEV`), lighter text, no status chip
+- 5+ children: show first 5 + "... N more" expand link
+- Preview panel: orchestration summary when parent selected
+
+### Task 8.12 — Fork/Join Timeline Component ✅
+**Files:** `cli/app/src/components/AgentTimeline.tsx`, `cli/app/src/App.css`
+**Design ref:** `mockups/agent-timeline.html`
+
+SVG-based fork/join timeline visualization:
+- Single line for solo sessions (with activity ticks)
+- Fork into parallel lanes when agents spawn, reconverge when they return
+- Lane width = wall-clock duration, color = agent role
+- Compact variant for case study cards (~400px wide)
+- Full variant for transcript pages (with time labels, clickable lanes)
+- Multi-wave support: fork → join → fork again
+- Data input: `Session` with `childSessions` (start_time, end_time, agentRole per child)
 
 ---
 
@@ -560,7 +611,7 @@ Compute per-developer metrics from aggregated session data.
 ### Dependencies
 - **Phase 1** (Foundation) → blocks everything
 - **Phases 2-4** (CLI frontend) → can run in parallel with Phases 5-7 (Web)
-- **Phase 8** (CLI backend) → blocks CLI from working with real data; depends on Phases 2-4 for the UI it serves
+- **Phase 8** (CLI backend) → blocks CLI from working with real data; depends on Phases 2-4 for the UI it serves. Tasks 8.8-8.10 (subagent data/parser/server) block 8.11-8.12 (subagent UI)
 - **Phase 9** (Templates) → depends on Phase 7.1 (session page structure)
 - **Phase 10** (Interview) → depends on Phases 7.1 + 12.1
 - **Phase 11** (Mobile) → depends on Phases 7.1, 7.2

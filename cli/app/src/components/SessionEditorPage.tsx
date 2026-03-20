@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import type { Session } from '../types';
-import { MOCK_SESSIONS } from '../mock-data';
 import { AppShell } from './AppShell';
 import { SessionEditor } from './SessionEditor';
+import { useSessionsContext } from '../SessionsContext';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -263,8 +263,9 @@ export function SessionEditorPage({
 }: SessionEditorPageProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const ctx = useSessionsContext();
 
-  const sessionList = sessions ?? MOCK_SESSIONS;
+  const sessionList = sessions ?? ctx.sessions;
   const session = sessionList.find((s) => s.id === id);
 
   const [phase, setPhase] = useState<PublishPhase>('editing');
@@ -324,6 +325,17 @@ export function SessionEditorPage({
   const handleBack = useCallback(() => {
     navigate(`/session/${id}`);
   }, [navigate, id]);
+
+  // Loading guard
+  if (sessions == null && ctx.loading) {
+    return (
+      <AppShell title="Editor" onBack={() => { navigate('/'); }}>
+        <div style={{ padding: 'var(--spacing-6)', textAlign: 'center' }}>
+          <p className="text-body">Loading session...</p>
+        </div>
+      </AppShell>
+    );
+  }
 
   // 404 guard
   if (session == null) {

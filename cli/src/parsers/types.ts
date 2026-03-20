@@ -18,7 +18,10 @@ export interface SessionAnalysis {
   turns: number;
   tool_calls: ToolCall[];
   files_touched: string[];
+  /** Active time — excludes idle gaps > 5 min */
   duration_ms: number;
+  /** Wall-clock time — first to last timestamp */
+  wall_clock_ms: number;
   loc_stats: LocStats;
   raw_entries: RawEntry[];
   start_time: string | null;

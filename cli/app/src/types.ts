@@ -22,11 +22,22 @@ export interface TurnEvent {
   content: string;
 }
 
+export interface ChildSessionSummary {
+  sessionId: string;
+  role?: string;
+  title?: string;
+  durationMinutes?: number;
+  linesOfCode?: number;
+}
+
 export interface Session {
   id: string;
   title: string;
   date: string;
+  /** Active time in minutes (excludes idle gaps > 5 min) */
   durationMinutes: number;
+  /** Wall-clock time in minutes (first to last timestamp, includes idle) */
+  wallClockMinutes?: number;
   turns: number;
   linesOfCode: number;
   status: 'draft' | 'enhanced' | 'published' | 'archived';
@@ -45,6 +56,8 @@ export interface Session {
   parentSessionId?: string | null;
   agentRole?: string;
   isOrchestrated?: boolean;
+  childCount?: number;
+  children?: ChildSessionSummary[];
 }
 
 export interface Project {

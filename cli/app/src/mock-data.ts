@@ -293,8 +293,8 @@ export const MOCK_SESSIONS: Session[] = [
 ];
 
 export const MOCK_PROJECTS: Project[] = [
-  { name: 'auth-service', sessionCount: 2, description: 'JWT auth and OAuth provider layer' },
-  { name: 'data-pipeline', sessionCount: 2, description: 'Event stream ETL and ingestion' },
-  { name: 'ui-components', sessionCount: 1, description: 'Accessible component library' },
-  { name: 'api-gateway', sessionCount: 1, description: 'Request validation and routing' },
+  { name: 'auth-service', dirName: 'auth-service', sessionCount: 2, description: 'JWT auth and OAuth provider layer' },
+  { name: 'data-pipeline', dirName: 'data-pipeline', sessionCount: 2, description: 'Event stream ETL and ingestion' },
+  { name: 'ui-components', dirName: 'ui-components', sessionCount: 1, description: 'Accessible component library' },
+  { name: 'api-gateway', dirName: 'api-gateway', sessionCount: 1, description: 'Request validation and routing' },
 ];
