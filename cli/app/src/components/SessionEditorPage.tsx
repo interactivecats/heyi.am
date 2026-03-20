@@ -195,7 +195,7 @@ function SuccessLinked({ session }: { session: Session }) {
 
       <div className="publish-success__actions" style={{ marginTop: 'var(--spacing-6)' }}>
         <Link to="/" className="btn btn-primary">View on Portfolio</Link>
-        <Link to="/" className="btn btn-secondary">View Case Study</Link>
+        <Link to={`/session/${session.id}`} className="btn btn-secondary">View Case Study</Link>
       </div>
     </div>
   );

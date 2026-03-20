@@ -1,0 +1,114 @@
+<.public_shell logo_href={"/" <> @portfolio_user.username} current_page="Project">
+  <:nav_item href={"/" <> @portfolio_user.username} label="Portfolio" />
+  <:nav_item href="#" label="Project" />
+  <:status>
+    <span class="topbar-status">@{@portfolio_user.username}</span>
+  </:status>
+
+  <%!-- Content --%>
+  <div class={"tpl-#{@portfolio_layout}"} style="max-width: var(--content-max-width); margin-inline: auto; padding: var(--spacing-8);">
+    <%!-- Breadcrumb --%>
+    <div class="content-ref" style="margin-block-end: var(--spacing-6);">
+      <a href={"/" <> @portfolio_user.username} class="content-ref-tag">{@portfolio_user.username}</a>
+      <span class="content-ref-separator">/</span>
+      <span class="content-ref-text">{@project.slug}</span>
+    </div>
+
+    <%!-- Project Header --%>
+    <div class="project-header" style="margin-block-end: var(--spacing-8);">
+      <div style="display: flex; align-items: center; gap: var(--spacing-3);">
+        <h1>{@project.title}</h1>
+        <span class="chip chip--secondary">{@project.status}</span>
+      </div>
+      <p class="project-header-desc">{@project.description}</p>
+      <div class="skills-row">
+        <span :for={skill <- @project.skills} class="skill-chip">{skill}</span>
+      </div>
+    </div>
+
+    <%!-- Hero Stats --%>
+    <div style="display: grid; grid-template-columns: 1fr; gap: var(--spacing-4); margin-block-end: var(--spacing-8);">
+      <%!-- Primary stat --%>
+      <div class="card card-padded" style="text-align: center;">
+        <span class="stat-card-label">Total Sessions</span>
+        <span class="stat-card-value" style="display: block; margin-block-start: var(--spacing-2);">{@project.session_count}</span>
+      </div>
+      <%!-- Supporting stats --%>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-4);">
+        <div :for={{label, value} <- [
+          {"Total Time", "#{@project.total_minutes}m"},
+          {"Files Touched", "#{@project.files_touched}"},
+          {"LOC Changed", @project.loc_changed}
+        ]} class="card card-padded">
+          <span class="stat-card-label">{label}</span>
+          <span class="stat-card-value stat-card-value--sm" style="display: block; margin-block-start: var(--spacing-1);">{value}</span>
+        </div>
+      </div>
+    </div>
+
+    <%!-- Project Take --%>
+    <section class="dev-take" style="margin-block-end: var(--spacing-8);">
+      <h3 class="dev-take-heading">Project Take</h3>
+      <p class="dev-take-body">{@project.dev_take}</p>
+    </section>
+
+    <%!-- Architectural Approach --%>
+    <div class="card card-padded" style="margin-block-end: var(--spacing-8);">
+      <span class="label-mono" style="display: block; margin-block-end: var(--spacing-3);">Architectural Approach</span>
+      <p style="font-size: 0.875rem; color: var(--on-surface-variant); line-height: 1.65;">{@project.architecture}</p>
+    </div>
+
+    <%!-- Growth Chart — Empty State --%>
+    <div class="card card-padded" style="margin-block-end: var(--spacing-4);">
+      <span class="label-mono" style="display: block; margin-block-end: var(--spacing-3);">Growth Chart</span>
+      <div style="padding: var(--spacing-8) var(--spacing-4); text-align: center; color: var(--outline); font-size: 0.875rem;">
+        Coming soon — requires published session data
+      </div>
+    </div>
+
+    <%!-- Directory Heatmap — Empty State --%>
+    <div class="card card-padded" style="margin-block-end: var(--spacing-4);">
+      <span class="label-mono" style="display: block; margin-block-end: var(--spacing-3);">Directory Heatmap</span>
+      <div style="padding: var(--spacing-8) var(--spacing-4); text-align: center; color: var(--outline); font-size: 0.875rem;">
+        Coming soon — requires published session data
+      </div>
+    </div>
+
+    <%!-- Top Files — Collapsible, Empty State --%>
+    <details class="collapsible" style="margin-block-end: var(--spacing-8);">
+      <summary>Top files</summary>
+      <div class="collapsible-content" style="text-align: center; color: var(--outline); font-size: 0.875rem; padding: var(--spacing-6);">
+        Coming soon — requires published session data
+      </div>
+    </details>
+
+    <%!-- Published Sessions --%>
+    <div style="margin-block-end: var(--spacing-8);">
+      <span class="label-mono" style="display: block; margin-block-end: var(--spacing-4);">Published Sessions</span>
+      <div class="project-sessions-grid">
+        <a :for={session <- @sessions} href={"/s/" <> session.token} class="session-card">
+          <div class="session-card-bar"></div>
+          <div class="session-card-body">
+            <div class="session-card-title">{session.title}</div>
+            <div class="session-card-desc">{session.description}</div>
+            <div class="session-card-meta">
+              <span class="label-sm">{session.duration_minutes}m</span>
+              <span class="label-sm">{session.turns} turns</span>
+              <span class="label-sm">{session.files_changed} files</span>
+              <span class="label-sm">{session.loc_changed} LOC</span>
+            </div>
+            <div class="skills-row" style="margin-block-start: var(--spacing-2);">
+              <span :for={skill <- session.skills} class="skill-chip">{skill}</span>
+            </div>
+            <%= if session.verified_at do %>
+              <div class="sealed-badge" style="margin-block-start: var(--spacing-2);">
+                <span class="sealed-badge-icon">&#10003;</span>
+                <span class="sealed-badge-text">Verified {Calendar.strftime(session.verified_at, "%b %d, %Y")}</span>
+              </div>
+            <% end %>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</.public_shell>

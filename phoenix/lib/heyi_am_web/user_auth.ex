@@ -194,7 +194,13 @@ defmodule HeyiAmWeb.UserAuth do
     end
   end
 
-  defp signed_in_path(_conn), do: ~p"/"
+  defp signed_in_path(conn) do
+    case conn.assigns[:current_scope] do
+      %{user: %{username: nil}} -> ~p"/onboarding/username"
+      %{user: %{username: username}} when is_binary(username) -> ~p"/#{username}"
+      _ -> ~p"/"
+    end
+  end
 
   @doc """
   Plug for routes that require the user to be authenticated.
@@ -218,7 +224,10 @@ defmodule HeyiAmWeb.UserAuth do
   defp maybe_store_return_to(conn), do: conn
 
   @doc """
-  LiveView on_mount callback for ensuring the user is authenticated.
+  LiveView on_mount callbacks for authentication and authorization.
+
+  - `:ensure_authenticated` — redirects to login if not authenticated
+  - `:ensure_owner` — redirects if the `:username` route param doesn't match the authenticated user
   """
   def on_mount(:ensure_authenticated, _params, session, socket) do
     socket = mount_current_scope(session, socket)
@@ -227,6 +236,24 @@ defmodule HeyiAmWeb.UserAuth do
       {:cont, socket}
     else
       {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/users/log-in")}
+    end
+  end
+
+  def on_mount(:ensure_owner, params, session, socket) do
+    socket = mount_current_scope(session, socket)
+
+    cond do
+      is_nil(socket.assigns.current_scope) or is_nil(socket.assigns.current_scope.user) ->
+        {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/users/log-in")}
+
+      params["username"] == socket.assigns.current_scope.user.username ->
+        {:cont, socket}
+
+      true ->
+        {:halt,
+         socket
+         |> Phoenix.LiveView.put_flash(:error, "You can only edit your own portfolio.")
+         |> Phoenix.LiveView.redirect(to: ~p"/")}
     end
   end
 

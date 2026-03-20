@@ -69,6 +69,13 @@ defmodule HeyiAmWeb.Router do
     live_session :authenticated, on_mount: [{HeyiAmWeb.UserAuth, :ensure_authenticated}] do
       live "/onboarding/username", ClaimUsernameLive
       live "/onboarding/vibe", VibePickerLive
+    end
+
+    live_session :owner_required,
+      on_mount: [
+        {HeyiAmWeb.UserAuth, :ensure_authenticated},
+        {HeyiAmWeb.UserAuth, :ensure_owner}
+      ] do
       live "/:username/edit", PortfolioEditorLive
       live "/:username/projects/:slug/edit", ProjectEditorLive
     end
@@ -86,10 +93,19 @@ defmodule HeyiAmWeb.Router do
     delete "/users/log-out", UserSessionController, :delete
   end
 
+  # Shared session pages — before portfolio catch-all
+  scope "/s", HeyiAmWeb do
+    pipe_through :browser
+
+    get "/:token", ShareController, :show
+    get "/:token/transcript", ShareController, :transcript
+  end
+
   # Portfolio — catch-all, must be last
   scope "/", HeyiAmWeb do
     pipe_through :browser
 
+    get "/:username/:project", PortfolioController, :project
     get "/:username", PortfolioController, :show
   end
 end

@@ -34,7 +34,7 @@ heyi.am turns AI coding sessions into evidence-backed developer portfolios. Two 
 - [x] **Phase 4** — CLI: Editor & Publishing (5/5)
 - [x] **Phase 5** — Web: Landing, Auth & Onboarding (6/6)
 - [x] **Phase 6** — Web: Portfolio Editor (3/3)
-- [ ] **Phase 7** — Web: Public Pages (0/5)
+- [x] **Phase 7** — Web: Public Pages (4/4, 7.5 deferred to Phase 11)
 - [ ] **Phase 8** — Backend & Data Model (0/6)
 - [ ] **Phase 9** — CLI ↔ Web Integration (0/6)
 - [ ] **Phase 10** — Session Templates (0/5)
@@ -310,8 +310,8 @@ LiveView at `/onboarding/vibe`. 6 template cards in grid with live preview panel
 
 - Breadcrumb, title, hero stat + supporting stats
 - Project Take section
-- Cumulative growth chart (SVG: LOC across sessions)
-- Directory heatmap (grid: dirs × sessions)
+- ~~Cumulative growth chart (SVG: LOC across sessions)~~ — **deferred to Phase 8** (needs real session LOC data)
+- ~~Directory heatmap (grid: dirs × sessions)~~ — **deferred to Phase 8** (needs real file change data)
 - Top files table (collapsible)
 - Session cards (2-col, gradient headers, LOC)
 
@@ -325,12 +325,13 @@ LiveView at `/onboarding/vibe`. 6 template cards in grid with live preview panel
 - CRITICAL DECISION highlight blocks
 - Full conversation
 
-### Task 7.5 — Sealed Verification (Interview Only)
+### Task 7.5 — Sealed Verification (Interview Only) — **deferred to Phase 11**
 **Screen 27**
 **Files:** `phoenix/lib/heyi_am_web/controllers/share_controller.ex`
 
 - Ed25519 signature + hash verification
 - Only for interview challenge responses
+- Depends on challenge schema from Phase 11; no value in rendering with mock data
 
 ---
 

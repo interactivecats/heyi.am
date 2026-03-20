@@ -229,7 +229,8 @@ defmodule HeyiAmWeb.UserAuthTest do
         |> UserAuth.redirect_if_user_is_authenticated([])
 
       assert conn.halted
-      assert redirected_to(conn) == ~p"/"
+      # User has no username yet, so redirects to onboarding
+      assert redirected_to(conn) == ~p"/onboarding/username"
     end
 
     test "does not redirect if user is not authenticated", %{conn: conn} do

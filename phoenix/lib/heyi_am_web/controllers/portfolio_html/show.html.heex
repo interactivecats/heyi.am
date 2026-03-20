@@ -1,33 +1,121 @@
-<div class={"portfolio-page tpl-#{@portfolio_layout}"}>
-  <header class="portfolio-hero">
-    <h1 class="display-md"><%= @portfolio_user.display_name || @portfolio_user.username %></h1>
-    <%= if @portfolio_user.bio do %>
-      <p class="body-lg" style="color: var(--on-surface-variant); margin-block-start: var(--spacing-2);">
-        <%= @portfolio_user.bio %>
-      </p>
-    <% end %>
-    <%= if @portfolio_user.location do %>
-      <p class="body-sm" style="color: var(--on-surface-variant); margin-block-start: var(--spacing-1);">
-        <%= @portfolio_user.location %>
-      </p>
-    <% end %>
-  </header>
+<.public_shell logo_href={"/" <> @portfolio_user.username} current_page="Portfolio">
+  <:nav_item href={"/" <> @portfolio_user.username} label="Portfolio" />
+  <:status>
+    <span class="topbar-status">@{@portfolio_user.username}</span>
+  </:status>
 
-  <section class="portfolio-empty-state">
-    <p class="body-lg" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-6);">
-      No sessions yet. Publish your first:
-    </p>
-    <div class="terminal" style="max-width: 28rem; margin-inline: auto; text-align: start;">
-      <div class="terminal-header">
-        <div class="terminal-dots">
-          <span class="terminal-dot terminal-dot--red"></span>
-          <span class="terminal-dot terminal-dot--yellow"></span>
-          <span class="terminal-dot terminal-dot--green"></span>
+  <%!-- Portfolio Grid: 8fr / 4fr --%>
+  <div class={"portfolio-grid tpl-#{@portfolio_layout}"}>
+    <%!-- Main Column --%>
+    <div>
+      <%!-- Hero Card --%>
+      <div class="portfolio-hero">
+        <h1>{@portfolio_user.display_name || @portfolio_user.username}</h1>
+        <%= if @portfolio_user.bio do %>
+          <p class="portfolio-hero-bio" style="border-inline-start: 3px solid var(--primary); padding-inline-start: var(--spacing-4);">
+            {@portfolio_user.bio}
+          </p>
+        <% end %>
+        <div class="portfolio-hero-badges">
+          <%= if @portfolio_user.status do %>
+            <span class="chip chip--secondary">{@portfolio_user.status}</span>
+          <% end %>
+          <%= if @portfolio_user.location do %>
+            <span class="chip">{@portfolio_user.location}</span>
+          <% end %>
+        </div>
+        <%!-- Skills aggregated from projects --%>
+        <% all_skills = @projects |> Enum.flat_map(& &1.skills) |> Enum.uniq() %>
+        <%= if all_skills != [] do %>
+          <div class="skills-row" style="margin-block-start: var(--spacing-4);">
+            <span :for={skill <- all_skills} class="skill-chip">{skill}</span>
+          </div>
+        <% end %>
+      </div>
+
+      <%!-- AI Collaboration Profile --%>
+      <div class="card card-padded" style="margin-block-start: var(--spacing-6);">
+        <span class="label-mono" style="display: block; margin-block-end: var(--spacing-4);">AI Collaboration Profile</span>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-6);">
+          <div :for={{label, value} <- [
+            {"Task Scoping", @collab_profile.task_scoping},
+            {"Redirection", @collab_profile.redirection},
+            {"Verification", @collab_profile.verification},
+            {"Orchestration", @collab_profile.orchestration}
+          ]}>
+            <div style="display: flex; justify-content: space-between; margin-block-end: var(--spacing-1);">
+              <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant);">{label}</span>
+              <span style="font-family: var(--font-mono); font-size: 0.6875rem; font-weight: 600;">{value}%</span>
+            </div>
+            <div style="height: 6px; background: var(--surface-container-low); border-radius: 3px; overflow: hidden;">
+              <div style={"width: #{value}%; height: 100%; background: var(--primary); border-radius: 3px;"}></div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="terminal-line"><span class="terminal-prompt">$</span> npm i -g @anthropic/heyiam</div>
-      <div class="terminal-line"><span class="terminal-prompt">$</span> heyiam open</div>
-      <div class="terminal-line"><span class="terminal-prompt">$</span> <span class="terminal-cursor"></span></div>
+
+      <%!-- Active Deployment Logs (Projects) --%>
+      <div style="margin-block-start: var(--spacing-8);">
+        <span class="label-mono" style="display: block; margin-block-end: var(--spacing-4);">Active Deployment Logs</span>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-4);">
+          <a :for={project <- @projects}
+             href={"/" <> @portfolio_user.username <> "/" <> project.slug}
+             class="portfolio-project-card">
+            <h3>{project.title}</h3>
+            <p>{project.description}</p>
+            <div style="display: flex; gap: var(--spacing-4); margin-block-start: var(--spacing-3);">
+              <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant);">
+                {project.session_count} sessions
+              </span>
+              <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant);">
+                {project.total_minutes}m total
+              </span>
+              <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant);">
+                {project.loc_changed} LOC
+              </span>
+            </div>
+            <div class="skills-row">
+              <span :for={skill <- project.skills} class="skill-chip">{skill}</span>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <%!-- Bottom Metrics --%>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-4); margin-block-start: var(--spacing-8);">
+        <div :for={{label, value} <- [
+          {"Uptime", @metrics.uptime},
+          {"Avg Cycle", @metrics.avg_cycle},
+          {"Error Budget", @metrics.error_budget}
+        ]} class="stat-card">
+          <span class="stat-card-label">{label}</span>
+          <span class="stat-card-value stat-card-value--sm">{value}</span>
+        </div>
+      </div>
     </div>
-  </section>
-</div>
+
+    <%!-- Sidebar --%>
+    <aside class="portfolio-sidebar-section">
+      <%!-- Active Endpoints --%>
+      <div class="sidebar-card">
+        <span class="sidebar-card-label">Active Endpoints</span>
+        <div :for={project <- @projects} style="margin-block-start: var(--spacing-2);">
+          <a href={"/" <> @portfolio_user.username <> "/" <> project.slug}
+             style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--primary); text-decoration: none; display: block; padding-block: var(--spacing-1);">
+            /{project.slug}
+          </a>
+        </div>
+      </div>
+
+      <%!-- Recent Activity --%>
+      <div class="sidebar-card">
+        <span class="sidebar-card-label">Recent Activity</span>
+        <div :for={activity <- @recent_activity}
+             style="display: flex; justify-content: space-between; padding-block: var(--spacing-1); font-size: 0.8125rem;">
+          <span style="color: var(--on-surface);">{activity.label}</span>
+          <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant);">{activity.date}</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+</.public_shell>

@@ -13,13 +13,13 @@ describe('AppShell', () => {
     expect(screen.getByText('Main content here')).toBeInTheDocument();
   });
 
-  it('renders the heyiam logo', () => {
+  it('renders the heyi.am logo', () => {
     render(
       <AppShell>
         <div />
       </AppShell>,
     );
-    expect(screen.getByText('heyiam')).toBeInTheDocument();
+    expect(screen.getByText('heyi.am')).toBeInTheDocument();
   });
 
   it('renders a settings button', () => {

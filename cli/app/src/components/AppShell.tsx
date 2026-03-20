@@ -53,7 +53,7 @@ export function AppShell({
             </button>
           )}
           <span className="app-header__logo" aria-label="heyi.am home">
-            heyiam
+            heyi.am
           </span>
           {title != null && title.length > 0 && (
             <span className="app-header__title">{title}</span>

@@ -4,6 +4,26 @@ interface SharePreviewProps {
   session: Session;
 }
 
+function ToolBreakdownBar({ tools }: { tools: { tool: string; count: number }[] }) {
+  const maxCount = Math.max(...tools.map(t => t.count));
+  return (
+    <div className="tool-bar">
+      {tools.map((tool) => {
+        const pct = (tool.count / maxCount) * 100;
+        return (
+          <div key={tool.tool} className="tool-bar__item">
+            <span className="tool-bar__name">{tool.tool}</span>
+            <div className="tool-bar__track">
+              <div className="tool-bar__fill" style={{ width: `${pct}%` }} />
+            </div>
+            <span className="tool-bar__count">{tool.count}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /**
  * SharePreview renders a session case study as it would appear
  * when published on heyi.am. Reusable in session detail and editor views.
@@ -131,21 +151,7 @@ export function SharePreview({ session }: SharePreviewProps) {
             <span className="collapsible__chevron" aria-hidden="true">&#9662;</span>
           </summary>
           <div className="collapsible__content">
-            <div className="tool-bar">
-              {session.toolBreakdown.map((tool) => {
-                const maxCount = Math.max(...(session.toolBreakdown ?? []).map(t => t.count));
-                const pct = (tool.count / maxCount) * 100;
-                return (
-                  <div key={tool.tool} className="tool-bar__item">
-                    <span className="tool-bar__name">{tool.tool}</span>
-                    <div className="tool-bar__track">
-                      <div className="tool-bar__fill" style={{ width: `${pct}%` }} />
-                    </div>
-                    <span className="tool-bar__count">{tool.count}</span>
-                  </div>
-                );
-              })}
-            </div>
+            <ToolBreakdownBar tools={session.toolBreakdown} />
           </div>
         </details>
       )}

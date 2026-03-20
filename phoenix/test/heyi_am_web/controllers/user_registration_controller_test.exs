@@ -15,7 +15,8 @@ defmodule HeyiAmWeb.UserRegistrationControllerTest do
     test "redirects if already logged in", %{conn: conn} do
       conn = conn |> log_in_user(user_fixture()) |> get(~p"/users/register")
 
-      assert redirected_to(conn) == ~p"/"
+      # User has no username yet, so redirects to onboarding
+      assert redirected_to(conn) == ~p"/onboarding/username"
     end
   end
 

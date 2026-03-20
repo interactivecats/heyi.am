@@ -181,6 +181,13 @@ defmodule HeyiAmWeb.ProjectEditorLiveTest do
     end
   end
 
+  describe "ownership" do
+    test "redirects when visiting another user's project editor", %{conn: conn} do
+      assert {:error, {:redirect, %{to: "/", flash: %{"error" => _}}}} =
+               live(conn, ~p"/someone-else/projects/project-alpha/edit")
+    end
+  end
+
   describe "unauthenticated" do
     test "unauthenticated users are redirected", %{conn: _conn} do
       conn = build_conn()

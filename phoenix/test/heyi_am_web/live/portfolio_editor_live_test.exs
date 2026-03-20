@@ -273,6 +273,13 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
     end
   end
 
+  describe "ownership" do
+    test "redirects when visiting another user's editor", %{conn: conn} do
+      assert {:error, {:redirect, %{to: "/", flash: %{"error" => _}}}} =
+               live(conn, ~p"/someone-else/edit")
+    end
+  end
+
   describe "unauthenticated" do
     test "redirects to login", %{conn: _conn} do
       conn = build_conn()

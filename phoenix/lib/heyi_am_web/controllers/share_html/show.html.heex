@@ -1,0 +1,187 @@
+<.public_shell logo_href={"/" <> @session.user.username} current_page="Session">
+  <:nav_item href={"/" <> @session.user.username} label="Portfolio" />
+  <:nav_item href="#" label="Session" />
+  <:status>
+    <span :if={@session[:sealed?]} class="chip chip--primary">SEALED</span>
+  </:status>
+
+  <%!-- Case Study Layout --%>
+  <div class={"case-study-layout tpl-#{@portfolio_layout}"}>
+    <%!-- Main Column --%>
+    <div class="case-study-main">
+      <%!-- Header: chip + session ID + title --%>
+      <div>
+        <div class="case-study-meta" style="margin-block-end: var(--spacing-4);">
+          <span class="chip chip--primary">Editorial Documentation</span>
+          <span class="label-mono">ID: {@session.token}</span>
+        </div>
+        <h1 class="case-study-title">{@session.title}</h1>
+      </div>
+
+      <%!-- Stats Grid --%>
+      <div class="stats-strip">
+        <div class="stat-card">
+          <span class="stat-card-label">Duration</span>
+          <span class="stat-card-value stat-card-value--sm">{@session.duration_minutes}m</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-label">Turns</span>
+          <span class="stat-card-value stat-card-value--sm">{@session.turns}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-label">Files</span>
+          <span class="stat-card-value stat-card-value--sm">{@session.files_changed}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-label">LOC Changed</span>
+          <span class="stat-card-value stat-card-value--sm">{@session.loc_changed}</span>
+        </div>
+      </div>
+
+      <%!-- Developer Take --%>
+      <section class="dev-take">
+        <h3 class="dev-take-heading">The Developer Take</h3>
+        <p class="dev-take-body">{@session.dev_take}</p>
+      </section>
+
+      <%!-- Applied Skills --%>
+      <section>
+        <span class="label-mono" style="display: block; margin-block-end: var(--spacing-3);">Applied Skills</span>
+        <div class="skills-row">
+          <span :for={skill <- @session.skills} class="skill-chip">{skill}</span>
+        </div>
+      </section>
+
+      <%!-- Session Q&A --%>
+      <section>
+        <span class="label-mono" style="display: block; margin-block-end: var(--spacing-4);">Session Questions</span>
+        <div :for={qa <- @session.qa_pairs} class="qa-pair">
+          <div class="question">{qa.question}</div>
+          <div class="answer">{qa.answer}</div>
+        </div>
+      </section>
+    </div>
+
+    <%!-- Sidebar --%>
+    <aside class="case-study-sidebar">
+      <%!-- Execution Path --%>
+      <div class="sidebar-card">
+        <span class="sidebar-card-label">Execution Path</span>
+        <div class="exec-path">
+          <div :for={{beat, idx} <- Enum.with_index(@session.beats)} class="exec-path-step">
+            <div class="exec-path-spine">
+              <div class="exec-path-number">{String.pad_leading(to_string(idx + 1), 2, "0")}</div>
+              <div :if={idx < length(@session.beats) - 1} class="exec-path-line"></div>
+            </div>
+            <div class="exec-path-content">
+              <div class="exec-path-title" style="font-size: 0.875rem;">{beat.label}</div>
+              <div :if={beat.description} class="exec-path-desc" style="font-size: 0.8125rem;">{beat.description}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%!-- Raw Log Preview --%>
+      <div class="terminal">
+        <div class="terminal-header">
+          <span style="font-size: 0.625rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.4);">Raw Log Preview</span>
+        </div>
+        <div :for={line <- @session.transcript_excerpt} class="terminal-line">
+          <span :if={line.role == :dev} class="terminal-prompt">&gt; </span>
+          <span :if={line.role == :ai} style="color: #60a5fa;">[AI] </span>
+          {line.text}
+        </div>
+        <div class="terminal-line" style="color: rgba(255,255,255,0.3);">... {(@session.turns - 3)} more turns</div>
+        <div style="margin-block-start: var(--spacing-3);">
+          <a href={"/s/#{@session.token}/transcript"} style="font-family: var(--font-mono); font-size: 0.625rem; color: #60a5fa; text-decoration: none;">
+            View full transcript &rarr;
+          </a>
+        </div>
+      </div>
+
+      <%!-- Source Info --%>
+      <div class="sidebar-card">
+        <span class="sidebar-card-label">Source</span>
+        <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); line-height: 2;">
+          <div>Source: Claude Code</div>
+          <div>Date: {Calendar.strftime(@session.recorded_at, "%b %d, %Y")}</div>
+          <div>
+            Author:
+            <a href={"/" <> @session.user.username} style="color: var(--primary); text-decoration: none;">
+              {@session.user.display_name}
+            </a>
+          </div>
+        </div>
+        <div :if={@session.verified_at} class="sealed-badge" style="margin-block-start: var(--spacing-2);">
+          <span class="sealed-badge-icon">&#10003;</span>
+          <span class="sealed-badge-text">Verified {Calendar.strftime(@session.verified_at, "%b %d, %Y")}</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <%!-- Full-width sections below the 2-column layout --%>
+  <div style="max-width: var(--content-max-width); margin-inline: auto; padding: 0 var(--spacing-8) var(--spacing-8);">
+    <%!-- Highlights --%>
+    <section style="margin-block-end: var(--spacing-6);">
+      <span class="label-mono" style="display: block; margin-block-end: var(--spacing-3);">Highlights</span>
+      <div style="display: flex; gap: var(--spacing-4); overflow-x: auto; padding-block-end: var(--spacing-2);">
+        <div :for={hl <- @session.highlights} class="highlight-card" style="min-width: 240px; flex: 1; flex-direction: column; align-items: flex-start;">
+          <span class={[
+            "chip",
+            hl.type == "pivot" && "chip--primary",
+            hl.type == "win" && "chip--secondary",
+            hl.type == "insight" && "chip--tertiary"
+          ]} style="margin-block-end: var(--spacing-2);">
+            {String.capitalize(hl.type)}
+          </span>
+          <div style="font-weight: 600; font-size: 0.875rem; margin-block-end: 2px;">{hl.title}</div>
+          <div style="font-size: 0.8125rem; color: var(--on-surface-variant);">{hl.description}</div>
+        </div>
+      </div>
+    </section>
+
+    <%!-- Collapsible: Tool Breakdown --%>
+    <details class="collapsible" style="margin-block-end: var(--spacing-2);">
+      <summary>
+        Tool breakdown ({Enum.reduce(@session.tool_breakdown, 0, &(&1.count + &2))} calls)
+      </summary>
+      <div class="collapsible-content">
+        <div :for={tool <- @session.tool_breakdown} style="display: flex; align-items: center; gap: var(--spacing-3); margin-block-end: var(--spacing-2);">
+          <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); width: 5rem; text-align: end;">{tool.name}</span>
+          <div style="flex: 1; height: 6px; background: var(--surface-container-low); border-radius: 3px; overflow: hidden;">
+            <% max_count = Enum.max_by(@session.tool_breakdown, & &1.count).count %>
+            <div style={"width: #{round(tool.count / max_count * 100)}%; height: 100%; background: var(--primary); border-radius: 3px;"}></div>
+          </div>
+          <span style="font-family: var(--font-mono); font-size: 0.75rem; width: 2rem;">{tool.count}</span>
+        </div>
+      </div>
+    </details>
+
+    <%!-- Collapsible: Files Changed --%>
+    <details class="collapsible" style="margin-block-end: var(--spacing-2);">
+      <summary>
+        Files changed ({@session.files_changed} files)
+      </summary>
+      <div class="collapsible-content">
+        <div :for={file <- @session.top_files} style="display: flex; justify-content: space-between; padding: var(--spacing-1) 0; font-family: var(--font-mono); font-size: 0.75rem;">
+          <span>{file.path}</span>
+          <span style="color: var(--on-surface-variant);">{file.touches}x</span>
+        </div>
+        <div :if={@session.files_changed > length(@session.top_files)} style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); padding: var(--spacing-2) 0;">
+          ... {@session.files_changed - length(@session.top_files)} more files
+        </div>
+      </div>
+    </details>
+
+    <%!-- Collapsible: Full Narrative --%>
+    <details class="collapsible" style="margin-block-end: var(--spacing-2);">
+      <summary>Full narrative</summary>
+      <div class="collapsible-content" style="font-size: 0.875rem; color: var(--on-surface-variant); line-height: 1.7;">
+        <p :for={paragraph <- String.split(@session.narrative, "\n\n")} style="margin-block-end: var(--spacing-4);">
+          {paragraph}
+        </p>
+      </div>
+    </details>
+  </div>
+</.public_shell>

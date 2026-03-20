@@ -91,8 +91,20 @@ function SkillChips({
 }: {
   skills: string[];
   onRemove: (skill: string) => void;
-  onAdd: () => void;
+  onAdd: (skill: string) => void;
 }) {
+  const [adding, setAdding] = useState(false);
+  const [newSkill, setNewSkill] = useState('');
+
+  function commitSkill() {
+    const trimmed = newSkill.trim();
+    if (trimmed.length > 0) {
+      onAdd(trimmed);
+    }
+    setNewSkill('');
+    setAdding(false);
+  }
+
   return (
     <div className="session-editor__chips" aria-label="Skills">
       {skills.map((skill) => (
@@ -109,13 +121,27 @@ function SkillChips({
           </button>
         </span>
       ))}
-      <button
-        type="button"
-        className="btn-tertiary session-editor__add-skill"
-        onClick={onAdd}
-      >
-        + Add
-      </button>
+      {adding ? (
+        <input
+          type="text"
+          className="session-editor__add-skill-input"
+          value={newSkill}
+          onChange={(e) => { setNewSkill(e.target.value); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') commitSkill(); }}
+          onBlur={commitSkill}
+          placeholder="Skill name"
+          aria-label="New skill name"
+          autoFocus
+        />
+      ) : (
+        <button
+          type="button"
+          className="btn-tertiary session-editor__add-skill"
+          onClick={() => { setAdding(true); }}
+        >
+          + Add
+        </button>
+      )}
     </div>
   );
 }
@@ -245,15 +271,11 @@ export function SessionEditor({ session, onPublish }: SessionEditorProps) {
     }));
   }
 
-  function handleAddSkill() {
-    const skill = window.prompt('Enter skill name');
-    if (skill != null && skill.trim().length > 0) {
-      const trimmed = skill.trim();
-      setState((prev) => {
-        if (prev.skills.includes(trimmed)) return prev;
-        return { ...prev, skills: [...prev.skills, trimmed] };
-      });
-    }
+  function handleAddSkill(skill: string) {
+    setState((prev) => {
+      if (prev.skills.includes(skill)) return prev;
+      return { ...prev, skills: [...prev.skills, skill] };
+    });
   }
 
   return (

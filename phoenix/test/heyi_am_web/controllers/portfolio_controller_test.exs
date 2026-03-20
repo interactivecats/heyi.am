@@ -19,8 +19,6 @@ defmodule HeyiAmWeb.PortfolioControllerTest do
       assert html =~ "Alice Builder"
       assert html =~ "I build things"
       assert html =~ "tpl-editorial"
-      assert html =~ "No sessions yet"
-      assert html =~ "heyiam open"
     end
 
     test "uses portfolio_layout for template class", %{conn: conn} do
@@ -51,6 +49,146 @@ defmodule HeyiAmWeb.PortfolioControllerTest do
 
     test "returns 404 for non-existent username", %{conn: conn} do
       conn = get(conn, "/nobody-here")
+      assert html_response(conn, 404)
+    end
+
+    test "renders hero card with status chip", %{conn: conn} do
+      user = user_fixture()
+      {:ok, user} = HeyiAm.Accounts.update_user_username(user, %{username: "eve"})
+      {:ok, _} = HeyiAm.Accounts.update_user_profile(user, %{status: "building"})
+
+      conn = get(conn, ~p"/eve")
+      html = html_response(conn, 200)
+      assert html =~ "building"
+    end
+
+    test "renders AI Collaboration Profile section", %{conn: conn} do
+      user = user_fixture()
+      {:ok, _} = HeyiAm.Accounts.update_user_username(user, %{username: "frank"})
+
+      conn = get(conn, ~p"/frank")
+      html = html_response(conn, 200)
+      assert html =~ "AI Collaboration Profile"
+      assert html =~ "Task Scoping"
+      assert html =~ "Redirection"
+      assert html =~ "Verification"
+      assert html =~ "Orchestration"
+    end
+
+    test "renders project cards with links", %{conn: conn} do
+      user = user_fixture()
+      {:ok, _} = HeyiAm.Accounts.update_user_username(user, %{username: "grace"})
+
+      conn = get(conn, ~p"/grace")
+      html = html_response(conn, 200)
+      assert html =~ "Active Deployment Logs"
+      assert html =~ "DataFlow Engine"
+      assert html =~ "/grace/dataflow-engine"
+    end
+
+    test "renders bottom metrics", %{conn: conn} do
+      user = user_fixture()
+      {:ok, _} = HeyiAm.Accounts.update_user_username(user, %{username: "heidi"})
+
+      conn = get(conn, ~p"/heidi")
+      html = html_response(conn, 200)
+      assert html =~ "Uptime"
+      assert html =~ "Avg Cycle"
+      assert html =~ "Error Budget"
+    end
+
+    test "renders sidebar with active endpoints and recent activity", %{conn: conn} do
+      user = user_fixture()
+      {:ok, _} = HeyiAm.Accounts.update_user_username(user, %{username: "ivan"})
+
+      conn = get(conn, ~p"/ivan")
+      html = html_response(conn, 200)
+      assert html =~ "Active Endpoints"
+      assert html =~ "Recent Activity"
+    end
+  end
+
+  describe "GET /:username/:project" do
+    test "renders project detail page", %{conn: conn} do
+      user = user_fixture()
+      {:ok, user} = HeyiAm.Accounts.update_user_username(user, %{username: "alice"})
+
+      {:ok, _} =
+        HeyiAm.Accounts.update_user_profile(user, %{display_name: "Alice Builder"})
+
+      conn = get(conn, ~p"/alice/dataflow-engine")
+      html = html_response(conn, 200)
+      assert html =~ "project-page" or html =~ "project-header"
+      assert html =~ "dataflow-engine"
+    end
+
+    test "renders breadcrumb navigation", %{conn: conn} do
+      user = user_fixture()
+      {:ok, _} = HeyiAm.Accounts.update_user_username(user, %{username: "bob"})
+
+      conn = get(conn, ~p"/bob/my-project")
+      html = html_response(conn, 200)
+      assert html =~ "bob"
+      assert html =~ "my-project"
+      assert html =~ "content-ref"
+    end
+
+    test "renders hero stats", %{conn: conn} do
+      user = user_fixture()
+      {:ok, _} = HeyiAm.Accounts.update_user_username(user, %{username: "charlie"})
+
+      conn = get(conn, ~p"/charlie/some-project")
+      html = html_response(conn, 200)
+      assert html =~ "Total Sessions"
+      assert html =~ "Total Time"
+      assert html =~ "Files Touched"
+      assert html =~ "LOC Changed"
+    end
+
+    test "renders developer take and architecture sections", %{conn: conn} do
+      user = user_fixture()
+      {:ok, _} = HeyiAm.Accounts.update_user_username(user, %{username: "dana"})
+
+      conn = get(conn, ~p"/dana/some-project")
+      html = html_response(conn, 200)
+      assert html =~ "Project Take"
+      assert html =~ "Architectural Approach"
+    end
+
+    test "renders empty state placeholders for growth chart and heatmap", %{conn: conn} do
+      user = user_fixture()
+      {:ok, _} = HeyiAm.Accounts.update_user_username(user, %{username: "eve"})
+
+      conn = get(conn, ~p"/eve/some-project")
+      html = html_response(conn, 200)
+      assert html =~ "Growth Chart"
+      assert html =~ "Directory Heatmap"
+      assert html =~ "Coming soon"
+    end
+
+    test "renders published session cards", %{conn: conn} do
+      user = user_fixture()
+      {:ok, _} = HeyiAm.Accounts.update_user_username(user, %{username: "frank"})
+
+      conn = get(conn, ~p"/frank/some-project")
+      html = html_response(conn, 200)
+      assert html =~ "Published Sessions"
+      assert html =~ "session-card"
+      assert html =~ "/s/abc123"
+    end
+
+    test "renders verified badge on sessions", %{conn: conn} do
+      user = user_fixture()
+      {:ok, _} = HeyiAm.Accounts.update_user_username(user, %{username: "grace"})
+
+      conn = get(conn, ~p"/grace/some-project")
+      html = html_response(conn, 200)
+      assert html =~ "Verified"
+      assert html =~ "sealed-badge"
+    end
+
+    test "returns 404 for non-existent username", %{conn: conn} do
+      conn = get(conn, "/nobody-here/some-project")
       assert html_response(conn, 404)
     end
   end

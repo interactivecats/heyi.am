@@ -146,4 +146,18 @@ describe('SessionEditor', () => {
     renderEditor();
     expect(screen.getByText('+ Add')).toBeDefined();
   });
+
+  it('adds a skill via inline input', () => {
+    renderEditor();
+    // Click + Add to reveal input
+    fireEvent.click(screen.getByText('+ Add'));
+    const input = screen.getByLabelText('New skill name') as HTMLInputElement;
+    expect(input).toBeDefined();
+    // Type and press Enter
+    fireEvent.change(input, { target: { value: 'GraphQL' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(screen.getByText('GraphQL')).toBeDefined();
+    // Input should be hidden again, + Add button back
+    expect(screen.getByText('+ Add')).toBeDefined();
+  });
 });

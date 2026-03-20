@@ -1,0 +1,57 @@
+<.public_shell logo_href={"/s/#{@session.token}"} current_page="Transcript">
+  <:nav_item href={"/s/#{@session.token}"} label="← Case Study" />
+  <:status>
+    <span :if={@session[:sealed?]} class="chip chip--primary">SEALED</span>
+    <span class="topbar-status">{@session.turns} turns total</span>
+  </:status>
+
+  <%!-- Transcript --%>
+  <div class="transcript-layout">
+    <%!-- Header --%>
+    <div class="transcript-header">
+      <h1 class="headline-md">{@session.title}</h1>
+      <div style="display: flex; gap: var(--spacing-4); flex-wrap: wrap;">
+        <span class="label-mono">{Calendar.strftime(@session.recorded_at, "%b %d, %Y")}</span>
+        <span class="label-mono">{@session.duration_minutes} min</span>
+        <span class="label-mono">{@session.turns} turns</span>
+      </div>
+    </div>
+
+    <%!-- Transcript Turns --%>
+    <%= for {turn, idx} <- Enum.with_index(@transcript) do %>
+      <div class="transcript-msg">
+        <div class={["transcript-avatar", turn.role == :dev && "transcript-avatar--dev", turn.role == :ai && "transcript-avatar--ai"]}>
+          {if turn.role == :dev, do: "DEV", else: "AI"}
+        </div>
+        <div class="transcript-content">
+          <div class="transcript-meta">
+            <span>{turn.id}</span>
+            <span>{turn.timestamp}</span>
+          </div>
+          <div class="transcript-body">
+            <%= for paragraph <- String.split(turn.text, "\n\n") do %>
+              <p style="margin-block-end: var(--spacing-2);">{paragraph}</p>
+            <% end %>
+          </div>
+          <%= if turn.decision do %>
+            <div class="transcript-decision" style={if turn.decision.color == "secondary", do: "border-inline-start-color: var(--secondary); background-color: rgba(0, 106, 97, 0.04);", else: ""}>
+              <div class="transcript-decision-label" style={if turn.decision.color == "secondary", do: "color: var(--secondary);", else: ""}>
+                {turn.decision.label}
+              </div>
+              <p class="body-sm" style={if turn.decision.color == "secondary", do: "color: var(--secondary);", else: ""}>
+                {turn.decision.text}
+              </p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%!-- Insert "skipped turns" indicator after the first batch (before the last turn) --%>
+      <%= if idx == length(@transcript) - 2 && @skipped_turns > 0 do %>
+        <div style="text-align: center; padding: var(--spacing-8); color: var(--on-surface-variant); font-family: var(--font-mono); font-size: 0.8125rem;">
+          ... {@skipped_turns} more turns ...
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</.public_shell>
