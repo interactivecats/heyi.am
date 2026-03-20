@@ -23,6 +23,8 @@ export interface SessionAnalysis {
   raw_entries: RawEntry[];
   start_time: string | null;
   end_time: string | null;
+  agent_role?: string;
+  parent_session_id?: string | null;
 }
 
 /** Minimal shape of a JSONL entry from Claude Code sessions */

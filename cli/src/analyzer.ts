@@ -27,6 +27,9 @@ export interface SessionAnalysis {
   turns: ParsedTurn[];
   filesChanged: ParsedFileChange[];
   rawLog: string[];
+  childSessions?: SessionAnalysis[];
+  agentRole?: string;
+  parentSessionId?: string | null;
 }
 
 // ── Output types (mirrors cli/app/src/types.ts) ────────────────
@@ -71,6 +74,10 @@ export interface Session {
   filesChanged: FileChange[];
   turnTimeline: TurnEvent[];
   toolCalls: number;
+  childSessions?: Session[];
+  parentSessionId?: string | null;
+  agentRole?: string;
+  isOrchestrated?: boolean;
 }
 
 // ── Skill extraction ───────────────────────────────────────────
@@ -333,6 +340,8 @@ export function computeLinesOfCode(filesChanged: ParsedFileChange[]): number {
 
 export function analyzeSession(analysis: SessionAnalysis): Session {
   const toolTurns = analysis.turns.filter((t) => t.type === 'tool');
+  const childSessions = analysis.childSessions?.map(analyzeSession);
+  const isOrchestrated = childSessions !== undefined && childSessions.length > 0;
 
   return {
     id: analysis.id,
@@ -350,5 +359,9 @@ export function analyzeSession(analysis: SessionAnalysis): Session {
     filesChanged: analysis.filesChanged,
     turnTimeline: buildTurnTimeline(analysis.turns),
     toolCalls: toolTurns.length,
+    ...(childSessions && childSessions.length > 0 ? { childSessions } : {}),
+    ...(analysis.parentSessionId != null ? { parentSessionId: analysis.parentSessionId } : {}),
+    ...(analysis.agentRole ? { agentRole: analysis.agentRole } : {}),
+    ...(isOrchestrated ? { isOrchestrated } : {}),
   };
 }

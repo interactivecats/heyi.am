@@ -41,10 +41,16 @@ export interface Session {
   filesChanged?: FileChange[];
   turnTimeline?: TurnEvent[];
   toolCalls?: number;
+  childSessions?: Session[];
+  parentSessionId?: string | null;
+  agentRole?: string;
+  isOrchestrated?: boolean;
 }
 
 export interface Project {
   name: string;
+  /** The raw directory name, used as the stable ID for API calls */
+  dirName: string;
   sessionCount: number;
   description: string;
 }
