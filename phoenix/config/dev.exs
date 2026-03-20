@@ -24,7 +24,10 @@ config :heyi_am, HeyiAmWeb.Endpoint,
   code_reloader: true,
   debug_errors: true,
   secret_key_base: "e9OPp6ipXBwRBRpQlq9Cw0HhPMEFhBI8lfYVYOfrmOj0KxLqTtfJwpWjRsJjLZuy",
-  watchers: []
+  watchers: [
+    esbuild: {Esbuild, :install_and_run, [:heyi_am, ~w(--sourcemap=inline --watch)]},
+    esbuild_css: {Esbuild, :install_and_run, [:css, ~w(--sourcemap=inline --watch)]}
+  ]
 
 # ## SSL Support
 #
