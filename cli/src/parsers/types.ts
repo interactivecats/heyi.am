@@ -47,6 +47,7 @@ export interface RawEntry {
   cwd?: string;
   version?: string;
   gitBranch?: string;
+  agentId?: string;
 }
 
 export type ContentBlock = TextBlock | ThinkingBlock | ToolUseBlock | ToolResultBlock | ImageBlock;

@@ -192,6 +192,48 @@ async function detect(path: string): Promise<boolean> {
   }
 }
 
+/**
+ * Map subagent_type values from Agent tool calls to display roles.
+ * Teamrc agent names like "trc-frontend-dev" get the prefix stripped.
+ * Built-in types like "Explore" or "Plan" are lowercased.
+ */
+export function mapAgentRole(subagentType: string): string {
+  if (subagentType.startsWith("trc-")) {
+    return subagentType.slice(4); // "trc-frontend-dev" → "frontend-dev"
+  }
+  return subagentType.toLowerCase(); // "Explore" → "explore"
+}
+
+/**
+ * Extract agent roles from parent's Agent tool calls.
+ * Returns a map of tool_use id → agentRole for matching with child sessions.
+ */
+export function extractAgentRoles(entries: RawEntry[]): Map<string, string> {
+  const roles = new Map<string, string>();
+  for (const entry of entries) {
+    if (entry.type !== "assistant") continue;
+    for (const block of getContentBlocks(entry)) {
+      if (isToolUseBlock(block) && block.name === "Agent") {
+        const subagentType = block.input.subagent_type;
+        if (typeof subagentType === "string") {
+          roles.set(block.id, mapAgentRole(subagentType));
+        }
+      }
+    }
+  }
+  return roles;
+}
+
+/**
+ * Extract the agentId from a child session's first entry (fallback role detection).
+ */
+export function extractAgentIdFromEntries(entries: RawEntry[]): string | undefined {
+  for (const entry of entries) {
+    if (entry.agentId) return entry.agentId;
+  }
+  return undefined;
+}
+
 async function parse(path: string): Promise<SessionAnalysis> {
   const raw = await readFile(path, "utf-8");
   const entries = parseEntries(raw);

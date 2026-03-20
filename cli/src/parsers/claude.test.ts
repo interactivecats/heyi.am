@@ -2,9 +2,9 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { writeFile, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { claudeParser, computeLocStats } from "./claude.js";
+import { claudeParser, computeLocStats, mapAgentRole, extractAgentRoles, extractAgentIdFromEntries } from "./claude.js";
 import { parseSession, listSessions } from "./index.js";
-import type { RawEntry } from "./types.js";
+import type { RawEntry, ContentBlock } from "./types.js";
 
 // --- Test fixtures based on real Claude Code JSONL structure ---
 
@@ -18,13 +18,13 @@ function makeEntry(overrides: Partial<RawEntry> & { type: string }): RawEntry {
   } as RawEntry;
 }
 
-function userEntry(content: string | object[], ts?: string): RawEntry {
+function userEntry(content: string | ContentBlock[], ts?: string): RawEntry {
   return makeEntry({
     type: "user",
     timestamp: ts ?? "2026-03-20T10:00:00.000Z",
     message: {
       role: "user",
-      content: typeof content === "string" ? content : content,
+      content,
     },
   });
 }
@@ -387,5 +387,187 @@ describe("edge cases", () => {
     const result = await claudeParser.parse(path);
     expect(result.turns).toBe(1);
     expect(result.tool_calls).toHaveLength(0);
+  });
+});
+
+// --- Agent role extraction ---
+
+describe("mapAgentRole", () => {
+  it("strips trc- prefix from teamrc agent names", () => {
+    expect(mapAgentRole("trc-frontend-dev")).toBe("frontend-dev");
+    expect(mapAgentRole("trc-backend-dev")).toBe("backend-dev");
+    expect(mapAgentRole("trc-qa-engineer")).toBe("qa-engineer");
+  });
+
+  it("lowercases built-in subagent types", () => {
+    expect(mapAgentRole("Explore")).toBe("explore");
+    expect(mapAgentRole("Plan")).toBe("plan");
+  });
+});
+
+describe("extractAgentRoles", () => {
+  it("extracts roles from Agent tool calls with subagent_type", () => {
+    const entries: RawEntry[] = [
+      assistantEntry([
+        {
+          type: "tool_use",
+          id: "toolu_agent_001",
+          name: "Agent",
+          input: { subagent_type: "trc-frontend-dev", prompt: "Build the UI" },
+        },
+      ]),
+      assistantEntry([
+        {
+          type: "tool_use",
+          id: "toolu_agent_002",
+          name: "Agent",
+          input: { subagent_type: "Explore", prompt: "Find the file" },
+        },
+      ]),
+    ];
+    const roles = extractAgentRoles(entries);
+    expect(roles.get("toolu_agent_001")).toBe("frontend-dev");
+    expect(roles.get("toolu_agent_002")).toBe("explore");
+  });
+
+  it("ignores non-Agent tool calls", () => {
+    const entries: RawEntry[] = [
+      assistantEntry([
+        {
+          type: "tool_use",
+          id: "toolu_read_001",
+          name: "Read",
+          input: { file_path: "/app/main.ts" },
+        },
+      ]),
+    ];
+    const roles = extractAgentRoles(entries);
+    expect(roles.size).toBe(0);
+  });
+
+  it("ignores Agent calls without subagent_type", () => {
+    const entries: RawEntry[] = [
+      assistantEntry([
+        {
+          type: "tool_use",
+          id: "toolu_agent_003",
+          name: "Agent",
+          input: { prompt: "Do something" },
+        },
+      ]),
+    ];
+    const roles = extractAgentRoles(entries);
+    expect(roles.size).toBe(0);
+  });
+});
+
+describe("extractAgentIdFromEntries", () => {
+  it("extracts agentId from first entry", () => {
+    const entries: RawEntry[] = [
+      { ...makeEntry({ type: "user" }), agentId: "agent-frontend-abc" } as any,
+      makeEntry({ type: "assistant" }),
+    ];
+    expect(extractAgentIdFromEntries(entries)).toBe("agent-frontend-abc");
+  });
+
+  it("returns undefined when no agentId present", () => {
+    const entries: RawEntry[] = [makeEntry({ type: "user" }), makeEntry({ type: "assistant" })];
+    expect(extractAgentIdFromEntries(entries)).toBeUndefined();
+  });
+});
+
+// --- Parent-child linking in listSessions ---
+
+describe("listSessions — parent-child linking", () => {
+  it("nests child sessions under parent and excludes them from top level", async () => {
+    const scanDir = join(tmpDir, "linking-test");
+    const projectDir = join(scanDir, "my-project");
+    const parentId = "parent-uuid-001";
+    const childId = "child-uuid-001";
+
+    // Create parent session file
+    await mkdir(projectDir, { recursive: true });
+    await writeFile(join(projectDir, `${parentId}.jsonl`), toJsonl(BASIC_SESSION));
+
+    // Create child session in {parentId}/subagents/
+    const subagentsDir = join(projectDir, parentId, "subagents");
+    await mkdir(subagentsDir, { recursive: true });
+    await writeFile(join(subagentsDir, `${childId}.jsonl`), toJsonl(BASIC_SESSION));
+
+    const sessions = await listSessions(scanDir);
+
+    // Only the parent should appear at top level
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].sessionId).toBe(parentId);
+    expect(sessions[0].isSubagent).toBe(false);
+
+    // Child should be nested
+    expect(sessions[0].children).toHaveLength(1);
+    expect(sessions[0].children![0].sessionId).toBe(childId);
+    expect(sessions[0].children![0].isSubagent).toBe(true);
+    expect(sessions[0].children![0].parentSessionId).toBe(parentId);
+  });
+
+  it("handles parent with no children (no children array)", async () => {
+    const scanDir = join(tmpDir, "no-children-test");
+    const projectDir = join(scanDir, "solo-project");
+    await mkdir(projectDir, { recursive: true });
+    await writeFile(join(projectDir, "solo-session.jsonl"), toJsonl(BASIC_SESSION));
+
+    const sessions = await listSessions(scanDir);
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].children).toBeUndefined();
+  });
+
+  it("handles multiple children under one parent", async () => {
+    const scanDir = join(tmpDir, "multi-child-test");
+    const projectDir = join(scanDir, "multi-project");
+    const parentId = "parent-multi-001";
+
+    await mkdir(projectDir, { recursive: true });
+    await writeFile(join(projectDir, `${parentId}.jsonl`), toJsonl(BASIC_SESSION));
+
+    const subagentsDir = join(projectDir, parentId, "subagents");
+    await mkdir(subagentsDir, { recursive: true });
+    await writeFile(join(subagentsDir, "child-a.jsonl"), toJsonl(BASIC_SESSION));
+    await writeFile(join(subagentsDir, "child-b.jsonl"), toJsonl(BASIC_SESSION));
+    await writeFile(join(subagentsDir, "child-c.jsonl"), toJsonl(BASIC_SESSION));
+
+    const sessions = await listSessions(scanDir);
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].children).toHaveLength(3);
+    const childIds = sessions[0].children!.map((c) => c.sessionId).sort();
+    expect(childIds).toEqual(["child-a", "child-b", "child-c"]);
+  });
+
+  it("handles empty subagents directory", async () => {
+    const scanDir = join(tmpDir, "empty-subagents-test");
+    const projectDir = join(scanDir, "empty-project");
+    const parentId = "parent-empty-001";
+
+    await mkdir(projectDir, { recursive: true });
+    await writeFile(join(projectDir, `${parentId}.jsonl`), toJsonl(BASIC_SESSION));
+
+    // Create empty subagents dir
+    await mkdir(join(projectDir, parentId, "subagents"), { recursive: true });
+
+    const sessions = await listSessions(scanDir);
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].children).toBeUndefined();
+  });
+
+  it("handles orphan children (subagent dir without matching parent .jsonl)", async () => {
+    const scanDir = join(tmpDir, "orphan-test");
+    const projectDir = join(scanDir, "orphan-project");
+
+    await mkdir(projectDir, { recursive: true });
+    // No parent .jsonl, but subagents dir exists
+    const subagentsDir = join(projectDir, "orphan-parent-id", "subagents");
+    await mkdir(subagentsDir, { recursive: true });
+    await writeFile(join(subagentsDir, "orphan-child.jsonl"), toJsonl(BASIC_SESSION));
+
+    const sessions = await listSessions(scanDir);
+    // Orphan children are not returned at the top level (no parent to attach to)
+    expect(sessions).toHaveLength(0);
   });
 });

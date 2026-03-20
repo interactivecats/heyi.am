@@ -1,5 +1,5 @@
 import { readdir } from "node:fs/promises";
-import { join } from "node:path";
+import { join, basename, dirname } from "node:path";
 import { homedir } from "node:os";
 import { claudeParser } from "./claude.js";
 import type { SessionParser, SessionAnalysis } from "./types.js";
@@ -37,18 +37,21 @@ export interface SessionMeta {
  *   ~/.claude/projects/{encoded-path}/{uuid}.jsonl                  ← main sessions
  *   ~/.claude/projects/{encoded-path}/{uuid}/subagents/{id}.jsonl   ← subagent sessions
  *
- * Both are included, grouped under the same project. Subagent sessions
- * are flagged with `isSubagent: true`.
+ * Children are linked to parents by matching the directory name ({uuid}/)
+ * to the parent's session file ({uuid}.jsonl). By default, only parent
+ * sessions are returned at the top level; children are nested in the
+ * parent's `children` array.
  */
 export async function listSessions(basePath?: string): Promise<SessionMeta[]> {
   const base = basePath ?? join(homedir(), ".claude", "projects");
-  const sessions: SessionMeta[] = [];
+  const parents: SessionMeta[] = [];
+  const childrenByParentId = new Map<string, SessionMeta[]>();
 
   let projectDirs;
   try {
     projectDirs = await readdir(base, { withFileTypes: true });
   } catch {
-    return sessions;
+    return parents;
   }
 
   for (const projectEntry of projectDirs) {
@@ -68,36 +71,52 @@ export async function listSessions(basePath?: string): Promise<SessionMeta[]> {
         // Main session file
         const fullPath = join(projectPath, file.name);
         const sessionId = file.name.replace(/\.jsonl$/, "");
-        await tryAddSession(fullPath, sessionId, projectDir, false, sessions);
+        await tryAddSession(fullPath, sessionId, projectDir, false, parents);
       } else if (file.isDirectory()) {
-        // Check for subagents/ inside session data dirs
-        await collectSubagents(join(projectPath, file.name), projectDir, sessions);
+        // Directory name is the parent session UUID
+        const parentSessionId = file.name;
+        const children = await collectSubagents(join(projectPath, file.name), projectDir, parentSessionId);
+        if (children.length > 0) {
+          const existing = childrenByParentId.get(parentSessionId) ?? [];
+          existing.push(...children);
+          childrenByParentId.set(parentSessionId, existing);
+        }
       }
     }
   }
 
-  return sessions;
+  // Link children to parents
+  for (const parent of parents) {
+    const children = childrenByParentId.get(parent.sessionId);
+    if (children && children.length > 0) {
+      parent.children = children;
+    }
+  }
+
+  return parents;
 }
 
 async function collectSubagents(
   sessionDataDir: string,
   projectDir: string,
-  out: SessionMeta[],
-): Promise<void> {
+  parentSessionId: string,
+): Promise<SessionMeta[]> {
   const subagentsDir = join(sessionDataDir, "subagents");
+  const children: SessionMeta[] = [];
   let files;
   try {
     files = await readdir(subagentsDir, { withFileTypes: true });
   } catch {
-    return; // No subagents directory
+    return children; // No subagents directory
   }
 
   for (const file of files) {
     if (!file.name.endsWith(".jsonl") || file.isDirectory()) continue;
     const fullPath = join(subagentsDir, file.name);
     const sessionId = file.name.replace(/\.jsonl$/, "");
-    await tryAddSession(fullPath, sessionId, projectDir, true, out);
+    await tryAddSession(fullPath, sessionId, projectDir, true, children, parentSessionId);
   }
+  return children;
 }
 
 async function tryAddSession(
@@ -106,10 +125,15 @@ async function tryAddSession(
   projectDir: string,
   isSubagent: boolean,
   out: SessionMeta[],
+  parentSessionId?: string,
 ): Promise<void> {
   for (const parser of parsers) {
     if (await parser.detect(fullPath)) {
-      out.push({ path: fullPath, source: parser.name, sessionId, projectDir, isSubagent });
+      const meta: SessionMeta = { path: fullPath, source: parser.name, sessionId, projectDir, isSubagent };
+      if (parentSessionId) {
+        meta.parentSessionId = parentSessionId;
+      }
+      out.push(meta);
       break;
     }
   }
