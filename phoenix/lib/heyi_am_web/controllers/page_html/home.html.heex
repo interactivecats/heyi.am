@@ -1,7 +1,14 @@
 <.public_shell current_page="Home">
   <:status>
-    <a href={~p"/users/log-in"} class="btn btn-secondary btn-sm">Log in</a>
-    <a href={~p"/users/register"} class="btn btn-primary btn-sm">Sign up</a>
+    <%= if @current_scope && @current_scope.user do %>
+      <span class="label-sm" style="color: var(--on-surface-variant);">
+        {@current_scope.user.email}
+      </span>
+      <.link href={~p"/users/log-out"} method="delete" class="btn btn-secondary btn-sm">Log out</.link>
+    <% else %>
+      <a href={~p"/users/log-in"} class="btn btn-secondary btn-sm">Log in</a>
+      <a href={~p"/users/register"} class="btn btn-primary btn-sm">Sign up</a>
+    <% end %>
   </:status>
 
   <%!-- ── Hero ── --%>

@@ -31,14 +31,15 @@ heyi.am turns AI coding sessions into evidence-backed developer portfolios. Two 
 - [x] **Phase 1** — Design System & Shared Components (4/5) — Task 1.5 skipped (already done)
 - [x] **Phase 2** — CLI: Session Browser (3/3)
 - [x] **Phase 3** — CLI: Session Detail & Enhancement (3/3)
-- [ ] **Phase 4** — CLI: Editor & Publishing (0/5)
+- [x] **Phase 4** — CLI: Editor & Publishing (5/5)
 - [x] **Phase 5** — Web: Landing, Auth & Onboarding (6/6)
-- [ ] **Phase 6** — Web: Portfolio Editor (0/3)
+- [x] **Phase 6** — Web: Portfolio Editor (3/3)
 - [ ] **Phase 7** — Web: Public Pages (0/5)
-- [ ] **Phase 8** — Session Templates (0/5)
-- [ ] **Phase 9** — Interview / Challenge Flow (0/6)
-- [ ] **Phase 10** — Edge Cases & Mobile (0/6)
-- [ ] **Phase 11** — Backend & Data Model (0/6)
+- [ ] **Phase 8** — Backend & Data Model (0/6)
+- [ ] **Phase 9** — CLI ↔ Web Integration (0/6)
+- [ ] **Phase 10** — Session Templates (0/5)
+- [ ] **Phase 11** — Interview / Challenge Flow (0/6)
+- [ ] **Phase 12** — Edge Cases & Mobile (0/6)
 
 ---
 
@@ -332,9 +333,109 @@ LiveView at `/onboarding/vibe`. 6 template cards in grid with live preview panel
 
 ---
 
-## Phase 8: Session Templates
+## Phase 8: Backend & Data Model
 
-### Task 8.1 — Terminal Template
+### Task 8.1 — LOC Computation
+**Files:** `cli/src/parser.ts`
+
+Extract LOC from Write/Edit tool calls. Compute lines added/removed per file.
+
+### Task 8.2 — Pluggable Parser Architecture
+**Files:** `cli/src/parsers/claude-parser.ts`, `cli/src/parsers/types.ts`
+
+Create `SessionAnalysis` interface. Extract Claude Code parser. Prepare for cursor + codex parsers.
+
+### Task 8.3 — Pin/Highlight Data Model
+**Files:** Share schema + new migration
+
+Add `pinned_turns` and `highlighted_steps` fields.
+
+### Task 8.4 — Session Auto-Add to Portfolio
+**Files:** `phoenix/lib/heyi_am/shares.ex`
+
+Auto-create portfolio entry on publish (default ON).
+
+### Task 8.5 — Project Growth Data
+**Files:** `phoenix/lib/heyi_am/projects.ex`
+
+Compute cumulative LOC, file heatmap, session overlap for project visualizations.
+
+### Task 8.6 — AI Collaboration Profile
+**Files:** `phoenix/lib/heyi_am/profiles.ex`
+
+Compute per-developer metrics from aggregated session data.
+
+---
+
+## Phase 9: CLI ↔ Web Integration
+
+### Task 9.1 — Share API: Create & Read
+**Files:** `phoenix/lib/heyi_am_web/controllers/share_api_controller.ex`, `phoenix/lib/heyi_am_web/router.ex`
+
+JSON API endpoints for the CLI to publish sessions:
+- `POST /api/shares` — create a share (accepts session JSON payload, Ed25519 signature)
+- `GET /api/shares/:id` — retrieve a share by ID
+- Authentication via bearer token (user session token or machine token)
+- Validates payload structure, stores raw session data + enhanced fields
+- Returns share URL on success
+
+### Task 9.2 — Device Auth Flow (RFC 8628)
+**Files:** `phoenix/lib/heyi_am/device_auth.ex`, `phoenix/lib/heyi_am_web/controllers/device_auth_controller.ex`, new migration
+
+Device authorization for CLI login (`heyiam login`):
+- `POST /api/device/code` — generate device code + user code
+- `GET /device` — web page where user enters the code
+- `POST /api/device/token` — CLI polls until user approves
+- Device codes expire after 15 minutes
+- On approval, return a long-lived machine token for the CLI
+
+### Task 9.3 — CLI Publish: Real API Integration
+**Files:** `cli/src/api.ts`, `cli/src/server.ts`, `cli/app/src/components/SessionEditorPage.tsx`
+
+Replace mock publish animation with real API calls:
+- Read machine token from `~/.config/heyiam/auth.json`
+- POST session payload to `/api/shares` with auth header
+- Sign payload with Ed25519 keypair (generate on first publish, store locally)
+- Stream terminal animation while request is in-flight
+- Handle errors: auth expired, network failure, validation errors
+- On success: display real share URL
+
+### Task 9.4 — CLI Session Ingestion: Real Parser
+**Files:** `cli/src/parsers/claude-parser.ts`, `cli/src/parsers/types.ts`, `cli/src/server.ts`
+
+Replace `MOCK_SESSIONS` with real session file reading:
+- Scan `~/.claude/projects/` for JSONL session files
+- Parse Claude Code session format → `Session` structs
+- Extract: turns, tool calls, files changed, duration, LOC (from Write/Edit calls)
+- Group sessions by project directory
+- Watch for new sessions and update the browser via SSE/WebSocket
+
+### Task 9.5 — CLI Enhance: Real AI Enhancement
+**Files:** `cli/app/src/components/EnhanceFlow.tsx`, `cli/src/enhance.ts`
+
+Replace mock enhancement with real Anthropic API calls:
+- Read API key from local settings
+- Send session context to Claude API with structured prompt
+- Stream responses: title, skills, execution path, developer questions
+- Parse structured output into `Session` fields
+- Anti-fluff questions generated from actual session content
+- Save enhanced data locally before publish
+
+### Task 9.6 — Portfolio Sync: Sessions → Web
+**Files:** `phoenix/lib/heyi_am/shares.ex`, `phoenix/lib/heyi_am/projects.ex`
+
+Wire published shares into portfolio:
+- On share creation, auto-create portfolio entry (linked to user)
+- Auto-assign to project based on project directory or user selection
+- Portfolio editor reads real shares/projects from database
+- Public portfolio page queries real data instead of mock assigns
+- Project page computes real growth charts from session LOC data
+
+---
+
+## Phase 10: Session Templates
+
+### Task 10.1 — Terminal Template
 **Screen 28**
 **Mockup image:** `mockups/new/templates/session_template_terminal_v2/screen.png`
 **Mockup HTML:** `mockups/new/templates/session_template_terminal_v2/code.html`
@@ -342,27 +443,27 @@ LiveView at `/onboarding/vibe`. 6 template cards in grid with live preview panel
 
 - Full dark bg, green monospace, terminal command execution path, file staging, status bento
 
-### Task 8.2 — Minimal Template
+### Task 10.2 — Minimal Template
 **Screen 29**
 **Mockup image:** `mockups/new/templates/session_template_minimal/screen.png`
 **Mockup HTML:** `mockups/new/templates/session_template_minimal/code.html`
 
 - White, max whitespace, large prose take, numbered path, terminal at bottom
 
-### Task 8.3 — Brutalist Template
+### Task 10.3 — Brutalist Template
 **Screen 30**
 **Mockup image:** `mockups/new/templates/session_template_brutalist/screen.png`
 **Mockup HTML:** `mockups/new/templates/session_template_brutalist/code.html`
 
 - B&W only, thick borders, zero radius, ALL CAPS, photo grid placeholders
 
-### Task 8.4 — Campfire Template
+### Task 10.4 — Campfire Template
 **Mockup image:** `mockups/new/templates/session_template_campfire/screen.png`
 **Mockup HTML:** `mockups/new/templates/session_template_campfire/code.html`
 
 - Warm solarized palette, 2-col with "The Spark" narrative, params table, image gallery
 
-### Task 8.5 — Neon Night Template
+### Task 10.5 — Neon Night Template
 **Mockup image:** `mockups/new/templates/session_template_neon_night/screen.png`
 **Mockup HTML:** `mockups/new/templates/session_template_neon_night/code.html`
 
@@ -370,9 +471,9 @@ LiveView at `/onboarding/vibe`. 6 template cards in grid with live preview panel
 
 ---
 
-## Phase 9: Interview / Challenge Flow
+## Phase 11: Interview / Challenge Flow
 
-### Task 9.1 — Create a Challenge
+### Task 11.1 — Create a Challenge
 **Screen 33**
 **Mockup image:** `mockups/new/create_a_challenge/screen.png`
 **Mockup HTML:** `mockups/new/create_a_challenge/code.html`
@@ -382,7 +483,7 @@ LiveView at `/onboarding/vibe`. 6 template cards in grid with live preview panel
 - Live candidate preview panel
 - "Generate Link" CTA
 
-### Task 9.2 — Challenge Landing (Candidate)
+### Task 11.2 — Challenge Landing (Candidate)
 **Screen 34**
 **Files:** Challenge templates
 
@@ -390,19 +491,19 @@ LiveView at `/onboarding/vibe`. 6 template cards in grid with live preview panel
 - Time limit, sealed notice, access code input
 - "Begin Challenge" CTA
 
-### Task 9.3 — Challenge In Progress
+### Task 11.3 — Challenge In Progress
 **Screen 35**
 
 - Split: requirements left, live terminal right
 - Timer, "heyiam publish --challenge"
 
-### Task 9.4 — Challenge Submitted
+### Task 11.4 — Challenge Submitted
 **Screen 36**
 
 - "Response Sealed & Submitted"
 - Ed25519 hash, immutability notice
 
-### Task 9.5 — Comparison View (Manager)
+### Task 11.5 — Comparison View (Manager)
 **Screen 37**
 **Mockup image:** `mockups/new/interview_comparison_view/screen.png`
 **Mockup HTML:** `mockups/new/interview_comparison_view/code.html`
@@ -412,7 +513,7 @@ LiveView at `/onboarding/vibe`. 6 template cards in grid with live preview panel
 - Table: session detail, metrics, AI profile, trust hash
 - Evidence disclaimer
 
-### Task 9.6 — Candidate Deep Dive
+### Task 11.6 — Candidate Deep Dive
 **Screen 38**
 
 - Full case study with challenge banner
@@ -420,60 +521,26 @@ LiveView at `/onboarding/vibe`. 6 template cards in grid with live preview panel
 
 ---
 
-## Phase 10: Edge Cases & Mobile
+## Phase 12: Edge Cases & Mobile
 
-### Task 10.1 — 404 Page
+### Task 12.1 — 404 Page
 **Screen 31**
 **Files:** `phoenix/lib/heyi_am_web/controllers/error_html.ex`
 
-### Task 10.2 — Deleted/Expired Session
+### Task 12.2 — Deleted/Expired Session
 **Screen 32**
 
-### Task 10.3 — Mobile: Session Case Study
+### Task 12.3 — Mobile: Session Case Study
 **Screen 39** — Responsive CSS at 375px
 
-### Task 10.4 — Mobile: Portfolio
+### Task 12.4 — Mobile: Portfolio
 **Screen 40** — Responsive at 375px
 
-### Task 10.5 — Mobile: Session Browser
+### Task 12.5 — Mobile: Session Browser
 **Screen 41** — Project dropdown, sticky bottom CTA
 
-### Task 10.6 — Mobile: Challenge Landing
+### Task 12.6 — Mobile: Challenge Landing
 **Screen 42** — Stacked requirements, full-width CTA
-
----
-
-## Phase 11: Backend & Data Model
-
-### Task 11.1 — LOC Computation
-**Files:** `cli/src/parser.ts`
-
-Extract LOC from Write/Edit tool calls. Compute lines added/removed per file.
-
-### Task 11.2 — Pluggable Parser Architecture
-**Files:** `cli/src/parsers/claude-parser.ts`, `cli/src/parsers/types.ts`
-
-Create `SessionAnalysis` interface. Extract Claude Code parser. Prepare for cursor + codex parsers.
-
-### Task 11.3 — Pin/Highlight Data Model
-**Files:** Share schema + new migration
-
-Add `pinned_turns` and `highlighted_steps` fields.
-
-### Task 11.4 — Session Auto-Add to Portfolio
-**Files:** `phoenix/lib/heyi_am/shares.ex`
-
-Auto-create portfolio entry on publish (default ON).
-
-### Task 11.5 — Project Growth Data
-**Files:** `phoenix/lib/heyi_am/projects.ex`
-
-Compute cumulative LOC, file heatmap, session overlap for project visualizations.
-
-### Task 11.6 — AI Collaboration Profile
-**Files:** `phoenix/lib/heyi_am/profiles.ex`
-
-Compute per-developer metrics from aggregated session data.
 
 ---
 
@@ -482,10 +549,11 @@ Compute per-developer metrics from aggregated session data.
 ### Dependencies
 - **Phase 1** (Foundation) → blocks everything
 - **Phases 2-4** (CLI) → can run in parallel with Phases 5-7 (Web)
-- **Phase 8** (Templates) → depends on Phase 7.1 (session page)
-- **Phase 9** (Interview) → depends on Phases 7.1 + 11.3
-- **Phase 10** (Mobile) → depends on Phases 7.1, 7.2
-- **Phase 11** (Backend) → slot tasks in as frontend phases need them
+- **Phase 8** (Backend) → do after Phase 7, provides real schemas
+- **Phase 9** (Integration) → depends on Phases 4, 5, 8; connects CLI to real API and replaces all mock data
+- **Phase 10** (Templates) → depends on Phase 7.1 (session page)
+- **Phase 11** (Interview) → depends on Phases 7.1 + 8.3
+- **Phase 12** (Mobile) → depends on Phases 7.1, 7.2
 
 ### Suggested Team Split
 - **Dev A**: Phase 1 → Phase 2 → Phase 3 → Phase 4 (CLI end-to-end)

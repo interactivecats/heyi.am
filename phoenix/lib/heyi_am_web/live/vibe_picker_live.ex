@@ -3,15 +3,6 @@ defmodule HeyiAmWeb.VibePickerLive do
 
   alias HeyiAm.Accounts
 
-  @templates [
-    %{id: "editorial", name: "Editorial", desc: "Clean, centered layout. Data-focused with stats and timeline."},
-    %{id: "terminal", name: "Terminal", desc: "Dark background, monospace green text. Hacker aesthetic."},
-    %{id: "minimal", name: "Minimal", desc: "Extreme whitespace. No decoration, just content."},
-    %{id: "brutalist", name: "Brutalist", desc: "Thick borders, zero radius. Bold and unapologetic."},
-    %{id: "campfire", name: "Campfire", desc: "Warm cream tones, serif headings. Cozy and inviting."},
-    %{id: "neon-night", name: "Neon Night", desc: "Deep navy with cyan and magenta accents. Electric."}
-  ]
-
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_scope.user
@@ -21,7 +12,7 @@ defmodule HeyiAmWeb.VibePickerLive do
      socket
      |> assign(:page_title, "Choose your vibe")
      |> assign(:user, user)
-     |> assign(:templates, @templates)
+     |> assign(:templates, HeyiAmWeb.Templates.list())
      |> assign(:selected, current_layout)}
   end
 
