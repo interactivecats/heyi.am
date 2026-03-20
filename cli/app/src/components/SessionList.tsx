@@ -6,7 +6,7 @@ import { AppShell } from './AppShell';
    Data Model
    ========================================================================== */
 
-interface Session {
+export interface Session {
   id: string;
   title: string;
   date: string;
@@ -18,7 +18,7 @@ interface Session {
   rawLog: string[];
 }
 
-interface Project {
+export interface Project {
   name: string;
   sessionCount: number;
   description: string;
@@ -28,7 +28,7 @@ interface Project {
    Mock Data
    ========================================================================== */
 
-const MOCK_SESSIONS: Session[] = [
+export const MOCK_SESSIONS: Session[] = [
   {
     id: 'ses-001',
     title: 'Refactor JWT middleware to support refresh tokens',
@@ -148,7 +148,7 @@ const MOCK_SESSIONS: Session[] = [
   },
 ];
 
-const MOCK_PROJECTS: Project[] = [
+export const MOCK_PROJECTS: Project[] = [
   { name: 'auth-service', sessionCount: 2, description: 'JWT auth and OAuth provider layer' },
   { name: 'data-pipeline', sessionCount: 2, description: 'Event stream ETL and ingestion' },
   { name: 'ui-components', sessionCount: 1, description: 'Accessible component library' },
@@ -168,19 +168,77 @@ function formatDuration(minutes: number): string {
   return `${minutes} min`;
 }
 
+function deriveProjects(sessions: Session[]): Project[] {
+  const map = new Map<string, number>();
+  for (const s of sessions) {
+    map.set(s.projectName, (map.get(s.projectName) ?? 0) + 1);
+  }
+  return Array.from(map.entries()).map(([name, count]) => ({
+    name,
+    sessionCount: count,
+    description: '',
+  }));
+}
+
+/* ==========================================================================
+   Terminal log line renderer
+   ========================================================================== */
+
+function LogLine({ line }: { line: string }) {
+  if (line.startsWith('[AI]')) {
+    return (
+      <div className="terminal-line">
+        <span className="terminal-line--ai">{line.substring(0, 4)}</span>
+        {line.substring(4)}
+      </div>
+    );
+  }
+  if (line.startsWith('>')) {
+    return (
+      <div className="terminal-line">
+        <span className="terminal-line--prompt">&gt;</span>
+        {line.substring(1)}
+      </div>
+    );
+  }
+  if (line === '...') {
+    return (
+      <div className="terminal-line">
+        <span className="terminal-line--dim">...</span>
+      </div>
+    );
+  }
+  if (line.startsWith('[')) {
+    return (
+      <div className="terminal-line">
+        <span className="terminal-line--success">{line}</span>
+      </div>
+    );
+  }
+  return <div className="terminal-line">{line}</div>;
+}
+
 /* ==========================================================================
    Component
    ========================================================================== */
 
-export function SessionList() {
+interface SessionListProps {
+  sessions?: Session[];
+  projects?: Project[];
+}
+
+export function SessionList({
+  sessions = MOCK_SESSIONS,
+  projects: projectsProp,
+}: SessionListProps = {}) {
   const navigate = useNavigate();
+  const projects = projectsProp ?? (sessions === MOCK_SESSIONS ? MOCK_PROJECTS : deriveProjects(sessions));
+
   const [selectedProject, setSelectedProject] = useState<string | null>(
-    MOCK_PROJECTS.length > 0 ? MOCK_PROJECTS[0].name : null,
+    projects.length > 0 ? projects[0].name : null,
   );
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
-  const sessions = MOCK_SESSIONS;
-  const projects = MOCK_PROJECTS;
   const isEmpty = sessions.length === 0;
 
   const filteredSessions = selectedProject
@@ -195,88 +253,31 @@ export function SessionList() {
     ? projects.find((p) => p.name === selectedProject) ?? null
     : null;
 
-  const totalSessions = selectedProject
-    ? filteredSessions.length
-    : sessions.length;
-
   /* ---------- Empty state ---------- */
 
   if (isEmpty) {
     return (
       <AppShell title="Sessions">
         <div style={{ padding: 'var(--spacing-6)' }}>
-          {/* Setup banner */}
-          <div
-            style={{
-              background: 'var(--tertiary-fixed)',
-              padding: 'var(--spacing-4) var(--spacing-6)',
-              borderRadius: 'var(--radius-sm)',
-              marginBottom: 'var(--spacing-8)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-3)',
-            }}
-            data-testid="setup-banner"
-          >
-            <span style={{ color: 'var(--tertiary)', fontWeight: 600, fontSize: '1rem' }}>&#9888;</span>
-            <span style={{ fontSize: '0.875rem', color: 'var(--tertiary)' }}>
+          <div className="setup-banner" data-testid="setup-banner">
+            <span className="setup-banner__icon">&#9888;</span>
+            <span className="setup-banner__text">
               Add your Anthropic API key to enable AI summaries
             </span>
             <button
               type="button"
-              className="btn btn-secondary"
-              style={{ marginLeft: 'auto', fontSize: '0.75rem', padding: '4px 12px' }}
+              className="btn btn-secondary setup-banner__action"
+              style={{ fontSize: '0.75rem', padding: '4px 12px' }}
               onClick={() => navigate('/settings')}
             >
               Settings
             </button>
           </div>
 
-          {/* Empty state */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 'var(--spacing-20) 0',
-              textAlign: 'center',
-            }}
-          >
-            <div
-              style={{
-                width: '64px',
-                height: '64px',
-                background: 'var(--surface-container-low)',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 'var(--spacing-6)',
-                color: 'var(--on-surface-variant)',
-                fontSize: '1.5rem',
-              }}
-            >
-              &#128196;
-            </div>
-            <h2
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: '1.5rem',
-                fontWeight: 700,
-                marginBottom: 'var(--spacing-3)',
-              }}
-            >
-              No sessions found
-            </h2>
-            <p
-              style={{
-                fontSize: '0.9375rem',
-                color: 'var(--on-surface-variant)',
-                maxWidth: '400px',
-                lineHeight: 1.6,
-              }}
-            >
+          <div className="empty-state">
+            <div className="empty-state__icon">&#128196;</div>
+            <h2 className="empty-state__title">No sessions found</h2>
+            <p className="empty-state__desc">
               Claude Code sessions from{' '}
               <code
                 style={{
@@ -291,20 +292,8 @@ export function SessionList() {
               </code>{' '}
               will appear here.
             </p>
-            <div style={{ marginTop: 'var(--spacing-8)' }}>
-              <code
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '0.8125rem',
-                  color: 'var(--on-surface-variant)',
-                  background: 'var(--surface-container-low)',
-                  padding: 'var(--spacing-3) var(--spacing-5)',
-                  borderRadius: 'var(--radius-sm)',
-                  display: 'inline-block',
-                }}
-              >
-                $ claude  # start a session first
-              </code>
+            <div className="empty-state__cmd">
+              <code>$ claude  # start a session first</code>
             </div>
           </div>
         </div>
@@ -341,23 +330,10 @@ export function SessionList() {
       </div>
       <div className="app-sidebar__section">
         <p className="app-sidebar__label">Stats</p>
-        <div
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.75rem',
-            color: 'var(--on-surface-variant)',
-            lineHeight: 2,
-          }}
-        >
-          <div>
-            Sessions: <strong style={{ color: 'var(--on-surface)' }}>{sessions.length}</strong>
-          </div>
-          <div>
-            Enhanced: <strong style={{ color: 'var(--on-surface)' }}>{enhancedCount}</strong>
-          </div>
-          <div>
-            Published: <strong style={{ color: 'var(--on-surface)' }}>{publishedCount}</strong>
-          </div>
+        <div className="sidebar-stats">
+          <div>Sessions: <strong>{sessions.length}</strong></div>
+          <div>Enhanced: <strong>{enhancedCount}</strong></div>
+          <div>Published: <strong>{publishedCount}</strong></div>
         </div>
       </div>
     </>
@@ -371,198 +347,74 @@ export function SessionList() {
       showSidebar
       sidebarContent={sidebarContent}
     >
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 340px', gap: 'var(--spacing-8)', padding: 'var(--spacing-8)' }}>
+      <div className="session-browser">
         {/* Session list column */}
         <div>
-          <h2
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '1.75rem',
-              fontWeight: 700,
-              marginBottom: 'var(--spacing-1)',
-            }}
-          >
+          <h2 className="session-browser__heading">
             {activeProject ? activeProject.name : 'All Sessions'}
           </h2>
-          <p
-            style={{
-              fontSize: '0.875rem',
-              color: 'var(--on-surface-variant)',
-              marginBottom: 'var(--spacing-6)',
-            }}
-          >
-            {totalSessions} sessions
-            {activeProject ? ` \u00b7 ${activeProject.description}` : ''}
+          <p className="session-browser__subtitle">
+            {filteredSessions.length} sessions
+            {activeProject?.description ? ` \u00b7 ${activeProject.description}` : ''}
           </p>
 
-          {/* Search */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-2)',
-              background: 'var(--surface-container-lowest)',
-              padding: 'var(--spacing-3) var(--spacing-4)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid rgba(194, 199, 208, 0.15)',
-              marginBottom: 'var(--spacing-6)',
-            }}
-          >
-            <span style={{ color: 'var(--on-surface-variant)', fontSize: '0.875rem' }}>&#128269;</span>
+          <div className="session-browser__search">
+            <span className="session-browser__search-icon">&#128269;</span>
             <input
-              className="input"
-              style={{
-                border: 'none',
-                outline: 'none',
-                background: 'none',
-                padding: 0,
-                boxShadow: 'none',
-                fontFamily: 'var(--font-body)',
-                fontSize: '0.875rem',
-                color: 'var(--on-surface)',
-                width: '100%',
-              }}
+              className="session-browser__search-input"
               placeholder="Search sessions..."
               readOnly
             />
           </div>
 
-          {/* Table header */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 120px 100px 40px',
-              padding: 'var(--spacing-3) var(--spacing-4)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: '0.6875rem',
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-              color: 'var(--on-surface-variant)',
-              background: 'var(--surface-container-low)',
-              borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
-            }}
-          >
+          <div className="session-browser__table-header">
             <span>Session</span>
             <span>Duration</span>
             <span>Status</span>
             <span></span>
           </div>
 
-          {/* Session rows */}
-          {filteredSessions.map((session, i) => (
+          {filteredSessions.map((session) => (
             <button
               key={session.id}
               type="button"
+              className={`session-browser__row${selectedSessionId === session.id ? ' session-browser__row--selected' : ''}`}
               onClick={() => setSelectedSessionId(session.id)}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 120px 100px 40px',
-                alignItems: 'center',
-                padding: 'var(--spacing-5) var(--spacing-4)',
-                background: selectedSessionId === session.id
-                  ? 'var(--surface-container-low)'
-                  : 'var(--surface-container-lowest)',
-                cursor: 'pointer',
-                border: 'none',
-                borderTop: i > 0 ? '1px solid rgba(194, 199, 208, 0.15)' : 'none',
-                textAlign: 'start',
-                width: '100%',
-                fontFamily: 'inherit',
-              }}
             >
               <div>
-                <div
-                  style={{
-                    fontWeight: 600,
-                    fontSize: '0.9375rem',
-                    marginBottom: '2px',
-                    color: 'var(--on-surface)',
-                  }}
-                >
-                  {session.title}
-                </div>
-                <div
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.6875rem',
-                    color: 'var(--on-surface-variant)',
-                  }}
-                >
+                <div className="session-browser__row-title">{session.title}</div>
+                <div className="session-browser__row-meta">
                   {formatDate(session.date)} &middot; {session.turns} turns
                 </div>
               </div>
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '0.75rem',
-                  color: 'var(--on-surface-variant)',
-                }}
-              >
+              <span className="session-browser__row-duration">
                 {formatDuration(session.durationMinutes)}
               </span>
               <span className={`chip chip--${session.status}`}>
                 {session.status.toUpperCase()}
               </span>
-              <span
-                style={{
-                  color: 'var(--primary)',
-                  fontSize: '1.25rem',
-                  textAlign: 'center',
-                }}
-              >
-                &#8594;
-              </span>
+              <span className="session-browser__row-arrow">&#8594;</span>
             </button>
           ))}
         </div>
 
         {/* Preview panel */}
-        <div
-          style={{
-            background: 'var(--surface-container-low)',
-            borderRadius: 'var(--radius-sm)',
-            padding: 'var(--spacing-5)',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          <div
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '0.6875rem',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: 'var(--on-surface-variant)',
-              marginBottom: 'var(--spacing-4)',
-              textAlign: 'center',
-            }}
-          >
+        <div className="session-browser__preview">
+          <div className="session-browser__preview-label">
             Raw Session Log Preview
           </div>
-          <div className="terminal" style={{ flex: 1, minHeight: '260px' }}>
+          <div className="terminal session-browser__preview-terminal">
             {selectedSession ? (
               <>
                 {selectedSession.rawLog.map((line, i) => (
-                  <div key={i} style={{ lineHeight: 1.8 }}>
-                    {line.startsWith('[AI]') ? (
-                      <><span style={{ color: '#60a5fa' }}>{line.substring(0, 4)}</span>{line.substring(4)}</>
-                    ) : line.startsWith('>') ? (
-                      <><span style={{ color: '#34d399' }}>&gt;</span>{line.substring(1)}</>
-                    ) : line === '...' ? (
-                      <span style={{ color: 'rgba(255,255,255,0.3)' }}>...</span>
-                    ) : line.startsWith('[') ? (
-                      <span style={{ color: '#34d399', fontWeight: 600 }}>{line}</span>
-                    ) : (
-                      <span>{line}</span>
-                    )}
-                  </div>
+                  <LogLine key={i} line={line} />
                 ))}
-                <div style={{ lineHeight: 1.8 }}>
+                <div className="terminal-line">
                   <span className="raw-log__cursor" />
                 </div>
               </>
             ) : (
-              <div style={{ color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>
+              <div className="terminal-line--dim" style={{ fontStyle: 'italic' }}>
                 Select a session to preview
               </div>
             )}
@@ -579,17 +431,7 @@ export function SessionList() {
           >
             Enhance with AI
           </a>
-          <div
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '0.625rem',
-              color: 'var(--on-surface-variant)',
-              textAlign: 'center',
-              marginTop: 'var(--spacing-2)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
+          <div className="session-browser__enhance-subtitle">
             Requires API key
           </div>
         </div>

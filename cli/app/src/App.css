@@ -1091,6 +1091,263 @@
 }
 
 /* ==========================================================================
+   SETUP BANNER — amber warning banner for missing config
+   ========================================================================== */
+
+.setup-banner {
+  background: var(--tertiary-fixed);
+  padding: var(--spacing-4) var(--spacing-6);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-8);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.setup-banner__icon {
+  color: var(--tertiary);
+  font-weight: 600;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.setup-banner__text {
+  font-size: 0.875rem;
+  color: var(--tertiary);
+}
+
+.setup-banner__action {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   EMPTY STATE — centered placeholder for no-data screens
+   ========================================================================== */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-20) 0;
+  text-align: center;
+}
+
+.empty-state__icon {
+  width: 64px;
+  height: 64px;
+  background: var(--surface-container-low);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--spacing-6);
+  color: var(--on-surface-variant);
+  font-size: 1.5rem;
+}
+
+.empty-state__title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-3);
+}
+
+.empty-state__desc {
+  font-size: 0.9375rem;
+  color: var(--on-surface-variant);
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+.empty-state__cmd {
+  margin-top: var(--spacing-8);
+}
+
+.empty-state__cmd code {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--on-surface-variant);
+  background: var(--surface-container-low);
+  padding: var(--spacing-3) var(--spacing-5);
+  border-radius: var(--radius-sm);
+  display: inline-block;
+}
+
+/* ==========================================================================
+   SESSION BROWSER — main browse layout (list + preview grid)
+   ========================================================================== */
+
+.session-browser {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: var(--spacing-8);
+  padding: var(--spacing-8);
+}
+
+.session-browser__heading {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-1);
+}
+
+.session-browser__subtitle {
+  font-size: 0.875rem;
+  color: var(--on-surface-variant);
+  margin-bottom: var(--spacing-6);
+}
+
+.session-browser__search {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  background: var(--surface-container-lowest);
+  padding: var(--spacing-3) var(--spacing-4);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(194, 199, 208, 0.15);
+  margin-bottom: var(--spacing-6);
+}
+
+.session-browser__search-icon {
+  color: var(--on-surface-variant);
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.session-browser__search-input {
+  border: none;
+  outline: none;
+  background: none;
+  padding: 0;
+  box-shadow: none;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--on-surface);
+  width: 100%;
+}
+
+.session-browser__table-header {
+  display: grid;
+  grid-template-columns: 1fr 120px 100px 40px;
+  padding: var(--spacing-3) var(--spacing-4);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+  background: var(--surface-container-low);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.session-browser__row {
+  display: grid;
+  grid-template-columns: 1fr 120px 100px 40px;
+  align-items: center;
+  padding: var(--spacing-5) var(--spacing-4);
+  background: var(--surface-container-lowest);
+  cursor: pointer;
+  border: none;
+  text-align: start;
+  width: 100%;
+  font-family: inherit;
+}
+
+.session-browser__row + .session-browser__row {
+  border-top: 1px solid rgba(194, 199, 208, 0.15);
+}
+
+.session-browser__row--selected {
+  background: var(--surface-container-low);
+}
+
+.session-browser__row-title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  margin-bottom: 2px;
+  color: var(--on-surface);
+}
+
+.session-browser__row-meta {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--on-surface-variant);
+}
+
+.session-browser__row-duration {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+}
+
+.session-browser__row-arrow {
+  color: var(--primary);
+  font-size: 1.25rem;
+  text-align: center;
+}
+
+/* Preview panel */
+
+.session-browser__preview {
+  background: var(--surface-container-low);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-5);
+  display: flex;
+  flex-direction: column;
+}
+
+.session-browser__preview-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+  margin-bottom: var(--spacing-4);
+  text-align: center;
+}
+
+.session-browser__preview-terminal {
+  flex: 1;
+  min-height: 260px;
+}
+
+.session-browser__enhance-subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--on-surface-variant);
+  text-align: center;
+  margin-top: var(--spacing-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Sidebar stats */
+
+.sidebar-stats {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+  line-height: 2;
+}
+
+.sidebar-stats strong {
+  color: var(--on-surface);
+}
+
+/* Terminal log line variants */
+
+.terminal-line {
+  line-height: 1.8;
+}
+
+.terminal-line--prompt { color: #34d399; }
+.terminal-line--ai { color: #60a5fa; }
+.terminal-line--dim { color: rgba(255, 255, 255, 0.3); }
+.terminal-line--success { color: #34d399; font-weight: 600; }
+
+/* ==========================================================================
    SETTINGS PAGE — centered single-column settings layout
    ========================================================================== */
 

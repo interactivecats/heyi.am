@@ -4,20 +4,55 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { SessionList } from './SessionList';
 
-function renderSessionList() {
+function renderSessionList(props: Parameters<typeof SessionList>[0] = {}) {
   return render(
     <MemoryRouter>
-      <SessionList />
+      <SessionList {...props} />
     </MemoryRouter>,
   );
 }
+
+describe('SessionList — empty state', () => {
+  it('renders "No sessions found" when sessions array is empty', () => {
+    renderSessionList({ sessions: [] });
+    expect(screen.getByText('No sessions found')).toBeInTheDocument();
+  });
+
+  it('renders setup banner in empty state', () => {
+    renderSessionList({ sessions: [] });
+    expect(screen.getByTestId('setup-banner')).toBeInTheDocument();
+    expect(
+      screen.getByText('Add your Anthropic API key to enable AI summaries'),
+    ).toBeInTheDocument();
+  });
+
+  it('renders Settings button that links to settings', () => {
+    renderSessionList({ sessions: [] });
+    expect(screen.getByText('Settings')).toBeInTheDocument();
+  });
+
+  it('shows ~/.claude/projects path hint', () => {
+    renderSessionList({ sessions: [] });
+    expect(screen.getByText('~/.claude/projects')).toBeInTheDocument();
+  });
+
+  it('shows claude command hint', () => {
+    renderSessionList({ sessions: [] });
+    expect(screen.getByText(/\$ claude/)).toBeInTheDocument();
+  });
+
+  it('does not render sidebar in empty state', () => {
+    renderSessionList({ sessions: [] });
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+  });
+});
 
 describe('SessionList — populated state', () => {
   it('renders the selected project name as heading', () => {
     renderSessionList();
     // First project is selected by default — appears in both sidebar and heading
     const matches = screen.getAllByText('auth-service');
-    expect(matches.length).toBeGreaterThanOrEqual(2); // sidebar + heading
+    expect(matches.length).toBeGreaterThanOrEqual(2);
   });
 
   it('renders project list in sidebar', () => {
@@ -69,14 +104,11 @@ describe('SessionList — populated state', () => {
     const user = userEvent.setup();
     renderSessionList();
 
-    // Click "ui-components" project
     await user.click(screen.getByText('ui-components'));
 
-    // Only the dropdown session should remain
     expect(
       screen.getByText('Implement accessible dropdown component'),
     ).toBeInTheDocument();
-    // Sessions from other projects should be gone
     expect(
       screen.queryByText('Refactor JWT middleware to support refresh tokens'),
     ).not.toBeInTheDocument();
@@ -86,12 +118,10 @@ describe('SessionList — populated state', () => {
     const user = userEvent.setup();
     renderSessionList();
 
-    // Click a session
     await user.click(
       screen.getByText('Refactor JWT middleware to support refresh tokens'),
     );
 
-    // Raw log content should appear in the terminal
     expect(
       screen.getByText(/The existing auth was frankencode/),
     ).toBeInTheDocument();
@@ -99,8 +129,7 @@ describe('SessionList — populated state', () => {
 
   it('renders "Enhance with AI" button in preview panel', () => {
     renderSessionList();
-    const enhanceLink = screen.getByText(/Enhance with AI/);
-    expect(enhanceLink).toBeInTheDocument();
+    expect(screen.getByText('Enhance with AI')).toBeInTheDocument();
   });
 
   it('renders "Requires API key" subtitle under enhance button', () => {
