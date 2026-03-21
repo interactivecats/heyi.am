@@ -340,6 +340,24 @@ describe('GET /api/auth/status', () => {
   });
 });
 
+describe('CORS restriction', () => {
+  it('allows requests from localhost:17845', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app)
+      .get('/api/projects')
+      .set('Origin', 'http://localhost:17845');
+    expect(res.headers['access-control-allow-origin']).toBe('http://localhost:17845');
+  });
+
+  it('rejects requests from other origins', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app)
+      .get('/api/projects')
+      .set('Origin', 'http://evil.com');
+    expect(res.headers['access-control-allow-origin']).toBeUndefined();
+  });
+});
+
 describe('empty sessions directory', () => {
   it('returns empty projects for non-existent base path', async () => {
     const app = createApp(join(tmpDir, 'does-not-exist'));

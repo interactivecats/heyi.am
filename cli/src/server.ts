@@ -62,7 +62,7 @@ async function loadSession(sessionPath: string, projectName: string, sessionId: 
 export function createApp(sessionsBasePath?: string) {
   const app = express();
 
-  app.use(cors());
+  app.use(cors({ origin: ['http://localhost:17845', 'http://127.0.0.1:17845'] }));
   app.use(express.json());
 
   // API routes — wired to real parser pipeline
