@@ -11,7 +11,7 @@ defmodule HeyiAmWeb.ShareApiController do
   Accepts JSON with session data, optional challenge slug, signature, and public key.
   """
   def create(conn, %{"session" => session_params} = params) do
-    user_id = get_user_id_from_token(conn)
+    user_id = conn.assigns[:current_user_id]
     has_challenge = is_binary(params["challenge_slug"]) and params["challenge_slug"] != ""
 
     # Require auth for non-challenge publishes
@@ -25,6 +25,7 @@ defmodule HeyiAmWeb.ShareApiController do
         |> Map.delete("user_id")
         |> Map.put("token", Shares.generate_token())
         |> Map.put("status", "listed")
+        |> Map.put_new("recorded_at", DateTime.utc_now())
         |> maybe_put("user_id", user_id)
 
       with {:ok, attrs} <- maybe_link_challenge(attrs, params) do
@@ -86,21 +87,6 @@ defmodule HeyiAmWeb.ShareApiController do
           verified_at: share.verified_at
         })
     end
-  end
-
-  defp get_user_id_from_token(conn) do
-    case get_req_header(conn, "authorization") do
-      ["Bearer " <> token] ->
-        case HeyiAm.Accounts.get_user_by_session_token(Base.decode64!(token)) do
-          {%{id: id}, _inserted_at} -> id
-          _ -> nil
-        end
-
-      _ ->
-        nil
-    end
-  rescue
-    ArgumentError -> nil
   end
 
   defp maybe_put(map, _key, nil), do: map

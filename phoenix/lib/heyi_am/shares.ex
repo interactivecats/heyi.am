@@ -57,21 +57,6 @@ defmodule HeyiAm.Shares do
     |> Repo.all()
   end
 
-  def pin_turn(%Share{} = share, turn_id), do: add_to_list(share, :pinned_turns, turn_id)
-  def unpin_turn(%Share{} = share, turn_id), do: remove_from_list(share, :pinned_turns, turn_id)
-  def highlight_step(%Share{} = share, step_index), do: add_to_list(share, :highlighted_steps, step_index)
-  def unhighlight_step(%Share{} = share, step_index), do: remove_from_list(share, :highlighted_steps, step_index)
-
-  defp add_to_list(share, field, item) do
-    updated = Enum.uniq(Map.get(share, field) ++ [item])
-    update_share(share, %{field => updated})
-  end
-
-  defp remove_from_list(share, field, item) do
-    updated = Enum.reject(Map.get(share, field), &(&1 == item))
-    update_share(share, %{field => updated})
-  end
-
   def generate_token do
     :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
   end

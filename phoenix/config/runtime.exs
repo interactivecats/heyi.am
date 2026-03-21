@@ -20,6 +20,29 @@ if System.get_env("PHX_SERVER") do
   config :heyi_am, HeyiAmWeb.Endpoint, server: true
 end
 
+# Umami analytics — only active when both env vars are set
+if umami_url = System.get_env("UMAMI_SCRIPT_URL") do
+  config :heyi_am, umami_script_url: umami_url
+  config :heyi_am, umami_website_id: System.get_env("UMAMI_WEBSITE_ID")
+end
+
+# LLM proxy — server-side AI enhancement (skipped in test; configured in test.exs)
+if config_env() != :test do
+  config :heyi_am, HeyiAm.LLM,
+    provider: System.get_env("LLM_PROVIDER", "gemini"),
+    gemini_api_key: System.get_env("GEMINI_API_KEY"),
+    anthropic_api_key: System.get_env("LLM_ANTHROPIC_API_KEY"),
+    gemini_model: System.get_env("LLM_GEMINI_MODEL", "gemini-2.5-flash"),
+    anthropic_model: System.get_env("LLM_ANTHROPIC_MODEL", "claude-haiku-4-5-20251001"),
+    monthly_quota: String.to_integer(System.get_env("LLM_MONTHLY_QUOTA", "10"))
+end
+
+# OpenTelemetry — enable OTLP export when endpoint is configured (e.g. Signoz)
+if otel_endpoint = System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") do
+  config :opentelemetry,
+    traces_exporter: {:otlp, endpoint: otel_endpoint}
+end
+
 # GitHub OAuth — required in prod, optional in dev/test
 if client_id = System.get_env("GITHUB_CLIENT_ID") do
   config :ueberauth, Ueberauth.Strategy.Github.OAuth,

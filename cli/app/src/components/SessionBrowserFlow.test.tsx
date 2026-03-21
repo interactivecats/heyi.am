@@ -5,13 +5,14 @@
  * verifying component rendering, navigation triggers, and user interactions.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { SessionList } from './SessionList';
 import { SessionDetail } from './SessionDetail';
 import { EnhanceFlow } from './EnhanceFlow';
 import { SessionEditorPage } from './SessionEditorPage';
+import { AuthProvider } from '../AuthContext';
 import { MOCK_SESSIONS, MOCK_PROJECTS } from '../mock-data';
 import * as api from '../api';
 import type { EnhancementResult } from '../api';
@@ -74,11 +75,13 @@ function renderEnhance(sessionId: string) {
 function renderEditor(sessionId: string, isAuthenticated = true) {
   return render(
     <MemoryRouter initialEntries={[`/session/${sessionId}/edit`]}>
-      <Routes>
-        <Route path="/session/:id/edit" element={<SessionEditorPage sessions={MOCK_SESSIONS} isAuthenticated={isAuthenticated} />} />
-        <Route path="/" element={<div>Home</div>} />
-        <Route path="/session/:id" element={<div>Detail Page</div>} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/session/:id/edit" element={<SessionEditorPage sessions={MOCK_SESSIONS} isAuthenticated={isAuthenticated} />} />
+          <Route path="/" element={<div>Home</div>} />
+          <Route path="/session/:id" element={<div>Detail Page</div>} />
+        </Routes>
+      </AuthProvider>
     </MemoryRouter>,
   );
 }
@@ -258,7 +261,7 @@ describe('Session Detail', () => {
 
 describe('Enhance Flow — full phase progression', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.spyOn(api, 'enhanceSession').mockResolvedValue(MOCK_ENHANCEMENT);
   });
 
@@ -363,11 +366,21 @@ describe('Enhance Flow — full phase progression', () => {
 
 describe('Session Editor — layout and publish', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.spyOn(api, 'fetchAuthStatus' as keyof typeof api).mockResolvedValue({ authenticated: false });
+    vi.spyOn(api, 'startDeviceAuth' as keyof typeof api).mockResolvedValue({
+      device_code: 'test-dc',
+      user_code: 'TEST-CODE',
+      verification_uri: 'http://localhost:4000/device',
+      expires_in: 900,
+      interval: 5,
+    });
+    vi.spyOn(api, 'pollDeviceAuth' as keyof typeof api).mockResolvedValue({ authenticated: false });
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it('renders editor with session title in input', () => {
@@ -406,16 +419,18 @@ describe('Session Editor — layout and publish', () => {
     expect(screen.getByRole('button', { name: /Publish/ })).toBeInTheDocument();
   });
 
-  it('Publish triggers auth check — shows auth modal when not authenticated', () => {
+  it('Publish triggers auth check — shows auth modal when not authenticated', async () => {
     renderEditor('ses-001', false);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    expect(screen.getByText('Connect your account?')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Connect your account')).toBeInTheDocument();
+    });
   });
 
   it('Publish skips auth modal when authenticated', () => {
     renderEditor('ses-001', true);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    expect(screen.queryByText('Connect your account?')).toBeNull();
+    expect(screen.queryByText('Connect your account')).toBeNull();
     act(() => { vi.advanceTimersByTime(500); });
     expect(screen.getByText('$ heyiam publish')).toBeInTheDocument();
   });

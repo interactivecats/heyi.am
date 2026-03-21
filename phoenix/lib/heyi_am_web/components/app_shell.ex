@@ -80,6 +80,18 @@ defmodule HeyiAmWeb.AppShell do
       <main class={["content-center", @class]} style="padding-block: 4rem;">
         {render_slot(@inner_block)}
       </main>
+
+      <footer style="border-top: 1px solid var(--outline-variant); padding-block: var(--spacing-6); margin-block-start: var(--spacing-8);">
+        <div style="max-width: var(--content-max-width); margin-inline: auto; padding-inline: var(--spacing-6); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-4);">
+          <span class="label-sm" style="color: var(--on-surface-variant);">
+            heyi.am
+          </span>
+          <nav aria-label="Footer" style="display: flex; gap: var(--spacing-6);">
+            <a href="/terms" class="label-sm" style="color: var(--on-surface-variant); text-decoration: none;">Terms</a>
+            <a href="/privacy" class="label-sm" style="color: var(--on-surface-variant); text-decoration: none;">Privacy</a>
+          </nav>
+        </div>
+      </footer>
     </div>
     """
   end

@@ -125,54 +125,6 @@ defmodule HeyiAm.SharesTest do
     end
   end
 
-  describe "pin_turn/2 and unpin_turn/2" do
-    test "adds turn to pinned_turns" do
-      share = share_fixture()
-      {:ok, updated} = Shares.pin_turn(share, "turn-1")
-      assert "turn-1" in updated.pinned_turns
-    end
-
-    test "does not duplicate pinned turns" do
-      share = share_fixture()
-      {:ok, share} = Shares.pin_turn(share, "turn-1")
-      {:ok, share} = Shares.pin_turn(share, "turn-1")
-      assert Enum.count(share.pinned_turns, &(&1 == "turn-1")) == 1
-    end
-
-    test "removes turn from pinned_turns" do
-      share = share_fixture()
-      {:ok, share} = Shares.pin_turn(share, "turn-1")
-      {:ok, share} = Shares.pin_turn(share, "turn-2")
-      {:ok, updated} = Shares.unpin_turn(share, "turn-1")
-      refute "turn-1" in updated.pinned_turns
-      assert "turn-2" in updated.pinned_turns
-    end
-  end
-
-  describe "highlight_step/2 and unhighlight_step/2" do
-    test "adds step to highlighted_steps" do
-      share = share_fixture()
-      {:ok, updated} = Shares.highlight_step(share, 3)
-      assert 3 in updated.highlighted_steps
-    end
-
-    test "does not duplicate highlighted steps" do
-      share = share_fixture()
-      {:ok, share} = Shares.highlight_step(share, 3)
-      {:ok, share} = Shares.highlight_step(share, 3)
-      assert Enum.count(share.highlighted_steps, &(&1 == 3)) == 1
-    end
-
-    test "removes step from highlighted_steps" do
-      share = share_fixture()
-      {:ok, share} = Shares.highlight_step(share, 3)
-      {:ok, share} = Shares.highlight_step(share, 5)
-      {:ok, updated} = Shares.unhighlight_step(share, 3)
-      refute 3 in updated.highlighted_steps
-      assert 5 in updated.highlighted_steps
-    end
-  end
-
   describe "sealed immutability" do
     test "sealed shares cannot be modified" do
       share = share_fixture(%{sealed: true})

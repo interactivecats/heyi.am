@@ -7,13 +7,16 @@ defmodule HeyiAm.Application do
 
   @impl true
   def start(_type, _args) do
+    OpentelemetryPhoenix.setup(adapter: :bandit)
+    OpentelemetryEcto.setup([:heyi_am, :repo])
+    OpentelemetryBandit.setup()
+
     children = [
       HeyiAmWeb.Telemetry,
       HeyiAm.Repo,
       {DNSCluster, query: Application.get_env(:heyi_am, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: HeyiAm.PubSub},
-      # Start a worker by calling: HeyiAm.Worker.start_link(arg)
-      # {HeyiAm.Worker, arg},
+      HeyiAm.Accounts.DeviceCodeCleaner,
       # Start to serve requests, typically the last entry
       HeyiAmWeb.Endpoint
     ]

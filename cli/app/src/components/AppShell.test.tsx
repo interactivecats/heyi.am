@@ -1,11 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { AppShell } from './AppShell.tsx';
+
+function renderShell(ui: React.ReactElement) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>);
+}
 
 describe('AppShell', () => {
   it('renders children in the main content area', () => {
-    render(
+    renderShell(
       <AppShell>
         <p>Main content here</p>
       </AppShell>,
@@ -14,7 +19,7 @@ describe('AppShell', () => {
   });
 
   it('renders the heyi.am logo', () => {
-    render(
+    renderShell(
       <AppShell>
         <div />
       </AppShell>,
@@ -23,7 +28,7 @@ describe('AppShell', () => {
   });
 
   it('renders a settings button', () => {
-    render(
+    renderShell(
       <AppShell>
         <div />
       </AppShell>,
@@ -32,7 +37,7 @@ describe('AppShell', () => {
   });
 
   it('does not render back button when onBack is not provided', () => {
-    render(
+    renderShell(
       <AppShell>
         <div />
       </AppShell>,
@@ -41,7 +46,7 @@ describe('AppShell', () => {
   });
 
   it('renders back button when onBack is provided', () => {
-    render(
+    renderShell(
       <AppShell onBack={() => {}}>
         <div />
       </AppShell>,
@@ -52,7 +57,7 @@ describe('AppShell', () => {
   it('calls onBack when back button is clicked', async () => {
     const handleBack = vi.fn();
     const user = userEvent.setup();
-    render(
+    renderShell(
       <AppShell onBack={handleBack}>
         <div />
       </AppShell>,
@@ -62,7 +67,7 @@ describe('AppShell', () => {
   });
 
   it('renders title when provided', () => {
-    render(
+    renderShell(
       <AppShell title="Browse Sessions">
         <div />
       </AppShell>,
@@ -71,7 +76,7 @@ describe('AppShell', () => {
   });
 
   it('does not render title element when title is not provided', () => {
-    const { container } = render(
+    const { container } = renderShell(
       <AppShell>
         <div />
       </AppShell>,
@@ -80,7 +85,7 @@ describe('AppShell', () => {
   });
 
   it('does not render sidebar by default', () => {
-    render(
+    renderShell(
       <AppShell>
         <div />
       </AppShell>,
@@ -89,7 +94,7 @@ describe('AppShell', () => {
   });
 
   it('renders sidebar when showSidebar is true', () => {
-    render(
+    renderShell(
       <AppShell showSidebar sidebarContent={<p>Project list</p>}>
         <div />
       </AppShell>,
@@ -99,7 +104,7 @@ describe('AppShell', () => {
   });
 
   it('does not render bottom bar by default', () => {
-    const { container } = render(
+    const { container } = renderShell(
       <AppShell>
         <div />
       </AppShell>,
@@ -108,7 +113,7 @@ describe('AppShell', () => {
   });
 
   it('renders bottom bar when provided', () => {
-    render(
+    renderShell(
       <AppShell bottomBar={<button type="button">Enhance with AI</button>}>
         <div />
       </AppShell>,
@@ -117,7 +122,7 @@ describe('AppShell', () => {
   });
 
   it('uses semantic landmark roles', () => {
-    render(
+    renderShell(
       <AppShell showSidebar sidebarContent={<div />}>
         <div />
       </AppShell>,
@@ -128,7 +133,7 @@ describe('AppShell', () => {
   });
 
   it('renders auth status indicator', () => {
-    render(
+    renderShell(
       <AppShell>
         <div />
       </AppShell>,

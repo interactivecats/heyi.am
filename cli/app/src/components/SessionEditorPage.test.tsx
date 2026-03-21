@@ -1,31 +1,45 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { SessionEditorPage } from './SessionEditorPage';
 import type { SessionEditorPageProps } from './SessionEditorPage';
+import { AuthProvider } from '../AuthContext';
 import { MOCK_SESSIONS } from '../mock-data';
 
 vi.mock('../api', () => ({
   publishSession: vi.fn(() =>
     Promise.resolve({ token: 'tok-123', url: '/s/ses-001', sealed: false, content_hash: 'abc' }),
   ),
+  fetchAuthStatus: vi.fn(() => Promise.resolve({ authenticated: false })),
+  startDeviceAuth: vi.fn(() =>
+    Promise.resolve({
+      device_code: 'test-dc',
+      user_code: 'TEST-CODE',
+      verification_uri: 'http://localhost:4000/device',
+      expires_in: 900,
+      interval: 5,
+    }),
+  ),
+  pollDeviceAuth: vi.fn(() => Promise.resolve({ authenticated: false })),
 }));
 
 function renderWithRoute(sessionId: string, props?: Partial<SessionEditorPageProps>) {
   return render(
     <MemoryRouter initialEntries={[`/session/${sessionId}/edit`]}>
-      <Routes>
-        <Route path="/session/:id/edit" element={<SessionEditorPage sessions={MOCK_SESSIONS} {...props} />} />
-        <Route path="/" element={<div>Home</div>} />
-        <Route path="/session/:id" element={<div>Detail Page</div>} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/session/:id/edit" element={<SessionEditorPage sessions={MOCK_SESSIONS} {...props} />} />
+          <Route path="/" element={<div>Home</div>} />
+          <Route path="/session/:id" element={<div>Detail Page</div>} />
+        </Routes>
+      </AuthProvider>
     </MemoryRouter>,
   );
 }
 
 describe('SessionEditorPage', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
   });
 
   afterEach(() => {
@@ -52,36 +66,33 @@ describe('SessionEditorPage', () => {
     expect(publishBtn?.textContent).toContain('Publish');
   });
 
-  it('shows auth modal when Publish clicked (not authenticated)', () => {
+  it('shows auth modal when Publish clicked (not authenticated)', async () => {
     renderWithRoute('ses-001', { isAuthenticated: false });
     const publishBtn = screen.getByRole('button', { name: /Publish/ });
     fireEvent.click(publishBtn);
-    expect(screen.getByText('Connect your account?')).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByText('Connect your account')).toBeDefined();
+    });
   });
 
-  it('auth modal has "Connect now" and "Cancel" buttons', () => {
+  it('auth modal has "Open in browser" and "Cancel" buttons', async () => {
     renderWithRoute('ses-001', { isAuthenticated: false });
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    expect(screen.getByText('Connect now')).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByText('Open in browser')).toBeDefined();
+    });
     expect(screen.getByText('Cancel')).toBeDefined();
   });
 
-  it('Cancel button returns to editing phase', () => {
+  it('Cancel button returns to editing phase', async () => {
     renderWithRoute('ses-001', { isAuthenticated: false });
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
+    await waitFor(() => {
+      expect(screen.getByText('Connect your account')).toBeDefined();
+    });
     fireEvent.click(screen.getByText('Cancel'));
-    expect(screen.queryByText('Connect your account?')).toBeNull();
+    expect(screen.queryByText('Connect your account')).toBeNull();
     expect(screen.getByDisplayValue(MOCK_SESSIONS[0].title)).toBeDefined();
-  });
-
-  it('"Connect now" transitions to terminal animation', () => {
-    renderWithRoute('ses-001', { isAuthenticated: false });
-    fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    fireEvent.click(screen.getByText('Connect now'));
-
-    // First line appears after 500ms
-    act(() => { vi.advanceTimersByTime(500); });
-    expect(screen.getByText('$ heyiam publish')).toBeDefined();
   });
 
   it('terminal animation shows publish steps sequentially', () => {
@@ -125,7 +136,7 @@ describe('SessionEditorPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
 
     // Should go straight to terminal, no auth modal
-    expect(screen.queryByText('Connect your account?')).toBeNull();
+    expect(screen.queryByText('Connect your account')).toBeNull();
     act(() => { vi.advanceTimersByTime(500); });
     expect(screen.getByText('$ heyiam publish')).toBeDefined();
   });

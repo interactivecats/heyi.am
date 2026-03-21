@@ -3,7 +3,7 @@
 import { Command } from 'commander';
 import { startServer } from './server.js';
 import open from 'open';
-import { checkAuthStatus, deviceAuthFlow, getAuthToken, buildPublishPayload } from './auth.js';
+import { checkAuthStatus, deviceAuthFlow, getAuthToken, deleteAuthToken, buildPublishPayload } from './auth.js';
 import { loadOrCreateKeyPair, signPayload, getFingerprint } from './machine-key.js';
 
 const program = new Command();
@@ -69,6 +69,14 @@ program
       console.error(`Login failed: ${(err as Error).message}`);
       process.exitCode = 1;
     }
+  });
+
+program
+  .command('logout')
+  .description('Remove saved authentication credentials')
+  .action(() => {
+    deleteAuthToken();
+    console.log('Logged out. Run `heyiam login` to re-authenticate.');
   });
 
 program

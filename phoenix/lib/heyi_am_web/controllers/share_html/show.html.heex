@@ -117,7 +117,7 @@
         <span class="sidebar-card-label">Source</span>
         <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); line-height: 2;">
           <div>Source: Claude Code</div>
-          <div>Date: {Calendar.strftime(@session.recorded_at, "%b %d, %Y")}</div>
+          <div>Date: {if @session.recorded_at, do: Calendar.strftime(@session.recorded_at, "%b %d, %Y"), else: "—"}</div>
           <div>
             Author:
             <a href={"/" <> @session.user.username} style="color: var(--primary); text-decoration: none;">
@@ -208,7 +208,7 @@
     </details>
 
     <%!-- Collapsible: Full Narrative --%>
-    <details class="collapsible" style="margin-block-end: var(--spacing-2);">
+    <details :if={@session.narrative} class="collapsible" style="margin-block-end: var(--spacing-2);">
       <summary>Full narrative</summary>
       <div class="collapsible-content" style="font-size: 0.875rem; color: var(--on-surface-variant); line-height: 1.7;">
         <p :for={paragraph <- String.split(@session.narrative, "\n\n")} style="margin-block-end: var(--spacing-4);">

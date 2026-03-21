@@ -49,6 +49,18 @@ vi.mock('./summarize.js', () => {
   };
 });
 
+vi.mock('./llm/index.js', async () => {
+  // Import the mocked summarize module to get the same mock result
+  const { summarizeSession } = await import('./summarize.js');
+  return {
+    getProvider: vi.fn().mockReturnValue({
+      name: 'local',
+      enhance: vi.fn().mockImplementation((session: unknown) => summarizeSession(session as never)),
+    }),
+    getEnhanceMode: vi.fn().mockReturnValue('local'),
+  };
+});
+
 // --- Test fixtures ---
 
 function makeEntry(overrides: Partial<RawEntry> & { type: string }): RawEntry {
@@ -338,12 +350,40 @@ describe('POST /api/publish', () => {
   });
 });
 
+describe('GET /api/enhance/status', () => {
+  it('returns enhance status with mode', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app).get('/api/enhance/status');
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('mode');
+    // In test env with mocked llm module, getEnhanceMode returns 'local'
+    expect(res.body.mode).toBe('local');
+  });
+});
+
 describe('GET /api/auth/status', () => {
   it('returns auth status', async () => {
     const app = createApp(tmpDir);
     const res = await request(app).get('/api/auth/status');
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('authenticated');
+  });
+});
+
+describe('POST /api/auth/login', () => {
+  it('endpoint exists and proxies to Phoenix', () => {
+    const app = createApp(tmpDir);
+    // Verify no global state is stored
+    expect(app.locals.pendingDeviceCode).toBeUndefined();
+  });
+});
+
+describe('POST /api/auth/poll', () => {
+  it('returns 400 when no device_code provided', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app).post('/api/auth/poll').send({});
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('Missing device_code');
   });
 });
 

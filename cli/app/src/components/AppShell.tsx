@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 
 interface AppShellProps {
@@ -32,6 +33,7 @@ export function AppShell({
   children,
 }: AppShellProps) {
   const auth = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div className="app-shell">
@@ -77,6 +79,7 @@ export function AppShell({
             className="app-header__icon-btn"
             aria-label="Settings"
             type="button"
+            onClick={() => navigate('/settings')}
           >
             <svg
               viewBox="0 0 24 24"

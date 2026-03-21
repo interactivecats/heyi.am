@@ -75,6 +75,12 @@ config :hammer,
             [expiry_ms: 60_000 * 60 * 4,
              cleanup_interval_ms: 60_000 * 10]}
 
+# OpenTelemetry — disabled by default, enabled via OTEL_EXPORTER_OTLP_ENDPOINT at runtime
+config :opentelemetry,
+  resource: [service: [name: "heyi-am"]],
+  span_processor: :batch,
+  traces_exporter: :none
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 

@@ -61,7 +61,13 @@ defmodule HeyiAm.MixProject do
       {:esbuild, "~> 0.10.0", runtime: Mix.env() == :dev},
       {:ueberauth, "~> 0.10"},
       {:ueberauth_github, "~> 0.8"},
-      {:hammer, "~> 6.1"}
+      {:hammer, "~> 6.1"},
+      {:opentelemetry, "~> 1.4"},
+      {:opentelemetry_api, "~> 1.3"},
+      {:opentelemetry_exporter, "~> 1.7"},
+      {:opentelemetry_phoenix, "~> 2.0"},
+      {:opentelemetry_ecto, "~> 1.2"},
+      {:opentelemetry_bandit, "~> 0.2"}
     ]
   end
 

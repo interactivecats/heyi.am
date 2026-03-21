@@ -5,17 +5,36 @@
  * unauthenticated publish flow auth prompt, and connection states.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { Settings } from './Settings';
 import { SessionEditorPage } from './SessionEditorPage';
+import { AuthProvider } from '../AuthContext';
 import { MOCK_SESSIONS } from '../mock-data';
+
+const mockStartDeviceAuth = vi.fn(() =>
+  Promise.resolve({
+    device_code: 'test-device-code',
+    user_code: 'ABCD-1234',
+    verification_uri: 'http://localhost:4000/device',
+    expires_in: 900,
+    interval: 5,
+  }),
+);
+
+const mockPollDeviceAuth = vi.fn(() =>
+  Promise.resolve({ authenticated: false }),
+);
 
 vi.mock('../api', () => ({
   publishSession: vi.fn(() =>
     Promise.resolve({ token: 'tok-123', url: '/s/ses-001', sealed: false, content_hash: 'abc' }),
   ),
+  fetchAuthStatus: vi.fn(() => Promise.resolve({ authenticated: false })),
+  fetchEnhanceStatus: vi.fn(() => Promise.resolve({ mode: 'local', remaining: null })),
+  startDeviceAuth: () => mockStartDeviceAuth(),
+  pollDeviceAuth: (_deviceCode: string) => mockPollDeviceAuth(),
 }));
 
 // ---------------------------------------------------------------------------
@@ -33,11 +52,13 @@ function renderSettings() {
 function renderEditor(sessionId: string, isAuthenticated = false) {
   return render(
     <MemoryRouter initialEntries={[`/session/${sessionId}/edit`]}>
-      <Routes>
-        <Route path="/session/:id/edit" element={<SessionEditorPage sessions={MOCK_SESSIONS} isAuthenticated={isAuthenticated} />} />
-        <Route path="/" element={<div>Home</div>} />
-        <Route path="/session/:id" element={<div>Detail Page</div>} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/session/:id/edit" element={<SessionEditorPage sessions={MOCK_SESSIONS} isAuthenticated={isAuthenticated} />} />
+          <Route path="/" element={<div>Home</div>} />
+          <Route path="/session/:id" element={<div>Detail Page</div>} />
+        </Routes>
+      </AuthProvider>
     </MemoryRouter>,
   );
 }
@@ -49,27 +70,31 @@ function renderEditor(sessionId: string, isAuthenticated = false) {
 describe('Settings page — sections', () => {
   it('renders all three settings sections', () => {
     renderSettings();
-    expect(screen.getByText('API Configuration')).toBeInTheDocument();
+    expect(screen.getByText('AI Enhancement')).toBeInTheDocument();
     expect(screen.getByText('Authentication')).toBeInTheDocument();
     expect(screen.getByText('Machine Identity')).toBeInTheDocument();
   });
 
-  it('renders API key input as password field with placeholder', () => {
+  it('renders collapsible API key section', () => {
     renderSettings();
-    const input = screen.getByLabelText('Anthropic API Key');
-    expect(input).toHaveAttribute('type', 'password');
-    expect(input).toHaveAttribute('placeholder', 'sk-ant-...');
+    expect(screen.getByText('Use your own API key')).toBeInTheDocument();
   });
 
-  it('renders API key help text', () => {
+  it('renders API key input inside collapsible with placeholder', () => {
     renderSettings();
-    expect(screen.getByText('Used for AI enhancement. Stored locally, never sent to our servers.')).toBeInTheDocument();
+    const input = screen.getByPlaceholderText('sk-ant-...');
+    expect(input).toHaveAttribute('type', 'password');
+  });
+
+  it('renders BYOK help text', () => {
+    renderSettings();
+    expect(screen.getByText('Uses your own Anthropic account. Bypasses proxy quota.')).toBeInTheDocument();
   });
 
   it('toggles API key visibility', async () => {
     const user = userEvent.setup();
     renderSettings();
-    const input = screen.getByLabelText('Anthropic API Key');
+    const input = screen.getByPlaceholderText('sk-ant-...');
     expect(input).toHaveAttribute('type', 'password');
 
     await user.click(screen.getByRole('button', { name: /show api key/i }));
@@ -124,58 +149,76 @@ describe('Settings page — sections', () => {
 
 describe('Auth prompt modal — unauthenticated publish', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    mockStartDeviceAuth.mockClear();
+    mockPollDeviceAuth.mockClear();
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it('shows auth prompt modal when Publish clicked without auth', () => {
+  it('shows auth prompt modal when Publish clicked without auth', async () => {
     renderEditor('ses-001', false);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    expect(screen.getByText('Connect your account?')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Connect your account')).toBeInTheDocument();
+    });
   });
 
-  it('modal has device code', () => {
+  it('shows loading state then real device code', async () => {
     renderEditor('ses-001', false);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    expect(screen.getByText('RXKF-7Y2M')).toBeInTheDocument();
+    // Initially the device-code area shows loading
+    const codeEl = document.querySelector('.publish-modal__device-code');
+    expect(codeEl?.textContent).toBe('...');
+    // After API responds, shows real code
+    await waitFor(() => {
+      expect(screen.getByText('ABCD-1234')).toBeInTheDocument();
+    });
   });
 
-  it('modal has "heyi.am/device" instructions', () => {
+  it('modal has verification URI', async () => {
     renderEditor('ses-001', false);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    expect(screen.getByText(/heyi\.am\/device/)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/localhost:4000\/device/)).toBeInTheDocument();
+    });
   });
 
-  it('modal has Connect now button', () => {
+  it('modal has Open in browser link', async () => {
     renderEditor('ses-001', false);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    expect(screen.getByText('Connect now')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Open in browser')).toBeInTheDocument();
+    });
   });
 
-  it('modal has Cancel button', () => {
+  it('modal has Cancel button', async () => {
     renderEditor('ses-001', false);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    expect(screen.getByText('Cancel')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Cancel')).toBeInTheDocument();
+    });
   });
 
-  it('Cancel returns to editing phase', () => {
+  it('Cancel returns to editing phase', async () => {
     renderEditor('ses-001', false);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
+    await waitFor(() => {
+      expect(screen.getByText('Connect your account')).toBeInTheDocument();
+    });
     fireEvent.click(screen.getByText('Cancel'));
-    expect(screen.queryByText('Connect your account?')).toBeNull();
+    expect(screen.queryByText('Connect your account')).toBeNull();
   });
 
-  it('Connect now transitions to terminal animation', () => {
+  it('calls startDeviceAuth when publish clicked unauthenticated', async () => {
     renderEditor('ses-001', false);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    fireEvent.click(screen.getByText('Connect now'));
-    act(() => { vi.advanceTimersByTime(500); });
-    expect(screen.getByText('$ heyiam publish')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockStartDeviceAuth).toHaveBeenCalledTimes(1);
+    });
   });
-
 });
 
 // ===========================================================================
@@ -194,12 +237,8 @@ describe('Auth — connected state', () => {
   it('skips auth modal and goes straight to terminal when authenticated', () => {
     renderEditor('ses-001', true);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    expect(screen.queryByText('Connect your account?')).toBeNull();
+    expect(screen.queryByText('Connect your account')).toBeNull();
     act(() => { vi.advanceTimersByTime(500); });
     expect(screen.getByText('$ heyiam publish')).toBeInTheDocument();
   });
-
-  // NOTE: Connected state with green dot + username not yet wired
-  // (Settings component has isConnected hardcoded to false).
-  // When wired, add test: green dot visible + username shown.
 });

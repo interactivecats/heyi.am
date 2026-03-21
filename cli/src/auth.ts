@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
@@ -42,6 +42,13 @@ export function writeConfig(filename: string, data: unknown, configDir: string =
 
 export function getAuthToken(configDir: string = CONFIG_DIR): AuthConfig | null {
   return readConfig<AuthConfig>(AUTH_FILE, configDir);
+}
+
+export function deleteAuthToken(configDir: string = CONFIG_DIR): void {
+  const filePath = join(configDir, AUTH_FILE);
+  if (existsSync(filePath)) {
+    unlinkSync(filePath);
+  }
 }
 
 export function saveAuthToken(token: string, username: string, configDir: string = CONFIG_DIR): void {

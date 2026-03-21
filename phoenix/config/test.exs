@@ -34,6 +34,9 @@ config :ueberauth, Ueberauth.Strategy.Github.OAuth,
   client_id: "test_client_id",
   client_secret: "test_client_secret"
 
+# Use mock LLM provider in tests
+config :heyi_am, HeyiAm.LLM, provider: "mock", monthly_quota: 10
+
 # Disable rate limiting in tests (tested explicitly in rate_limit_test.exs)
 config :heyi_am, rate_limiting_enabled: false
 

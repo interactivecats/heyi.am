@@ -47,6 +47,19 @@ defmodule HeyiAmWeb.ShareController do
       title: share.project_name,
       slug: slugify(share.project_name)
     })
+    # Default nil numeric/list fields so templates don't crash on arithmetic/length
+    |> Map.update(:files_changed, 0, &(&1 || 0))
+    |> Map.update(:turns, 0, &(&1 || 0))
+    |> Map.update(:duration_minutes, 0, &(&1 || 0))
+    |> Map.update(:top_files, [], &(&1 || []))
+    |> Map.update(:beats, [], &(&1 || []))
+    |> Map.update(:qa_pairs, [], &(&1 || []))
+    |> Map.update(:highlights, [], &(&1 || []))
+    |> Map.update(:skills, [], &(&1 || []))
+    |> Map.update(:tools, [], &(&1 || []))
+    |> Map.update(:tool_breakdown, [], &(&1 || []))
+    |> Map.update(:transcript_excerpt, [], &(&1 || []))
+    |> Map.update(:turn_timeline, [], &(&1 || []))
   end
 
   defp slugify(nil), do: ""

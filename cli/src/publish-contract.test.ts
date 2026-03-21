@@ -154,8 +154,6 @@ describe('Publish Flow Contract', () => {
         'topFiles',         // should be top_files
         'transcriptExcerpt', // should be transcript_excerpt
         'qaPairs',          // should be qa_pairs
-        'pinnedTurns',      // should be pinned_turns
-        'highlightedSteps', // should be highlighted_steps
       ];
 
       // This test documents the field name mapping the CLI must perform

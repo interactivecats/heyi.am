@@ -1,8 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { Settings } from './Settings';
+
+vi.mock('../api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../api')>();
+  return {
+    ...actual,
+    fetchEnhanceStatus: vi.fn().mockResolvedValue({ mode: 'local', remaining: null }),
+  };
+});
 
 function renderSettings() {
   return render(
@@ -15,27 +23,44 @@ function renderSettings() {
 describe('Settings', () => {
   it('renders settings page with all sections', () => {
     renderSettings();
-    expect(screen.getByText('API Configuration')).toBeInTheDocument();
+    expect(screen.getByText('AI Enhancement')).toBeInTheDocument();
     expect(screen.getByText('Authentication')).toBeInTheDocument();
     expect(screen.getByText('Machine Identity')).toBeInTheDocument();
   });
 
-  it('renders API key input', () => {
+  it('renders mode indicator', async () => {
     renderSettings();
-    const input = screen.getByLabelText('Anthropic API Key');
-    expect(input).toBeInTheDocument();
-    expect(input).toHaveAttribute('type', 'password');
-    expect(input).toHaveAttribute('placeholder', 'sk-ant-...');
+    // Wait for enhance status to load
+    expect(await screen.findByText('Local API key')).toBeInTheDocument();
   });
 
-  it('toggles API key visibility between password and text', async () => {
+  it('renders collapsible API key section', () => {
+    renderSettings();
+    expect(screen.getByText('Use your own API key')).toBeInTheDocument();
+  });
+
+  it('renders API key input inside collapsible', async () => {
     const user = userEvent.setup();
     renderSettings();
-    const input = screen.getByLabelText('Anthropic API Key');
+
+    // Open the details
+    await user.click(screen.getByText('Use your own API key'));
+
+    const input = screen.getByPlaceholderText('sk-ant-...');
+    expect(input).toBeInTheDocument();
+    expect(input).toHaveAttribute('type', 'password');
+  });
+
+  it('toggles API key visibility', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByText('Use your own API key'));
+
+    const input = screen.getByPlaceholderText('sk-ant-...');
     const toggleBtn = screen.getByRole('button', { name: /show api key/i });
 
     expect(input).toHaveAttribute('type', 'password');
-
     await user.click(toggleBtn);
     expect(input).toHaveAttribute('type', 'text');
 
@@ -61,34 +86,14 @@ describe('Settings', () => {
     expect(screen.getByText('Machine Token')).toBeInTheDocument();
     expect(screen.getByText('ed25519:a4f2...8b3c')).toBeInTheDocument();
     expect(screen.getByText('SHA256:kR7x...Qm4w')).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Used for cryptographic signing of published sessions',
-      ),
-    ).toBeInTheDocument();
   });
 
-  it('back button navigates to home', () => {
+  it('renders help text for BYOK', async () => {
+    const user = userEvent.setup();
     renderSettings();
-    const backBtn = screen.getByRole('button', { name: /go back/i });
-    expect(backBtn).toBeInTheDocument();
-  });
-
-  it('renders section labels with label class', () => {
-    const { container } = renderSettings();
-    const labels = container.querySelectorAll('.label');
-    const labelTexts = Array.from(labels).map((el) => el.textContent);
-    expect(labelTexts).toContain('API Configuration');
-    expect(labelTexts).toContain('Authentication');
-    expect(labelTexts).toContain('Machine Identity');
-  });
-
-  it('renders help text for API key', () => {
-    renderSettings();
+    await user.click(screen.getByText('Use your own API key'));
     expect(
-      screen.getByText(
-        'Used for AI enhancement. Stored locally, never sent to our servers.',
-      ),
+      screen.getByText('Uses your own Anthropic account. Bypasses proxy quota.'),
     ).toBeInTheDocument();
   });
 
@@ -100,5 +105,32 @@ describe('Settings', () => {
   it('renders title in app shell header', () => {
     renderSettings();
     expect(screen.getByText('Settings')).toBeInTheDocument();
+  });
+
+  it('renders section labels with label class', () => {
+    const { container } = renderSettings();
+    const labels = container.querySelectorAll('.label');
+    const labelTexts = Array.from(labels).map((el) => el.textContent);
+    expect(labelTexts).toContain('AI Enhancement');
+    expect(labelTexts).toContain('Authentication');
+    expect(labelTexts).toContain('Machine Identity');
+  });
+});
+
+describe('Settings — enhance mode display', () => {
+  it('shows "Not configured" when mode is none', async () => {
+    const api = await import('../api');
+    vi.mocked(api.fetchEnhanceStatus).mockResolvedValue({ mode: 'none', remaining: 0 });
+    renderSettings();
+    expect(await screen.findByText('Not configured')).toBeInTheDocument();
+    expect(screen.getByText(/Log in or set ANTHROPIC_API_KEY/)).toBeInTheDocument();
+  });
+
+  it('shows "heyi.am proxy" when mode is proxy', async () => {
+    const api = await import('../api');
+    vi.mocked(api.fetchEnhanceStatus).mockResolvedValue({ mode: 'proxy', remaining: 7 });
+    renderSettings();
+    expect(await screen.findByText('heyi.am proxy')).toBeInTheDocument();
+    expect(await screen.findByText('7 remaining this month')).toBeInTheDocument();
   });
 });

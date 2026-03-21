@@ -107,11 +107,15 @@ defmodule HeyiAm.Projects do
       total_turns: Enum.sum(Enum.map(shares, &(&1[:turns] || 0))),
       unique_files: MapSet.size(all_files),
       date_range: {
-        DateTime.to_date(List.first(sorted).recorded_at),
-        DateTime.to_date(List.last(sorted).recorded_at)
+        safe_to_date(List.first(sorted).recorded_at),
+        safe_to_date(List.last(sorted).recorded_at)
       }
     }
   end
+
+  defp safe_to_date(nil), do: Date.utc_today()
+  defp safe_to_date(%DateTime{} = dt), do: DateTime.to_date(dt)
+  defp safe_to_date(%NaiveDateTime{} = ndt), do: NaiveDateTime.to_date(ndt)
 
   defp extract_directory(file_path) do
     case Path.split(file_path) do

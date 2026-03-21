@@ -180,4 +180,30 @@ describe('EnhanceFlow', () => {
     expect(screen.getByText('Enhancement failed')).toBeDefined();
     expect(screen.getByText('API key missing')).toBeDefined();
   });
+
+  it('shows setup card when auth is required', async () => {
+    const authError = new api.EnhanceError('AUTH_REQUIRED', 'Authentication required. Run: heyiam login');
+    vi.spyOn(api, 'enhanceSession').mockRejectedValue(authError);
+    renderWithRoute('ses-001');
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(600); });
+
+    expect(screen.getByText('Enhancement failed')).toBeDefined();
+    expect(screen.getByText(/heyiam login/)).toBeDefined();
+    expect(screen.getByText(/Uses our hosted AI/)).toBeDefined();
+    expect(screen.getByText(/Set ANTHROPIC_API_KEY in your env/)).toBeDefined();
+  });
+
+  it('shows quota exceeded card with BYOK suggestion', async () => {
+    const quotaError = new api.EnhanceError('QUOTA_EXCEEDED', 'Monthly enhancement limit reached.', '2026-04-01');
+    vi.spyOn(api, 'enhanceSession').mockRejectedValue(quotaError);
+    renderWithRoute('ses-001');
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(600); });
+
+    expect(screen.getByText('Enhancement failed')).toBeDefined();
+    expect(screen.getByText('Monthly enhancement limit reached.')).toBeDefined();
+    expect(screen.getByText(/Set ANTHROPIC_API_KEY in your env/)).toBeDefined();
+    expect(screen.getByText(/Uses your own account, no limits/)).toBeDefined();
+  });
 });

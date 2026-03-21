@@ -255,6 +255,95 @@ defmodule HeyiAm.Accounts do
     :ok
   end
 
+  ## Device Authorization
+
+  alias HeyiAm.Accounts.DeviceCode
+
+  @doc """
+  Creates a new device code for the device authorization flow.
+  Returns `{raw_device_code, %DeviceCode{}}`.
+  """
+  @device_code_max_retry 3
+
+  def create_device_code(attempt \\ 0) do
+    {raw_code, device_code} = DeviceCode.build()
+
+    case Repo.insert(device_code) do
+      {:ok, inserted} ->
+        {raw_code, inserted}
+
+      {:error, _changeset} when attempt < @device_code_max_retry ->
+        create_device_code(attempt + 1)
+
+      {:error, changeset} ->
+        raise "Failed to create device code after retries: #{inspect(changeset.errors)}"
+    end
+  end
+
+  @doc """
+  Authorizes a pending device code by user_code, linking it to the given user.
+  Returns `{:ok, %DeviceCode{}}` or `{:error, :not_found}`.
+  """
+  def authorize_device_code(user_code, user) do
+    user_code = user_code |> String.trim() |> String.upcase()
+
+    case Repo.one(DeviceCode.by_user_code_query(user_code)) do
+      nil ->
+        {:error, :not_found}
+
+      %DeviceCode{} = dc ->
+        dc
+        |> Ecto.Changeset.change(%{status: "authorized", user_id: user.id})
+        |> Repo.update()
+    end
+  end
+
+  @doc """
+  Polls a device code for authorization status.
+
+  Returns:
+  - `{:ok, {session_token, user}}` when authorized (token is raw binary)
+  - `{:error, :authorization_pending}` when still pending
+  - `{:error, :expired_token}` when expired
+  - `{:error, :access_denied}` when denied
+  - `{:error, :not_found}` when not found
+  """
+  def poll_device_code(raw_device_code) do
+    hashed = DeviceCode.hash(raw_device_code)
+
+    # Atomic delete-and-select: only one concurrent caller can claim the row
+    authorized_query =
+      from dc in DeviceCode,
+        where: dc.device_code == ^hashed,
+        where: dc.status == "authorized",
+        select: dc.user_id
+
+    case Repo.delete_all(authorized_query) do
+      {1, [user_id]} ->
+        user = Repo.get!(User, user_id)
+        token = generate_user_session_token(user)
+        {:ok, {token, user}}
+
+      {0, _} ->
+        # Not authorized — check why
+        case Repo.one(from dc in DeviceCode, where: dc.device_code == ^hashed) do
+          nil ->
+            {:error, :not_found}
+
+          %DeviceCode{status: "pending"} = dc ->
+            if DeviceCode.expired?(dc),
+              do: {:error, :expired_token},
+              else: {:error, :authorization_pending}
+
+          %DeviceCode{status: "denied"} ->
+            {:error, :access_denied}
+
+          %DeviceCode{} ->
+            {:error, :expired_token}
+        end
+    end
+  end
+
   ## Profile
 
   @doc """
@@ -287,6 +376,159 @@ defmodule HeyiAm.Accounts do
     user
     |> User.username_changeset(attrs)
     |> Repo.update()
+  end
+
+  ## GDPR
+
+  def export_user_data(%User{} = user) do
+    shares = HeyiAm.Shares.list_shares_for_user(user.id)
+    portfolio_sessions = HeyiAm.Portfolios.list_portfolio_sessions(user.id)
+    challenges = HeyiAm.Challenges.list_challenges_for_user(user)
+
+    {:ok, %{
+      exported_at: DateTime.utc_now(),
+      profile: %{
+        email: user.email,
+        username: user.username,
+        display_name: user.display_name,
+        bio: user.bio,
+        avatar_url: user.avatar_url,
+        github_url: user.github_url,
+        location: user.location,
+        status: user.status,
+        portfolio_layout: user.portfolio_layout,
+        portfolio_accent: user.portfolio_accent,
+        confirmed_at: user.confirmed_at,
+        inserted_at: user.inserted_at
+      },
+      shares: Enum.map(shares, &share_to_export/1),
+      portfolio_sessions: Enum.map(portfolio_sessions, &portfolio_session_to_export/1),
+      challenges: Enum.map(challenges, &challenge_to_export/1)
+    }}
+  end
+
+  def delete_user_account(%User{} = user) do
+    Repo.transact(fn ->
+      # Anonymize shares — strip PII, keep aggregate stats
+      share_ids = Repo.all(from(s in HeyiAm.Shares.Share, where: s.user_id == ^user.id, select: s.id))
+
+      for id <- share_ids do
+        from(s in HeyiAm.Shares.Share, where: s.id == ^id)
+        |> Repo.update_all(set: [
+          user_id: nil,
+          title: "deleted",
+          dev_take: nil,
+          narrative: nil,
+          project_name: nil,
+          beats: [],
+          qa_pairs: [],
+          highlights: [],
+          tool_breakdown: [],
+          top_files: [],
+          transcript_excerpt: [],
+          signature: nil,
+          public_key: nil,
+          token: "deleted-#{Ecto.UUID.generate()}",
+          sealed: false,
+          status: "unlisted"
+        ])
+      end
+
+      # Anonymize portfolio sessions — strip project_name, keep structure for stats
+      Repo.update_all(
+        from(ps in HeyiAm.Portfolios.PortfolioSession, where: ps.user_id == ^user.id),
+        set: [project_name: nil]
+      )
+
+      # Anonymize challenges — strip content, keep counts
+      Repo.update_all(
+        from(c in HeyiAm.Challenges.Challenge, where: c.creator_id == ^user.id),
+        set: [
+          title: "deleted",
+          problem_statement: "",
+          evaluation_criteria: [],
+          access_code_hash: nil,
+          status: "closed"
+        ]
+      )
+
+      # Delete all session tokens (security)
+      Repo.delete_all(from(t in UserToken, where: t.user_id == ^user.id))
+
+      # Anonymize user record — frees username and email for re-registration
+      Repo.update_all(
+        from(u in User, where: u.id == ^user.id),
+        set: [
+          email: "deleted-#{Ecto.UUID.generate()}@deleted.heyi.am",
+          hashed_password: "",
+          username: nil,
+          display_name: nil,
+          bio: nil,
+          avatar_url: nil,
+          github_id: nil,
+          github_url: nil,
+          location: nil,
+          status: "deleted",
+          confirmed_at: nil
+        ]
+      )
+
+      {:ok, user}
+    end)
+  end
+
+  defp share_to_export(share) do
+    %{
+      token: share.token,
+      title: share.title,
+      dev_take: share.dev_take,
+      duration_minutes: share.duration_minutes,
+      turns: share.turns,
+      files_changed: share.files_changed,
+      loc_changed: share.loc_changed,
+      recorded_at: share.recorded_at,
+      verified_at: share.verified_at,
+      sealed: share.sealed,
+      template: share.template,
+      language: share.language,
+      tools: share.tools,
+      skills: share.skills,
+      beats: share.beats,
+      qa_pairs: share.qa_pairs,
+      highlights: share.highlights,
+      tool_breakdown: share.tool_breakdown,
+      top_files: share.top_files,
+      transcript_excerpt: share.transcript_excerpt,
+      narrative: share.narrative,
+      project_name: share.project_name,
+      signature: share.signature,
+      public_key: share.public_key,
+      status: share.status,
+      inserted_at: share.inserted_at
+    }
+  end
+
+  defp portfolio_session_to_export(ps) do
+    %{
+      project_name: ps.project_name,
+      position: ps.position,
+      visible: ps.visible,
+      share_id: ps.share_id,
+      inserted_at: ps.inserted_at
+    }
+  end
+
+  defp challenge_to_export(challenge) do
+    %{
+      slug: challenge.slug,
+      title: challenge.title,
+      problem_statement: challenge.problem_statement,
+      evaluation_criteria: challenge.evaluation_criteria,
+      time_limit_minutes: challenge.time_limit_minutes,
+      max_responses: challenge.max_responses,
+      status: challenge.status,
+      inserted_at: challenge.inserted_at
+    }
   end
 
   ## Token helper

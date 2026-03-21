@@ -28,8 +28,6 @@ defmodule HeyiAm.Shares.Share do
     field :transcript_excerpt, {:array, :map}, default: []
     field :narrative, :string
     field :project_name, :string
-    field :pinned_turns, {:array, :string}, default: []
-    field :highlighted_steps, {:array, :integer}, default: []
     field :signature, :string
     field :public_key, :string
     field :status, :string, default: "listed"
@@ -56,7 +54,7 @@ defmodule HeyiAm.Shares.Share do
       :loc_changed, :recorded_at, :verified_at, :sealed, :template, :language,
       :tools, :skills, :beats, :qa_pairs, :highlights, :tool_breakdown,
       :top_files, :transcript_excerpt, :narrative, :project_name, :user_id,
-      :pinned_turns, :highlighted_steps, :signature, :public_key,
+      :signature, :public_key,
       :challenge_id, :status
     ])
     |> validate_required([:token, :title])

@@ -147,7 +147,10 @@ function RawLogPanel({
   );
 }
 
-function AnalyzingPanel({ session, error }: { session: Session; error?: string }) {
+function AnalyzingPanel({ session, error, errorCode }: { session: Session; error?: string; errorCode?: string }) {
+  const isAuthError = errorCode === 'AUTH_REQUIRED' || errorCode === 'AUTH_EXPIRED';
+  const isQuotaError = errorCode === 'QUOTA_EXCEEDED';
+
   return (
     <div className="editor-panel__draft-content">
       <div className="card">
@@ -155,7 +158,33 @@ function AnalyzingPanel({ session, error }: { session: Session; error?: string }
           <span className="enhance-flow__status-dot" />
           {error ? 'Enhancement failed' : 'Reading your session...'}
         </div>
-        {error ? (
+        {isAuthError ? (
+          <div style={{ marginTop: 'var(--spacing-4)' }}>
+            <p className="text-body">To run AI enhancement, either:</p>
+            <div className="terminal" style={{ marginTop: 'var(--spacing-4)', fontSize: '0.75rem' }}>
+              <span className="terminal__prompt">$ </span>heyiam login
+            </div>
+            <p className="settings-help" style={{ marginTop: 'var(--spacing-2)' }}>
+              Uses our hosted AI (10 free per month)
+            </p>
+            <div style={{ marginTop: 'var(--spacing-4)', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--spacing-4)' }}>
+              <p className="text-body">Set ANTHROPIC_API_KEY in your env</p>
+              <p className="settings-help" style={{ marginTop: 'var(--spacing-2)' }}>
+                Uses your own Anthropic account
+              </p>
+            </div>
+          </div>
+        ) : isQuotaError ? (
+          <div style={{ marginTop: 'var(--spacing-4)' }}>
+            <p className="text-body">{error}</p>
+            <div style={{ marginTop: 'var(--spacing-4)', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--spacing-4)' }}>
+              <p className="text-body">Set ANTHROPIC_API_KEY in your env</p>
+              <p className="settings-help" style={{ marginTop: 'var(--spacing-2)' }}>
+                Uses your own account, no limits
+              </p>
+            </div>
+          </div>
+        ) : error ? (
           <p
             className="text-body"
             style={{ marginTop: 'var(--spacing-4)', color: 'var(--color-error, #dc2626)' }}
@@ -520,6 +549,7 @@ export function EnhanceFlow({ sessions }: EnhanceFlowProps = {}) {
   const [phase, setPhase] = useState<Phase>('analyzing');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [enhanceError, setEnhanceError] = useState<string>();
+  const [enhanceErrorCode, setEnhanceErrorCode] = useState<string>();
   const [feedLines] = useState<AiFeedLine[]>(
     session != null ? buildAiFeedLines(session) : [],
   );
@@ -556,7 +586,9 @@ export function EnhanceFlow({ sessions }: EnhanceFlowProps = {}) {
       })
       .catch((err: unknown) => {
         const message = err instanceof Error ? err.message : 'Enhancement failed';
+        const code = (err as { code?: string }).code;
         setEnhanceError(message);
+        setEnhanceErrorCode(code);
       });
 
     return () => {
@@ -655,7 +687,7 @@ export function EnhanceFlow({ sessions }: EnhanceFlowProps = {}) {
           visibleFeedCount={visibleFeedCount}
         />
         <div className="editor-panel__draft">
-          {phase === 'analyzing' && <AnalyzingPanel session={session} error={enhanceError} />}
+          {phase === 'analyzing' && <AnalyzingPanel session={session} error={enhanceError} errorCode={enhanceErrorCode} />}
           {phase === 'questions' && (
             <QuestionsPanel
               questions={questions}

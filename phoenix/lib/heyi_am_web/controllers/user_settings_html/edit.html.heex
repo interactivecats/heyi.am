@@ -46,4 +46,41 @@
       Save Password
     </.button>
   </.form>
+
+  <div class="divider" />
+
+  <.header>
+    Your Data
+    <:subtitle>Download a copy of all data associated with your account</:subtitle>
+  </.header>
+
+  <a href={~p"/users/settings/export"} download class="btn btn-outline">
+    Download data export
+  </a>
+
+  <div class="divider" />
+
+  <.header>
+    Danger Zone
+    <:subtitle>Permanently delete your account and all associated data. This cannot be undone.</:subtitle>
+  </.header>
+
+  <p class="text-sm text-base-content/70">
+    This will erase your profile, sessions, portfolio, and challenges.
+    Your username <strong><%= @current_scope.user.username %></strong> will be released and available for others to claim.
+  </p>
+
+  <.form for={%{}} action={~p"/users/settings"} method="delete" id="delete_account">
+    <.input
+      name="username"
+      value=""
+      type="text"
+      label={"Type your username (#{@current_scope.user.username}) to confirm"}
+      autocomplete="off"
+      required
+    />
+    <.button type="submit" class="btn btn-error">
+      Delete my account
+    </.button>
+  </.form>
 </Layouts.app>

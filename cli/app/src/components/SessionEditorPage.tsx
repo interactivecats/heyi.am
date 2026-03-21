@@ -5,8 +5,8 @@ import { AppShell } from './AppShell';
 import { SessionEditor } from './SessionEditor';
 import { useSessionsContext } from '../SessionsContext';
 import { useAuth } from '../AuthContext';
-import { publishSession } from '../api';
-import type { PublishResult } from '../api';
+import { publishSession, pollDeviceAuth } from '../api';
+import type { PublishResult, DeviceCodeInfo } from '../api';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -47,10 +47,12 @@ const POST_ANIMATION_DELAY_MS = 1000;
 // ---------------------------------------------------------------------------
 
 function AuthPromptModal({
-  onConnectNow,
+  codeInfo,
+  loading,
   onCancel,
 }: {
-  onConnectNow: () => void;
+  codeInfo: DeviceCodeInfo | null;
+  loading: boolean;
   onCancel: () => void;
 }) {
   return (
@@ -63,26 +65,30 @@ function AuthPromptModal({
           </svg>
         </div>
         <h2 id="auth-prompt-heading" className="text-headline" style={{ marginTop: 'var(--spacing-4)' }}>
-          Connect your account?
+          Connect your account
         </h2>
         <p className="text-body" style={{ marginTop: 'var(--spacing-3)', color: 'var(--on-surface-variant)' }}>
           Link this session to your heyi.am portfolio so it appears on your profile
           and can be managed from the web.
         </p>
         <div className="terminal publish-modal__terminal" style={{ marginTop: 'var(--spacing-6)' }}>
-          <div className="publish-modal__device-code">RXKF-7Y2M</div>
+          <div className="publish-modal__device-code">
+            {loading ? '...' : (codeInfo?.user_code ?? '----')}
+          </div>
           <div className="text-label" style={{ marginTop: 'var(--spacing-2)' }}>
-            Enter at heyi.am/device
+            Enter at {codeInfo?.verification_uri ?? 'heyi.am/device'}
           </div>
         </div>
         <div className="publish-modal__actions" style={{ marginTop: 'var(--spacing-6)' }}>
-          <button
-            type="button"
+          <a
+            href={codeInfo?.verification_uri ?? '#'}
+            target="_blank"
+            rel="noopener noreferrer"
             className="btn btn-primary btn--lg btn--full"
-            onClick={onConnectNow}
+            style={{ textAlign: 'center', textDecoration: 'none' }}
           >
-            Connect now
-          </button>
+            Open in browser
+          </a>
           <button
             type="button"
             className="btn btn-tertiary"
@@ -224,8 +230,11 @@ export function SessionEditorPage({
   const [visibleLineCount, setVisibleLineCount] = useState(0);
   const [publishResult, setPublishResult] = useState<PublishResult | null>(null);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [deviceCodeInfo, setDeviceCodeInfo] = useState<DeviceCodeInfo | null>(null);
+  const [authLoading, setAuthLoading] = useState(false);
   const publishResolvedRef = useRef(false);
   const animationDoneRef = useRef(false);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Total lines = PUBLISH_LINES + 1 final URL line
   const totalLines = PUBLISH_LINES.length + 1;
@@ -285,6 +294,7 @@ export function SessionEditorPage({
       lines_of_code: session.linesOfCode,
       raw_log: session.rawLog,
       project_name: session.projectName,
+      recorded_at: session.date || new Date().toISOString(),
     };
 
     publishSession(payload)
@@ -301,21 +311,54 @@ export function SessionEditorPage({
       });
   }, [session, maybeAdvance]);
 
+  const stopPolling = useCallback(() => {
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+  }, []);
+
   const handlePublish = useCallback(() => {
     if (isAuthenticated) {
       startPublish();
     } else {
       setPhase('auth-prompt');
+      setAuthLoading(true);
+      auth.login()
+        .then((info) => {
+          setDeviceCodeInfo(info);
+          setAuthLoading(false);
+          // Start polling for authorization
+          const timer = setInterval(async () => {
+            try {
+              const status = await pollDeviceAuth(info.device_code);
+              if (status.authenticated) {
+                stopPolling();
+                await auth.refresh();
+                startPublish();
+              }
+            } catch {
+              // Keep polling unless fatal — expiry handled by server
+            }
+          }, (info.interval ?? 5) * 1000);
+          pollTimerRef.current = timer;
+        })
+        .catch(() => {
+          setAuthLoading(false);
+        });
     }
-  }, [isAuthenticated, startPublish]);
-
-  const handleConnectNow = useCallback(() => {
-    startPublish();
-  }, [startPublish]);
+  }, [isAuthenticated, startPublish, auth, stopPolling]);
 
   const handleCancel = useCallback(() => {
+    stopPolling();
     setPhase('editing');
-  }, []);
+    setDeviceCodeInfo(null);
+  }, [stopPolling]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => { stopPolling(); };
+  }, [stopPolling]);
 
   const handleBack = useCallback(() => {
     navigate(`/session/${id}`);
@@ -376,7 +419,8 @@ export function SessionEditorPage({
         <>
           <SessionEditor session={session} />
           <AuthPromptModal
-            onConnectNow={handleConnectNow}
+            codeInfo={deviceCodeInfo}
+            loading={authLoading}
             onCancel={handleCancel}
           />
         </>

@@ -26,8 +26,6 @@ defmodule HeyiAm.Repo.Migrations.CreateShares do
       add :narrative, :text
       add :project_name, :string
       add :user_id, references(:users, on_delete: :nilify_all), null: true
-      add :pinned_turns, {:array, :string}, default: []
-      add :highlighted_steps, {:array, :integer}, default: []
       add :signature, :text
       add :public_key, :text
 

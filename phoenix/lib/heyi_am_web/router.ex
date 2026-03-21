@@ -27,15 +27,57 @@ defmodule HeyiAmWeb.Router do
     plug HeyiAmWeb.Plugs.RateLimit, action: "api_session", limit: 10, period: 60_000
   end
 
+  pipeline :rate_limit_device_poll do
+    plug HeyiAmWeb.Plugs.RateLimit, action: "device_poll", limit: 20, period: 60_000
+  end
+
+  pipeline :api_auth do
+    plug HeyiAmWeb.Plugs.ApiAuth
+  end
+
   scope "/", HeyiAmWeb do
     pipe_through :browser
 
     get "/", PageController, :home
+    get "/terms", PageController, :terms
+    get "/privacy", PageController, :privacy
+  end
+
+  # Device code creation (strict rate limit: 5/min)
+  scope "/api", HeyiAmWeb do
+    pipe_through [:api, :rate_limit_auth]
+
+    post "/device/code", DeviceApiController, :create_code
+  end
+
+  # Device token polling (generous rate limit: 20/min for legitimate 5s polling)
+  scope "/api", HeyiAmWeb do
+    pipe_through [:api, :rate_limit_device_poll]
+
+    post "/device/token", DeviceApiController, :poll_token
+  end
+
+  # Auth status API (rate-limited)
+  scope "/api", HeyiAmWeb do
+    pipe_through [:api, :rate_limit_auth]
+
+    get "/auth/status", DeviceApiController, :auth_status
+  end
+
+  pipeline :rate_limit_enhance do
+    plug HeyiAmWeb.Plugs.RateLimit, action: "enhance", limit: 5, period: 60_000
+  end
+
+  # LLM proxy enhancement endpoint
+  scope "/api", HeyiAmWeb do
+    pipe_through [:api, :api_auth, :rate_limit_enhance]
+
+    post "/enhance", EnhanceApiController, :create
   end
 
   # API routes for CLI publish and verification
   scope "/api", HeyiAmWeb do
-    pipe_through [:api, :rate_limit_api_session]
+    pipe_through [:api, :api_auth, :rate_limit_api_session]
 
     post "/sessions", ShareApiController, :create
   end
@@ -87,6 +129,7 @@ defmodule HeyiAmWeb.Router do
     live_session :authenticated, on_mount: [{HeyiAmWeb.UserAuth, :ensure_authenticated}] do
       live "/onboarding/username", ClaimUsernameLive
       live "/onboarding/vibe", VibePickerLive
+      live "/device", DeviceAuthLive
     end
 
     live_session :owner_required,
@@ -100,6 +143,8 @@ defmodule HeyiAmWeb.Router do
 
     get "/users/settings", UserSettingsController, :edit
     put "/users/settings", UserSettingsController, :update
+    delete "/users/settings", UserSettingsController, :delete
+    get "/users/settings/export", UserSettingsController, :export
     get "/users/settings/confirm-email/:token", UserSettingsController, :confirm_email
 
     # Challenge management (authenticated)
