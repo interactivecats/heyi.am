@@ -148,7 +148,7 @@ describe('AgentTimeline', () => {
     expect(timeLabels.length).toBe(0);
   });
 
-  it('full variant: includes time axis and labels', () => {
+  it('full variant: no time axis labels (removed)', () => {
     const session = makeSession({ turns: 5 });
     const { container } = render(
       <AgentTimeline session={session} variant="full" />,
@@ -156,7 +156,47 @@ describe('AgentTimeline', () => {
     const timeLabels = container.querySelectorAll(
       '[data-testid="time-label"]',
     );
-    expect(timeLabels.length).toBeGreaterThan(0);
+    expect(timeLabels.length).toBe(0);
+  });
+
+  it('lane widths are proportional to duration', () => {
+    const session = makeSession({
+      durationMinutes: 30,
+      childSessions: [
+        makeChild('c1', 'frontend-dev', 0, 2),
+        makeChild('c2', 'backend-dev', 0, 10),
+      ],
+    });
+    const { container } = render(
+      <AgentTimeline session={session} variant="full" />,
+    );
+    const lanes = container.querySelectorAll('[data-testid="agent-lane"]');
+    expect(lanes.length).toBe(2);
+
+    const rects = Array.from(lanes).map(
+      (lane) => lane.querySelector('rect')!,
+    );
+    const widths = rects.map((r) => parseFloat(r.getAttribute('width')!));
+    // The 10m lane should be wider than the 2m lane
+    expect(widths[1]).toBeGreaterThan(widths[0]);
+  });
+
+  it('detail labels include start offset', () => {
+    const session = makeSession({
+      durationMinutes: 30,
+      childSessions: [makeChild('c1', 'frontend-dev', 5, 10)],
+    });
+    const { container } = render(
+      <AgentTimeline session={session} variant="full" />,
+    );
+    const lanes = container.querySelectorAll('[data-testid="agent-lane"]');
+    expect(lanes.length).toBe(1);
+
+    // Detail text should contain "+5m"
+    const texts = lanes[0].querySelectorAll('text');
+    const detailTexts = Array.from(texts).map((t) => t.textContent);
+    const hasOffset = detailTexts.some((t) => t?.includes('+5m'));
+    expect(hasOffset).toBe(true);
   });
 
   it('unknown agent roles get default gray color', () => {

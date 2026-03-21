@@ -37,6 +37,8 @@ export interface Session {
   id: string;
   title: string;
   date: string;
+  /** End time as ISO timestamp */
+  endTime?: string;
   /** Active time in minutes (excludes idle gaps > 5 min) */
   durationMinutes: number;
   /** Wall-clock time in minutes (first to last timestamp, includes idle) */

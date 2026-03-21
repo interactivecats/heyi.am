@@ -31,15 +31,6 @@ function getAgentColor(role?: string): string {
   return AGENT_COLORS[role.toLowerCase()] ?? DEFAULT_COLOR;
 }
 
-function formatTime(minutes: number): string {
-  if (minutes >= 60) {
-    const h = Math.floor(minutes / 60);
-    const m = Math.round(minutes % 60);
-    return `${h}h${m > 0 ? m + 'm' : ''}`;
-  }
-  return `${Math.round(minutes)}m`;
-}
-
 // ── Wave detection ──────────────────────────────────────────────
 
 interface Wave {
@@ -92,30 +83,37 @@ export function AgentTimeline({ session, variant }: AgentTimelineProps) {
 
   const waves = detectWaves(children);
 
-  // ── Structural layout: allocate fixed space per wave, not proportional to time ──
-  // This matches the mockup approach: planning → fork → agents → join → gap → repeat
+  // ── Structural layout: proportional lane widths based on duration ──
   const laneSpacing = isCompact ? 20 : 60;
   const maxLanesPerWave = Math.max(...waves.map((w) => w.children.length), 1);
   const curveDx = isCompact ? 12 : 25;
   const preFork = isCompact ? 30 : 80;     // main line before first fork
   const postJoin = isCompact ? 30 : 80;    // main line after last join
   const waveGap = isCompact ? 20 : 50;     // main line between waves
-  const laneMinWidth = isCompact ? 40 : 120; // minimum lane length
+  const minLaneWidth = isCompact ? 30 : 60;
+  const maxLaneWidth = isCompact ? 80 : 200;
   const labelSpace = isCompact ? 0 : 100;  // space after lane for label text
   const forkJoinWidth = curveDx * 2;       // space for fork/join curves
 
-  // Each wave width: fork curves + lane + label space + join curves
-  const waveWidth = forkJoinWidth + laneMinWidth + labelSpace + forkJoinWidth;
-  const totalWidth = preFork + waves.length * waveWidth + (waves.length - 1) * waveGap + postJoin;
+  // Compute max child duration across ALL waves for proportional sizing
+  const allChildren = waves.flatMap((w) => w.children);
+  const maxChildDuration = Math.max(...allChildren.map((c) => c.durationMinutes), 1);
+
+  // Each wave's width varies based on its longest lane
+  const waveWidths = waves.map((wave) => {
+    const longestLane = Math.max(...wave.children.map((c) => c.durationMinutes), 1);
+    const laneWidth = Math.max(minLaneWidth, (longestLane / maxChildDuration) * maxLaneWidth);
+    return forkJoinWidth + laneWidth + labelSpace + forkJoinWidth;
+  });
+  const totalWidth = preFork + waveWidths.reduce((a, b) => a + b, 0) + (waves.length - 1) * waveGap + postJoin;
   const width = Math.max(isCompact ? 400 : 900, totalWidth);
   const padding = isCompact ? 10 : 30;
 
   // Vertical layout
   const baseY = isCompact ? 30 : Math.max(80, maxLanesPerWave * laneSpacing / 2 + 30);
-  const timeAxisH = isCompact ? 0 : 30;
   const height = isCompact
     ? Math.max(60, maxLanesPerWave * laneSpacing + 30)
-    : baseY + maxLanesPerWave * laneSpacing / 2 + 40 + timeAxisH;
+    : baseY + maxLanesPerWave * laneSpacing / 2 + 40;
 
   const strokeW = isCompact ? 2.5 : 3;
   const circleR = isCompact ? 3.5 : 5;
@@ -132,6 +130,7 @@ export function AgentTimeline({ session, variant }: AgentTimelineProps) {
     x1: number;
     x2: number;
     color: string;
+    offsetMinutes: number;
   }
   interface WaveLayout {
     forkX: number;
@@ -142,11 +141,15 @@ export function AgentTimeline({ session, variant }: AgentTimelineProps) {
   const waveLayouts: WaveLayout[] = [];
   let cursor = padding + preFork;
 
-  for (const wave of waves) {
+  const sessionStartMs = new Date(session.date).getTime();
+
+  for (let wi = 0; wi < waves.length; wi++) {
+    const wave = waves[wi];
     const forkX = cursor;
+    const longestLane = Math.max(...wave.children.map((c) => c.durationMinutes), 1);
+    const waveLaneWidth = Math.max(minLaneWidth, (longestLane / maxChildDuration) * maxLaneWidth);
     const laneStart = forkX + forkJoinWidth;
-    const laneEnd = laneStart + laneMinWidth;
-    const joinX = laneEnd + labelSpace + forkJoinWidth;
+    const joinX = laneStart + waveLaneWidth + labelSpace + forkJoinWidth;
 
     const sorted = [...wave.children].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
@@ -156,12 +159,15 @@ export function AgentTimeline({ session, variant }: AgentTimelineProps) {
       const n = sorted.length;
       const totalH = (n - 1) * laneSpacing;
       const y = baseY - totalH / 2 + i * laneSpacing;
+      const childLaneWidth = Math.max(minLaneWidth, (child.durationMinutes / maxChildDuration) * maxLaneWidth);
+      const offsetMinutes = Math.round((new Date(child.date).getTime() - sessionStartMs) / 60000);
       return {
         child,
         y,
         x1: laneStart,
-        x2: laneEnd,
+        x2: laneStart + childLaneWidth,
         color: getAgentColor(child.agentRole),
+        offsetMinutes,
       };
     });
 
@@ -254,7 +260,7 @@ export function AgentTimeline({ session, variant }: AgentTimelineProps) {
               >
                 {(lane.child.agentRole ?? 'agent').toUpperCase()}
               </text>
-              {/* Detail text: LOC + duration (full variant only) */}
+              {/* Detail text: offset + LOC + duration (full variant only) */}
               {!isCompact && detailSize > 0 && (
                 <text
                   x={lane.x2 + 8}
@@ -263,7 +269,7 @@ export function AgentTimeline({ session, variant }: AgentTimelineProps) {
                   fontSize={detailSize}
                   fill="#6b7280"
                 >
-                  {lane.child.linesOfCode > 0 ? `${lane.child.linesOfCode} LOC · ` : ''}
+                  +{lane.offsetMinutes}m · {lane.child.linesOfCode > 0 ? `${lane.child.linesOfCode} LOC · ` : ''}
                   {lane.child.durationMinutes}m
                 </text>
               )}
@@ -315,40 +321,6 @@ export function AgentTimeline({ session, variant }: AgentTimelineProps) {
       {/* End marker */}
       <circle cx={endX} cy={baseY} r={startR} fill={MAIN_COLOR} />
 
-      {/* Time axis (full variant only) */}
-      {!isCompact && (
-        <>
-          <line
-            x1={padding}
-            y1={height - timeAxisH + 5}
-            x2={endX}
-            y2={height - timeAxisH + 5}
-            stroke="#c4c7cc"
-            strokeWidth={1}
-          />
-          <text
-            x={padding}
-            y={height - 5}
-            fontFamily="var(--font-mono), 'IBM Plex Mono', monospace"
-            fontSize={9}
-            fill="#6b7280"
-            data-testid="time-label"
-          >
-            0:00
-          </text>
-          <text
-            x={endX}
-            y={height - 5}
-            fontFamily="var(--font-mono), 'IBM Plex Mono', monospace"
-            fontSize={9}
-            fill="#6b7280"
-            textAnchor="end"
-            data-testid="time-label"
-          >
-            {formatTime(session.durationMinutes)}
-          </text>
-        </>
-      )}
     </svg>
   );
 
@@ -373,11 +345,10 @@ function SingleAgentTimeline({
   const padding = isCompact ? 20 : 60;
   const xStart = padding;
   const xEnd = width - padding;
-  const timeAxisH = isCompact ? 0 : 30;
   const strokeW = isCompact ? 2.5 : 3;
   const circleR = isCompact ? 3 : 4;
   const mainY = isCompact ? 20 : 50;
-  const height = isCompact ? 40 : 80 + timeAxisH;
+  const height = isCompact ? 40 : 80;
   const tickHeight = isCompact ? 12 : 20;
 
   const turns = session.turns || 0;
@@ -414,13 +385,6 @@ function SingleAgentTimeline({
           data-testid="activity-tick"
         />
       ))}
-      {!isCompact && (
-        <>
-          <line x1={xStart - 20} y1={height - timeAxisH + 10} x2={xEnd + 10} y2={height - timeAxisH + 10} stroke="#c4c7cc" strokeWidth={1} />
-          <text x={xStart} y={height - 5} fontFamily="var(--font-mono), 'IBM Plex Mono', monospace" fontSize={9} fill="#6b7280" data-testid="time-label">0:00</text>
-          <text x={xEnd} y={height - 5} fontFamily="var(--font-mono), 'IBM Plex Mono', monospace" fontSize={9} fill="#6b7280" textAnchor="end" data-testid="time-label">{session.durationMinutes}m</text>
-        </>
-      )}
     </svg>
   );
 }

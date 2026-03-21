@@ -22,6 +22,8 @@ export interface SessionAnalysis {
   id: string;
   title: string;               // first prompt or summarized
   date: string;                // ISO timestamp
+  /** End time as ISO timestamp */
+  endTime?: string;
   durationMinutes: number;
   /** Wall-clock minutes (first to last timestamp, includes idle) */
   wallClockMinutes?: number;
@@ -64,6 +66,8 @@ export interface Session {
   id: string;
   title: string;
   date: string;
+  /** End time as ISO timestamp */
+  endTime?: string;
   /** Active time in minutes (excludes idle gaps) */
   durationMinutes: number;
   /** Wall-clock time in minutes (first to last timestamp) */
@@ -352,6 +356,7 @@ export function analyzeSession(analysis: SessionAnalysis): Session {
     id: analysis.id,
     title: analysis.title,
     date: analysis.date,
+    ...(analysis.endTime ? { endTime: analysis.endTime } : {}),
     durationMinutes: analysis.durationMinutes,
     ...(analysis.wallClockMinutes != null ? { wallClockMinutes: analysis.wallClockMinutes } : {}),
     turns: analysis.turns.length,

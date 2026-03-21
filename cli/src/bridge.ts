@@ -34,14 +34,17 @@ export function bridgeToAnalyzer(
   const rawLog = extractRawLog(parsed.raw_entries);
 
   const wallClockMinutes = parsed.wall_clock_ms > 0
-    ? Math.round(parsed.wall_clock_ms / 60_000)
+    ? Math.max(1, Math.round(parsed.wall_clock_ms / 60_000))
     : undefined;
 
   return {
     id: opts.sessionId,
     title,
     date: parsed.start_time ?? new Date().toISOString(),
-    durationMinutes: Math.round(parsed.duration_ms / 60_000),
+    ...(parsed.end_time ? { endTime: parsed.end_time } : {}),
+    durationMinutes: parsed.duration_ms > 0
+      ? Math.max(1, Math.round(parsed.duration_ms / 60_000))
+      : 0,
     ...(wallClockMinutes != null ? { wallClockMinutes } : {}),
     projectName: opts.projectName,
     turns,
@@ -192,13 +195,13 @@ function extractRawLog(entries: RawEntry[]): string[] {
 
 /**
  * Deduplicate worktree clones: agents with same role and start time within
- * 60 seconds are considered duplicates. Keep the one with more turns.
+ * 30 seconds are considered duplicates. Keep the one with more turns.
  */
-function deduplicateChildren(children: Session[]): Session[] {
+export function deduplicateChildren(children: Session[]): Session[] {
   const seen = new Map<string, Session>();
   for (const child of children) {
-    const startMin = Math.floor(new Date(child.date).getTime() / 60000);
-    const key = `${child.agentRole ?? 'agent'}::${startMin}`;
+    const startBucket = Math.floor(new Date(child.date).getTime() / 30_000);
+    const key = `${child.agentRole ?? 'agent'}::${startBucket}`;
     const existing = seen.get(key);
     if (!existing || child.turns > existing.turns) {
       seen.set(key, child);

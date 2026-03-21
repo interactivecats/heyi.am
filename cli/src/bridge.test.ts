@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { bridgeToAnalyzer, aggregateChildStats } from "./bridge.js";
+import { bridgeToAnalyzer, aggregateChildStats, deduplicateChildren } from "./bridge.js";
 import type { Session } from "./analyzer.js";
 import type { SessionAnalysis as ParserOutput, RawEntry } from "./parsers/types.js";
 
@@ -277,6 +277,38 @@ describe("bridgeToAnalyzer", () => {
     expect(result.turns[0].toolInput).toBe("TODO");
   });
 
+  it("passes endTime from parser end_time", () => {
+    const parsed = makeParserOutput({
+      end_time: "2026-03-20T10:05:00.000Z",
+    });
+    const result = bridgeToAnalyzer(parsed, { sessionId: "x", projectName: "p" });
+    expect(result.endTime).toBe("2026-03-20T10:05:00.000Z");
+  });
+
+  it("omits endTime when end_time is null", () => {
+    const parsed = makeParserOutput({ end_time: null });
+    const result = bridgeToAnalyzer(parsed, { sessionId: "x", projectName: "p" });
+    expect(result.endTime).toBeUndefined();
+  });
+
+  it("floors durationMinutes at 1 for sub-30s sessions", () => {
+    const parsed = makeParserOutput({ duration_ms: 15_000 }); // 15 seconds
+    const result = bridgeToAnalyzer(parsed, { sessionId: "x", projectName: "p" });
+    expect(result.durationMinutes).toBe(1);
+  });
+
+  it("returns 0 durationMinutes when duration_ms is 0", () => {
+    const parsed = makeParserOutput({ duration_ms: 0 });
+    const result = bridgeToAnalyzer(parsed, { sessionId: "x", projectName: "p" });
+    expect(result.durationMinutes).toBe(0);
+  });
+
+  it("floors wallClockMinutes at 1 for short sessions", () => {
+    const parsed = makeParserOutput({ wall_clock_ms: 20_000 }); // 20 seconds
+    const result = bridgeToAnalyzer(parsed, { sessionId: "x", projectName: "p" });
+    expect(result.wallClockMinutes).toBe(1);
+  });
+
   it("passes agentRole and parentSessionId through", () => {
     const parsed = makeParserOutput();
     const result = bridgeToAnalyzer(parsed, {
@@ -307,5 +339,56 @@ describe("aggregateChildStats", () => {
     expect(stats.totalLoc).toBe(0);
     expect(stats.totalDurationMinutes).toBe(0);
     expect(stats.agentCount).toBe(0);
+  });
+});
+
+describe("deduplicateChildren", () => {
+  function makeSession(overrides: Partial<Session>): Session {
+    return {
+      id: "s1",
+      title: "Test",
+      date: "2026-03-20T10:00:00.000Z",
+      durationMinutes: 5,
+      turns: 10,
+      linesOfCode: 50,
+      status: "draft",
+      projectName: "p",
+      rawLog: [],
+      skills: [],
+      executionPath: [],
+      toolBreakdown: [],
+      filesChanged: [],
+      turnTimeline: [],
+      toolCalls: 5,
+      ...overrides,
+    };
+  }
+
+  it("keeps agents with same role but start times >30s apart", () => {
+    const children = [
+      makeSession({ id: "a", agentRole: "dev", date: "2026-03-20T10:00:00.000Z", turns: 5 }),
+      makeSession({ id: "b", agentRole: "dev", date: "2026-03-20T10:00:31.000Z", turns: 5 }),
+    ];
+    const result = deduplicateChildren(children);
+    expect(result).toHaveLength(2);
+  });
+
+  it("deduplicates agents with same role within 30s bucket", () => {
+    const children = [
+      makeSession({ id: "a", agentRole: "dev", date: "2026-03-20T10:00:00.000Z", turns: 3 }),
+      makeSession({ id: "b", agentRole: "dev", date: "2026-03-20T10:00:15.000Z", turns: 8 }),
+    ];
+    const result = deduplicateChildren(children);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("b"); // keeps the one with more turns
+  });
+
+  it("does not merge agents with different roles in same bucket", () => {
+    const children = [
+      makeSession({ id: "a", agentRole: "frontend", date: "2026-03-20T10:00:00.000Z", turns: 5 }),
+      makeSession({ id: "b", agentRole: "backend", date: "2026-03-20T10:00:00.000Z", turns: 5 }),
+    ];
+    const result = deduplicateChildren(children);
+    expect(result).toHaveLength(2);
   });
 });
