@@ -14,8 +14,7 @@ type PublishPhase =
   | 'editing'
   | 'auth-prompt'
   | 'publishing'
-  | 'success-linked'
-  | 'success-anonymous';
+  | 'success';
 
 export interface SessionEditorPageProps {
   sessions?: Session[];
@@ -47,10 +46,10 @@ const POST_ANIMATION_DELAY_MS = 1000;
 
 function AuthPromptModal({
   onConnectNow,
-  onPublishAnonymously,
+  onCancel,
 }: {
   onConnectNow: () => void;
-  onPublishAnonymously: () => void;
+  onCancel: () => void;
 }) {
   return (
     <div className="publish-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="auth-prompt-heading">
@@ -85,10 +84,10 @@ function AuthPromptModal({
           <button
             type="button"
             className="btn btn-tertiary"
-            onClick={onPublishAnonymously}
+            onClick={onCancel}
             style={{ marginTop: 'var(--spacing-3)' }}
           >
-            Publish anonymously instead
+            Cancel
           </button>
         </div>
       </div>
@@ -141,7 +140,7 @@ function PublishTerminal({
   );
 }
 
-function SuccessLinked({ session }: { session: Session }) {
+function Success({ session }: { session: Session }) {
   const [copied, setCopied] = useState(false);
   const url = `heyi.am/s/${session.id}`;
   const publishDate = new Date().toLocaleDateString('en-US', {
@@ -202,58 +201,6 @@ function SuccessLinked({ session }: { session: Session }) {
   );
 }
 
-function SuccessAnonymous({ session }: { session: Session }) {
-  const [copied, setCopied] = useState(false);
-  const url = `heyi.am/s/${session.id}`;
-
-  const handleCopy = useCallback(() => {
-    void navigator.clipboard.writeText(`https://${url}`).then(() => {
-      setCopied(true);
-      setTimeout(() => { setCopied(false); }, 2000);
-    });
-  }, [url]);
-
-  return (
-    <div className="publish-success">
-      <div className="publish-success__icon publish-success__icon--amber">
-        <span aria-hidden="true" style={{ fontSize: '1.5rem' }}>!</span>
-      </div>
-      <h2 className="text-headline" style={{ marginTop: 'var(--spacing-4)' }}>
-        Published Anonymously
-      </h2>
-      <p className="text-body" style={{ marginTop: 'var(--spacing-2)', color: 'var(--on-surface-variant)' }}>
-        This session is not linked to any account.
-      </p>
-
-      <div className="publish-success__delete-code" style={{ marginTop: 'var(--spacing-6)' }}>
-        <span className="label" style={{ marginBottom: 'var(--spacing-2)', display: 'block' }}>
-          Delete Code
-        </span>
-        <code className="publish-success__delete-value">DEL-X7K9-M2PQ</code>
-        <p className="publish-success__delete-warning">
-          Save this code -- it is the only way to delete this share
-        </p>
-      </div>
-
-      <div className="publish-success__url-bar" style={{ marginTop: 'var(--spacing-4)' }}>
-        <code className="publish-success__url">{url}</code>
-        <button type="button" className="btn btn-secondary" onClick={handleCopy}>
-          {copied ? 'Copied' : 'Copy'}
-        </button>
-      </div>
-
-      <div className="publish-success__login-hint" style={{ marginTop: 'var(--spacing-6)' }}>
-        <p className="text-body" style={{ color: 'var(--on-surface-variant)' }}>
-          Want a portfolio? Run:
-        </p>
-        <div className="terminal" style={{ marginTop: 'var(--spacing-2)', padding: 'var(--spacing-3) var(--spacing-4)' }}>
-          <code>$ heyiam login</code>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
@@ -272,7 +219,6 @@ export function SessionEditorPage({
   const session = sessionList.find((s) => s.id === id);
 
   const [phase, setPhase] = useState<PublishPhase>('editing');
-  const [anonymous, setAnonymous] = useState(false);
   const [visibleLineCount, setVisibleLineCount] = useState(0);
 
   // Total lines = PUBLISH_LINES + 1 final URL line
@@ -296,7 +242,7 @@ export function SessionEditorPage({
 
     // Auto-advance after all lines + delay
     const advanceTimer = setTimeout(() => {
-      setPhase(anonymous ? 'success-anonymous' : 'success-linked');
+      setPhase('success');
     }, totalLines * LINE_DELAY_MS + POST_ANIMATION_DELAY_MS);
 
     timers.push(advanceTimer);
@@ -304,11 +250,10 @@ export function SessionEditorPage({
     return () => {
       for (const t of timers) clearTimeout(t);
     };
-  }, [phase, anonymous, totalLines]);
+  }, [phase, totalLines]);
 
   const handlePublish = useCallback(() => {
     if (isAuthenticated) {
-      setAnonymous(false);
       setPhase('publishing');
     } else {
       setPhase('auth-prompt');
@@ -316,13 +261,11 @@ export function SessionEditorPage({
   }, [isAuthenticated]);
 
   const handleConnectNow = useCallback(() => {
-    setAnonymous(false);
     setPhase('publishing');
   }, []);
 
-  const handlePublishAnonymously = useCallback(() => {
-    setAnonymous(true);
-    setPhase('publishing');
+  const handleCancel = useCallback(() => {
+    setPhase('editing');
   }, []);
 
   const handleBack = useCallback(() => {
@@ -385,7 +328,7 @@ export function SessionEditorPage({
           <SessionEditor session={session} />
           <AuthPromptModal
             onConnectNow={handleConnectNow}
-            onPublishAnonymously={handlePublishAnonymously}
+            onCancel={handleCancel}
           />
         </>
       )}
@@ -398,12 +341,8 @@ export function SessionEditorPage({
         />
       )}
 
-      {phase === 'success-linked' && (
-        <SuccessLinked session={session} />
-      )}
-
-      {phase === 'success-anonymous' && (
-        <SuccessAnonymous session={session} />
+      {phase === 'success' && (
+        <Success session={session} />
       )}
     </AppShell>
   );

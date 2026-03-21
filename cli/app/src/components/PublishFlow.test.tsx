@@ -1,8 +1,8 @@
 /**
  * Integration tests: Publish Success States
  *
- * Tests the terminal animation, linked success screen, and anonymous
- * success screen including URL display, copy button, and delete code.
+ * Tests the terminal animation and success screen including URL display,
+ * copy button, and portfolio links.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
@@ -143,54 +143,3 @@ describe('Publish — linked success', () => {
   });
 });
 
-// ===========================================================================
-// Success — anonymous
-// ===========================================================================
-
-describe('Publish — anonymous success', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  function publishAnonymously() {
-    renderEditor('ses-001', false);
-    fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    fireEvent.click(screen.getByText('Publish anonymously instead'));
-    act(() => { vi.advanceTimersByTime(ANIMATION_COMPLETE_MS); });
-  }
-
-  it('shows "Published Anonymously" heading', () => {
-    publishAnonymously();
-    expect(screen.getByText('Published Anonymously')).toBeInTheDocument();
-  });
-
-  it('shows delete code warning', () => {
-    publishAnonymously();
-    expect(screen.getByText('DEL-X7K9-M2PQ')).toBeInTheDocument();
-    expect(screen.getByText(/Save this code/)).toBeInTheDocument();
-  });
-
-  it('shows "not linked to any account" message', () => {
-    publishAnonymously();
-    expect(screen.getByText('This session is not linked to any account.')).toBeInTheDocument();
-  });
-
-  it('shows URL', () => {
-    publishAnonymously();
-    expect(screen.getByText('heyi.am/s/ses-001')).toBeInTheDocument();
-  });
-
-  it('has Copy button', () => {
-    publishAnonymously();
-    expect(screen.getByText('Copy')).toBeInTheDocument();
-  });
-
-  it('shows login hint with "heyiam login"', () => {
-    publishAnonymously();
-    expect(screen.getByText(/heyiam login/)).toBeInTheDocument();
-  });
-});

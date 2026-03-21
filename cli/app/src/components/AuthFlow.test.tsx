@@ -149,10 +149,17 @@ describe('Auth prompt modal — unauthenticated publish', () => {
     expect(screen.getByText('Connect now')).toBeInTheDocument();
   });
 
-  it('modal has Publish anonymously button', () => {
+  it('modal has Cancel button', () => {
     renderEditor('ses-001', false);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    expect(screen.getByText('Publish anonymously instead')).toBeInTheDocument();
+    expect(screen.getByText('Cancel')).toBeInTheDocument();
+  });
+
+  it('Cancel returns to editing phase', () => {
+    renderEditor('ses-001', false);
+    fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
+    fireEvent.click(screen.getByText('Cancel'));
+    expect(screen.queryByText('Connect your account?')).toBeNull();
   });
 
   it('Connect now transitions to terminal animation', () => {
@@ -163,13 +170,6 @@ describe('Auth prompt modal — unauthenticated publish', () => {
     expect(screen.getByText('$ heyiam publish')).toBeInTheDocument();
   });
 
-  it('Publish anonymously transitions to terminal animation', () => {
-    renderEditor('ses-001', false);
-    fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    fireEvent.click(screen.getByText('Publish anonymously instead'));
-    act(() => { vi.advanceTimersByTime(500); });
-    expect(screen.getByText('$ heyiam publish')).toBeInTheDocument();
-  });
 });
 
 // ===========================================================================

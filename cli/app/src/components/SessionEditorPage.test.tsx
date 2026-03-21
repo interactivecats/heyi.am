@@ -53,11 +53,19 @@ describe('SessionEditorPage', () => {
     expect(screen.getByText('Connect your account?')).toBeDefined();
   });
 
-  it('auth modal has "Connect now" and "Publish anonymously" buttons', () => {
+  it('auth modal has "Connect now" and "Cancel" buttons', () => {
     renderWithRoute('ses-001', { isAuthenticated: false });
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
     expect(screen.getByText('Connect now')).toBeDefined();
-    expect(screen.getByText('Publish anonymously instead')).toBeDefined();
+    expect(screen.getByText('Cancel')).toBeDefined();
+  });
+
+  it('Cancel button returns to editing phase', () => {
+    renderWithRoute('ses-001', { isAuthenticated: false });
+    fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
+    fireEvent.click(screen.getByText('Cancel'));
+    expect(screen.queryByText('Connect your account?')).toBeNull();
+    expect(screen.getByDisplayValue(MOCK_SESSIONS[0].title)).toBeDefined();
   });
 
   it('"Connect now" transitions to terminal animation', () => {
@@ -66,15 +74,6 @@ describe('SessionEditorPage', () => {
     fireEvent.click(screen.getByText('Connect now'));
 
     // First line appears after 500ms
-    act(() => { vi.advanceTimersByTime(500); });
-    expect(screen.getByText('$ heyiam publish')).toBeDefined();
-  });
-
-  it('"Publish anonymously" transitions to terminal animation', () => {
-    renderWithRoute('ses-001', { isAuthenticated: false });
-    fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    fireEvent.click(screen.getByText('Publish anonymously instead'));
-
     act(() => { vi.advanceTimersByTime(500); });
     expect(screen.getByText('$ heyiam publish')).toBeDefined();
   });
@@ -105,7 +104,7 @@ describe('SessionEditorPage', () => {
     expect(screen.getByText('Session Published')).toBeDefined();
   });
 
-  it('success-linked shows "Session Published" and URL', () => {
+  it('success shows "Session Published" and URL', () => {
     renderWithRoute('ses-001', { isAuthenticated: true });
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
 
@@ -113,18 +112,6 @@ describe('SessionEditorPage', () => {
     expect(screen.getByText('Session Published')).toBeDefined();
     expect(screen.getByText('Your case study is live on your portfolio.')).toBeDefined();
     expect(screen.getByText('heyi.am/s/ses-001')).toBeDefined();
-  });
-
-  it('success-anonymous shows "Published Anonymously" and delete code', () => {
-    renderWithRoute('ses-001', { isAuthenticated: false });
-    fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    fireEvent.click(screen.getByText('Publish anonymously instead'));
-
-    // Wait for animation to complete
-    act(() => { vi.advanceTimersByTime(6500); });
-    expect(screen.getByText('Published Anonymously')).toBeDefined();
-    expect(screen.getByText('DEL-X7K9-M2PQ')).toBeDefined();
-    expect(screen.getByText('This session is not linked to any account.')).toBeDefined();
   });
 
   it('authenticated user skips auth modal on publish', () => {
@@ -137,18 +124,9 @@ describe('SessionEditorPage', () => {
     expect(screen.getByText('$ heyiam publish')).toBeDefined();
   });
 
-  it('copy button exists on success-linked screen', () => {
+  it('copy button exists on success screen', () => {
     renderWithRoute('ses-001', { isAuthenticated: true });
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-
-    act(() => { vi.advanceTimersByTime(6500); });
-    expect(screen.getByText('Copy')).toBeDefined();
-  });
-
-  it('copy button exists on success-anonymous screen', () => {
-    renderWithRoute('ses-001', { isAuthenticated: false });
-    fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    fireEvent.click(screen.getByText('Publish anonymously instead'));
 
     act(() => { vi.advanceTimersByTime(6500); });
     expect(screen.getByText('Copy')).toBeDefined();
