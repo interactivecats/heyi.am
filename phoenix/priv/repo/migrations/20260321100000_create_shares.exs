@@ -19,7 +19,7 @@ defmodule HeyiAm.Repo.Migrations.CreateShares do
       add :skills, :map, default: "[]"
       add :beats, :map, default: "[]"
       add :qa_pairs, :map, default: "[]"
-      add :highlights, :map, default: "{}"
+      add :highlights, :map, default: "[]"
       add :tool_breakdown, :map, default: "[]"
       add :top_files, :map, default: "[]"
       add :transcript_excerpt, :map, default: "[]"
