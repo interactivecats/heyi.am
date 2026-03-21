@@ -72,19 +72,28 @@ defmodule HeyiAmWeb.ChallengeController do
   def submitted(conn, %{"slug" => slug}) do
     challenge = Challenges.get_challenge_by_slug!(slug)
 
-    responses = Challenges.list_responses(challenge)
-    latest = List.last(responses)
+    is_owner = is_challenge_owner?(conn, challenge)
+    has_response_token = get_session(conn, "challenge_response_#{challenge.id}") != nil
 
-    seal_hash =
-      if latest,
-        do: Signature.content_hash(latest),
-        else: nil
+    if is_owner or has_response_token do
+      responses = Challenges.list_responses(challenge)
+      latest = List.last(responses)
 
-    render(conn, :submitted,
-      challenge: challenge,
-      seal_hash: seal_hash,
-      page_title: "Submitted — #{challenge.title}"
-    )
+      seal_hash =
+        if latest,
+          do: Signature.content_hash(latest),
+          else: nil
+
+      render(conn, :submitted,
+        challenge: challenge,
+        seal_hash: seal_hash,
+        page_title: "Submitted — #{challenge.title}"
+      )
+    else
+      conn
+      |> redirect(to: ~p"/challenges/#{challenge.slug}")
+      |> halt()
+    end
   end
 
   def compare(conn, %{"slug" => slug}) do
@@ -175,6 +184,13 @@ defmodule HeyiAmWeb.ChallengeController do
 
       _ ->
         params
+    end
+  end
+
+  defp is_challenge_owner?(conn, challenge) do
+    case conn.assigns[:current_scope] do
+      %{user: %{id: id}} -> challenge.creator_id == id
+      _ -> false
     end
   end
 

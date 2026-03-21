@@ -171,6 +171,55 @@ defmodule HeyiAmWeb.ChallengeControllerTest do
     end
   end
 
+  describe "GET /challenges/:slug/submitted (access restriction)" do
+    setup :register_and_log_in_user
+
+    test "owner can view submitted page", %{conn: conn, user: user} do
+      challenge = challenge_fixture(user)
+      conn = get(conn, ~p"/challenges/#{challenge.slug}/submitted")
+      html = html_response(conn, 200)
+      assert html =~ "Submitted"
+    end
+
+    test "non-owner without response token is redirected", %{conn: conn} do
+      other_user = user_fixture()
+      challenge = challenge_fixture(other_user)
+      conn = get(conn, ~p"/challenges/#{challenge.slug}/submitted")
+      assert redirected_to(conn) == "/challenges/#{challenge.slug}"
+    end
+
+    test "non-owner with response token can view submitted page", %{conn: conn} do
+      other_user = user_fixture()
+      challenge = challenge_fixture(other_user)
+
+      conn =
+        conn
+        |> Plug.Conn.put_session("challenge_response_#{challenge.id}", true)
+        |> get(~p"/challenges/#{challenge.slug}/submitted")
+
+      html = html_response(conn, 200)
+      assert html =~ "Submitted"
+    end
+  end
+
+  describe "require_owner verifies creator_id" do
+    setup :register_and_log_in_user
+
+    test "compare checks creator_id matches current user", %{conn: conn, user: user} do
+      challenge = challenge_fixture(user)
+      conn = get(conn, ~p"/challenges/#{challenge.slug}/compare")
+      assert html_response(conn, 200) =~ "Responses"
+    end
+
+    test "compare rejects non-creator by checking creator_id", %{conn: conn} do
+      other_user = user_fixture()
+      challenge = challenge_fixture(other_user)
+      conn = get(conn, ~p"/challenges/#{challenge.slug}/compare")
+      assert redirected_to(conn) == "/"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "do not have access"
+    end
+  end
+
   describe "GET /challenges/:slug/compare (authenticated, creator only)" do
     setup :register_and_log_in_user
 
