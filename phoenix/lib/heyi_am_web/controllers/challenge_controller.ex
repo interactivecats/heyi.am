@@ -76,13 +76,28 @@ defmodule HeyiAmWeb.ChallengeController do
     has_response_token = get_session(conn, "challenge_response_#{challenge.id}") != nil
 
     if is_owner or has_response_token do
-      responses = Challenges.list_responses(challenge)
-      latest = List.last(responses)
-
       seal_hash =
-        if latest,
-          do: Signature.content_hash(latest),
-          else: nil
+        if is_owner do
+          # Owner sees the latest response hash (they can see all via compare anyway)
+          responses = Challenges.list_responses(challenge)
+          latest = List.last(responses)
+          if latest, do: Signature.content_hash(latest)
+        else
+          # Candidate: show only their own response hash if token stored, else nil
+          response_token = get_session(conn, "challenge_response_#{challenge.id}")
+
+          case response_token do
+            token when is_binary(token) ->
+              case HeyiAm.Shares.get_share_by_token(token) do
+                %{} = share -> Signature.content_hash(share)
+                _ -> nil
+              end
+
+            _ ->
+              # Legacy boolean or no token — don't leak other candidates' hashes
+              nil
+          end
+        end
 
       render(conn, :submitted,
         challenge: challenge,
