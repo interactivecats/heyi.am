@@ -57,8 +57,20 @@ defmodule HeyiAm.Shares.Share do
       :challenge_id
     ])
     |> validate_required([:token, :title])
+    |> validate_length(:title, max: 200)
+    |> validate_length(:dev_take, max: 2000)
+    |> validate_length(:narrative, max: 10000)
+    |> validate_length(:project_name, max: 200)
+    |> validate_skills_length()
     |> validate_inclusion(:template, @valid_templates)
     |> unique_constraint(:token)
   end
 
+  defp validate_skills_length(changeset) do
+    validate_change(changeset, :skills, fn :skills, skills ->
+      if length(skills) > 50,
+        do: [skills: "cannot have more than 50 items"],
+        else: []
+    end)
+  end
 end
