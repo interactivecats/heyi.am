@@ -11,7 +11,7 @@ import { checkAuthStatus, getAuthToken, saveAuthToken } from './auth.js';
 import { API_URL } from './config.js';
 import { summarizeSession, createSSEHandler } from './summarize.js';
 import { getProvider, getEnhanceMode } from './llm/index.js';
-import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData } from './settings.js';
+import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData, markAsUploaded } from './settings.js';
 import Anthropic from '@anthropic-ai/sdk';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -82,7 +82,7 @@ function mergeEnhancedData(session: Session): Session {
       description: s.body,
     })),
     qaPairs: enhanced.qaPairs,
-    status: 'enhanced',
+    status: enhanced.uploaded ? 'published' : 'enhanced',
     quickEnhanced: enhanced.quickEnhanced ?? false,
   };
 }
@@ -437,6 +437,7 @@ export function createApp(sessionsBasePath?: string) {
         }
 
         const data = await response.json() as Record<string, unknown>;
+        markAsUploaded(sessionId);
         uploaded++;
         send({
           type: 'progress',
@@ -519,6 +520,9 @@ export function createApp(sessionsBasePath?: string) {
       }
 
       console.log(`[publish] SUCCESS: ${data.url}`);
+
+      // Mark session as uploaded locally
+      if (sessionId) markAsUploaded(sessionId as string);
 
       // Best-effort upload of raw data to object storage
       if (data.upload_urls) {

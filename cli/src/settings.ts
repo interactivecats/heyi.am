@@ -48,6 +48,8 @@ export interface EnhancedData {
   enhancedAt: string;
   /** True when enhanced via bulk mode with auto-accepted AI suggestions. */
   quickEnhanced?: boolean;
+  /** True when uploaded to heyi.am via publish or bulk upload. */
+  uploaded?: boolean;
 }
 
 function enhancedDir(configDir: string = CONFIG_DIR): string {
@@ -81,6 +83,15 @@ export function loadEnhancedData(sessionId: string, configDir?: string): Enhance
   } catch {
     return null;
   }
+}
+
+export function markAsUploaded(sessionId: string, configDir?: string): void {
+  const data = loadEnhancedData(sessionId, configDir);
+  if (!data) return;
+  data.uploaded = true;
+  const dir = enhancedDir(configDir);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(enhancedPath(sessionId, configDir), JSON.stringify(data, null, 2), { mode: 0o600 });
 }
 
 export function deleteEnhancedData(sessionId: string, configDir?: string): void {

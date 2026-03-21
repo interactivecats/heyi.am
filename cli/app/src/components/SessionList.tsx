@@ -29,6 +29,7 @@ function formatDuration(minutes: number): string {
    ========================================================================== */
 
 type BulkStatus = 'idle' | 'enhancing' | 'uploading' | 'done';
+type BulkDoneMode = 'enhance' | 'upload';
 
 interface BulkProgress {
   completed: number;
@@ -111,6 +112,7 @@ export function SessionList({
 
   // Bulk enhance state
   const [bulkStatus, setBulkStatus] = useState<BulkStatus>('idle');
+  const [bulkDoneMode, setBulkDoneMode] = useState<BulkDoneMode>('enhance');
   const [bulkProgress, setBulkProgress] = useState<BulkProgress>({
     completed: 0,
     total: 0,
@@ -216,6 +218,7 @@ export function SessionList({
     for (const s of selected) statuses.set(s.id, 'queued');
 
     setBulkStatus('enhancing');
+    setBulkDoneMode('enhance');
     setBulkProgress({
       completed: 0,
       total: selected.length,
@@ -287,6 +290,7 @@ export function SessionList({
     for (const s of selected) statuses.set(s.id, 'queued');
 
     setBulkStatus('uploading');
+    setBulkDoneMode('upload');
     setBulkProgress({
       completed: 0,
       total: selected.length,
@@ -324,7 +328,8 @@ export function SessionList({
             enhanced: event.uploaded ?? prev.enhanced,
             failed: event.failed ?? prev.failed,
           }));
-          if (usingApi) ctx.refreshSessions();
+          // Don't refreshSessions here — uploaded sessions are still 'enhanced' locally.
+          // The override chips (UPLOADED) stay visible until user dismisses.
         }
       },
       (error: Error) => {
@@ -720,7 +725,7 @@ export function SessionList({
               {bulkStatus === 'done' && (
                 <div className="session-browser__bulk-progress" data-testid="bulk-done">
                   <span className="session-browser__bulk-count">
-                    {bulkProgress.enhanced} done{bulkProgress.failed > 0 ? `, ${bulkProgress.failed} failed` : ''}
+                    {bulkProgress.enhanced} {bulkDoneMode === 'upload' ? 'uploaded' : 'enhanced'}{bulkProgress.failed > 0 ? `, ${bulkProgress.failed} failed` : ''}
                   </span>
                   <button
                     type="button"
