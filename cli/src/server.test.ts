@@ -323,11 +323,18 @@ describe('Hierarchical session API', () => {
 });
 
 describe('POST /api/publish', () => {
-  it('returns stub response', async () => {
+  it('returns 400 without session data', async () => {
     const app = createApp(tmpDir);
     const res = await request(app).post('/api/publish').send({});
-    expect(res.status).toBe(200);
-    expect(res.body.status).toBe('stub');
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Missing session data');
+  });
+
+  it('returns 401 without auth token', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app).post('/api/publish').send({ session: { title: 'Test' } });
+    expect(res.status).toBe(401);
+    expect(res.body.error).toContain('Not authenticated');
   });
 });
 

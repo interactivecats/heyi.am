@@ -6,7 +6,7 @@ import type { Server } from 'node:http';
 import { listSessions, parseSession, type SessionMeta } from './parsers/index.js';
 import { bridgeToAnalyzer, bridgeChildSessions, aggregateChildStats, type ChildSessionSummary } from './bridge.js';
 import { analyzeSession, type Session } from './analyzer.js';
-import { checkAuthStatus } from './auth.js';
+import { checkAuthStatus, getAuthToken } from './auth.js';
 import { API_URL } from './config.js';
 import { summarizeSession, createSSEHandler } from './summarize.js';
 
@@ -205,8 +205,39 @@ export function createApp(sessionsBasePath?: string) {
     }
   });
 
-  app.post('/api/publish', (_req: Request, res: Response) => {
-    res.json({ status: 'stub', message: 'Publish coming soon' });
+  app.post('/api/publish', async (req: Request, res: Response) => {
+    try {
+      const { session } = req.body;
+      if (!session) {
+        res.status(400).json({ error: 'Missing session data' });
+        return;
+      }
+
+      const auth = getAuthToken();
+      if (!auth?.token) {
+        res.status(401).json({ error: 'Not authenticated. Run: heyiam login' });
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/api/sessions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`,
+        },
+        body: JSON.stringify({ session }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        res.status(response.status).json(data);
+        return;
+      }
+
+      res.json(data);
+    } catch {
+      res.status(500).json({ error: 'Publish failed' });
+    }
   });
 
   app.get('/api/auth/status', async (_req: Request, res: Response) => {
