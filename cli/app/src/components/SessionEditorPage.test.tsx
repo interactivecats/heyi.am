@@ -5,6 +5,12 @@ import { SessionEditorPage } from './SessionEditorPage';
 import type { SessionEditorPageProps } from './SessionEditorPage';
 import { MOCK_SESSIONS } from '../mock-data';
 
+vi.mock('../api', () => ({
+  publishSession: vi.fn(() =>
+    Promise.resolve({ token: 'tok-123', url: '/s/ses-001', sealed: false, content_hash: 'abc' }),
+  ),
+}));
+
 function renderWithRoute(sessionId: string, props?: Partial<SessionEditorPageProps>) {
   return render(
     <MemoryRouter initialEntries={[`/session/${sessionId}/edit`]}>
@@ -95,20 +101,20 @@ describe('SessionEditorPage', () => {
     expect(screen.getByText('Payload signed')).toBeDefined();
   });
 
-  it('terminal auto-advances to success after animation', () => {
+  it('terminal auto-advances to success after animation', async () => {
     renderWithRoute('ses-001', { isAuthenticated: true });
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
 
-    // 10 lines * 500ms + 1000ms post-delay = 6000ms
-    act(() => { vi.advanceTimersByTime(6500); });
+    // Flush the publish promise microtask, then advance timers
+    await act(async () => { vi.advanceTimersByTime(6500); });
     expect(screen.getByText('Session Published')).toBeDefined();
   });
 
-  it('success shows "Session Published" and URL', () => {
+  it('success shows "Session Published" and URL', async () => {
     renderWithRoute('ses-001', { isAuthenticated: true });
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
 
-    act(() => { vi.advanceTimersByTime(6500); });
+    await act(async () => { vi.advanceTimersByTime(6500); });
     expect(screen.getByText('Session Published')).toBeDefined();
     expect(screen.getByText('Your case study is live on your portfolio.')).toBeDefined();
     expect(screen.getByText('heyi.am/s/ses-001')).toBeDefined();
@@ -124,11 +130,11 @@ describe('SessionEditorPage', () => {
     expect(screen.getByText('$ heyiam publish')).toBeDefined();
   });
 
-  it('copy button exists on success screen', () => {
+  it('copy button exists on success screen', async () => {
     renderWithRoute('ses-001', { isAuthenticated: true });
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
 
-    act(() => { vi.advanceTimersByTime(6500); });
+    await act(async () => { vi.advanceTimersByTime(6500); });
     expect(screen.getByText('Copy')).toBeDefined();
   });
 });

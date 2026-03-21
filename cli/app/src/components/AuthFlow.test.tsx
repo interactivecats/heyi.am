@@ -12,6 +12,12 @@ import { Settings } from './Settings';
 import { SessionEditorPage } from './SessionEditorPage';
 import { MOCK_SESSIONS } from '../mock-data';
 
+vi.mock('../api', () => ({
+  publishSession: vi.fn(() =>
+    Promise.resolve({ token: 'tok-123', url: '/s/ses-001', sealed: false, content_hash: 'abc' }),
+  ),
+}));
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

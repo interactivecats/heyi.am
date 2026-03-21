@@ -1,10 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import type { Session } from '../types';
 import { AppShell } from './AppShell';
 import { SessionEditor } from './SessionEditor';
 import { useSessionsContext } from '../SessionsContext';
 import { useAuth } from '../AuthContext';
+import { publishSession } from '../api';
+import type { PublishResult } from '../api';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -140,9 +142,9 @@ function PublishTerminal({
   );
 }
 
-function Success({ session }: { session: Session }) {
+function Success({ session, publishResult }: { session: Session; publishResult: PublishResult | null }) {
   const [copied, setCopied] = useState(false);
-  const url = `heyi.am/s/${session.id}`;
+  const url = publishResult?.url ? `heyi.am${publishResult.url}` : `heyi.am/s/${session.id}`;
   const publishDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -220,15 +222,27 @@ export function SessionEditorPage({
 
   const [phase, setPhase] = useState<PublishPhase>('editing');
   const [visibleLineCount, setVisibleLineCount] = useState(0);
+  const [publishResult, setPublishResult] = useState<PublishResult | null>(null);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const publishResolvedRef = useRef(false);
+  const animationDoneRef = useRef(false);
 
   // Total lines = PUBLISH_LINES + 1 final URL line
   const totalLines = PUBLISH_LINES.length + 1;
+
+  // Try to advance to success when both animation and API call are done
+  const maybeAdvance = useCallback(() => {
+    if (animationDoneRef.current && publishResolvedRef.current) {
+      setPhase('success');
+    }
+  }, []);
 
   // Publishing animation: reveal lines one by one
   useEffect(() => {
     if (phase !== 'publishing') return;
 
     setVisibleLineCount(0);
+    animationDoneRef.current = false;
 
     const timers: ReturnType<typeof setTimeout>[] = [];
 
@@ -240,9 +254,10 @@ export function SessionEditorPage({
       );
     }
 
-    // Auto-advance after all lines + delay
+    // Mark animation done after all lines + delay
     const advanceTimer = setTimeout(() => {
-      setPhase('success');
+      animationDoneRef.current = true;
+      maybeAdvance();
     }, totalLines * LINE_DELAY_MS + POST_ANIMATION_DELAY_MS);
 
     timers.push(advanceTimer);
@@ -250,19 +265,53 @@ export function SessionEditorPage({
     return () => {
       for (const t of timers) clearTimeout(t);
     };
-  }, [phase, totalLines]);
+  }, [phase, totalLines, maybeAdvance]);
+
+  const startPublish = useCallback(() => {
+    if (!session) return;
+    setPublishError(null);
+    publishResolvedRef.current = false;
+    animationDoneRef.current = false;
+    setPhase('publishing');
+
+    const payload: Record<string, unknown> = {
+      title: session.title,
+      context: session.context,
+      developer_take: session.developerTake,
+      skills: session.skills,
+      execution_path: session.executionPath,
+      turns: session.turns,
+      duration_minutes: session.durationMinutes,
+      lines_of_code: session.linesOfCode,
+      raw_log: session.rawLog,
+      project_name: session.projectName,
+    };
+
+    publishSession(payload)
+      .then((result) => {
+        setPublishResult(result);
+        publishResolvedRef.current = true;
+        maybeAdvance();
+      })
+      .catch((err: Error) => {
+        setPublishError(err.message);
+        // Still allow animation to finish, then show error on success screen
+        publishResolvedRef.current = true;
+        maybeAdvance();
+      });
+  }, [session, maybeAdvance]);
 
   const handlePublish = useCallback(() => {
     if (isAuthenticated) {
-      setPhase('publishing');
+      startPublish();
     } else {
       setPhase('auth-prompt');
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, startPublish]);
 
   const handleConnectNow = useCallback(() => {
-    setPhase('publishing');
-  }, []);
+    startPublish();
+  }, [startPublish]);
 
   const handleCancel = useCallback(() => {
     setPhase('editing');
@@ -342,7 +391,19 @@ export function SessionEditorPage({
       )}
 
       {phase === 'success' && (
-        <Success session={session} />
+        <>
+          {publishError && (
+            <div className="publish-error" role="alert" style={{ padding: 'var(--spacing-4)', marginBottom: 'var(--spacing-4)', color: 'var(--error)' }}>
+              <p className="text-body">Publish failed: {publishError}</p>
+              <button type="button" className="btn btn-secondary" style={{ marginTop: 'var(--spacing-3)' }} onClick={() => { setPhase('editing'); }}>
+                Back to editor
+              </button>
+            </div>
+          )}
+          {!publishError && (
+            <Success session={session} publishResult={publishResult} />
+          )}
+        </>
       )}
     </AppShell>
   );

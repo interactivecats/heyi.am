@@ -100,6 +100,26 @@ export async function fetchAuthStatus(): Promise<AuthStatus> {
   }
 }
 
+export interface PublishResult {
+  token: string;
+  url: string;
+  sealed: boolean;
+  content_hash: string;
+}
+
+export async function publishSession(session: Record<string, unknown>): Promise<PublishResult> {
+  const res = await fetch(`${API_BASE}/publish`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Publish failed' }));
+    throw new Error(err.error || err.errors?.join(', ') || 'Publish failed');
+  }
+  return res.json();
+}
+
 export async function fetchAllSessions(): Promise<{ projects: ApiProject[]; sessions: Session[] }> {
   const projects = await fetchProjects();
 

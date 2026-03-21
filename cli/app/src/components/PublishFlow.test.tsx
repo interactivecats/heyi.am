@@ -10,6 +10,12 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { SessionEditorPage } from './SessionEditorPage';
 import { MOCK_SESSIONS } from '../mock-data';
 
+vi.mock('../api', () => ({
+  publishSession: vi.fn(() =>
+    Promise.resolve({ token: 'tok-123', url: '/s/ses-001', sealed: false, content_hash: 'abc' }),
+  ),
+}));
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -72,10 +78,10 @@ describe('Publish — terminal animation', () => {
     expect(progressFill).not.toBeNull();
   });
 
-  it('auto-advances to success after animation completes', () => {
+  it('auto-advances to success after animation completes', async () => {
     renderEditor('ses-001', true);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    act(() => { vi.advanceTimersByTime(ANIMATION_COMPLETE_MS); });
+    await act(async () => { vi.advanceTimersByTime(ANIMATION_COMPLETE_MS); });
     expect(screen.getByText('Session Published')).toBeInTheDocument();
   });
 });
@@ -93,52 +99,52 @@ describe('Publish — linked success', () => {
     vi.useRealTimers();
   });
 
-  it('shows "Session Published" heading', () => {
+  it('shows "Session Published" heading', async () => {
     renderEditor('ses-001', true);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    act(() => { vi.advanceTimersByTime(ANIMATION_COMPLETE_MS); });
+    await act(async () => { vi.advanceTimersByTime(ANIMATION_COMPLETE_MS); });
     expect(screen.getByText('Session Published')).toBeInTheDocument();
   });
 
-  it('shows portfolio message', () => {
+  it('shows portfolio message', async () => {
     renderEditor('ses-001', true);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    act(() => { vi.advanceTimersByTime(ANIMATION_COMPLETE_MS); });
+    await act(async () => { vi.advanceTimersByTime(ANIMATION_COMPLETE_MS); });
     expect(screen.getByText('Your case study is live on your portfolio.')).toBeInTheDocument();
   });
 
-  it('displays the session URL', () => {
+  it('displays the session URL', async () => {
     renderEditor('ses-001', true);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    act(() => { vi.advanceTimersByTime(ANIMATION_COMPLETE_MS); });
+    await act(async () => { vi.advanceTimersByTime(ANIMATION_COMPLETE_MS); });
     expect(screen.getByText('heyi.am/s/ses-001')).toBeInTheDocument();
   });
 
-  it('has Copy button', () => {
+  it('has Copy button', async () => {
     renderEditor('ses-001', true);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    act(() => { vi.advanceTimersByTime(ANIMATION_COMPLETE_MS); });
+    await act(async () => { vi.advanceTimersByTime(ANIMATION_COMPLETE_MS); });
     expect(screen.getByText('Copy')).toBeInTheDocument();
   });
 
-  it('has View on Portfolio link', () => {
+  it('has View on Portfolio link', async () => {
     renderEditor('ses-001', true);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    act(() => { vi.advanceTimersByTime(ANIMATION_COMPLETE_MS); });
+    await act(async () => { vi.advanceTimersByTime(ANIMATION_COMPLETE_MS); });
     expect(screen.getByText('View on Portfolio')).toBeInTheDocument();
   });
 
-  it('has View Case Study link', () => {
+  it('has View Case Study link', async () => {
     renderEditor('ses-001', true);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    act(() => { vi.advanceTimersByTime(ANIMATION_COMPLETE_MS); });
+    await act(async () => { vi.advanceTimersByTime(ANIMATION_COMPLETE_MS); });
     expect(screen.getByText('View Case Study')).toBeInTheDocument();
   });
 
-  it('shows Published badge', () => {
+  it('shows Published badge', async () => {
     renderEditor('ses-001', true);
     fireEvent.click(screen.getByRole('button', { name: /Publish/ }));
-    act(() => { vi.advanceTimersByTime(ANIMATION_COMPLETE_MS); });
+    await act(async () => { vi.advanceTimersByTime(ANIMATION_COMPLETE_MS); });
     expect(screen.getByText('Published')).toBeInTheDocument();
   });
 });
