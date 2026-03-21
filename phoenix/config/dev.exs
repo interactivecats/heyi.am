@@ -27,8 +27,8 @@ end
 # to bundle .js and .css sources.
 config :heyi_am, HeyiAmWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
-  # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}],
+  # Set PHX_IP=0.0.0.0 (e.g. in docker-compose) to allow access from outside.
+  http: [ip: if(System.get_env("PHX_IP") == "0.0.0.0", do: {0, 0, 0, 0}, else: {127, 0, 0, 1})],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
@@ -112,4 +112,9 @@ config :ex_aws,
   ]
 
 config :heyi_am, HeyiAm.ObjectStorage,
-  bucket: System.get_env("OBJECT_STORAGE_BUCKET", "heyi-am-sessions")
+  bucket: System.get_env("OBJECT_STORAGE_BUCKET", "heyi-am-sessions"),
+  external_endpoint: [
+    scheme: System.get_env("OBJECT_STORAGE_EXTERNAL_SCHEME", "http://"),
+    host: System.get_env("OBJECT_STORAGE_EXTERNAL_HOST", "localhost"),
+    port: String.to_integer(System.get_env("OBJECT_STORAGE_EXTERNAL_PORT", "8333"))
+  ]

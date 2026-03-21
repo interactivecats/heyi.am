@@ -17,9 +17,10 @@ services:
 
   seaweedfs:
     image: chrislusf/seaweedfs
-    command: "server -s3 -s3.config=/etc/seaweedfs/s3.json -dir=/data"
+    command: "server -s3 -s3.config=/etc/seaweedfs/s3.json -filer -dir=/data"
     ports:
       - "8333:8333"   # S3 API
+      - "8888:8888"   # Filer Web UI
       - "9333:9333"   # Master
     volumes:
       - heyi_seaweed:/data
@@ -72,6 +73,7 @@ services:
       OBJECT_STORAGE_ACCESS_KEY_ID: heyi_admin
       OBJECT_STORAGE_SECRET_ACCESS_KEY: heyi_secret_key
       OBJECT_STORAGE_BUCKET: heyi-am-sessions
+      OBJECT_STORAGE_EXTERNAL_HOST: host.docker.internal
     ports:
       - "4000:4000"
     volumes:
