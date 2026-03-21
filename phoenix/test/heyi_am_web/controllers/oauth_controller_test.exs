@@ -23,7 +23,7 @@ defmodule HeyiAmWeb.OAuthControllerTest do
         |> assign(:ueberauth_auth, auth)
         |> OAuthController.callback(%{})
 
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/onboarding/username"
       assert get_session(conn, :user_token)
 
       user = HeyiAm.Repo.get_by!(Accounts.User, github_id: 12345)
@@ -49,7 +49,7 @@ defmodule HeyiAmWeb.OAuthControllerTest do
         |> assign(:ueberauth_auth, auth)
         |> OAuthController.callback(%{})
 
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/onboarding/username"
       assert get_session(conn, :user_token)
       assert length(HeyiAm.Repo.all(Accounts.User)) == 1
     end

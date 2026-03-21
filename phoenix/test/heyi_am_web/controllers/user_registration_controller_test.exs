@@ -30,7 +30,7 @@ defmodule HeyiAmWeb.UserRegistrationControllerTest do
         })
 
       assert get_session(conn, :user_token)
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/onboarding/username"
 
       assert conn.assigns.flash["info"] =~ "Account created successfully"
     end

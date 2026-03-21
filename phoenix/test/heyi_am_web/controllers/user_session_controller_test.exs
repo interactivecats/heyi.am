@@ -35,7 +35,7 @@ defmodule HeyiAmWeb.UserSessionControllerTest do
         })
 
       assert get_session(conn, :user_token)
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/onboarding/username"
     end
 
     test "logs the user in with remember me", %{conn: conn, user: user} do
@@ -49,7 +49,7 @@ defmodule HeyiAmWeb.UserSessionControllerTest do
         })
 
       assert conn.resp_cookies["_heyi_am_web_user_remember_me"]
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/onboarding/username"
     end
 
     test "logs the user in with return to", %{conn: conn, user: user} do

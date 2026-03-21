@@ -37,7 +37,7 @@ defmodule HeyiAmWeb.UserAuth do
 
     conn
     |> create_or_extend_session(user, params)
-    |> redirect(to: user_return_to || signed_in_path(conn))
+    |> redirect(to: user_return_to || signed_in_path_for_user(user))
   end
 
   @doc """
@@ -194,10 +194,13 @@ defmodule HeyiAmWeb.UserAuth do
     end
   end
 
+  defp signed_in_path_for_user(%{username: nil}), do: ~p"/onboarding/username"
+  defp signed_in_path_for_user(%{username: username}) when is_binary(username), do: ~p"/#{username}"
+  defp signed_in_path_for_user(_), do: ~p"/"
+
   defp signed_in_path(conn) do
     case conn.assigns[:current_scope] do
-      %{user: %{username: nil}} -> ~p"/onboarding/username"
-      %{user: %{username: username}} when is_binary(username) -> ~p"/#{username}"
+      %{user: user} -> signed_in_path_for_user(user)
       _ -> ~p"/"
     end
   end

@@ -23,7 +23,7 @@ defmodule HeyiAmWeb.UserAuthTest do
     test "stores the user token in the session", %{conn: conn, user: user} do
       conn = UserAuth.log_in_user(conn, user)
       assert token = get_session(conn, :user_token)
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/onboarding/username"
       assert Accounts.get_user_by_session_token(token)
     end
 
