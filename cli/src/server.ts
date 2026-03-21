@@ -391,6 +391,9 @@ export function createApp(sessionsBasePath?: string) {
     for (let i = 0; i < sessionList.length; i++) {
       if (cancelled) break;
 
+      // Pace requests to stay under Phoenix rate limit (30/min)
+      if (i > 0) await new Promise((r) => setTimeout(r, 2000));
+
       const { projectName, sessionId } = sessionList[i];
       send({ type: 'progress', sessionId, status: 'uploading', index: i, total: sessionList.length });
 
@@ -422,21 +425,30 @@ export function createApp(sessionsBasePath?: string) {
           template: 'editorial',
         };
 
-        const response = await fetch(`${API_URL}/api/sessions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${auth.token}`,
-          },
-          body: JSON.stringify({ session: payload }),
-        });
-
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error((errData as Record<string, string>).error ?? `Upload failed: ${response.status}`);
+        let fetchRes: globalThis.Response | null = null;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          fetchRes = await fetch(`${API_URL}/api/sessions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${auth.token}`,
+            },
+            body: JSON.stringify({ session: payload }),
+          });
+          if (fetchRes.status === 429 && attempt < 2) {
+            // Rate limited — wait and retry
+            await new Promise((r) => setTimeout(r, 5000 * (attempt + 1)));
+            continue;
+          }
+          break;
         }
 
-        const data = await response.json() as Record<string, unknown>;
+        if (!fetchRes || !fetchRes.ok) {
+          const errData = fetchRes ? await fetchRes.json().catch(() => ({})) : {};
+          throw new Error((errData as Record<string, string>).error ?? `Upload failed: ${fetchRes?.status ?? 'no response'}`);
+        }
+
+        const data = await fetchRes.json() as Record<string, unknown>;
         markAsUploaded(sessionId);
         uploaded++;
         send({
