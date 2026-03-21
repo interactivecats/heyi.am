@@ -121,6 +121,8 @@ defmodule HeyiAmWeb.ChallengeController do
         responses: responses,
         page_title: "Compare — #{challenge.title}"
       )
+    else
+      %Plug.Conn{} = conn -> conn
     end
   end
 
@@ -147,6 +149,8 @@ defmodule HeyiAmWeb.ChallengeController do
         next_response: next_response,
         page_title: "#{share.title} — #{challenge.title}"
       )
+    else
+      %Plug.Conn{} = conn -> conn
     end
   end
 
@@ -176,7 +180,7 @@ defmodule HeyiAmWeb.ChallengeController do
       skills: share.skills || [],
       qa_pairs: share.qa_pairs || [],
       beats: share.beats || [],
-      highlights: share.highlights || %{},
+      highlights: share.highlights || [],
       tool_breakdown: share.tool_breakdown || [],
       narrative: share.narrative || "",
       top_files: share.top_files || []

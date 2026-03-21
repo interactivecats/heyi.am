@@ -5,20 +5,30 @@ defmodule HeyiAm.Portfolios do
   alias HeyiAm.Portfolios.PortfolioSession
 
   def add_to_portfolio(user, share) do
-    max_pos =
-      PortfolioSession
-      |> where(user_id: ^user.id)
-      |> select([p], max(p.position))
-      |> Repo.one() || 0
+    Repo.transaction(fn ->
+      # Lock existing rows to prevent concurrent position races
+      positions =
+        PortfolioSession
+        |> where(user_id: ^user.id)
+        |> select([p], p.position)
+        |> lock("FOR UPDATE")
+        |> Repo.all()
 
-    %PortfolioSession{}
-    |> PortfolioSession.changeset(%{
-      user_id: user.id,
-      share_id: share.id,
-      project_name: share.project_name,
-      position: max_pos + 1
-    })
-    |> Repo.insert()
+      max_pos = Enum.max(positions, fn -> 0 end)
+
+      %PortfolioSession{}
+      |> PortfolioSession.changeset(%{
+        user_id: user.id,
+        share_id: share.id,
+        project_name: share.project_name,
+        position: max_pos + 1
+      })
+      |> Repo.insert()
+      |> case do
+        {:ok, ps} -> ps
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
+    end)
   end
 
   def list_portfolio_sessions(user_id) do
@@ -52,15 +62,25 @@ defmodule HeyiAm.Portfolios do
   end
 
   def reorder(user_id, ordered_ids) do
-    Repo.transaction(fn ->
-      ordered_ids
-      |> Enum.with_index(1)
-      |> Enum.each(fn {id, position} ->
-        PortfolioSession
-        |> where(id: ^id, user_id: ^user_id)
-        |> Repo.update_all(set: [position: position])
+    if ordered_ids == [] do
+      {:ok, :noop}
+    else
+      # Single query: UPDATE with unnest for all positions at once
+      ids = Enum.with_index(ordered_ids, 1)
+
+      Repo.transaction(fn ->
+        Ecto.Adapters.SQL.query!(
+          Repo,
+          """
+          UPDATE portfolio_sessions AS ps
+          SET position = v.position
+          FROM (SELECT unnest($1::bigint[]) AS id, unnest($2::integer[]) AS position) AS v
+          WHERE ps.id = v.id AND ps.user_id = $3
+          """,
+          [Enum.map(ids, &elem(&1, 0)), Enum.map(ids, &elem(&1, 1)), user_id]
+        )
       end)
-    end)
+    end
   end
 
   def remove_from_portfolio(%PortfolioSession{} = ps) do

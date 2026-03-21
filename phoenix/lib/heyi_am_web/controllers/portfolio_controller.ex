@@ -1,6 +1,8 @@
 defmodule HeyiAmWeb.PortfolioController do
   use HeyiAmWeb, :controller
 
+  import HeyiAmWeb.Helpers, only: [format_loc: 1, slugify: 1]
+
   alias HeyiAm.Accounts
   alias HeyiAm.Portfolios
   alias HeyiAm.Profiles
@@ -16,9 +18,10 @@ defmodule HeyiAmWeb.PortfolioController do
 
       user ->
         portfolio_sessions = Portfolios.list_visible_portfolio_sessions(user.id)
-        shares = Enum.map(portfolio_sessions, fn ps -> Map.from_struct(ps.share) end)
+        shares = Enum.map(portfolio_sessions, fn ps -> ps.share end)
 
-        projects = build_projects(shares)
+        # Use portfolio_session.project_name (snapshot at publish time) for grouping
+        projects = build_projects(portfolio_sessions)
         collab_profile = build_collab_profile(shares)
         metrics = build_metrics(shares)
         recent_activity = build_recent_activity(shares)
@@ -45,47 +48,72 @@ defmodule HeyiAmWeb.PortfolioController do
 
       user ->
         portfolio_sessions = Portfolios.list_visible_portfolio_sessions(user.id)
-        shares = Enum.map(portfolio_sessions, fn ps -> Map.from_struct(ps.share) end)
 
         project_shares =
-          Enum.filter(shares, fn s ->
-            slugify(s.project_name) == slug
-          end)
+          portfolio_sessions
+          |> Enum.filter(fn ps -> slugify(ps.project_name) == slug end)
+          |> Enum.map(& &1.share)
 
-        project = build_project_detail(project_shares, slug)
+        case project_shares do
+          [] ->
+            conn
+            |> put_status(:not_found)
+            |> put_view(HeyiAmWeb.ErrorHTML)
+            |> render(:"404")
 
-        sessions =
-          Enum.map(project_shares, fn s ->
-            %{
-              token: s.token,
-              title: s.title,
-              description: s.dev_take,
-              duration_minutes: s.duration_minutes,
-              turns: s.turns,
-              files_changed: s.files_changed,
-              loc_changed: format_loc(s.loc_changed),
-              skills: s.skills || [],
-              recorded_at: s.recorded_at,
-              verified_at: s.verified_at
-            }
-          end)
+          _ ->
+            project = build_project_detail(project_shares, slug)
 
-        render(conn, :project,
-          portfolio_user: user,
-          project: project,
-          sessions: sessions,
-          page_title: "#{project.title} — #{user.display_name || user.username}",
-          portfolio_layout: user.portfolio_layout || "editorial"
-        )
+            sessions =
+              Enum.map(project_shares, fn s ->
+                %{
+                  token: s.token,
+                  title: s.title,
+                  description: s.dev_take,
+                  duration_minutes: s.duration_minutes,
+                  turns: s.turns,
+                  files_changed: s.files_changed,
+                  loc_changed: format_loc(s.loc_changed),
+                  skills: s.skills || [],
+                  recorded_at: s.recorded_at,
+                  verified_at: s.verified_at
+                }
+              end)
+
+            growth_data = Projects.compute_cumulative_loc(project_shares)
+            chart = compute_chart(growth_data)
+            heatmap_data = Projects.compute_file_heatmap(project_shares)
+            top_files = Projects.compute_top_files(project_shares) |> Enum.take(10)
+
+            # Build ordered session tokens for heatmap columns
+            heatmap_sessions =
+              project_shares
+              |> Enum.sort_by(& &1.recorded_at, DateTime)
+              |> Enum.map(fn s -> %{token: s.token, title: truncate(s.title, 12)} end)
+
+            render(conn, :project,
+              portfolio_user: user,
+              project: project,
+              sessions: sessions,
+              growth_data: growth_data,
+              chart: chart,
+              heatmap_data: heatmap_data,
+              heatmap_sessions: heatmap_sessions,
+              top_files: top_files,
+              page_title: "#{project.title} — #{user.display_name || user.username}",
+              portfolio_layout: user.portfolio_layout || "editorial"
+            )
+        end
     end
   end
 
   # -- Private helpers --
 
-  defp build_projects(shares) do
-    shares
+  defp build_projects(portfolio_sessions) do
+    portfolio_sessions
     |> Enum.group_by(& &1.project_name)
-    |> Enum.map(fn {project_name, project_shares} ->
+    |> Enum.map(fn {project_name, pss} ->
+      project_shares = Enum.map(pss, & &1.share)
       stats = Projects.compute_project_stats(project_shares)
 
       %{
@@ -178,19 +206,81 @@ defmodule HeyiAmWeb.PortfolioController do
     }
   end
 
-  defp format_loc(nil), do: "0"
-  defp format_loc(n) when is_integer(n) and n >= 1000, do: "#{Float.round(n / 1000, 1)}k"
-  defp format_loc(n) when is_integer(n), do: to_string(n)
+  defp compute_chart([]), do: nil
+
+  defp compute_chart(growth_data) do
+    max_loc = Enum.max_by(growth_data, & &1.loc).loc
+    max_loc = if max_loc == 0, do: 1, else: max_loc
+    count = length(growth_data)
+
+    chart_left = 40
+    chart_right = 490
+    chart_top = 10
+    chart_bottom = 140
+    chart_w = chart_right - chart_left
+    chart_h = chart_bottom - chart_top
+
+    points =
+      growth_data
+      |> Enum.with_index()
+      |> Enum.map(fn {d, i} ->
+        x = if count == 1, do: chart_left + div(chart_w, 2), else: chart_left + round(chart_w * i / (count - 1))
+        y = chart_bottom - round(chart_h * d.loc / max_loc)
+        %{x: x, y: y, loc: d.loc, title: d.title, delta: d.loc_delta}
+      end)
+
+    y_steps = [0, round(max_loc * 0.33), round(max_loc * 0.66), max_loc]
+
+    poly_points =
+      if count > 1 do
+        first_x = List.first(points).x
+        last_x = List.last(points).x
+        coords = Enum.map(points, fn p -> "#{p.x},#{p.y}" end)
+        "#{first_x},#{chart_bottom} #{Enum.join(coords, " ")} #{last_x},#{chart_bottom}"
+      end
+
+    line_points =
+      if count > 1, do: Enum.map_join(points, " ", fn p -> "#{p.x},#{p.y}" end)
+
+    y_grid =
+      y_steps
+      |> Enum.with_index()
+      |> Enum.map(fn {val, i} ->
+        y = chart_bottom - round(chart_h * val / max_loc)
+        %{y: y, label: format_loc(val), show_line: i > 0}
+      end)
+
+    deltas =
+      if count > 1 do
+        points
+        |> Enum.with_index()
+        |> Enum.filter(fn {_, i} -> i > 0 end)
+        |> Enum.map(fn {p, i} ->
+          prev = Enum.at(points, i - 1)
+          %{x: round((prev.x + p.x) / 2), y: round((prev.y + p.y) / 2) - 8, delta: p.delta}
+        end)
+      else
+        []
+      end
+
+    %{
+      points: points,
+      poly_points: poly_points,
+      line_points: line_points,
+      y_grid: y_grid,
+      deltas: deltas,
+      chart_left: chart_left,
+      chart_right: chart_right,
+      chart_top: chart_top,
+      chart_bottom: chart_bottom
+    }
+  end
 
   defp format_duration(minutes) when minutes >= 60, do: "#{div(minutes, 60)}h"
   defp format_duration(minutes), do: "#{minutes}m"
 
-  defp slugify(nil), do: ""
-  defp slugify(name) do
-    name
-    |> String.downcase()
-    |> String.replace(~r/[^a-z0-9\s-]/, "")
-    |> String.replace(~r/\s+/, "-")
-    |> String.trim("-")
-  end
+  defp truncate(nil, _max), do: ""
+  defp truncate(str, max) when byte_size(str) <= max, do: str
+  defp truncate(str, max), do: String.slice(str, 0, max) <> "…"
+
 end

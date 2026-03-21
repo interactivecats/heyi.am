@@ -27,11 +27,12 @@ defmodule HeyiAm.Shares.Share do
     field :tool_breakdown, {:array, :map}, default: []
     field :top_files, {:array, :map}, default: []
     field :transcript_excerpt, {:array, :map}, default: []
+    field :turn_timeline, {:array, :map}, default: []
     field :narrative, :string
     field :project_name, :string
     field :signature, :string
     field :public_key, :string
-    field :status, :string, default: "listed"
+    field :status, :string, default: "draft"
     field :raw_storage_key, :string
     field :log_storage_key, :string
 
@@ -56,7 +57,7 @@ defmodule HeyiAm.Shares.Share do
       :token, :title, :dev_take, :context, :duration_minutes, :turns, :files_changed,
       :loc_changed, :recorded_at, :verified_at, :sealed, :template, :language,
       :tools, :skills, :beats, :qa_pairs, :highlights, :tool_breakdown,
-      :top_files, :transcript_excerpt, :narrative, :project_name, :user_id,
+      :top_files, :transcript_excerpt, :turn_timeline, :narrative, :project_name, :user_id,
       :signature, :public_key,
       :challenge_id, :status,
       :raw_storage_key, :log_storage_key

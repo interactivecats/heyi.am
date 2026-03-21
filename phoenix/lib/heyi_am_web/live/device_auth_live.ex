@@ -13,7 +13,6 @@ defmodule HeyiAmWeb.DeviceAuthLive do
       |> assign(:user_code, "")
       |> assign(:status, nil)
       |> assign(:error_message, nil)
-      |> assign(:failed_attempts, 0)
 
     # Auto-fill from ?code= param (e.g., CLI opens /device?code=ABCD-1234)
     socket =
@@ -64,26 +63,31 @@ defmodule HeyiAmWeb.DeviceAuthLive do
   end
 
   defp lookup_code(socket, code) do
-    if socket.assigns.failed_attempts >= @max_failed_attempts do
-      socket
-      |> assign(:status, :error)
-      |> assign(:error_message, "Too many failed attempts. Please reload the page and try again.")
-    else
-      user_code = code |> String.trim() |> String.upcase()
+    # Server-side rate limit using Hammer — survives page reloads
+    user = socket.assigns.current_scope.user
+    bucket = "device_auth_lookup:#{user.id}"
 
-      case Accounts.DeviceCode.by_user_code_query(user_code) |> HeyiAm.Repo.one() do
-        nil ->
-          socket
-          |> assign(:status, :error)
-          |> assign(:error_message, "Code not found or expired. Check and try again.")
-          |> assign(:failed_attempts, socket.assigns.failed_attempts + 1)
+    case Hammer.check_rate(bucket, 300_000, @max_failed_attempts) do
+      {:deny, _} ->
+        socket
+        |> assign(:status, :error)
+        |> assign(:error_message, "Too many failed attempts. Please wait a few minutes and try again.")
 
-        _dc ->
-          socket
-          |> assign(:status, :confirm)
-          |> assign(:user_code, user_code)
-          |> assign(:error_message, nil)
-      end
+      {:allow, _} ->
+        user_code = code |> String.trim() |> String.upcase()
+
+        case Accounts.DeviceCode.by_user_code_query(user_code) |> HeyiAm.Repo.one() do
+          nil ->
+            socket
+            |> assign(:status, :error)
+            |> assign(:error_message, "Code not found or expired. Check and try again.")
+
+          _dc ->
+            socket
+            |> assign(:status, :confirm)
+            |> assign(:user_code, user_code)
+            |> assign(:error_message, nil)
+        end
     end
   end
 

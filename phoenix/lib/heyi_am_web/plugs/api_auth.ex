@@ -33,3 +33,25 @@ defmodule HeyiAmWeb.Plugs.ApiAuth do
     ArgumentError -> nil
   end
 end
+
+defmodule HeyiAmWeb.Plugs.RequireApiAuth do
+  @moduledoc """
+  Plug that halts with 401 if `current_user_id` is not assigned.
+  Use after `ApiAuth` in pipelines where authentication is mandatory.
+  """
+
+  import Plug.Conn
+
+  def init(opts), do: opts
+
+  def call(conn, _opts) do
+    if conn.assigns[:current_user_id] do
+      conn
+    else
+      conn
+      |> put_resp_content_type("application/json")
+      |> send_resp(401, Jason.encode!(%{error: %{code: "AUTH_REQUIRED", message: "Authentication required. Run: heyiam login"}}))
+      |> halt()
+    end
+  end
+end

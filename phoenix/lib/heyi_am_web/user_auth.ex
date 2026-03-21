@@ -14,7 +14,8 @@ defmodule HeyiAmWeb.UserAuth do
   @remember_me_options [
     sign: true,
     max_age: @max_cookie_age_in_days * 24 * 60 * 60,
-    same_site: "Lax"
+    same_site: "Lax",
+    secure: Mix.env() == :prod
   ]
 
   # How old the session token should be before a new one is issued. When a request is made
@@ -120,7 +121,7 @@ defmodule HeyiAmWeb.UserAuth do
 
   # Do not renew session if the user is already logged in
   # to prevent CSRF errors or data being lost in tabs that are still open
-  defp renew_session(conn, user) when conn.assigns.current_scope.user.id == user.id do
+  defp renew_session(%{assigns: %{current_scope: %{user: %{id: id}}}} = conn, %{id: id}) do
     conn
   end
 

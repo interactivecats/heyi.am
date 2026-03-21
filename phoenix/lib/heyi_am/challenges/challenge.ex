@@ -28,12 +28,10 @@ defmodule HeyiAm.Challenges.Challenge do
       :evaluation_criteria,
       :time_limit_minutes,
       :access_code,
-      :max_responses,
-      :status
+      :max_responses
     ])
     |> validate_required([:title, :problem_statement])
     |> validate_length(:title, min: 3, max: 200)
-    |> validate_inclusion(:status, @valid_statuses)
     |> validate_number(:time_limit_minutes, greater_than: 0)
     |> validate_number(:max_responses, greater_than: 0)
     |> maybe_hash_access_code()

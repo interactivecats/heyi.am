@@ -112,27 +112,34 @@ defmodule HeyiAmWeb.ProjectEditorLive do
 
   def handle_event("toggle_visibility", %{"id" => id_str}, socket) do
     id = String.to_integer(id_str)
+    session = Enum.find(socket.assigns.project.sessions, &(&1.id == id))
 
-    sessions =
-      Enum.map(socket.assigns.project.sessions, fn session ->
-        if session.id == id do
-          new_vis = if session.visibility == :public, do: :private, else: :public
+    if session do
+      new_vis = if session.visibility == :public, do: :private, else: :public
+      user = socket.assigns.current_scope.user
 
-          user = socket.assigns.current_scope.user
-
-          case Portfolios.get_portfolio_session_for_user(id, user.id) do
-            nil -> :ok
-            ps -> Portfolios.toggle_visibility(ps, new_vis == :public)
-          end
-
-          %{session | visibility: new_vis}
-        else
-          session
+      db_result =
+        case Portfolios.get_portfolio_session_for_user(id, user.id) do
+          nil -> {:ok, nil}
+          ps -> Portfolios.toggle_visibility(ps, new_vis == :public)
         end
-      end)
 
-    project = %{socket.assigns.project | sessions: sessions}
-    {:noreply, assign(socket, :project, project)}
+      case db_result do
+        {:ok, _} ->
+          sessions =
+            Enum.map(socket.assigns.project.sessions, fn s ->
+              if s.id == id, do: %{s | visibility: new_vis}, else: s
+            end)
+
+          project = %{socket.assigns.project | sessions: sessions}
+          {:noreply, assign(socket, :project, project)}
+
+        {:error, _} ->
+          {:noreply, put_flash(socket, :error, "Failed to update visibility")}
+      end
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event("toggle_star", %{"id" => id_str}, socket) do
@@ -167,7 +174,29 @@ defmodule HeyiAmWeb.ProjectEditorLive do
   end
 
   def handle_event("save", _params, socket) do
-    {:noreply, put_flash(socket, :info, "Changes saved")}
+    user = socket.assigns.current_scope.user
+    project = socket.assigns.project
+
+    shares = Shares.list_shares_for_user_project(user.id, project.name)
+
+    results =
+      Enum.map(shares, fn share ->
+        Shares.update_share(share, %{
+          dev_take: project.take,
+          skills: Enum.map(project.tags, &String.downcase/1),
+          project_name: project.name
+        })
+      end)
+
+    case Enum.find(results, fn {status, _} -> status == :error end) do
+      nil ->
+        {:noreply, put_flash(socket, :info, "Changes saved")}
+
+      {:error, changeset} ->
+        require Logger
+        Logger.error("Failed to save project: #{inspect(changeset.errors)}")
+        {:noreply, put_flash(socket, :error, "Failed to save changes")}
+    end
   end
 
   @impl true

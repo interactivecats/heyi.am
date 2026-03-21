@@ -15,8 +15,8 @@ defmodule HeyiAmWeb.PageControllerTest do
     assert response =~ "AI Enhancement"
     assert response =~ "Cryptographic Sealing"
 
-    # Featured takes
-    assert response =~ "Featured Sessions"
+    # Example sessions
+    assert response =~ "Example Sessions"
     assert response =~ "Sarah Chen"
 
     # AI Collaboration Profile

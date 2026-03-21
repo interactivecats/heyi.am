@@ -97,7 +97,7 @@ defmodule HeyiAm.LLM.Sampler do
     })
   end
 
-  defp sample_log(raw_log, log_total, turn_total) do
+  defp sample_log(raw_log, log_total, _turn_total) do
     if log_total == 0 do
       []
     else
@@ -126,7 +126,7 @@ defmodule HeyiAm.LLM.Sampler do
       end)
       |> Enum.sort_by(fn {_line, orig_idx, _score} -> orig_idx end)
       |> Enum.map(fn {line, orig_idx, _score} ->
-        "[T#{orig_idx + 1}/#{turn_total}] #{line}"
+        "[T#{orig_idx + 1}/#{log_total}] #{line}"
       end)
     end
   end

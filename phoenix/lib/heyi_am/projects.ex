@@ -7,24 +7,29 @@ defmodule HeyiAm.Projects do
 
   Expected share fields: :loc_changed, :recorded_at, :top_files, :token,
   :duration_minutes, :turns, :files_changed
+
+  top_files entries can be either plain strings ("lib/app.ex") or maps
+  with a "path" key (%{"path" => "lib/app.ex", "additions" => 10}).
   """
 
   @doc """
   Computes cumulative lines of code over time from a list of shares.
 
-  Returns a list of `%{date: date, loc: cumulative_loc}` sorted by date.
+  Returns a list of `%{date: date, loc: cumulative_loc, title: title, loc_delta: delta}`
+  sorted by date.
   """
-  @spec compute_cumulative_loc([map()]) :: [%{date: Date.t(), loc: integer()}]
+  @spec compute_cumulative_loc([map()]) :: [map()]
   def compute_cumulative_loc([]), do: []
 
   def compute_cumulative_loc(shares) do
     shares
     |> Enum.sort_by(& &1.recorded_at, DateTime)
-    |> Enum.scan({nil, 0}, fn share, {_prev_date, acc} ->
-      {share.recorded_at, acc + (share.loc_changed || 0)}
+    |> Enum.scan({nil, 0, nil, 0}, fn share, {_prev_date, acc, _title, _delta} ->
+      delta = Map.get(share, :loc_changed) || 0
+      {share.recorded_at, acc + delta, Map.get(share, :title), delta}
     end)
-    |> Enum.map(fn {recorded_at, cumulative} ->
-      %{date: DateTime.to_date(recorded_at), loc: cumulative}
+    |> Enum.map(fn {recorded_at, cumulative, title, delta} ->
+      %{date: DateTime.to_date(recorded_at), loc: cumulative, title: title, loc_delta: delta}
     end)
   end
 
@@ -32,18 +37,24 @@ defmodule HeyiAm.Projects do
   Computes a file heatmap grouped by directory.
 
   Returns `%{dir_name => %{session_token => touch_count}}`.
-  Files are grouped by their first path component (directory).
+  Files are grouped by their logical directory (up to 2 levels deep for
+  paths with 3+ components, e.g. "lib/heyi_am/" from "lib/heyi_am/accounts.ex").
+  Absolute paths are normalized to project-relative paths first.
   """
   @spec compute_file_heatmap([map()]) :: %{String.t() => %{String.t() => non_neg_integer()}}
   def compute_file_heatmap([]), do: %{}
 
   def compute_file_heatmap(shares) do
+    all_paths = collect_all_paths(shares)
+    prefix = common_prefix(all_paths)
+
     Enum.reduce(shares, %{}, fn share, acc ->
-      files = share[:top_files] || []
+      files = share.top_files || []
       token = share.token
 
       Enum.reduce(files, acc, fn file, inner_acc ->
-        dir = extract_directory(file)
+        path = extract_path(file) |> strip_prefix(prefix)
+        dir = extract_directory(path)
 
         inner_acc
         |> Map.put_new(dir, %{})
@@ -63,7 +74,10 @@ defmodule HeyiAm.Projects do
   def compute_session_overlap(shares) do
     indexed =
       shares
-      |> Enum.map(fn share -> {share.token, MapSet.new(share[:top_files] || [])} end)
+      |> Enum.map(fn share ->
+        paths = (share.top_files || []) |> Enum.map(&extract_path/1)
+        {share.token, MapSet.new(paths)}
+      end)
 
     for {token1, files1} <- indexed,
         {token2, files2} <- indexed,
@@ -95,16 +109,18 @@ defmodule HeyiAm.Projects do
   def compute_project_stats(shares) do
     all_files =
       shares
-      |> Enum.flat_map(fn share -> share[:top_files] || [] end)
+      |> Enum.flat_map(fn share ->
+        (share.top_files || []) |> Enum.map(&extract_path/1)
+      end)
       |> MapSet.new()
 
     sorted = Enum.sort_by(shares, & &1.recorded_at, DateTime)
 
     %{
       total_sessions: length(shares),
-      total_loc: Enum.sum(Enum.map(shares, &(&1[:loc_changed] || 0))),
-      total_duration: Enum.sum(Enum.map(shares, &(&1[:duration_minutes] || 0))),
-      total_turns: Enum.sum(Enum.map(shares, &(&1[:turns] || 0))),
+      total_loc: Enum.sum(Enum.map(shares, &(Map.get(&1, :loc_changed) || 0))),
+      total_duration: Enum.sum(Enum.map(shares, &(Map.get(&1, :duration_minutes) || 0))),
+      total_turns: Enum.sum(Enum.map(shares, &(Map.get(&1, :turns) || 0))),
       unique_files: MapSet.size(all_files),
       date_range: {
         safe_to_date(List.first(sorted).recorded_at),
@@ -113,14 +129,96 @@ defmodule HeyiAm.Projects do
     }
   end
 
+  @doc """
+  Aggregates top files across all sessions.
+
+  Returns a sorted list of `%{path: path, edits: count, loc: total_loc, sessions: session_count}`,
+  ordered by edit count descending.
+  """
+  @spec compute_top_files([map()]) :: [map()]
+  def compute_top_files([]), do: []
+
+  def compute_top_files(shares) do
+    all_paths = collect_all_paths(shares)
+    prefix = common_prefix(all_paths)
+
+    shares
+    |> Enum.flat_map(fn share ->
+      token = share.token
+      (share.top_files || [])
+      |> Enum.map(fn file ->
+        {extract_path(file) |> strip_prefix(prefix), extract_loc(file), token}
+      end)
+    end)
+    |> Enum.group_by(fn {path, _loc, _token} -> path end)
+    |> Enum.map(fn {path, entries} ->
+      total_loc = entries |> Enum.map(fn {_, loc, _} -> loc end) |> Enum.sum()
+      session_count = entries |> Enum.map(fn {_, _, token} -> token end) |> Enum.uniq() |> length()
+      %{path: path, edits: length(entries), loc: total_loc, sessions: session_count}
+    end)
+    |> Enum.sort_by(& &1.edits, :desc)
+  end
+
   defp safe_to_date(nil), do: Date.utc_today()
   defp safe_to_date(%DateTime{} = dt), do: DateTime.to_date(dt)
   defp safe_to_date(%NaiveDateTime{} = ndt), do: NaiveDateTime.to_date(ndt)
 
-  defp extract_directory(file_path) do
+  @doc false
+  def extract_path(%{"path" => path}), do: path
+  def extract_path(path) when is_binary(path), do: path
+
+  defp extract_loc(%{"additions" => a, "deletions" => d}), do: (a || 0) + (d || 0)
+  defp extract_loc(%{"additions" => a}), do: a || 0
+  defp extract_loc(_), do: 0
+
+  @doc false
+  def extract_directory(file_path) do
     case Path.split(file_path) do
-      [dir | _rest] when dir != "" -> dir
+      ["/" | rest] -> extract_directory(Enum.join(rest, "/"))
+      [dir, subdir, _ | _] -> dir <> "/" <> subdir <> "/"
+      [dir, _file] -> dir <> "/"
+      [file] -> file
       _ -> "."
+    end
+  end
+
+  defp collect_all_paths(shares) do
+    Enum.flat_map(shares, fn share ->
+      (share.top_files || []) |> Enum.map(&extract_path/1)
+    end)
+  end
+
+  defp common_prefix([]), do: ""
+  defp common_prefix(paths) do
+    # Only strip common prefix for absolute paths
+    if Enum.all?(paths, &String.starts_with?(&1, "/")) do
+      split_paths = Enum.map(paths, &Path.split/1)
+      min_parts = split_paths |> Enum.map(&length/1) |> Enum.min(fn -> 0 end)
+
+      prefix_parts =
+        Enum.reduce_while(0..(max(min_parts - 2, 0)), [], fn i, acc ->
+          parts_at_i = Enum.map(split_paths, &Enum.at(&1, i))
+          if Enum.uniq(parts_at_i) |> length() == 1 do
+            {:cont, acc ++ [hd(parts_at_i)]}
+          else
+            {:halt, acc}
+          end
+        end)
+
+      case prefix_parts do
+        [] -> ""
+        parts -> Path.join(parts) <> "/"
+      end
+    else
+      ""
+    end
+  end
+
+  defp strip_prefix(path, ""), do: path
+  defp strip_prefix(path, prefix) do
+    case String.replace_prefix(path, prefix, "") do
+      "" -> path
+      stripped -> stripped
     end
   end
 end

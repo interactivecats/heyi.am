@@ -72,7 +72,7 @@ defmodule HeyiAmWeb.DeviceApiController do
     HeyiAmWeb.Endpoint.url() <> @verification_uri_path <> "?code=#{user_code}"
   end
 
-  defp status_for_error(:authorization_pending), do: :forbidden
+  defp status_for_error(:authorization_pending), do: :bad_request
   defp status_for_error(:expired_token), do: :gone
   defp status_for_error(:access_denied), do: :forbidden
   defp status_for_error(_), do: :bad_request

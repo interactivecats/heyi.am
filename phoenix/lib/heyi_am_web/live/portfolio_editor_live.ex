@@ -80,9 +80,7 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
     {:noreply, socket}
   end
 
-  def handle_event("toggle_project_visibility", %{"id" => id_str}, socket) do
-    id = String.to_integer(id_str)
-
+  def handle_event("toggle_project_visibility", %{"id" => id}, socket) do
     projects =
       Enum.map(socket.assigns.projects, fn project ->
         if project.id == id do
@@ -106,8 +104,7 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
     {:noreply, assign(socket, :projects, projects)}
   end
 
-  def handle_event("toggle_project", %{"id" => id_str}, socket) do
-    id = String.to_integer(id_str)
+  def handle_event("toggle_project", %{"id" => id}, socket) do
     current = socket.assigns.expanded_project
     {:noreply, assign(socket, :expanded_project, if(current == id, do: nil, else: id))}
   end
@@ -143,23 +140,33 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
 
   def handle_event("reorder", %{"ids" => ids}, socket) do
     expanded_id = socket.assigns.expanded_project
-    user = socket.assigns.current_scope.user
 
-    int_ids = Enum.map(ids, &String.to_integer/1)
-    Portfolios.reorder(user.id, int_ids)
+    if is_nil(expanded_id) do
+      {:noreply, socket}
+    else
+      user = socket.assigns.current_scope.user
 
-    projects =
-      Enum.map(socket.assigns.projects, fn project ->
-        if project.id == expanded_id do
-          session_map = Map.new(project.sessions, &{to_string(&1.id), &1})
-          reordered = Enum.map(ids, &Map.fetch!(session_map, &1))
-          %{project | sessions: reordered}
-        else
-          project
-        end
-      end)
+      int_ids = Enum.map(ids, &String.to_integer/1)
+      Portfolios.reorder(user.id, int_ids)
 
-    {:noreply, assign(socket, :projects, projects)}
+      projects =
+        Enum.map(socket.assigns.projects, fn project ->
+          if project.id == expanded_id do
+            session_map = Map.new(project.sessions, &{to_string(&1.id), &1})
+
+            reordered =
+              ids
+              |> Enum.map(&Map.get(session_map, &1))
+              |> Enum.reject(&is_nil/1)
+
+            %{project | sessions: reordered}
+          else
+            project
+          end
+        end)
+
+      {:noreply, assign(socket, :projects, projects)}
+    end
   end
 
   def handle_event("toggle_session_featured", %{"id" => id_str}, socket) do
@@ -184,9 +191,8 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
 
   defp build_projects(portfolio_sessions) do
     portfolio_sessions
-    |> Enum.group_by(& &1.project_name)
-    |> Enum.with_index(1)
-    |> Enum.map(fn {{project_name, ps_list}, idx} ->
+    |> Enum.group_by(&(&1.project_name || "Untitled Project"))
+    |> Enum.map(fn {project_name, ps_list} ->
       all_skills =
         ps_list
         |> Enum.flat_map(fn ps -> (ps.share && ps.share.skills) || [] end)
@@ -208,10 +214,10 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
           }
         end)
 
-      slug = slugify(project_name || "unnamed-project")
+      slug = slugify(project_name)
 
       %{
-        id: idx,
+        id: slug,
         slug: slug,
         name: project_name || "Unnamed Project",
         description: first_dev_take(ps_list),
@@ -229,6 +235,8 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
     |> Enum.find_value(fn ps -> ps.share && ps.share.dev_take end)
     |> Kernel.||("")
   end
+
+  defp slugify(nil), do: "untitled"
 
   defp slugify(name) do
     name
@@ -324,22 +332,26 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
               <span class="label-sm" style="color: var(--accent); opacity: 0.6;">ID: USER_082</span>
               <div class="pe-hero-rule"></div>
             </div>
-            <h1
-              class="display-lg"
-              contenteditable={if(!@visitor_mode, do: "true")}
-              phx-blur="update_profile"
-              phx-value-field="name"
-            >
-              {@profile.name}
-            </h1>
-            <p
-              class="body-lg pe-hero-bio"
-              contenteditable={if(!@visitor_mode, do: "true")}
-              phx-blur="update_profile"
-              phx-value-field="bio"
-            >
-              {@profile.bio}
-            </p>
+            <%= if @visitor_mode do %>
+              <h1 class="display-lg">{@profile.name}</h1>
+              <p class="body-lg pe-hero-bio">{@profile.bio}</p>
+            <% else %>
+              <input
+                type="text"
+                class="display-lg pe-inline-input"
+                name="name"
+                value={@profile.name}
+                phx-blur="update_profile"
+                phx-value-field="name"
+              />
+              <textarea
+                class="body-lg pe-hero-bio pe-inline-input"
+                name="bio"
+                rows="2"
+                phx-blur="update_profile"
+                phx-value-field="bio"
+              >{@profile.bio}</textarea>
+            <% end %>
             <div class="pe-hero-badges">
               <div class="pe-location-badge label-sm">LOC: {@profile.location}</div>
               <div class="pe-status-badge label-sm">STATUS: {@profile.status}</div>

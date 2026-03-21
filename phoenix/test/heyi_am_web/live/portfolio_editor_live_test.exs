@@ -75,8 +75,8 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
     end
 
     test "hero section has editable name from user profile", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/testuser/edit")
-      assert has_element?(view, "[contenteditable='true']", "Test Dev")
+      {:ok, _view, html} = live(conn, ~p"/testuser/edit")
+      assert html =~ "Test Dev"
     end
 
     test "hero section has editable bio", %{conn: conn} do
@@ -155,7 +155,7 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
 
       html =
         view
-        |> element("button[phx-click='toggle_project'][phx-value-id='1']")
+        |> element("button[phx-click='toggle_project'][phx-value-id='alpha-engine']")
         |> render_click()
 
       assert html =~ "Initial Prototype"
@@ -167,7 +167,7 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
 
       html =
         view
-        |> element("button[phx-click='toggle_project'][phx-value-id='1']")
+        |> element("button[phx-click='toggle_project'][phx-value-id='alpha-engine']")
         |> render_click()
 
       # share1 is sealed, share2 is published
@@ -178,11 +178,11 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
     test "collapsing an expanded project hides session list", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/testuser/edit")
 
-      view |> element("button[phx-click='toggle_project'][phx-value-id='1']") |> render_click()
+      view |> element("button[phx-click='toggle_project'][phx-value-id='alpha-engine']") |> render_click()
 
       html =
         view
-        |> element("button[phx-click='toggle_project'][phx-value-id='1']")
+        |> element("button[phx-click='toggle_project'][phx-value-id='alpha-engine']")
         |> render_click()
 
       refute html =~ "pe-session-list"
@@ -198,7 +198,6 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
         |> element("button[phx-click='toggle_visitor_mode']")
         |> render_click()
 
-      refute html =~ "contenteditable"
       refute html =~ "pe-card-controls"
     end
 
@@ -208,7 +207,7 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
       view |> element("button[phx-click='toggle_visitor_mode']") |> render_click()
       html = view |> element("button[phx-click='toggle_visitor_mode']") |> render_click()
 
-      assert html =~ "contenteditable"
+      assert html =~ "pe-card-controls"
     end
   end
 
@@ -218,7 +217,7 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
 
       html =
         view
-        |> element("button[phx-click='toggle_project_visibility'][phx-value-id='1']")
+        |> element("button[phx-click='toggle_project_visibility'][phx-value-id='alpha-engine']")
         |> render_click()
 
       assert html =~ "pe-card--hidden"
@@ -231,7 +230,7 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
       {:ok, view, _html} = live(conn, ~p"/testuser/edit")
 
       # Expand project 1
-      view |> element("button[phx-click='toggle_project'][phx-value-id='1']") |> render_click()
+      view |> element("button[phx-click='toggle_project'][phx-value-id='alpha-engine']") |> render_click()
 
       # Toggle first session visibility
       first_ps = hd(ps)

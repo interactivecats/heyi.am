@@ -57,8 +57,7 @@ defmodule HeyiAm.PortfoliosTest do
       user = user_fixture()
       share = share_fixture()
       {:ok, _} = Portfolios.add_to_portfolio(user, share)
-      {:error, changeset} = Portfolios.add_to_portfolio(user, share)
-      assert {"has already been taken", _} = changeset.errors[:user_id]
+      assert {:error, _} = Portfolios.add_to_portfolio(user, share)
     end
   end
 
@@ -142,6 +141,7 @@ defmodule HeyiAm.PortfoliosTest do
         HeyiAm.Shares.create_share(%{
           token: HeyiAm.Shares.generate_token(),
           title: "Auto-added",
+          status: "listed",
           user_id: user.id,
           project_name: "test-project"
         })

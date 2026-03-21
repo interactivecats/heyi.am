@@ -25,6 +25,7 @@ defmodule HeyiAmWeb.PortfolioControllerTest do
         recorded_at: ~U[2026-03-12 14:02:00Z],
         verified_at: ~U[2026-03-12 14:49:00Z],
         project_name: "heyi.am",
+        status: "listed",
         skills: ["Elixir", "Phoenix"],
         user_id: user.id,
         top_files: [%{"path" => "lib/auth.ex", "touches" => 12}]
@@ -42,6 +43,7 @@ defmodule HeyiAmWeb.PortfolioControllerTest do
         recorded_at: ~U[2026-03-10 10:15:00Z],
         verified_at: ~U[2026-03-10 10:50:00Z],
         project_name: "heyi.am",
+        status: "listed",
         skills: ["LiveView", "JavaScript"],
         user_id: user.id,
         top_files: []
@@ -206,11 +208,9 @@ defmodule HeyiAmWeb.PortfolioControllerTest do
       assert html_response(conn, 404)
     end
 
-    test "renders empty project for non-existent project slug", %{conn: conn} do
+    test "returns 404 for non-existent project slug", %{conn: conn} do
       conn = get(conn, ~p"/alice/nonexistent-project")
-      html = html_response(conn, 200)
-      assert html =~ "nonexistent-project"
-      assert html =~ "0"
+      assert html_response(conn, 404)
     end
   end
 end

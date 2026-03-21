@@ -86,11 +86,13 @@ defmodule HeyiAm.LLM.Parser do
 
   defp parse_steps(_), do: []
 
-  defp enforce_max_length(str, max) when byte_size(str) > max do
-    String.slice(str, 0, max - 1) <> "…"
+  defp enforce_max_length(str, max) when is_binary(str) do
+    if String.length(str) > max do
+      String.slice(str, 0, max - 1) <> "…"
+    else
+      str
+    end
   end
-
-  defp enforce_max_length(str, _max), do: str
 
   defp enforce_word_limit(str, max_words) do
     words = String.split(str, ~r/\s+/, trim: true)

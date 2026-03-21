@@ -10,7 +10,7 @@ defmodule HeyiAmWeb.Router do
     plug :put_root_layout, html: {HeyiAmWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers, %{
-      "content-security-policy" => "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'"
+      "content-security-policy" => "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self'"
     }
     plug :fetch_current_scope_for_user
   end
@@ -68,9 +68,13 @@ defmodule HeyiAmWeb.Router do
     plug HeyiAmWeb.Plugs.RateLimit, action: "enhance", limit: 5, period: 60_000
   end
 
+  pipeline :require_api_auth do
+    plug HeyiAmWeb.Plugs.RequireApiAuth
+  end
+
   # LLM proxy enhancement endpoint
   scope "/api", HeyiAmWeb do
-    pipe_through [:api, :api_auth, :rate_limit_enhance]
+    pipe_through [:api, :api_auth, :require_api_auth, :rate_limit_enhance]
 
     post "/enhance", EnhanceApiController, :create
   end

@@ -11,7 +11,7 @@
     <div class="transcript-header">
       <h1 class="headline-md">{@session.title}</h1>
       <div style="display: flex; gap: var(--spacing-4); flex-wrap: wrap;">
-        <span class="label-mono">{Calendar.strftime(@session.recorded_at, "%b %d, %Y")}</span>
+        <span class="label-mono">{if @session.recorded_at, do: Calendar.strftime(@session.recorded_at, "%b %d, %Y"), else: "—"}</span>
         <span class="label-mono">{@session.duration_minutes} min</span>
         <span class="label-mono">{@session.turns} turns</span>
       </div>

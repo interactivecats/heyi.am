@@ -5,7 +5,8 @@ defmodule HeyiAm.SharesFixtures do
     Enum.into(attrs, %{
       token: Shares.generate_token(),
       title: "Test Session #{System.unique_integer([:positive])}",
-      template: "editorial"
+      template: "editorial",
+      status: "listed"
     })
   end
 

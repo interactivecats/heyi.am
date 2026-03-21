@@ -12,6 +12,14 @@ defmodule HeyiAm.Shares do
     Repo.get_by(Share, token: token)
   end
 
+  def get_published_share_by_token(token) do
+    case Repo.get_by(Share, token: token) do
+      nil -> nil
+      %{status: "draft"} -> nil
+      share -> Repo.preload(share, :user)
+    end
+  end
+
   def create_share(attrs) do
     result =
       %Share{}

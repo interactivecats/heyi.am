@@ -45,9 +45,13 @@ end
 
 # GitHub OAuth — required in prod, optional in dev/test
 if client_id = System.get_env("GITHUB_CLIENT_ID") do
+  client_secret =
+    System.get_env("GITHUB_CLIENT_SECRET") ||
+      raise "GITHUB_CLIENT_SECRET must be set when GITHUB_CLIENT_ID is present"
+
   config :ueberauth, Ueberauth.Strategy.Github.OAuth,
     client_id: client_id,
-    client_secret: System.get_env("GITHUB_CLIENT_SECRET")
+    client_secret: client_secret
 end
 
 config :heyi_am, HeyiAmWeb.Endpoint,
@@ -55,12 +59,24 @@ config :heyi_am, HeyiAmWeb.Endpoint,
 
 if config_env() == :prod do
   # Object Storage (Garage / S3-compatible) — credentials injected at runtime
+  object_storage_access_key_id =
+    System.get_env("OBJECT_STORAGE_ACCESS_KEY_ID") ||
+      raise "OBJECT_STORAGE_ACCESS_KEY_ID must be set in production"
+
+  object_storage_secret_access_key =
+    System.get_env("OBJECT_STORAGE_SECRET_ACCESS_KEY") ||
+      raise "OBJECT_STORAGE_SECRET_ACCESS_KEY must be set in production"
+
+  object_storage_host =
+    System.get_env("OBJECT_STORAGE_HOST") ||
+      raise "OBJECT_STORAGE_HOST must be set in production"
+
   config :ex_aws,
-    access_key_id: System.get_env("OBJECT_STORAGE_ACCESS_KEY_ID"),
-    secret_access_key: System.get_env("OBJECT_STORAGE_SECRET_ACCESS_KEY"),
+    access_key_id: object_storage_access_key_id,
+    secret_access_key: object_storage_secret_access_key,
     s3: [
       scheme: System.get_env("OBJECT_STORAGE_SCHEME", "https://"),
-      host: System.get_env("OBJECT_STORAGE_HOST"),
+      host: object_storage_host,
       port: String.to_integer(System.get_env("OBJECT_STORAGE_PORT", "443")),
       virtual_hosted_style_bucket: false
     ]

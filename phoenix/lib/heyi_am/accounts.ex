@@ -92,10 +92,25 @@ defmodule HeyiAm.Accounts do
   def find_or_create_from_github(%{github_id: github_id} = attrs) when is_integer(github_id) do
     case Repo.get_by(User, github_id: github_id) do
       nil ->
-        %User{}
-        |> User.github_changeset(attrs)
-        |> User.confirm_changeset()
-        |> Repo.insert()
+        changeset =
+          %User{}
+          |> User.github_changeset(attrs)
+          |> User.confirm_changeset()
+
+        case Repo.insert(changeset) do
+          {:ok, user} ->
+            {:ok, user}
+
+          {:error, %Ecto.Changeset{errors: errors} = changeset} ->
+            if Keyword.has_key?(errors, :github_id) do
+              case Repo.get_by(User, github_id: github_id) do
+                nil -> {:error, changeset}
+                user -> {:ok, user}
+              end
+            else
+              {:error, changeset}
+            end
+        end
 
       user ->
         {:ok, user}
@@ -410,29 +425,28 @@ defmodule HeyiAm.Accounts do
   def delete_user_account(%User{} = user) do
     Repo.transact(fn ->
       # Anonymize shares — strip PII, keep aggregate stats
-      share_ids = Repo.all(from(s in HeyiAm.Shares.Share, where: s.user_id == ^user.id, select: s.id))
-
-      for id <- share_ids do
-        from(s in HeyiAm.Shares.Share, where: s.id == ^id)
-        |> Repo.update_all(set: [
+      from(s in HeyiAm.Shares.Share,
+        where: s.user_id == ^user.id,
+        update: [set: [
           user_id: nil,
           title: "deleted",
           dev_take: nil,
           narrative: nil,
           project_name: nil,
-          beats: [],
-          qa_pairs: [],
-          highlights: [],
-          tool_breakdown: [],
-          top_files: [],
-          transcript_excerpt: [],
+          beats: fragment("'[]'::jsonb"),
+          qa_pairs: fragment("'[]'::jsonb"),
+          highlights: fragment("'[]'::jsonb"),
+          tool_breakdown: fragment("'[]'::jsonb"),
+          top_files: fragment("'[]'::jsonb"),
+          transcript_excerpt: fragment("'[]'::jsonb"),
           signature: nil,
           public_key: nil,
-          token: "deleted-#{Ecto.UUID.generate()}",
           sealed: false,
-          status: "unlisted"
-        ])
-      end
+          status: "unlisted",
+          token: fragment("'deleted-' || gen_random_uuid()::text")
+        ]]
+      )
+      |> Repo.update_all([])
 
       # Anonymize portfolio sessions — strip project_name, keep structure for stats
       Repo.update_all(
@@ -536,7 +550,7 @@ defmodule HeyiAm.Accounts do
   defp update_user_and_delete_all_tokens(changeset) do
     Repo.transact(fn ->
       with {:ok, user} <- Repo.update(changeset) do
-        tokens_to_expire = Repo.all_by(UserToken, user_id: user.id)
+        tokens_to_expire = Repo.all(from(t in UserToken, where: t.user_id == ^user.id))
 
         Repo.delete_all(from(t in UserToken, where: t.id in ^Enum.map(tokens_to_expire, & &1.id)))
 

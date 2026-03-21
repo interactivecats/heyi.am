@@ -11,9 +11,9 @@ defmodule HeyiAm.ProfilesTest do
         duration_minutes: 30,
         beats: [%{}, %{}, %{}],
         tool_breakdown: [
-          %{name: "Read", count: 5},
-          %{name: "Edit", count: 3},
-          %{name: "Bash", count: 2}
+          %{"name" =>"Read", "count" =>5},
+          %{"name" =>"Edit", "count" =>3},
+          %{"name" =>"Bash", "count" =>2}
         ],
         child_sessions: []
       },
@@ -100,24 +100,24 @@ defmodule HeyiAm.ProfilesTest do
   describe "verification/1" do
     test "returns 100 when all sessions have test tools" do
       shares = make_shares(3, %{
-        tool_breakdown: [%{name: "Bash", count: 5}, %{name: "test_runner", count: 2}]
+        tool_breakdown: [%{"name" =>"Bash", "count" =>5}, %{"name" =>"test_runner", "count" =>2}]
       })
       assert Profiles.verification(shares) == 100
     end
 
     test "returns 0 when no sessions have test tools" do
       shares = make_shares(3, %{
-        tool_breakdown: [%{name: "Read", count: 5}, %{name: "Edit", count: 3}]
+        tool_breakdown: [%{"name" =>"Read", "count" =>5}, %{"name" =>"Edit", "count" =>3}]
       })
       assert Profiles.verification(shares) == 0
     end
 
     test "returns proportional score for mixed sessions" do
       shares = [
-        make_share(%{tool_breakdown: [%{name: "Bash", count: 1}]}),
-        make_share(%{tool_breakdown: [%{name: "Read", count: 1}]}),
-        make_share(%{tool_breakdown: [%{name: "Read", count: 1}]}),
-        make_share(%{tool_breakdown: [%{name: "Bash", count: 1}]})
+        make_share(%{tool_breakdown: [%{"name" =>"Bash", "count" =>1}]}),
+        make_share(%{tool_breakdown: [%{"name" =>"Read", "count" =>1}]}),
+        make_share(%{tool_breakdown: [%{"name" =>"Read", "count" =>1}]}),
+        make_share(%{tool_breakdown: [%{"name" =>"Bash", "count" =>1}]})
       ]
       assert Profiles.verification(shares) == 50
     end
@@ -125,18 +125,18 @@ defmodule HeyiAm.ProfilesTest do
 
   describe "tool_orchestration/1" do
     test "returns 100 for sessions with many distinct tools" do
-      tools = Enum.map(1..10, fn i -> %{name: "Tool#{i}", count: 1} end)
+      tools = Enum.map(1..10, fn i -> %{"name" =>"Tool#{i}", "count" =>1} end)
       shares = make_shares(3, %{tool_breakdown: tools})
       assert Profiles.tool_orchestration(shares) == 100
     end
 
     test "returns 0 for sessions with 1 tool" do
-      shares = make_shares(3, %{tool_breakdown: [%{name: "Read", count: 10}]})
+      shares = make_shares(3, %{tool_breakdown: [%{"name" =>"Read", "count" =>10}]})
       assert Profiles.tool_orchestration(shares) == 0
     end
 
     test "returns mid-range for moderate tool diversity" do
-      tools = Enum.map(1..5, fn i -> %{name: "Tool#{i}", count: 1} end)
+      tools = Enum.map(1..5, fn i -> %{"name" =>"Tool#{i}", "count" =>1} end)
       shares = make_shares(3, %{tool_breakdown: tools})
       score = Profiles.tool_orchestration(shares)
       assert score > 0 and score < 100

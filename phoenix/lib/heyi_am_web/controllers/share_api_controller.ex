@@ -14,6 +14,33 @@ defmodule HeyiAmWeb.ShareApiController do
     user_id = conn.assigns[:current_user_id]
     has_challenge = is_binary(params["challenge_slug"]) and params["challenge_slug"] != ""
 
+    with :ok <- check_challenge_rate_limit(conn, has_challenge, user_id, params) do
+      do_create(conn, session_params, params, user_id, has_challenge)
+    end
+  end
+
+  def create(conn, _params) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{error: %{code: "MISSING_SESSION", message: "Missing 'session' parameter"}})
+  end
+
+  defp check_challenge_rate_limit(conn, true = _has_challenge, nil = _user_id, params) do
+    ip = conn.remote_ip |> :inet.ntoa() |> to_string()
+    bucket = "challenge_submit:#{params["challenge_slug"]}:#{ip}"
+
+    case Hammer.check_rate(bucket, 60_000, 5) do
+      {:allow, _} -> :ok
+      {:deny, _} ->
+        conn
+        |> put_status(429)
+        |> json(%{error: %{code: "RATE_LIMITED", message: "Too many submissions. Try again later."}})
+    end
+  end
+
+  defp check_challenge_rate_limit(_conn, _has_challenge, _user_id, _params), do: :ok
+
+  defp do_create(conn, session_params, params, user_id, has_challenge) do
     # Require auth for non-challenge publishes
     if is_nil(user_id) and not has_challenge do
       conn
@@ -24,11 +51,13 @@ defmodule HeyiAmWeb.ShareApiController do
       raw_key = "sessions/#{token}/raw.jsonl"
       log_key = "sessions/#{token}/log.json"
 
+      status = if session_params["status"] in ~w(listed unlisted), do: session_params["status"], else: "listed"
+
       attrs =
         session_params
         |> Map.delete("user_id")
         |> Map.put("token", token)
-        |> Map.put("status", "listed")
+        |> Map.put("status", status)
         |> Map.put("raw_storage_key", raw_key)
         |> Map.put("log_storage_key", log_key)
         |> Map.put_new("recorded_at", DateTime.utc_now())
@@ -68,12 +97,6 @@ defmodule HeyiAmWeb.ShareApiController do
       {:error, reason} -> send_challenge_error(conn, reason)
     end
     end
-  end
-
-  def create(conn, _params) do
-    conn
-    |> put_status(:bad_request)
-    |> json(%{error: %{code: "MISSING_SESSION", message: "Missing 'session' parameter"}})
   end
 
   @doc """

@@ -66,8 +66,8 @@ defmodule HeyiAm.Profiles do
   def active_redirection(shares) do
     ratios =
       Enum.map(shares, fn share ->
-        turns = share[:turns] || 0
-        steps = max(length(share[:beats] || []), 1)
+        turns = Map.get(share, :turns) || 0
+        steps = max(length(Map.get(share, :beats) || []), 1)
         turns / steps
       end)
 
@@ -82,7 +82,7 @@ defmodule HeyiAm.Profiles do
   def verification(shares) do
     test_sessions =
       Enum.count(shares, fn share ->
-        tools = share[:tool_breakdown] || []
+        tools = Map.get(share, :tool_breakdown) || []
         Enum.any?(tools, &test_tool?/1)
       end)
 
@@ -99,7 +99,7 @@ defmodule HeyiAm.Profiles do
     avg_tools = avg(shares, fn s ->
       s[:tool_breakdown]
       |> Kernel.||([])
-      |> Enum.map(& &1.name)
+      |> Enum.map(& &1["name"])
       |> Enum.uniq()
       |> length()
     end)
@@ -151,7 +151,7 @@ defmodule HeyiAm.Profiles do
     max(min(score, 100.0), 0.0)
   end
 
-  defp test_tool?(%{name: name}) do
+  defp test_tool?(%{"name" => name}) do
     downcased = String.downcase(name)
     String.contains?(downcased, "test") or downcased == "bash"
   end

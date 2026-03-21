@@ -17,7 +17,8 @@ defmodule HeyiAm.LLM.Gemini do
     if is_nil(api_key) do
       {:error, :missing_api_key}
     else
-      url = "#{@base_url}/#{model}:generateContent?key=#{api_key}"
+      url = "#{@base_url}/#{model}:generateContent"
+      headers = [{"x-goog-api-key", api_key}, {"content-type", "application/json"}]
 
       body = %{
         system_instruction: %{parts: [%{text: system_prompt}]},
@@ -25,7 +26,7 @@ defmodule HeyiAm.LLM.Gemini do
         generationConfig: %{maxOutputTokens: 2048}
       }
 
-      case Req.post(url, json: body, receive_timeout: timeout) do
+      case Req.post(url, json: body, headers: headers, receive_timeout: timeout) do
         {:ok, %{status: 200, body: resp_body}} ->
           extract_text(resp_body)
 
@@ -45,6 +46,14 @@ defmodule HeyiAm.LLM.Gemini do
       |> Enum.map_join("", & &1["text"])
 
     {:ok, text}
+  end
+
+  defp extract_text(%{"promptFeedback" => %{"blockReason" => reason}}) do
+    {:error, {:content_blocked, reason}}
+  end
+
+  defp extract_text(%{"candidates" => []}) do
+    {:error, :empty_candidates}
   end
 
   defp extract_text(body) do

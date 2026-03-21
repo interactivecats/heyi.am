@@ -82,7 +82,9 @@ defmodule HeyiAmWeb.UserSettingsController do
   def delete(conn, %{"username" => confirmation}) do
     user = conn.assigns.current_scope.user
 
-    if confirmation == user.username do
+    expected = user.username || user.email
+
+    if confirmation == expected do
       {:ok, _} = Accounts.delete_user_account(user)
 
       conn

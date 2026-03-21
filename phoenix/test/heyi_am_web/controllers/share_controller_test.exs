@@ -27,6 +27,7 @@ defmodule HeyiAmWeb.ShareControllerTest do
         tools: ["Elixir", "Phoenix"],
         skills: ["Elixir", "Phoenix", "Authentication"],
         project_name: "heyi.am",
+        status: "listed",
         user_id: user.id,
         beats: [
           %{"label" => "Review auth flow", "description" => "Found 3 token systems"},

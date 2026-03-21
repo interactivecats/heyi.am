@@ -1,8 +1,9 @@
 defmodule HeyiAmWeb.ShareController do
   use HeyiAmWeb, :controller
 
+  import HeyiAmWeb.Helpers, only: [format_loc: 1, slugify: 1]
+
   alias HeyiAm.Shares
-  alias HeyiAm.Repo
 
   @valid_templates MapSet.new(HeyiAm.Shares.Share.valid_templates())
 
@@ -16,23 +17,8 @@ defmodule HeyiAmWeb.ShareController do
 
   @gone_tokens MapSet.new(~w(deleted expired removed))
 
-  @doc """
-  Formats an integer LOC count into a human-readable string.
-  e.g. 2400 → "2.4k", 890 → "890"
-  """
-  def format_loc(nil), do: "0"
-  def format_loc(n) when is_integer(n) and n >= 1000 do
-    "#{Float.round(n / 1000, 1)}k"
-  end
-  def format_loc(n) when is_integer(n), do: to_string(n)
-  def format_loc(n) when is_binary(n), do: n
-
   defp load_share(token) do
-    case Shares.get_share_by_token(token) do
-      nil -> nil
-      %{status: "draft"} -> nil
-      share -> Repo.preload(share, :user)
-    end
+    Shares.get_published_share_by_token(token)
   end
 
   defp build_session(share) do
@@ -60,15 +46,6 @@ defmodule HeyiAmWeb.ShareController do
     |> Map.update(:tool_breakdown, [], &(&1 || []))
     |> Map.update(:transcript_excerpt, [], &(&1 || []))
     |> Map.update(:turn_timeline, [], &(&1 || []))
-  end
-
-  defp slugify(nil), do: ""
-  defp slugify(name) do
-    name
-    |> String.downcase()
-    |> String.replace(~r/[^a-z0-9\s-]/, "")
-    |> String.replace(~r/\s+/, "-")
-    |> String.trim("-")
   end
 
   def show(conn, %{"token" => token} = params) do

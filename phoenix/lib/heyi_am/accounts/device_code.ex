@@ -6,8 +6,6 @@ defmodule HeyiAm.Accounts.DeviceCode do
   # Excluded: 0, O, 1, I to avoid ambiguity
   @user_code_chars ~c"ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
   @expiry_minutes 15
-  @max_retry 3
-
   schema "device_codes" do
     # Stores SHA-256 hash of the raw device_code (raw is never persisted)
     field :device_code, :binary
@@ -66,20 +64,6 @@ defmodule HeyiAm.Accounts.DeviceCode do
       where: dc.status == "pending",
       where: dc.expires_at > ^now
   end
-
-  @doc """
-  Query for an authorized device code by hashed device_code.
-  """
-  def authorized_query(hashed_device_code) do
-    from dc in __MODULE__,
-      where: dc.device_code == ^hashed_device_code,
-      where: dc.status == "authorized"
-  end
-
-  @doc """
-  Maximum retries for unique constraint collisions.
-  """
-  def max_retry, do: @max_retry
 
   defp generate_user_code do
     chars = @user_code_chars

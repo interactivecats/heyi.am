@@ -64,29 +64,133 @@
       <p style="font-size: 0.875rem; color: var(--on-surface-variant); line-height: 1.65;">{@project.architecture}</p>
     </div>
 
-    <%!-- Growth Chart — Empty State --%>
-    <div class="card card-padded" style="margin-block-end: var(--spacing-4);">
-      <span class="label-mono" style="display: block; margin-block-end: var(--spacing-3);">Growth Chart</span>
-      <div style="padding: var(--spacing-8) var(--spacing-4); text-align: center; color: var(--outline); font-size: 0.875rem;">
-        Coming soon — requires published session data
+    <%!-- Growth Chart --%>
+    <%= if @chart do %>
+      <span class="label-mono" style="display: block; margin-block-end: var(--spacing-4);">Project Growth</span>
+      <div class="card" style="background: var(--surface-container-lowest); margin-block-end: var(--spacing-6); padding: var(--spacing-6);">
+        <div style="display: flex; gap: var(--spacing-8);">
+          <div style="flex: 1;">
+            <svg viewBox="0 0 500 160" style="width: 100%; height: 160px;">
+              <%!-- Grid lines --%>
+              <line x1={@chart.chart_left} y1={@chart.chart_top} x2={@chart.chart_left} y2={@chart.chart_bottom} stroke="var(--ghost-border)" stroke-width="0.5"/>
+              <line x1={@chart.chart_left} y1={@chart.chart_bottom} x2={@chart.chart_right} y2={@chart.chart_bottom} stroke="var(--ghost-border)" stroke-width="0.5"/>
+              <%= for g <- @chart.y_grid do %>
+                <%= if g.show_line do %>
+                  <line x1={@chart.chart_left} y1={g.y} x2={@chart.chart_right} y2={g.y} stroke="var(--ghost-border)" stroke-width="0.5" stroke-dasharray="2,4"/>
+                <% end %>
+                <text x={@chart.chart_left - 5} y={g.y + 3} text-anchor="end" fill="var(--on-surface-variant)" font-family="IBM Plex Mono" font-size="8">{g.label}</text>
+              <% end %>
+              <%!-- Area fill --%>
+              <%= if @chart.poly_points do %>
+                <polygon points={@chart.poly_points} fill="rgba(8,68,113,0.08)"/>
+                <polyline points={@chart.line_points} fill="none" stroke="#084471" stroke-width="2"/>
+              <% end %>
+              <%!-- Session dots --%>
+              <%= for p <- @chart.points do %>
+                <circle cx={p.x} cy={p.y} r="5" fill="#084471" stroke="#fff" stroke-width="2"/>
+              <% end %>
+              <%!-- X axis labels --%>
+              <%= for p <- @chart.points do %>
+                <text x={p.x} y="155" text-anchor="middle" fill="var(--on-surface-variant)" font-family="IBM Plex Mono" font-size="7">{truncate_title(p.title, 14)}</text>
+              <% end %>
+              <%!-- Delta annotations --%>
+              <%= for d <- @chart.deltas do %>
+                <text x={d.x} y={d.y} fill="#084471" font-family="IBM Plex Mono" font-size="7" font-weight="600">+{format_loc(d.delta)}</text>
+              <% end %>
+            </svg>
+          </div>
+          <%!-- Summary stats --%>
+          <div style="width: 140px; display: flex; flex-direction: column; justify-content: center; gap: var(--spacing-4);">
+            <div>
+              <div style="font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; color: var(--primary);">{@project.loc_changed}</div>
+              <div class="label-mono" style="font-size: 0.5625rem;">Total LOC</div>
+            </div>
+            <div>
+              <div style="font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700;">{@project.files_touched}</div>
+              <div class="label-mono" style="font-size: 0.5625rem;">Files touched</div>
+            </div>
+            <div>
+              <div style="font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700;">{@project.session_count}</div>
+              <div class="label-mono" style="font-size: 0.5625rem;">Sessions</div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    <% end %>
 
-    <%!-- Directory Heatmap — Empty State --%>
-    <div class="card card-padded" style="margin-block-end: var(--spacing-4);">
-      <span class="label-mono" style="display: block; margin-block-end: var(--spacing-3);">Directory Heatmap</span>
-      <div style="padding: var(--spacing-8) var(--spacing-4); text-align: center; color: var(--outline); font-size: 0.875rem;">
-        Coming soon — requires published session data
+    <%!-- Directory Heatmap --%>
+    <%= if map_size(@heatmap_data) > 0 and length(@heatmap_sessions) >= 2 do %>
+      <%
+        all_counts = @heatmap_data |> Map.values() |> Enum.flat_map(&Map.values/1)
+        max_count = if all_counts == [], do: 1, else: Enum.max(all_counts)
+        sorted_dirs = @heatmap_data |> Map.keys() |> Enum.sort()
+        session_count = length(@heatmap_sessions)
+      %>
+      <span class="label-mono" style="display: block; margin-block-end: var(--spacing-4);">Edit Heatmap by Directory</span>
+      <div class="card" style="background: var(--surface-container-lowest); margin-block-end: var(--spacing-6); padding: var(--spacing-5);">
+        <%!-- Header row --%>
+        <div style={"display: grid; grid-template-columns: 140px repeat(#{session_count}, 1fr); gap: 2px; margin-block-end: 2px;"}>
+          <div></div>
+          <%= for hs <- @heatmap_sessions do %>
+            <div style="font-family: var(--font-mono); font-size: 0.5625rem; color: var(--on-surface-variant); text-align: center; padding: 4px;">{hs.title}</div>
+          <% end %>
+        </div>
+        <%!-- Directory rows --%>
+        <%= for dir <- sorted_dirs do %>
+          <% dir_counts = @heatmap_data[dir] %>
+          <div style={"display: grid; grid-template-columns: 140px repeat(#{session_count}, 1fr); gap: 2px; margin-block-end: 2px;"}>
+            <div style="font-family: var(--font-mono); font-size: 0.6875rem; padding: 8px 4px;">{dir}</div>
+            <%= for hs <- @heatmap_sessions do %>
+              <% count = dir_counts[hs.token] || 0 %>
+              <% opacity = if max_count > 0, do: Float.round(0.05 + 0.45 * count / max_count, 2), else: 0.02 %>
+              <% opacity = if count == 0, do: 0.02, else: opacity %>
+              <div style={"background: rgba(8,68,113,#{opacity}); border-radius: var(--radius-sm); min-height: 28px;"} title={"#{count} edits"}></div>
+            <% end %>
+          </div>
+        <% end %>
+        <%!-- Legend --%>
+        <div style="display: flex; align-items: center; gap: var(--spacing-4); margin-block-start: var(--spacing-4); font-family: var(--font-mono); font-size: 0.625rem; color: var(--on-surface-variant);">
+          <span>Intensity = edit count</span>
+          <div style="display: flex; align-items: center; gap: 2px;">
+            <div style="width: 16px; height: 10px; background: rgba(8,68,113,0.05); border-radius: 1px;"></div>
+            <div style="width: 16px; height: 10px; background: rgba(8,68,113,0.15); border-radius: 1px;"></div>
+            <div style="width: 16px; height: 10px; background: rgba(8,68,113,0.3); border-radius: 1px;"></div>
+            <div style="width: 16px; height: 10px; background: rgba(8,68,113,0.5); border-radius: 1px;"></div>
+            <span style="margin-inline-start: 2px;">low → high</span>
+          </div>
+        </div>
       </div>
-    </div>
+    <% end %>
 
-    <%!-- Top Files — Collapsible, Empty State --%>
-    <details class="collapsible" style="margin-block-end: var(--spacing-8);">
-      <summary>Top files</summary>
-      <div class="collapsible-content" style="text-align: center; color: var(--outline); font-size: 0.875rem; padding: var(--spacing-6);">
-        Coming soon — requires published session data
-      </div>
-    </details>
+    <%!-- Top Files (collapsible) --%>
+    <%= if length(@top_files) > 0 do %>
+      <details style="margin-block-end: var(--spacing-8);">
+        <summary style="font-family: var(--font-body); font-size: 0.875rem; font-weight: 500; color: var(--on-surface-variant); cursor: pointer; list-style: none; display: flex; justify-content: space-between; padding: var(--spacing-3) 0;">
+          Top {min(length(@top_files), 10)} most-edited files (of {@project.files_touched} total) <span>→</span>
+        </summary>
+        <div style="padding: var(--spacing-3) 0;">
+          <div style="display: grid; grid-template-columns: 1fr 80px 60px 80px; gap: var(--spacing-2); padding: var(--spacing-2) 0; font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant); border-block-end: 1px solid var(--ghost-border);">
+            <span style="font-weight: 600;">FILE</span>
+            <span style="text-align: right;">EDITS</span>
+            <span style="text-align: right;">LOC</span>
+            <span style="text-align: right;">SESSIONS</span>
+          </div>
+          <%= for file <- @top_files do %>
+            <div style="display: grid; grid-template-columns: 1fr 80px 60px 80px; gap: var(--spacing-2); padding: var(--spacing-2) 0; font-family: var(--font-mono); font-size: 0.6875rem; border-block-end: 1px solid var(--ghost-border);">
+              <span>{file.path}</span>
+              <span style="text-align: right;">{file.edits}</span>
+              <span style="text-align: right;">{format_loc(file.loc)}</span>
+              <span style="text-align: right;">{file.sessions}</span>
+            </div>
+          <% end %>
+          <%= if @project.files_touched > length(@top_files) do %>
+            <div style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant); padding: var(--spacing-3) 0;">
+              ... and {@project.files_touched - length(@top_files)} more files
+            </div>
+          <% end %>
+        </div>
+      </details>
+    <% end %>
 
     <%!-- Published Sessions --%>
     <div style="margin-block-end: var(--spacing-8);">

@@ -18,7 +18,7 @@ defmodule HeyiAm.LLM do
   """
   def enhance(user_id, session) when is_map(session) do
     with :ok <- validate_session(session),
-         :ok <- check_quota(user_id) do
+         {:ok, remaining} <- check_quota(user_id) do
       provider = Provider.provider()
       config = Application.get_env(:heyi_am, __MODULE__, [])
       provider_name = Keyword.get(config, :provider, "gemini")
@@ -49,7 +49,7 @@ defmodule HeyiAm.LLM do
                 status: "success"
               })
 
-              {:ok, result, remaining_quota(user_id)}
+              {:ok, result, remaining - 1}
 
             {:error, parse_error} ->
               log_usage(%{
@@ -141,7 +141,8 @@ defmodule HeyiAm.LLM do
   end
 
   defp check_quota(user_id) do
-    if within_quota?(user_id), do: :ok, else: {:error, :quota_exceeded}
+    remaining = remaining_quota(user_id)
+    if remaining > 0, do: {:ok, remaining}, else: {:error, :quota_exceeded}
   end
 
   defp truncate_session(session) do
@@ -161,11 +162,13 @@ defmodule HeyiAm.LLM do
     end)
   end
 
-  defp truncate_string(str, max) when is_binary(str) and byte_size(str) > max do
-    String.slice(str, 0, max)
+  defp truncate_string(str, max) when is_binary(str) do
+    if String.length(str) > max do
+      String.slice(str, 0, max)
+    else
+      str
+    end
   end
-
-  defp truncate_string(str, _max) when is_binary(str), do: str
   defp truncate_string(_, _), do: ""
 
   defp estimate_tokens(text) when is_binary(text), do: div(byte_size(text), 4)
@@ -185,5 +188,5 @@ defmodule HeyiAm.LLM do
 
   defp provider_model(config, "gemini"), do: Keyword.get(config, :gemini_model, "gemini-2.5-flash")
   defp provider_model(config, "anthropic"), do: Keyword.get(config, :anthropic_model, "claude-haiku-4-5-20251001")
-  defp provider_model(config, _), do: Keyword.get(config, :gemini_model, "mock")
+  defp provider_model(_config, _unknown), do: "mock"
 end

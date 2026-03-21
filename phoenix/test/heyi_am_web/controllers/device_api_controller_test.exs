@@ -29,7 +29,7 @@ defmodule HeyiAmWeb.DeviceApiControllerTest do
       %{"device_code" => device_code} = json_response(conn1, 200)
 
       conn2 = post(conn, ~p"/api/device/token", %{device_code: device_code})
-      assert %{"error" => "authorization_pending"} = json_response(conn2, 403)
+      assert %{"error" => "authorization_pending"} = json_response(conn2, 400)
     end
 
     test "returns access_token after authorization", %{conn: conn} do

@@ -92,6 +92,7 @@ defmodule HeyiAmWeb.E2ERoundtripTest do
           token: HeyiAm.Shares.generate_token(),
           title: "E2E portfolio integration",
           dev_take: "Verifying portfolio shows real sessions.",
+          status: "listed",
           duration_minutes: 20,
           turns: 30,
           files_changed: 5,

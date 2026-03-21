@@ -110,7 +110,8 @@
           <span :if={to_string(line["role"]) == "ai"} style="color: #60a5fa;">[AI] </span>
           {line["text"]}
         </div>
-        <div class="terminal-line" style="color: rgba(255,255,255,0.3);">... {(@session.turns - 3)} more turns</div>
+        <% remaining_turns = max(@session.turns - length(@session.transcript_excerpt), 0) %>
+        <div :if={remaining_turns > 0} class="terminal-line" style="color: rgba(255,255,255,0.3);">... {remaining_turns} more turns</div>
         <div style="margin-block-start: var(--spacing-3);">
           <a href={"/s/#{@session.token}/transcript"} style="font-family: var(--font-mono); font-size: 0.625rem; color: #60a5fa; text-decoration: none;">
             View full transcript &rarr;
@@ -126,9 +127,13 @@
           <div>Date: {if @session.recorded_at, do: Calendar.strftime(@session.recorded_at, "%b %d, %Y"), else: "—"}</div>
           <div>
             Author:
-            <a href={"/" <> @session.user.username} style="color: var(--primary); text-decoration: none;">
-              {@session.user.display_name}
-            </a>
+            <%= if @session.user.username != "anonymous" do %>
+              <a href={"/" <> @session.user.username} style="color: var(--primary); text-decoration: none;">
+                {@session.user.display_name}
+              </a>
+            <% else %>
+              <span style="color: var(--on-surface-variant);">{@session.user.display_name}</span>
+            <% end %>
           </div>
         </div>
         <div :if={@session.verified_at} class="sealed-badge" style="margin-block-start: var(--spacing-2);">
@@ -166,11 +171,11 @@
         Tool breakdown ({Enum.reduce(@session.tool_breakdown, 0, &((&1["count"] || 0) + &2))} calls)
       </summary>
       <div class="collapsible-content">
+        <% max_count = if @session.tool_breakdown == [], do: 1, else: (Enum.max_by(@session.tool_breakdown, &((&1["count"] || 0)))["count"] || 1) %>
         <div :for={tool <- @session.tool_breakdown} style="display: flex; align-items: center; gap: var(--spacing-3); margin-block-end: var(--spacing-2);">
           <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); width: 5rem; text-align: end;">{tool["name"]}</span>
           <div style="flex: 1; height: 6px; background: var(--surface-container-low); border-radius: 3px; overflow: hidden;">
-            <% max_count = Enum.max_by(@session.tool_breakdown, & &1["count"])["count"] %>
-            <div style={"width: #{round(tool["count"] / max_count * 100)}%; height: 100%; background: var(--primary); border-radius: 3px;"}></div>
+            <div style={"width: #{round((tool["count"] || 0) / max_count * 100)}%; height: 100%; background: var(--primary); border-radius: 3px;"}></div>
           </div>
           <span style="font-family: var(--font-mono); font-size: 0.75rem; width: 2rem;">{tool["count"]}</span>
         </div>
@@ -201,12 +206,12 @@
       <div class="collapsible-content">
         <div :for={turn <- @session.turn_timeline} style="display: flex; align-items: flex-start; gap: var(--spacing-3); margin-block-end: var(--spacing-3);">
           <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); min-width: 2rem; text-align: end;">
-            #{turn.turn}
+            #{turn["turn"]}
           </span>
           <div style="flex: 1;">
-            <span style="font-size: 0.8125rem;">{turn.prompt}</span>
-            <div :if={turn.tools != []} style="display: flex; gap: var(--spacing-1); margin-block-start: var(--spacing-1); flex-wrap: wrap;">
-              <span :for={tool <- turn.tools} class="chip" style="font-size: 0.625rem; padding: 1px 6px;">{tool}</span>
+            <span style="font-size: 0.8125rem;">{turn["prompt"]}</span>
+            <div :if={turn["tools"] && turn["tools"] != []} style="display: flex; gap: var(--spacing-1); margin-block-start: var(--spacing-1); flex-wrap: wrap;">
+              <span :for={tool <- turn["tools"]} class="chip" style="font-size: 0.625rem; padding: 1px 6px;">{tool}</span>
             </div>
           </div>
         </div>

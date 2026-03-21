@@ -8,7 +8,8 @@ defmodule HeyiAmWeb.Endpoint do
     store: :cookie,
     key: "_heyi_am_key",
     signing_salt: "rApT8+FT",
-    same_site: "Lax"
+    same_site: "Lax",
+    secure: Mix.env() == :prod
   ]
 
   socket "/live", Phoenix.LiveView.Socket,
@@ -46,7 +47,7 @@ defmodule HeyiAmWeb.Endpoint do
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
-    length: 50_000_000,
+    length: 8_000_000,
     json_decoder: Phoenix.json_library()
 
   plug Plug.MethodOverride
