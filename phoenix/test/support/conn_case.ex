@@ -71,6 +71,23 @@ defmodule HeyiAmWeb.ConnCase do
     |> Plug.Conn.put_session(:user_token, token)
   end
 
+  @doc """
+  Creates an API conn with a valid Bearer token for the given user.
+  Returns {conn, user} or {conn, user} with user auto-created.
+  """
+  def api_conn_with_auth(user \\ nil) do
+    user = user || HeyiAm.AccountsFixtures.user_fixture()
+    token = HeyiAm.Accounts.generate_user_session_token(user)
+    encoded_token = Base.encode64(token)
+
+    conn =
+      Phoenix.ConnTest.build_conn()
+      |> Plug.Conn.put_req_header("content-type", "application/json")
+      |> Plug.Conn.put_req_header("authorization", "Bearer #{encoded_token}")
+
+    {conn, user}
+  end
+
   defp maybe_set_token_authenticated_at(_token, nil), do: nil
 
   defp maybe_set_token_authenticated_at(token, authenticated_at) do

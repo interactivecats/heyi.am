@@ -9,10 +9,11 @@ defmodule HeyiAmWeb.E2ERoundtripTest do
 
   describe "publish → view session" do
     test "POST /api/sessions then GET /s/:token renders published content", %{conn: conn} do
-      # Publish a session via the API
+      # Publish a session via the API (authenticated)
+      {auth_conn, _user} = api_conn_with_auth()
+
       publish_conn =
-        conn
-        |> put_req_header("content-type", "application/json")
+        auth_conn
         |> post(~p"/api/sessions", %{
           session: %{
             title: "E2E: Wiring real database queries",

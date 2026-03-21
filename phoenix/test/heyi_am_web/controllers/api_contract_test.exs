@@ -14,11 +14,10 @@ defmodule HeyiAmWeb.ApiContractTest do
   # ──────────────────────────────────────────────────────────────
 
   describe "POST /api/sessions — endpoint exists and accepts CLI payload shape" do
-    test "accepts minimal payload: session with title only", %{conn: conn} do
-      conn =
-        conn
-        |> put_req_header("content-type", "application/json")
-        |> post(~p"/api/sessions", %{session: %{title: "Test Session"}})
+    test "accepts minimal payload: session with title only", %{conn: _conn} do
+      {conn, _user} = api_conn_with_auth()
+
+      conn = post(conn, ~p"/api/sessions", %{session: %{title: "Test Session"}})
 
       resp = json_response(conn, 201)
       assert is_binary(resp["token"])
@@ -27,11 +26,11 @@ defmodule HeyiAmWeb.ApiContractTest do
       assert String.starts_with?(resp["content_hash"], "sha256:")
     end
 
-    test "accepts full CLI publish payload with all Share fields", %{conn: conn} do
+    test "accepts full CLI publish payload with all Share fields", %{conn: _conn} do
+      {conn, _user} = api_conn_with_auth()
+
       conn =
-        conn
-        |> put_req_header("content-type", "application/json")
-        |> post(~p"/api/sessions", %{
+        post(conn, ~p"/api/sessions", %{
           session: %{
             title: "Auth rebuild with phx.gen.auth",
             dev_take: "Three token systems was a security liability.",
@@ -62,43 +61,40 @@ defmodule HeyiAmWeb.ApiContractTest do
                json_response(conn, 201)
     end
 
-    test "returns 400 when session param is missing", %{conn: conn} do
-      conn =
-        conn
-        |> put_req_header("content-type", "application/json")
-        |> post(~p"/api/sessions", %{})
+    test "returns 400 when session param is missing", %{conn: _conn} do
+      {conn, _user} = api_conn_with_auth()
+
+      conn = post(conn, ~p"/api/sessions", %{})
 
       assert %{"error" => %{"code" => "MISSING_SESSION"}} = json_response(conn, 400)
     end
 
-    test "returns 422 when title is empty", %{conn: conn} do
-      conn =
-        conn
-        |> put_req_header("content-type", "application/json")
-        |> post(~p"/api/sessions", %{session: %{title: ""}})
+    test "returns 422 when title is empty", %{conn: _conn} do
+      {conn, _user} = api_conn_with_auth()
+
+      conn = post(conn, ~p"/api/sessions", %{session: %{title: ""}})
 
       resp = json_response(conn, 422)
       assert resp["error"]["code"] == "VALIDATION_FAILED"
       assert is_map(resp["error"]["details"])
     end
 
-    test "validates template against allowed list", %{conn: conn} do
-      # Valid templates: editorial, terminal, minimal, brutalist, campfire, neon-night
-      conn =
-        conn
-        |> put_req_header("content-type", "application/json")
-        |> post(~p"/api/sessions", %{
-          session: %{title: "Template Test", template: "invalid-template"}
-        })
+    test "validates template against allowed list", %{conn: _conn} do
+      {conn, _user} = api_conn_with_auth()
+
+      conn = post(conn, ~p"/api/sessions", %{
+        session: %{title: "Template Test", template: "invalid-template"}
+      })
 
       assert %{"error" => %{"code" => "VALIDATION_FAILED"}} = json_response(conn, 422)
     end
 
     test "accepts all valid templates", %{conn: _conn} do
       for template <- ~w(editorial terminal minimal brutalist campfire neon-night) do
+        {conn, _user} = api_conn_with_auth()
+
         resp =
-          build_conn()
-          |> put_req_header("content-type", "application/json")
+          conn
           |> post(~p"/api/sessions", %{
             session: %{title: "Template #{template}", template: template}
           })
@@ -115,31 +111,19 @@ defmodule HeyiAmWeb.ApiContractTest do
   # ──────────────────────────────────────────────────────────────
 
   describe "POST /api/sessions — authenticated publish" do
-    @tag :skip
     test "links share to user when valid Bearer token is provided", %{conn: _conn} do
-      # BUG: ShareApiController.get_user_id_from_token/1 pattern-matches
-      #   %{id: id} against the return of Accounts.get_user_by_session_token/1,
-      # but that function returns {user, inserted_at} (a tuple), not a bare user map.
-      # The match should be: {%{id: id}, _} -> id
-      # Until this is fixed, authenticated publish silently falls back to anonymous.
-      user = user_fixture()
-      token = HeyiAm.Accounts.generate_user_session_token(user)
-      encoded_token = Base.encode64(token)
+      {conn, user} = api_conn_with_auth()
 
-      conn =
-        build_conn()
-        |> put_req_header("content-type", "application/json")
-        |> put_req_header("authorization", "Bearer #{encoded_token}")
-        |> post(~p"/api/sessions", %{
-          session: %{title: "Authenticated Session"}
-        })
+      conn = post(conn, ~p"/api/sessions", %{
+        session: %{title: "Authenticated Session"}
+      })
 
       resp = json_response(conn, 201)
       share = HeyiAm.Shares.get_share_by_token!(resp["token"])
       assert share.user_id == user.id
     end
 
-    test "creates anonymous share when no auth header", %{conn: conn} do
+    test "returns 401 when no auth header provided", %{conn: conn} do
       conn =
         conn
         |> put_req_header("content-type", "application/json")
@@ -147,12 +131,10 @@ defmodule HeyiAmWeb.ApiContractTest do
           session: %{title: "Anonymous Session"}
         })
 
-      resp = json_response(conn, 201)
-      share = HeyiAm.Shares.get_share_by_token!(resp["token"])
-      assert is_nil(share.user_id)
+      assert %{"error" => _} = json_response(conn, 401)
     end
 
-    test "creates anonymous share when invalid Bearer token", %{conn: conn} do
+    test "returns 401 when invalid Bearer token provided", %{conn: conn} do
       conn =
         conn
         |> put_req_header("content-type", "application/json")
@@ -161,10 +143,7 @@ defmodule HeyiAmWeb.ApiContractTest do
           session: %{title: "Bad Token Session"}
         })
 
-      # Should still create the share, just without user_id
-      resp = json_response(conn, 201)
-      share = HeyiAm.Shares.get_share_by_token!(resp["token"])
-      assert is_nil(share.user_id)
+      assert %{"error" => _} = json_response(conn, 401)
     end
   end
 
@@ -280,6 +259,25 @@ defmodule HeyiAmWeb.ApiContractTest do
       assert %{"token" => _} = json_response(conn2, 201)
     end
 
+    test "anonymous challenge response succeeds without auth", %{conn: conn} do
+      user = user_fixture()
+      challenge = challenge_fixture(user)
+
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post(~p"/api/sessions", %{
+          session: %{title: "Anonymous Challenge Response", sealed: true},
+          challenge_slug: challenge.slug
+        })
+
+      resp = json_response(conn, 201)
+      assert is_binary(resp["token"])
+      share = HeyiAm.Shares.get_share_by_token!(resp["token"])
+      assert share.challenge_id == challenge.id
+      assert is_nil(share.user_id)
+    end
+
     test "enforces max_responses limit", %{conn: _conn} do
       user = user_fixture()
       challenge = challenge_fixture(user, %{max_responses: 1})
@@ -311,11 +309,10 @@ defmodule HeyiAmWeb.ApiContractTest do
   # ──────────────────────────────────────────────────────────────
 
   describe "Response shape contract — CLI relies on these exact keys" do
-    test "create success returns {token, url, sealed, content_hash}", %{conn: conn} do
-      conn =
-        conn
-        |> put_req_header("content-type", "application/json")
-        |> post(~p"/api/sessions", %{session: %{title: "Shape Test"}})
+    test "create success returns {token, url, sealed, content_hash}", %{conn: _conn} do
+      {conn, _user} = api_conn_with_auth()
+
+      conn = post(conn, ~p"/api/sessions", %{session: %{title: "Shape Test"}})
 
       resp = json_response(conn, 201)
 
@@ -349,25 +346,21 @@ defmodule HeyiAmWeb.ApiContractTest do
     end
 
     test "error responses always have {error: {code: string, ...}}", %{conn: _conn} do
-      # Missing session
-      conn1 =
-        build_conn()
-        |> put_req_header("content-type", "application/json")
-        |> post(~p"/api/sessions", %{})
+      # Missing session (needs auth to get past 401)
+      {conn1, _user} = api_conn_with_auth()
+      conn1 = post(conn1, ~p"/api/sessions", %{})
 
       resp1 = json_response(conn1, 400)
       assert is_binary(resp1["error"]["code"])
 
-      # Validation failure
-      conn2 =
-        build_conn()
-        |> put_req_header("content-type", "application/json")
-        |> post(~p"/api/sessions", %{session: %{title: ""}})
+      # Validation failure (needs auth to get past 401)
+      {conn2, _user} = api_conn_with_auth()
+      conn2 = post(conn2, ~p"/api/sessions", %{session: %{title: ""}})
 
       resp2 = json_response(conn2, 422)
       assert is_binary(resp2["error"]["code"])
 
-      # Not found
+      # Not found (GET verify doesn't need auth)
       conn3 = get(build_conn(), ~p"/api/sessions/nonexistent/verify")
       resp3 = json_response(conn3, 404)
       assert is_binary(resp3["error"]["code"])
