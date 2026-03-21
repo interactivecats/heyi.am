@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { SessionEditor } from './SessionEditor';
@@ -6,11 +6,10 @@ import { MOCK_SESSIONS } from '../mock-data';
 
 const session = MOCK_SESSIONS[0]; // ses-001, status 'published', has all fields
 
-function renderEditor(props?: { onPublish?: () => void }) {
-  const onPublish = props?.onPublish ?? vi.fn();
+function renderEditor() {
   return render(
     <MemoryRouter>
-      <SessionEditor session={session} onPublish={onPublish} />
+      <SessionEditor session={session} />
     </MemoryRouter>,
   );
 }
@@ -104,14 +103,6 @@ describe('SessionEditor', () => {
     expect(screen.queryByText(firstSkill)).toBeNull();
   });
 
-  it('accepts onPublish prop (publish button is in parent topbar)', () => {
-    const onPublish = vi.fn();
-    renderEditor({ onPublish });
-    // Publish button was moved to SessionEditorPage's AppShell header (Task #20).
-    // SessionEditor still accepts onPublish but no longer renders the button itself.
-    expect(onPublish).not.toHaveBeenCalled();
-  });
-
   it('shows progress breadcrumb', () => {
     renderEditor();
     expect(screen.getByText('Your Input')).toBeDefined();
@@ -128,7 +119,7 @@ describe('SessionEditor', () => {
     const draftSession = MOCK_SESSIONS[1]; // ses-002, status 'draft'
     render(
       <MemoryRouter>
-        <SessionEditor session={draftSession} onPublish={vi.fn()} />
+        <SessionEditor session={draftSession} />
       </MemoryRouter>,
     );
     expect(screen.getByText('Draft')).toBeDefined();

@@ -15,7 +15,6 @@ import { SessionEditorPage } from './SessionEditorPage';
 import { MOCK_SESSIONS, MOCK_PROJECTS } from '../mock-data';
 import * as api from '../api';
 import type { EnhancementResult } from '../api';
-import type { Session, Project } from '../types';
 
 // ---------------------------------------------------------------------------
 // Helpers

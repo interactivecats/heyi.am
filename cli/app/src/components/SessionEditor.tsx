@@ -7,7 +7,6 @@ import type { Session, ExecutionStep } from '../types';
 
 interface SessionEditorProps {
   session: Session;
-  onPublish: () => void;
 }
 
 interface EditorState {
@@ -207,29 +206,11 @@ function ExecutionPathEditor({
   );
 }
 
-function PublishBar({ onPublish }: { onPublish: () => void }) {
-  return (
-    <div className="session-editor__publish-bar glass-panel">
-      <div className="session-editor__publish-info">
-        <span className="text-title">Publish</span>
-        <span className="text-label">Share this case study on your portfolio</span>
-      </div>
-      <button
-        type="button"
-        className="btn btn-primary btn--lg"
-        onClick={onPublish}
-      >
-        Publish &rarr;
-      </button>
-    </div>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
 
-export function SessionEditor({ session, onPublish }: SessionEditorProps) {
+export function SessionEditor({ session }: SessionEditorProps) {
   const [state, setState] = useState<EditorState>(() => ({
     title: session.title,
     developerTake: session.developerTake ?? '',

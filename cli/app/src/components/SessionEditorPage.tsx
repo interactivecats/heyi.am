@@ -377,12 +377,12 @@ export function SessionEditorPage({
       }
     >
       {phase === 'editing' && (
-        <SessionEditor session={session} onPublish={handlePublish} />
+        <SessionEditor session={session} />
       )}
 
       {phase === 'auth-prompt' && (
         <>
-          <SessionEditor session={session} onPublish={handlePublish} />
+          <SessionEditor session={session} />
           <AuthPromptModal
             onConnectNow={handleConnectNow}
             onPublishAnonymously={handlePublishAnonymously}
