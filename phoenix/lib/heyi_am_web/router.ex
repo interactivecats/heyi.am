@@ -9,12 +9,22 @@ defmodule HeyiAmWeb.Router do
     plug :fetch_live_flash
     plug :put_root_layout, html: {HeyiAmWeb.Layouts, :root}
     plug :protect_from_forgery
-    plug :put_secure_browser_headers
+    plug :put_secure_browser_headers, %{
+      "content-security-policy" => "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'"
+    }
     plug :fetch_current_scope_for_user
   end
 
   pipeline :api do
     plug :accepts, ["json"]
+  end
+
+  pipeline :rate_limit_auth do
+    plug HeyiAmWeb.Plugs.RateLimit, action: "auth", limit: 5, period: 60_000
+  end
+
+  pipeline :rate_limit_api_session do
+    plug HeyiAmWeb.Plugs.RateLimit, action: "api_session", limit: 10, period: 60_000
   end
 
   scope "/", HeyiAmWeb do
@@ -25,9 +35,14 @@ defmodule HeyiAmWeb.Router do
 
   # API routes for CLI publish and verification
   scope "/api", HeyiAmWeb do
-    pipe_through :api
+    pipe_through [:api, :rate_limit_api_session]
 
     post "/sessions", ShareApiController, :create
+  end
+
+  scope "/api", HeyiAmWeb do
+    pipe_through :api
+
     get "/sessions/:token/verify", ShareApiController, :verify
   end
 
@@ -97,8 +112,13 @@ defmodule HeyiAmWeb.Router do
     pipe_through [:browser]
 
     get "/users/log-in", UserSessionController, :new
-    post "/users/log-in", UserSessionController, :create
     delete "/users/log-out", UserSessionController, :delete
+  end
+
+  scope "/", HeyiAmWeb do
+    pipe_through [:browser, :rate_limit_auth]
+
+    post "/users/log-in", UserSessionController, :create
   end
 
   # Challenge public pages — before portfolio catch-all
@@ -106,9 +126,14 @@ defmodule HeyiAmWeb.Router do
     pipe_through :browser
 
     get "/:slug", ChallengeController, :show
-    post "/:slug/unlock", ChallengeController, :verify_access_code
     get "/:slug/progress", ChallengeController, :in_progress
     get "/:slug/submitted", ChallengeController, :submitted
+  end
+
+  scope "/challenges", HeyiAmWeb do
+    pipe_through [:browser, :rate_limit_auth]
+
+    post "/:slug/unlock", ChallengeController, :verify_access_code
   end
 
   # Shared session pages — before portfolio catch-all
