@@ -169,11 +169,14 @@ export interface PublishResult {
   content_hash: string;
 }
 
-export async function publishSession(session: Record<string, unknown>): Promise<PublishResult> {
+export async function publishSession(
+  session: Record<string, unknown>,
+  opts?: { sessionId?: string; projectDir?: string },
+): Promise<PublishResult> {
   const res = await fetch(`${API_BASE}/publish`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session }),
+    body: JSON.stringify({ session, sessionId: opts?.sessionId, projectDir: opts?.projectDir }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Publish failed' }));

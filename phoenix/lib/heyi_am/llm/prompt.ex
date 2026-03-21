@@ -42,6 +42,7 @@ defmodule HeyiAm.LLM.Prompt do
       "Duration: #{session["durationMinutes"] || 0} min, #{session["turns"] || 0} turns, #{session["linesOfCode"] || 0} LOC changed"
     ]
 
+    parts = maybe_add_sampling_note(parts, session["_sampling_meta"])
     parts = maybe_add_skills(parts, session["skills"])
     parts = maybe_add_tools(parts, session["toolBreakdown"])
     parts = maybe_add_files(parts, session["filesChanged"])
@@ -51,6 +52,15 @@ defmodule HeyiAm.LLM.Prompt do
 
     Enum.join(parts, "\n")
   end
+
+  defp maybe_add_sampling_note(parts, %{"sampled" => true} = meta) do
+    selected = meta["selectedTurns"] || "?"
+    total = meta["totalTurns"] || "?"
+    note = "[SAMPLED: #{selected} of #{total} turns shown, distributed beginning/middle/end, high-signal moments prioritized. T{n}/#{total} = position in full session.]"
+    parts ++ [note]
+  end
+
+  defp maybe_add_sampling_note(parts, _), do: parts
 
   defp maybe_add_skills(parts, skills) when is_list(skills) and skills != [] do
     parts ++ ["Detected skills: #{Enum.join(skills, ", ")}"]
@@ -92,10 +102,8 @@ defmodule HeyiAm.LLM.Prompt do
   defp maybe_add_execution_path(parts, _), do: parts
 
   defp maybe_add_prompts(parts, timeline) when is_list(timeline) and timeline != [] do
-    dev_prompts =
-      timeline
-      |> Enum.filter(fn t -> t["type"] == "prompt" end)
-      |> Enum.take(15)
+    # Sampling has already limited and selected turns; just filter for prompts here.
+    dev_prompts = Enum.filter(timeline, fn t -> t["type"] == "prompt" end)
 
     if dev_prompts == [] do
       parts
@@ -109,7 +117,8 @@ defmodule HeyiAm.LLM.Prompt do
   defp maybe_add_prompts(parts, _), do: parts
 
   defp maybe_add_raw_log(parts, log) when is_list(log) and log != [] do
-    excerpt = log |> Enum.take(30) |> Enum.join("\n")
+    # Sampling has already limited the log; join all provided lines.
+    excerpt = Enum.join(log, "\n")
     parts ++ ["Raw log excerpt:\n#{excerpt}"]
   end
 

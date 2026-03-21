@@ -63,6 +63,33 @@ When these are unset, no analytics script is injected.
 
 When no LLM API key is configured, the enhance endpoint returns 502. Users with their own `ANTHROPIC_API_KEY` bypass the proxy entirely.
 
+### Object Storage (SeaweedFS)
+
+heyi.am uses an S3-compatible store for session recording files. SeaweedFS is
+recommended — it's a one-click deploy on Coolify. All credentials are injected
+at runtime — never hardcoded.
+
+| Variable | Default | Notes |
+|---|---|---|
+| `OBJECT_STORAGE_ACCESS_KEY_ID` | — | S3 access key ID (from SeaweedFS config) |
+| `OBJECT_STORAGE_SECRET_ACCESS_KEY` | — | S3 secret access key |
+| `OBJECT_STORAGE_HOST` | — | Hostname of your SeaweedFS S3 gateway, e.g. `s3.internal.example.com` |
+| `OBJECT_STORAGE_BUCKET` | `heyi-am-sessions` | Bucket name |
+| `OBJECT_STORAGE_SCHEME` | `https://` | Use `http://` only on a private network |
+| `OBJECT_STORAGE_PORT` | `443` | Port; SeaweedFS S3 gateway defaults to `8333` |
+
+The app uses path-style bucket access (`/bucket/key`). Create the bucket before
+the first deploy using the AWS CLI or any S3-compatible tool pointed at your
+SeaweedFS instance:
+
+```bash
+aws --endpoint-url http://your-seaweedfs:8333 s3 mb s3://heyi-am-sessions
+```
+
+Presigned URLs expire after 15 minutes (configurable via `presign_expires_in`
+in the app config). The `OBJECT_STORAGE_SECRET_ACCESS_KEY` is never logged or
+returned in API responses.
+
 ### Other optional
 
 | Variable | Default | Notes |

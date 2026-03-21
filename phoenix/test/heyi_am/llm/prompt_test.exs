@@ -97,14 +97,16 @@ defmodule HeyiAm.LLM.PromptTest do
       refute prompt =~ "Done"
     end
 
-    test "includes raw log excerpt (max 30 lines)" do
-      log = for i <- 1..40, do: "log line #{i}"
+    test "includes raw log lines" do
+      # The sampler controls log truncation for long sessions; prompt.ex renders
+      # whatever the sampler provides. For short/pass-through sessions, all lines
+      # are present. Here we verify lines are included at all.
+      log = for i <- 1..10, do: "log line #{i}"
       session = %{"title" => "Test", "projectName" => "test", "rawLog" => log}
       prompt = Prompt.user_prompt(session)
 
       assert prompt =~ "log line 1"
-      assert prompt =~ "log line 30"
-      refute prompt =~ "log line 31"
+      assert prompt =~ "log line 10"
     end
 
     test "handles missing optional fields gracefully" do

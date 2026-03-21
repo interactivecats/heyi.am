@@ -285,19 +285,23 @@ export function SessionEditorPage({
 
     const payload: Record<string, unknown> = {
       title: session.title,
-      context: session.context,
-      developer_take: session.developerTake,
+      dev_take: session.developerTake,
       skills: session.skills,
-      execution_path: session.executionPath,
+      beats: session.executionPath,
       turns: session.turns,
       duration_minutes: session.durationMinutes,
-      lines_of_code: session.linesOfCode,
-      raw_log: session.rawLog,
+      loc_changed: session.linesOfCode,
+      files_changed: session.filesChanged?.length ?? 0,
+      top_files: session.filesChanged?.slice(0, 20),
+      tool_breakdown: session.toolBreakdown,
+      tools: session.toolBreakdown?.map((t) => t.tool),
+      qa_pairs: session.qaPairs,
       project_name: session.projectName,
       recorded_at: session.date || new Date().toISOString(),
+      template: 'editorial',
     };
 
-    publishSession(payload)
+    publishSession(payload, { sessionId: session.id, projectDir: ctx.activeProject ?? undefined })
       .then((result) => {
         setPublishResult(result);
         publishResolvedRef.current = true;

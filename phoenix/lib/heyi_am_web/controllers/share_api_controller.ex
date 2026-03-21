@@ -20,25 +20,37 @@ defmodule HeyiAmWeb.ShareApiController do
       |> put_status(:unauthorized)
       |> json(%{error: "Authentication required. Run: heyiam login"})
     else
+      token = Shares.generate_token()
+      raw_key = "sessions/#{token}/raw.jsonl"
+      log_key = "sessions/#{token}/log.json"
+
       attrs =
         session_params
         |> Map.delete("user_id")
-        |> Map.put("token", Shares.generate_token())
+        |> Map.put("token", token)
         |> Map.put("status", "listed")
+        |> Map.put("raw_storage_key", raw_key)
+        |> Map.put("log_storage_key", log_key)
         |> Map.put_new("recorded_at", DateTime.utc_now())
         |> maybe_put("user_id", user_id)
 
       with {:ok, attrs} <- maybe_link_challenge(attrs, params) do
       case Shares.create_share(attrs) do
         {:ok, share} ->
-          conn
-          |> put_status(:created)
-          |> json(%{
+          upload_urls = build_upload_urls(raw_key, log_key)
+
+          response = %{
             token: share.token,
             url: "/s/#{share.token}",
             sealed: share.sealed || false,
             content_hash: Signature.content_hash(share)
-          })
+          }
+
+          response = if upload_urls, do: Map.put(response, :upload_urls, upload_urls), else: response
+
+          conn
+          |> put_status(:created)
+          |> json(response)
 
         {:error, changeset} ->
           errors =
@@ -91,6 +103,15 @@ defmodule HeyiAmWeb.ShareApiController do
 
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
+
+  defp build_upload_urls(raw_key, log_key) do
+    with {:ok, raw_url} <- HeyiAm.ObjectStorage.presign_put(raw_key),
+         {:ok, log_url} <- HeyiAm.ObjectStorage.presign_put(log_key) do
+      %{raw: raw_url, log: log_url}
+    else
+      _ -> nil
+    end
+  end
 
   defp maybe_link_challenge(attrs, params) do
     case params["challenge_slug"] do

@@ -49,6 +49,12 @@
         </div>
       </div>
 
+      <%!-- Context / Problem Statement --%>
+      <section :if={@session.context && @session.context != ""} class="case-study-context" style="margin-block-end: var(--spacing-5);">
+        <span class="label-mono" style="display: block; margin-block-end: var(--spacing-2);">Context</span>
+        <p style="font-size: 0.9375rem; color: var(--on-surface-variant); line-height: 1.6; margin: 0;">{@session.context}</p>
+      </section>
+
       <%!-- Developer Take --%>
       <section class="dev-take">
         <h3 class="dev-take-heading">

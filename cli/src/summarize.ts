@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { Session } from './analyzer.js';
+import type { Session, TurnEvent } from './analyzer.js';
 
 // ── Banned words (anti-fluff enforcement) ────────────────────
 
@@ -47,6 +47,140 @@ export type StreamEvent =
   | { type: 'done'; data: EnhancementResult }
   | { type: 'error'; data: string };
 
+// ── Signal-weighted sampling ─────────────────────────────────
+
+const SELF_CORRECTION_PATTERN = /\?|actually|wait|no,|wrong/i;
+
+const PASS_THROUGH_THRESHOLD = 50;
+
+// Slot allocation per third: [promptSlots, logSlots]
+const THIRD_SLOTS: [number, number][] = [
+  [4, 10],  // beginning
+  [8, 16],  // middle
+  [8, 14],  // end
+];
+
+export interface SampleResult {
+  turns: TurnEvent[];
+  log: string[];
+  sampled: boolean;
+  totalTurns: number;
+  selectedTurns: number;
+}
+
+export function scoreTurn(turn: TurnEvent, allTurns: TurnEvent[], idx: number): number {
+  let score = 0;
+  if (turn.type === 'prompt') score += 1;
+  if (turn.type === 'error') score += 1;
+  if (SELF_CORRECTION_PATTERN.test(turn.content)) score += 1;
+  if (turn.content.length > 200) score += 1;
+  if (idx > 0 && allTurns[idx - 1].type === 'error') score += 1;
+  return score;
+}
+
+function selectTopN<T>(
+  items: T[],
+  scores: number[],
+  n: number,
+): T[] {
+  if (items.length <= n) return items;
+
+  const indexed = items.map((item, i) => ({ item, score: scores[i], idx: i }));
+  indexed.sort((a, b) => b.score - a.score || a.idx - b.idx);
+  const selected = indexed.slice(0, n);
+  selected.sort((a, b) => a.idx - b.idx);
+  return selected.map((s) => s.item);
+}
+
+export function sampleSession(session: Session): SampleResult {
+  const timeline = session.turnTimeline;
+  const rawLog = session.rawLog;
+  const total = timeline.length;
+
+  if (total <= PASS_THROUGH_THRESHOLD) {
+    return {
+      turns: timeline,
+      log: rawLog,
+      sampled: false,
+      totalTurns: total,
+      selectedTurns: total,
+    };
+  }
+
+  const scores = timeline.map((turn, idx) => scoreTurn(turn, timeline, idx));
+
+  const thirdSize = Math.floor(total / 3);
+  const thirds: [number, number][] = [
+    [0, thirdSize],
+    [thirdSize, 2 * thirdSize],
+    [2 * thirdSize, total],
+  ];
+
+  const selectedTurns: Array<TurnEvent & { _originalIdx: number }> = [];
+
+  for (let t = 0; t < 3; t++) {
+    const [start, end] = thirds[t];
+    const [promptSlots, _logSlots] = THIRD_SLOTS[t];
+
+    const thirdTurns = timeline.slice(start, end);
+    const thirdScores = scores.slice(start, end);
+
+    const chosen = selectTopN(thirdTurns, thirdScores, promptSlots);
+    const chosenWithIdx = chosen.map((turn) => {
+      const origIdx = start + thirdTurns.indexOf(turn);
+      return { ...turn, _originalIdx: origIdx };
+    });
+    selectedTurns.push(...chosenWithIdx);
+  }
+
+  // Re-sort by original position (chronological)
+  selectedTurns.sort((a, b) => a._originalIdx - b._originalIdx);
+
+  const annotatedTurns: TurnEvent[] = selectedTurns.map((t) => ({
+    timestamp: t.timestamp,
+    type: t.type,
+    content: `[T${t._originalIdx + 1}/${total}] ${t.content}`,
+  }));
+
+  // Sample raw log with same three-thirds approach using log slots
+  const logTotal = rawLog.length;
+  const logThirdSize = Math.floor(logTotal / 3);
+  const logThirds: [number, number][] = [
+    [0, logThirdSize],
+    [logThirdSize, 2 * logThirdSize],
+    [2 * logThirdSize, logTotal],
+  ];
+
+  const selectedLogLines: Array<{ line: string; origIdx: number }> = [];
+
+  for (let t = 0; t < 3; t++) {
+    const [start, end] = logThirds[t];
+    const [_promptSlots, logSlots] = THIRD_SLOTS[t];
+    const chunk = rawLog.slice(start, end);
+    // For raw log, score by line length as a rough signal proxy
+    const chunkScores = chunk.map((line) => line.length);
+    const chosen = selectTopN(chunk, chunkScores, logSlots);
+    chosen.forEach((line) => {
+      const origIdx = start + chunk.indexOf(line);
+      selectedLogLines.push({ line, origIdx });
+    });
+  }
+
+  selectedLogLines.sort((a, b) => a.origIdx - b.origIdx);
+
+  const annotatedLog = selectedLogLines.map(
+    ({ line, origIdx }) => `[T${origIdx + 1}/${logTotal}] ${line}`,
+  );
+
+  return {
+    turns: annotatedTurns,
+    log: annotatedLog,
+    sampled: true,
+    totalTurns: total,
+    selectedTurns: annotatedTurns.length,
+  };
+}
+
 // ── Prompt construction ──────────────────────────────────────
 
 function buildSystemPrompt(): string {
@@ -79,9 +213,17 @@ Respond in JSON matching this exact schema:
 function buildUserPrompt(session: Session): string {
   const parts: string[] = [];
 
+  const sampling = sampleSession(session);
+
   parts.push(`Session: ${session.title}`);
   parts.push(`Project: ${session.projectName}`);
   parts.push(`Duration: ${session.durationMinutes} min, ${session.turns} turns, ${session.linesOfCode} LOC changed`);
+
+  if (sampling.sampled) {
+    parts.push(
+      `[SAMPLED: ${sampling.selectedTurns} of ${sampling.totalTurns} turns shown, distributed beginning/middle/end, high-signal moments prioritized. T{n}/${sampling.totalTurns} = position in full session.]`,
+    );
+  }
 
   if (session.skills.length > 0) {
     parts.push(`Detected skills: ${session.skills.join(', ')}`);
@@ -105,11 +247,9 @@ function buildUserPrompt(session: Session): string {
     }
   }
 
-  if (session.turnTimeline.length > 0) {
-    // Include developer prompts — these are the decisions and corrections
-    const devPrompts = session.turnTimeline
-      .filter((t) => t.type === 'prompt')
-      .slice(0, 15);
+  if (sampling.turns.length > 0) {
+    // Include developer prompts from sampled turns — these are the decisions and corrections
+    const devPrompts = sampling.turns.filter((t) => t.type === 'prompt');
     if (devPrompts.length > 0) {
       parts.push('Developer prompts (decisions & corrections):');
       for (const p of devPrompts) {
@@ -118,9 +258,8 @@ function buildUserPrompt(session: Session): string {
     }
   }
 
-  if (session.rawLog.length > 0) {
-    const excerpt = session.rawLog.slice(0, 30).join('\n');
-    parts.push(`Raw log excerpt:\n${excerpt}`);
+  if (sampling.log.length > 0) {
+    parts.push(`Raw log excerpt:\n${sampling.log.join('\n')}`);
   }
 
   return parts.join('\n');
@@ -300,3 +439,5 @@ function enforceWordLimit(str: string, maxWords: number): string {
 // ── Exports for testing ──────────────────────────────────────
 
 export { buildSystemPrompt as _buildSystemPrompt, buildUserPrompt as _buildUserPrompt };
+
+// scoreTurn and sampleSession are already exported above

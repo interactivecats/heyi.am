@@ -1,14 +1,23 @@
 import Config
 
 # Configure your database
-config :heyi_am, HeyiAm.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "heyi_am_dev",
-  stacktrace: true,
-  show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+# DATABASE_URL overrides defaults when running in docker-compose
+if database_url = System.get_env("DATABASE_URL") do
+  config :heyi_am, HeyiAm.Repo,
+    url: database_url,
+    stacktrace: true,
+    show_sensitive_data_on_connection_error: true,
+    pool_size: 10
+else
+  config :heyi_am, HeyiAm.Repo,
+    username: "postgres",
+    password: "postgres",
+    hostname: "localhost",
+    database: "heyi_am_dev",
+    stacktrace: true,
+    show_sensitive_data_on_connection_error: true,
+    pool_size: 10
+end
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
@@ -90,3 +99,17 @@ config :phoenix_live_view,
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+# Object Storage (SeaweedFS) — env vars override defaults for docker-compose
+config :ex_aws,
+  access_key_id: System.get_env("OBJECT_STORAGE_ACCESS_KEY_ID", "heyi_admin"),
+  secret_access_key: System.get_env("OBJECT_STORAGE_SECRET_ACCESS_KEY", "heyi_secret_key"),
+  s3: [
+    scheme: System.get_env("OBJECT_STORAGE_SCHEME", "http://"),
+    host: System.get_env("OBJECT_STORAGE_HOST", "localhost"),
+    port: String.to_integer(System.get_env("OBJECT_STORAGE_PORT", "8333")),
+    virtual_hosted_style_bucket: false
+  ]
+
+config :heyi_am, HeyiAm.ObjectStorage,
+  bucket: System.get_env("OBJECT_STORAGE_BUCKET", "heyi-am-sessions")

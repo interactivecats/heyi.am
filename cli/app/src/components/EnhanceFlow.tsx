@@ -384,10 +384,12 @@ function DonePanel({
   session,
   items,
   questions,
+  onEditPublish,
 }: {
   session: Session;
   items: StreamItem[];
   questions: Question[];
+  onEditPublish: () => void;
 }) {
   const answeredQuestions = questions.filter(
     (q) => !q.skipped && q.answer.trim().length > 0,
@@ -513,12 +515,12 @@ function DonePanel({
           marginTop: 'var(--spacing-8)',
         }}
       >
-        <Link
-          to={`/session/${session.id}/edit`}
+        <button
           className="btn btn-primary btn--lg"
+          onClick={onEditPublish}
         >
           Edit &amp; Publish
-        </Link>
+        </button>
         <Link
           to={`/session/${session.id}`}
           className="btn btn-secondary"
@@ -556,6 +558,7 @@ export function EnhanceFlow({ sessions }: EnhanceFlowProps = {}) {
   const [visibleFeedCount, setVisibleFeedCount] = useState(0);
   const [streamItems, setStreamItems] = useState<StreamItem[]>([]);
   const [visibleStreamCount, setVisibleStreamCount] = useState(0);
+  const [enhanceResult, setEnhanceResult] = useState<EnhancementResult | null>(null);
 
   const enhanceCalledRef = useRef(false);
 
@@ -577,6 +580,7 @@ export function EnhanceFlow({ sessions }: EnhanceFlowProps = {}) {
 
     enhanceSession(session.projectName, session.id)
       .then((result) => {
+        setEnhanceResult(result);
         setQuestions(resultToQuestions(result));
         setStreamItems(resultToStreamItems(result));
         setVisibleFeedCount(feedLines.length);
@@ -707,6 +711,28 @@ export function EnhanceFlow({ sessions }: EnhanceFlowProps = {}) {
               session={session}
               items={streamItems}
               questions={questions}
+              onEditPublish={() => {
+                if (enhanceResult && session) {
+                  const answeredQaPairs = questions
+                    .filter((q) => !q.skipped && q.answer.trim())
+                    .map((q) => ({ question: q.text, answer: q.answer }));
+
+                  ctx.updateSession(session.id, {
+                    title: enhanceResult.title,
+                    developerTake: enhanceResult.developerTake,
+                    context: enhanceResult.context,
+                    skills: enhanceResult.skills,
+                    executionPath: enhanceResult.executionSteps.map((s) => ({
+                      stepNumber: s.stepNumber,
+                      title: s.title,
+                      description: s.body,
+                    })),
+                    qaPairs: answeredQaPairs,
+                    status: 'enhanced',
+                  });
+                }
+                navigate(`/session/${id}/edit`);
+              }}
             />
           )}
         </div>

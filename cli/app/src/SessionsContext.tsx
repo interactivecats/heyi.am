@@ -15,6 +15,8 @@ interface SessionsState {
   error: string | null;
   /** Load sessions for a specific project */
   selectProject: (projectDirName: string) => void;
+  /** Merge partial updates into a session (e.g. enhancement results) */
+  updateSession: (sessionId: string, updates: Partial<Session>) => void;
 }
 
 const SessionsContext = createContext<SessionsState>({
@@ -25,6 +27,7 @@ const SessionsContext = createContext<SessionsState>({
   loadingSessions: false,
   error: null,
   selectProject: () => {},
+  updateSession: () => {},
 });
 
 export function useSessionsContext() {
@@ -98,6 +101,12 @@ export function SessionsProvider({ children }: { children: ReactNode }) {
     setActiveProject(projectDirName);
   }, []);
 
+  const updateSession = useCallback((sessionId: string, updates: Partial<Session>) => {
+    setSessions((prev) =>
+      prev.map((s) => (s.id === sessionId ? { ...s, ...updates } : s)),
+    );
+  }, []);
+
   return (
     <SessionsContext.Provider value={{
       projects,
@@ -107,6 +116,7 @@ export function SessionsProvider({ children }: { children: ReactNode }) {
       loadingSessions,
       error,
       selectProject,
+      updateSession,
     }}>
       {children}
     </SessionsContext.Provider>

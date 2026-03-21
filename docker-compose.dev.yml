@@ -15,49 +15,50 @@ services:
       timeout: 5s
       retries: 5
 
-  minio:
-    image: minio/minio
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: heyi_admin
-      MINIO_ROOT_PASSWORD: heyi_secret_key
+  seaweedfs:
+    image: chrislusf/seaweedfs
+    command: "server -s3 -s3.config=/etc/seaweedfs/s3.json -dir=/data"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "8333:8333"   # S3 API
+      - "9333:9333"   # Master
     volumes:
-      - heyi_minio:/data
+      - heyi_seaweed:/data
+      - ./dev/seaweedfs-s3.json:/etc/seaweedfs/s3.json:ro
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-sf", "http://localhost:9333/cluster/status"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  minio-setup:
-    image: minio/minio
+  seaweed-setup:
+    image: amazon/aws-cli
     depends_on:
-      minio:
+      seaweedfs:
         condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: heyi_admin
+      AWS_SECRET_ACCESS_KEY: heyi_secret_key
     entrypoint: /bin/sh
     command: >
       -c "
-      mc alias set local http://minio:9000 heyi_admin heyi_secret_key &&
-      mc mb --ignore-existing local/heyi-public &&
-      mc anonymous set download local/heyi-public &&
+      aws --endpoint-url http://seaweedfs:8333 s3 mb s3://heyi-am-sessions --region us-east-1 2>/dev/null || true &&
       echo 'Bucket ready'
       "
 
   phoenix:
     image: hexpm/elixir:1.18.2-erlang-27.2.4-alpine-3.21.3
     working_dir: /app
+    stdin_open: true
+    tty: true
     command: >
       sh -c "
-      apk add --no-cache git build-base &&
+      apk add --no-cache git build-base inotify-tools &&
       mix local.hex --force &&
       mix local.rebar --force &&
       mix deps.get &&
       mix ecto.create &&
       mix ecto.migrate &&
-      mix phx.server
+      iex -S mix phx.server
       "
     environment:
       MIX_ENV: dev
@@ -65,12 +66,12 @@ services:
       PHX_HOST: localhost
       PHX_IP: "0.0.0.0"
       SECRET_KEY_BASE: dev-only-not-for-production-at-least-64-chars-long-xxxxxxxxxxxxxxxxxx
-      # S3/MinIO — internal endpoint for uploads, external URL for public access
-      S3_ENDPOINT: http://minio:9000
-      AWS_ACCESS_KEY_ID: heyi_admin
-      AWS_SECRET_ACCESS_KEY: heyi_secret_key
-      S3_BUCKET: heyi-public
-      STORAGE_PUBLIC_URL: http://localhost:9000/heyi-public
+      OBJECT_STORAGE_HOST: seaweedfs
+      OBJECT_STORAGE_PORT: "8333"
+      OBJECT_STORAGE_SCHEME: "http://"
+      OBJECT_STORAGE_ACCESS_KEY_ID: heyi_admin
+      OBJECT_STORAGE_SECRET_ACCESS_KEY: heyi_secret_key
+      OBJECT_STORAGE_BUCKET: heyi-am-sessions
     ports:
       - "4000:4000"
     volumes:
@@ -80,11 +81,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      minio-setup:
+      seaweed-setup:
         condition: service_completed_successfully
 
 volumes:
   heyi_pgdata:
-  heyi_minio:
+  heyi_seaweed:
   phoenix_build:
   phoenix_deps:

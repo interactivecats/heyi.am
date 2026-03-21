@@ -37,6 +37,10 @@ config :ueberauth, Ueberauth.Strategy.Github.OAuth,
 # Use mock LLM provider in tests
 config :heyi_am, HeyiAm.LLM, provider: "mock", monthly_quota: 10
 
+# Use mock object storage adapter in tests — never touches a real S3 endpoint
+config :heyi_am, HeyiAm.ObjectStorage,
+  adapter: HeyiAm.ObjectStorage.Mock
+
 # Disable rate limiting in tests (tested explicitly in rate_limit_test.exs)
 config :heyi_am, rate_limiting_enabled: false
 

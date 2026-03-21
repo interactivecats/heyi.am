@@ -7,9 +7,12 @@ import {
   parseEnhancementResult,
   summarizeSession,
   summarizeSessionStream,
+  scoreTurn,
+  sampleSession,
   _buildSystemPrompt,
   _buildUserPrompt,
 } from './summarize.js';
+import type { TurnEvent } from './analyzer.js';
 
 // ── Fixtures ─────────────────────────────────────────────────
 
@@ -294,6 +297,218 @@ describe('summarizeSession', () => {
 
     const call = (mockClient.messages.create as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(call.model).toBe('claude-haiku-4-5-20251001');
+  });
+});
+
+// ── Sampling tests ────────────────────────────────────────────
+
+function makeTurn(
+  type: TurnEvent['type'],
+  content: string,
+  timestamp = '00:00:00',
+): TurnEvent {
+  return { type, content, timestamp };
+}
+
+function makeTimeline(n: number): TurnEvent[] {
+  return Array.from({ length: n }, (_, i) => {
+    const type: TurnEvent['type'] = i % 4 === 0 ? 'prompt' : i % 4 === 1 ? 'tool' : i % 4 === 2 ? 'response' : 'error';
+    return makeTurn(type, `turn ${i} content`, `00:${String(i).padStart(2, '0')}:00`);
+  });
+}
+
+describe('scoreTurn', () => {
+  it('scores prompt type +1', () => {
+    const t = makeTurn('prompt', 'do something');
+    expect(scoreTurn(t, [t], 0)).toBeGreaterThanOrEqual(1);
+  });
+
+  it('scores error type +1', () => {
+    const t = makeTurn('error', 'compilation failed');
+    expect(scoreTurn(t, [t], 0)).toBeGreaterThanOrEqual(1);
+  });
+
+  it('scores self-correction keywords +1', () => {
+    const turns = [
+      makeTurn('response', 'ok done'),
+      makeTurn('prompt', 'wait, that is wrong'),
+    ];
+    const score = scoreTurn(turns[1], turns, 1);
+    // prompt (+1) + self-correction pattern (+1)
+    expect(score).toBeGreaterThanOrEqual(2);
+  });
+
+  it('scores content length > 200 +1', () => {
+    const longContent = 'x'.repeat(201);
+    const t = makeTurn('response', longContent);
+    expect(scoreTurn(t, [t], 0)).toBeGreaterThanOrEqual(1);
+  });
+
+  it('scores recovery after error +1', () => {
+    const turns = [
+      makeTurn('error', 'crash'),
+      makeTurn('prompt', 'fix it'),
+    ];
+    const score = scoreTurn(turns[1], turns, 1);
+    // prompt (+1) + previous was error (+1)
+    expect(score).toBeGreaterThanOrEqual(2);
+  });
+
+  it('max possible score is 5', () => {
+    const prev = makeTurn('error', 'crash');
+    const turn = makeTurn('prompt', `actually wait no, that is wrong ${'x'.repeat(201)}`);
+    const score = scoreTurn(turn, [prev, turn], 1);
+    expect(score).toBeLessThanOrEqual(5);
+  });
+});
+
+describe('sampleSession', () => {
+  it('passes through unchanged when N <= 50', () => {
+    const session = makeSession({
+      turns: 30,
+      turnTimeline: makeTimeline(30),
+      rawLog: Array.from({ length: 30 }, (_, i) => `line ${i}`),
+    });
+    const result = sampleSession(session);
+    expect(result.sampled).toBe(false);
+    expect(result.totalTurns).toBe(30);
+    expect(result.turns).toHaveLength(30);
+    expect(result.log).toHaveLength(30);
+  });
+
+  it('passes through N=50 (boundary)', () => {
+    const session = makeSession({
+      turns: 50,
+      turnTimeline: makeTimeline(50),
+      rawLog: Array.from({ length: 50 }, (_, i) => `line ${i}`),
+    });
+    const result = sampleSession(session);
+    expect(result.sampled).toBe(false);
+  });
+
+  it('samples when N=500, sampled=true', () => {
+    const session = makeSession({
+      turns: 500,
+      turnTimeline: makeTimeline(500),
+      rawLog: Array.from({ length: 500 }, (_, i) => `line ${i}`),
+    });
+    const result = sampleSession(session);
+    expect(result.sampled).toBe(true);
+    expect(result.totalTurns).toBe(500);
+  });
+
+  it('selected turns cover all three thirds for N=500', () => {
+    const timeline = makeTimeline(500);
+    const session = makeSession({ turns: 500, turnTimeline: timeline, rawLog: [] });
+    const result = sampleSession(session);
+
+    // Each turn has [T{n}/500] annotation — extract position numbers
+    const positions = result.turns.map((t) => {
+      const m = t.content.match(/\[T(\d+)\/500\]/);
+      return m ? parseInt(m[1], 10) : null;
+    }).filter((p): p is number => p !== null);
+
+    const third = Math.floor(500 / 3);
+    const fromBeginning = positions.filter((p) => p <= third);
+    const fromMiddle = positions.filter((p) => p > third && p <= 2 * third);
+    const fromEnd = positions.filter((p) => p > 2 * third);
+
+    expect(fromBeginning.length).toBeGreaterThan(0);
+    expect(fromMiddle.length).toBeGreaterThan(0);
+    expect(fromEnd.length).toBeGreaterThan(0);
+  });
+
+  it('high-signal turns beat low-signal within the same third', () => {
+    // Build a 200-turn session where turns 60-80 contain self-correction keywords
+    const timeline: TurnEvent[] = Array.from({ length: 200 }, (_, i) => {
+      if (i >= 60 && i < 70) {
+        return makeTurn('prompt', `wait, actually this is wrong and I need to reconsider ${'x'.repeat(201)}`);
+      }
+      return makeTurn('response', `turn ${i}`);
+    });
+
+    const session = makeSession({ turns: 200, turnTimeline: timeline, rawLog: [] });
+    const result = sampleSession(session);
+
+    // The high-signal turns are in the middle third (~67-133). At least some should be selected.
+    const positions = result.turns.map((t) => {
+      const m = t.content.match(/\[T(\d+)\/200\]/);
+      return m ? parseInt(m[1], 10) : null;
+    }).filter((p): p is number => p !== null);
+
+    // Turns 61-70 (1-indexed) should appear since they have max signal
+    const highSignalSelected = positions.filter((p) => p >= 61 && p <= 70);
+    expect(highSignalSelected.length).toBeGreaterThan(0);
+  });
+
+  it('annotations use correct T{n}/{total} format', () => {
+    const session = makeSession({
+      turns: 100,
+      turnTimeline: makeTimeline(100),
+      rawLog: Array.from({ length: 100 }, (_, i) => `line ${i}`),
+    });
+    const result = sampleSession(session);
+    expect(result.sampled).toBe(true);
+
+    // Every annotated turn should match the pattern
+    for (const turn of result.turns) {
+      expect(turn.content).toMatch(/\[T\d+\/100\]/);
+    }
+
+    for (const line of result.log) {
+      expect(line).toMatch(/\[T\d+\/100\]/);
+    }
+  });
+
+  it('result turns are in chronological order', () => {
+    const session = makeSession({
+      turns: 200,
+      turnTimeline: makeTimeline(200),
+      rawLog: Array.from({ length: 200 }, (_, i) => `line ${i}`),
+    });
+    const result = sampleSession(session);
+
+    const positions = result.turns.map((t) => {
+      const m = t.content.match(/\[T(\d+)\/200\]/);
+      return m ? parseInt(m[1], 10) : 0;
+    });
+
+    for (let i = 1; i < positions.length; i++) {
+      expect(positions[i]).toBeGreaterThanOrEqual(positions[i - 1]);
+    }
+  });
+});
+
+describe('buildUserPrompt with sampling', () => {
+  it('for a 500-turn session the prompt contains the SAMPLED header', () => {
+    const session = makeSession({
+      turns: 500,
+      turnTimeline: makeTimeline(500),
+      rawLog: Array.from({ length: 500 }, (_, i) => `log line ${i}`),
+    });
+    const prompt = _buildUserPrompt(session);
+    expect(prompt).toContain('[SAMPLED:');
+    expect(prompt).toContain('500');
+  });
+
+  it('for a 500-turn session the prompt is under 32000 characters', () => {
+    const session = makeSession({
+      turns: 500,
+      turnTimeline: makeTimeline(500),
+      rawLog: Array.from({ length: 500 }, (_, i) => `log line ${i} with some content to simulate real log output`),
+    });
+    const prompt = _buildUserPrompt(session);
+    expect(prompt.length).toBeLessThan(32000);
+  });
+
+  it('for a short session the prompt does not contain SAMPLED header', () => {
+    const session = makeSession({
+      turns: 20,
+      turnTimeline: makeTimeline(20),
+      rawLog: Array.from({ length: 20 }, (_, i) => `line ${i}`),
+    });
+    const prompt = _buildUserPrompt(session);
+    expect(prompt).not.toContain('[SAMPLED:');
   });
 });
 

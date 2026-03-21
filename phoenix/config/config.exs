@@ -81,6 +81,14 @@ config :opentelemetry,
   span_processor: :batch,
   traces_exporter: :none
 
+# ExAws — use Jason for JSON decoding (e.g. STS responses)
+config :ex_aws, json_codec: Jason
+
+# Object storage — defaults used in dev; overridden per environment below
+config :heyi_am, HeyiAm.ObjectStorage,
+  bucket: "heyi-am-sessions",
+  presign_expires_in: 900
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 

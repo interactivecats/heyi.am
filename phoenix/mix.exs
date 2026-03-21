@@ -67,7 +67,10 @@ defmodule HeyiAm.MixProject do
       {:opentelemetry_exporter, "~> 1.7"},
       {:opentelemetry_phoenix, "~> 2.0"},
       {:opentelemetry_ecto, "~> 1.2"},
-      {:opentelemetry_bandit, "~> 0.2"}
+      {:opentelemetry_bandit, "~> 0.2"},
+      {:ex_aws, "~> 2.5"},
+      {:ex_aws_s3, "~> 2.5"},
+      {:hackney, "~> 1.20"}
     ]
   end
 

@@ -9,6 +9,7 @@ defmodule HeyiAm.Shares.Share do
     field :token, :string
     field :title, :string
     field :dev_take, :string
+    field :context, :string
     field :duration_minutes, :integer
     field :turns, :integer
     field :files_changed, :integer
@@ -31,6 +32,8 @@ defmodule HeyiAm.Shares.Share do
     field :signature, :string
     field :public_key, :string
     field :status, :string, default: "listed"
+    field :raw_storage_key, :string
+    field :log_storage_key, :string
 
     belongs_to :user, HeyiAm.Accounts.User
     belongs_to :challenge, HeyiAm.Challenges.Challenge
@@ -50,16 +53,18 @@ defmodule HeyiAm.Shares.Share do
   def changeset(share, attrs) do
     share
     |> cast(attrs, [
-      :token, :title, :dev_take, :duration_minutes, :turns, :files_changed,
+      :token, :title, :dev_take, :context, :duration_minutes, :turns, :files_changed,
       :loc_changed, :recorded_at, :verified_at, :sealed, :template, :language,
       :tools, :skills, :beats, :qa_pairs, :highlights, :tool_breakdown,
       :top_files, :transcript_excerpt, :narrative, :project_name, :user_id,
       :signature, :public_key,
-      :challenge_id, :status
+      :challenge_id, :status,
+      :raw_storage_key, :log_storage_key
     ])
     |> validate_required([:token, :title])
     |> validate_length(:title, max: 200)
     |> validate_length(:dev_take, max: 2000)
+    |> validate_length(:context, max: 500)
     |> validate_length(:narrative, max: 10000)
     |> validate_length(:project_name, max: 200)
     |> validate_skills_length()

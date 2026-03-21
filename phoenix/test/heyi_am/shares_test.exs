@@ -25,6 +25,23 @@ defmodule HeyiAm.SharesTest do
       assert %{title: ["can't be blank"]} = errors_on(changeset)
     end
 
+    test "accepts context within 500 chars" do
+      changeset = Share.changeset(%Share{}, %{token: "abc", title: "Test", context: String.duplicate("x", 500)})
+      assert changeset.valid?
+    end
+
+    test "rejects context over 500 chars" do
+      changeset = Share.changeset(%Share{}, %{token: "abc", title: "Test", context: String.duplicate("x", 501)})
+      refute changeset.valid?
+      assert %{context: ["should be at most 500 character(s)"]} = errors_on(changeset)
+    end
+
+    test "allows nil context" do
+      changeset = Share.changeset(%Share{}, %{token: "abc", title: "Test"})
+      assert changeset.valid?
+      assert get_change(changeset, :context) == nil
+    end
+
     test "validates template inclusion" do
       changeset = Share.changeset(%Share{}, %{token: "abc", title: "Test", template: "invalid"})
       refute changeset.valid?
@@ -53,6 +70,12 @@ defmodule HeyiAm.SharesTest do
       assert share.title == attrs.title
       assert share.dev_take == "Some take"
       assert share.language == "Elixir"
+    end
+
+    test "persists context field" do
+      attrs = valid_share_attributes(%{context: "Needed a fast search over 1M rows without a full table scan."})
+      {:ok, share} = Shares.create_share(attrs)
+      assert share.context == "Needed a fast search over 1M rows without a full table scan."
     end
 
     test "returns error with invalid attrs" do

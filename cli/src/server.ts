@@ -1,6 +1,7 @@
 import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import path from 'node:path';
+import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { Server } from 'node:http';
 import { listSessions, parseSession, type SessionMeta } from './parsers/index.js';
@@ -216,7 +217,7 @@ export function createApp(sessionsBasePath?: string) {
 
   app.post('/api/publish', async (req: Request, res: Response) => {
     try {
-      const { session } = req.body;
+      const { session, sessionId, projectDir } = req.body;
       if (!session) {
         console.log('[publish] ERROR: Missing session data in request body');
         res.status(400).json({ error: 'Missing session data' });
@@ -249,6 +250,14 @@ export function createApp(sessionsBasePath?: string) {
       }
 
       console.log(`[publish] SUCCESS: ${data.url}`);
+
+      // Best-effort upload of raw data to object storage
+      if (data.upload_urls) {
+        uploadRawData(data.upload_urls, sessionId, projectDir, session.raw_log, sessionsBasePath).catch((err) => {
+          console.error('[publish] Raw data upload failed (non-fatal):', err);
+        });
+      }
+
       res.json(data);
     } catch (err) {
       console.error('[publish] EXCEPTION:', err);
@@ -347,6 +356,52 @@ export function createApp(sessionsBasePath?: string) {
   });
 
   return app;
+}
+
+async function uploadRawData(
+  uploadUrls: { raw?: string; log?: string },
+  sessionId?: string,
+  projectDir?: string,
+  rawLog?: string[],
+  basePath?: string,
+): Promise<void> {
+  // Upload rawLog as JSON
+  if (uploadUrls.log && rawLog && rawLog.length > 0) {
+    const logRes = await fetch(uploadUrls.log, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rawLog),
+    });
+    if (logRes.ok) {
+      console.log('[publish] Uploaded raw log to object storage');
+    } else {
+      console.error(`[publish] Log upload failed: ${logRes.status}`);
+    }
+  }
+
+  // Upload raw JSONL file from disk
+  if (uploadUrls.raw && sessionId && projectDir) {
+    try {
+      const projects = await getProjects(basePath);
+      const project = projects.find((p) => p.dirName === projectDir);
+      const meta = project?.sessions.find((s) => s.sessionId === sessionId);
+      if (meta?.path) {
+        const fileData = await fs.promises.readFile(meta.path);
+        const rawRes = await fetch(uploadUrls.raw, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/octet-stream' },
+          body: fileData,
+        });
+        if (rawRes.ok) {
+          console.log(`[publish] Uploaded raw JSONL (${(fileData.length / 1024).toFixed(0)} KB) to object storage`);
+        } else {
+          console.error(`[publish] JSONL upload failed: ${rawRes.status}`);
+        }
+      }
+    } catch (err) {
+      console.error('[publish] Failed to read/upload JSONL:', err);
+    }
+  }
 }
 
 export function startServer(port: number = 17845): Promise<Server> {

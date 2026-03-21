@@ -7,7 +7,7 @@ defmodule HeyiAm.LLM do
 
   import Ecto.Query
   alias HeyiAm.Repo
-  alias HeyiAm.LLM.{Usage, Prompt, Parser, Provider}
+  alias HeyiAm.LLM.{Usage, Prompt, Parser, Provider, Sampler}
 
   @required_session_keys ~w(title)
 
@@ -146,11 +146,9 @@ defmodule HeyiAm.LLM do
 
   defp truncate_session(session) do
     session
+    |> Sampler.sample_session()
     |> Map.update("rawLog", [], fn log ->
-      if is_list(log), do: log |> Enum.take(30) |> Enum.map(&truncate_string(&1, 1500)), else: []
-    end)
-    |> Map.update("turnTimeline", [], fn tl ->
-      if is_list(tl), do: Enum.take(tl, 15), else: []
+      if is_list(log), do: Enum.map(log, &truncate_string(&1, 1500)), else: []
     end)
     |> Map.update("filesChanged", [], fn files ->
       if is_list(files) do

@@ -33,6 +33,11 @@ export interface ChildSessionSummary {
   linesOfCode?: number;
 }
 
+export interface QaPair {
+  question: string;
+  answer: string;
+}
+
 export interface Session {
   id: string;
   title: string;
@@ -57,6 +62,7 @@ export interface Session {
   filesChanged?: FileChange[];
   turnTimeline?: TurnEvent[];
   toolCalls?: number;
+  qaPairs?: QaPair[];
   childSessions?: Session[];
   parentSessionId?: string | null;
   agentRole?: string;

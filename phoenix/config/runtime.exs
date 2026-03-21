@@ -54,6 +54,20 @@ config :heyi_am, HeyiAmWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
 if config_env() == :prod do
+  # Object Storage (Garage / S3-compatible) — credentials injected at runtime
+  config :ex_aws,
+    access_key_id: System.get_env("OBJECT_STORAGE_ACCESS_KEY_ID"),
+    secret_access_key: System.get_env("OBJECT_STORAGE_SECRET_ACCESS_KEY"),
+    s3: [
+      scheme: System.get_env("OBJECT_STORAGE_SCHEME", "https://"),
+      host: System.get_env("OBJECT_STORAGE_HOST"),
+      port: String.to_integer(System.get_env("OBJECT_STORAGE_PORT", "443")),
+      virtual_hosted_style_bucket: false
+    ]
+
+  config :heyi_am, HeyiAm.ObjectStorage,
+    bucket: System.get_env("OBJECT_STORAGE_BUCKET", "heyi-am-sessions")
+
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
