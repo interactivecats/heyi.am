@@ -225,6 +225,7 @@ export function SessionList({
         <p className="app-sidebar__label">Stats</p>
         <div className="sidebar-stats">
           <div>Sessions: <strong>{sessions.length}</strong></div>
+          <div>Enhanced: <strong>{sessions.filter((s) => s.status === 'enhanced').length}</strong></div>
           <div>Published: <strong>{sessions.filter((s) => s.status === 'published').length}</strong></div>
         </div>
       </div>

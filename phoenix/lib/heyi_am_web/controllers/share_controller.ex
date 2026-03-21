@@ -83,7 +83,17 @@ defmodule HeyiAmWeb.ShareController do
       %{role: :dev, text: "No. Tear it all out."}
     ],
     narrative:
-      "This session began with a critical review of the existing authentication system. The developer identified three overlapping token mechanisms that had accumulated over months of feature development — session tokens in the database, API tokens for CLI access, and machine tokens for device authorization.\n\nWhen the AI suggested an incremental refactoring approach, the developer pushed back firmly: the layered token systems represented a security liability, not mere technical debt. The decision was made to move the existing Phoenix application to a backup directory and scaffold fresh using phx.gen.auth.\n\nThe migration required careful handling of the device authorization flow — the bridge between CLI and web that enables session publishing. Four pivots occurred during this phase as edge cases in token refresh and session management surfaced. The final result: a clean, testable authentication system with 309 tests passing on first run."
+      "This session began with a critical review of the existing authentication system. The developer identified three overlapping token mechanisms that had accumulated over months of feature development — session tokens in the database, API tokens for CLI access, and machine tokens for device authorization.\n\nWhen the AI suggested an incremental refactoring approach, the developer pushed back firmly: the layered token systems represented a security liability, not mere technical debt. The decision was made to move the existing Phoenix application to a backup directory and scaffold fresh using phx.gen.auth.\n\nThe migration required careful handling of the device authorization flow — the bridge between CLI and web that enables session publishing. Four pivots occurred during this phase as edge cases in token refresh and session management surfaced. The final result: a clean, testable authentication system with 309 tests passing on first run.",
+    turn_timeline: [
+      %{turn: 1, prompt: "Review existing auth flow", tools: ["Read", "Grep"]},
+      %{turn: 2, prompt: "AI suggests incremental patch", tools: ["Read"]},
+      %{turn: 3, prompt: "Override: tear it all out", tools: ["Bash"]},
+      %{turn: 4, prompt: "Scaffold fresh with phx.gen.auth", tools: ["Bash", "Write"]},
+      %{turn: 5, prompt: "Migrate user schema", tools: ["Edit", "Read"]},
+      %{turn: 6, prompt: "Rebuild OAuth flow", tools: ["Edit", "Write", "Read"]},
+      %{turn: 7, prompt: "Wire device authorization", tools: ["Edit", "Read", "Bash"]},
+      %{turn: 8, prompt: "Run full test suite — 309 passing", tools: ["Bash"]}
+    ]
   }
 
   @mock_transcript [
@@ -200,6 +210,8 @@ defmodule HeyiAmWeb.ShareController do
     verification = %{
       token: token,
       hash: content_hash,
+      signature: session[:signature],
+      public_key: session[:public_key],
       signature_status: signature_status,
       recorded_at: session.recorded_at,
       verified_at: session[:verified_at]

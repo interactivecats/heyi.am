@@ -4,6 +4,7 @@ import type { Session } from '../types';
 import { AppShell } from './AppShell';
 import { SessionEditor } from './SessionEditor';
 import { useSessionsContext } from '../SessionsContext';
+import { useAuth } from '../AuthContext';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -259,8 +260,10 @@ function SuccessAnonymous({ session }: { session: Session }) {
 
 export function SessionEditorPage({
   sessions,
-  isAuthenticated = false,
+  isAuthenticated: isAuthenticatedProp,
 }: SessionEditorPageProps) {
+  const auth = useAuth();
+  const isAuthenticated = isAuthenticatedProp ?? auth.authenticated;
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const ctx = useSessionsContext();
@@ -358,7 +361,21 @@ export function SessionEditorPage({
   }
 
   return (
-    <AppShell title="Editor" onBack={handleBack}>
+    <AppShell
+      title="Editor"
+      onBack={handleBack}
+      headerActions={
+        phase === 'editing' ? (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handlePublish}
+          >
+            Publish &rarr;
+          </button>
+        ) : undefined
+      }
+    >
       {phase === 'editing' && (
         <SessionEditor session={session} onPublish={handlePublish} />
       )}

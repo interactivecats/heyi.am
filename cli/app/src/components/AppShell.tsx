@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useAuth } from '../AuthContext';
 
 interface AppShellProps {
   /** Page title shown in header next to logo */
@@ -11,6 +12,8 @@ interface AppShellProps {
   bottomBar?: ReactNode;
   /** Back button handler — shows back arrow when provided */
   onBack?: () => void;
+  /** Actions rendered in the header right area (before auth/settings) */
+  headerActions?: ReactNode;
   /** Main content */
   children: ReactNode;
 }
@@ -25,8 +28,11 @@ export function AppShell({
   sidebarContent,
   bottomBar,
   onBack,
+  headerActions,
   children,
 }: AppShellProps) {
+  const auth = useAuth();
+
   return (
     <div className="app-shell">
       <header className="app-header" role="banner">
@@ -60,10 +66,11 @@ export function AppShell({
           )}
         </div>
         <div className="app-header__right">
+          {headerActions}
           <div className="app-header__auth-indicator">
             <span
-              className="app-header__auth-dot"
-              aria-label="Authentication status"
+              className={`app-header__auth-dot${auth.authenticated ? ' app-header__auth-dot--connected' : ''}`}
+              aria-label={auth.authenticated ? 'Authenticated' : 'Not authenticated'}
             />
           </div>
           <button

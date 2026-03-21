@@ -458,18 +458,20 @@ function DonePanel({
       })}
 
       {answeredQuestions.length > 0 && (
-        <div style={{ marginTop: 'var(--spacing-8)' }}>
-          <span className="label label--primary">Your answers incorporated</span>
+        <div className="enhance-qa-summary" style={{ marginTop: 'var(--spacing-8)' }}>
+          <div className="enhance-qa-summary__header">
+            <span className="label" style={{ color: 'var(--primary)' }}>Your input baked in</span>
+            <span className="enhance-qa-summary__count">&#10003; {answeredQuestions.length} answers</span>
+          </div>
           {answeredQuestions.map((q) => (
             <div
-              className="card"
+              className="enhance-qa-summary__item"
               key={q.id}
-              style={{ marginTop: 'var(--spacing-4)' }}
             >
-              <p className="text-label" style={{ marginBottom: 'var(--spacing-2)' }}>
+              <p className="text-label" style={{ marginBottom: 'var(--spacing-2)', fontWeight: 600 }}>
                 {q.text}
               </p>
-              <p className="text-body">{q.answer}</p>
+              <p className="enhance-qa-summary__answer">{q.answer}</p>
             </div>
           ))}
         </div>

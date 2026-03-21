@@ -133,6 +133,6 @@ describe('AppShell', () => {
         <div />
       </AppShell>,
     );
-    expect(screen.getByLabelText('Authentication status')).toBeInTheDocument();
+    expect(screen.getByLabelText('Not authenticated')).toBeInTheDocument();
   });
 });

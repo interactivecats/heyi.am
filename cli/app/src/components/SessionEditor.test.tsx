@@ -33,11 +33,12 @@ describe('SessionEditor', () => {
     expect(screen.getByText(session.rawLog[0])).toBeDefined();
   });
 
-  it('renders execution path steps', () => {
+  it('renders execution path steps as editable inputs', () => {
     renderEditor();
     const steps = session.executionPath!;
-    for (const step of steps) {
-      expect(screen.getByText(step.title)).toBeDefined();
+    for (let i = 0; i < steps.length; i++) {
+      const input = screen.getByLabelText(`Step ${i + 1} title`) as HTMLInputElement;
+      expect(input.value).toBe(steps[i].title);
     }
   });
 
@@ -73,14 +74,9 @@ describe('SessionEditor', () => {
     const moveUpBtn = screen.getByLabelText('Move step 2 up');
     fireEvent.click(moveUpBtn);
 
-    // After moving, the step icons should show new order
-    // The second step's title should now be first
-    const stepIcons = document.querySelectorAll('.exec-path__step-icon');
-    // First icon should now show "1" but contain what was step 2
-    const firstStepContent = stepIcons[0]
-      .closest('.exec-path__step')
-      ?.querySelector('.exec-path__step-title');
-    expect(firstStepContent?.textContent).toBe(steps[1].title);
+    // After moving, the first input should contain what was step 2's title
+    const firstInput = screen.getByLabelText('Step 1 title') as HTMLInputElement;
+    expect(firstInput.value).toBe(steps[1].title);
   });
 
   it('can remove a skill chip', () => {
@@ -91,12 +87,12 @@ describe('SessionEditor', () => {
     expect(screen.queryByText(firstSkill)).toBeNull();
   });
 
-  it('calls onPublish when Publish button clicked', () => {
+  it('accepts onPublish prop (publish button is in parent topbar)', () => {
     const onPublish = vi.fn();
     renderEditor({ onPublish });
-    const publishBtn = screen.getByRole('button', { name: /Publish/ });
-    fireEvent.click(publishBtn);
-    expect(onPublish).toHaveBeenCalledOnce();
+    // Publish button was moved to SessionEditorPage's AppShell header (Task #20).
+    // SessionEditor still accepts onPublish but no longer renders the button itself.
+    expect(onPublish).not.toHaveBeenCalled();
   });
 
   it('shows progress breadcrumb', () => {

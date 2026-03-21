@@ -187,6 +187,26 @@
       </div>
     </details>
 
+    <%!-- Collapsible: Turn Timeline --%>
+    <details :if={@session[:turn_timeline] && @session.turn_timeline != []} class="collapsible" style="margin-block-end: var(--spacing-2);">
+      <summary>
+        Turn timeline ({length(@session.turn_timeline)} turns)
+      </summary>
+      <div class="collapsible-content">
+        <div :for={turn <- @session.turn_timeline} style="display: flex; align-items: flex-start; gap: var(--spacing-3); margin-block-end: var(--spacing-3);">
+          <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); min-width: 2rem; text-align: end;">
+            #{turn.turn}
+          </span>
+          <div style="flex: 1;">
+            <span style="font-size: 0.8125rem;">{turn.prompt}</span>
+            <div :if={turn.tools != []} style="display: flex; gap: var(--spacing-1); margin-block-start: var(--spacing-1); flex-wrap: wrap;">
+              <span :for={tool <- turn.tools} class="chip" style="font-size: 0.625rem; padding: 1px 6px;">{tool}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
     <%!-- Collapsible: Full Narrative --%>
     <details class="collapsible" style="margin-block-end: var(--spacing-2);">
       <summary>Full narrative</summary>

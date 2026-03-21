@@ -106,6 +106,7 @@ defmodule HeyiAmWeb.Router do
     pipe_through :browser
 
     get "/:slug", ChallengeController, :show
+    post "/:slug/unlock", ChallengeController, :verify_access_code
     get "/:slug/progress", ChallengeController, :in_progress
     get "/:slug/submitted", ChallengeController, :submitted
   end

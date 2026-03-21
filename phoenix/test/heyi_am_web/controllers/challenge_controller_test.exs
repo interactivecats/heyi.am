@@ -56,6 +56,23 @@ defmodule HeyiAmWeb.ChallengeControllerTest do
       assert html =~ "ACTIVE"
     end
 
+    test "hides problem statement for private challenge without code", %{conn: conn, user: user} do
+      challenge = challenge_fixture(user, %{access_code: "secret123"})
+      conn = get(conn, ~p"/challenges/#{challenge.slug}")
+      html = html_response(conn, 200)
+      assert html =~ "requires an access code"
+      assert html =~ "Unlock Challenge"
+      refute html =~ "Begin Challenge"
+    end
+
+    test "shows problem statement for public challenge", %{conn: conn, user: user} do
+      challenge = challenge_fixture(user)
+      conn = get(conn, ~p"/challenges/#{challenge.slug}")
+      html = html_response(conn, 200)
+      assert html =~ challenge.problem_statement
+      assert html =~ "Begin Challenge"
+    end
+
     test "shows draft notice for draft challenges", %{conn: conn, user: user} do
       challenge = challenge_fixture(user, %{status: "draft"})
       conn = get(conn, ~p"/challenges/#{challenge.slug}")
@@ -75,6 +92,42 @@ defmodule HeyiAmWeb.ChallengeControllerTest do
       assert_raise Ecto.NoResultsError, fn ->
         get(conn, ~p"/challenges/nonexistent")
       end
+    end
+  end
+
+  describe "POST /challenges/:slug/unlock (access code)" do
+    setup :register_and_log_in_user
+
+    test "redirects to challenge on correct code", %{conn: conn, user: user} do
+      challenge = challenge_fixture(user, %{access_code: "secret123"})
+      conn = post(conn, ~p"/challenges/#{challenge.slug}/unlock", access_code: "secret123")
+      assert redirected_to(conn) == "/challenges/#{challenge.slug}"
+    end
+
+    test "re-renders with error on wrong code", %{conn: conn, user: user} do
+      challenge = challenge_fixture(user, %{access_code: "secret123"})
+      conn = post(conn, ~p"/challenges/#{challenge.slug}/unlock", access_code: "wrong")
+      html = html_response(conn, 200)
+      assert html =~ "Invalid access code"
+    end
+  end
+
+  describe "POST /challenges with evaluation criteria" do
+    setup :register_and_log_in_user
+
+    test "parses criteria_text into evaluation_criteria", %{conn: conn} do
+      attrs = %{
+        "title" => "Criteria Test",
+        "problem_statement" => "Test problem.",
+        "criteria_text" => "Code quality\nTest coverage\nPerformance"
+      }
+
+      conn = post(conn, ~p"/challenges", challenge: attrs)
+      assert %{slug: slug} = redirected_params(conn)
+
+      challenge = HeyiAm.Challenges.get_challenge_by_slug!(slug)
+      assert length(challenge.evaluation_criteria) == 3
+      assert Enum.at(challenge.evaluation_criteria, 0)["name"] == "Code quality"
     end
   end
 
@@ -99,6 +152,22 @@ defmodule HeyiAmWeb.ChallengeControllerTest do
       html = html_response(conn, 200)
       assert html =~ "Sealed"
       assert html =~ "Submitted"
+    end
+
+    test "shows real hash when response exists", %{conn: conn, user: user} do
+      challenge = challenge_fixture(user)
+      _share = share_fixture(%{challenge_id: challenge.id, title: "My Response"})
+      conn = get(conn, ~p"/challenges/#{challenge.slug}/submitted")
+      html = html_response(conn, 200)
+      assert html =~ "sha256:"
+      refute html =~ "Pending verification"
+    end
+
+    test "shows fallback when no response exists", %{conn: conn, user: user} do
+      challenge = challenge_fixture(user)
+      conn = get(conn, ~p"/challenges/#{challenge.slug}/submitted")
+      html = html_response(conn, 200)
+      assert html =~ "Awaiting response..."
     end
   end
 
@@ -146,6 +215,27 @@ defmodule HeyiAmWeb.ChallengeControllerTest do
       assert html =~ "My Rate Limiter"
       assert html =~ challenge.title
       assert html =~ "Developer Take"
+    end
+
+    test "renders expanded content with skills and Q&A", %{conn: conn, user: user} do
+      challenge = challenge_fixture(user)
+
+      share =
+        share_fixture(%{
+          challenge_id: challenge.id,
+          title: "Deep Dive Test",
+          dev_take: "My approach was thorough.",
+          skills: ["Elixir", "Testing"],
+          qa_pairs: [%{"question" => "Why?", "answer" => "Because."}]
+        })
+
+      conn = get(conn, ~p"/challenges/#{challenge.slug}/responses/#{share.token}")
+      html = html_response(conn, 200)
+      assert html =~ "Deep Dive Test"
+      assert html =~ "Applied Skills"
+      assert html =~ "Elixir"
+      assert html =~ "Session Questions"
+      assert html =~ "Because."
     end
 
     test "redirects non-creator", %{conn: conn} do

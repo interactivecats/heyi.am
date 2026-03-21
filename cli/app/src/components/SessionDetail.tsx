@@ -287,36 +287,23 @@ export function SessionDetail({
               <summary className="session-detail__summary">
                 Tool Breakdown
               </summary>
-              <div className="share-preview__tool-breakdown">
-                <div
-                  className="share-preview__tool-bar"
-                  role="img"
-                  aria-label="Tool usage breakdown"
-                >
-                  {session.toolBreakdown.map((tool) => {
-                    const total = totalToolCalls ?? 1;
-                    const pct = (tool.count / total) * 100;
-                    return (
-                      <div
-                        key={tool.tool}
-                        className="share-preview__tool-segment"
-                        style={{ flex: `${pct} 0 0%` }}
-                        title={`${tool.tool}: ${tool.count} (${Math.round(pct)}%)`}
-                      />
-                    );
-                  })}
-                </div>
-                <div className="share-preview__tool-legend">
-                  {session.toolBreakdown.map((tool) => (
-                    <span
-                      key={tool.tool}
-                      className="share-preview__tool-label"
-                    >
-                      <span className="share-preview__tool-dot" />
-                      {tool.tool} ({tool.count})
-                    </span>
-                  ))}
-                </div>
+              <div className="tool-breakdown-rows">
+                {session.toolBreakdown.map((tool) => {
+                  const maxCount = Math.max(...session.toolBreakdown!.map((t) => t.count));
+                  const pct = (tool.count / maxCount) * 100;
+                  return (
+                    <div key={tool.tool} className="tool-breakdown-row">
+                      <span className="tool-breakdown-row__label">{tool.tool}</span>
+                      <div className="tool-breakdown-row__track">
+                        <div
+                          className="tool-breakdown-row__bar"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="tool-breakdown-row__count">{tool.count}</span>
+                    </div>
+                  );
+                })}
               </div>
             </details>
           )}
@@ -328,22 +315,29 @@ export function SessionDetail({
               <summary className="session-detail__summary">
                 Turn Timeline
               </summary>
-              <div className="share-preview__timeline-entries">
-                {session.turnTimeline.map((event, i) => (
-                  <div key={i} className="share-preview__timeline-entry">
-                    <span className="share-preview__timeline-time">
-                      {event.timestamp}
+              <div className="turn-timeline-entries">
+                {session.turnTimeline.slice(0, 3).map((event, i) => (
+                  <div key={i} className="turn-timeline-entry">
+                    <span className="turn-timeline-entry__num">
+                      {event.turnNumber ?? i + 1}
                     </span>
-                    <span
-                      className={`badge badge--${event.type === 'prompt' ? 'sealed' : event.type === 'error' ? 'archived' : 'published'}`}
-                    >
-                      {event.type}
-                    </span>
-                    <span className="share-preview__timeline-content">
+                    <span className="turn-timeline-entry__content">
                       {event.content}
                     </span>
+                    {event.tools && event.tools.length > 0 && (
+                      <div className="turn-timeline-entry__tools">
+                        {event.tools.map((tool) => (
+                          <span key={tool} className="chip chip--sm">{tool}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
+                {session.turnTimeline.length > 3 && (
+                  <div className="turn-timeline-more">
+                    ... {session.turnTimeline.length - 3} more turns
+                  </div>
+                )}
               </div>
             </details>
           )}
@@ -355,32 +349,16 @@ export function SessionDetail({
               <summary className="session-detail__summary">
                 Files Changed ({session.filesChanged.length})
               </summary>
-              <table className="share-preview__file-table">
-                <thead>
-                  <tr>
-                    <th className="share-preview__file-th">File</th>
-                    <th className="share-preview__file-th share-preview__file-th--num">
-                      +
-                    </th>
-                    <th className="share-preview__file-th share-preview__file-th--num">
-                      -
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {session.filesChanged.map((file) => (
-                    <tr key={file.path}>
-                      <td className="share-preview__file-path">{file.path}</td>
-                      <td className="share-preview__file-add">
-                        +{file.additions}
-                      </td>
-                      <td className="share-preview__file-del">
-                        -{file.deletions}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="files-changed-list">
+                {session.filesChanged.map((file) => (
+                  <div key={file.path} className="files-changed-row">
+                    <span className="files-changed-row__path">{file.path}</span>
+                    <span className="files-changed-row__count">
+                      {file.editCount ?? file.additions + file.deletions}x
+                    </span>
+                  </div>
+                ))}
+              </div>
             </details>
           )}
 

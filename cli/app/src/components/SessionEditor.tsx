@@ -150,10 +150,14 @@ function ExecutionPathEditor({
   steps,
   onMoveUp,
   onMoveDown,
+  onEditTitle,
+  onDelete,
 }: {
   steps: ExecutionStep[];
   onMoveUp: (index: number) => void;
   onMoveDown: (index: number) => void;
+  onEditTitle: (index: number, title: string) => void;
+  onDelete: (index: number) => void;
 }) {
   return (
     <div className="exec-path">
@@ -161,7 +165,13 @@ function ExecutionPathEditor({
         <div key={step.stepNumber} className="exec-path__step session-editor__step">
           <div className="exec-path__step-icon">{index + 1}</div>
           <div className="exec-path__step-content">
-            <p className="exec-path__step-title">{step.title}</p>
+            <input
+              type="text"
+              className="session-editor__step-title-input"
+              value={step.title}
+              onChange={(e) => { onEditTitle(index, e.target.value); }}
+              aria-label={`Step ${index + 1} title`}
+            />
           </div>
           <div className="session-editor__step-actions">
             <button
@@ -181,6 +191,14 @@ function ExecutionPathEditor({
               aria-label={`Move step ${index + 1} down`}
             >
               Down
+            </button>
+            <button
+              type="button"
+              className="btn-tertiary session-editor__step-delete"
+              onClick={() => { onDelete(index); }}
+              aria-label={`Delete step ${index + 1}`}
+            >
+              &times;
             </button>
           </div>
         </div>
@@ -262,6 +280,24 @@ export function SessionEditor({ session, onPublish }: SessionEditorProps) {
     });
   }
 
+  // -- Step editing --
+
+  function handleEditStepTitle(index: number, title: string) {
+    setState((prev) => {
+      const steps = prev.executionPath.map((s, i) =>
+        i === index ? { ...s, title } : s
+      );
+      return { ...prev, executionPath: steps };
+    });
+  }
+
+  function handleDeleteStep(index: number) {
+    setState((prev) => ({
+      ...prev,
+      executionPath: prev.executionPath.filter((_, i) => i !== index),
+    }));
+  }
+
   // -- Skills --
 
   function handleRemoveSkill(skill: string) {
@@ -341,6 +377,8 @@ export function SessionEditor({ session, onPublish }: SessionEditorProps) {
                   steps={state.executionPath}
                   onMoveUp={handleMoveUp}
                   onMoveDown={handleMoveDown}
+                  onEditTitle={handleEditStepTitle}
+                  onDelete={handleDeleteStep}
                 />
               </section>
             )}
@@ -356,8 +394,6 @@ export function SessionEditor({ session, onPublish }: SessionEditorProps) {
             </section>
           </div>
 
-          {/* Publish bar */}
-          <PublishBar onPublish={onPublish} />
         </div>
       </div>
     </div>

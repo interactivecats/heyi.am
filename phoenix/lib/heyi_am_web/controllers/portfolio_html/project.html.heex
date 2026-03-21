@@ -30,13 +30,19 @@
     <div style="display: grid; grid-template-columns: 1fr; gap: var(--spacing-4); margin-block-end: var(--spacing-8);">
       <%!-- Primary stat --%>
       <div class="card card-padded" style="text-align: center;">
-        <span class="stat-card-label">Total Sessions</span>
-        <span class="stat-card-value" style="display: block; margin-block-start: var(--spacing-2);">{@project.session_count}</span>
+        <span class="stat-card-label">Total Time</span>
+        <span class="stat-card-value" style="display: block; margin-block-start: var(--spacing-2);">
+          <%= if @project.total_minutes >= 60 do %>
+            {div(@project.total_minutes, 60)}h
+          <% else %>
+            {@project.total_minutes}m
+          <% end %>
+        </span>
       </div>
       <%!-- Supporting stats --%>
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-4);">
         <div :for={{label, value} <- [
-          {"Total Time", "#{@project.total_minutes}m"},
+          {"Sessions", "#{@project.session_count}"},
           {"Files Touched", "#{@project.files_touched}"},
           {"LOC Changed", @project.loc_changed}
         ]} class="card card-padded">

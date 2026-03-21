@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppShell } from './AppShell';
+import { useAuth } from '../AuthContext';
 
 export function Settings() {
   const navigate = useNavigate();
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
+  const auth = useAuth();
 
-  // Mock state — will be replaced with real data
-  const isConnected = false;
-  const username = '';
+  const isConnected = auth.authenticated;
+  const username = auth.username ?? '';
   const machineToken = 'ed25519:a4f2...8b3c';
   const tokenFingerprint = 'SHA256:kR7x...Qm4w';
 

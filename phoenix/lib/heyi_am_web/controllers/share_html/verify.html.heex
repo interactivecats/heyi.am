@@ -24,6 +24,16 @@
           </span>
         </div>
 
+        <div :if={@verification.signature} style="margin-block-end: var(--spacing-4);">
+          <span class="label-sm">Ed25519 Signature</span>
+          <code class="challenge-hash-display">{@verification.signature}</code>
+        </div>
+
+        <div :if={@verification.public_key} style="margin-block-end: var(--spacing-4);">
+          <span class="label-sm">Public Key</span>
+          <code class="challenge-hash-display">{@verification.public_key}</code>
+        </div>
+
         <div :if={@verification.recorded_at} style="margin-block-end: var(--spacing-4);">
           <span class="label-sm">Recorded At</span>
           <span class="body-sm">{Calendar.strftime(@verification.recorded_at, "%Y-%m-%d %H:%M:%S UTC")}</span>
@@ -33,6 +43,17 @@
           <span class="label-sm">Verified At</span>
           <span class="body-sm">{Calendar.strftime(@verification.verified_at, "%Y-%m-%d %H:%M:%S UTC")}</span>
         </div>
+      </div>
+    </div>
+
+    <div :if={@verification.signature_status == "verified"} style="display: flex; align-items: center; gap: var(--spacing-3); margin-block-start: var(--spacing-6); padding: var(--spacing-4); background: var(--surface-container-low); border-radius: 8px; border-inline-start: 3px solid var(--primary);">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <path d="M9 12l2 2 4-4"/>
+      </svg>
+      <div>
+        <span class="label-md" style="color: var(--primary); display: block;">Cryptographically Verified</span>
+        <span class="body-sm" style="color: var(--on-surface-variant);">This session's content matches the Ed25519 signature from the original recording.</span>
       </div>
     </div>
 

@@ -15,6 +15,8 @@ defmodule HeyiAmWeb.ChallengeController do
   def create(conn, %{"challenge" => challenge_params}) do
     user = conn.assigns.current_scope.user
 
+    challenge_params = parse_criteria_text(challenge_params)
+
     case Challenges.create_challenge(user, challenge_params) do
       {:ok, challenge} ->
         conn
@@ -29,10 +31,33 @@ defmodule HeyiAmWeb.ChallengeController do
   def show(conn, %{"slug" => slug}) do
     challenge = Challenges.get_challenge_by_slug!(slug)
 
+    unlocked =
+      !Challenge.has_access_code?(challenge) ||
+        get_session(conn, "challenge_unlocked_#{challenge.id}") == true
+
     render(conn, :show,
       challenge: challenge,
+      unlocked: unlocked,
+      access_code_error: false,
       page_title: challenge.title
     )
+  end
+
+  def verify_access_code(conn, %{"slug" => slug, "access_code" => code}) do
+    challenge = Challenges.get_challenge_by_slug!(slug)
+
+    if Challenges.verify_access_code(challenge, code) do
+      conn
+      |> put_session("challenge_unlocked_#{challenge.id}", true)
+      |> redirect(to: ~p"/challenges/#{challenge.slug}")
+    else
+      render(conn, :show,
+        challenge: challenge,
+        unlocked: false,
+        access_code_error: true,
+        page_title: challenge.title
+      )
+    end
   end
 
   def in_progress(conn, %{"slug" => slug}) do
@@ -47,8 +72,17 @@ defmodule HeyiAmWeb.ChallengeController do
   def submitted(conn, %{"slug" => slug}) do
     challenge = Challenges.get_challenge_by_slug!(slug)
 
+    responses = Challenges.list_responses(challenge)
+    latest = List.last(responses)
+
+    seal_hash =
+      if latest,
+        do: Signature.content_hash(latest),
+        else: nil
+
     render(conn, :submitted,
       challenge: challenge,
+      seal_hash: seal_hash,
       page_title: "Submitted — #{challenge.title}"
     )
   end
@@ -86,7 +120,7 @@ defmodule HeyiAmWeb.ChallengeController do
 
       render(conn, :deep_dive,
         challenge: challenge,
-        response: response_summary(share),
+        response: response_detail(share),
         prev_response: prev_response,
         next_response: next_response,
         page_title: "#{share.title} — #{challenge.title}"
@@ -104,6 +138,44 @@ defmodule HeyiAmWeb.ChallengeController do
       sealed?: share.sealed || false,
       hash: String.slice(Signature.content_hash(share), 0..15) <> "..."
     }
+  end
+
+  defp response_detail(share) do
+    %{
+      token: share.token,
+      title: share.title,
+      dev_take: share.dev_take || "",
+      duration_minutes: share.duration_minutes || 0,
+      turns: share.turns || 0,
+      files_changed: share.files_changed || 0,
+      loc_changed: share.loc_changed || 0,
+      sealed?: share.sealed || false,
+      hash: Signature.content_hash(share),
+      skills: share.skills || [],
+      qa_pairs: share.qa_pairs || [],
+      beats: share.beats || [],
+      highlights: share.highlights || %{},
+      tool_breakdown: share.tool_breakdown || [],
+      narrative: share.narrative || "",
+      top_files: share.top_files || []
+    }
+  end
+
+  defp parse_criteria_text(params) do
+    case params["criteria_text"] do
+      text when is_binary(text) and text != "" ->
+        criteria =
+          text
+          |> String.split("\n")
+          |> Enum.map(&String.trim/1)
+          |> Enum.reject(&(&1 == ""))
+          |> Enum.map(&%{"name" => &1})
+
+        Map.put(params, "evaluation_criteria", criteria)
+
+      _ ->
+        params
+    end
   end
 
   defp require_owner(conn, challenge) do

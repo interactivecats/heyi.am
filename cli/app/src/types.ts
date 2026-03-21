@@ -14,12 +14,15 @@ export interface FileChange {
   path: string;
   additions: number;
   deletions: number;
+  editCount?: number;
 }
 
 export interface TurnEvent {
   timestamp: string;
   type: 'prompt' | 'response' | 'tool' | 'error';
   content: string;
+  turnNumber?: number;
+  tools?: string[];
 }
 
 export interface ChildSessionSummary {
@@ -40,7 +43,7 @@ export interface Session {
   wallClockMinutes?: number;
   turns: number;
   linesOfCode: number;
-  status: 'draft' | 'enhanced' | 'published' | 'archived';
+  status: 'draft' | 'enhanced' | 'published' | 'archived' | 'sealed';
   projectName: string;
   rawLog: string[];
   sessionRef?: string;

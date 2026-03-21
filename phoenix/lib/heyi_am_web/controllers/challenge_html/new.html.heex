@@ -68,6 +68,25 @@
             </div>
 
             <div class="challenge-field">
+              <label class="label-md">
+                Evaluation Criteria <span class="label-sm" style="color: var(--outline); text-transform: none;">(Optional)</span>
+              </label>
+              <p class="body-sm" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-3);">
+                Add criteria that responses will be evaluated against. One per line.
+              </p>
+              <textarea
+                id="challenge_criteria_text"
+                name="challenge[criteria_text]"
+                placeholder={"Code quality and readability\nError handling\nTest coverage\nPerformance considerations"}
+                rows="5"
+                class="challenge-textarea"
+              ><%= if @form[:evaluation_criteria].value && @form[:evaluation_criteria].value != [] do %><%= @form[:evaluation_criteria].value |> Enum.map(& &1["name"]) |> Enum.join("\n") %><% end %></textarea>
+              <div class="challenge-field-hint">
+                <span class="label-sm" style="color: var(--outline);">One criterion per line</span>
+              </div>
+            </div>
+
+            <div class="challenge-field">
               <label class="label-md" for="challenge_access_code">
                 Access Code <span class="label-sm" style="color: var(--outline); text-transform: none;">(Optional)</span>
               </label>

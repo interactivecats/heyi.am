@@ -37,9 +37,9 @@ heyi.am turns AI coding sessions into evidence-backed developer portfolios. Two 
 - [x] **Phase 7** — Web: Public Pages (4/4, 7.5 deferred to Phase 12)
 - [x] **Phase 8** — CLI Backend & Parser (12/12) — scaffold, parser, LOC, analyzer, AI enhance, auth, subagent hierarchy, fork/join timeline
 - [x] **Phase 9** — Session Templates (5/5) — per-session template field, ShareController wiring, conditional markup, 5 CSS templates
-- [ ] **Phase 10** — Interview / Challenge Flow (0/6)
-- [ ] **Phase 11** — Edge Cases & Mobile (0/6)
-- [ ] **Phase 12** — Backend & Data Model extras (0/4)
+- [x] **Phase 10** — Interview / Challenge Flow (6/6) — challenge schema, create/landing/in-progress/submitted/comparison/deep-dive
+- [x] **Phase 11** — Edge Cases & Mobile (6/6) — 404 page, gone session page, mobile responsive CSS
+- [x] **Phase 12** — Backend & Data Model extras (4/4) — Share schema, portfolios, project stats, AI collaboration profile
 
 ---
 

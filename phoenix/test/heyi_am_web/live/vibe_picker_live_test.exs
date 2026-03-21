@@ -22,6 +22,14 @@ defmodule HeyiAmWeb.VibePickerLiveTest do
       assert html =~ "Preview"
     end
 
+    test "shows onboarding step sidebar", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/onboarding/vibe")
+      assert html =~ "Setup Progress"
+      assert html =~ "Claim your URL"
+      assert html =~ "Choose your vibe"
+      assert html =~ "Start building"
+    end
+
     test "editorial is selected by default", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/onboarding/vibe")
       assert html =~ "vibe-card--selected"

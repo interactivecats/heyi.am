@@ -85,6 +85,21 @@ export function enhanceSessionStream(
   );
 }
 
+export interface AuthStatus {
+  authenticated: boolean;
+  username?: string;
+}
+
+export async function fetchAuthStatus(): Promise<AuthStatus> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/status`);
+    if (!res.ok) return { authenticated: false };
+    return await res.json();
+  } catch {
+    return { authenticated: false };
+  }
+}
+
 export async function fetchAllSessions(): Promise<{ projects: ApiProject[]; sessions: Session[] }> {
   const projects = await fetchProjects();
 

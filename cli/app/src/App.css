@@ -2614,3 +2614,162 @@ details[open] > .collapsible__summary .collapsible__chevron {
     padding: var(--spacing-3);
   }
 }
+
+/* ==========================================================================
+   Tool Breakdown Rows (individual horizontal bars)
+   ========================================================================== */
+.tool-breakdown-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tool-breakdown-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+.tool-breakdown-row__label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+  width: 60px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.tool-breakdown-row__track {
+  flex: 1;
+  height: 6px;
+  background: var(--surface-container-low);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.tool-breakdown-row__bar {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+}
+.tool-breakdown-row__count {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  width: 30px;
+}
+
+/* ==========================================================================
+   Turn Timeline Entries (turn number + content + tool chips)
+   ========================================================================== */
+.turn-timeline-entries {
+  display: flex;
+  flex-direction: column;
+}
+.turn-timeline-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2) 0;
+  border-bottom: 1px solid var(--ghost-border);
+}
+.turn-timeline-entry__num {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--on-surface-variant);
+  width: 24px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.turn-timeline-entry__content {
+  font-size: 0.8125rem;
+  flex: 1;
+}
+.turn-timeline-entry__tools {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.chip--sm {
+  font-size: 0.5625rem;
+  padding: 1px 6px;
+}
+.turn-timeline-more {
+  padding: var(--spacing-3) 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+  text-align: center;
+}
+
+/* ==========================================================================
+   Files Changed List (filepath + edit count)
+   ========================================================================== */
+.files-changed-list {
+  display: flex;
+  flex-direction: column;
+}
+.files-changed-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--spacing-1) 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+.files-changed-row__path {
+  color: var(--on-surface);
+}
+.files-changed-row__count {
+  color: var(--on-surface-variant);
+}
+
+/* ==========================================================================
+   Enhance Q&A Summary (Phase 4 done state)
+   ========================================================================== */
+.enhance-qa-summary {
+  background: var(--surface-container-low);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-5);
+}
+.enhance-qa-summary__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-4);
+}
+.enhance-qa-summary__count {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--secondary);
+}
+.enhance-qa-summary__item {
+  margin-top: var(--spacing-4);
+}
+/* ==========================================================================
+   Exec Path Step Editor (inline editable)
+   ========================================================================== */
+.session-editor__step-title-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: none;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  font-family: var(--font-body);
+  color: var(--on-surface);
+  padding: 2px 0;
+  border-bottom: 1px solid transparent;
+}
+.session-editor__step-title-input:focus {
+  border-bottom-color: var(--primary);
+}
+.session-editor__step-delete {
+  color: var(--error);
+  opacity: 0.5;
+}
+.session-editor__step-delete:hover {
+  opacity: 1;
+}
+
+.enhance-qa-summary__answer {
+  font-size: 0.8125rem;
+  color: var(--on-surface-variant);
+  padding-left: var(--spacing-3);
+  border-left: 2px solid var(--primary);
+  line-height: 1.6;
+}

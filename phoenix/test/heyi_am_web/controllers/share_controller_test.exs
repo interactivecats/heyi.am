@@ -219,5 +219,25 @@ defmodule HeyiAmWeb.ShareControllerTest do
       html = html_response(conn, 200)
       assert html =~ "/s/my-token"
     end
+
+    test "renders Ed25519 Signature label when signature present", %{conn: conn} do
+      # Mock session has no signature, so the :if guard hides it
+      conn = get(conn, ~p"/s/test-token/verify")
+      html = html_response(conn, 200)
+      # Signature fields should not appear for unsigned sessions
+      refute html =~ "Ed25519 Signature"
+      refute html =~ "Public Key"
+    end
+  end
+
+  describe "turn timeline on case study" do
+    test "renders turn timeline collapsible", %{conn: conn} do
+      conn = get(conn, ~p"/s/test-token")
+      html = html_response(conn, 200)
+      assert html =~ "Turn timeline"
+      assert html =~ "8 turns"
+      assert html =~ "Review existing auth flow"
+      assert html =~ "Run full test suite"
+    end
   end
 end

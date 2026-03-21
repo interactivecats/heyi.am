@@ -15,41 +15,73 @@
         </span>
       </div>
       <h1 class="display-sm">{@challenge.title}</h1>
-      <div :if={@challenge.problem_statement} class="challenge-problem-statement body-lg" style="color: var(--on-surface-variant); border-inline-start: 2px solid var(--outline-variant); padding-inline-start: var(--spacing-6);">
-        {@challenge.problem_statement}
-      </div>
+
+      <%= if !@unlocked do %>
+        <%!-- Access Code Gate --%>
+        <div style="margin-block-start: var(--spacing-6);">
+          <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
+            This challenge requires an access code to view.
+          </p>
+          <form action={~p"/challenges/#{@challenge.slug}/unlock"} method="post" style="max-width: 24rem;">
+            <input type="hidden" name="_csrf_token" value={Phoenix.Controller.get_csrf_token()} />
+            <div class="challenge-field">
+              <label class="label-md" for="access_code">Access Code</label>
+              <input
+                type="password"
+                id="access_code"
+                name="access_code"
+                placeholder="Enter access code"
+                class="challenge-input"
+                autocomplete="off"
+              />
+              <span :if={@access_code_error} class="body-sm" style="color: var(--error); margin-block-start: var(--spacing-1); display: block;">
+                Invalid access code. Please try again.
+              </span>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-block-start: var(--spacing-3);">
+              Unlock Challenge
+            </button>
+          </form>
+        </div>
+      <% else %>
+        <div :if={@challenge.problem_statement} class="challenge-problem-statement body-lg" style="color: var(--on-surface-variant); border-inline-start: 2px solid var(--outline-variant); padding-inline-start: var(--spacing-6);">
+          {@challenge.problem_statement}
+        </div>
+      <% end %>
     </header>
 
-    <%!-- Challenge Details --%>
-    <div class="challenge-details">
-      <div :if={@challenge.time_limit_minutes} class="challenge-detail-card">
-        <span class="label-sm">Time Limit</span>
-        <span class="headline-md">{@challenge.time_limit_minutes} min</span>
-      </div>
-      <div :if={@challenge.evaluation_criteria != []} class="challenge-criteria">
-        <span class="label-sm" style="margin-block-end: var(--spacing-3);">Requirements</span>
-        <div class="challenge-criteria-grid">
-          <div :for={criterion <- @challenge.evaluation_criteria} class="challenge-criterion">
-            <span class="body-sm">{criterion["name"] || criterion["label"]}</span>
+    <%= if @unlocked do %>
+      <%!-- Challenge Details --%>
+      <div class="challenge-details">
+        <div :if={@challenge.time_limit_minutes} class="challenge-detail-card">
+          <span class="label-sm">Time Limit</span>
+          <span class="headline-md">{@challenge.time_limit_minutes} min</span>
+        </div>
+        <div :if={@challenge.evaluation_criteria != []} class="challenge-criteria">
+          <span class="label-sm" style="margin-block-end: var(--spacing-3);">Requirements</span>
+          <div class="challenge-criteria-grid">
+            <div :for={criterion <- @challenge.evaluation_criteria} class="challenge-criterion">
+              <span class="body-sm">{criterion["name"] || criterion["label"]}</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <%!-- CTA --%>
-    <div :if={@challenge.status == "active"} class="challenge-cta">
-      <a href={~p"/challenges/#{@challenge.slug}/progress"} class="btn btn-primary challenge-begin-btn">
-        Begin Challenge
-      </a>
-      <p class="body-sm" style="color: var(--on-surface-variant); margin-block-start: var(--spacing-3);">
-        You'll receive a CLI command to run locally. Your session will be recorded and sealed.
-      </p>
-    </div>
-    <div :if={@challenge.status == "closed"} class="challenge-closed-notice">
-      <p class="body-md" style="color: var(--on-surface-variant);">This challenge is no longer accepting responses.</p>
-    </div>
-    <div :if={@challenge.status == "draft"} class="challenge-draft-notice">
-      <p class="body-md" style="color: var(--on-surface-variant);">This challenge is not yet active.</p>
-    </div>
+      <%!-- CTA --%>
+      <div :if={@challenge.status == "active"} class="challenge-cta">
+        <a href={~p"/challenges/#{@challenge.slug}/progress"} class="btn btn-primary challenge-begin-btn">
+          Begin Challenge
+        </a>
+        <p class="body-sm" style="color: var(--on-surface-variant); margin-block-start: var(--spacing-3);">
+          You'll receive a CLI command to run locally. Your session will be recorded and sealed.
+        </p>
+      </div>
+      <div :if={@challenge.status == "closed"} class="challenge-closed-notice">
+        <p class="body-md" style="color: var(--on-surface-variant);">This challenge is no longer accepting responses.</p>
+      </div>
+      <div :if={@challenge.status == "draft"} class="challenge-draft-notice">
+        <p class="body-md" style="color: var(--on-surface-variant);">This challenge is not yet active.</p>
+      </div>
+    <% end %>
   </div>
 </.public_shell>
