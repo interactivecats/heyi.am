@@ -12,6 +12,7 @@ import { API_URL } from './config.js';
 import { summarizeSession, createSSEHandler } from './summarize.js';
 import { getProvider, getEnhanceMode } from './llm/index.js';
 import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey } from './settings.js';
+import Anthropic from '@anthropic-ai/sdk';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -209,7 +210,9 @@ export function createApp(sessionsBasePath?: string) {
       }
 
       const session = await loadSession(meta.path, proj.name, meta.sessionId);
-      const handler = createSSEHandler(session);
+      const apiKey = getAnthropicApiKey();
+      const sseOptions = apiKey ? { client: new Anthropic({ apiKey }) } : {};
+      const handler = createSSEHandler(session, sseOptions);
       await handler(req, res);
     } catch (err) {
       res.status(500).json({ error: { code: 'STREAM_FAILED', message: (err as Error).message } });
