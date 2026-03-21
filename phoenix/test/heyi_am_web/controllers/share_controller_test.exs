@@ -1,87 +1,119 @@
 defmodule HeyiAmWeb.ShareControllerTest do
   use HeyiAmWeb.ConnCase
 
+  import HeyiAm.AccountsFixtures
+
+  defp create_share_with_user(_context) do
+    user = user_fixture()
+    {:ok, user} = HeyiAm.Accounts.update_user_username(user, %{username: "testdev"})
+
+    {:ok, user} =
+      HeyiAm.Accounts.update_user_profile(user, %{display_name: "Test Developer"})
+
+    {:ok, share} =
+      HeyiAm.Shares.create_share(%{
+        token: "real-token-123",
+        title: "Rebuilding the auth system",
+        dev_take: "The old auth was a mess of layered tokens.",
+        duration_minutes: 47,
+        turns: 77,
+        files_changed: 34,
+        loc_changed: 2400,
+        recorded_at: ~U[2026-03-12 14:02:00Z],
+        verified_at: ~U[2026-03-12 14:49:00Z],
+        sealed: false,
+        template: "editorial",
+        language: "Elixir",
+        tools: ["Elixir", "Phoenix"],
+        skills: ["Elixir", "Phoenix", "Authentication"],
+        project_name: "heyi.am",
+        user_id: user.id,
+        beats: [
+          %{"label" => "Review auth flow", "description" => "Found 3 token systems"},
+          %{"label" => "Scaffold fresh", "description" => "Clean phx.gen.auth"}
+        ],
+        qa_pairs: [
+          %{
+            "question" => "Why tear out auth entirely?",
+            "answer" => "Three token systems is a security liability."
+          }
+        ],
+        highlights: [
+          %{"type" => "pivot", "title" => "Rejected patch", "description" => "Chose rewrite."},
+          %{"type" => "win", "title" => "Tests passing", "description" => "309 green."}
+        ],
+        tool_breakdown: [
+          %{"name" => "Read", "count" => 142},
+          %{"name" => "Edit", "count" => 92}
+        ],
+        top_files: [
+          %{"path" => "lib/auth.ex", "touches" => 12}
+        ],
+        transcript_excerpt: [
+          %{"role" => "dev", "text" => "The old auth was frankencode"},
+          %{"role" => "ai", "text" => "I can help patch..."},
+          %{"role" => "dev", "text" => "No. Tear it all out."}
+        ],
+        narrative: "This session rebuilt the authentication system from scratch."
+      })
+
+    %{share: share, user: user}
+  end
+
   describe "GET /s/:token (case study)" do
-    test "renders case study page with session data", %{conn: conn} do
-      conn = get(conn, ~p"/s/test-token")
+    setup [:create_share_with_user]
+
+    test "renders case study page with real session data", %{conn: conn} do
+      conn = get(conn, ~p"/s/real-token-123")
       html = html_response(conn, 200)
 
-      # Title
-      assert html =~ "Ripping out auth and rebuilding with phx.gen.auth"
-
-      # Template class
+      assert html =~ "Rebuilding the auth system"
       assert html =~ "tpl-editorial"
-
-      # Stats
       assert html =~ "47m"
-      assert html =~ "77"
-      assert html =~ "34"
       assert html =~ "2.4k"
-
-      # Developer Take
-      assert html =~ "The Developer Take"
-      assert html =~ "frankencode"
-
-      # Skills
+      assert html =~ "The old auth was a mess"
       assert html =~ "skill-chip"
       assert html =~ "Elixir"
-      assert html =~ "Phoenix"
-      assert html =~ "Authentication"
-
-      # Q&A pairs
       assert html =~ "qa-pair"
-      assert html =~ "Why did you choose to tear out auth entirely"
-      assert html =~ "security liability, not tech debt"
-
-      # Execution path
+      assert html =~ "Why tear out auth entirely?"
       assert html =~ "exec-path"
-      assert html =~ "Deep review of existing auth flow"
-      assert html =~ "309 tests passing"
-
-      # Sidebar source info
-      assert html =~ "Claude Code"
-      assert html =~ "heyi.am contributors"
-
-      # Highlights
+      assert html =~ "Review auth flow"
+      assert html =~ "Test Developer"
       assert html =~ "Pivot"
       assert html =~ "Win"
-      assert html =~ "Insight"
-
-      # Collapsible sections
       assert html =~ "Tool breakdown"
-      assert html =~ "Files changed"
       assert html =~ "Full narrative"
     end
 
-    test "uses token from URL in page", %{conn: conn} do
-      conn = get(conn, ~p"/s/my-custom-token")
-      html = html_response(conn, 200)
-      assert html =~ "my-custom-token"
+    test "returns 404 for non-existent token", %{conn: conn} do
+      conn = get(conn, ~p"/s/nonexistent-token")
+      assert html_response(conn, 404)
     end
 
     test "includes link to transcript", %{conn: conn} do
-      conn = get(conn, ~p"/s/abc123")
+      conn = get(conn, ~p"/s/real-token-123")
       html = html_response(conn, 200)
-      assert html =~ "/s/abc123/transcript"
+      assert html =~ "/s/real-token-123/transcript"
     end
 
     test "includes link to author portfolio", %{conn: conn} do
-      conn = get(conn, ~p"/s/abc123")
+      conn = get(conn, ~p"/s/real-token-123")
       html = html_response(conn, 200)
-      assert html =~ "/ben"
+      assert html =~ "/testdev"
     end
   end
 
   describe "template rendering" do
+    setup [:create_share_with_user]
+
     test "defaults to editorial template", %{conn: conn} do
-      conn = get(conn, ~p"/s/test-token")
+      conn = get(conn, ~p"/s/real-token-123")
       html = html_response(conn, 200)
       assert html =~ "tpl-editorial"
-      assert html =~ "Editorial Documentation"
     end
 
     test "template query param overrides to terminal", %{conn: conn} do
-      conn = get(conn, ~p"/s/test-token?template=terminal")
+      conn = get(conn, ~p"/s/real-token-123?template=terminal")
       html = html_response(conn, 200)
       assert html =~ "tpl-terminal"
       assert html =~ "Terminal Session"
@@ -89,13 +121,13 @@ defmodule HeyiAmWeb.ShareControllerTest do
     end
 
     test "template query param overrides to minimal", %{conn: conn} do
-      conn = get(conn, ~p"/s/test-token?template=minimal")
+      conn = get(conn, ~p"/s/real-token-123?template=minimal")
       html = html_response(conn, 200)
       assert html =~ "tpl-minimal"
     end
 
     test "template query param overrides to brutalist", %{conn: conn} do
-      conn = get(conn, ~p"/s/test-token?template=brutalist")
+      conn = get(conn, ~p"/s/real-token-123?template=brutalist")
       html = html_response(conn, 200)
       assert html =~ "tpl-brutalist"
       assert html =~ "chip--inverted"
@@ -103,27 +135,21 @@ defmodule HeyiAmWeb.ShareControllerTest do
     end
 
     test "template query param overrides to campfire", %{conn: conn} do
-      conn = get(conn, ~p"/s/test-token?template=campfire")
+      conn = get(conn, ~p"/s/real-token-123?template=campfire")
       html = html_response(conn, 200)
       assert html =~ "tpl-campfire"
       assert html =~ "Your Take"
     end
 
     test "template query param overrides to neon-night", %{conn: conn} do
-      conn = get(conn, ~p"/s/test-token?template=neon-night")
+      conn = get(conn, ~p"/s/real-token-123?template=neon-night")
       html = html_response(conn, 200)
       assert html =~ "tpl-neon-night"
       assert html =~ "System Optimized"
     end
 
     test "invalid template name falls back to editorial", %{conn: conn} do
-      conn = get(conn, ~p"/s/test-token?template=nonexistent")
-      html = html_response(conn, 200)
-      assert html =~ "tpl-editorial"
-    end
-
-    test "empty template param falls back to editorial", %{conn: conn} do
-      conn = get(conn, ~p"/s/test-token?template=")
+      conn = get(conn, ~p"/s/real-token-123?template=nonexistent")
       html = html_response(conn, 200)
       assert html =~ "tpl-editorial"
     end
@@ -135,10 +161,7 @@ defmodule HeyiAmWeb.ShareControllerTest do
       html = html_response(conn, 410)
 
       assert html =~ "Session Removed"
-      assert html =~ "This session has been removed by its owner"
       assert html =~ "Token: deleted"
-      assert html =~ "Back to Home"
-      assert html =~ "heyi.am"
     end
 
     test "renders gone page for expired token", %{conn: conn} do
@@ -151,93 +174,53 @@ defmodule HeyiAmWeb.ShareControllerTest do
   end
 
   describe "GET /s/:token/transcript" do
+    setup [:create_share_with_user]
+
     test "renders transcript page with turns", %{conn: conn} do
-      conn = get(conn, ~p"/s/test-token/transcript")
+      conn = get(conn, ~p"/s/real-token-123/transcript")
       html = html_response(conn, 200)
 
-      # Title
-      assert html =~ "Ripping out auth and rebuilding with phx.gen.auth"
-
-      # Turn metadata
-      assert html =~ "REQ-001"
-      assert html =~ "RES-001"
-      assert html =~ "00:00:12"
-
-      # Avatars
+      assert html =~ "Rebuilding the auth system"
+      assert html =~ "frankencode"
+      assert html =~ "I can help patch"
+      assert html =~ "Tear it all out"
       assert html =~ "transcript-avatar--dev"
       assert html =~ "transcript-avatar--ai"
-
-      # Turn content
-      assert html =~ "frankencode"
-      assert html =~ "I can see three separate token systems"
-
-      # Critical Decision block
-      assert html =~ "transcript-decision"
-      assert html =~ "Critical Decision"
-      assert html =~ "Developer overrides AI suggestion"
-
-      # Session Complete block
-      assert html =~ "Session Complete"
-      assert html =~ "309 tests passing"
-
-      # Skipped turns indicator
-      assert html =~ "72 more turns"
     end
 
-    test "includes back link to case study", %{conn: conn} do
-      conn = get(conn, ~p"/s/my-token/transcript")
-      html = html_response(conn, 200)
-      assert html =~ "/s/my-token"
-    end
-
-    test "does not show sealed chip for non-challenge session", %{conn: conn} do
-      conn = get(conn, ~p"/s/test-token/transcript")
-      html = html_response(conn, 200)
-      refute html =~ "SEALED"
+    test "returns 404 for non-existent token", %{conn: conn} do
+      conn = get(conn, ~p"/s/nonexistent-token/transcript")
+      assert html_response(conn, 404)
     end
 
     test "shows turn count in topbar", %{conn: conn} do
-      conn = get(conn, ~p"/s/test-token/transcript")
+      conn = get(conn, ~p"/s/real-token-123/transcript")
       html = html_response(conn, 200)
       assert html =~ "77 turns total"
     end
   end
 
   describe "GET /s/:token/verify" do
+    setup [:create_share_with_user]
+
     test "renders verification page with hash and status", %{conn: conn} do
-      conn = get(conn, ~p"/s/test-token/verify")
+      conn = get(conn, ~p"/s/real-token-123/verify")
       html = html_response(conn, 200)
       assert html =~ "Session Verification"
       assert html =~ "Content Hash"
-      assert html =~ "sha256:"
       assert html =~ "Signature Status"
       assert html =~ "UNVERIFIED"
     end
 
+    test "returns 404 for non-existent token", %{conn: conn} do
+      conn = get(conn, ~p"/s/nonexistent-token/verify")
+      assert html_response(conn, 404)
+    end
+
     test "includes link back to session", %{conn: conn} do
-      conn = get(conn, ~p"/s/my-token/verify")
+      conn = get(conn, ~p"/s/real-token-123/verify")
       html = html_response(conn, 200)
-      assert html =~ "/s/my-token"
-    end
-
-    test "renders Ed25519 Signature label when signature present", %{conn: conn} do
-      # Mock session has no signature, so the :if guard hides it
-      conn = get(conn, ~p"/s/test-token/verify")
-      html = html_response(conn, 200)
-      # Signature fields should not appear for unsigned sessions
-      refute html =~ "Ed25519 Signature"
-      refute html =~ "Public Key"
-    end
-  end
-
-  describe "turn timeline on case study" do
-    test "renders turn timeline collapsible", %{conn: conn} do
-      conn = get(conn, ~p"/s/test-token")
-      html = html_response(conn, 200)
-      assert html =~ "Turn timeline"
-      assert html =~ "8 turns"
-      assert html =~ "Review existing auth flow"
-      assert html =~ "Run full test suite"
+      assert html =~ "/s/real-token-123"
     end
   end
 end

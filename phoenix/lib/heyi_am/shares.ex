@@ -50,6 +50,13 @@ defmodule HeyiAm.Shares do
     |> Repo.all()
   end
 
+  def list_shares_for_user_project(user_id, project_name) do
+    Share
+    |> where(user_id: ^user_id, project_name: ^project_name)
+    |> order_by([s], desc: s.inserted_at)
+    |> Repo.all()
+  end
+
   def pin_turn(%Share{} = share, turn_id), do: add_to_list(share, :pinned_turns, turn_id)
   def unpin_turn(%Share{} = share, turn_id), do: remove_from_list(share, :pinned_turns, turn_id)
   def highlight_step(%Share{} = share, step_index), do: add_to_list(share, :highlighted_steps, step_index)

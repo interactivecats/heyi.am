@@ -1,7 +1,7 @@
 <.public_shell logo_href={"/s/#{@session.token}"} current_page="Transcript">
   <:nav_item href={"/s/#{@session.token}"} label="← Case Study" />
   <:status>
-    <span :if={@session[:sealed?]} class="chip chip--primary">SEALED</span>
+    <span :if={@session.sealed} class="chip chip--primary">SEALED</span>
     <span class="topbar-status">{@session.turns} turns total</span>
   </:status>
 
@@ -19,27 +19,29 @@
 
     <%!-- Transcript Turns --%>
     <%= for {turn, idx} <- Enum.with_index(@transcript) do %>
+      <% role = to_string(turn["role"]) %>
       <div class="transcript-msg">
-        <div class={["transcript-avatar", turn.role == :dev && "transcript-avatar--dev", turn.role == :ai && "transcript-avatar--ai"]}>
-          {if turn.role == :dev, do: "DEV", else: "AI"}
+        <div class={["transcript-avatar", role == "dev" && "transcript-avatar--dev", role == "ai" && "transcript-avatar--ai"]}>
+          {if role == "dev", do: "DEV", else: "AI"}
         </div>
         <div class="transcript-content">
           <div class="transcript-meta">
-            <span>{turn.id}</span>
-            <span>{turn.timestamp}</span>
+            <span>{turn["id"]}</span>
+            <span>{turn["timestamp"]}</span>
           </div>
           <div class="transcript-body">
-            <%= for paragraph <- String.split(turn.text, "\n\n") do %>
+            <%= for paragraph <- String.split(turn["text"] || "", "\n\n") do %>
               <p style="margin-block-end: var(--spacing-2);">{paragraph}</p>
             <% end %>
           </div>
-          <%= if turn.decision do %>
-            <div class="transcript-decision" style={if turn.decision.color == "secondary", do: "border-inline-start-color: var(--secondary); background-color: rgba(0, 106, 97, 0.04);", else: ""}>
-              <div class="transcript-decision-label" style={if turn.decision.color == "secondary", do: "color: var(--secondary);", else: ""}>
-                {turn.decision.label}
+          <%= if turn["decision"] do %>
+            <% decision = turn["decision"] %>
+            <div class="transcript-decision" style={if decision["color"] == "secondary", do: "border-inline-start-color: var(--secondary); background-color: rgba(0, 106, 97, 0.04);", else: ""}>
+              <div class="transcript-decision-label" style={if decision["color"] == "secondary", do: "color: var(--secondary);", else: ""}>
+                {decision["label"]}
               </div>
-              <p class="body-sm" style={if turn.decision.color == "secondary", do: "color: var(--secondary);", else: ""}>
-                {turn.decision.text}
+              <p class="body-sm" style={if decision["color"] == "secondary", do: "color: var(--secondary);", else: ""}>
+                {decision["text"]}
               </p>
             </div>
           <% end %>

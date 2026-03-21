@@ -47,7 +47,7 @@ defmodule HeyiAmWeb.ApiContractTest do
             skills: ["Elixir", "Phoenix", "Authentication"],
             beats: [%{label: "Step 1", description: "Analyzed auth"}],
             qa_pairs: [%{question: "Why?", answer: "Because."}],
-            highlights: %{pivots: 4},
+            highlights: [%{type: "pivot", title: "Rejected patch", description: "Chose rewrite"}],
             tool_breakdown: [%{name: "Read", count: 142}],
             top_files: [%{path: "lib/accounts.ex", touches: 9}],
             transcript_excerpt: [%{role: "dev", text: "Tear it out."}],

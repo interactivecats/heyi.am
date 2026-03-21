@@ -21,7 +21,7 @@ defmodule HeyiAm.Shares.Share do
     field :skills, {:array, :string}, default: []
     field :beats, {:array, :map}, default: []
     field :qa_pairs, {:array, :map}, default: []
-    field :highlights, :map, default: %{}
+    field :highlights, {:array, :map}, default: []
     field :tool_breakdown, {:array, :map}, default: []
     field :top_files, {:array, :map}, default: []
     field :transcript_excerpt, {:array, :map}, default: []

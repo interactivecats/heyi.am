@@ -2,7 +2,7 @@
   <:nav_item href={"/" <> @session.user.username} label="Portfolio" />
   <:nav_item href="#" label="Session" />
   <:status>
-    <span :if={@session[:sealed?]} class="chip chip--primary">SEALED</span>
+    <span :if={@session.sealed} class="chip chip--primary">SEALED</span>
   </:status>
 
   <%!-- Template scope wraps the entire case study --%>
@@ -69,8 +69,8 @@
       <section>
         <span class="label-mono" style="display: block; margin-block-end: var(--spacing-4);">Session Questions</span>
         <div :for={qa <- @session.qa_pairs} class="qa-pair">
-          <div class="question">{qa.question}</div>
-          <div class="answer">{qa.answer}</div>
+          <div class="question">{qa["question"]}</div>
+          <div class="answer">{qa["answer"]}</div>
         </div>
       </section>
     </div>
@@ -87,8 +87,8 @@
               <div :if={idx < length(@session.beats) - 1} class="exec-path-line"></div>
             </div>
             <div class="exec-path-content">
-              <div class="exec-path-title" style="font-size: 0.875rem;">{beat.label}</div>
-              <div :if={beat.description} class="exec-path-desc" style="font-size: 0.8125rem;">{beat.description}</div>
+              <div class="exec-path-title" style="font-size: 0.875rem;">{beat["label"]}</div>
+              <div :if={beat["description"]} class="exec-path-desc" style="font-size: 0.8125rem;">{beat["description"]}</div>
             </div>
           </div>
         </div>
@@ -100,9 +100,9 @@
           <span style="font-size: 0.625rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.4);">Raw Log Preview</span>
         </div>
         <div :for={line <- @session.transcript_excerpt} class="terminal-line">
-          <span :if={line.role == :dev} class="terminal-prompt">&gt; </span>
-          <span :if={line.role == :ai} style="color: #60a5fa;">[AI] </span>
-          {line.text}
+          <span :if={to_string(line["role"]) == "dev"} class="terminal-prompt">&gt; </span>
+          <span :if={to_string(line["role"]) == "ai"} style="color: #60a5fa;">[AI] </span>
+          {line["text"]}
         </div>
         <div class="terminal-line" style="color: rgba(255,255,255,0.3);">... {(@session.turns - 3)} more turns</div>
         <div style="margin-block-start: var(--spacing-3);">
@@ -142,14 +142,14 @@
         <div :for={hl <- @session.highlights} class="highlight-card" style="min-width: 240px; flex: 1; flex-direction: column; align-items: flex-start;">
           <span class={[
             "chip",
-            hl.type == "pivot" && "chip--primary",
-            hl.type == "win" && "chip--secondary",
-            hl.type == "insight" && "chip--tertiary"
+            hl["type"] == "pivot" && "chip--primary",
+            hl["type"] == "win" && "chip--secondary",
+            hl["type"] == "insight" && "chip--tertiary"
           ]} style="margin-block-end: var(--spacing-2);">
-            {String.capitalize(hl.type)}
+            {String.capitalize(hl["type"])}
           </span>
-          <div style="font-weight: 600; font-size: 0.875rem; margin-block-end: 2px;">{hl.title}</div>
-          <div style="font-size: 0.8125rem; color: var(--on-surface-variant);">{hl.description}</div>
+          <div style="font-weight: 600; font-size: 0.875rem; margin-block-end: 2px;">{hl["title"]}</div>
+          <div style="font-size: 0.8125rem; color: var(--on-surface-variant);">{hl["description"]}</div>
         </div>
       </div>
     </section>
@@ -157,16 +157,16 @@
     <%!-- Collapsible: Tool Breakdown --%>
     <details class="collapsible" style="margin-block-end: var(--spacing-2);">
       <summary>
-        Tool breakdown ({Enum.reduce(@session.tool_breakdown, 0, &(&1.count + &2))} calls)
+        Tool breakdown ({Enum.reduce(@session.tool_breakdown, 0, &((&1["count"] || 0) + &2))} calls)
       </summary>
       <div class="collapsible-content">
         <div :for={tool <- @session.tool_breakdown} style="display: flex; align-items: center; gap: var(--spacing-3); margin-block-end: var(--spacing-2);">
-          <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); width: 5rem; text-align: end;">{tool.name}</span>
+          <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); width: 5rem; text-align: end;">{tool["name"]}</span>
           <div style="flex: 1; height: 6px; background: var(--surface-container-low); border-radius: 3px; overflow: hidden;">
-            <% max_count = Enum.max_by(@session.tool_breakdown, & &1.count).count %>
-            <div style={"width: #{round(tool.count / max_count * 100)}%; height: 100%; background: var(--primary); border-radius: 3px;"}></div>
+            <% max_count = Enum.max_by(@session.tool_breakdown, & &1["count"])["count"] %>
+            <div style={"width: #{round(tool["count"] / max_count * 100)}%; height: 100%; background: var(--primary); border-radius: 3px;"}></div>
           </div>
-          <span style="font-family: var(--font-mono); font-size: 0.75rem; width: 2rem;">{tool.count}</span>
+          <span style="font-family: var(--font-mono); font-size: 0.75rem; width: 2rem;">{tool["count"]}</span>
         </div>
       </div>
     </details>
@@ -178,8 +178,8 @@
       </summary>
       <div class="collapsible-content">
         <div :for={file <- @session.top_files} style="display: flex; justify-content: space-between; padding: var(--spacing-1) 0; font-family: var(--font-mono); font-size: 0.75rem;">
-          <span>{file.path}</span>
-          <span style="color: var(--on-surface-variant);">{file.touches}x</span>
+          <span>{file["path"]}</span>
+          <span style="color: var(--on-surface-variant);">{file["touches"]}x</span>
         </div>
         <div :if={@session.files_changed > length(@session.top_files)} style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); padding: var(--spacing-2) 0;">
           ... {@session.files_changed - length(@session.top_files)} more files
