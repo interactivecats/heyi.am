@@ -152,6 +152,25 @@ describe('EnhanceFlow', () => {
     expect(screen.getByText('Discard')).toBeDefined();
   });
 
+  it('shows Q&A summary with "Your input baked in" label in done phase', async () => {
+    renderWithRoute('ses-001');
+    await act(async () => { await vi.advanceTimersByTimeAsync(600); });
+
+    // Answer a question
+    const textareas = screen.getAllByRole('textbox');
+    fireEvent.change(textareas[0], { target: { value: 'My answer' } });
+
+    fireEvent.click(screen.getByText('Continue'));
+    act(() => { vi.advanceTimersByTime(3000); });
+
+    expect(screen.getByText('Your input baked in')).toBeDefined();
+    const summary = document.querySelector('.enhance-qa-summary');
+    expect(summary).not.toBeNull();
+    // Answer should have primary border-left via CSS class
+    const answer = document.querySelector('.enhance-qa-summary__answer');
+    expect(answer).not.toBeNull();
+  });
+
   it('shows error state when enhancement API fails', async () => {
     vi.spyOn(api, 'enhanceSession').mockRejectedValue(new Error('API key missing'));
     renderWithRoute('ses-001');

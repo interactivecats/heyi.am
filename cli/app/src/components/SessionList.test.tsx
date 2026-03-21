@@ -72,10 +72,11 @@ describe('SessionList — populated state', () => {
     expect(screen.getByText('api-gateway')).toBeInTheDocument();
   });
 
-  it('renders sidebar stats section', () => {
+  it('renders sidebar stats section with Enhanced count', () => {
     renderSessionList();
     expect(screen.getByText('Stats')).toBeInTheDocument();
     expect(screen.getByText(/Sessions:/)).toBeInTheDocument();
+    expect(screen.getByText(/Enhanced:/)).toBeInTheDocument();
     expect(screen.getByText(/Published:/)).toBeInTheDocument();
   });
 

@@ -82,11 +82,6 @@ export function SessionDetail({
     );
   }
 
-  const totalToolCalls = session.toolBreakdown?.reduce(
-    (sum, t) => sum + t.count,
-    0,
-  );
-
   function handleEnhanceClick() {
     if (!hasApiKey) {
       setShowApiKeyError(true);

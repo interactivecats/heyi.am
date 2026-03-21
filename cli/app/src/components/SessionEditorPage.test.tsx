@@ -37,6 +37,15 @@ describe('SessionEditorPage', () => {
     expect(screen.getByText('Raw Session Digest')).toBeDefined();
   });
 
+  it('renders publish button in the header bar', () => {
+    renderWithRoute('ses-001');
+    const headerRight = document.querySelector('.app-header__right');
+    const buttons = headerRight?.querySelectorAll('button');
+    const publishBtn = Array.from(buttons ?? []).find((b) => b.textContent?.includes('Publish'));
+    expect(publishBtn).toBeDefined();
+    expect(publishBtn?.textContent).toContain('Publish');
+  });
+
   it('shows auth modal when Publish clicked (not authenticated)', () => {
     renderWithRoute('ses-001', { isAuthenticated: false });
     const publishBtn = screen.getByRole('button', { name: /Publish/ });

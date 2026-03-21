@@ -79,6 +79,23 @@ describe('SessionEditor', () => {
     expect(firstInput.value).toBe(steps[1].title);
   });
 
+  it('can edit a step title inline', () => {
+    renderEditor();
+    const input = screen.getByLabelText('Step 1 title') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Updated step title' } });
+    expect(input.value).toBe('Updated step title');
+  });
+
+  it('can delete a step', () => {
+    renderEditor();
+    const steps = session.executionPath!;
+    const deleteBtn = screen.getByLabelText('Delete step 1');
+    fireEvent.click(deleteBtn);
+    // After deleting, step 1 should now contain what was step 2
+    const firstInput = screen.getByLabelText('Step 1 title') as HTMLInputElement;
+    expect(firstInput.value).toBe(steps[1].title);
+  });
+
   it('can remove a skill chip', () => {
     renderEditor();
     const firstSkill = session.skills![0];

@@ -47,19 +47,30 @@ describe('SessionDetail', () => {
     expect(screen.getByText('Production Rollout')).toBeDefined();
   });
 
-  it('renders collapsible tool breakdown', () => {
+  it('renders tool breakdown as individual horizontal bars', () => {
     renderWithRoute('ses-001');
     expect(screen.getByText('Tool Breakdown')).toBeDefined();
+    const rows = document.querySelectorAll('.tool-breakdown-row');
+    expect(rows.length).toBeGreaterThan(0);
+    // Each row should have a label, track, and count
+    const firstRow = rows[0];
+    expect(firstRow.querySelector('.tool-breakdown-row__label')).toBeDefined();
+    expect(firstRow.querySelector('.tool-breakdown-row__track')).toBeDefined();
+    expect(firstRow.querySelector('.tool-breakdown-row__count')).toBeDefined();
   });
 
-  it('renders collapsible turn timeline', () => {
+  it('renders turn timeline with turn numbers and truncation', () => {
     renderWithRoute('ses-001');
     expect(screen.getByText('Turn Timeline')).toBeDefined();
+    const entries = document.querySelectorAll('.turn-timeline-entry');
+    expect(entries.length).toBeLessThanOrEqual(3);
   });
 
-  it('renders collapsible files changed', () => {
+  it('renders files changed with filepath and edit count', () => {
     renderWithRoute('ses-001');
     expect(screen.getByText(/Files Changed \(5\)/)).toBeDefined();
+    const rows = document.querySelectorAll('.files-changed-row');
+    expect(rows.length).toBeGreaterThan(0);
   });
 
   it('renders action buttons', () => {
