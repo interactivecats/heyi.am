@@ -3,42 +3,60 @@ defmodule HeyiAmWeb.ProjectEditorLive do
 
   import HeyiAmWeb.AppShell
 
-  @mock_project %{
-    slug: "project-alpha",
-    name: "Project Alpha",
-    version: "v2.4.0-stable",
-    take:
-      "Building a scalable telemetry engine for edge devices using Rust and WebAssembly. Focus on low-latency data ingestion and visual debugging interfaces.",
-    tags: ["RUST", "WASM", "EDGE-COMP"],
-    github_synced: true,
-    sessions: [
-      %{
-        id: "0x82A1",
-        title: "Initial Architectural Prototype",
-        status: :sealed,
-        visibility: :public,
-        featured: false
-      },
-      %{
-        id: "0x9F4B",
-        title: "WASM Memory Isolation Tests",
-        status: :published,
-        visibility: :public,
-        featured: true
-      },
-      %{
-        id: "0x112C",
-        title: "Refactoring Event Loop...",
-        status: :draft,
-        visibility: :private,
-        featured: false
-      }
-    ]
-  }
+  alias HeyiAm.Shares
+  alias HeyiAm.Portfolios
 
   @impl true
-  def mount(_params, _session, socket) do
-    project = @mock_project
+  def mount(%{"slug" => slug}, _session, socket) do
+    user = socket.assigns.current_scope.user
+    portfolio_sessions = Portfolios.list_portfolio_sessions(user.id)
+
+    # Find portfolio sessions matching this slug
+    matching_ps =
+      Enum.filter(portfolio_sessions, fn ps ->
+        slugify(ps.project_name) == slug
+      end)
+
+    project_name =
+      case matching_ps do
+        [first | _] -> first.project_name
+        [] -> unslugify(slug)
+      end
+
+    shares = Shares.list_shares_for_user_project(user.id, project_name)
+
+    all_skills =
+      shares
+      |> Enum.flat_map(& &1.skills)
+      |> Enum.uniq()
+      |> Enum.map(&String.upcase/1)
+
+    sessions =
+      Enum.map(matching_ps, fn ps ->
+        share = ps.share
+
+        %{
+          id: ps.id,
+          title: (share && share.title) || "Untitled",
+          status: cond do
+            share && share.sealed -> :sealed
+            true -> :published
+          end,
+          visibility: if(ps.visible, do: :public, else: :private),
+          featured: false
+        }
+      end)
+
+    project = %{
+      slug: slug,
+      name: project_name || "Unnamed Project",
+      version: "",
+      take: Enum.find_value(shares, "", fn s -> s.dev_take end),
+      tags: all_skills,
+      github_synced: false,
+      sessions: sessions
+    }
+
     active_count = Enum.count(project.sessions, &(&1.status != :archived))
     archived_count = Enum.count(project.sessions, &(&1.status == :archived))
 
@@ -48,6 +66,21 @@ defmodule HeyiAmWeb.ProjectEditorLive do
      |> assign(:project, project)
      |> assign(:active_count, active_count)
      |> assign(:archived_count, archived_count)}
+  end
+
+  defp slugify(nil), do: "unnamed-project"
+
+  defp slugify(name) do
+    name
+    |> String.downcase()
+    |> String.replace(~r/[^a-z0-9]+/, "-")
+    |> String.trim("-")
+  end
+
+  defp unslugify(slug) do
+    slug
+    |> String.split("-")
+    |> Enum.map_join(" ", &String.capitalize/1)
   end
 
   @impl true
@@ -77,11 +110,21 @@ defmodule HeyiAmWeb.ProjectEditorLive do
     end
   end
 
-  def handle_event("toggle_visibility", %{"id" => id}, socket) do
+  def handle_event("toggle_visibility", %{"id" => id_str}, socket) do
+    id = String.to_integer(id_str)
+
     sessions =
       Enum.map(socket.assigns.project.sessions, fn session ->
         if session.id == id do
           new_vis = if session.visibility == :public, do: :private, else: :public
+
+          user = socket.assigns.current_scope.user
+
+          case Portfolios.get_portfolio_session_for_user(id, user.id) do
+            nil -> :ok
+            ps -> Portfolios.toggle_visibility(ps, new_vis == :public)
+          end
+
           %{session | visibility: new_vis}
         else
           session
@@ -92,7 +135,9 @@ defmodule HeyiAmWeb.ProjectEditorLive do
     {:noreply, assign(socket, :project, project)}
   end
 
-  def handle_event("toggle_star", %{"id" => id}, socket) do
+  def handle_event("toggle_star", %{"id" => id_str}, socket) do
+    id = String.to_integer(id_str)
+
     sessions =
       Enum.map(socket.assigns.project.sessions, fn session ->
         if session.id == id do
@@ -107,7 +152,11 @@ defmodule HeyiAmWeb.ProjectEditorLive do
   end
 
   def handle_event("reorder", %{"ids" => ids}, socket) do
-    session_map = Map.new(socket.assigns.project.sessions, &{&1.id, &1})
+    user = socket.assigns.current_scope.user
+    int_ids = Enum.map(ids, &String.to_integer/1)
+    Portfolios.reorder(user.id, int_ids)
+
+    session_map = Map.new(socket.assigns.project.sessions, &{to_string(&1.id), &1})
     reordered = Enum.map(ids, &Map.fetch!(session_map, &1))
     project = %{socket.assigns.project | sessions: reordered}
     {:noreply, assign(socket, :project, project)}

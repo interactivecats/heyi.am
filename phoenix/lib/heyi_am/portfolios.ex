@@ -29,6 +29,12 @@ defmodule HeyiAm.Portfolios do
     |> Repo.all()
   end
 
+  def get_portfolio_session_for_user(id, user_id) do
+    PortfolioSession
+    |> where(id: ^id, user_id: ^user_id)
+    |> Repo.one()
+  end
+
   def toggle_visibility(%PortfolioSession{} = ps, visible) do
     ps
     |> PortfolioSession.changeset(%{visible: visible})

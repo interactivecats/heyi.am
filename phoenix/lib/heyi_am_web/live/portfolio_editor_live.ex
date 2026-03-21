@@ -3,6 +3,10 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
 
   import HeyiAmWeb.AppShell
 
+  alias HeyiAm.Portfolios
+  alias HeyiAm.Shares
+  alias HeyiAm.Accounts
+
   @accent_colors [
     %{id: "seal-blue", label: "Seal Blue", hex: "#084471"},
     %{id: "violet", label: "Violet", hex: "#7C5CFC"},
@@ -12,82 +16,46 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
     %{id: "sky", label: "Sky", hex: "#0284C7"}
   ]
 
-  @mock_profile %{
-    name: "Alex Rivera",
-    bio: "Full-stack systems architect specializing in distributed databases and high-concurrency web applications. Building resilient digital infrastructures at scale.",
-    location: "SAN_FRANCISCO_CA",
-    status: "OPEN_FOR_COLLAB"
-  }
-
-  @mock_expertise [
-    %{label: "BACKEND", techs: "Rust / Go / Node.js", level: 80},
-    %{label: "INFRA", techs: "AWS / Kubernetes / Terraform", level: 75},
-    %{label: "DATABASE", techs: "PostgreSQL / Redis / Cassandra", level: 100},
-    %{label: "FRONTEND", techs: "React / TypeScript / WebGL", level: 60},
-    %{label: "SECURITY", techs: "mTLS / RBAC / Vault", level: 55}
-  ]
-
-  @mock_projects [
-    %{
-      id: 1,
-      slug: "hyperion-grid",
-      name: "Hyperion Grid Engine",
-      description: "A high-performance compute engine for real-time financial modeling.",
-      category: "ARCHITECTURE",
-      skills: ["Rust", "WebAssembly", "PostgreSQL"],
-      visible: true,
-      sessions: [
-        %{id: 1, title: "Initial Architectural Prototype", status: :sealed, visibility: :public, featured: false},
-        %{id: 2, title: "WASM Memory Isolation Tests", status: :published, visibility: :public, featured: true},
-        %{id: 3, title: "Refactoring Event Loop...", status: :draft, visibility: :private, featured: false}
-      ]
-    },
-    %{
-      id: 2,
-      slug: "lancer-sdk",
-      name: "Lancer SDK",
-      description: "Lightweight TypeScript framework for decentralized identity verification.",
-      category: "PROTOCOL",
-      skills: ["TypeScript", "Cryptography"],
-      visible: true,
-      sessions: [
-        %{id: 4, title: "ZK Proof Implementation", status: :published, visibility: :public, featured: true}
-      ]
-    },
-    %{
-      id: 3,
-      slug: "flux-capacitor",
-      name: "Flux Capacitor UI",
-      description: "A component library for rapid prototyping of industrial IoT dashboards.",
-      category: "OPEN_SOURCE",
-      skills: ["React", "D3.js", "WebGL"],
-      visible: true,
-      sessions: []
-    }
-  ]
-
   @impl true
   def mount(_params, _session, socket) do
+    user = socket.assigns.current_scope.user
+
+    profile = %{
+      name: user.display_name || user.username || "Unnamed",
+      bio: user.bio || "",
+      location: user.location || "",
+      status: user.status || ""
+    }
+
+    portfolio_sessions = Portfolios.list_portfolio_sessions(user.id)
+    projects = build_projects(portfolio_sessions)
+    shares = Shares.list_shares_for_user(user.id)
+    expertise = compute_expertise(shares)
+
     {:ok,
      socket
      |> assign(:page_title, "Portfolio Editor")
      |> assign(:templates, HeyiAmWeb.Templates.list())
      |> assign(:accent_colors, @accent_colors)
-     |> assign(:selected_template, "editorial")
-     |> assign(:selected_accent, "seal-blue")
+     |> assign(:selected_template, user.portfolio_layout || "editorial")
+     |> assign(:selected_accent, user.portfolio_accent || "seal-blue")
      |> assign(:visitor_mode, false)
-     |> assign(:profile, @mock_profile)
-     |> assign(:projects, @mock_projects)
-     |> assign(:expertise, @mock_expertise)
+     |> assign(:profile, profile)
+     |> assign(:projects, projects)
+     |> assign(:expertise, expertise)
      |> assign(:expanded_project, nil)}
   end
 
   @impl true
   def handle_event("select_template", %{"template" => template_id}, socket) do
+    user = socket.assigns.current_scope.user
+    Accounts.update_user_profile(user, %{portfolio_layout: template_id})
     {:noreply, assign(socket, :selected_template, template_id)}
   end
 
   def handle_event("select_accent", %{"accent" => accent_id}, socket) do
+    user = socket.assigns.current_scope.user
+    Accounts.update_user_profile(user, %{portfolio_accent: accent_id})
     {:noreply, assign(socket, :selected_accent, accent_id)}
   end
 
@@ -100,6 +68,11 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
   def handle_event("update_profile", %{"field" => field, "value" => value}, socket)
       when field in @allowed_profile_fields do
     profile = Map.put(socket.assigns.profile, String.to_existing_atom(field), value)
+    user = socket.assigns.current_scope.user
+
+    db_field = if field == "name", do: :display_name, else: String.to_existing_atom(field)
+    Accounts.update_user_profile(user, %{db_field => value})
+
     {:noreply, assign(socket, :profile, profile)}
   end
 
@@ -112,7 +85,22 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
 
     projects =
       Enum.map(socket.assigns.projects, fn project ->
-        if project.id == id, do: %{project | visible: !project.visible}, else: project
+        if project.id == id do
+          new_visible = !project.visible
+
+          user = socket.assigns.current_scope.user
+
+          Enum.each(project.portfolio_session_ids, fn ps_id ->
+            case Portfolios.get_portfolio_session_for_user(ps_id, user.id) do
+              nil -> :ok
+              ps -> Portfolios.toggle_visibility(ps, new_visible)
+            end
+          end)
+
+          %{project | visible: new_visible}
+        else
+          project
+        end
       end)
 
     {:noreply, assign(socket, :projects, projects)}
@@ -133,6 +121,14 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
           Enum.map(project.sessions, fn session ->
             if session.id == id do
               new_vis = if session.visibility == :public, do: :private, else: :public
+
+              user = socket.assigns.current_scope.user
+
+              case Portfolios.get_portfolio_session_for_user(id, user.id) do
+                nil -> :ok
+                ps -> Portfolios.toggle_visibility(ps, new_vis == :public)
+              end
+
               %{session | visibility: new_vis}
             else
               session
@@ -147,6 +143,10 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
 
   def handle_event("reorder", %{"ids" => ids}, socket) do
     expanded_id = socket.assigns.expanded_project
+    user = socket.assigns.current_scope.user
+
+    int_ids = Enum.map(ids, &String.to_integer/1)
+    Portfolios.reorder(user.id, int_ids)
 
     projects =
       Enum.map(socket.assigns.projects, fn project ->
@@ -180,6 +180,81 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
       end)
 
     {:noreply, assign(socket, :projects, projects)}
+  end
+
+  defp build_projects(portfolio_sessions) do
+    portfolio_sessions
+    |> Enum.group_by(& &1.project_name)
+    |> Enum.with_index(1)
+    |> Enum.map(fn {{project_name, ps_list}, idx} ->
+      all_skills =
+        ps_list
+        |> Enum.flat_map(fn ps -> (ps.share && ps.share.skills) || [] end)
+        |> Enum.uniq()
+
+      sessions =
+        Enum.map(ps_list, fn ps ->
+          share = ps.share
+
+          %{
+            id: ps.id,
+            title: (share && share.title) || "Untitled",
+            status: cond do
+              share && share.sealed -> :sealed
+              true -> :published
+            end,
+            visibility: if(ps.visible, do: :public, else: :private),
+            featured: false
+          }
+        end)
+
+      slug = slugify(project_name || "unnamed-project")
+
+      %{
+        id: idx,
+        slug: slug,
+        name: project_name || "Unnamed Project",
+        description: first_dev_take(ps_list),
+        category: "PROJECT",
+        skills: all_skills,
+        visible: Enum.any?(ps_list, & &1.visible),
+        sessions: sessions,
+        portfolio_session_ids: Enum.map(ps_list, & &1.id)
+      }
+    end)
+  end
+
+  defp first_dev_take(ps_list) do
+    ps_list
+    |> Enum.find_value(fn ps -> ps.share && ps.share.dev_take end)
+    |> Kernel.||("")
+  end
+
+  defp slugify(name) do
+    name
+    |> String.downcase()
+    |> String.replace(~r/[^a-z0-9]+/, "-")
+    |> String.trim("-")
+  end
+
+  defp compute_expertise(shares) do
+    skill_counts =
+      shares
+      |> Enum.flat_map(& &1.skills)
+      |> Enum.frequencies()
+
+    max_count = skill_counts |> Map.values() |> Enum.max(fn -> 1 end)
+
+    skill_counts
+    |> Enum.sort_by(fn {_skill, count} -> -count end)
+    |> Enum.take(8)
+    |> Enum.map(fn {skill, count} ->
+      %{
+        label: String.upcase(skill),
+        techs: skill,
+        level: round(count / max_count * 100)
+      }
+    end)
   end
 
   defp accent_hex(accent_id) do
