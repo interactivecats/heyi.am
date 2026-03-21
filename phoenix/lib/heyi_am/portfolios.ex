@@ -29,6 +29,14 @@ defmodule HeyiAm.Portfolios do
     |> Repo.all()
   end
 
+  def list_visible_portfolio_sessions(user_id) do
+    PortfolioSession
+    |> where(user_id: ^user_id, visible: true)
+    |> order_by(:position)
+    |> preload(:share)
+    |> Repo.all()
+  end
+
   def get_portfolio_session_for_user(id, user_id) do
     PortfolioSession
     |> where(id: ^id, user_id: ^user_id)

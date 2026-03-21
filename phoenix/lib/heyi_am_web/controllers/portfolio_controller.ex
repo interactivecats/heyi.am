@@ -15,7 +15,7 @@ defmodule HeyiAmWeb.PortfolioController do
         |> render(:"404")
 
       user ->
-        portfolio_sessions = Portfolios.list_portfolio_sessions(user.id)
+        portfolio_sessions = Portfolios.list_visible_portfolio_sessions(user.id)
         shares = Enum.map(portfolio_sessions, fn ps -> Map.from_struct(ps.share) end)
 
         projects = build_projects(shares)
@@ -44,7 +44,7 @@ defmodule HeyiAmWeb.PortfolioController do
         |> render(:"404")
 
       user ->
-        portfolio_sessions = Portfolios.list_portfolio_sessions(user.id)
+        portfolio_sessions = Portfolios.list_visible_portfolio_sessions(user.id)
         shares = Enum.map(portfolio_sessions, fn ps -> Map.from_struct(ps.share) end)
 
         project_shares =
