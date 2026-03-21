@@ -4,11 +4,32 @@ import { AppShell } from './AppShell';
 import { useAuth } from '../AuthContext';
 import { fetchEnhanceStatus, type EnhanceStatus } from '../api';
 
+const API_BASE = '/api';
+
+async function fetchApiKeyStatus(): Promise<{ hasKey: boolean; maskedKey: string | null }> {
+  const res = await fetch(`${API_BASE}/settings/api-key`);
+  if (!res.ok) return { hasKey: false, maskedKey: null };
+  return res.json();
+}
+
+async function saveApiKey(apiKey: string): Promise<{ ok: boolean; mode: string }> {
+  const res = await fetch(`${API_BASE}/settings/api-key`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ apiKey }),
+  });
+  if (!res.ok) throw new Error('Failed to save API key');
+  return res.json();
+}
+
 export function Settings() {
   const navigate = useNavigate();
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [enhanceStatus, setEnhanceStatus] = useState<EnhanceStatus | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [hasExistingKey, setHasExistingKey] = useState(false);
+  const [maskedKey, setMaskedKey] = useState<string | null>(null);
   const auth = useAuth();
 
   const isConnected = auth.authenticated;
@@ -18,7 +39,44 @@ export function Settings() {
 
   useEffect(() => {
     fetchEnhanceStatus().then(setEnhanceStatus);
+    fetchApiKeyStatus().then(({ hasKey, maskedKey: mk }) => {
+      setHasExistingKey(hasKey);
+      setMaskedKey(mk);
+    });
   }, []);
+
+  const handleSaveApiKey = async () => {
+    setSaveStatus('saving');
+    try {
+      const result = await saveApiKey(apiKey);
+      setSaveStatus('saved');
+      setHasExistingKey(!!apiKey.trim());
+      setMaskedKey(apiKey.trim() ? `${apiKey.trim().slice(0, 7)}...${apiKey.trim().slice(-4)}` : null);
+      setApiKey('');
+      // Refresh enhance status to reflect new mode
+      setEnhanceStatus({ mode: result.mode as EnhanceStatus['mode'], remaining: null });
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch {
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    }
+  };
+
+  const handleClearApiKey = async () => {
+    setSaveStatus('saving');
+    try {
+      const result = await saveApiKey('');
+      setSaveStatus('saved');
+      setHasExistingKey(false);
+      setMaskedKey(null);
+      setApiKey('');
+      setEnhanceStatus({ mode: result.mode as EnhanceStatus['mode'], remaining: null });
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch {
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    }
+  };
 
   const modeLabel = enhanceStatus?.mode === 'local'
     ? 'Local API key'
@@ -61,9 +119,16 @@ export function Settings() {
               </p>
             )}
 
+            {hasExistingKey && maskedKey && (
+              <div className="settings-row" style={{ marginTop: 'var(--spacing-4)' }}>
+                <span className="settings-row__label">API Key</span>
+                <span className="settings-row__value">{maskedKey}</span>
+              </div>
+            )}
+
             <details style={{ marginTop: 'var(--spacing-4)' }}>
               <summary className="text-label" style={{ cursor: 'pointer' }}>
-                Use your own API key
+                {hasExistingKey ? 'Change API key' : 'Use your own API key'}
               </summary>
               <div className="settings-input-group" style={{ marginTop: 'var(--spacing-3)' }}>
                 <div className="settings-input-wrapper">
@@ -97,8 +162,33 @@ export function Settings() {
                     )}
                   </button>
                 </div>
+                <div style={{ display: 'flex', gap: 'var(--spacing-2)', marginTop: 'var(--spacing-2)' }}>
+                  <button
+                    className="btn btn-primary"
+                    type="button"
+                    onClick={handleSaveApiKey}
+                    disabled={!apiKey.trim() || saveStatus === 'saving'}
+                  >
+                    {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : 'Save'}
+                  </button>
+                  {hasExistingKey && (
+                    <button
+                      className="btn btn-secondary"
+                      type="button"
+                      onClick={handleClearApiKey}
+                      disabled={saveStatus === 'saving'}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                {saveStatus === 'error' && (
+                  <p className="settings-help" style={{ color: 'var(--color-error, #e53e3e)' }}>
+                    Failed to save. Try again.
+                  </p>
+                )}
                 <p className="settings-help">
-                  Uses your own Anthropic account. Bypasses proxy quota.
+                  Saved to ~/.config/heyiam/settings.json. Uses your own Anthropic account.
                 </p>
               </div>
             </details>

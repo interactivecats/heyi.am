@@ -11,6 +11,7 @@ import { checkAuthStatus, getAuthToken, saveAuthToken } from './auth.js';
 import { API_URL } from './config.js';
 import { summarizeSession, createSSEHandler } from './summarize.js';
 import { getProvider, getEnhanceMode } from './llm/index.js';
+import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey } from './settings.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -286,6 +287,29 @@ export function createApp(sessionsBasePath?: string) {
     } catch {
       res.json({ mode: 'unknown', remaining: null });
     }
+  });
+
+  // Save or clear the Anthropic API key
+  app.post('/api/settings/api-key', express.json(), (req: Request, res: Response) => {
+    const { apiKey } = req.body as { apiKey?: string };
+    if (apiKey && typeof apiKey === 'string' && apiKey.trim()) {
+      saveAnthropicApiKey(apiKey.trim());
+      console.log('[settings] API key saved');
+      res.json({ ok: true, mode: getEnhanceMode() });
+    } else {
+      clearAnthropicApiKey();
+      console.log('[settings] API key cleared');
+      res.json({ ok: true, mode: getEnhanceMode() });
+    }
+  });
+
+  // Get current API key status (masked)
+  app.get('/api/settings/api-key', (_req: Request, res: Response) => {
+    const key = getAnthropicApiKey();
+    res.json({
+      hasKey: !!key,
+      maskedKey: key ? `${key.slice(0, 7)}...${key.slice(-4)}` : null,
+    });
   });
 
   app.get('/api/auth/status', async (_req: Request, res: Response) => {
