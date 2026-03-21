@@ -34,6 +34,9 @@ config :ueberauth, Ueberauth.Strategy.Github.OAuth,
   client_id: "test_client_id",
   client_secret: "test_client_secret"
 
+# Disable rate limiting in tests (tested explicitly in rate_limit_test.exs)
+config :heyi_am, rate_limiting_enabled: false
+
 # Print only warnings and errors during test
 config :logger, level: :warning
 

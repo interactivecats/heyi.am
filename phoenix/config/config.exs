@@ -69,6 +69,12 @@ config :ueberauth, Ueberauth,
     github: {Ueberauth.Strategy.Github, [default_scope: "user:email"]}
   ]
 
+# Configure Hammer rate limiter
+config :hammer,
+  backend: {Hammer.Backend.ETS,
+            [expiry_ms: 60_000 * 60 * 4,
+             cleanup_interval_ms: 60_000 * 10]}
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 

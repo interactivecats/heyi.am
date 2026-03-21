@@ -60,7 +60,8 @@ defmodule HeyiAm.MixProject do
       {:bandit, "~> 1.5"},
       {:esbuild, "~> 0.10.0", runtime: Mix.env() == :dev},
       {:ueberauth, "~> 0.10"},
-      {:ueberauth_github, "~> 0.8"}
+      {:ueberauth_github, "~> 0.8"},
+      {:hammer, "~> 6.1"}
     ]
   end
 
