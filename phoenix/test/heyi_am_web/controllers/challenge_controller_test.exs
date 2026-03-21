@@ -192,13 +192,62 @@ defmodule HeyiAmWeb.ChallengeControllerTest do
       other_user = user_fixture()
       challenge = challenge_fixture(other_user)
 
+      # Create a response linked to this challenge
+      {:ok, share} =
+        HeyiAm.Shares.create_share(%{
+          "token" => HeyiAm.Shares.generate_token(),
+          "title" => "My Response",
+          "challenge_id" => challenge.id
+        })
+
       conn =
         conn
-        |> Plug.Conn.put_session("challenge_response_#{challenge.id}", true)
+        |> Plug.Conn.put_session("challenge_response_#{challenge.id}", share.token)
         |> get(~p"/challenges/#{challenge.slug}/submitted")
 
       html = html_response(conn, 200)
       assert html =~ "Submitted"
+    end
+
+    test "candidate can access submitted page via ?token= query param", %{conn: conn} do
+      other_user = user_fixture()
+      challenge = challenge_fixture(other_user)
+
+      {:ok, share} =
+        HeyiAm.Shares.create_share(%{
+          "token" => HeyiAm.Shares.generate_token(),
+          "title" => "My Response",
+          "challenge_id" => challenge.id
+        })
+
+      conn = get(conn, ~p"/challenges/#{challenge.slug}/submitted?token=#{share.token}")
+
+      html = html_response(conn, 200)
+      assert html =~ "Submitted"
+    end
+
+    test "invalid token query param does not grant access", %{conn: conn} do
+      other_user = user_fixture()
+      challenge = challenge_fixture(other_user)
+
+      conn = get(conn, ~p"/challenges/#{challenge.slug}/submitted?token=bogus-token")
+      assert redirected_to(conn) == "/challenges/#{challenge.slug}"
+    end
+
+    test "token for different challenge does not grant access", %{conn: conn} do
+      other_user = user_fixture()
+      challenge = challenge_fixture(other_user)
+      other_challenge = challenge_fixture(other_user)
+
+      {:ok, share} =
+        HeyiAm.Shares.create_share(%{
+          "token" => HeyiAm.Shares.generate_token(),
+          "title" => "Wrong Challenge Response",
+          "challenge_id" => other_challenge.id
+        })
+
+      conn = get(conn, ~p"/challenges/#{challenge.slug}/submitted?token=#{share.token}")
+      assert redirected_to(conn) == "/challenges/#{challenge.slug}"
     end
   end
 

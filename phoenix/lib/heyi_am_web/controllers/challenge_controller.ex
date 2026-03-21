@@ -69,23 +69,22 @@ defmodule HeyiAmWeb.ChallengeController do
     )
   end
 
-  def submitted(conn, %{"slug" => slug}) do
+  def submitted(conn, %{"slug" => slug} = params) do
     challenge = Challenges.get_challenge_by_slug!(slug)
 
-    is_owner = is_challenge_owner?(conn, challenge)
-    has_response_token = get_session(conn, "challenge_response_#{challenge.id}") != nil
+    # If ?token= query param provided, verify it belongs to this challenge and set session
+    conn = maybe_set_response_session(conn, challenge, params["token"])
 
-    if is_owner or has_response_token do
+    is_owner = is_challenge_owner?(conn, challenge)
+    response_token = get_session(conn, "challenge_response_#{challenge.id}")
+
+    if is_owner or response_token do
       seal_hash =
         if is_owner do
-          # Owner sees the latest response hash (they can see all via compare anyway)
           responses = Challenges.list_responses(challenge)
           latest = List.last(responses)
           if latest, do: Signature.content_hash(latest)
         else
-          # Candidate: show only their own response hash if token stored, else nil
-          response_token = get_session(conn, "challenge_response_#{challenge.id}")
-
           case response_token do
             token when is_binary(token) ->
               case HeyiAm.Shares.get_share_by_token(token) do
@@ -94,7 +93,6 @@ defmodule HeyiAmWeb.ChallengeController do
               end
 
             _ ->
-              # Legacy boolean or no token — don't leak other candidates' hashes
               nil
           end
         end
@@ -199,6 +197,19 @@ defmodule HeyiAmWeb.ChallengeController do
 
       _ ->
         params
+    end
+  end
+
+  defp maybe_set_response_session(conn, _challenge, nil), do: conn
+  defp maybe_set_response_session(conn, _challenge, ""), do: conn
+
+  defp maybe_set_response_session(conn, challenge, token) when is_binary(token) do
+    case HeyiAm.Shares.get_share_by_token(token) do
+      %{challenge_id: cid} when cid == challenge.id ->
+        put_session(conn, "challenge_response_#{challenge.id}", token)
+
+      _ ->
+        conn
     end
   end
 
