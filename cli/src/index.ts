@@ -42,7 +42,8 @@ program
     await new Promise(() => {});
   });
 
-const API_BASE = process.env.HEYIAM_API_URL ?? 'https://heyi.am';
+import { API_URL } from './config.js';
+const API_BASE = API_URL;
 
 program
   .command('login')

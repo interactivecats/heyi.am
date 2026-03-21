@@ -7,6 +7,7 @@ import { listSessions, parseSession, type SessionMeta } from './parsers/index.js
 import { bridgeToAnalyzer, bridgeChildSessions, aggregateChildStats, type ChildSessionSummary } from './bridge.js';
 import { analyzeSession, type Session } from './analyzer.js';
 import { checkAuthStatus } from './auth.js';
+import { API_URL } from './config.js';
 import { summarizeSession, createSSEHandler } from './summarize.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -211,7 +212,7 @@ export function createApp(sessionsBasePath?: string) {
   app.get('/api/auth/status', async (_req: Request, res: Response) => {
     try {
       const status = await checkAuthStatus(
-        process.env.HEYIAM_API_URL ?? 'https://heyi.am',
+        API_URL,
       );
       res.json(status);
     } catch {
