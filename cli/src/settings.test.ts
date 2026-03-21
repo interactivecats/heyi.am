@@ -2,11 +2,15 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { existsSync } from 'node:fs';
 import {
   getSettings,
   saveAnthropicApiKey,
   clearAnthropicApiKey,
   getAnthropicApiKey,
+  saveEnhancedData,
+  loadEnhancedData,
+  deleteEnhancedData,
 } from './settings.js';
 
 describe('settings', () => {
@@ -67,6 +71,60 @@ describe('settings', () => {
       saveAnthropicApiKey('sk-ant-fromfile', tmpDir);
       process.env.ANTHROPIC_API_KEY = 'sk-ant-fromenv';
       expect(getAnthropicApiKey(tmpDir)).toBe('sk-ant-fromenv');
+    });
+  });
+
+  describe('enhanced data persistence', () => {
+    const sampleData = {
+      title: 'Refactored auth to Ed25519',
+      developerTake: 'HS256 was a liability.',
+      context: 'Auth module needed upgrade.',
+      skills: ['TypeScript', 'Cryptography'],
+      questions: [{ text: 'Why Ed25519?', suggestedAnswer: 'Smaller keys, faster.' }],
+      executionSteps: [{ stepNumber: 1, title: 'Analyzed auth', body: 'Read auth.ts.' }],
+    };
+
+    it('returns null when no enhanced data exists', () => {
+      expect(loadEnhancedData('nonexistent', tmpDir)).toBeNull();
+    });
+
+    it('saves and loads enhanced data', () => {
+      saveEnhancedData('session-123', sampleData, tmpDir);
+      const loaded = loadEnhancedData('session-123', tmpDir);
+      expect(loaded).not.toBeNull();
+      expect(loaded!.title).toBe('Refactored auth to Ed25519');
+      expect(loaded!.skills).toEqual(['TypeScript', 'Cryptography']);
+      expect(loaded!.enhancedAt).toBeDefined();
+    });
+
+    it('creates enhanced/ subdirectory', () => {
+      saveEnhancedData('session-456', sampleData, tmpDir);
+      expect(existsSync(join(tmpDir, 'enhanced', 'session-456.json'))).toBe(true);
+    });
+
+    it('deletes enhanced data', () => {
+      saveEnhancedData('session-789', sampleData, tmpDir);
+      expect(loadEnhancedData('session-789', tmpDir)).not.toBeNull();
+      deleteEnhancedData('session-789', tmpDir);
+      expect(loadEnhancedData('session-789', tmpDir)).toBeNull();
+    });
+
+    it('delete is idempotent for nonexistent data', () => {
+      expect(() => deleteEnhancedData('nonexistent', tmpDir)).not.toThrow();
+    });
+
+    it('saves and loads quickEnhanced flag', () => {
+      saveEnhancedData('session-quick', { ...sampleData, quickEnhanced: true }, tmpDir);
+      const loaded = loadEnhancedData('session-quick', tmpDir);
+      expect(loaded).not.toBeNull();
+      expect(loaded!.quickEnhanced).toBe(true);
+    });
+
+    it('defaults quickEnhanced to false when not provided', () => {
+      saveEnhancedData('session-normal', sampleData, tmpDir);
+      const loaded = loadEnhancedData('session-normal', tmpDir);
+      expect(loaded).not.toBeNull();
+      expect(loaded!.quickEnhanced).toBe(false);
     });
   });
 });

@@ -7,6 +7,10 @@ import type { Session, ExecutionStep } from '../types';
 
 interface SessionEditorProps {
   session: Session;
+  /** Called when the developer take text changes (for publish gate). */
+  onTakeChanged?: (value: string) => void;
+  /** The original AI-generated take (shown as reference when quickEnhanced). */
+  originalAiTake?: string;
 }
 
 interface EditorState {
@@ -210,7 +214,7 @@ function ExecutionPathEditor({
 // Main component
 // ---------------------------------------------------------------------------
 
-export function SessionEditor({ session }: SessionEditorProps) {
+export function SessionEditor({ session, onTakeChanged, originalAiTake }: SessionEditorProps) {
   const [state, setState] = useState<EditorState>(() => ({
     title: session.title,
     developerTake: session.developerTake ?? '',
@@ -230,6 +234,7 @@ export function SessionEditor({ session }: SessionEditorProps) {
   function handleTakeChange(value: string) {
     if (value.length <= TAKE_MAX_CHARS) {
       setState((prev) => ({ ...prev, developerTake: value }));
+      onTakeChanged?.(value);
     }
   }
 
@@ -324,8 +329,19 @@ export function SessionEditor({ session }: SessionEditorProps) {
             {/* Your Take */}
             <section className="session-editor__section">
               <span className="label label--primary">Your Take</span>
+              {originalAiTake && state.developerTake === originalAiTake && (
+                <div className="session-editor__ai-suggestion" data-testid="ai-take-suggestion">
+                  <span className="session-editor__ai-suggestion-label">AI suggested:</span>
+                  <blockquote className="session-editor__ai-suggestion-text">
+                    &ldquo;{originalAiTake}&rdquo;
+                  </blockquote>
+                  <span className="session-editor__ai-suggestion-hint">
+                    Edit below to make it yours. What would you actually say about this?
+                  </span>
+                </div>
+              )}
               <textarea
-                className="textarea session-editor__take-textarea"
+                className={`textarea session-editor__take-textarea${originalAiTake && state.developerTake === originalAiTake ? ' session-editor__take-textarea--needs-edit' : ''}`}
                 rows={4}
                 placeholder="What was the key insight? What would you tell a colleague about this session?"
                 value={state.developerTake}

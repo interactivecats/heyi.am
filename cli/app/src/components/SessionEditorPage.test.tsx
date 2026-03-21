@@ -149,3 +149,65 @@ describe('SessionEditorPage', () => {
     expect(screen.getByText('Copy')).toBeDefined();
   });
 });
+
+describe('SessionEditorPage — quick-enhanced publish gate', () => {
+  const QUICK_ENHANCED_SESSIONS = MOCK_SESSIONS.map((s) =>
+    s.id === 'ses-001'
+      ? { ...s, quickEnhanced: true, developerTake: 'AI suggested take' }
+      : s,
+  );
+
+  function renderQuickEnhanced(props?: Partial<SessionEditorPageProps>) {
+    return render(
+      <MemoryRouter initialEntries={['/session/ses-001/edit']}>
+        <AuthProvider>
+          <Routes>
+            <Route
+              path="/session/:id/edit"
+              element={
+                <SessionEditorPage
+                  sessions={QUICK_ENHANCED_SESSIONS}
+                  isAuthenticated={true}
+                  {...props}
+                />
+              }
+            />
+          </Routes>
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+  }
+
+  it('shows quick-enhance banner for quick-enhanced sessions', () => {
+    renderQuickEnhanced();
+    expect(screen.getByTestId('quick-enhance-banner')).toBeDefined();
+    expect(screen.getByText(/Bulk-enhanced/)).toBeDefined();
+  });
+
+  it('publish button is disabled when take has not been edited', () => {
+    renderQuickEnhanced();
+    const publishBtn = screen.getByRole('button', { name: /Publish/ });
+    expect(publishBtn).toBeDisabled();
+  });
+
+  it('does not show banner for normal enhanced sessions', () => {
+    const normalSessions = MOCK_SESSIONS.map((s) =>
+      s.id === 'ses-001' ? { ...s, quickEnhanced: false } : s,
+    );
+    render(
+      <MemoryRouter initialEntries={['/session/ses-001/edit']}>
+        <AuthProvider>
+          <Routes>
+            <Route
+              path="/session/:id/edit"
+              element={
+                <SessionEditorPage sessions={normalSessions} isAuthenticated={true} />
+              }
+            />
+          </Routes>
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+    expect(screen.queryByTestId('quick-enhance-banner')).toBeNull();
+  });
+});

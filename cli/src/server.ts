@@ -11,7 +11,7 @@ import { checkAuthStatus, getAuthToken, saveAuthToken } from './auth.js';
 import { API_URL } from './config.js';
 import { summarizeSession, createSSEHandler } from './summarize.js';
 import { getProvider, getEnhanceMode } from './llm/index.js';
-import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey } from './settings.js';
+import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData } from './settings.js';
 import Anthropic from '@anthropic-ai/sdk';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -61,7 +61,30 @@ async function getProjects(basePath?: string): Promise<ProjectInfo[]> {
 async function loadSession(sessionPath: string, projectName: string, sessionId: string): Promise<Session> {
   const parsed = await parseSession(sessionPath);
   const analyzerInput = bridgeToAnalyzer(parsed, { sessionId, projectName });
-  return analyzeSession(analyzerInput);
+  const session = analyzeSession(analyzerInput);
+  return mergeEnhancedData(session);
+}
+
+/** Merge locally-saved enhanced data into a session if it exists. */
+function mergeEnhancedData(session: Session): Session {
+  const enhanced = loadEnhancedData(session.id);
+  if (!enhanced) return session;
+
+  return {
+    ...session,
+    title: enhanced.title,
+    developerTake: enhanced.developerTake,
+    context: enhanced.context,
+    skills: enhanced.skills,
+    executionPath: enhanced.executionSteps.map((s) => ({
+      stepNumber: s.stepNumber,
+      title: s.title,
+      description: s.body,
+    })),
+    qaPairs: enhanced.qaPairs,
+    status: 'enhanced',
+    quickEnhanced: enhanced.quickEnhanced ?? false,
+  };
 }
 
 export function createApp(sessionsBasePath?: string) {
@@ -181,6 +204,11 @@ export function createApp(sessionsBasePath?: string) {
       const session = await loadSession(meta.path, proj.name, meta.sessionId);
       const provider = getProvider();
       const result = await provider.enhance(session);
+
+      // Auto-save enhanced data locally
+      saveEnhancedData(id as string, result);
+      console.log(`[enhance] Saved enhanced data for ${id}`);
+
       res.json({ result, provider: provider.name });
     } catch (err) {
       const error = err as Error & { code?: string };
@@ -217,6 +245,243 @@ export function createApp(sessionsBasePath?: string) {
     } catch (err) {
       res.status(500).json({ error: { code: 'STREAM_FAILED', message: (err as Error).message } });
     }
+  });
+
+  // Bulk enhance — parallel processing (3 concurrent) with SSE progress
+  app.post('/api/enhance/bulk', async (req: Request, res: Response) => {
+    const { sessions: rawList } = req.body as {
+      sessions?: Array<{ projectName: string; sessionId: string }>;
+    };
+
+    if (!Array.isArray(rawList) || rawList.length === 0) {
+      res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'sessions array is required' } });
+      return;
+    }
+
+    const sessionList = rawList; // narrowed to non-undefined
+    const CONCURRENCY = 3;
+
+    // Set up SSE
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    });
+
+    const send = (event: Record<string, unknown>) => {
+      res.write(`data: ${JSON.stringify(event)}\n\n`);
+    };
+
+    const provider = getProvider();
+    const projects = await getProjects(sessionsBasePath);
+    let enhanced = 0;
+    let failed = 0;
+    let completed = 0;
+    let cancelled = false;
+
+    // Handle client disconnect
+    req.on('close', () => { cancelled = true; });
+
+    async function processOne(index: number) {
+      if (cancelled) return;
+
+      const { projectName, sessionId } = sessionList[index];
+      send({ type: 'progress', sessionId, status: 'processing', index, total: sessionList.length });
+
+      try {
+        const proj = projects.find((p) => p.name === projectName || p.dirName === projectName);
+        if (!proj) throw new Error('Project not found');
+
+        const meta = proj.sessions.find((s) => s.sessionId === sessionId);
+        if (!meta) throw new Error('Session not found');
+
+        const session = await loadSession(meta.path, proj.name, meta.sessionId);
+        const result = await provider.enhance(session);
+
+        // Auto-accept suggested answers as Q&A pairs
+        const qaPairs = result.questions.map((q) => ({
+          question: q.text,
+          answer: q.suggestedAnswer,
+        }));
+
+        saveEnhancedData(sessionId, { ...result, qaPairs, quickEnhanced: true });
+        enhanced++;
+        completed++;
+        send({
+          type: 'progress',
+          sessionId,
+          status: 'enhanced',
+          index,
+          total: sessionList.length,
+          title: result.title,
+          completed,
+        });
+      } catch (err) {
+        failed++;
+        completed++;
+        send({
+          type: 'progress',
+          sessionId,
+          status: 'failed',
+          index,
+          total: sessionList.length,
+          error: (err as Error).message,
+          completed,
+        });
+      }
+    }
+
+    // Process with concurrency pool
+    let nextIndex = 0;
+    async function runWorker() {
+      while (nextIndex < sessionList.length && !cancelled) {
+        const idx = nextIndex++;
+        // Mark remaining as queued on first pass
+        await processOne(idx);
+      }
+    }
+
+    const workers = Array.from(
+      { length: Math.min(CONCURRENCY, sessionList.length) },
+      () => runWorker(),
+    );
+    await Promise.all(workers);
+
+    send({ type: 'done', enhanced, failed, cancelled });
+    res.end();
+  });
+
+  // Bulk upload — push multiple enhanced sessions to Phoenix
+  app.post('/api/upload/bulk', async (req: Request, res: Response) => {
+    const { sessions: rawList } = req.body as {
+      sessions?: Array<{ projectName: string; sessionId: string }>;
+    };
+
+    if (!Array.isArray(rawList) || rawList.length === 0) {
+      res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'sessions array is required' } });
+      return;
+    }
+
+    const auth = getAuthToken();
+    if (!auth?.token) {
+      res.status(401).json({ error: 'Not authenticated. Run: heyiam login' });
+      return;
+    }
+
+    const sessionList = rawList;
+
+    // Set up SSE
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    });
+
+    const send = (event: Record<string, unknown>) => {
+      res.write(`data: ${JSON.stringify(event)}\n\n`);
+    };
+
+    const projects = await getProjects(sessionsBasePath);
+    let uploaded = 0;
+    let failedCount = 0;
+    let cancelled = false;
+
+    req.on('close', () => { cancelled = true; });
+
+    for (let i = 0; i < sessionList.length; i++) {
+      if (cancelled) break;
+
+      const { projectName, sessionId } = sessionList[i];
+      send({ type: 'progress', sessionId, status: 'uploading', index: i, total: sessionList.length });
+
+      try {
+        const proj = projects.find((p) => p.name === projectName || p.dirName === projectName);
+        if (!proj) throw new Error('Project not found');
+
+        const meta = proj.sessions.find((s) => s.sessionId === sessionId);
+        if (!meta) throw new Error('Session not found');
+
+        const session = await loadSession(meta.path, proj.name, meta.sessionId);
+
+        // Build publish payload from enhanced session data
+        const payload: Record<string, unknown> = {
+          title: session.title,
+          dev_take: session.developerTake,
+          skills: session.skills,
+          beats: session.executionPath,
+          turns: session.turns,
+          duration_minutes: session.durationMinutes,
+          loc_changed: session.linesOfCode,
+          files_changed: session.filesChanged?.length ?? 0,
+          top_files: session.filesChanged?.slice(0, 20),
+          tool_breakdown: session.toolBreakdown,
+          tools: session.toolBreakdown?.map((t) => t.tool),
+          qa_pairs: session.qaPairs,
+          project_name: session.projectName,
+          recorded_at: session.date || new Date().toISOString(),
+          template: 'editorial',
+        };
+
+        const response = await fetch(`${API_URL}/api/sessions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${auth.token}`,
+          },
+          body: JSON.stringify({ session: payload }),
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error((errData as Record<string, string>).error ?? `Upload failed: ${response.status}`);
+        }
+
+        const data = await response.json() as Record<string, unknown>;
+        uploaded++;
+        send({
+          type: 'progress',
+          sessionId,
+          status: 'uploaded',
+          index: i,
+          total: sessionList.length,
+          url: data.url,
+          completed: uploaded + failedCount,
+        });
+
+        // Best-effort raw data upload
+        if (data.upload_urls) {
+          uploadRawData(
+            data.upload_urls as { raw?: string; log?: string },
+            sessionId,
+            proj.dirName,
+            session.rawLog,
+            sessionsBasePath,
+          ).catch(() => {});
+        }
+      } catch (err) {
+        failedCount++;
+        send({
+          type: 'progress',
+          sessionId,
+          status: 'failed',
+          index: i,
+          total: sessionList.length,
+          error: (err as Error).message,
+          completed: uploaded + failedCount,
+        });
+      }
+    }
+
+    send({ type: 'done', uploaded, failed: failedCount, cancelled });
+    res.end();
+  });
+
+  // Delete locally-saved enhanced data (allows re-enhancing)
+  app.delete('/api/sessions/:id/enhanced', (_req: Request, res: Response) => {
+    const { id } = _req.params;
+    deleteEnhancedData(id as string);
+    console.log(`[enhance] Deleted enhanced data for ${id}`);
+    res.json({ ok: true });
   });
 
   app.post('/api/publish', async (req: Request, res: Response) => {

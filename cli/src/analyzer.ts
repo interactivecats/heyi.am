@@ -83,10 +83,16 @@ export interface Session {
   filesChanged: FileChange[];
   turnTimeline: TurnEvent[];
   toolCalls: number;
+  /** AI-generated fields (populated from enhanced data) */
+  context?: string;
+  developerTake?: string;
+  qaPairs?: Array<{ question: string; answer: string }>;
   childSessions?: Session[];
   parentSessionId?: string | null;
   agentRole?: string;
   isOrchestrated?: boolean;
+  /** True when enhanced via bulk mode with auto-accepted AI suggestions */
+  quickEnhanced?: boolean;
 }
 
 // ── Skill extraction ───────────────────────────────────────────

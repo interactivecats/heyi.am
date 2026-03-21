@@ -185,6 +185,154 @@ export async function publishSession(
   return res.json();
 }
 
+// Bulk enhance types and function
+export interface BulkEnhanceEvent {
+  type: 'progress' | 'done';
+  sessionId?: string;
+  status?: 'processing' | 'enhanced' | 'failed';
+  index?: number;
+  total?: number;
+  /** Number of sessions completed so far (enhanced + failed) */
+  completed?: number;
+  /** AI-generated title (available when status='enhanced') */
+  title?: string;
+  error?: string;
+  enhanced?: number;
+  failed?: number;
+  cancelled?: boolean;
+}
+
+export function bulkEnhance(
+  sessions: Array<{ projectName: string; sessionId: string }>,
+  onEvent: (event: BulkEnhanceEvent) => void,
+  onError: (error: Error) => void,
+): AbortController {
+  const controller = new AbortController();
+
+  fetch(`${API_BASE}/enhance/bulk`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessions }),
+    signal: controller.signal,
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: { message: 'Bulk enhance failed' } }));
+        onError(new Error(err.error?.message ?? 'Bulk enhance failed'));
+        return;
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) {
+        onError(new Error('No response body'));
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const event = JSON.parse(line.slice(6)) as BulkEnhanceEvent;
+              onEvent(event);
+            } catch {
+              // skip malformed events
+            }
+          }
+        }
+      }
+    })
+    .catch((err) => {
+      if ((err as Error).name !== 'AbortError') {
+        onError(err as Error);
+      }
+    });
+
+  return controller;
+}
+
+// Bulk upload types and function
+export interface BulkUploadEvent {
+  type: 'progress' | 'done';
+  sessionId?: string;
+  status?: 'uploading' | 'uploaded' | 'failed';
+  index?: number;
+  total?: number;
+  completed?: number;
+  url?: string;
+  error?: string;
+  uploaded?: number;
+  failed?: number;
+  cancelled?: boolean;
+}
+
+export function bulkUpload(
+  sessions: Array<{ projectName: string; sessionId: string }>,
+  onEvent: (event: BulkUploadEvent) => void,
+  onError: (error: Error) => void,
+): AbortController {
+  const controller = new AbortController();
+
+  fetch(`${API_BASE}/upload/bulk`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessions }),
+    signal: controller.signal,
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: { message: 'Bulk upload failed' } }));
+        onError(new Error(err.error?.message ?? err.error ?? 'Bulk upload failed'));
+        return;
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) {
+        onError(new Error('No response body'));
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const event = JSON.parse(line.slice(6)) as BulkUploadEvent;
+              onEvent(event);
+            } catch {
+              // skip malformed events
+            }
+          }
+        }
+      }
+    })
+    .catch((err) => {
+      if ((err as Error).name !== 'AbortError') {
+        onError(err as Error);
+      }
+    });
+
+  return controller;
+}
+
 export async function fetchAllSessions(): Promise<{ projects: ApiProject[]; sessions: Session[] }> {
   const projects = await fetchProjects();
 

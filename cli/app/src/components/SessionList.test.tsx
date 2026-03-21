@@ -301,3 +301,122 @@ describe('SessionList — 5+ children truncation', () => {
     expect(screen.queryByTestId('expand-more')).not.toBeInTheDocument();
   });
 });
+
+/* ==========================================================================
+   Bulk selection tests
+   ========================================================================== */
+
+const BULK_SESSIONS: Session[] = [
+  {
+    id: 'draft-1',
+    title: 'Draft session one',
+    date: '2026-03-20T10:00:00Z',
+    durationMinutes: 10,
+    turns: 5,
+    linesOfCode: 50,
+    status: 'draft',
+    projectName: 'bulk-test',
+    rawLog: ['> hello'],
+  },
+  {
+    id: 'draft-2',
+    title: 'Draft session two',
+    date: '2026-03-20T11:00:00Z',
+    durationMinutes: 20,
+    turns: 8,
+    linesOfCode: 100,
+    status: 'draft',
+    projectName: 'bulk-test',
+    rawLog: ['> world'],
+  },
+  {
+    id: 'enhanced-1',
+    title: 'Already enhanced',
+    date: '2026-03-20T12:00:00Z',
+    durationMinutes: 15,
+    turns: 6,
+    linesOfCode: 75,
+    status: 'enhanced',
+    projectName: 'bulk-test',
+    rawLog: ['> done'],
+  },
+];
+
+const BULK_PROJECTS: Project[] = [
+  { name: 'bulk-test', dirName: 'bulk-test', sessionCount: 3, description: '' },
+];
+
+function renderBulk() {
+  return renderSessionList({
+    sessions: BULK_SESSIONS,
+    projects: BULK_PROJECTS,
+  });
+}
+
+describe('SessionList — bulk selection', () => {
+  it('renders checkboxes for non-published sessions', () => {
+    renderBulk();
+    const checkboxes = screen.getAllByTestId('session-checkbox');
+    // 2 draft + 1 enhanced = 3 non-published sessions
+    expect(checkboxes).toHaveLength(3);
+  });
+
+  it('renders select-all checkbox in header', () => {
+    renderBulk();
+    expect(screen.getByTestId('select-all-checkbox')).toBeInTheDocument();
+  });
+
+  it('checking a draft session shows Enhance button', async () => {
+    const user = userEvent.setup();
+    renderBulk();
+    const checkboxes = screen.getAllByTestId('session-checkbox');
+    await user.click(checkboxes[0]); // first draft
+    expect(screen.getByTestId('bulk-bar')).toBeInTheDocument();
+    expect(screen.getByText('1 selected')).toBeInTheDocument();
+    expect(screen.getByTestId('bulk-enhance-btn')).toBeInTheDocument();
+  });
+
+  it('checking an enhanced session shows Upload button', async () => {
+    const user = userEvent.setup();
+    renderBulk();
+    const checkboxes = screen.getAllByTestId('session-checkbox');
+    await user.click(checkboxes[2]); // enhanced session
+    expect(screen.getByTestId('bulk-bar')).toBeInTheDocument();
+    expect(screen.getByTestId('bulk-upload-btn')).toBeInTheDocument();
+  });
+
+  it('select-all checks all non-published sessions', async () => {
+    const user = userEvent.setup();
+    renderBulk();
+    await user.click(screen.getByTestId('select-all-checkbox'));
+    expect(screen.getByText('3 selected')).toBeInTheDocument();
+  });
+
+  it('clearing selection hides the bulk bar', async () => {
+    const user = userEvent.setup();
+    renderBulk();
+    const checkboxes = screen.getAllByTestId('session-checkbox');
+    await user.click(checkboxes[0]);
+    expect(screen.getByTestId('bulk-bar')).toBeInTheDocument();
+    await user.click(screen.getByText('Clear'));
+    expect(screen.queryByTestId('bulk-bar')).not.toBeInTheDocument();
+  });
+
+  it('unchecking the only checked session hides the bulk bar', async () => {
+    const user = userEvent.setup();
+    renderBulk();
+    const checkboxes = screen.getAllByTestId('session-checkbox');
+    await user.click(checkboxes[0]);
+    expect(screen.getByTestId('bulk-bar')).toBeInTheDocument();
+    await user.click(checkboxes[0]);
+    expect(screen.queryByTestId('bulk-bar')).not.toBeInTheDocument();
+  });
+
+  it('shows both Enhance and Upload when mixed selection', async () => {
+    const user = userEvent.setup();
+    renderBulk();
+    await user.click(screen.getByTestId('select-all-checkbox'));
+    expect(screen.getByTestId('bulk-enhance-btn')).toBeInTheDocument();
+    expect(screen.getByTestId('bulk-upload-btn')).toBeInTheDocument();
+  });
+});

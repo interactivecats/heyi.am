@@ -236,6 +236,13 @@ export function SessionEditorPage({
   const animationDoneRef = useRef(false);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Quick-enhanced publish gate: track whether dev take has been edited
+  const isQuickEnhanced = session?.quickEnhanced ?? false;
+  const originalTake = session?.developerTake ?? '';
+  const [currentTake, setCurrentTake] = useState(originalTake);
+  const takeWasEdited = currentTake !== originalTake;
+  const publishBlocked = isQuickEnhanced && !takeWasEdited;
+
   // Total lines = PUBLISH_LINES + 1 final URL line
   const totalLines = PUBLISH_LINES.length + 1;
 
@@ -409,6 +416,8 @@ export function SessionEditorPage({
             type="button"
             className="btn btn-primary"
             onClick={handlePublish}
+            disabled={publishBlocked}
+            title={publishBlocked ? 'Edit the developer take before publishing' : undefined}
           >
             Publish &rarr;
           </button>
@@ -416,7 +425,26 @@ export function SessionEditorPage({
       }
     >
       {phase === 'editing' && (
-        <SessionEditor session={session} />
+        <>
+          {isQuickEnhanced && !takeWasEdited && (
+            <div
+              className="setup-banner"
+              role="status"
+              data-testid="quick-enhance-banner"
+              style={{ margin: 'var(--spacing-4) var(--spacing-6) 0' }}
+            >
+              <span className="setup-banner__icon" aria-hidden="true">&#9998;</span>
+              <span className="setup-banner__text">
+                Bulk-enhanced — edit <strong>Your Take</strong> below before publishing.
+              </span>
+            </div>
+          )}
+          <SessionEditor
+            session={session}
+            onTakeChanged={setCurrentTake}
+            originalAiTake={isQuickEnhanced ? originalTake : undefined}
+          />
+        </>
       )}
 
       {phase === 'auth-prompt' && (
