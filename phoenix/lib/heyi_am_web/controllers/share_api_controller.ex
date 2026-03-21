@@ -12,14 +12,22 @@ defmodule HeyiAmWeb.ShareApiController do
   """
   def create(conn, %{"session" => session_params} = params) do
     user_id = get_user_id_from_token(conn)
+    has_challenge = is_binary(params["challenge_slug"]) and params["challenge_slug"] != ""
 
-    attrs =
-      session_params
-      |> Map.delete("user_id")
-      |> Map.put("token", Shares.generate_token())
-      |> maybe_put("user_id", user_id)
+    # Require auth for non-challenge publishes
+    if is_nil(user_id) and not has_challenge do
+      conn
+      |> put_status(:unauthorized)
+      |> json(%{error: "Authentication required. Run: heyiam login"})
+    else
+      attrs =
+        session_params
+        |> Map.delete("user_id")
+        |> Map.put("token", Shares.generate_token())
+        |> Map.put("status", "listed")
+        |> maybe_put("user_id", user_id)
 
-    with {:ok, attrs} <- maybe_link_challenge(attrs, params) do
+      with {:ok, attrs} <- maybe_link_challenge(attrs, params) do
       case Shares.create_share(attrs) do
         {:ok, share} ->
           conn
@@ -45,6 +53,7 @@ defmodule HeyiAmWeb.ShareApiController do
       end
     else
       {:error, reason} -> send_challenge_error(conn, reason)
+    end
     end
   end
 

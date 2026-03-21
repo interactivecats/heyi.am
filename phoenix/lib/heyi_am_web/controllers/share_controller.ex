@@ -30,6 +30,7 @@ defmodule HeyiAmWeb.ShareController do
   defp load_share(token) do
     case Shares.get_share_by_token(token) do
       nil -> nil
+      %{status: "draft"} -> nil
       share -> Repo.preload(share, :user)
     end
   end

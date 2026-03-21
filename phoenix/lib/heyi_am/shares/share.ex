@@ -3,6 +3,7 @@ defmodule HeyiAm.Shares.Share do
   import Ecto.Changeset
 
   @valid_templates ~w(editorial terminal minimal brutalist campfire neon-night)
+  @valid_statuses ~w(draft listed unlisted)
 
   schema "shares" do
     field :token, :string
@@ -31,6 +32,7 @@ defmodule HeyiAm.Shares.Share do
     field :highlighted_steps, {:array, :integer}, default: []
     field :signature, :string
     field :public_key, :string
+    field :status, :string, default: "listed"
 
     belongs_to :user, HeyiAm.Accounts.User
     belongs_to :challenge, HeyiAm.Challenges.Challenge
@@ -39,6 +41,7 @@ defmodule HeyiAm.Shares.Share do
   end
 
   def valid_templates, do: @valid_templates
+  def valid_statuses, do: @valid_statuses
 
   def changeset(%{sealed: true} = share, _attrs) do
     share
@@ -54,7 +57,7 @@ defmodule HeyiAm.Shares.Share do
       :tools, :skills, :beats, :qa_pairs, :highlights, :tool_breakdown,
       :top_files, :transcript_excerpt, :narrative, :project_name, :user_id,
       :pinned_turns, :highlighted_steps, :signature, :public_key,
-      :challenge_id
+      :challenge_id, :status
     ])
     |> validate_required([:token, :title])
     |> validate_length(:title, max: 200)
@@ -63,6 +66,7 @@ defmodule HeyiAm.Shares.Share do
     |> validate_length(:project_name, max: 200)
     |> validate_skills_length()
     |> validate_inclusion(:template, @valid_templates)
+    |> validate_inclusion(:status, @valid_statuses)
     |> unique_constraint(:token)
   end
 

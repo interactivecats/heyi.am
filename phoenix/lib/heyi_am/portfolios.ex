@@ -32,7 +32,9 @@ defmodule HeyiAm.Portfolios do
   def list_visible_portfolio_sessions(user_id) do
     PortfolioSession
     |> where(user_id: ^user_id, visible: true)
-    |> order_by(:position)
+    |> join(:inner, [ps], s in assoc(ps, :share))
+    |> where([_ps, s], s.status == "listed")
+    |> order_by([ps], ps.position)
     |> preload(:share)
     |> Repo.all()
   end
