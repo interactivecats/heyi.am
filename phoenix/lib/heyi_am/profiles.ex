@@ -48,8 +48,8 @@ defmodule HeyiAm.Profiles do
   """
   @spec task_scoping([map()]) :: non_neg_integer()
   def task_scoping(shares) do
-    avg_steps = avg(shares, fn s -> length(s[:beats] || []) end)
-    avg_duration = avg(shares, fn s -> s[:duration_minutes] || 0 end)
+    avg_steps = avg(shares, fn s -> length(Map.get(s, :beats) || []) end)
+    avg_duration = avg(shares, fn s -> Map.get(s, :duration_minutes) || 0 end)
 
     step_score = normalize(avg_steps, 5.0, 15.0, :inverse)
     duration_score = normalize(avg_duration, 30.0, 120.0, :inverse)
@@ -97,7 +97,7 @@ defmodule HeyiAm.Profiles do
   @spec tool_orchestration([map()]) :: non_neg_integer()
   def tool_orchestration(shares) do
     avg_tools = avg(shares, fn s ->
-      s[:tool_breakdown]
+      Map.get(s, :tool_breakdown)
       |> Kernel.||([])
       |> Enum.map(& &1["name"])
       |> Enum.uniq()
@@ -116,14 +116,14 @@ defmodule HeyiAm.Profiles do
   def orchestration(shares) do
     orchestrated =
       Enum.filter(shares, fn s ->
-        children = s[:child_sessions] || []
+        children = Map.get(s, :child_sessions) || []
         length(children) > 0
       end)
 
     if length(orchestrated) < 5 do
       nil
     else
-      avg_children = avg(orchestrated, fn s -> length(s[:child_sessions] || []) end)
+      avg_children = avg(orchestrated, fn s -> length(Map.get(s, :child_sessions) || []) end)
       # Normalize: 1 child = 0, 5+ children = 100
       round(normalize(avg_children, 1.0, 5.0, :direct))
     end
