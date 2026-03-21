@@ -15,6 +15,7 @@ defmodule HeyiAmWeb.ShareApiController do
 
     attrs =
       session_params
+      |> Map.delete("user_id")
       |> Map.put("token", Shares.generate_token())
       |> maybe_put("user_id", user_id)
 
@@ -82,7 +83,7 @@ defmodule HeyiAmWeb.ShareApiController do
     case get_req_header(conn, "authorization") do
       ["Bearer " <> token] ->
         case HeyiAm.Accounts.get_user_by_session_token(Base.decode64!(token)) do
-          %{id: id} -> id
+          {%{id: id}, _inserted_at} -> id
           _ -> nil
         end
 

@@ -145,6 +145,21 @@ defmodule HeyiAmWeb.ShareApiControllerTest do
     end
   end
 
+  describe "user_id spoofing prevention" do
+    test "strips user_id from session params", %{conn: conn} do
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post(~p"/api/sessions", %{
+          session: %{title: "Spoofed", user_id: 999}
+        })
+
+      assert %{"token" => token} = json_response(conn, 201)
+      share = HeyiAm.Shares.get_share_by_token!(token)
+      assert share.user_id == nil
+    end
+  end
+
   describe "max_responses enforcement" do
     test "rejects publish when max responses reached", %{conn: _conn} do
       user = user_fixture()
