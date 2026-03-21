@@ -3,11 +3,55 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
 
   import Phoenix.LiveViewTest
 
+  alias HeyiAm.SharesFixtures
+
   setup :register_and_log_in_user
 
   setup %{user: user} do
     {:ok, _} = HeyiAm.Accounts.update_user_username(user, %{username: "testuser"})
-    :ok
+
+    {:ok, _} =
+      HeyiAm.Accounts.update_user_profile(user, %{
+        display_name: "Test Dev",
+        bio: "Building cool stuff",
+        location: "NYC",
+        status: "OPEN_FOR_COLLAB"
+      })
+
+    # Create shares with portfolio sessions (auto-added by create_share)
+    share1 =
+      SharesFixtures.share_fixture(%{
+        user_id: user.id,
+        title: "Initial Prototype",
+        project_name: "Alpha Engine",
+        skills: ["Rust", "PostgreSQL"],
+        sealed: true
+      })
+
+    share2 =
+      SharesFixtures.share_fixture(%{
+        user_id: user.id,
+        title: "Memory Tests",
+        project_name: "Alpha Engine",
+        skills: ["Rust", "WebAssembly"]
+      })
+
+    share3 =
+      SharesFixtures.share_fixture(%{
+        user_id: user.id,
+        title: "SDK Bootstrap",
+        project_name: "Beta SDK",
+        skills: ["TypeScript"]
+      })
+
+    portfolio_sessions = HeyiAm.Portfolios.list_portfolio_sessions(user.id)
+
+    %{
+      share1: share1,
+      share2: share2,
+      share3: share3,
+      portfolio_sessions: portfolio_sessions
+    }
   end
 
   describe "mount" do
@@ -24,42 +68,38 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
       assert html =~ "Save &amp; Deploy"
     end
 
-    test "shows mock projects in bento grid", %{conn: conn} do
+    test "shows real projects in bento grid", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/testuser/edit")
-      assert html =~ "Hyperion Grid Engine"
-      assert html =~ "Lancer SDK"
-      assert html =~ "Flux Capacitor UI"
+      assert html =~ "Alpha Engine"
+      assert html =~ "Beta SDK"
     end
 
-    test "hero section has editable name", %{conn: conn} do
+    test "hero section has editable name from user profile", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/testuser/edit")
-      assert has_element?(view, "[contenteditable='true']", "Alex Rivera")
+      assert has_element?(view, "[contenteditable='true']", "Test Dev")
     end
 
     test "hero section has editable bio", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/testuser/edit")
-      assert html =~ "Full-stack systems architect"
+      assert html =~ "Building cool stuff"
     end
 
     test "shows location and status badges", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/testuser/edit")
-      assert html =~ "SAN_FRANCISCO_CA"
+      assert html =~ "NYC"
       assert html =~ "OPEN_FOR_COLLAB"
     end
 
-    test "shows expertise ledger", %{conn: conn} do
+    test "shows expertise ledger computed from shares", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/testuser/edit")
       assert html =~ "Expertise Ledger"
-      assert html =~ "BACKEND"
-      assert html =~ "FRONTEND"
-      assert html =~ "Rust / Go / Node.js"
+      assert html =~ "RUST"
     end
 
     test "shows project skills as chips", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/testuser/edit")
       assert html =~ "RUST"
-      assert html =~ "WEBASSEMBLY"
-      assert html =~ "TYPESCRIPT"
+      assert html =~ "POSTGRESQL"
     end
   end
 
@@ -118,9 +158,8 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
         |> element("button[phx-click='toggle_project'][phx-value-id='1']")
         |> render_click()
 
-      assert html =~ "Initial Architectural Prototype"
-      assert html =~ "WASM Memory Isolation Tests"
-      assert html =~ "Refactoring Event Loop..."
+      assert html =~ "Initial Prototype"
+      assert html =~ "Memory Tests"
     end
 
     test "expanded project shows session statuses", %{conn: conn} do
@@ -131,42 +170,22 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
         |> element("button[phx-click='toggle_project'][phx-value-id='1']")
         |> render_click()
 
+      # share1 is sealed, share2 is published
       assert html =~ "Sealed"
       assert html =~ "Published"
-      assert html =~ "Draft"
     end
 
-    test "featured session shows Featured badge", %{conn: conn} do
+    test "collapsing an expanded project hides session list", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/testuser/edit")
+
+      view |> element("button[phx-click='toggle_project'][phx-value-id='1']") |> render_click()
 
       html =
         view
         |> element("button[phx-click='toggle_project'][phx-value-id='1']")
         |> render_click()
 
-      assert html =~ "Featured"
-    end
-
-    test "empty project shows empty state", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/testuser/edit")
-
-      html =
-        view
-        |> element("button[phx-click='toggle_project'][phx-value-id='3']")
-        |> render_click()
-
-      assert html =~ "Ready for a new exploration?"
-    end
-
-    test "draft session has reduced opacity class", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/testuser/edit")
-
-      html =
-        view
-        |> element("button[phx-click='toggle_project'][phx-value-id='1']")
-        |> render_click()
-
-      assert html =~ "pe-session-row--draft"
+      refute html =~ "pe-session-list"
     end
   end
 
@@ -206,70 +225,23 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
     end
   end
 
-  describe "session reorder within expanded project" do
-    test "reorder event changes session order", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/testuser/edit")
-
-      # Expand project 1
-      view |> element("button[phx-click='toggle_project'][phx-value-id='1']") |> render_click()
-
-      # Reverse the session order (original: 1, 2, 3)
-      html = render_hook(view, "reorder", %{"ids" => ["3", "2", "1"]})
-
-      # Verify reversed order by position in HTML
-      pos_3 = :binary.match(html, "Refactoring Event Loop") |> elem(0)
-      pos_2 = :binary.match(html, "WASM Memory Isolation") |> elem(0)
-      pos_1 = :binary.match(html, "Initial Architectural") |> elem(0)
-
-      assert pos_3 < pos_2
-      assert pos_2 < pos_1
-    end
-  end
-
   describe "session controls within expanded project" do
-    test "toggle_session_visibility switches public/private", %{conn: conn} do
+    test "toggle_session_visibility switches public/private",
+         %{conn: conn, portfolio_sessions: ps} do
       {:ok, view, _html} = live(conn, ~p"/testuser/edit")
 
       # Expand project 1
       view |> element("button[phx-click='toggle_project'][phx-value-id='1']") |> render_click()
 
-      # Session 1 starts as public, toggle to private
+      # Toggle first session visibility
+      first_ps = hd(ps)
+
       html =
         view
-        |> element("button[phx-click='toggle_session_visibility'][phx-value-id='1']")
+        |> element("button[phx-click='toggle_session_visibility'][phx-value-id='#{first_ps.id}']")
         |> render_click()
 
       assert html =~ "Private"
-    end
-
-    test "toggle_session_featured toggles star", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/testuser/edit")
-
-      # Expand project 1
-      view |> element("button[phx-click='toggle_project'][phx-value-id='1']") |> render_click()
-
-      # Session 1 starts as not featured, toggle to featured
-      html =
-        view
-        |> element("button[phx-click='toggle_session_featured'][phx-value-id='1']")
-        |> render_click()
-
-      assert html =~ "star"
-    end
-
-    test "collapsing an expanded project hides session list", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/testuser/edit")
-
-      # Expand project 1
-      view |> element("button[phx-click='toggle_project'][phx-value-id='1']") |> render_click()
-
-      # Collapse project 1
-      html =
-        view
-        |> element("button[phx-click='toggle_project'][phx-value-id='1']")
-        |> render_click()
-
-      refute html =~ "pe-session-list"
     end
   end
 

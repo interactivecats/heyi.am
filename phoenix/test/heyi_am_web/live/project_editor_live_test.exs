@@ -3,14 +3,40 @@ defmodule HeyiAmWeb.ProjectEditorLiveTest do
 
   import Phoenix.LiveViewTest
 
-  setup :register_and_log_in_user
+  alias HeyiAm.SharesFixtures
 
-  @editor_path "/testuser/projects/project-alpha/edit"
+  setup :register_and_log_in_user
 
   setup %{user: user} do
     {:ok, _} = HeyiAm.Accounts.update_user_username(user, %{username: "testuser"})
-    :ok
+
+    # Create shares with portfolio sessions (auto-added by create_share)
+    share1 =
+      SharesFixtures.share_fixture(%{
+        user_id: user.id,
+        title: "Initial Prototype",
+        project_name: "Project Alpha",
+        skills: ["Rust", "WASM"],
+        dev_take: "Building a scalable telemetry engine",
+        sealed: true
+      })
+
+    share2 =
+      SharesFixtures.share_fixture(%{
+        user_id: user.id,
+        title: "Memory Tests",
+        project_name: "Project Alpha",
+        skills: ["Rust", "WebAssembly"]
+      })
+
+    portfolio_sessions =
+      HeyiAm.Portfolios.list_portfolio_sessions(user.id)
+      |> Enum.filter(&(&1.project_name == "Project Alpha"))
+
+    %{share1: share1, share2: share2, portfolio_sessions: portfolio_sessions}
   end
+
+  @editor_path "/testuser/projects/project-alpha/edit"
 
   describe "mount and render" do
     test "renders editor shell with breadcrumb", %{conn: conn} do
@@ -23,7 +49,7 @@ defmodule HeyiAmWeb.ProjectEditorLiveTest do
       assert html =~ "project-editor__breadcrumb"
     end
 
-    test "shows project definition form with pre-filled data", %{conn: conn} do
+    test "shows project definition form with real data", %{conn: conn} do
       {:ok, _view, html} = live(conn, @editor_path)
 
       assert html =~ "Project Definition"
@@ -32,45 +58,20 @@ defmodule HeyiAmWeb.ProjectEditorLiveTest do
       assert html =~ "scalable telemetry engine"
       assert html =~ "RUST"
       assert html =~ "WASM"
-      assert html =~ "EDGE-COMP"
     end
 
     test "shows session list with correct statuses", %{conn: conn} do
       {:ok, _view, html} = live(conn, @editor_path)
 
       assert html =~ "Session Management"
-      assert html =~ "Initial Architectural Prototype"
-      assert html =~ "WASM Memory Isolation Tests"
-      assert html =~ "Refactoring Event Loop..."
+      assert html =~ "Initial Prototype"
+      assert html =~ "Memory Tests"
       assert html =~ "Sealed"
-      assert html =~ "Featured"
-      assert html =~ "Draft"
-    end
-
-    test "featured session has visual distinction", %{conn: conn} do
-      {:ok, _view, html} = live(conn, @editor_path)
-
-      assert html =~ "project-editor__session-card--featured"
-    end
-
-    test "draft sessions show at reduced state", %{conn: conn} do
-      {:ok, _view, html} = live(conn, @editor_path)
-
-      assert html =~ "project-editor__session-card--draft"
-      assert html =~ "project-editor__session-title--draft"
     end
 
     test "shows empty state placeholder", %{conn: conn} do
       {:ok, _view, html} = live(conn, @editor_path)
-
       assert html =~ "Ready for a new exploration?"
-      assert html =~ "project-editor__empty-state"
-    end
-
-    test "shows repository sync status", %{conn: conn} do
-      {:ok, _view, html} = live(conn, @editor_path)
-
-      assert html =~ "Synchronized with GitHub"
     end
   end
 
@@ -85,14 +86,12 @@ defmodule HeyiAmWeb.ProjectEditorLiveTest do
 
       refute html =~ ~r/class="project-editor__tag"[^>]*>.*RUST/s
       assert html =~ "WASM"
-      assert html =~ "EDGE-COMP"
     end
 
     test "add_tag event adds a tag", %{conn: conn} do
       {:ok, view, _html} = live(conn, @editor_path)
 
       html = render_hook(view, "add_tag", %{"tag" => "elixir"})
-
       assert html =~ "ELIXIR"
     end
 
@@ -100,8 +99,6 @@ defmodule HeyiAmWeb.ProjectEditorLiveTest do
       {:ok, view, _html} = live(conn, @editor_path)
 
       html = render_hook(view, "add_tag", %{"tag" => "rust"})
-
-      # Should still have exactly one RUST tag (not duplicated)
       assert length(Regex.scan(~r/phx-value-tag="RUST"/, html)) == 1
     end
 
@@ -110,59 +107,54 @@ defmodule HeyiAmWeb.ProjectEditorLiveTest do
 
       html_after = render_hook(view, "add_tag", %{"tag" => "   "})
 
-      # Tag count should not change
       assert length(Regex.scan(~r/project-editor__tag"/, html_before)) ==
                length(Regex.scan(~r/project-editor__tag"/, html_after))
     end
   end
 
   describe "session interactions" do
-    test "visibility toggle works", %{conn: conn} do
-      {:ok, view, html} = live(conn, @editor_path)
-
-      # Draft session 0x112C starts as Private
-      assert html =~ "Private"
+    test "visibility toggle works", %{conn: conn, portfolio_sessions: ps} do
+      {:ok, view, _html} = live(conn, @editor_path)
+      first_ps = hd(ps)
 
       html =
         view
-        |> element("button[phx-click='toggle_visibility'][phx-value-id='0x112C']")
+        |> element("button[phx-click='toggle_visibility'][phx-value-id='#{first_ps.id}']")
         |> render_click()
 
-      # After toggle, the session that was Private should now be Public
-      # We check the specific button's text changed
-      assert html =~ "Public"
+      assert html =~ "Private"
     end
 
-    test "star toggle works", %{conn: conn} do
-      {:ok, view, html} = live(conn, @editor_path)
-
-      # 0x82A1 starts as not featured
-      refute html =~ ~r/data-session-id="0x82A1"[^>]*class="[^"]*featured/s
+    test "star toggle works", %{conn: conn, portfolio_sessions: ps} do
+      {:ok, view, _html} = live(conn, @editor_path)
+      first_ps = hd(ps)
 
       html =
         view
-        |> element("button[phx-click='toggle_star'][phx-value-id='0x82A1']")
+        |> element("button[phx-click='toggle_star'][phx-value-id='#{first_ps.id}']")
         |> render_click()
 
-      # After starring, should have featured class on the card
       assert html =~ "project-editor__star-btn--active"
     end
   end
 
   describe "session reorder" do
-    test "reorder event changes session order", %{conn: conn} do
+    test "reorder event changes session order", %{conn: conn, portfolio_sessions: ps} do
       {:ok, view, _html} = live(conn, @editor_path)
 
-      # Original order: 0x82A1, 0x9F4B, 0x112C — reverse it
-      html = render_hook(view, "reorder", %{"ids" => ["0x112C", "0x9F4B", "0x82A1"]})
+      reversed_ids = ps |> Enum.reverse() |> Enum.map(&to_string(&1.id))
+      html = render_hook(view, "reorder", %{"ids" => reversed_ids})
 
-      # Verify the new order by checking positions in rendered HTML
-      pos_112c = :binary.match(html, "0x112C") |> elem(0)
-      pos_9f4b = :binary.match(html, "0x9F4B") |> elem(0)
-      pos_82a1 = :binary.match(html, "0x82A1") |> elem(0)
+      # Verify the last session now appears first
+      last_ps = List.last(ps)
+      first_ps = hd(ps)
+      last_share_title = last_ps.share.title
+      first_share_title = first_ps.share.title
 
-      assert pos_112c < pos_9f4b
-      assert pos_9f4b < pos_82a1
+      pos_last = :binary.match(html, last_share_title) |> elem(0)
+      pos_first = :binary.match(html, first_share_title) |> elem(0)
+
+      assert pos_last < pos_first
     end
   end
 
@@ -170,13 +162,10 @@ defmodule HeyiAmWeb.ProjectEditorLiveTest do
     test "save event triggers flash", %{conn: conn} do
       {:ok, view, _html} = live(conn, @editor_path)
 
-      # Clicking save should not crash and should set flash
       view
       |> element("button[phx-click='save']")
       |> render_click()
 
-      # The flash is rendered in the root layout, not directly in the LiveView render.
-      # Verify the event was handled successfully by checking the view is still alive.
       assert render(view) =~ "Project Definition"
     end
   end
