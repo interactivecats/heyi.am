@@ -70,7 +70,8 @@ defmodule HeyiAm.MixProject do
       {:opentelemetry_bandit, "~> 0.2"},
       {:ex_aws, "~> 2.5"},
       {:ex_aws_s3, "~> 2.5"},
-      {:hackney, "~> 1.20"}
+      {:hackney, "~> 1.20"},
+      {:gen_smtp, "~> 1.2"}
     ]
   end
 
