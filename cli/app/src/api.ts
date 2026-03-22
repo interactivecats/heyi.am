@@ -200,6 +200,7 @@ export interface ProjectEnhanceResult {
 export type EnhanceEventType =
   | { type: 'session_progress'; sessionId: string; title: string; status: 'enhancing' | 'done' | 'skipped'; detail?: string; skills?: string[] }
   | { type: 'project_enhance'; status: 'generating' }
+  | { type: 'narrative_chunk'; text: string }
   | { type: 'done'; result: ProjectEnhanceResult }
   | { type: 'error'; message: string };
 

@@ -518,6 +518,7 @@ function EnhanceStep({
   const [narrativeStatus, setNarrativeStatus] = useState<'waiting' | 'generating' | 'done'>('waiting');
   const [result, setResult] = useState<ProjectEnhanceResult | null>(null);
   const [progressSkills, setProgressSkills] = useState<string[]>([]);
+  const [streamingNarrative, setStreamingNarrative] = useState('');
   const [error, setError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const feedRef = useRef<HTMLDivElement>(null);
@@ -560,6 +561,9 @@ function EnhanceStep({
             break;
           case 'project_enhance':
             setNarrativeStatus('generating');
+            break;
+          case 'narrative_chunk':
+            setStreamingNarrative((prev) => prev + event.text);
             break;
           case 'done':
             setNarrativeStatus('done');
@@ -654,8 +658,13 @@ function EnhanceStep({
             <div className="upload-flow__label">Project Story</div>
             <h2 className="upload-flow__title">{project.name}</h2>
 
-            {result?.narrative && (
-              <div className="enhance-split__narrative-text">{result.narrative}</div>
+            {(streamingNarrative || result?.narrative) && (
+              <div className="enhance-split__narrative-text">
+                {result?.narrative ?? streamingNarrative}
+                {narrativeStatus === 'generating' && (
+                  <span className="typewriter-cursor" aria-hidden="true" />
+                )}
+              </div>
             )}
 
             {displaySkills.length > 0 && (
@@ -975,6 +984,213 @@ const PLACEHOLDER_TIMELINE: TimelinePeriod[] = [
   },
 ];
 
+// ── Project Preview overlay (Screen 25 mockup) ──────────────────
+
+interface ProjectPreviewProps {
+  project: Project;
+  narrative: string;
+  skills: string[];
+  timeline: TimelinePeriod[];
+  selectedCount: number;
+  repoUrl: string;
+  projectUrl: string;
+  onClose: () => void;
+}
+
+function ProjectPreview({
+  project,
+  narrative,
+  skills,
+  timeline,
+  selectedCount,
+  repoUrl,
+  projectUrl,
+  onClose,
+}: ProjectPreviewProps) {
+  const totalSessions = timeline.reduce((sum, p) => sum + p.sessions.length, 0);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div className="project-preview" role="dialog" aria-label="Project preview">
+      <div className="project-preview__banner">
+        Preview — this is how your project will appear on heyi.am
+      </div>
+      <button
+        className="project-preview__close"
+        onClick={onClose}
+        aria-label="Close preview"
+      >
+        Close preview &times;
+      </button>
+
+      <div className="project-preview__content">
+        {/* Breadcrumb */}
+        <div className="project-preview__breadcrumb">
+          ben / {project.name}
+        </div>
+
+        {/* Title */}
+        <h1 className="project-preview__title">{project.name}</h1>
+
+        {/* Links row */}
+        {(repoUrl || projectUrl) && (
+          <div className="project-preview__links">
+            {repoUrl && (
+              <a
+                href={repoUrl}
+                className="project-preview__link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                </svg>
+                Repo
+              </a>
+            )}
+            {projectUrl && (
+              <a
+                href={projectUrl}
+                className="project-preview__link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                  <path d="M5 1H2a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V9M8 1h5v5M13 1L6 8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Live site
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Narrative */}
+        {narrative && (
+          <div className="project-preview__narrative">
+            {narrative}
+          </div>
+        )}
+
+        {/* Skills */}
+        {skills.length > 0 && (
+          <div className="project-preview__skills">
+            {skills.map((skill) => (
+              <span key={skill} className="chip">{skill}</span>
+            ))}
+          </div>
+        )}
+
+        {/* Screenshot placeholder */}
+        <div className="project-preview__screenshot">
+          <div className="project-preview__screenshot-inner">
+            <span aria-hidden="true">&#128247;</span>
+            <span>Project screenshot</span>
+          </div>
+        </div>
+
+        {/* Hero stats */}
+        <div className="project-preview__hero-stats">
+          <div className="project-preview__hero-stat">
+            <div className="project-preview__hero-value project-preview__hero-value--primary">
+              {formatDuration(project.totalDuration)}
+            </div>
+            <div className="project-preview__hero-label">Total Time</div>
+          </div>
+          <div className="project-preview__hero-stat">
+            <div className="project-preview__hero-value">
+              {project.sessionCount} ({selectedCount})
+            </div>
+            <div className="project-preview__hero-label">Sessions</div>
+          </div>
+          <div className="project-preview__hero-stat">
+            <div className="project-preview__hero-value">{formatLoc(project.totalLoc)}</div>
+            <div className="project-preview__hero-label">LOC</div>
+          </div>
+          <div className="project-preview__hero-stat">
+            <div className="project-preview__hero-value">{project.totalFiles}</div>
+            <div className="project-preview__hero-label">Files</div>
+          </div>
+        </div>
+
+        {/* Timeline */}
+        <div className="project-preview__timeline-heading">PROJECT TIMELINE</div>
+        <div className="timeline">
+          <div className="timeline__line" />
+          {timeline.map((period, pIdx) => {
+            const featured = period.sessions.filter((s) => s.featured);
+            const collapsed = period.sessions.filter((s) => !s.featured);
+
+            return (
+              <div key={pIdx} className="timeline__period">
+                <div className="timeline__period-header">
+                  <span className="timeline__period-date">{period.period}</span>
+                  <span className="timeline__period-sep">&mdash;</span>
+                  <span className="timeline__period-label">{period.label}</span>
+                </div>
+
+                {featured.map((s) => (
+                  <div key={s.sessionId} className="timeline__featured">
+                    <div className="timeline__dot--large" />
+                    <div
+                      className="timeline__card"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => { /* TODO: navigate to session detail */ }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          /* TODO: navigate to session detail */
+                        }
+                      }}
+                    >
+                      <div className="timeline__card-header">
+                        <span className="timeline__card-title">{s.title}</span>
+                        {s.tag && (
+                          <span className="timeline__card-tag">{s.tag}</span>
+                        )}
+                      </div>
+                      <div className="timeline__card-meta">
+                        <span>{formatDuration(s.duration)}</span>
+                        {s.date && <span>{formatDate(s.date)}</span>}
+                      </div>
+                      {s.description && (
+                        <p className="timeline__card-desc">{s.description}</p>
+                      )}
+                      {s.skills && s.skills.length > 0 && (
+                        <div className="timeline__card-skills">
+                          {s.skills.map((skill) => (
+                            <span key={skill} className="chip">{skill}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {collapsed.length > 0 && (
+                  <div className="timeline__collapsed">
+                    <div className="timeline__dot--small" />
+                    <CollapsedSessions sessions={collapsed} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Screen 47: Review before publishing ──────────────────────────
 
 interface ReviewStepProps {
@@ -983,6 +1199,7 @@ interface ReviewStepProps {
   selectedCount: number;
   skippedCount: number;
   skills: string[];
+  timeline: TimelinePeriod[];
   repoUrl: string;
   onRepoUrlChange: (url: string) => void;
   projectUrl: string;
@@ -998,6 +1215,7 @@ export function ReviewStep({
   selectedCount,
   skippedCount,
   skills,
+  timeline,
   repoUrl,
   onRepoUrlChange,
   projectUrl,
@@ -1005,6 +1223,7 @@ export function ReviewStep({
   onPublish,
   onBack,
 }: ReviewStepProps) {
+  const [showPreview, setShowPreview] = useState(false);
   const publishedLabel = `${project.sessionCount} (${selectedCount} published)`;
 
   return (
@@ -1036,6 +1255,26 @@ export function ReviewStep({
           ))}
         </div>
       </div>
+
+      <button
+        className="review-preview-link"
+        onClick={() => setShowPreview(true)}
+      >
+        Preview full project page &rarr;
+      </button>
+
+      {showPreview && (
+        <ProjectPreview
+          project={project}
+          narrative={narrative}
+          skills={skills}
+          timeline={timeline}
+          selectedCount={selectedCount}
+          repoUrl={repoUrl}
+          projectUrl={projectUrl}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
 
       {/* ── What gets published ── */}
       <div className="review-checklist">
@@ -1423,6 +1662,21 @@ export function ProjectUploadFlow() {
           selectedCount={selectedIds.size}
           skippedCount={sessions.length - selectedIds.size}
           skills={enhanceSkills.length > 0 ? enhanceSkills : project.skills}
+          timeline={enhanceTimeline.length > 0
+            ? enhanceTimeline.map((t) => ({
+                ...t,
+                sessions: t.sessions.map((s) => ({
+                  sessionId: s.sessionId,
+                  title: s.title,
+                  description: s.description,
+                  featured: s.featured,
+                  tag: s.tag,
+                  skills: s.skills,
+                  duration: sessions.find((ss) => ss.id === s.sessionId)?.durationMinutes ?? 0,
+                  date: sessions.find((ss) => ss.id === s.sessionId)?.date,
+                })),
+              }))
+            : PLACEHOLDER_TIMELINE}
           repoUrl={repoUrl}
           onRepoUrlChange={setRepoUrl}
           projectUrl={projectUrl}

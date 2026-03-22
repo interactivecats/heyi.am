@@ -604,10 +604,12 @@ export function createApp(sessionsBasePath?: string) {
         }
       }
 
-      // Step 2: Generate project narrative
+      // Step 2: Generate project narrative (streaming narrative chunks)
       send({ type: 'project_enhance', status: 'generating' });
 
-      const projectResult = await enhanceProject(sessionSummaries, skippedSessions ?? []);
+      const projectResult = await enhanceProject(sessionSummaries, skippedSessions ?? [], (event) => {
+        send({ type: event.type, text: event.text });
+      });
 
       send({ type: 'done', result: projectResult });
       res.end();

@@ -133,13 +133,18 @@ function extractJson<T>(text: string): T {
   return JSON.parse(match[0]) as T;
 }
 
+export type EnhanceProjectProgress =
+  | { type: 'narrative_chunk'; text: string };
+
 /**
  * Generate a project narrative, arc, timeline, and context-aware questions
- * from enhanced session summaries.
+ * from enhanced session summaries. Streams narrative chunks via onProgress
+ * as the LLM generates the response.
  */
 export async function enhanceProject(
   sessions: SessionSummary[],
   skippedSessions: SkippedSessionMeta[],
+  onProgress?: (event: EnhanceProjectProgress) => void,
 ): Promise<ProjectEnhanceResult> {
   const client = createClient();
 
@@ -161,7 +166,14 @@ export async function enhanceProject(
     totalSessions: sessions.length + skippedSessions.length,
   };
 
-  const response = await client.messages.create({
+  let fullText = '';
+
+  // State machine for detecting and streaming the "narrative" JSON string value
+  let streamPhase: 'scanning' | 'in_narrative' | 'past_narrative' = 'scanning';
+  let scanBuffer = '';
+  let escaped = false; // tracks whether the previous char was an unresolved backslash
+
+  const stream = client.messages.stream({
     model: 'claude-sonnet-4-6',
     max_tokens: 4096,
     system: PROJECT_ENHANCE_SYSTEM,
@@ -171,12 +183,71 @@ export async function enhanceProject(
     }],
   });
 
-  const text = response.content
-    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-    .map((b) => b.text)
-    .join('');
+  for await (const event of stream) {
+    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+      const chunk = event.delta.text;
+      fullText += chunk;
 
-  const result = extractJson<ProjectEnhanceResult>(text);
+      if (!onProgress || streamPhase === 'past_narrative') continue;
+
+      for (const char of chunk) {
+        if (streamPhase === 'scanning') {
+          scanBuffer += char;
+          // Detect "narrative":<whitespace>" — the opening of the value string
+          const marker = '"narrative"';
+          const markerIdx = scanBuffer.indexOf(marker);
+          if (markerIdx >= 0) {
+            const afterMarker = scanBuffer.slice(markerIdx + marker.length);
+            // Match : then optional whitespace then opening "
+            const valueStart = afterMarker.match(/^\s*:\s*"/);
+            if (valueStart) {
+              streamPhase = 'in_narrative';
+              // Anything after the opening quote is narrative content
+              const remainder = afterMarker.slice(valueStart[0].length);
+              if (remainder.length > 0) {
+                for (const rc of remainder) {
+                  // Process remainder through the same escape logic below
+                  if (escaped) {
+                    escaped = false;
+                    const decoded = rc === 'n' ? '\n' : rc === 't' ? '\t' : rc;
+                    onProgress({ type: 'narrative_chunk', text: decoded });
+                  } else if (rc === '\\') {
+                    escaped = true;
+                  } else if (rc === '"') {
+                    streamPhase = 'past_narrative';
+                    break;
+                  } else {
+                    onProgress({ type: 'narrative_chunk', text: rc });
+                  }
+                }
+              }
+              scanBuffer = '';
+            }
+          }
+          // Prevent unbounded buffer growth
+          if (scanBuffer.length > 500) {
+            scanBuffer = scanBuffer.slice(-200);
+          }
+        } else if (streamPhase === 'in_narrative') {
+          if (escaped) {
+            escaped = false;
+            const decoded = char === 'n' ? '\n' : char === 't' ? '\t' : char;
+            onProgress({ type: 'narrative_chunk', text: decoded });
+          } else if (char === '\\') {
+            escaped = true;
+          } else if (char === '"') {
+            // Unescaped quote — end of narrative string
+            streamPhase = 'past_narrative';
+            break;
+          } else {
+            onProgress({ type: 'narrative_chunk', text: char });
+          }
+        }
+      }
+    }
+  }
+
+  const result = extractJson<ProjectEnhanceResult>(fullText);
 
   // Validate required fields
   if (!result.narrative || !Array.isArray(result.arc) || !Array.isArray(result.skills)) {
