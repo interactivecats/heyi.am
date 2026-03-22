@@ -14,18 +14,18 @@
   <%!-- ── Hero ── --%>
   <section style="text-align: center; padding-block: var(--spacing-20) var(--spacing-16); max-width: 48rem; margin-inline: auto;">
     <h1 class="display-md" style="margin-block-end: var(--spacing-6);">
-      The End of AI Fluff.<br /><em style="font-style: italic;">The Start of Provable Thinking.</em>
+      Show How You Think.
     </h1>
     <p class="body-lg" style="color: var(--on-surface-variant); max-width: 38rem; margin-inline: auto; margin-block-end: var(--spacing-8);">
-      heyi.am captures your AI coding sessions, extracts the signal, and publishes cryptographically sealed case studies that prove how you actually build.
+      heyi.am turns your AI coding projects into portfolio case studies. The AI reads your sessions, picks the best ones, builds the narrative, and you add your voice.
     </p>
     <div style="display: flex; gap: var(--spacing-3); justify-content: center; margin-block-end: var(--spacing-10);">
-      <a href={~p"/users/register"} class="btn btn-primary">Publish your first session</a>
-      <a href="#featured" class="btn btn-secondary">See examples</a>
+      <a href={~p"/users/register"} class="btn btn-primary">Publish your first project</a>
+      <a href="#how-it-works" class="btn btn-secondary">See how it works</a>
     </div>
 
     <%!-- Terminal visual --%>
-    <div class="terminal" style="max-width: 32rem; margin-inline: auto; text-align: start;">
+    <div class="terminal" style="max-width: 34rem; margin-inline: auto; text-align: start;">
       <div class="terminal-header">
         <div class="terminal-dots">
           <span class="terminal-dot terminal-dot--red"></span>
@@ -35,93 +35,93 @@
         <span style="font-size: 0.625rem; color: rgba(255,255,255,0.4);">terminal</span>
       </div>
       <div class="terminal-line"><span class="terminal-prompt">$</span> npx heyiam</div>
-      <div class="terminal-line"><span style="color: var(--inverse-primary);">[INFO]</span> Found 3 sessions in ~/.claude/projects</div>
-      <div class="terminal-line"><span class="terminal-prompt">$</span> npx heyiam enhance --session latest</div>
-      <div class="terminal-line"><span class="terminal-success">&#10003;</span> Enhanced. Ready to publish.</div>
-      <div class="terminal-line"><span class="terminal-prompt">$</span> npx heyiam publish</div>
-      <div class="terminal-line"><span class="terminal-success">&#10003;</span> Sealed &amp; published: heyi.am/s/abc123</div>
+      <div class="terminal-line"><span style="color: var(--inverse-primary);">[INFO]</span> Found 3 projects (21 sessions)</div>
+      <div class="terminal-line"><span style="color: var(--inverse-primary);">[INFO]</span> Sources: Claude Code, Cursor, Gemini CLI</div>
+      <div class="terminal-line" style="margin-block-start: 0.25rem;"><span class="terminal-success">&#10003;</span> AI selected 8 of 21 sessions</div>
+      <div class="terminal-line"><span class="terminal-success">&#10003;</span> Project narrative generated</div>
+      <div class="terminal-line"><span class="terminal-success">&#10003;</span> Published: heyi.am/ben/heyi-am</div>
       <div class="terminal-line"><span class="terminal-prompt">$</span> <span class="terminal-cursor"></span></div>
     </div>
   </section>
 
-  <%!-- ── Feature Cards ── --%>
-  <section style="padding-block: var(--spacing-16);">
+  <%!-- ── How It Works ── --%>
+  <section id="how-it-works" style="padding-block: var(--spacing-16);">
     <div class="label-md" style="text-align: center; color: var(--primary); margin-block-end: var(--spacing-8);">How it works</div>
     <div class="landing-features-grid">
       <div class="card card-padded">
         <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-4);">01</div>
-        <h3 class="headline-sm" style="margin-block-end: var(--spacing-3);">CLI Ingestion</h3>
+        <h3 class="headline-sm" style="margin-block-end: var(--spacing-3);">One Command</h3>
         <p class="body-md" style="color: var(--on-surface-variant);">
-          Reads Claude Code, Cursor, and Copilot sessions directly from your machine. No copy-paste, no screenshots.
+          Run <code style="font-family: var(--font-mono); font-size: 0.875em;">npx heyiam</code> and see your projects. Sessions from Claude Code, Cursor, Codex, and Gemini CLI are grouped automatically.
         </p>
       </div>
       <div class="card card-padded">
         <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-4);">02</div>
-        <h3 class="headline-sm" style="margin-block-end: var(--spacing-3);">AI Enhancement</h3>
+        <h3 class="headline-sm" style="margin-block-end: var(--spacing-3);">AI Picks the Signal</h3>
         <p class="body-md" style="color: var(--on-surface-variant);">
-          Extracts decisions, execution paths, and skills. Your answers to 5 anti-fluff questions ensure it sounds like you.
+          The AI triages your sessions, selects the ones worth showcasing, and builds a project narrative. You answer 2-3 targeted questions so it sounds like you.
         </p>
       </div>
       <div class="card card-padded">
         <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-4);">03</div>
-        <h3 class="headline-sm" style="margin-block-end: var(--spacing-3);">Cryptographic Sealing</h3>
+        <h3 class="headline-sm" style="margin-block-end: var(--spacing-3);">Publish the Project</h3>
         <p class="body-md" style="color: var(--on-surface-variant);">
-          Ed25519 signatures prove your sessions haven't been modified. Verifiable by anyone, owned by you.
+          One click publishes the project with a timeline, narrative, and accurate stats from all your sessions.
         </p>
       </div>
     </div>
   </section>
 
-  <%!-- ── Featured Takes ── --%>
+  <%!-- ── Example Projects ── --%>
   <section id="featured" style="padding-block: var(--spacing-16);">
-    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">Example Sessions</div>
-    <h2 class="headline-lg" style="margin-block-end: var(--spacing-8);">How developers are showing their thinking</h2>
+    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">Example Projects</div>
+    <h2 class="headline-lg" style="margin-block-end: var(--spacing-8);">What a project page looks like</h2>
     <div class="landing-takes-grid">
       <div class="card card-padded">
-        <div style="display: flex; justify-content: space-between; align-items: start; margin-block-end: var(--spacing-4);">
-          <div>
-            <div class="title-md" style="margin-block-end: var(--spacing-1);">Ripping out auth and rebuilding with phx.gen.auth</div>
-            <div class="label-sm" style="color: var(--outline);">Sarah Chen</div>
-          </div>
-          <span class="badge badge--sealed">Sealed</span>
+        <div style="margin-block-end: var(--spacing-4);">
+          <div class="title-md" style="margin-block-end: var(--spacing-1);">heyi.am</div>
+          <div class="label-sm" style="color: var(--outline);">Sarah Chen</div>
         </div>
         <p class="body-sm" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
-          "The existing auth was a liability. I needed phx.gen.auth's battle-tested defaults, but migrating live users meant I couldn't break sessions mid-deploy."
+          "Built a portfolio platform from scratch. The hardest calls were ripping out auth twice and choosing Ed25519 over JWT for session sealing."
         </p>
         <div style="display: flex; gap: var(--spacing-2); flex-wrap: wrap; margin-block-end: var(--spacing-4);">
           <span class="chip chip--primary">Elixir</span>
           <span class="chip chip--primary">Phoenix</span>
-          <span class="chip">Auth</span>
+          <span class="chip">TypeScript</span>
+          <span class="chip">React</span>
         </div>
-        <div class="label-sm" style="color: var(--outline);">47 min</div>
+        <div class="label-sm" style="color: var(--outline); display: flex; gap: var(--spacing-4);">
+          <span>21 sessions (8 published)</span>
+          <span>14.2 hrs</span>
+          <span>8.4k LOC</span>
+        </div>
       </div>
 
       <div class="card card-padded">
-        <div style="display: flex; justify-content: space-between; align-items: start; margin-block-end: var(--spacing-4);">
-          <div>
-            <div class="title-md" style="margin-block-end: var(--spacing-1);">Building a real-time WebSocket sync engine</div>
-            <div class="label-sm" style="color: var(--outline);">Marcus Rivera</div>
-          </div>
-          <span class="badge badge--sealed">Sealed</span>
+        <div style="margin-block-end: var(--spacing-4);">
+          <div class="title-md" style="margin-block-end: var(--spacing-1);">sync-engine</div>
+          <div class="label-sm" style="color: var(--outline);">Marcus Rivera</div>
         </div>
         <p class="body-sm" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
-          "CRDTs looked elegant in the paper but the edge cases around concurrent deletes nearly killed the project. Had to rethink the whole merge strategy."
+          "CRDTs looked elegant in the paper but concurrent deletes nearly killed the project. Had to rethink the merge strategy from scratch with three agents working in parallel."
         </p>
         <div style="display: flex; gap: var(--spacing-2); flex-wrap: wrap; margin-block-end: var(--spacing-4);">
           <span class="chip chip--primary">TypeScript</span>
           <span class="chip chip--primary">WebSockets</span>
           <span class="chip">CRDTs</span>
         </div>
-        <div class="label-sm" style="color: var(--outline);">62 min</div>
+        <div class="label-sm" style="color: var(--outline); display: flex; gap: var(--spacing-4);">
+          <span>12 sessions (6 published)</span>
+          <span>9.8 hrs</span>
+          <span>5.1k LOC</span>
+        </div>
       </div>
 
       <div class="card card-padded">
-        <div style="display: flex; justify-content: space-between; align-items: start; margin-block-end: var(--spacing-4);">
-          <div>
-            <div class="title-md" style="margin-block-end: var(--spacing-1);">Migrating a monolith's CI pipeline to GitHub Actions</div>
-            <div class="label-sm" style="color: var(--outline);">Aisha Patel</div>
-          </div>
-          <span class="badge badge--sealed">Sealed</span>
+        <div style="margin-block-end: var(--spacing-4);">
+          <div class="title-md" style="margin-block-end: var(--spacing-1);">ci-migration</div>
+          <div class="label-sm" style="color: var(--outline);">Aisha Patel</div>
         </div>
         <p class="body-sm" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
           "Jenkins had 200+ jobs and nobody understood the dependency graph. I mapped it first, then migrated in waves. The AI caught three circular deps I missed."
@@ -131,16 +131,17 @@
           <span class="chip">CI/CD</span>
           <span class="chip">GitHub Actions</span>
         </div>
-        <div class="label-sm" style="color: var(--outline);">35 min</div>
+        <div class="label-sm" style="color: var(--outline); display: flex; gap: var(--spacing-4);">
+          <span>8 sessions (5 published)</span>
+          <span>6.3 hrs</span>
+          <span>2.8k LOC</span>
+        </div>
       </div>
 
       <div class="card card-padded">
-        <div style="display: flex; justify-content: space-between; align-items: start; margin-block-end: var(--spacing-4);">
-          <div>
-            <div class="title-md" style="margin-block-end: var(--spacing-1);">Optimizing Postgres queries that were timing out in prod</div>
-            <div class="label-sm" style="color: var(--outline);">James Okonkwo</div>
-          </div>
-          <span class="badge badge--sealed">Sealed</span>
+        <div style="margin-block-end: var(--spacing-4);">
+          <div class="title-md" style="margin-block-end: var(--spacing-1);">query-optimizer</div>
+          <div class="label-sm" style="color: var(--outline);">James Okonkwo</div>
         </div>
         <p class="body-sm" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
           "EXPLAIN ANALYZE showed a sequential scan on 4M rows. Adding a partial index cut the query from 12s to 8ms. The AI helped me reason through the index strategy."
@@ -150,7 +151,43 @@
           <span class="chip">Performance</span>
           <span class="chip">Indexing</span>
         </div>
-        <div class="label-sm" style="color: var(--outline);">28 min</div>
+        <div class="label-sm" style="color: var(--outline); display: flex; gap: var(--spacing-4);">
+          <span>5 sessions (4 published)</span>
+          <span>3.1 hrs</span>
+          <span>1.2k LOC</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ── What You Get ── --%>
+  <section style="padding-block: var(--spacing-16);">
+    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">What gets published</div>
+    <h2 class="headline-lg" style="margin-block-end: var(--spacing-8);">A project page, not a transcript dump</h2>
+    <div class="landing-takes-grid">
+      <div class="card card-padded">
+        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Project Narrative</h3>
+        <p class="body-sm" style="color: var(--on-surface-variant);">
+          AI-generated, refined with your answers. 2-3 sentences that sound like a dev explaining what they built and why — not a summary.
+        </p>
+      </div>
+      <div class="card card-padded">
+        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Project Timeline</h3>
+        <p class="body-sm" style="color: var(--on-surface-variant);">
+          Sessions grouped by phase. Featured sessions expanded as case studies, small sessions collapsed. The story of how the project evolved.
+        </p>
+      </div>
+      <div class="card card-padded">
+        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Accurate Stats</h3>
+        <p class="body-sm" style="color: var(--on-surface-variant);">
+          Total time, LOC, files, and session count computed from all your local sessions — not just the ones you published.
+        </p>
+      </div>
+      <div class="card card-padded">
+        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Session Case Studies</h3>
+        <p class="body-sm" style="color: var(--on-surface-variant);">
+          Each published session includes execution paths, key decisions, skills, and the developer's own take on what happened.
+        </p>
       </div>
     </div>
   </section>
@@ -201,42 +238,30 @@
     </div>
   </section>
 
-  <%!-- ── Dual Audience Section (dark) ── --%>
+  <%!-- ── Why It Works (dark) ── --%>
   <section style="background-color: var(--inverse-surface); color: var(--inverse-on-surface); margin-inline: calc(-1 * var(--spacing-6)); padding: var(--spacing-16) var(--spacing-6);">
     <div style="max-width: var(--content-max-width); margin-inline: auto;">
-      <h2 class="headline-lg" style="text-align: center; margin-block-end: var(--spacing-12);">Built for two audiences</h2>
+      <h2 class="headline-lg" style="text-align: center; margin-block-end: var(--spacing-12);">Why this works</h2>
       <div class="landing-dual-grid">
         <div>
-          <h3 class="headline-sm" style="margin-block-end: var(--spacing-4); color: var(--inverse-primary);">For Developers</h3>
+          <h3 class="headline-sm" style="margin-block-end: var(--spacing-4); color: var(--inverse-primary);">Your sessions are already recorded</h3>
           <ul class="stack stack--md" style="list-style: none;">
             <li class="body-md" style="color: var(--inverse-on-surface);">
-              Stop writing case studies from memory. Your sessions are already recorded.
+              Claude Code, Cursor, Codex, and Gemini CLI all save session data locally. heyi.am reads it directly — no extra work.
             </li>
             <li class="body-md" style="color: var(--inverse-on-surface);">
-              Anti-fluff questions force you to explain the hard decisions, not summarize the easy ones.
-            </li>
-            <li class="body-md" style="color: var(--inverse-on-surface);">
-              Cryptographic sealing means your work speaks for itself. No embellishment needed.
-            </li>
-            <li class="body-md" style="color: var(--inverse-on-surface);">
-              Build a portfolio that shows how you think, not just what you shipped.
+              Sessions from the same project directory are grouped automatically, even across different tools.
             </li>
           </ul>
         </div>
         <div>
-          <h3 class="headline-sm" style="margin-block-end: var(--spacing-4); color: var(--inverse-primary);">For Hiring Managers</h3>
+          <h3 class="headline-sm" style="margin-block-end: var(--spacing-4); color: var(--inverse-primary);">AI does the heavy lifting</h3>
           <ul class="stack stack--md" style="list-style: none;">
             <li class="body-md" style="color: var(--inverse-on-surface);">
-              See how candidates actually think through problems, not just the polished result.
+              The AI triages sessions, skips the noise, extracts decisions and execution paths, and writes a project narrative.
             </li>
             <li class="body-md" style="color: var(--inverse-on-surface);">
-              Sealed sessions can't be faked. Ed25519 signatures verify authenticity.
-            </li>
-            <li class="body-md" style="color: var(--inverse-on-surface);">
-              AI collaboration profiles show whether a developer drives the AI or follows it.
-            </li>
-            <li class="body-md" style="color: var(--inverse-on-surface);">
-              Replace take-home tests with real session reviews. Better signal, less candidate burden.
+              Anti-fluff questions force you to explain the hard decisions. The result sounds like you, not a summary.
             </li>
           </ul>
         </div>
@@ -246,9 +271,9 @@
 
   <%!-- ── Bottom CTA ── --%>
   <section style="text-align: center; padding-block: var(--spacing-20);">
-    <h2 class="display-sm" style="margin-block-end: var(--spacing-4);">Publish your first session</h2>
+    <h2 class="display-sm" style="margin-block-end: var(--spacing-4);">Publish your first project</h2>
     <p class="body-lg" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-8);">
-      Install the CLI and show the world how you think.
+      One command. The AI does the rest.
     </p>
     <div class="terminal" style="max-width: 28rem; margin-inline: auto; text-align: start; margin-block-end: var(--spacing-8);">
       <div class="terminal-line"><span class="terminal-prompt">$</span> npx heyiam</div>
