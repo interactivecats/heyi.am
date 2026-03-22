@@ -1,13 +1,24 @@
 {
   "name": "heyiam",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Turn AI coding sessions into portfolio case studies",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/interactivecats/heyi.am"
+  },
+  "keywords": ["ai", "portfolio", "claude", "coding-sessions", "developer-tools"],
   "bin": {
     "heyiam": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "app/dist"
+  ],
   "scripts": {
-    "build": "tsc && cd app && npm run build",
+    "build": "tsc && cd app && npx vite build",
+    "prepublishOnly": "npm run build && find dist -name '*.test.*' -delete",
     "dev": "npx concurrently \"npm:dev:api\" \"npm:dev:app\"",
     "dev:api": "tsx watch src/index.ts open --no-open",
     "dev:app": "cd app && npm run dev",

@@ -1,0 +1,3 @@
+# Allow dist/ to be published (overrides .gitignore)
+src/
+node_modules/

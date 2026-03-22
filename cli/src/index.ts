@@ -5,13 +5,14 @@ import { startServer } from './server.js';
 import open from 'open';
 import { checkAuthStatus, deviceAuthFlow, getAuthToken, deleteAuthToken, buildPublishPayload } from './auth.js';
 import { loadOrCreateKeyPair, signPayload, getFingerprint } from './machine-key.js';
+import { getAnthropicApiKey } from './settings.js';
 
 const program = new Command();
 
 program
   .name('heyiam')
   .description('Turn AI coding sessions into portfolio case studies')
-  .version('0.1.0');
+  .version('0.1.2');
 
 program
   .command('open')
@@ -20,26 +21,38 @@ program
   .option('--no-open', 'Start server without opening browser')
   .action(async (opts) => {
     const port = parseInt(opts.port, 10);
+
+    // Check for API key before starting
+    const apiKey = getAnthropicApiKey();
+    if (!apiKey) {
+      console.log('\n⚠  No Anthropic API key found.');
+      console.log('   AI enhancement requires an API key. Add one in Settings after the app opens.');
+      console.log('   Or set ANTHROPIC_API_KEY in your environment.\n');
+    }
+
     const server = await startServer(port);
     const url = `http://localhost:${port}`;
     console.log(`\nheyiam running at ${url}`);
+    if (!apiKey) {
+      console.log(`Open ${url}/settings to add your Anthropic API key`);
+    }
     console.log('Press Ctrl+C to stop\n');
     if (opts.open) {
-      await open(url);
+      open(url).catch(() => {}); // fire-and-forget, don't crash if browser fails
     }
 
     // Keep the process alive until Ctrl+C
     const shutdown = () => {
       console.log('\nShutting down...');
       server.close(() => process.exit(0));
-      // Force exit after 3s if connections hang
       setTimeout(() => process.exit(0), 3000);
     };
     process.on('SIGINT', shutdown);
     process.on('SIGTERM', shutdown);
 
-    // Block forever — the event loop stays alive because the server is listening
-    await new Promise(() => {});
+    // Keep event loop alive explicitly
+    const keepAlive = setInterval(() => {}, 60_000);
+    keepAlive.unref = undefined as unknown as typeof keepAlive.unref; // prevent unref
   });
 
 import { API_URL } from './config.js';
@@ -126,16 +139,9 @@ program
     }
   });
 
-// Default to 'open' when no command is given
-program.action(async () => {
-  await program.parseAsync(['', '', 'open']);
-});
-
 export { program };
 
 // Only run if this is the entry point (not imported for testing).
-// When installed via npm link, process.argv[1] is the symlink path
-// (e.g., ~/.nvm/.../bin/heyiam), so we resolve it to check the real path.
 import { realpathSync } from 'node:fs';
 
 const resolvedArgv = process.argv[1] ? realpathSync(process.argv[1]) : '';
@@ -143,5 +149,14 @@ const isDirectRun = resolvedArgv.endsWith('/dist/index.js') ||
   resolvedArgv.endsWith('/src/index.ts');
 
 if (isDirectRun) {
-  program.parseAsync(process.argv);
+  // If no command given (just `heyiam`), default to `open`
+  const args = process.argv.slice(2);
+  const knownCommands = ['open', 'login', 'logout', 'publish'];
+  if (args.length === 0 || !knownCommands.includes(args[0])) {
+    process.argv.splice(2, 0, 'open');
+  }
+  program.parseAsync(process.argv).catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
 }
