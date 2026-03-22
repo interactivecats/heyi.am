@@ -160,12 +160,13 @@ if config_env() == :prod do
   #
   # Check `Plug.SSL` for all available options in `force_ssl`.
 
-  # Swoosh mailer for production (Amazon SES)
-  config :heyi_am, HeyiAm.Mailer,
-    adapter: Swoosh.Adapters.AmazonSES,
-    region: System.get_env("SES_REGION", "us-east-1"),
-    access_key: System.get_env("SES_ACCESS_KEY_ID") ||
-      raise("SES_ACCESS_KEY_ID must be set in production"),
-    secret: System.get_env("SES_SECRET_ACCESS_KEY") ||
-      raise("SES_SECRET_ACCESS_KEY must be set in production")
+  # Swoosh mailer for production (Amazon SES when configured, otherwise Local)
+  if ses_key = System.get_env("SES_ACCESS_KEY_ID") do
+    config :heyi_am, HeyiAm.Mailer,
+      adapter: Swoosh.Adapters.AmazonSES,
+      region: System.get_env("SES_REGION", "us-east-1"),
+      access_key: ses_key,
+      secret: System.get_env("SES_SECRET_ACCESS_KEY") ||
+        raise("SES_SECRET_ACCESS_KEY must be set when SES_ACCESS_KEY_ID is present")
+  end
 end
