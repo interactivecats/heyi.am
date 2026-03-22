@@ -943,7 +943,14 @@ export function createApp(sessionsBasePath?: string) {
               filesChanged: (session.filesChanged ?? []).slice(0, 20).map((f) => (typeof f === 'string' ? { path: f, additions: 0, deletions: 0 } : f)),
               linesOfCode: session.linesOfCode ?? 0,
               date: session.date ? new Date(session.date).toISOString() : new Date().toISOString(),
-              endTime: session.endTime ? new Date(session.endTime).toISOString() : null,
+              // Only use wall-clock endTime when reasonable (≤ 3x active time)
+              // Overnight sessions span 20+ hours which breaks timeline clustering
+              endTime: (() => {
+                if (!session.endTime || !session.date) return null;
+                const wallMs = new Date(session.endTime).getTime() - new Date(session.date).getTime();
+                const activeMs = (session.durationMinutes ?? 0) * 60_000;
+                return wallMs <= activeMs * 3 ? new Date(session.endTime).toISOString() : null;
+              })(),
               cwd: session.cwd ?? null,
               wallClockMinutes: session.wallClockMinutes ?? null,
               template: 'editorial',
