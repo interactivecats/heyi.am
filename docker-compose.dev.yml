@@ -73,7 +73,7 @@ services:
       OBJECT_STORAGE_ACCESS_KEY_ID: heyi_admin
       OBJECT_STORAGE_SECRET_ACCESS_KEY: heyi_secret_key
       OBJECT_STORAGE_BUCKET: heyi-am-sessions
-      OBJECT_STORAGE_EXTERNAL_HOST: host.docker.internal
+      OBJECT_STORAGE_EXTERNAL_HOST: localhost
     ports:
       - "4000:4000"
     volumes:
