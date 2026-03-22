@@ -1,479 +1,539 @@
 # heyi.am -- Manual Test Plan
 
 > **Prerequisites**
-> 1. Start the dev server: `cd phoenix && mix phx.server` (runs at `http://localhost:4000`)
-> 2. Ensure Postgres is running with `heyi_am_dev` database (`mix ecto.setup` if needed)
-> 3. Open the dev mailbox at `http://localhost:4000/dev/mailbox` in a separate tab (for email confirmations)
-> 4. Have a second browser or incognito window ready for "another user" tests
+> 1. Start the backend: `docker compose -f docker-compose.dev.yml up -d` (Phoenix + Postgres + SeaweedFS)
+> 2. Start the CLI: `cd cli && HEYIAM_API_URL=http://localhost:4000 npm run dev`
+> 3. Have at least one Claude Code project with sessions in `~/.claude/projects/`
+> 4. Open the dev mailbox at `http://localhost:4000/dev/mailbox` in a separate tab
 > 5. Have `curl` or a REST client available for API tests
+> 6. Have a second browser or incognito window ready for "another user" tests
+> 7. Optional: set `ANTHROPIC_API_KEY` in env for local AI enhancement
 
 ---
 
-## 1. Registration
+## 1. Registration & Auth
 
-### 1.1 Happy path -- email/password
+### 1.1 Register -- email/password
 1. Open `http://localhost:4000/users/register`
-2. Enter a valid email (e.g. `test@example.com`) and a password (12+ characters)
+2. Enter a valid email and password (12+ characters)
 3. Click **Register**
-4. **Expect:** Redirected to `/onboarding/username`. Flash message confirms account created.
+4. **Expect:** Redirected to `/onboarding/username`. Flash confirms account created.
 
 ### 1.2 Duplicate email
-1. Go to `/users/register` again
-2. Enter the **same email** you just used with any password
-3. Click **Register**
-4. **Expect:** Stay on register page. Error: "has already been taken"
+1. Go to `/users/register`, enter the same email
+2. **Expect:** Error: "has already been taken"
 
 ### 1.3 Short password
-1. Go to `/users/register`
-2. Enter a new email and password `short` (under 12 chars)
-3. Click **Register**
-4. **Expect:** Validation error about minimum password length
+1. Enter a new email and password under 12 chars
+2. **Expect:** Validation error about minimum password length
 
-### 1.4 Empty fields
-1. Go to `/users/register`
-2. Submit the form with both fields blank
-3. **Expect:** Required field errors on both email and password
+### 1.4 Login -- happy path
+1. Go to `/users/log-in`, enter credentials from 1.1
+2. **Expect:** Logged in, redirected to home or onboarding
 
-### 1.5 Already logged in
-1. While logged in, navigate directly to `/users/register`
-2. **Expect:** Redirected away (to `/` or onboarding) since `redirect_if_user_is_authenticated` pipe is active
+### 1.5 Login -- wrong password
+1. Enter correct email, wrong password
+2. **Expect:** Generic error "Invalid email or password"
 
----
+### 1.6 Login -- rate limiting
+1. Submit 6+ login attempts rapidly
+2. **Expect:** After 5 attempts, rate limit kicks in (429 or error message)
 
-## 2. Login
+### 1.7 GitHub OAuth
+1. Go to `/users/log-in`, click "Continue with GitHub"
+2. **Expect:** Redirects to GitHub, then back to `/auth/github/callback`. Account created/linked.
 
-### 2.1 Happy path
-1. Go to `http://localhost:4000/users/log-in`
-2. Enter the credentials from test 1.1
-3. Click **Log in**
-4. **Expect:** Logged in, redirected to home or onboarding
-
-### 2.2 Wrong password
-1. Go to `/users/log-in`
-2. Enter correct email, wrong password
-3. **Expect:** Error "Invalid email or password" -- no hint about which field is wrong
-
-### 2.3 Non-existent email
-1. Enter `nobody@example.com` with any password
-2. **Expect:** Same generic error "Invalid email or password" (no user enumeration)
-
-### 2.4 Rate limiting
-1. Rapidly submit 6+ login attempts in under 60 seconds
-2. **Expect:** After 5 attempts, rate limit kicks in (429 or error message). The `rate_limit_auth` pipeline limits to 5/minute.
-
-### 2.5 Logout
-1. While logged in, trigger `DELETE /users/log-out` (click logout link/button)
-2. **Expect:** Session destroyed, redirected to home page
-3. Try navigating to `/onboarding/username`
-4. **Expect:** Redirected to `/users/log-in`
+### 1.8 Logout
+1. Click logout
+2. **Expect:** Session destroyed, redirected to home
 
 ---
 
-## 3. Onboarding -- Username Claim
+## 2. Onboarding
 
-### 3.1 Happy path
-1. Log in with a fresh account that hasn't claimed a username
-2. You should land at `/onboarding/username`
-3. Type a valid username: `testuser` (3-39 chars, lowercase, hyphens OK)
-4. **Expect:** Live availability check shows green/available indicator
+### 2.1 Claim username -- happy path
+1. Log in with a fresh account
+2. Land at `/onboarding/username`
+3. Type a valid username (3-39 chars, lowercase, hyphens OK)
+4. **Expect:** Live availability check shows green/available
 5. Submit
 6. **Expect:** Redirected to `/onboarding/vibe`
 
-### 3.2 Invalid usernames
-Try each of these in the username field and check for validation errors:
-- `ab` (too short -- under 3 chars)
-- `UPPERCASE` (must be lowercase)
-- `user@name` (special characters not allowed)
-- `a-very-very-very-very-very-very-very-very-long-name` (over 39 chars)
-- **Expect:** Each shows an inline validation error, submit is blocked
+### 2.2 Invalid usernames
+Try each: `ab` (too short), `UPPERCASE`, `user@name` (special chars), 40+ chars
+- **Expect:** Inline validation errors
 
-### 3.3 Taken username
-1. In a second browser, register a different account and claim username `taken`
-2. In first browser, try to claim `taken`
-3. **Expect:** Live check shows unavailable. Submit either blocked or returns error.
+### 2.3 Taken username
+1. Claim username `taken` with one account
+2. Try `taken` with another account
+3. **Expect:** Shows unavailable
 
-### 3.4 Auth guard
-1. Log out
-2. Navigate directly to `/onboarding/username`
-3. **Expect:** Redirected to `/users/log-in`
+### 2.4 Vibe picker
+1. At `/onboarding/vibe`, see 6 template cards
+2. Click each card -- **Expect:** Visual selection indicator
+3. Pick an accent color
+4. Click Save & Deploy
+5. **Expect:** Redirected to `/:username` portfolio page
 
 ---
 
-## 4. Onboarding -- Vibe Picker
+## 3. CLI -- Project Dashboard
 
-### 4.1 Happy path
-1. After claiming username, you should be at `/onboarding/vibe`
-2. **Expect:** 6 template cards visible: Editorial, Terminal, Minimal, Brutalist, Campfire, Neon Night
-3. Click each card -- **Expect:** Visual selection indicator (border, highlight, etc.)
-4. Look for accent color options (seal-blue, violet, rose, teal, amber, sky)
-5. Pick a color -- **Expect:** Preview updates with that accent
-6. Click Save/Continue
-7. **Expect:** Redirected to `/:username` (your portfolio page)
+### 3.1 Project cards
+1. Open `http://localhost:17845`
+2. **Expect:** Project cards with: name, session count, total time, LOC, files, skills chips, date range
+3. Each card has an "Upload" button
 
-### 4.2 Skip check
-1. Navigate directly to `/onboarding/vibe` without having claimed a username first
-2. **Expect:** Redirected back to `/onboarding/username`
+### 3.2 Empty state
+1. If no Claude Code sessions exist
+2. **Expect:** Empty state message prompting to start a session
 
----
-
-## 5. Session Pages (Mock Data)
-
-> **Note:** The ShareController currently serves mock data for all tokens. These tests verify template rendering and page structure, not data integrity.
-
-### 5.1 Session show page
-1. Go to `http://localhost:4000/s/any-token-here`
-2. **Expect:** Session page renders with the mock "Ripping out auth" session. Shows: title, dev_take, duration (47m), turns (77), files (34), LOC (2.4k), beats timeline, Q&A pairs, highlights, tool breakdown, top files.
-
-### 5.2 Template switching via query param
-1. Visit `/s/test123?template=terminal`
-2. **Expect:** Terminal template styling applied
-3. Try each template: `?template=editorial`, `?template=minimal`, `?template=brutalist`, `?template=campfire`, `?template=neon-night`
-4. **Expect:** Each renders with distinct visual style. No broken CSS, proper typography.
-5. Try `?template=nonexistent`
-6. **Expect:** Falls back to editorial (default)
-
-### 5.3 "Gone" tokens
-1. Visit `/s/deleted`
-2. **Expect:** 410 Gone page renders (not 404)
-3. Also try `/s/expired` and `/s/removed`
-4. **Expect:** Same gone page for all three
-
-### 5.4 Transcript page
-1. Visit `/s/any-token/transcript`
-2. **Expect:** Full mock transcript with dev/AI message pairs, timestamps, decision callouts
-
-### 5.5 Verify page
-1. Visit `/s/any-token/verify`
-2. **Expect:** Verification page showing content hash, signature status "unverified" (mock session has no signature), recorded_at and verified_at timestamps
+### 3.3 Settings navigation
+1. Click the settings gear icon
+2. **Expect:** Navigate to `/settings`
 
 ---
 
-## 6. API -- Publish Session
+## 4. CLI -- Project Upload Flow
 
-### 6.1 Happy path (no auth)
-```bash
-curl -X POST http://localhost:4000/api/sessions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "session": {
-      "title": "Test session",
-      "dev_take": "Just testing the publish flow",
-      "duration_minutes": 30,
-      "turns": 42,
-      "files_changed": 10,
-      "loc_changed": 500,
-      "template": "editorial"
-    }
-  }'
-```
-**Expect:** 201 response with `{"token": "...", "url": "/s/...", "sealed": false, "content_hash": "..."}`
+### 4.1 Session overview
+1. Click "Upload" on a project card
+2. **Expect:** Full session list in table (date, time, LOC, turns)
+3. Project summary stats at top (4 cards)
+4. "Let AI pick sessions" button (or "Enhance all" if < 5 sessions)
 
-### 6.2 Missing session param
-```bash
-curl -X POST http://localhost:4000/api/sessions \
-  -H "Content-Type: application/json" \
-  -d '{"title": "wrong shape"}'
-```
-**Expect:** 400 with `{"error": {"code": "MISSING_SESSION", "message": "Missing 'session' parameter"}}`
+### 4.2 AI triage (requires API key or proxy)
+1. Click "Let AI pick sessions"
+2. **Expect:** Terminal-style progress: loading stats -> hard floor filter -> signal extraction -> LLM ranking -> done
+3. **Expect:** Selected sessions with green border + significance tags
+4. **Expect:** Skipped sessions in collapsible section with skip reasons ("Too small", "Mechanical")
 
-### 6.3 Missing required fields
-```bash
-curl -X POST http://localhost:4000/api/sessions \
-  -H "Content-Type: application/json" \
-  -d '{"session": {}}'
-```
-**Expect:** 422 with `{"error": {"code": "VALIDATION_FAILED", "details": {...}}}` listing missing field errors
+### 4.3 Triage override
+1. Uncheck a selected session
+2. Check a skipped session
+3. **Expect:** Selection updates, counts change
 
-### 6.4 Rate limiting
-```bash
-for i in $(seq 1 12); do
-  curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:4000/api/sessions \
-    -H "Content-Type: application/json" \
-    -d '{"session": {"title": "rate test '$i'", "dev_take": "test"}}'
-done
-```
-**Expect:** First 10 return 201 or 422, then 429 (rate limited at 10/minute)
+### 4.4 Small project auto-select
+1. Open a project with < 5 sessions
+2. **Expect:** All sessions auto-selected, triage step skipped or all selected
 
-### 6.5 Verify via API
-1. Take a token from test 6.1's response
-2. ```bash
-   curl http://localhost:4000/api/sessions/TOKEN_HERE/verify
-   ```
-3. **Expect:** JSON with `token`, `content_hash`, `signed: false`, `verified: false`, `sealed: false`
+### 4.5 Enhance -- session processing
+1. Click "Enhance project"
+2. **Expect:** Left panel: per-session progress (pending -> enhancing -> done)
+3. **Expect:** Sessions enhanced concurrently (up to 3)
+4. Already-enhanced sessions show as "skipped" (not re-enhanced)
 
-### 6.6 Non-existent token verify
-```bash
-curl http://localhost:4000/api/sessions/nonexistent/verify
-```
-**Expect:** 404 with `{"error": {"code": "NOT_FOUND"}}`
+### 4.6 Enhance -- project narrative
+1. After sessions complete, project narrative streams in
+2. **Expect:** Right panel shows: project description, skills, arc phases, timeline periods progressively appearing
 
----
+### 4.7 Questions step
+1. After enhance completes, see 2-3 questions
+2. **Expect:** Questions reference specific patterns from sessions (not generic)
+3. **Expect:** Category tags: "Pattern detected", "Architecture", "Evolution"
+4. Answer one question, skip others
+5. Click "Weave into narrative"
+6. **Expect:** Narrative updates with developer's voice
 
-## 7. Challenges
+### 4.8 Skip questions
+1. Click "Skip questions" instead
+2. **Expect:** Draft narrative used as-is, proceed to timeline
 
-### 7.1 Create a challenge
-1. Log in, go to `/challenges/new`
-2. Fill in:
-   - **Title:** "Elixir GenServer Challenge"
-   - **Problem statement:** "Build a GenServer that manages a shopping cart"
-   - **Criteria** (one per line): "Proper GenServer callbacks\nError handling\nTest coverage"
-   - **Time limit:** 60 (minutes)
-   - **Max responses:** 5
-   - **Access code:** (leave blank for now)
-3. Submit
-4. **Expect:** Redirected to `/challenges/SLUG` with flash "Challenge created." Challenge is in **draft** status.
+### 4.9 Timeline review
+1. **Expect:** Vertical timeline grouped by time period
+2. Featured sessions as expanded cards with titles + tags
+3. Small sessions collapsed ("N smaller sessions")
 
-### 7.2 Create challenge with access code
-1. Go to `/challenges/new`
-2. Fill in fields + set access code to `secret123`
-3. Submit
-4. **Expect:** Challenge created. Access code is bcrypt-hashed (not stored in plain text).
+### 4.10 Review step
+1. **Expect:** Project card preview (narrative, stats, skills)
+2. **Expect:** "What gets published" checklist
+3. **Expect:** Repository URL field (auto-detected from git remote)
+4. Project URL field (manual entry)
+5. Screenshot upload zone (optional)
 
-### 7.3 View draft challenge (as owner)
-1. Navigate to `/challenges/SLUG` for the challenge you created
-2. **Expect:** Challenge details visible. Status shows "draft."
+### 4.11 Publish (requires auth)
+1. Click "Publish project"
+2. **Expect:** Progress: creating project -> uploading sessions (N of M) -> done
+3. **Expect:** Success page with project URL + copy button
+4. **Expect:** "View Project Page" and "View Portfolio" buttons
 
-### 7.4 View draft challenge (as another user)
-1. In incognito, log in as a different user
-2. Navigate to the same `/challenges/SLUG`
-3. **Expect:** The page renders (public show page), but challenge should indicate it's not yet active. No submission option.
-
-### 7.5 Access code flow
-1. In incognito (not logged in), visit the access-code-protected challenge from 7.2
-2. **Expect:** See an access code input form (challenge is locked)
-3. Enter wrong code `wrong`
-4. **Expect:** Error displayed, still locked
-5. Enter correct code `secret123`
-6. **Expect:** Page refreshes, now unlocked. Session cookie stores `challenge_unlocked_<id>`
-7. Refresh the page
-8. **Expect:** Still unlocked (session persists)
-
-### 7.6 Challenge with no access code
-1. Visit the challenge from 7.1 (no access code)
-2. **Expect:** Problem statement visible immediately, no unlock step
-
-### 7.7 Publish a response to a challenge
-1. First, activate the challenge via IEx:
-   ```bash
-   # In a separate terminal in the phoenix/ directory:
-   iex -S mix
-   # Then:
-   challenge = HeyiAm.Challenges.get_challenge_by_slug!("YOUR-SLUG")
-   HeyiAm.Challenges.activate_challenge(challenge)
-   ```
-2. Publish a session linked to the challenge:
-   ```bash
-   curl -X POST http://localhost:4000/api/sessions \
-     -H "Content-Type: application/json" \
-     -d '{
-       "session": {
-         "title": "My GenServer solution",
-         "dev_take": "Used handle_call for sync ops",
-         "duration_minutes": 45,
-         "turns": 30
-       },
-       "challenge_slug": "YOUR-SLUG"
-     }'
-   ```
-3. **Expect:** 201, share created with `challenge_id` linked
-
-### 7.8 Challenge at max responses
-1. Publish responses up to the `max_responses` limit (5 from test 7.1)
-2. Attempt one more
-3. **Expect:** Error `{"error": {"code": "MAX_RESPONSES_REACHED"}}`
-
-### 7.9 Response to non-existent challenge
-```bash
-curl -X POST http://localhost:4000/api/sessions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "session": {"title": "test", "dev_take": "test"},
-    "challenge_slug": "does-not-exist"
-  }'
-```
-**Expect:** 404 with `{"error": {"code": "CHALLENGE_NOT_FOUND"}}`
-
-### 7.10 Compare view (owner only)
-1. Log in as the challenge creator
-2. Go to `/challenges/SLUG/compare`
-3. **Expect:** All responses listed with summary (title, duration, turns, sealed status, truncated hash)
-
-### 7.11 Compare view (non-owner)
-1. Log in as a different user
-2. Go to `/challenges/SLUG/compare`
-3. **Expect:** Redirected to `/` with flash "You do not have access to this challenge."
-
-### 7.12 Deep dive
-1. As the challenge owner, go to `/challenges/SLUG/responses/TOKEN` (use a response token from compare view)
-2. **Expect:** Detailed view: title, dev_take, skills, beats, Q&A pairs, narrative, tool breakdown
-3. Check prev/next navigation links
-4. **Expect:** First response has no "prev" link, last has no "next" link
-
-### 7.13 Non-existent challenge slug
-1. Visit `/challenges/totally-fake-slug`
-2. **Expect:** 404 error (Ecto.NoResultsError raises)
+### 4.12 Publish -- not authenticated
+1. Try to publish without running `heyiam login`
+2. **Expect:** Auth prompt / redirect to login flow
 
 ---
 
-## 8. Portfolio
+## 5. CLI -- Settings
 
-### 8.1 View portfolio (mock data)
-1. Go to `http://localhost:4000/YOUR-USERNAME`
-2. **Expect:** Portfolio page renders with mock projects (DataFlow Engine, heyi.am), collab profile radar, metrics, recent activity. Uses the template/accent you chose in onboarding.
+### 5.1 API key management
+1. Go to `/settings`
+2. Enter an Anthropic API key
+3. **Expect:** Key saved, masked display
+4. Toggle show/hide
+5. **Expect:** Key revealed/hidden
 
-### 8.2 Non-existent username
-1. Go to `/nobody-exists-here`
+### 5.2 Auth status
+1. **Expect:** Shows authentication status (connected username or "not connected")
+
+### 5.3 Enhancement mode
+1. With API key set: **Expect:** "Using local API key"
+2. Without API key: **Expect:** "Not configured" or proxy mode indicator
+
+---
+
+## 6. Public Pages -- Portfolio
+
+### 6.1 Portfolio page
+1. Visit `http://localhost:4000/:username`
+2. **Expect:** User hero (name, bio, location, skills)
+3. **Expect:** AI Collaboration Profile bars (4 dimensions)
+4. **Expect:** Project cards (title, narrative, stats, skills)
+5. **Expect:** Aggregate metrics at bottom
+
+### 6.2 Non-existent username
+1. Visit `/nobody-exists-here`
 2. **Expect:** 404 page
 
-### 8.3 Project detail (mock data)
-1. Go to `/YOUR-USERNAME/dataflow-engine`
-2. **Expect:** Project detail page with mock data -- description, stats, session list (3 mock sessions)
+### 6.3 Portfolio with no projects
+1. Visit portfolio for user with no published projects
+2. **Expect:** Empty state (no project cards, terminal install prompt)
 
-### 8.4 Project with non-existent slug
-1. Go to `/YOUR-USERNAME/fake-project`
-2. **Expect:** Page renders (mock data is hardcoded for any slug). Note: this is expected behavior while mock data is in use.
+---
+
+## 7. Public Pages -- Project Detail
+
+### 7.1 Project page
+1. Click a project card on the portfolio
+2. **Expect:** Breadcrumb (username / project)
+3. **Expect:** Project title + narrative (border-left accent)
+4. **Expect:** Skills row, hero stats (time, sessions, LOC, files)
+5. **Expect:** Project timeline with featured + collapsed sessions
+6. **Expect:** Growth chart (SVG, cumulative LOC)
+7. **Expect:** Directory heatmap
+
+### 7.2 Project links
+1. If project has repo_url: **Expect:** Repository link visible
+2. If project has project_url: **Expect:** Live site link visible
+
+### 7.3 Non-existent project slug
+1. Visit `/:username/fake-project`
+2. **Expect:** 404 page
+
+### 7.4 Session links in timeline
+1. Click a featured session in the project timeline
+2. **Expect:** Navigate to `/:username/:project/:session-slug`
+
+---
+
+## 8. Public Pages -- Session Case Study
+
+### 8.1 Session via friendly URL
+1. Visit `/:username/:project/:session-slug`
+2. **Expect:** Full case study: title, dev take, stats, Q&A, execution path, tool breakdown
+
+### 8.2 Session via token URL
+1. Visit `/s/:token`
+2. **Expect:** Same session renders (no breadcrumb context)
+
+### 8.3 Template switching
+1. Visit `/s/:token?template=terminal`
+2. Try each: `editorial`, `terminal`, `minimal`, `brutalist`, `campfire`, `neon-night`
+3. **Expect:** Each renders with distinct visual style
+4. Try `?template=nonexistent` -- **Expect:** Falls back to editorial
+
+### 8.4 Agent timeline (orchestrated session)
+1. View a session that used subagents
+2. **Expect:** Fork/join SVG timeline with colored agent lanes
+3. **Expect:** Agent contributions table (role, LOC, duration)
+
+### 8.5 "Gone" tokens
+1. Visit `/s/deleted`, `/s/expired`, `/s/removed`
+2. **Expect:** 410 Gone page
+
+### 8.6 Transcript page
+1. Visit `/s/:token/transcript`
+2. **Expect:** Turn-by-turn transcript with timestamps
+
+### 8.7 Verification page
+1. Visit `/s/:token/verify`
+2. **Expect:** Content hash, signature status, verification result
 
 ---
 
 ## 9. Portfolio Editor (LiveView)
 
 ### 9.1 Access as owner
-1. Log in, go to `/YOUR-USERNAME/edit`
-2. **Expect:** LiveView editor loads with profile fields (display_name, bio, location, status), session list, expertise section
+1. Log in, go to `/:username/edit`
+2. **Expect:** LiveView editor with profile fields, project list, expertise section
 
-### 9.2 Edit profile fields
+### 9.2 Edit profile
 1. Change display name, bio, location, status
 2. Save
-3. **Expect:** Changes persisted. Visit `/YOUR-USERNAME` to verify they appear.
+3. **Expect:** Changes persisted. Visit `/:username` to verify.
 
 ### 9.3 Access as non-owner
-1. In incognito, log in as a different user
-2. Navigate to `/FIRST-USERS-USERNAME/edit`
-3. **Expect:** Blocked by `ensure_owner` mount hook -- error or redirect
+1. Log in as a different user, go to `/other-user/edit`
+2. **Expect:** Blocked (error or redirect)
 
 ### 9.4 Access when not logged in
-1. Log out, navigate to `/ANY-USERNAME/edit`
+1. Log out, go to `/any-user/edit`
 2. **Expect:** Redirected to `/users/log-in`
 
 ---
 
-## 10. Project Editor (LiveView)
+## 10. API -- Project Publish
 
-### 10.1 Access as owner
-1. Log in, go to `/YOUR-USERNAME/projects/some-project/edit`
-2. **Expect:** LiveView loads with project editing UI (mock data)
-
-### 10.2 Access as non-owner
-1. Log in as different user, try `/FIRST-USERS-USERNAME/projects/some-project/edit`
-2. **Expect:** Blocked by `ensure_owner`
-
----
-
-## 11. User Settings
-
-### 11.1 View settings
-1. Log in, go to `/users/settings`
-2. **Expect:** Settings form with email change and password change sections
-
-### 11.2 Change email
-1. Enter new email + current password
-2. Submit
-3. **Expect:** Flash says confirmation email sent
-4. Open `http://localhost:4000/dev/mailbox`
-5. **Expect:** Email with confirmation link
-6. Click the confirmation link
-7. **Expect:** Email updated, flash confirms
-
-### 11.3 Change email -- wrong password
-1. Enter new email + wrong current password
-2. **Expect:** Error "is not valid"
-
-### 11.4 Change password
-1. Enter current password + new password (12+ chars) + confirmation
-2. Submit
-3. **Expect:** Password changed. May need to re-login.
-
-### 11.5 Expired confirmation token
-1. Start an email change
-2. Wait or manually invalidate the token (or use it twice)
-3. **Expect:** "link is invalid or it has expired"
-
----
-
-## 12. Error Pages
-
-### 12.1 404 page
-1. Visit `http://localhost:4000/this/path/does/not/exist`
-2. **Expect:** Catches at the portfolio catch-all route (`/:username/:project`). Since no user "this" exists, returns custom 404 page.
-
-### 12.2 Gone page
-1. Visit `/s/deleted`, `/s/expired`, `/s/removed`
-2. **Expect:** 410 Gone page with appropriate messaging
-
-### 12.3 API error format
-1. Send malformed JSON to the API:
-   ```bash
-   curl -X POST http://localhost:4000/api/sessions \
-     -H "Content-Type: application/json" \
-     -d 'not json'
-   ```
-2. **Expect:** 400 error with JSON error body
-
----
-
-## 13. Security and Edge Cases
-
-### 13.1 CSRF protection
-1. Open browser dev tools -> Network tab
-2. Submit any form (login, register, challenge create)
-3. **Expect:** Request includes `_csrf_token` parameter. The `:protect_from_forgery` plug is active.
-
-### 13.2 CSP headers
-1. In dev tools -> Network, inspect any page response headers
-2. **Expect:** `content-security-policy` header present with `default-src 'self'` and the font/style exceptions defined in the router
-
-### 13.3 Session fixation
-1. Note your session cookie value before login
-2. Log in
-3. **Expect:** Session cookie changes (new session issued on auth)
-
-### 13.4 XSS in user-controlled fields
-1. Set your display name to `<script>alert('xss')</script>` via the portfolio editor
-2. Visit your portfolio page
-3. **Expect:** Script tag is HTML-escaped, not executed. Renders as literal text.
-
-### 13.5 API without Content-Type
+### 10.1 Create project
 ```bash
-curl -X POST http://localhost:4000/api/sessions -d 'title=test'
+curl -X POST http://localhost:4000/api/projects \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "project": {
+      "title": "Test Project",
+      "slug": "test-project",
+      "narrative": "A test project for manual testing.",
+      "skills": ["Elixir", "Phoenix"],
+      "total_sessions": 5,
+      "total_loc": 1200,
+      "total_duration_minutes": 180,
+      "total_files_changed": 20,
+      "timeline": [],
+      "skipped_sessions": []
+    }
+  }'
 ```
-**Expect:** 406 Not Acceptable or 400 -- the `:api` pipeline requires `accepts: ["json"]`
+**Expect:** 201 with `{"project_id": ..., "slug": "test-project"}`
+
+### 10.2 Upsert project (same slug)
+1. Repeat 10.1 with updated fields
+2. **Expect:** Same project updated, not duplicated
+
+### 10.3 Create project -- no auth
+```bash
+curl -X POST http://localhost:4000/api/projects \
+  -H "Content-Type: application/json" \
+  -d '{"project": {"title": "test", "slug": "test"}}'
+```
+**Expect:** 401 Unauthorized
+
+### 10.4 Publish session with project_id
+```bash
+curl -X POST http://localhost:4000/api/sessions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "session": {
+      "title": "Test session",
+      "dev_take": "Testing the publish flow",
+      "duration_minutes": 30,
+      "turns": 42,
+      "files_changed": 10,
+      "loc_changed": 500,
+      "template": "editorial",
+      "project_id": PROJECT_ID_FROM_10_1
+    }
+  }'
+```
+**Expect:** 201 with `{"token": "...", "url": "/s/...", "sealed": false, "content_hash": "...", "upload_urls": {"raw": "...", "log": "..."}}`
+
+### 10.5 Session publish -- no auth
+1. Omit Authorization header
+2. **Expect:** 401 Unauthorized
+
+### 10.6 Session publish -- wrong project owner
+1. Publish session with a project_id owned by a different user
+2. **Expect:** Rejected (project ownership verified)
+
+### 10.7 Verify session
+```bash
+curl http://localhost:4000/api/sessions/TOKEN_HERE/verify
+```
+**Expect:** JSON with `token`, `content_hash`, `signed`, `verified`, `sealed`
+
+### 10.8 Non-existent token verify
+```bash
+curl http://localhost:4000/api/sessions/nonexistent/verify
+```
+**Expect:** 404
+
+### 10.9 API rate limiting
+1. Send 31+ requests to `/api/sessions` within a minute
+2. **Expect:** 429 after 30 (rate_limit_publish pipeline)
 
 ---
 
-## 14. Mobile Responsiveness
+## 11. AI Enhancement API
 
-> Open Chrome DevTools -> toggle device toolbar (Ctrl+Shift+M / Cmd+Shift+M)
+### 11.1 Enhance via proxy (Phoenix)
+```bash
+curl -X POST http://localhost:4000/api/enhance \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "session": {
+      "title": "Test",
+      "turns": 20,
+      "duration_minutes": 30,
+      "files_changed": 5,
+      "raw_log": ["user: fix the auth", "ai: I will review..."]
+    }
+  }'
+```
+**Expect:** 200 with enhanced session data (title, dev_take, beats, skills, etc.)
 
-### 14.1 Portfolio page -- iPhone SE (375px)
+### 11.2 Enhance -- rate limiting
+1. Send 6+ enhance requests in a minute
+2. **Expect:** 429 after 5 (rate_limit_enhance pipeline)
+
+### 11.3 Enhance -- no auth
+1. Omit Authorization header
+2. **Expect:** 401
+
+---
+
+## 12. Device Auth Flow
+
+### 12.1 Request device code
+```bash
+curl -X POST http://localhost:4000/api/device/code \
+  -H "Content-Type: application/json"
+```
+**Expect:** `{"device_code": "...", "user_code": "...", "verification_uri": "...", "expires_in": 900, "interval": 5}`
+
+### 12.2 Poll before authorization
+```bash
+curl -X POST http://localhost:4000/api/device/token \
+  -H "Content-Type: application/json" \
+  -d '{"device_code": "DEVICE_CODE_FROM_12_1"}'
+```
+**Expect:** 400 with `{"error": "authorization_pending"}`
+
+### 12.3 Complete device auth
+1. Open `verification_uri` from 12.1 in browser
+2. Log in and authorize
+3. Poll again
+4. **Expect:** 200 with `{"access_token": "...", "token_type": "Bearer"}`
+
+### 12.4 Poll rate limiting
+1. Poll rapidly (more than 5 times per 5 min for same user)
+2. **Expect:** Rate limit response
+
+---
+
+## 13. User Settings
+
+### 13.1 Change email
+1. Go to `/users/settings`, enter new email + current password
+2. **Expect:** Confirmation email sent (check dev mailbox)
+3. Click confirmation link
+4. **Expect:** Email updated
+
+### 13.2 Change password
+1. Enter current password + new password (12+ chars) + confirmation
+2. **Expect:** Password changed
+
+### 13.3 Export data
+1. Click export link at `/users/settings/export`
+2. **Expect:** JSON export of account data
+
+### 13.4 Delete account
+1. Follow delete account flow
+2. **Expect:** Account, projects, and shares deleted
+
+---
+
+## 14. Security & Edge Cases
+
+### 14.1 CSRF protection
+1. Submit any form, check for `_csrf_token` in request
+2. **Expect:** CSRF token present and validated
+
+### 14.2 CSP headers
+1. Inspect response headers
+2. **Expect:** `content-security-policy` with `default-src 'self'` + font/style exceptions
+
+### 14.3 XSS in user fields
+1. Set display name to `<script>alert('xss')</script>`
+2. Visit portfolio
+3. **Expect:** Script tag escaped, not executed
+
+### 14.4 Session fixation
+1. Note session cookie before login, log in
+2. **Expect:** Cookie changes (new session)
+
+### 14.5 Sealed session immutability
+1. Publish a sealed session
+2. Try to update it via API
+3. **Expect:** Update rejected (sealed sessions are immutable)
+
+---
+
+## 15. Mobile Responsiveness
+
+> Open Chrome DevTools -> toggle device toolbar (Cmd+Shift+M)
+
+### 15.1 Portfolio page -- iPhone SE (375px)
 1. Visit `/:username`
 2. **Expect:** Content stacks vertically, readable, no horizontal scroll
 
-### 14.2 Session page -- iPhone SE
-1. Visit `/s/any-token`
-2. **Expect:** Beats timeline, Q&A, tool breakdown all render mobile-friendly
+### 15.2 Project page -- iPhone SE
+1. Visit `/:username/:project`
+2. **Expect:** Timeline, stats, growth chart all render mobile-friendly
 
-### 14.3 Forms -- iPhone SE
-1. Visit `/users/register`, `/users/log-in`, `/challenges/new`
-2. **Expect:** All inputs are full-width, tappable, no overflow
+### 15.3 Session case study -- iPhone SE
+1. Visit `/s/:token`
+2. **Expect:** Two-column layout collapses to single column
 
-### 14.4 Tablet (768px)
-1. Check portfolio + session pages at tablet width
-2. **Expect:** Reasonable intermediate layout, nothing broken
+### 15.4 Forms -- iPhone SE
+1. Visit `/users/register`, `/users/log-in`
+2. **Expect:** All inputs full-width, tappable, no overflow
+
+### 15.5 CLI -- iPhone SE
+1. Open `localhost:17845` on mobile viewport
+2. **Expect:** Project cards stack vertically, upload flow usable
+
+### 15.6 Tablet (768px)
+1. Check portfolio + session + project pages
+2. **Expect:** Reasonable intermediate layout
+
+---
+
+## 16. End-to-End: Full Project Upload
+
+This test verifies the complete happy path from CLI to public page.
+
+1. Open `http://localhost:17845`
+2. See project cards with real Claude Code session data
+3. Click "Upload" on a project
+4. See session overview with stats
+5. Click "Let AI pick sessions" (or "Enhance all" for small projects)
+6. Wait for triage to complete, verify selection looks reasonable
+7. Optionally override selection (check/uncheck sessions)
+8. Click "Enhance project"
+9. Watch sessions enhance (left panel) and narrative stream in (right panel)
+10. Answer at least one question, click "Weave into narrative"
+11. Review the timeline (featured sessions should be the most interesting)
+12. On Review step, verify repo URL auto-detected
+13. Click "Publish project"
+14. Wait for publish to complete
+15. Click "View Project Page"
+16. **Expect:** Project page at `/:username/:project` shows:
+    - Narrative matching what was generated
+    - Correct total stats (all sessions, not just published)
+    - Timeline with featured sessions clickable
+    - Skills row
+17. Click a featured session
+18. **Expect:** Session case study page renders with full detail
+19. Click "View full transcript"
+20. **Expect:** Transcript page renders
+21. Go back to `/:username` portfolio
+22. **Expect:** Project card visible with narrative and stats
 
 ---
 
 ## Notes
 
-- **Mock data caveat:** The ShareController and PortfolioController serve hardcoded mock data. `/s/:token` renders the same session regardless of token, and `/:username` shows the same projects for any real user. Tests in sections 5 and 8 verify rendering, not data integrity.
-- **API vs views gap:** The API controller (`POST /api/sessions`) writes to the DB, but the share view pages don't read from it yet. There's a gap between "publish" and "view" that will need wiring up.
-- **Challenge flows are fully wired:** Challenges are the most "real" feature to test end-to-end right now, hitting the DB for both writes and reads.
+- **API key modes:** Tests in sections 4, 11, and 16 require either `ANTHROPIC_API_KEY` (BYOK) or a configured proxy endpoint with a Gemini/Anthropic key on the Phoenix side. Without either, triage falls back to scoring-only and enhancement is unavailable.
+- **Presigned uploads:** Session publish (10.4) returns `upload_urls` with presigned S3 PUT URLs. The CLI uploads raw JSONL and log JSON directly to SeaweedFS. If SeaweedFS is not running, shares still work but transcripts won't be available.
+- **SSE streams:** The CLI triage, enhance, and publish endpoints use Server-Sent Events. These can't be tested with plain curl -- use the CLI React UI or an SSE client.
