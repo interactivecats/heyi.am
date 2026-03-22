@@ -20,6 +20,10 @@ defmodule HeyiAm.Shares do
     end
   end
 
+  def get_share_by_project_slug(project_id, slug) do
+    Repo.one(from s in Share, where: s.project_id == ^project_id and s.slug == ^slug)
+  end
+
   def get_published_share_by_project_slug(user_id, project_slug, session_slug) do
     Share
     |> join(:inner, [s], p in assoc(s, :project))

@@ -2,6 +2,7 @@ defmodule HeyiAmWeb.ShareApiController do
   use HeyiAmWeb, :controller
 
   alias HeyiAm.Shares
+  alias HeyiAm.Shares.Share
   alias HeyiAm.Projects
   alias HeyiAm.Signature
 
@@ -46,13 +47,36 @@ defmodule HeyiAmWeb.ShareApiController do
         |> Map.put("user_id", user_id)
         |> then(fn a -> if verified_project_id, do: Map.put(a, "project_id", verified_project_id), else: a end)
 
-      case Shares.create_share(attrs) do
+      # Upsert: if a share with the same (project_id, slug) exists, update it
+      existing =
+        if verified_project_id && attrs["slug"] do
+          Shares.get_share_by_project_slug(verified_project_id, attrs["slug"])
+        end
+
+      result =
+        case existing do
+          %Share{sealed: true} ->
+            # Sealed shares are immutable — create a new one instead
+            Shares.create_share(attrs)
+
+          %Share{} = share ->
+            # Update existing share, keep its token
+            Shares.update_share(share, Map.delete(attrs, "token"))
+
+          nil ->
+            Shares.create_share(attrs)
+        end
+
+      case result do
         {:ok, share} ->
-          upload_urls = build_upload_urls(raw_key, log_key)
+          actual_token = share.token
+          actual_raw_key = share.raw_storage_key || "sessions/#{actual_token}/raw.jsonl"
+          actual_log_key = share.log_storage_key || "sessions/#{actual_token}/log.json"
+          upload_urls = build_upload_urls(actual_raw_key, actual_log_key)
 
           response = %{
-            token: share.token,
-            url: "/s/#{share.token}",
+            token: actual_token,
+            url: "/s/#{actual_token}",
             sealed: share.sealed || false,
             content_hash: Signature.content_hash(share)
           }

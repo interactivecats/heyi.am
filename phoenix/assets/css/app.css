@@ -4095,3 +4095,203 @@ details.collapsible .collapsible-content {
     padding: var(--spacing-4);
   }
 }
+
+/* ==========================================================================
+   SHARED @heyiam/ui COMPONENT STYLES
+   Copied from CLI — must stay in sync with cli/app/src/App.css
+   ========================================================================== */
+
+/* Work Timeline */
+.work-timeline__scroll-controls {
+  display: flex;
+  gap: var(--spacing-2, 0.5rem);
+  justify-content: flex-end;
+  margin-bottom: var(--spacing-2, 0.5rem);
+}
+
+.work-timeline__scroll-btn {
+  width: 32px;
+  height: 28px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+  color: #374151;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s;
+}
+
+.work-timeline__scroll-btn:hover {
+  background: #f3f4f6;
+}
+
+.work-timeline__scroll-btn:active {
+  background: #e5e7eb;
+}
+
+/* Growth Chart */
+.growth-chart {
+  display: flex;
+  gap: var(--spacing-6);
+  margin-bottom: var(--spacing-8);
+  align-items: center;
+}
+
+.growth-chart__svg-container {
+  flex: 1;
+  min-width: 0;
+}
+
+.growth-chart__summary {
+  width: 200px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.growth-chart__total-value {
+  font-family: var(--font-mono);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.1;
+}
+
+.growth-chart__total-label {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+  margin-top: var(--spacing-1);
+}
+
+.growth-chart__stat {
+  margin-top: var(--spacing-4);
+}
+
+.growth-chart__stat-value {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--on-surface);
+  line-height: 1.2;
+}
+
+.growth-chart__stat-label {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+  margin-top: var(--spacing-1);
+}
+
+/* Directory Heatmap */
+.dir-heatmap {
+  margin-bottom: var(--spacing-8);
+}
+
+.dir-heatmap__empty {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+  padding: var(--spacing-4) 0;
+}
+
+.dir-heatmap__grid {
+  display: grid;
+  gap: 2px;
+  overflow-x: auto;
+  margin-bottom: var(--spacing-3);
+}
+
+.dir-heatmap__session-label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  text-align: center;
+  color: var(--on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-bottom: var(--spacing-2);
+}
+
+.dir-heatmap__dir-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  align-self: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--on-surface);
+  padding-inline-end: var(--spacing-2);
+}
+
+.dir-heatmap__cell {
+  min-height: 32px;
+  min-width: 80px;
+  border-radius: 2px;
+  position: relative;
+  cursor: default;
+}
+
+.dir-heatmap__cell:hover {
+  outline: 1px solid var(--primary, #084471);
+}
+
+.dir-heatmap__legend {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--on-surface-variant);
+  margin-bottom: var(--spacing-6);
+}
+
+.dir-heatmap__top-files {
+  margin-bottom: var(--spacing-8);
+}
+
+.dir-heatmap__top-files-summary {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  margin-bottom: var(--spacing-3);
+}
+
+.dir-heatmap__top-files-summary:hover {
+  color: var(--on-surface);
+}
+
+.dir-heatmap__file-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--spacing-2) 0;
+  border-bottom: var(--ghost-border);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.dir-heatmap__file-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--on-surface);
+  margin-inline-end: var(--spacing-3);
+}
+
+.dir-heatmap__file-count {
+  flex-shrink: 0;
+  color: var(--on-surface-variant);
+}

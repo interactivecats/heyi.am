@@ -1,11 +1,14 @@
 defmodule HeyiAmWeb.PortfolioHTML do
   use HeyiAmWeb, :html
 
-  import HeyiAmWeb.Helpers, only: [format_loc: 1]
-
   embed_templates "portfolio_html/*"
 
-  defp truncate_title(nil, _max), do: ""
-  defp truncate_title(str, max) when byte_size(str) <= max, do: str
-  defp truncate_title(str, max), do: String.slice(str, 0, max) <> "…"
+  defp format_date(nil), do: ""
+  defp format_date(date_str) when is_binary(date_str) do
+    case Date.from_iso8601(date_str |> String.slice(0, 10)) do
+      {:ok, date} -> Calendar.strftime(date, "%b %d")
+      _ -> date_str
+    end
+  end
+  defp format_date(_), do: ""
 end

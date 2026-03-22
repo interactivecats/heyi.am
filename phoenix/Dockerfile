@@ -9,7 +9,7 @@ ARG RUNNER_IMAGE="docker.io/debian:${DEBIAN_VERSION}"
 FROM ${BUILDER_IMAGE} AS builder
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends build-essential git \
+  && apt-get install -y --no-install-recommends build-essential git nodejs npm \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -31,6 +31,7 @@ COPY lib lib
 RUN mix compile
 
 COPY assets assets
+RUN cd assets && npm install
 RUN mix assets.deploy
 
 COPY config/runtime.exs config/

@@ -2,6 +2,8 @@ import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import { mount as mountWorkTimeline } from "./islands/work-timeline"
+import { mount as mountGrowthChart } from "./islands/growth-chart"
+import { mount as mountDirectoryHeatmap } from "./islands/directory-heatmap"
 
 // ── Sortable Hook ──────────────────────────────────────────────
 // Attaches to a container element. Children with [data-sort-id]
@@ -66,3 +68,5 @@ window.liveSocket = liveSocket
 
 // Mount React islands
 mountWorkTimeline()
+mountGrowthChart()
+mountDirectoryHeatmap()

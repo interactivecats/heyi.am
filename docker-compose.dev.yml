@@ -53,10 +53,11 @@ services:
     tty: true
     command: >
       sh -c "
-      apk add --no-cache git build-base inotify-tools &&
+      apk add --no-cache git build-base inotify-tools nodejs npm &&
       mix local.hex --force &&
       mix local.rebar --force &&
       mix deps.get &&
+      cd assets && npm install && cd .. &&
       mix ecto.create &&
       mix ecto.migrate &&
       iex -S mix phx.server

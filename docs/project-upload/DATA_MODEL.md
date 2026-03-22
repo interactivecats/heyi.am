@@ -319,6 +319,8 @@ Cursor stores conversations in SQLite databases, not flat files. The parser read
 
 Discovery creates synthetic `cursor://{composerId}?name=...&createdAt=...` URLs since conversations aren't files.
 
+**Data availability:** Cursor migrated conversation storage to the global `cursorDiskKV` table around August 2025 (`composer.planMigrationToHomeDirCompleted`). Sessions created before September 2025 have metadata (title, date, mode) but no recoverable message content. The CLI only imports Cursor sessions from September 2025 onwards.
+
 #### Codex CLI (`~/.codex/sessions/`)
 
 ```
