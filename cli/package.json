@@ -34,6 +34,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.79.0",
+    "@secretlint/node": "^11.4.0",
+    "@secretlint/secretlint-rule-preset-recommend": "^11.4.0",
     "better-sqlite3": "^12.8.0",
     "commander": "^13.1.0",
     "cors": "^2.8.6",

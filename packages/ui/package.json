@@ -8,9 +8,15 @@
   "files": [
     "src"
   ],
+  "scripts": {
+    "test": "vitest run"
+  },
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.0"
   },
   "license": "MIT"
 }
