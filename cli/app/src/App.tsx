@@ -2,11 +2,8 @@ import './App.css'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { SessionsProvider } from './SessionsContext'
 import { AuthProvider } from './AuthContext'
-import { SessionList } from './components/SessionList'
 import { Settings } from './components/Settings'
-import { SessionDetail } from './components/SessionDetail'
-import { EnhanceFlow } from './components/EnhanceFlow'
-import { SessionEditorPage } from './components/SessionEditorPage'
+import { ProjectDashboard } from './components/ProjectDashboard'
 
 function App() {
   return (
@@ -14,15 +11,22 @@ function App() {
       <AuthProvider>
         <SessionsProvider>
           <Routes>
-            <Route path="/" element={<SessionList />} />
+            <Route path="/" element={<ProjectDashboard />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/session/:id" element={<SessionDetail />} />
-            <Route path="/session/:id/enhance" element={<EnhanceFlow />} />
-            <Route path="/session/:id/edit" element={<SessionEditorPage />} />
+            <Route path="/project/:dirName/upload" element={<UploadPlaceholder />} />
           </Routes>
         </SessionsProvider>
       </AuthProvider>
     </BrowserRouter>
+  )
+}
+
+function UploadPlaceholder() {
+  return (
+    <div style={{ padding: '2rem', textAlign: 'center', color: '#888' }}>
+      <h2>ProjectUploadFlow coming soon</h2>
+      <p>Phase 2-4 will build the triage, enhance, and publish flow here.</p>
+    </div>
   )
 }
 

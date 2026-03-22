@@ -32,7 +32,7 @@ describe('SessionsContext', () => {
 
   it('provides projects after fetch and lazy-loads first project sessions', async () => {
     vi.spyOn(api, 'fetchProjects').mockResolvedValue([
-      { name: 'test-project', dirName: 'test-dir', sessionCount: 1, description: 'A test' },
+      { name: 'test-project', dirName: 'test-dir', sessionCount: 1, description: 'A test', totalLoc: 100, totalDuration: 30, totalFiles: 5, skills: ['TypeScript'], dateRange: '2026-03-20|2026-03-20', lastSessionDate: '2026-03-20T00:00:00Z' },
     ]);
     vi.spyOn(api, 'fetchSessions').mockResolvedValue([
       {

@@ -1,7 +1,6 @@
 import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import path from 'node:path';
-import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { Server } from 'node:http';
 import { listSessions, parseSession, type SessionMeta } from './parsers/index.js';
@@ -9,10 +8,8 @@ import { bridgeToAnalyzer, bridgeChildSessions, aggregateChildStats, type ChildS
 import { analyzeSession, type Session } from './analyzer.js';
 import { checkAuthStatus, getAuthToken, saveAuthToken } from './auth.js';
 import { API_URL } from './config.js';
-import { summarizeSession, createSSEHandler } from './summarize.js';
 import { getProvider, getEnhanceMode } from './llm/index.js';
-import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData, markAsUploaded } from './settings.js';
-import Anthropic from '@anthropic-ai/sdk';
+import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData } from './settings.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -87,35 +84,75 @@ function mergeEnhancedData(session: Session): Session {
   };
 }
 
-/** Compute aggregate project stats from all sessions in a project. */
-async function computeProjectMeta(
-  proj: ProjectInfo,
-): Promise<{ total_sessions: number; total_loc: number; total_duration_minutes: number; total_files_changed: number }> {
-  let totalLoc = 0;
-  let totalDuration = 0;
-  let totalFiles = 0;
-
-  for (const meta of proj.sessions) {
-    try {
-      const session = await loadSession(meta.path, proj.name, meta.sessionId);
-      totalLoc += session.linesOfCode ?? 0;
-      totalDuration += session.durationMinutes ?? 0;
-      totalFiles += session.filesChanged?.length ?? 0;
-    } catch {
-      // Skip sessions that fail to parse
-    }
-  }
-
-  return {
-    total_sessions: proj.sessions.length,
-    total_loc: totalLoc,
-    total_duration_minutes: totalDuration,
-    total_files_changed: totalFiles,
-  };
+interface SessionStats {
+  loc: number;
+  duration: number;
+  files: number;
+  turns: number;
+  skills: string[];
+  date: string;
 }
 
 export function createApp(sessionsBasePath?: string) {
   const app = express();
+
+  // In-memory stats cache — survives for server lifetime
+  const statsCache = new Map<string, SessionStats>();
+
+  async function getSessionStats(meta: SessionMeta, projectName: string): Promise<SessionStats> {
+    const cached = statsCache.get(meta.sessionId);
+    if (cached) return cached;
+
+    try {
+      const session = await loadSession(meta.path, projectName, meta.sessionId);
+      const stats: SessionStats = {
+        loc: session.linesOfCode ?? 0,
+        duration: session.durationMinutes ?? 0,
+        files: session.filesChanged?.length ?? 0,
+        turns: session.turns ?? 0,
+        skills: session.skills ?? [],
+        date: session.date ?? '',
+      };
+      statsCache.set(meta.sessionId, stats);
+      return stats;
+    } catch {
+      return { loc: 0, duration: 0, files: 0, turns: 0, skills: [], date: '' };
+    }
+  }
+
+  async function getProjectWithStats(proj: ProjectInfo) {
+    const allStats = await Promise.all(
+      proj.sessions.map((m) => getSessionStats(m, proj.name)),
+    );
+
+    const totalLoc = allStats.reduce((s, st) => s + st.loc, 0);
+    const totalDuration = allStats.reduce((s, st) => s + st.duration, 0);
+    const totalFiles = allStats.reduce((s, st) => s + st.files, 0);
+
+    // Deduplicated skills across all sessions
+    const skillSet = new Set<string>();
+    for (const st of allStats) {
+      for (const sk of st.skills) skillSet.add(sk);
+    }
+
+    // Date range
+    const dates = allStats.map((st) => st.date).filter(Boolean).sort();
+    const firstDate = dates[0] ?? '';
+    const lastDate = dates[dates.length - 1] ?? '';
+
+    return {
+      name: proj.name,
+      dirName: proj.dirName,
+      sessionCount: proj.sessionCount,
+      description: '',
+      totalLoc,
+      totalDuration,
+      totalFiles,
+      skills: [...skillSet],
+      dateRange: firstDate && lastDate ? `${firstDate}|${lastDate}` : '',
+      lastSessionDate: lastDate,
+    };
+  }
 
   app.use(cors({ origin: ['http://localhost:17845', 'http://127.0.0.1:17845'] }));
   app.use(express.json({ limit: '50mb' }));
@@ -124,14 +161,10 @@ export function createApp(sessionsBasePath?: string) {
   app.get('/api/projects', async (_req: Request, res: Response) => {
     try {
       const projects = await getProjects(sessionsBasePath);
-      res.json({
-        projects: projects.map((p) => ({
-          name: p.name,
-          dirName: p.dirName,
-          sessionCount: p.sessionCount,
-          description: '',
-        })),
-      });
+      const projectsWithStats = await Promise.all(
+        projects.map((p) => getProjectWithStats(p)),
+      );
+      res.json({ projects: projectsWithStats });
     } catch (err) {
       res.status(500).json({ error: { code: 'SCAN_FAILED', message: (err as Error).message } });
     }
@@ -248,353 +281,12 @@ export function createApp(sessionsBasePath?: string) {
     }
   });
 
-  app.get('/api/projects/:project/sessions/:id/enhance/stream', async (req: Request, res: Response) => {
-    try {
-      const { project, id } = req.params;
-      const projects = await getProjects(sessionsBasePath);
-      const proj = projects.find((p) => p.name === project || p.dirName === project);
-      if (!proj) {
-        res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });
-        return;
-      }
-
-      const meta = proj.sessions.find((s) => s.sessionId === id);
-      if (!meta) {
-        res.status(404).json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } });
-        return;
-      }
-
-      const session = await loadSession(meta.path, proj.name, meta.sessionId);
-      const apiKey = getAnthropicApiKey();
-      const sseOptions = apiKey ? { client: new Anthropic({ apiKey }) } : {};
-      const handler = createSSEHandler(session, sseOptions);
-      await handler(req, res);
-    } catch (err) {
-      res.status(500).json({ error: { code: 'STREAM_FAILED', message: (err as Error).message } });
-    }
-  });
-
-  // Bulk enhance — parallel processing (3 concurrent) with SSE progress
-  app.post('/api/enhance/bulk', async (req: Request, res: Response) => {
-    const { sessions: rawList } = req.body as {
-      sessions?: Array<{ projectName: string; sessionId: string }>;
-    };
-
-    if (!Array.isArray(rawList) || rawList.length === 0) {
-      res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'sessions array is required' } });
-      return;
-    }
-
-    const sessionList = rawList; // narrowed to non-undefined
-    const CONCURRENCY = 3;
-
-    // Set up SSE
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-    });
-
-    const send = (event: Record<string, unknown>) => {
-      res.write(`data: ${JSON.stringify(event)}\n\n`);
-    };
-
-    const provider = getProvider();
-    const projects = await getProjects(sessionsBasePath);
-    let enhanced = 0;
-    let failed = 0;
-    let completed = 0;
-    let cancelled = false;
-
-    // Handle client disconnect
-    req.on('close', () => { cancelled = true; });
-
-    async function processOne(index: number) {
-      if (cancelled) return;
-
-      const { projectName, sessionId } = sessionList[index];
-      send({ type: 'progress', sessionId, status: 'processing', index, total: sessionList.length });
-
-      try {
-        const proj = projects.find((p) => p.name === projectName || p.dirName === projectName);
-        if (!proj) throw new Error('Project not found');
-
-        const meta = proj.sessions.find((s) => s.sessionId === sessionId);
-        if (!meta) throw new Error('Session not found');
-
-        const session = await loadSession(meta.path, proj.name, meta.sessionId);
-        const result = await provider.enhance(session);
-
-        // Auto-accept suggested answers as Q&A pairs
-        const qaPairs = result.questions.map((q) => ({
-          question: q.text,
-          answer: q.suggestedAnswer,
-        }));
-
-        saveEnhancedData(sessionId, { ...result, qaPairs, quickEnhanced: true });
-        enhanced++;
-        completed++;
-        send({
-          type: 'progress',
-          sessionId,
-          status: 'enhanced',
-          index,
-          total: sessionList.length,
-          title: result.title,
-          completed,
-        });
-      } catch (err) {
-        failed++;
-        completed++;
-        send({
-          type: 'progress',
-          sessionId,
-          status: 'failed',
-          index,
-          total: sessionList.length,
-          error: (err as Error).message,
-          completed,
-        });
-      }
-    }
-
-    // Process with concurrency pool
-    let nextIndex = 0;
-    async function runWorker() {
-      while (nextIndex < sessionList.length && !cancelled) {
-        const idx = nextIndex++;
-        // Mark remaining as queued on first pass
-        await processOne(idx);
-      }
-    }
-
-    const workers = Array.from(
-      { length: Math.min(CONCURRENCY, sessionList.length) },
-      () => runWorker(),
-    );
-    await Promise.all(workers);
-
-    send({ type: 'done', enhanced, failed, cancelled });
-    res.end();
-  });
-
-  // Bulk upload — push multiple enhanced sessions to Phoenix
-  app.post('/api/upload/bulk', async (req: Request, res: Response) => {
-    const { sessions: rawList } = req.body as {
-      sessions?: Array<{ projectName: string; sessionId: string }>;
-    };
-
-    if (!Array.isArray(rawList) || rawList.length === 0) {
-      res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'sessions array is required' } });
-      return;
-    }
-
-    const auth = getAuthToken();
-    if (!auth?.token) {
-      res.status(401).json({ error: 'Not authenticated. Run: heyiam login' });
-      return;
-    }
-
-    const sessionList = rawList;
-
-    // Set up SSE
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-    });
-
-    const send = (event: Record<string, unknown>) => {
-      res.write(`data: ${JSON.stringify(event)}\n\n`);
-    };
-
-    const projects = await getProjects(sessionsBasePath);
-    const projectMetaCache = new Map<string, Record<string, unknown>>();
-    let uploaded = 0;
-    let failedCount = 0;
-    let cancelled = false;
-
-    req.on('close', () => { cancelled = true; });
-
-    for (let i = 0; i < sessionList.length; i++) {
-      if (cancelled) break;
-
-      // Pace requests to stay under Phoenix rate limit (30/min)
-      if (i > 0) await new Promise((r) => setTimeout(r, 2000));
-
-      const { projectName, sessionId } = sessionList[i];
-      send({ type: 'progress', sessionId, status: 'uploading', index: i, total: sessionList.length });
-
-      try {
-        const proj = projects.find((p) => p.name === projectName || p.dirName === projectName);
-        if (!proj) throw new Error('Project not found');
-
-        const meta = proj.sessions.find((s) => s.sessionId === sessionId);
-        if (!meta) throw new Error('Session not found');
-
-        const session = await loadSession(meta.path, proj.name, meta.sessionId);
-
-        // Compute project_meta once per project
-        if (!projectMetaCache.has(proj.name)) {
-          projectMetaCache.set(proj.name, await computeProjectMeta(proj));
-        }
-
-        // Build publish payload from enhanced session data
-        const payload: Record<string, unknown> = {
-          title: session.title,
-          dev_take: session.developerTake,
-          skills: session.skills,
-          beats: session.executionPath,
-          turns: session.turns,
-          duration_minutes: session.durationMinutes,
-          loc_changed: session.linesOfCode,
-          files_changed: session.filesChanged?.length ?? 0,
-          top_files: session.filesChanged?.slice(0, 20),
-          tool_breakdown: session.toolBreakdown,
-          tools: session.toolBreakdown?.map((t) => t.tool),
-          qa_pairs: session.qaPairs,
-          project_name: session.projectName,
-          recorded_at: session.date || new Date().toISOString(),
-          template: 'editorial',
-          project_meta: projectMetaCache.get(proj.name),
-        };
-
-        let fetchRes: globalThis.Response | null = null;
-        for (let attempt = 0; attempt < 3; attempt++) {
-          fetchRes = await fetch(`${API_URL}/api/sessions`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${auth.token}`,
-            },
-            body: JSON.stringify({ session: payload }),
-          });
-          if (fetchRes.status === 429 && attempt < 2) {
-            // Rate limited — wait and retry
-            await new Promise((r) => setTimeout(r, 5000 * (attempt + 1)));
-            continue;
-          }
-          break;
-        }
-
-        if (!fetchRes || !fetchRes.ok) {
-          const errData = fetchRes ? await fetchRes.json().catch(() => ({})) : {};
-          throw new Error((errData as Record<string, string>).error ?? `Upload failed: ${fetchRes?.status ?? 'no response'}`);
-        }
-
-        const data = await fetchRes.json() as Record<string, unknown>;
-        markAsUploaded(sessionId);
-        uploaded++;
-        send({
-          type: 'progress',
-          sessionId,
-          status: 'uploaded',
-          index: i,
-          total: sessionList.length,
-          url: data.url,
-          completed: uploaded + failedCount,
-        });
-
-        // Best-effort raw data upload
-        if (data.upload_urls) {
-          uploadRawData(
-            data.upload_urls as { raw?: string; log?: string },
-            sessionId,
-            proj.dirName,
-            session.rawLog,
-            sessionsBasePath,
-          ).catch(() => {});
-        }
-      } catch (err) {
-        failedCount++;
-        send({
-          type: 'progress',
-          sessionId,
-          status: 'failed',
-          index: i,
-          total: sessionList.length,
-          error: (err as Error).message,
-          completed: uploaded + failedCount,
-        });
-      }
-    }
-
-    send({ type: 'done', uploaded, failed: failedCount, cancelled });
-    res.end();
-  });
-
   // Delete locally-saved enhanced data (allows re-enhancing)
   app.delete('/api/sessions/:id/enhanced', (_req: Request, res: Response) => {
     const { id } = _req.params;
     deleteEnhancedData(id as string);
     console.log(`[enhance] Deleted enhanced data for ${id}`);
     res.json({ ok: true });
-  });
-
-  app.post('/api/publish', async (req: Request, res: Response) => {
-    try {
-      const { session, sessionId, projectDir } = req.body;
-      if (!session) {
-        console.log('[publish] ERROR: Missing session data in request body');
-        res.status(400).json({ error: 'Missing session data' });
-        return;
-      }
-
-      const auth = getAuthToken();
-      if (!auth?.token) {
-        console.log('[publish] ERROR: Not authenticated (no token in ~/.config/heyiam/auth.json)');
-        res.status(401).json({ error: 'Not authenticated. Run: heyiam login' });
-        return;
-      }
-
-      // Compute project_meta from all local sessions in the same project
-      if (projectDir && !session.project_meta) {
-        try {
-          const projects = await getProjects(sessionsBasePath);
-          const proj = projects.find((p) => p.dirName === projectDir || p.name === session.project_name);
-          if (proj) {
-            session.project_meta = await computeProjectMeta(proj);
-          }
-        } catch (err) {
-          console.log('[publish] Warning: could not compute project_meta:', err);
-        }
-      }
-
-      console.log(`[publish] Sending to ${API_URL}/api/sessions (title: "${session.title}", keys: ${Object.keys(session).join(', ')})`);
-
-      const response = await fetch(`${API_URL}/api/sessions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`,
-        },
-        body: JSON.stringify({ session }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        console.log(`[publish] FAILED ${response.status}:`, JSON.stringify(data));
-        res.status(response.status).json(data);
-        return;
-      }
-
-      console.log(`[publish] SUCCESS: ${data.url}`);
-
-      // Mark session as uploaded locally
-      if (sessionId) markAsUploaded(sessionId as string);
-
-      // Best-effort upload of raw data to object storage
-      if (data.upload_urls) {
-        uploadRawData(data.upload_urls, sessionId, projectDir, session.raw_log, sessionsBasePath).catch((err) => {
-          console.error('[publish] Raw data upload failed (non-fatal):', err);
-        });
-      }
-
-      res.json(data);
-    } catch (err) {
-      console.error('[publish] EXCEPTION:', err);
-      res.status(500).json({ error: 'Publish failed' });
-    }
   });
 
   // Enhancement status — returns current mode and remaining quota
@@ -711,52 +403,6 @@ export function createApp(sessionsBasePath?: string) {
   });
 
   return app;
-}
-
-async function uploadRawData(
-  uploadUrls: { raw?: string; log?: string },
-  sessionId?: string,
-  projectDir?: string,
-  rawLog?: string[],
-  basePath?: string,
-): Promise<void> {
-  // Upload rawLog as JSON
-  if (uploadUrls.log && rawLog && rawLog.length > 0) {
-    const logRes = await fetch(uploadUrls.log, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(rawLog),
-    });
-    if (logRes.ok) {
-      console.log('[publish] Uploaded raw log to object storage');
-    } else {
-      console.error(`[publish] Log upload failed: ${logRes.status}`);
-    }
-  }
-
-  // Upload raw JSONL file from disk
-  if (uploadUrls.raw && sessionId && projectDir) {
-    try {
-      const projects = await getProjects(basePath);
-      const project = projects.find((p) => p.dirName === projectDir);
-      const meta = project?.sessions.find((s) => s.sessionId === sessionId);
-      if (meta?.path) {
-        const fileData = await fs.promises.readFile(meta.path);
-        const rawRes = await fetch(uploadUrls.raw, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/octet-stream' },
-          body: fileData,
-        });
-        if (rawRes.ok) {
-          console.log(`[publish] Uploaded raw JSONL (${(fileData.length / 1024).toFixed(0)} KB) to object storage`);
-        } else {
-          console.error(`[publish] JSONL upload failed: ${rawRes.status}`);
-        }
-      }
-    } catch (err) {
-      console.error('[publish] Failed to read/upload JSONL:', err);
-    }
-  }
 }
 
 export function startServer(port: number = 17845): Promise<Server> {

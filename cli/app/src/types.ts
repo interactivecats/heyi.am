@@ -79,4 +79,10 @@ export interface Project {
   dirName: string;
   sessionCount: number;
   description: string;
+  totalLoc: number;
+  totalDuration: number;
+  totalFiles: number;
+  skills: string[];
+  dateRange: string;
+  lastSessionDate: string;
 }

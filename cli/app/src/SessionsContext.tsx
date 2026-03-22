@@ -17,6 +17,8 @@ interface SessionsState {
   selectProject: (projectDirName: string) => void;
   /** Merge partial updates into a session (e.g. enhancement results) */
   updateSession: (sessionId: string, updates: Partial<Session>) => void;
+  /** Re-fetch sessions for the active project (e.g. after enhancement saves) */
+  refreshSessions: () => void;
 }
 
 const SessionsContext = createContext<SessionsState>({
@@ -28,23 +30,30 @@ const SessionsContext = createContext<SessionsState>({
   error: null,
   selectProject: () => {},
   updateSession: () => {},
+  refreshSessions: () => {},
 });
 
 export function useSessionsContext() {
   return useContext(SessionsContext);
 }
 
-function toProject(ap: ApiProject): Project & { dirName: string } {
+function toProject(ap: ApiProject): Project {
   return {
     name: ap.name,
     dirName: ap.dirName,
     sessionCount: ap.sessionCount,
     description: ap.description,
+    totalLoc: ap.totalLoc,
+    totalDuration: ap.totalDuration,
+    totalFiles: ap.totalFiles,
+    skills: ap.skills,
+    dateRange: ap.dateRange,
+    lastSessionDate: ap.lastSessionDate,
   };
 }
 
 export function SessionsProvider({ children }: { children: ReactNode }) {
-  const [projects, setProjects] = useState<Array<Project & { dirName: string }>>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeProject, setActiveProject] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -107,6 +116,13 @@ export function SessionsProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const refreshSessions = useCallback(() => {
+    if (!activeProject) return;
+    fetchSessions(activeProject)
+      .then((sess) => setSessions(sess))
+      .catch(() => {});
+  }, [activeProject]);
+
   return (
     <SessionsContext.Provider value={{
       projects,
@@ -117,6 +133,7 @@ export function SessionsProvider({ children }: { children: ReactNode }) {
       error,
       selectProject,
       updateSession,
+      refreshSessions,
     }}>
       {children}
     </SessionsContext.Provider>
