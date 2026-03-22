@@ -127,6 +127,7 @@ export interface TriageResult {
 const MIN_DURATION = 5;  // minutes
 const MIN_TURNS = 3;
 const MIN_FILES = 1;     // at least 1 file changed
+const MAX_SELECTED = 10; // cap featured sessions for a focused portfolio
 
 function passesHardFloor(s: SessionMetaWithStats): boolean {
   return s.duration >= MIN_DURATION && s.turns >= MIN_TURNS && s.files >= MIN_FILES;
@@ -162,6 +163,8 @@ Skip sessions that are:
 - Too small or mechanical (config changes, dependency updates)
 - Repetitive of already-selected sessions
 - Pure boilerplate generation
+
+Select at most 10 sessions. A focused portfolio is better than an exhaustive one. Pick the strongest 6-10.
 
 Return JSON with this exact structure:
 {
@@ -221,12 +224,26 @@ async function llmTriage(
   }
 }
 
+// ── Progress events ──────────────────────────────────────────────
+
+export type TriageProgressEvent =
+  | { type: 'scanning'; total: number }
+  | { type: 'hard_floor'; sessionId: string; title: string; passed: boolean; reason?: string }
+  | { type: 'extracting_signals'; sessionId: string; title: string }
+  | { type: 'signals_done'; sessionId: string; signals: SessionSignals }
+  | { type: 'llm_ranking'; sessionCount: number }
+  | { type: 'scoring_fallback'; sessionCount: number }
+  | { type: 'done'; selected: number; skipped: number };
+
 // ── Main triage function ─────────────────────────────────────────
 
 export async function triageSessions(
   sessions: SessionMetaWithStats[],
   useLLM: boolean = true,
+  onProgress?: (event: TriageProgressEvent) => void,
 ): Promise<TriageResult> {
+  onProgress?.({ type: 'scanning', total: sessions.length });
+
   // Layer 1: Hard floor
   const passed: SessionMetaWithStats[] = [];
   const hardSkipped: Array<{ sessionId: string; reason: string }> = [];
@@ -234,32 +251,49 @@ export async function triageSessions(
   for (const s of sessions) {
     if (passesHardFloor(s)) {
       passed.push(s);
+      onProgress?.({ type: 'hard_floor', sessionId: s.sessionId, title: s.title, passed: true });
     } else {
       const reasons: string[] = [];
       if (s.duration < MIN_DURATION) reasons.push('Too short');
       if (s.turns < MIN_TURNS) reasons.push('Too few turns');
       if (s.files < MIN_FILES) reasons.push('No files changed');
-      hardSkipped.push({ sessionId: s.sessionId, reason: reasons.join(', ') });
+      const reason = reasons.join(', ');
+      hardSkipped.push({ sessionId: s.sessionId, reason });
+      onProgress?.({ type: 'hard_floor', sessionId: s.sessionId, title: s.title, passed: false, reason });
     }
   }
 
-  // Layer 2: Signal extraction
-  const sessionsWithSignals = await Promise.all(
-    passed.map(async (s) => ({
-      ...s,
-      signals: await extractSignals(s.path),
-    })),
-  );
+  // Layer 2: Signal extraction (sequential for progress reporting)
+  const sessionsWithSignals: Array<SessionMetaWithStats & { signals: SessionSignals }> = [];
+  for (const s of passed) {
+    onProgress?.({ type: 'extracting_signals', sessionId: s.sessionId, title: s.title });
+    const signals = await extractSignals(s.path);
+    onProgress?.({ type: 'signals_done', sessionId: s.sessionId, signals });
+    sessionsWithSignals.push({ ...s, signals });
+  }
 
   // Layer 3: LLM ranking or fallback scoring
   if (useLLM) {
+    onProgress?.({ type: 'llm_ranking', sessionCount: sessionsWithSignals.length });
     const llmResult = await llmTriage(sessionsWithSignals);
     if (llmResult) {
-      return {
-        selected: llmResult.selected,
-        skipped: [...llmResult.skipped, ...hardSkipped],
+      // Enforce cap even if LLM returns too many
+      const capped = llmResult.selected.slice(0, MAX_SELECTED);
+      const overflow = llmResult.selected.slice(MAX_SELECTED).map((s) => ({
+        ...s,
+        reason: 'Over selection cap',
+      }));
+      const result = {
+        selected: capped,
+        skipped: [...overflow, ...llmResult.skipped, ...hardSkipped],
       };
+      onProgress?.({ type: 'done', selected: result.selected.length, skipped: result.skipped.length });
+      return result;
     }
+    // LLM failed, fall through to scoring
+    onProgress?.({ type: 'scoring_fallback', sessionCount: sessionsWithSignals.length });
+  } else {
+    onProgress?.({ type: 'scoring_fallback', sessionCount: sessionsWithSignals.length });
   }
 
   // Fallback: score-based selection
@@ -269,10 +303,10 @@ export async function triageSessions(
   }));
   scored.sort((a, b) => b.score - a.score);
 
-  // Select top sessions (at least 1, at most 80% of sessions)
+  // Select top sessions (at least 1, at most MAX_SELECTED)
   const selectCount = Math.max(1, Math.min(
     Math.ceil(scored.length * 0.6),
-    scored.length,
+    MAX_SELECTED,
   ));
 
   const selected = scored.slice(0, selectCount).map((s) => ({
@@ -288,7 +322,9 @@ export async function triageSessions(
     ...hardSkipped,
   ];
 
-  return { selected, skipped };
+  const result = { selected, skipped };
+  onProgress?.({ type: 'done', selected: result.selected.length, skipped: result.skipped.length });
+  return result;
 }
 
 function buildScoreReason(signals: SessionSignals): string {

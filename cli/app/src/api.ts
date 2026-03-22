@@ -44,17 +44,72 @@ export interface TriageResult {
   skipped: Array<{ sessionId: string; reason: string }>;
 }
 
-export async function triageProject(dirName: string): Promise<TriageResult> {
-  const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/triage`, {
+export type TriageEvent =
+  | { type: 'loading_stats'; sessionId: string; index: number; total: number }
+  | { type: 'scanning'; total: number }
+  | { type: 'hard_floor'; sessionId: string; title: string; passed: boolean; reason?: string }
+  | { type: 'extracting_signals'; sessionId: string; title: string }
+  | { type: 'signals_done'; sessionId: string }
+  | { type: 'llm_ranking'; sessionCount: number }
+  | { type: 'scoring_fallback'; sessionCount: number }
+  | { type: 'done'; selected: number; skipped: number }
+  | { type: 'result'; selected: Array<{ sessionId: string; reason: string }>; skipped: Array<{ sessionId: string; reason: string }> };
+
+// ── Triage SSE stream ────────────────────────────────────────────
+
+export function triageProject(
+  dirName: string,
+  onEvent: (event: TriageEvent) => void,
+): AbortController {
+  const controller = new AbortController();
+
+  fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/triage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({}),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: { message: 'Triage failed' } }));
-    throw new Error(err.error?.message ?? 'Triage failed');
-  }
-  return res.json();
+    signal: controller.signal,
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: { message: 'Triage failed' } }));
+        throw new Error(err.error?.message ?? 'Triage failed');
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) {
+        throw new Error('No response stream');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const json = line.slice(6).trim();
+          if (!json) continue;
+          try {
+            onEvent(JSON.parse(json) as TriageEvent);
+          } catch {
+            // skip malformed SSE lines
+          }
+        }
+      }
+    })
+    .catch((err) => {
+      if ((err as Error).name !== 'AbortError') {
+        onEvent({ type: 'done', selected: 0, skipped: 0 });
+      }
+    });
+
+  return controller;
 }
 
 export interface EnhanceStatus {
@@ -143,7 +198,7 @@ export interface ProjectEnhanceResult {
 }
 
 export type EnhanceEventType =
-  | { type: 'session_progress'; sessionId: string; title: string; status: 'enhancing' | 'done' | 'skipped'; detail?: string }
+  | { type: 'session_progress'; sessionId: string; title: string; status: 'enhancing' | 'done' | 'skipped'; detail?: string; skills?: string[] }
   | { type: 'project_enhance'; status: 'generating' }
   | { type: 'done'; result: ProjectEnhanceResult }
   | { type: 'error'; message: string };

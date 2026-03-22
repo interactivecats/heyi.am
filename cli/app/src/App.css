@@ -2203,7 +2203,7 @@ details[open] > .collapsible__summary .collapsible__chevron {
 .enhance-split {
   display: grid;
   grid-template-columns: 340px 1fr;
-  min-height: calc(100vh - 3.5rem);
+  height: calc(100vh - 3.5rem);
 }
 
 @media (max-width: 768px) {
@@ -2216,9 +2216,10 @@ details[open] > .collapsible__summary .collapsible__chevron {
   background: var(--inverse-surface);
   color: rgba(255, 255, 255, 0.8);
   padding: var(--spacing-6);
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  height: 100%;
 }
 
 .enhance-split__left-header {
@@ -2235,6 +2236,8 @@ details[open] > .collapsible__summary .collapsible__chevron {
   flex-direction: column;
   gap: var(--spacing-4);
   flex: 1;
+  overflow-y: auto;
+  scroll-behavior: smooth;
 }
 
 .enhance-feed-item--pending {
@@ -2969,4 +2972,59 @@ details[open] > .collapsible__summary .collapsible__chevron {
   display: flex;
   gap: var(--spacing-3);
   width: 100%;
+}
+
+/* ── Triage Terminal ──────────────────────────────────────────── */
+
+.triage-terminal {
+  background: var(--inverse-surface);
+  color: var(--inverse-on-surface);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--spacing-6);
+  max-width: 640px;
+  margin: var(--spacing-8) auto;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+}
+
+.triage-terminal__feed {
+  max-height: 480px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.triage-terminal__line {
+  white-space: pre;
+  min-height: 1.7em;
+}
+
+.triage-terminal__prompt {
+  color: var(--inverse-primary, #9dcaff);
+  font-weight: 600;
+  margin-bottom: var(--spacing-2);
+}
+
+.triage-terminal__section {
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+}
+
+.triage-terminal__line--passed {
+  color: #34d399;
+}
+
+.triage-terminal__line--skipped {
+  color: #f87171;
+}
+
+.triage-terminal__line--active {
+  color: #fbbf24;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .triage-terminal__line--active {
+    animation: none;
+  }
 }

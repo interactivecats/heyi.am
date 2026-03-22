@@ -246,40 +246,59 @@ export function createApp(sessionsBasePath?: string) {
     }
   });
 
-  // Triage endpoint — AI selects which sessions are worth showcasing
+  // Triage endpoint — AI selects which sessions are worth showcasing (SSE stream)
   app.post('/api/projects/:project/triage', async (req: Request, res: Response) => {
+    const { project } = req.params;
+    const projects = await getProjects(sessionsBasePath);
+    const proj = projects.find((p) => p.name === project || p.dirName === project);
+    if (!proj) {
+      res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });
+      return;
+    }
+
+    // Set up SSE
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    });
+
+    const send = (event: Record<string, unknown>) => {
+      res.write(`data: ${JSON.stringify(event)}\n\n`);
+    };
+
     try {
-      const { project } = req.params;
-      const projects = await getProjects(sessionsBasePath);
-      const proj = projects.find((p) => p.name === project || p.dirName === project);
-      if (!proj) {
-        res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });
-        return;
+      // Build session metadata with stats for triage (sequential for progress)
+      const total = proj.sessions.length;
+      const sessionsWithStats: SessionMetaWithStats[] = [];
+      for (let i = 0; i < proj.sessions.length; i++) {
+        const meta = proj.sessions[i];
+        send({ type: 'loading_stats', sessionId: meta.sessionId, index: i, total });
+        const stats = await getSessionStats(meta, proj.name);
+        sessionsWithStats.push({
+          sessionId: meta.sessionId,
+          path: meta.path,
+          title: stats.date ? `Session ${meta.sessionId.slice(0, 8)}` : meta.sessionId,
+          duration: stats.duration,
+          loc: stats.loc,
+          turns: stats.turns,
+          files: stats.files,
+          skills: stats.skills,
+          date: stats.date,
+        });
       }
 
-      // Build session metadata with stats for triage
-      const sessionsWithStats: SessionMetaWithStats[] = await Promise.all(
-        proj.sessions.map(async (meta) => {
-          const stats = await getSessionStats(meta, proj.name);
-          return {
-            sessionId: meta.sessionId,
-            path: meta.path,
-            title: stats.date ? `Session ${meta.sessionId.slice(0, 8)}` : meta.sessionId,
-            duration: stats.duration,
-            loc: stats.loc,
-            turns: stats.turns,
-            files: stats.files,
-            skills: stats.skills,
-            date: stats.date,
-          };
-        }),
-      );
-
       const useLLM = req.body?.useLLM !== false;
-      const result = await triageSessions(sessionsWithStats, useLLM);
-      res.json(result);
+      const result = await triageSessions(sessionsWithStats, useLLM, (event) => {
+        send(event as unknown as Record<string, unknown>);
+      });
+
+      // Send final result
+      send({ type: 'result', ...result });
+      res.end();
     } catch (err) {
-      res.status(500).json({ error: { code: 'TRIAGE_FAILED', message: (err as Error).message } });
+      send({ type: 'error', code: 'TRIAGE_FAILED', message: (err as Error).message });
+      res.end();
     }
   });
 
@@ -525,7 +544,7 @@ export function createApp(sessionsBasePath?: string) {
           // Check if already enhanced
           const existing = loadEnhancedData(sessionId);
           if (existing) {
-            send({ type: 'session_progress', sessionId, status: 'skipped' });
+            send({ type: 'session_progress', sessionId, status: 'skipped', title: existing.title, skills: existing.skills });
             sessionSummaries.push({
               sessionId,
               title: existing.title,
@@ -548,7 +567,7 @@ export function createApp(sessionsBasePath?: string) {
             const result = await provider.enhance(session);
             saveEnhancedData(sessionId, result);
 
-            send({ type: 'session_progress', sessionId, status: 'done' });
+            send({ type: 'session_progress', sessionId, status: 'done', title: result.title, skills: result.skills });
 
             sessionSummaries.push({
               sessionId,

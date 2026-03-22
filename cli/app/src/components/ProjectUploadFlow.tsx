@@ -8,6 +8,7 @@ import {
   enhanceProject,
   refineNarrative,
   type TriageResult,
+  type TriageEvent,
   type ProjectEnhanceResult,
   type EnhanceEventType,
   type RefineAnswer,
@@ -130,6 +131,205 @@ function StatCard({ label, value }: { label: string; value: string }) {
     <div className="stat-card">
       <div className="stat-card__label">{label}</div>
       <div className="stat-card__value">{value}</div>
+    </div>
+  );
+}
+
+// ── Screen 43b: Triage Terminal ──────────────────────────────────
+
+interface TriageLine {
+  id: string;
+  text: string;
+  variant: 'default' | 'passed' | 'skipped' | 'active' | 'section' | 'prompt';
+}
+
+const SPINNER_FRAMES = ['\u25D0', '\u25D1', '\u25D2', '\u25D3'];
+
+function useSpinner(): string {
+  const [frame, setFrame] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setFrame((f) => (f + 1) % SPINNER_FRAMES.length), 120);
+    return () => clearInterval(id);
+  }, []);
+  return SPINNER_FRAMES[frame];
+}
+
+function triageEventsToLines(events: TriageEvent[], spinnerChar: string): TriageLine[] {
+  const lines: TriageLine[] = [
+    { id: 'prompt', text: '$ heyiam triage', variant: 'prompt' },
+  ];
+
+  let loadingTotal = 0;
+  let loadedCount = 0;
+  let hardFloorPassed = 0;
+  let hardFloorFiltered = 0;
+  let showedHardFloorHeader = false;
+  let showedSignalHeader = false;
+  let showedRankingHeader = false;
+
+  for (const evt of events) {
+    switch (evt.type) {
+      case 'scanning':
+        loadingTotal = evt.total;
+        lines.push({ id: 'scanning', text: `  Loading session stats... (${evt.total} sessions)`, variant: 'active' });
+        break;
+
+      case 'loading_stats':
+        loadedCount = evt.index;
+        break;
+
+      case 'hard_floor': {
+        if (!showedHardFloorHeader) {
+          // Replace scanning line with done
+          const scanIdx = lines.findIndex((l) => l.id === 'scanning');
+          if (scanIdx !== -1) {
+            lines[scanIdx] = { id: 'scanning-done', text: `  \u2713 Loaded ${loadingTotal} sessions`, variant: 'passed' };
+          }
+          lines.push({ id: 'hf-header', text: '', variant: 'default' });
+          lines.push({ id: 'hf-section', text: '  \u2500\u2500 Hard floor filter \u2500\u2500', variant: 'section' });
+          showedHardFloorHeader = true;
+        }
+        const shortId = evt.sessionId.slice(0, 8);
+        if (evt.passed) {
+          hardFloorPassed++;
+          lines.push({
+            id: `hf-${evt.sessionId}`,
+            text: `  \u2713 ${evt.title || shortId} \u2192 passed`,
+            variant: 'passed',
+          });
+        } else {
+          hardFloorFiltered++;
+          lines.push({
+            id: `hf-${evt.sessionId}`,
+            text: `  \u2717 ${evt.title || shortId} \u2192 skipped${evt.reason ? ` (${evt.reason})` : ''}`,
+            variant: 'skipped',
+          });
+        }
+        break;
+      }
+
+      case 'extracting_signals': {
+        if (!showedSignalHeader) {
+          // Add hard floor summary if we had hard floor events
+          if (showedHardFloorHeader) {
+            lines.push({
+              id: 'hf-summary',
+              text: `  \u2713 ${hardFloorPassed} passed, ${hardFloorFiltered} filtered`,
+              variant: 'passed',
+            });
+          }
+          lines.push({ id: 'sig-header', text: '', variant: 'default' });
+          lines.push({ id: 'sig-section', text: '  \u2500\u2500 Signal extraction \u2500\u2500', variant: 'section' });
+          showedSignalHeader = true;
+        }
+        const shortId = evt.sessionId.slice(0, 8);
+        lines.push({
+          id: `sig-${evt.sessionId}`,
+          text: `  ${spinnerChar} Scanning ${evt.title || shortId}...`,
+          variant: 'active',
+        });
+        break;
+      }
+
+      case 'signals_done': {
+        // Replace the active scanning line with a done line
+        const idx = lines.findIndex((l) => l.id === `sig-${evt.sessionId}`);
+        if (idx !== -1) {
+          const shortId = evt.sessionId.slice(0, 8);
+          lines[idx] = {
+            id: `sig-done-${evt.sessionId}`,
+            text: `  \u2713 ${shortId}: signals extracted`,
+            variant: 'passed',
+          };
+        }
+        break;
+      }
+
+      case 'llm_ranking':
+        if (!showedRankingHeader) {
+          lines.push({ id: 'rank-header', text: '', variant: 'default' });
+          lines.push({ id: 'rank-section', text: '  \u2500\u2500 AI ranking \u2500\u2500', variant: 'section' });
+          showedRankingHeader = true;
+        }
+        lines.push({
+          id: 'llm-ranking',
+          text: `  ${spinnerChar} Sending ${evt.sessionCount} sessions to AI...`,
+          variant: 'active',
+        });
+        break;
+
+      case 'scoring_fallback':
+        if (!showedRankingHeader) {
+          lines.push({ id: 'rank-header', text: '', variant: 'default' });
+          lines.push({ id: 'rank-section', text: '  \u2500\u2500 Scoring \u2500\u2500', variant: 'section' });
+          showedRankingHeader = true;
+        }
+        lines.push({
+          id: 'scoring-fallback',
+          text: `  ${spinnerChar} Scoring ${evt.sessionCount} sessions...`,
+          variant: 'active',
+        });
+        break;
+
+      case 'done':
+        // Replace ranking active line
+        const rankIdx = lines.findIndex((l) => l.id === 'llm-ranking' || l.id === 'scoring-fallback');
+        if (rankIdx !== -1) {
+          lines[rankIdx] = {
+            id: 'rank-done',
+            text: `  \u2713 AI selected ${evt.selected} sessions`,
+            variant: 'passed',
+          };
+        }
+        break;
+
+      case 'result':
+        // Final result -- no terminal line needed, handled by parent
+        break;
+    }
+  }
+
+  return lines;
+}
+
+/** @internal Exported for testing */
+export function TriageTerminal({
+  events,
+  dirName,
+}: {
+  events: TriageEvent[];
+  dirName: string;
+}) {
+  const spinnerChar = useSpinner();
+  const feedRef = useRef<HTMLDivElement>(null);
+  const lines = triageEventsToLines(events, spinnerChar);
+
+  // Auto-scroll to bottom when new lines appear
+  useEffect(() => {
+    if (feedRef.current) {
+      feedRef.current.scrollTop = feedRef.current.scrollHeight;
+    }
+  }, [lines.length]);
+
+  return (
+    <div className="triage-terminal" role="log" aria-live="polite" aria-label="Triage progress">
+      <div className="triage-terminal__feed" ref={feedRef}>
+        {lines.map((line) => (
+          <div
+            key={line.id}
+            className={`triage-terminal__line${
+              line.variant === 'prompt' ? ' triage-terminal__prompt' :
+              line.variant === 'section' ? ' triage-terminal__section' :
+              line.variant === 'passed' ? ' triage-terminal__line--passed' :
+              line.variant === 'skipped' ? ' triage-terminal__line--skipped' :
+              line.variant === 'active' ? ' triage-terminal__line--active' :
+              ''
+            }`}
+          >
+            {line.text}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -282,8 +482,10 @@ function EnhanceStep({
   });
   const [narrativeStatus, setNarrativeStatus] = useState<'waiting' | 'generating' | 'done'>('waiting');
   const [result, setResult] = useState<ProjectEnhanceResult | null>(null);
+  const [progressSkills, setProgressSkills] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
+  const feedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!project.dirName) return;
@@ -313,6 +515,13 @@ function EnhanceStep({
                   : sp,
               ),
             );
+            if ((event.status === 'done' || event.status === 'skipped') && event.skills) {
+              setProgressSkills((prev) => {
+                const set = new Set(prev);
+                for (const s of event.skills!) set.add(s);
+                return [...set];
+              });
+            }
             break;
           case 'project_enhance':
             setNarrativeStatus('generating');
@@ -332,14 +541,27 @@ function EnhanceStep({
     return () => controller.abort();
   }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-scroll feed to keep the active/latest completed item visible
+  const completedCount = sessionProgress.filter((sp) => sp.status !== 'pending').length;
+  useEffect(() => {
+    if (!feedRef.current || completedCount === 0) return;
+    // Scroll to show the last non-pending item
+    const items = feedRef.current.querySelectorAll('.enhance-feed-item:not(.enhance-feed-item--pending)');
+    const last = items[items.length - 1];
+    if (last) {
+      last.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [completedCount]);
+
   const isDone = result !== null;
+  const displaySkills = result?.skills ?? progressSkills;
 
   return (
     <div className="enhance-split">
       {/* Left: dark terminal feed */}
       <div className="enhance-split__left">
         <div className="enhance-split__left-header">Session Processing</div>
-        <div className="enhance-split__feed">
+        <div className="enhance-split__feed" ref={feedRef}>
           {sessionProgress.map((sp) => (
             <div key={sp.sessionId} className={`enhance-feed-item ${sp.status === 'pending' ? 'enhance-feed-item--pending' : ''}`}>
               <div className="enhance-feed-item__row">
@@ -401,9 +623,9 @@ function EnhanceStep({
               <div className="enhance-split__narrative-text">{result.narrative}</div>
             )}
 
-            {result?.skills && result.skills.length > 0 && (
+            {displaySkills.length > 0 && (
               <div className="enhance-split__skills">
-                {result.skills.map((skill) => (
+                {displaySkills.map((skill) => (
                   <span key={skill} className="chip">{skill}</span>
                 ))}
               </div>
@@ -981,6 +1203,8 @@ export function ProjectUploadFlow() {
   const [triageResult, setTriageResult] = useState<TriageResult | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [triaging, setTriaging] = useState(false);
+  const [triageEvents, setTriageEvents] = useState<TriageEvent[]>([]);
+  const triageControllerRef = useRef<AbortController | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [enhanceResult, setEnhanceResult] = useState<ProjectEnhanceResult | null>(null);
   const [repoUrl, setRepoUrl] = useState('');
@@ -1005,21 +1229,39 @@ export function ProjectUploadFlow() {
       });
   }, [dirName]);
 
-  const handleTriage = useCallback(async () => {
+  const handleTriage = useCallback(() => {
     if (!dirName) return;
     setTriaging(true);
     setError(null);
-    try {
-      const result = await triageProject(dirName);
-      setTriageResult(result);
-      setSelectedIds(new Set(result.selected.map((s) => s.sessionId)));
-      setStep('triage');
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setTriaging(false);
-    }
+    setTriageEvents([]);
+
+    const controller = triageProject(dirName, (event: TriageEvent) => {
+      setTriageEvents((prev) => [...prev, event]);
+
+      if (event.type === 'result') {
+        const result: TriageResult = {
+          selected: event.selected,
+          skipped: event.skipped,
+        };
+        setTriageResult(result);
+        setSelectedIds(new Set(result.selected.map((s) => s.sessionId)));
+        // Brief pause then advance to triage results
+        setTimeout(() => {
+          setTriaging(false);
+          setStep('triage');
+        }, 1200);
+      }
+    });
+
+    triageControllerRef.current = controller;
   }, [dirName]);
+
+  // Cleanup triage controller on unmount
+  useEffect(() => {
+    return () => {
+      triageControllerRef.current?.abort();
+    };
+  }, []);
 
   const handleEnhanceComplete = useCallback((result: ProjectEnhanceResult) => {
     setEnhanceResult(result);
@@ -1082,9 +1324,7 @@ export function ProjectUploadFlow() {
         <div className="dashboard-error">{error}</div>
       ) : step === 'overview' ? (
         triaging ? (
-          <div className="dashboard-loading">
-            Scanning {sessions.length} sessions...
-          </div>
+          <TriageTerminal events={triageEvents} dirName={dirName ?? ''} />
         ) : (
           <SessionOverview
             project={project}
