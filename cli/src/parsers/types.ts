@@ -28,6 +28,8 @@ export interface SessionAnalysis {
   end_time: string | null;
   agent_role?: string;
   parent_session_id?: string | null;
+  /** Working directory where the session was started */
+  cwd?: string;
 }
 
 /** Minimal shape of a JSONL entry from Claude Code sessions */

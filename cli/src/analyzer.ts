@@ -34,6 +34,8 @@ export interface SessionAnalysis {
   childSessions?: SessionAnalysis[];
   agentRole?: string;
   parentSessionId?: string | null;
+  /** Working directory where the session was started */
+  cwd?: string;
 }
 
 // ── Output types (mirrors cli/app/src/types.ts) ────────────────
@@ -91,6 +93,8 @@ export interface Session {
   parentSessionId?: string | null;
   agentRole?: string;
   isOrchestrated?: boolean;
+  /** Working directory where the session was started */
+  cwd?: string;
   /** True when enhanced via bulk mode with auto-accepted AI suggestions */
   quickEnhanced?: boolean;
 }
@@ -380,5 +384,6 @@ export function analyzeSession(analysis: SessionAnalysis): Session {
     ...(analysis.parentSessionId != null ? { parentSessionId: analysis.parentSessionId } : {}),
     ...(analysis.agentRole ? { agentRole: analysis.agentRole } : {}),
     ...(isOrchestrated ? { isOrchestrated } : {}),
+    ...(analysis.cwd ? { cwd: analysis.cwd } : {}),
   };
 }

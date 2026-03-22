@@ -9,16 +9,13 @@ export interface SessionDetailOverlayProps {
 }
 
 /** Strip the project root from absolute paths to make them relative. */
-function stripRoot(filePath: string, dirName: string): string {
+function stripRoot(filePath: string, dirName: string, cwd?: string): string {
+  if (cwd && filePath.startsWith(cwd)) {
+    return filePath.slice(cwd.length).replace(/^\//, '') || filePath;
+  }
   const root = dirName.replace(/^-/, '/').replace(/-/g, '/');
   if (filePath.startsWith(root)) {
     return filePath.slice(root.length).replace(/^\//, '') || filePath;
-  }
-  const projectName = dirName.split('-').filter(Boolean).pop() ?? '';
-  const segments = filePath.split('/');
-  const idx = segments.findIndex((s) => s === projectName);
-  if (idx >= 0 && idx < segments.length - 1) {
-    return segments.slice(idx + 1).join('/');
   }
   return filePath;
 }
@@ -222,7 +219,7 @@ function ToolBreakdown({ tools }: { tools: ToolUsage[] }) {
   );
 }
 
-function FilesChanged({ files, projectDirName }: { files: FileChange[]; projectDirName: string }) {
+function FilesChanged({ files, projectDirName, cwd }: { files: FileChange[]; projectDirName: string; cwd?: string }) {
   return (
     <details className="session-detail__collapsible">
       <summary className="session-detail__collapsible-summary">
@@ -231,7 +228,7 @@ function FilesChanged({ files, projectDirName }: { files: FileChange[]; projectD
       <div className="session-detail__file-list">
         {files.map((f) => (
           <div key={f.path} className="session-detail__file-row">
-            <span className="session-detail__file-path">{stripRoot(f.path, projectDirName)}</span>
+            <span className="session-detail__file-path">{stripRoot(f.path, projectDirName, cwd)}</span>
             <span className="session-detail__file-additions">+{f.additions}</span>
             <span className="session-detail__file-deletions">-{f.deletions}</span>
           </div>
@@ -325,7 +322,7 @@ export function SessionDetailOverlay({ session, projectName, projectDirName, onC
         {/* Full-width sections below */}
         <div className="session-detail__full-width">
           {hasTools && <ToolBreakdown tools={session.toolBreakdown!} />}
-          {hasFiles && <FilesChanged files={session.filesChanged!} projectDirName={projectDirName} />}
+          {hasFiles && <FilesChanged files={session.filesChanged!} projectDirName={projectDirName} cwd={session.cwd} />}
         </div>
       </div>
     </div>

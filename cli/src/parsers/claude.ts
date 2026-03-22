@@ -269,6 +269,9 @@ async function parse(path: string): Promise<SessionAnalysis> {
   const { duration_ms, wall_clock_ms, start_time, end_time } = computeDuration(entries);
   const loc_stats = computeLocStats(entries);
 
+  // Extract cwd from the first entry that has it
+  const cwd = entries.find((e) => e.cwd)?.cwd;
+
   return {
     source: "claude",
     turns,
@@ -280,6 +283,7 @@ async function parse(path: string): Promise<SessionAnalysis> {
     raw_entries: entries,
     start_time,
     end_time,
+    cwd,
   };
 }
 

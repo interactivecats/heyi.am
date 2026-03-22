@@ -69,6 +69,8 @@ export interface Session {
   isOrchestrated?: boolean;
   childCount?: number;
   children?: ChildSessionSummary[];
+  /** Working directory where the session was started */
+  cwd?: string;
   /** True when enhanced via bulk mode with auto-accepted AI suggestions */
   quickEnhanced?: boolean;
 }

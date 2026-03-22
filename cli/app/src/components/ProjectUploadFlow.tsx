@@ -1232,21 +1232,19 @@ interface FileEditData {
   editCount: number;
 }
 
-/** Strip the project root from an absolute path to make it relative. */
-function stripProjectRoot(filePath: string, projectDirName: string): string {
-  // dirName encodes the root: "-Users-ben-Dev-myapp" → "/Users/ben/Dev/myapp"
+/** Strip the project root from an absolute path to make it relative.
+ *  Prefers session.cwd when available; falls back to dirName decoding. */
+function stripProjectRoot(filePath: string, projectDirName: string, cwd?: string): string {
+  // Prefer cwd (exact working directory from session data)
+  if (cwd && filePath.startsWith(cwd)) {
+    const relative = filePath.slice(cwd.length).replace(/^\//, '');
+    return relative || filePath;
+  }
+  // Fallback: decode dirName ("-Users-ben-Dev-myapp" → "/Users/ben/Dev/myapp")
   const root = projectDirName.replace(/^-/, '/').replace(/-/g, '/');
   if (filePath.startsWith(root)) {
     const relative = filePath.slice(root.length).replace(/^\//, '');
     return relative || filePath;
-  }
-  // Try common prefix stripping as fallback
-  const segments = filePath.split('/');
-  // Find where the project name appears and take everything after
-  const projectName = projectDirName.split('-').filter(Boolean).pop() ?? '';
-  const projIdx = segments.findIndex((s) => s === projectName);
-  if (projIdx >= 0 && projIdx < segments.length - 1) {
-    return segments.slice(projIdx + 1).join('/');
   }
   return filePath;
 }
@@ -1271,7 +1269,7 @@ function aggregateDirectoryEdits(sessions: Session[], projectDirName: string): {
     for (const fc of session.filesChanged) {
       if (!fc.path || typeof fc.path !== 'string') continue;
       const edits = fc.editCount ?? (fc.additions + fc.deletions);
-      const relativePath = stripProjectRoot(fc.path, projectDirName);
+      const relativePath = stripProjectRoot(fc.path, projectDirName, session.cwd);
       const dir = extractDirectory(relativePath);
       dirMap.set(dir, (dirMap.get(dir) ?? 0) + edits);
       fileMap.set(relativePath, (fileMap.get(relativePath) ?? 0) + edits);
