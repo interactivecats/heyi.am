@@ -1,7 +1,23 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import { AgentActivitySection } from './ProjectUploadFlow';
 import type { Session } from '../types';
+
+// Mock fetchSession from api module
+vi.mock('../api', async () => {
+  const actual = await vi.importActual('../api');
+  return {
+    ...actual,
+    fetchSession: vi.fn(),
+  };
+});
+
+import { fetchSession } from '../api';
+const mockFetchSession = vi.mocked(fetchSession);
+
+beforeEach(() => {
+  mockFetchSession.mockReset();
+});
 
 function makeSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -173,5 +189,80 @@ describe('AgentActivitySection', () => {
     render(<AgentActivitySection sessions={sessions} />);
     expect(screen.getByText('Setup auth')).toBeTruthy();
     expect(screen.getByText('Build API')).toBeTruthy();
+  });
+
+  it('lazy-loads full session when childCount > 0 and projectDirName provided', async () => {
+    const fullSession = makeSession({
+      id: 'ses-1',
+      title: 'Orchestrated work',
+      isOrchestrated: true,
+      childCount: 2,
+      childSessions: [
+        makeChild('c1', 'frontend-dev', 0, 10),
+        makeChild('c2', 'backend-dev', 0, 15),
+      ],
+    });
+    mockFetchSession.mockResolvedValueOnce(fullSession);
+
+    const sessions = [
+      makeSession({
+        id: 'ses-1',
+        title: 'Orchestrated work',
+        childCount: 2,
+      }),
+    ];
+    const { container } = render(
+      <AgentActivitySection sessions={sessions} projectDirName="test-project" />,
+    );
+
+    // Initially shows loading
+    expect(screen.getByText('Loading agent activity...')).toBeTruthy();
+
+    // After fetch resolves, should show fork circles from AgentTimeline
+    await waitFor(() => {
+      const forkCircles = container.querySelectorAll('[data-testid="fork-circle"]');
+      expect(forkCircles.length).toBeGreaterThan(0);
+    });
+
+    expect(mockFetchSession).toHaveBeenCalledWith('test-project', 'ses-1');
+  });
+
+  it('does not fetch when childCount is 0', () => {
+    mockFetchSession.mockClear();
+    const sessions = [makeSession({ childCount: 0 })];
+    render(<AgentActivitySection sessions={sessions} projectDirName="test-project" />);
+    expect(mockFetchSession).not.toHaveBeenCalled();
+  });
+
+  it('does not fetch when projectDirName is not provided', () => {
+    mockFetchSession.mockClear();
+    const sessions = [makeSession({ childCount: 3 })];
+    render(<AgentActivitySection sessions={sessions} />);
+    expect(mockFetchSession).not.toHaveBeenCalled();
+  });
+
+  it('handles fetch error gracefully by showing fallback SVG', async () => {
+    mockFetchSession.mockRejectedValueOnce(new Error('Network error'));
+
+    const sessions = [
+      makeSession({
+        id: 'ses-fail',
+        title: 'Failing fetch',
+        childCount: 2,
+        durationMinutes: 20,
+        linesOfCode: 100,
+      }),
+    ];
+    render(
+      <AgentActivitySection sessions={sessions} projectDirName="test-project" />,
+    );
+
+    // After fetch fails, should show the fallback SVG (no fork circles)
+    await waitFor(() => {
+      expect(screen.queryByText('Loading agent activity...')).toBeNull();
+    });
+
+    // Should still render the session label
+    expect(screen.getByText('Failing fetch')).toBeTruthy();
   });
 });

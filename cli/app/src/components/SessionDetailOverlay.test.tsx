@@ -1,7 +1,19 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SessionDetailOverlay } from './SessionDetailOverlay';
 import type { Session } from '../types';
+
+// Mock fetchSession from api module
+vi.mock('../api', async () => {
+  const actual = await vi.importActual('../api');
+  return {
+    ...actual,
+    fetchSession: vi.fn(),
+  };
+});
+
+import { fetchSession } from '../api';
+const mockFetchSession = vi.mocked(fetchSession);
 
 function makeSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -24,6 +36,7 @@ describe('SessionDetailOverlay', () => {
       <SessionDetailOverlay
         session={makeSession()}
         projectName="heyi-am"
+        projectDirName="heyi-am"
         onClose={() => {}}
       />,
     );
@@ -36,6 +49,7 @@ describe('SessionDetailOverlay', () => {
       <SessionDetailOverlay
         session={makeSession()}
         projectName="heyi-am"
+        projectDirName="heyi-am"
         onClose={() => {}}
       />,
     );
@@ -49,6 +63,7 @@ describe('SessionDetailOverlay', () => {
       <SessionDetailOverlay
         session={makeSession({ developerTake: 'This was a pivotal session.' })}
         projectName="heyi-am"
+        projectDirName="heyi-am"
         onClose={() => {}}
       />,
     );
@@ -61,6 +76,7 @@ describe('SessionDetailOverlay', () => {
       <SessionDetailOverlay
         session={makeSession({ developerTake: undefined })}
         projectName="heyi-am"
+        projectDirName="heyi-am"
         onClose={() => {}}
       />,
     );
@@ -72,6 +88,7 @@ describe('SessionDetailOverlay', () => {
       <SessionDetailOverlay
         session={makeSession({ skills: ['TypeScript', 'React'] })}
         projectName="heyi-am"
+        projectDirName="heyi-am"
         onClose={() => {}}
       />,
     );
@@ -86,6 +103,7 @@ describe('SessionDetailOverlay', () => {
           qaPairs: [{ question: 'Why this approach?', answer: 'It was simpler.' }],
         })}
         projectName="heyi-am"
+        projectDirName="heyi-am"
         onClose={() => {}}
       />,
     );
@@ -103,6 +121,7 @@ describe('SessionDetailOverlay', () => {
           ],
         })}
         projectName="heyi-am"
+        projectDirName="heyi-am"
         onClose={() => {}}
       />,
     );
@@ -121,6 +140,7 @@ describe('SessionDetailOverlay', () => {
           ],
         })}
         projectName="heyi-am"
+        projectDirName="heyi-am"
         onClose={() => {}}
       />,
     );
@@ -138,6 +158,7 @@ describe('SessionDetailOverlay', () => {
           ],
         })}
         projectName="heyi-am"
+        projectDirName="heyi-am"
         onClose={() => {}}
       />,
     );
@@ -152,6 +173,7 @@ describe('SessionDetailOverlay', () => {
       <SessionDetailOverlay
         session={makeSession()}
         projectName="heyi-am"
+        projectDirName="heyi-am"
         onClose={() => {}}
       />,
     );
@@ -169,6 +191,7 @@ describe('SessionDetailOverlay', () => {
       <SessionDetailOverlay
         session={makeSession()}
         projectName="heyi-am"
+        projectDirName="heyi-am"
         onClose={() => {}}
       />,
     );
@@ -182,6 +205,7 @@ describe('SessionDetailOverlay', () => {
       <SessionDetailOverlay
         session={makeSession()}
         projectName="heyi-am"
+        projectDirName="heyi-am"
         onClose={onClose}
       />,
     );
@@ -195,6 +219,7 @@ describe('SessionDetailOverlay', () => {
       <SessionDetailOverlay
         session={makeSession()}
         projectName="heyi-am"
+        projectDirName="heyi-am"
         onClose={onClose}
       />,
     );
@@ -208,6 +233,7 @@ describe('SessionDetailOverlay', () => {
       <SessionDetailOverlay
         session={makeSession()}
         projectName="heyi-am"
+        projectDirName="heyi-am"
         onClose={onClose}
       />,
     );
@@ -220,6 +246,7 @@ describe('SessionDetailOverlay', () => {
       <SessionDetailOverlay
         session={makeSession()}
         projectName="heyi-am"
+        projectDirName="heyi-am"
         onClose={() => {}}
       />,
     );
@@ -241,6 +268,7 @@ describe('SessionDetailOverlay', () => {
           rawLog: [],
         })}
         projectName="heyi-am"
+        projectDirName="heyi-am"
         onClose={() => {}}
       />,
     );
@@ -265,6 +293,7 @@ describe('SessionDetailOverlay', () => {
           ],
         })}
         projectName="heyi-am"
+        projectDirName="heyi-am"
         onClose={() => {}}
       />,
     );
@@ -273,5 +302,126 @@ describe('SessionDetailOverlay', () => {
     // "Key decision" appears in both exec path and highlights, so use getAllByText
     const matches = screen.getAllByText('Key decision');
     expect(matches.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('shows loading state then AgentTimeline for session with childCount > 0', async () => {
+    const childStart = new Date('2026-03-20T10:00:00Z');
+    const fullSession = makeSession({
+      id: 'ses-orch',
+      isOrchestrated: true,
+      childCount: 2,
+      childSessions: [
+        makeSession({
+          id: 'c1',
+          agentRole: 'frontend-dev',
+          date: childStart.toISOString(),
+          durationMinutes: 10,
+          linesOfCode: 50,
+          parentSessionId: 'ses-orch',
+        }),
+        makeSession({
+          id: 'c2',
+          agentRole: 'backend-dev',
+          date: childStart.toISOString(),
+          durationMinutes: 15,
+          linesOfCode: 70,
+          parentSessionId: 'ses-orch',
+        }),
+      ],
+    });
+    mockFetchSession.mockResolvedValueOnce(fullSession);
+
+    const { container } = render(
+      <SessionDetailOverlay
+        session={makeSession({ id: 'ses-orch', childCount: 2 })}
+        projectName="heyi-am"
+        projectDirName="heyi-am"
+        onClose={() => {}}
+      />,
+    );
+
+    // Initially shows loading
+    expect(screen.getByText('Loading agent activity...')).toBeTruthy();
+
+    // After fetch resolves, should show the AGENT ACTIVITY section with fork circles
+    await waitFor(() => {
+      expect(screen.getByText('AGENT ACTIVITY')).toBeTruthy();
+      const forkCircles = container.querySelectorAll('[data-testid="fork-circle"]');
+      expect(forkCircles.length).toBeGreaterThan(0);
+    });
+
+    expect(mockFetchSession).toHaveBeenCalledWith('heyi-am', 'ses-orch');
+  });
+
+  it('does not fetch or show timeline when childCount is 0', () => {
+    mockFetchSession.mockClear();
+    render(
+      <SessionDetailOverlay
+        session={makeSession({ childCount: 0 })}
+        projectName="heyi-am"
+        projectDirName="heyi-am"
+        onClose={() => {}}
+      />,
+    );
+    expect(mockFetchSession).not.toHaveBeenCalled();
+    expect(screen.queryByText('Loading agent activity...')).toBeNull();
+    expect(screen.queryByText('AGENT ACTIVITY')).toBeNull();
+  });
+
+  it('renders AgentTimeline directly when childSessions already present', () => {
+    mockFetchSession.mockClear();
+    const childStart = new Date('2026-03-20T10:00:00Z');
+    const { container } = render(
+      <SessionDetailOverlay
+        session={makeSession({
+          childCount: 2,
+          isOrchestrated: true,
+          childSessions: [
+            makeSession({
+              id: 'c1',
+              agentRole: 'frontend-dev',
+              date: childStart.toISOString(),
+              durationMinutes: 10,
+              linesOfCode: 50,
+            }),
+            makeSession({
+              id: 'c2',
+              agentRole: 'backend-dev',
+              date: childStart.toISOString(),
+              durationMinutes: 15,
+              linesOfCode: 70,
+            }),
+          ],
+        })}
+        projectName="heyi-am"
+        projectDirName="heyi-am"
+        onClose={() => {}}
+      />,
+    );
+    // Should not fetch since childSessions already present
+    expect(mockFetchSession).not.toHaveBeenCalled();
+    // Should show timeline immediately
+    expect(screen.getByText('AGENT ACTIVITY')).toBeTruthy();
+    const forkCircles = container.querySelectorAll('[data-testid="fork-circle"]');
+    expect(forkCircles.length).toBeGreaterThan(0);
+  });
+
+  it('handles fetch error gracefully without showing timeline', async () => {
+    mockFetchSession.mockRejectedValueOnce(new Error('Network error'));
+
+    render(
+      <SessionDetailOverlay
+        session={makeSession({ id: 'ses-fail', childCount: 3 })}
+        projectName="heyi-am"
+        projectDirName="heyi-am"
+        onClose={() => {}}
+      />,
+    );
+
+    // After fetch fails, loading disappears and no AGENT ACTIVITY section shows
+    await waitFor(() => {
+      expect(screen.queryByText('Loading agent activity...')).toBeNull();
+    });
+    expect(screen.queryByText('AGENT ACTIVITY')).toBeNull();
   });
 });
