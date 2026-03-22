@@ -10,7 +10,7 @@ defmodule HeyiAmWeb.Router do
     plug :put_root_layout, html: {HeyiAmWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers, %{
-      "content-security-policy" => "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self'"
+      "content-security-policy" => "default-src 'self'; script-src 'self' https://analytics.interactivecats.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://analytics.interactivecats.com; frame-ancestors 'self'"
     }
     plug :fetch_current_scope_for_user
   end
