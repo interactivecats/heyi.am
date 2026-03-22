@@ -75,22 +75,43 @@
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-4);">
             <a :for={project <- @projects}
                href={"/" <> @portfolio_user.username <> "/" <> project.slug}
-               class="portfolio-project-card">
-              <h3>{project.title}</h3>
-              <p>{project.description}</p>
-              <div style="display: flex; gap: var(--spacing-4); margin-block-start: var(--spacing-3);">
-                <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant);">
-                  {project.session_count} sessions
-                </span>
-                <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant);">
-                  {project.total_minutes}m total
-                </span>
-                <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant);">
-                  {project.loc_changed} LOC
-                </span>
-              </div>
-              <div class="skills-row">
-                <span :for={skill <- project.skills} class="skill-chip">{skill}</span>
+               class="portfolio-project-card"
+               style={if project.screenshot_url, do: "padding: 0; overflow: hidden;", else: ""}>
+              <%!-- Screenshot thumbnail --%>
+              <%= if project.screenshot_url do %>
+                <img src={project.screenshot_url} alt="" style="width: 100%; height: 140px; object-fit: cover; object-position: top; display: block; border-block-end: 1px solid var(--ghost-border);" loading="lazy" />
+              <% end %>
+              <div style={if project.screenshot_url, do: "padding: var(--spacing-4) var(--spacing-6) var(--spacing-6);", else: ""}>
+                <h3>{project.title}</h3>
+                <%!-- Links row --%>
+                <%= if project.repo_url || project.project_url do %>
+                  <div style="display: flex; gap: var(--spacing-3); margin-block-start: var(--spacing-1); margin-block-end: var(--spacing-2);">
+                    <%= if project.repo_url do %>
+                      <span style="display: inline-flex; align-items: center; gap: 3px; font-family: var(--font-mono); font-size: 0.625rem; color: var(--on-surface-variant);">
+                        <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                        Repo
+                      </span>
+                    <% end %>
+                    <%= if project.project_url do %>
+                      <span style="display: inline-flex; align-items: center; gap: 3px; font-family: var(--font-mono); font-size: 0.625rem; color: var(--on-surface-variant);">&#8599; {URI.parse(project.project_url).host || project.project_url}</span>
+                    <% end %>
+                  </div>
+                <% end %>
+                <p>{project.description}</p>
+                <div style="display: flex; gap: var(--spacing-4); margin-block-start: var(--spacing-3);">
+                  <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant);">
+                    {project.session_count} sessions
+                  </span>
+                  <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant);">
+                    {project.total_minutes}m total
+                  </span>
+                  <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant);">
+                    {project.loc_changed} LOC
+                  </span>
+                </div>
+                <div class="skills-row">
+                  <span :for={skill <- project.skills} class="skill-chip">{skill}</span>
+                </div>
               </div>
             </a>
           </div>

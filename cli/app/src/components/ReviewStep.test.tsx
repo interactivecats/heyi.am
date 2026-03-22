@@ -216,10 +216,14 @@ describe('ReviewStep', () => {
     expect(props.onProjectUrlChange).toHaveBeenCalledWith('h');
   });
 
-  it('renders the screenshot drop zone', () => {
-    renderReview();
-    expect(screen.getByText('Drop an image or click to upload')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /upload screenshot/i })).toBeInTheDocument();
+  it('shows auto-capture hint when project URL is set', () => {
+    renderReview({ projectUrl: 'https://example.com' });
+    expect(screen.getByText('Auto-captured from project URL on publish')).toBeInTheDocument();
+  });
+
+  it('hides screenshot hint when project URL is empty', () => {
+    renderReview({ projectUrl: '' });
+    expect(screen.queryByText('Auto-captured from project URL on publish')).not.toBeInTheDocument();
   });
 
   it('calls onBack when "Back to timeline" is clicked', async () => {

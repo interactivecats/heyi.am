@@ -89,7 +89,10 @@ defmodule HeyiAmWeb.PortfolioController do
         skills: project.skills || [],
         session_count: project.total_sessions || stats.total_sessions,
         total_minutes: project.total_duration_minutes || stats.total_duration,
-        loc_changed: format_loc(project.total_loc || stats.total_loc)
+        loc_changed: format_loc(project.total_loc || stats.total_loc),
+        repo_url: project.repo_url,
+        project_url: project.project_url,
+        screenshot_url: presign_screenshot(project.screenshot_key)
       }
     end)
   end
@@ -104,6 +107,7 @@ defmodule HeyiAmWeb.PortfolioController do
       narrative: project.narrative,
       repo_url: project.repo_url,
       project_url: project.project_url,
+      screenshot_url: presign_screenshot(project.screenshot_key),
       skills: project.skills || [],
       session_count: project.total_sessions || stats.total_sessions,
       uploaded_count: length(project.shares),
@@ -159,5 +163,14 @@ defmodule HeyiAmWeb.PortfolioController do
 
   defp format_duration(minutes) when minutes >= 60, do: "#{div(minutes, 60)}h"
   defp format_duration(minutes), do: "#{minutes}m"
+
+  defp presign_screenshot(nil), do: nil
+  defp presign_screenshot(""), do: nil
+  defp presign_screenshot(key) do
+    case HeyiAm.ObjectStorage.presign_get(key) do
+      {:ok, url} -> url
+      _ -> nil
+    end
+  end
 
 end

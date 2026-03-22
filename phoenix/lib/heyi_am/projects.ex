@@ -51,6 +51,17 @@ defmodule HeyiAm.Projects do
     |> Repo.one()
   end
 
+  def get_user_project_by_slug(user_id, slug) do
+    Repo.get_by(Project, user_id: user_id, slug: slug)
+  end
+
+  def update_screenshot_key(user_id, slug, key) do
+    case get_user_project_by_slug(user_id, slug) do
+      nil -> {:error, :not_found}
+      project -> update_project(project, %{"screenshot_key" => key})
+    end
+  end
+
   def upsert_project(user_id, attrs) do
     # Normalize to string keys so changeset cast doesn't get mixed atom/string maps
     attrs = Map.new(attrs, fn {k, v} -> {to_string(k), v} end)

@@ -31,6 +31,51 @@ defmodule HeyiAmWeb.ProjectApiController do
     |> json(%{error: %{code: "MISSING_PROJECT", message: "Missing 'project' parameter"}})
   end
 
+  def screenshot_url(conn, %{"slug" => slug, "ext" => ext}) do
+    user_id = conn.assigns[:current_user_id]
+
+    if is_nil(user_id) do
+      conn |> put_status(:unauthorized) |> json(%{error: "Authentication required"})
+    else
+      case Projects.get_user_project_by_slug(user_id, slug) do
+        nil ->
+          conn |> put_status(:not_found) |> json(%{error: "Project not found"})
+
+        _project ->
+          safe_ext = if ext in ["png", "jpg", "jpeg", "webp"], do: ext, else: "png"
+          key = "projects/#{slug}/screenshot.#{safe_ext}"
+
+          case HeyiAm.ObjectStorage.presign_put(key) do
+            {:ok, url} ->
+              json(conn, %{upload_url: url, key: key})
+
+            {:error, reason} ->
+              conn |> put_status(:internal_server_error) |> json(%{error: "Presign failed: #{inspect(reason)}"})
+          end
+      end
+    end
+  end
+
+  def screenshot_url(conn, %{"slug" => _slug}) do
+    screenshot_url(conn, Map.put(conn.params, "ext", "png"))
+  end
+
+  def update_screenshot_key(conn, %{"slug" => slug, "key" => key}) do
+    user_id = conn.assigns[:current_user_id]
+
+    if is_nil(user_id) do
+      conn |> put_status(:unauthorized) |> json(%{error: "Authentication required"})
+    else
+      case Projects.update_screenshot_key(user_id, slug, key) do
+        {:ok, _project} ->
+          json(conn, %{ok: true})
+
+        {:error, _reason} ->
+          conn |> put_status(:unprocessable_entity) |> json(%{error: "Failed to update screenshot key"})
+      end
+    end
+  end
+
   defp format_errors(changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
       Regex.replace(~r"%{(\w+)}", msg, fn _, key ->

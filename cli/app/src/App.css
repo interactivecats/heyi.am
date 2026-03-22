@@ -2922,6 +2922,13 @@ details[open] > .collapsible__summary .collapsible__chevron {
   opacity: 0.6;
 }
 
+.review-field__hint {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+  padding: var(--spacing-3) 0;
+}
+
 /* Screenshot drop zone */
 .review-dropzone {
   display: flex;

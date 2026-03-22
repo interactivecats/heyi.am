@@ -13,6 +13,7 @@ import { getProvider, getEnhanceMode } from './llm/index.js';
 import { triageSessions, type SessionMetaWithStats } from './llm/triage.js';
 import { enhanceProject, refineNarrative, type SessionSummary, type SkippedSessionMeta, type ProjectEnhanceResult } from './llm/project-enhance.js';
 import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData, loadFreshProjectEnhanceResult, saveProjectEnhanceResult, loadProjectEnhanceResult, buildProjectFingerprint, savePublishedState, getPublishedState } from './settings.js';
+import { captureScreenshot } from './screenshot.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -861,6 +862,50 @@ export function createApp(sessionsBasePath?: string) {
 
       const projectData = await projectRes.json() as { project_id: number; slug: string };
       send({ type: 'project', status: 'created', projectId: projectData.project_id, slug: projectData.slug });
+
+      // Step 1b: Auto-capture and upload screenshot from project URL (non-fatal)
+      if (projectUrl) {
+        try {
+          send({ type: 'screenshot', status: 'capturing' });
+          const screenshotPath = await captureScreenshot(projectUrl, projectData.slug);
+          if (screenshotPath) {
+            // Get presigned PUT URL from Phoenix
+            const ssUrlRes = await fetch(`${API_URL}/api/projects/${projectData.slug}/screenshot-url`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${auth.token}`,
+              },
+              body: JSON.stringify({ ext: 'png' }),
+            });
+            if (ssUrlRes.ok) {
+              const { upload_url, key } = await ssUrlRes.json() as { upload_url: string; key: string };
+              const imageData = readFileSync(screenshotPath);
+              await fetch(upload_url, {
+                method: 'PUT',
+                body: imageData,
+                headers: { 'Content-Type': 'image/png' },
+              });
+              // Update the project's screenshot_key
+              await fetch(`${API_URL}/api/projects/${projectData.slug}/screenshot-key`, {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${auth.token}`,
+                },
+                body: JSON.stringify({ key }),
+              });
+              send({ type: 'screenshot', status: 'uploaded' });
+            } else {
+              send({ type: 'screenshot', status: 'skipped', reason: 'presign failed' });
+            }
+          } else {
+            send({ type: 'screenshot', status: 'skipped', reason: 'Chrome not available' });
+          }
+        } catch {
+          send({ type: 'screenshot', status: 'skipped', reason: 'capture failed' });
+        }
+      }
 
       // Step 2: Publish selected sessions (non-fatal per session)
       const projects = await getProjects(sessionsBasePath);

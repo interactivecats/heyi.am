@@ -1960,13 +1960,14 @@ export function ReviewStep({
           />
         </div>
 
-        <div className="review-field">
-          <span className="review-field__label">Screenshot</span>
-          <div className="review-dropzone" role="button" tabIndex={0} aria-label="Upload screenshot">
-            <span className="review-dropzone__icon" aria-hidden="true">&#128247;</span>
-            <span className="review-dropzone__text">Drop an image or click to upload</span>
+        {projectUrl && (
+          <div className="review-field">
+            <span className="review-field__label">Screenshot</span>
+            <div className="review-field__hint">
+              Auto-captured from project URL on publish
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* ── Inline auth card ── */}

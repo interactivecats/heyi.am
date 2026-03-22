@@ -84,6 +84,8 @@ defmodule HeyiAmWeb.Router do
     pipe_through [:api, :api_auth, :rate_limit_api_session]
 
     post "/projects", ProjectApiController, :create
+    post "/projects/:slug/screenshot-url", ProjectApiController, :screenshot_url
+    patch "/projects/:slug/screenshot-key", ProjectApiController, :update_screenshot_key
     post "/sessions", ShareApiController, :create
   end
 
