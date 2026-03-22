@@ -431,14 +431,10 @@ describe('ReviewStep', () => {
     expect(container.querySelector('.project-preview__sessions-grid')).not.toBeInTheDocument();
   });
 
-  it('timeline card click scrolls to corresponding session card', async () => {
+  it('timeline card click opens session detail overlay', async () => {
     const user = userEvent.setup();
-    const { container } = renderReview();
+    renderReview();
     await user.click(screen.getByRole('button', { name: /preview full project page/i }));
-
-    const sessionCard = container.querySelector('#session-sess-1') as HTMLElement;
-    const scrollSpy = vi.fn();
-    sessionCard.scrollIntoView = scrollSpy;
 
     // Click the first featured timeline card (which is for sess-1)
     const dialog = screen.getByRole('dialog');
@@ -450,7 +446,10 @@ describe('ReviewStep', () => {
     );
     if (timelineCard) {
       await user.click(timelineCard);
-      expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+      // Should open session detail overlay (a second dialog)
+      const dialogs = screen.getAllByRole('dialog');
+      expect(dialogs.length).toBe(2);
+      expect(screen.getByText(/Back to project/)).toBeInTheDocument();
     }
   });
 });

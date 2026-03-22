@@ -14,6 +14,8 @@ import {
   type RefineAnswer,
 } from '../api';
 import type { Session, Project } from '../types';
+import { AgentTimeline } from './AgentTimeline';
+import { SessionDetailOverlay } from './SessionDetailOverlay';
 
 type Step = 'overview' | 'triage' | 'enhance' | 'questions' | 'timeline' | 'review' | 'done';
 
@@ -1218,6 +1220,325 @@ export function GrowthChart({ sessions, totalLoc, totalFiles }: GrowthChartProps
   );
 }
 
+// ── Directory Heatmap ──────────────────────────────────────────
+
+interface DirectoryEditData {
+  directory: string;
+  editCount: number;
+}
+
+interface FileEditData {
+  path: string;
+  editCount: number;
+}
+
+function extractDirectory(filePath: string): string {
+  const segments = filePath.split('/');
+  // Take first 2-3 path segments as directory, excluding the filename
+  const dirSegments = segments.slice(0, -1);
+  if (dirSegments.length === 0) return '/';
+  const depth = Math.min(dirSegments.length, 3);
+  return dirSegments.slice(0, depth).join('/') + '/';
+}
+
+function aggregateDirectoryEdits(sessions: Session[]): {
+  directories: DirectoryEditData[];
+  files: FileEditData[];
+  totalFiles: number;
+} {
+  const dirMap = new Map<string, number>();
+  const fileMap = new Map<string, number>();
+
+  for (const session of sessions) {
+    if (!session.filesChanged) continue;
+    for (const fc of session.filesChanged) {
+      if (!fc.path || typeof fc.path !== 'string') continue;
+      const edits = fc.editCount ?? (fc.additions + fc.deletions);
+      const dir = extractDirectory(fc.path);
+      dirMap.set(dir, (dirMap.get(dir) ?? 0) + edits);
+      fileMap.set(fc.path, (fileMap.get(fc.path) ?? 0) + edits);
+    }
+  }
+
+  const directories = Array.from(dirMap.entries())
+    .map(([directory, editCount]) => ({ directory, editCount }))
+    .sort((a, b) => b.editCount - a.editCount)
+    .slice(0, 10);
+
+  const files = Array.from(fileMap.entries())
+    .map(([path, editCount]) => ({ path, editCount }))
+    .sort((a, b) => b.editCount - a.editCount)
+    .slice(0, 10);
+
+  return { directories, files, totalFiles: fileMap.size };
+}
+
+function getBarOpacity(editCount: number, maxEdits: number): number {
+  if (maxEdits === 0) return 0.15;
+  const ratio = editCount / maxEdits;
+  return 0.15 + ratio * 0.65; // range: 0.15 to 0.80
+}
+
+/** @internal Exported for testing */
+export function DirectoryHeatmap({ sessions }: { sessions: Session[] }) {
+  const { directories, files, totalFiles } = aggregateDirectoryEdits(sessions);
+
+  if (directories.length === 0) {
+    return (
+      <div className="dir-heatmap">
+        <div className="project-preview__timeline-heading">DIRECTORY HEATMAP</div>
+        <p className="dir-heatmap__empty">No file data available</p>
+      </div>
+    );
+  }
+
+  const maxEdits = directories[0].editCount;
+
+  return (
+    <div className="dir-heatmap">
+      <div className="project-preview__timeline-heading">DIRECTORY HEATMAP</div>
+      <div className="dir-heatmap__rows" role="list" aria-label="Directory edit counts">
+        {directories.map((d) => {
+          const barWidth = maxEdits > 0 ? Math.max(5, Math.round((d.editCount / maxEdits) * 100)) : 0;
+          const opacity = getBarOpacity(d.editCount, maxEdits);
+          return (
+            <div key={d.directory} className="dir-heatmap__row" role="listitem">
+              <span className="dir-heatmap__dir" title={d.directory}>{d.directory}</span>
+              <div
+                className="dir-heatmap__bar"
+                style={{
+                  width: `${barWidth}%`,
+                  background: `rgba(8,68,113,${opacity})`,
+                }}
+                aria-hidden="true"
+              />
+              <span className="dir-heatmap__count">{d.editCount} edits</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="dir-heatmap__legend" aria-hidden="true">
+        <span>Intensity = edit count</span>
+        <span
+          style={{
+            display: 'inline-block',
+            width: 12,
+            height: 12,
+            background: 'rgba(8,68,113,0.15)',
+            borderRadius: 2,
+          }}
+        />
+        <span
+          style={{
+            display: 'inline-block',
+            width: 12,
+            height: 12,
+            background: 'rgba(8,68,113,0.45)',
+            borderRadius: 2,
+          }}
+        />
+        <span
+          style={{
+            display: 'inline-block',
+            width: 12,
+            height: 12,
+            background: 'rgba(8,68,113,0.8)',
+            borderRadius: 2,
+          }}
+        />
+        <span>low &rarr; high</span>
+      </div>
+
+      {/* Top 10 most-edited files */}
+      <div className="top-files">
+        <div className="top-files__heading">
+          Top {files.length} most-edited files (of {totalFiles} total)
+        </div>
+        <div role="list" aria-label="Most edited files">
+          {files.map((f) => (
+            <div key={f.path} className="top-files__row" role="listitem">
+              <span className="top-files__path" title={f.path}>{f.path}</span>
+              <span className="top-files__count">{f.editCount} edits</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Agent Activity Section ────────────────────────────────────────
+
+const AGENT_LEGEND: { role: string; label: string; color: string }[] = [
+  { role: 'main', label: 'Main', color: '#084471' },
+  { role: 'frontend', label: 'Frontend', color: '#7c3aed' },
+  { role: 'backend', label: 'Backend', color: '#0891b2' },
+  { role: 'qa', label: 'QA', color: '#059669' },
+  { role: 'ux', label: 'UX', color: '#d97706' },
+  { role: 'pm', label: 'PM', color: '#dc2626' },
+];
+
+export function AgentActivitySection({ sessions }: { sessions: Session[] }) {
+  if (sessions.length === 0) return null;
+
+  const orchestrated = sessions.filter((s) => s.isOrchestrated === true);
+  const hasOrchestrated = orchestrated.length > 0;
+
+  // Collect unique agent roles across all sessions
+  const allRoles = new Set<string>();
+  for (const s of sessions) {
+    if (s.agentRole) allRoles.add(s.agentRole.toLowerCase());
+    if (s.childSessions) {
+      for (const c of s.childSessions) {
+        if (c.agentRole) allRoles.add(c.agentRole.toLowerCase());
+      }
+    }
+    if (s.children) {
+      for (const c of s.children) {
+        if (c.role) allRoles.add(c.role.toLowerCase());
+      }
+    }
+  }
+
+  // Compute agent LOC from child sessions
+  let agentLoc = 0;
+  let totalLoc = 0;
+  for (const s of sessions) {
+    totalLoc += s.linesOfCode;
+    if (s.childSessions) {
+      for (const c of s.childSessions) {
+        agentLoc += c.linesOfCode;
+      }
+    } else if (s.children) {
+      for (const c of s.children) {
+        agentLoc += c.linesOfCode ?? 0;
+      }
+    }
+  }
+
+  // Filter legend to only roles actually present
+  const activeLegend = AGENT_LEGEND.filter((l) => allRoles.has(l.role));
+  // If no specific roles found but we have sessions, show at least "Main"
+  if (activeLegend.length === 0) {
+    activeLegend.push(AGENT_LEGEND[0]);
+  }
+
+  const maxDuration = Math.max(...sessions.map((s) => s.durationMinutes), 1);
+
+  return (
+    <div className="agent-activity">
+      <div className="project-preview__timeline-heading">AGENT ACTIVITY</div>
+      <div className="agent-activity__card">
+        {/* Color legend */}
+        <div className="agent-activity__legend">
+          {activeLegend.map((item) => (
+            <div key={item.role} className="agent-activity__legend-item">
+              <span
+                className="agent-activity__legend-dot"
+                style={{ background: item.color }}
+              />
+              {item.label}
+            </div>
+          ))}
+        </div>
+
+        {/* Session timelines */}
+        <div className="agent-activity__timelines">
+          {sessions.map((s) => {
+            const hasChildren = (s.childSessions && s.childSessions.length > 0) || false;
+            const canUseFullTimeline = s.isOrchestrated && hasChildren;
+
+            if (canUseFullTimeline) {
+              return (
+                <div key={s.id} className="agent-activity__session">
+                  <div className="agent-activity__session-label">{s.title}</div>
+                  <AgentTimeline session={s} variant="compact" />
+                </div>
+              );
+            }
+
+            // Simplified fallback: horizontal bar with dots
+            const barWidth = Math.max(20, Math.round((s.durationMinutes / maxDuration) * 100));
+            const childCount = s.childCount ?? s.children?.length ?? 0;
+
+            return (
+              <div key={s.id} className="agent-activity__session">
+                <div className="agent-activity__session-label">{s.title}</div>
+                <svg
+                  viewBox="0 0 400 30"
+                  role="img"
+                  aria-label={`Session timeline: ${s.title}`}
+                  style={{ width: '100%', height: 30, display: 'block' }}
+                >
+                  {/* Track line */}
+                  <line
+                    x1="20" y1="15" x2={20 + barWidth * 3.4} y2="15"
+                    stroke="var(--primary, #084471)"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  {/* Open circle at start */}
+                  <circle
+                    cx="20" cy="15" r="4"
+                    fill="none"
+                    stroke="var(--primary, #084471)"
+                    strokeWidth="1.5"
+                  />
+                  {/* Filled circle at end */}
+                  <circle
+                    cx={20 + barWidth * 3.4} cy="15" r="4"
+                    fill="var(--primary, #084471)"
+                  />
+                  {/* Duration + LOC label */}
+                  <text
+                    x={20 + barWidth * 3.4 + 12}
+                    y="19"
+                    fontFamily="var(--font-mono, monospace)"
+                    fontSize="8"
+                    fill="var(--on-surface-variant, #6b7280)"
+                  >
+                    {Math.round(s.durationMinutes)}m
+                    {s.linesOfCode > 0 ? ` \u00B7 ${s.linesOfCode} LOC` : ''}
+                    {childCount > 0 ? ` (${childCount} agents)` : ''}
+                  </text>
+                </svg>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Summary stats */}
+        <div className="agent-activity__summary">
+          <div>
+            <div className="agent-activity__summary-value">
+              {orchestrated.length} of {sessions.length}
+            </div>
+            <div className="agent-activity__summary-label">Orchestrated</div>
+          </div>
+          <div>
+            <div className="agent-activity__summary-value">
+              {Math.max(allRoles.size, 1)}
+            </div>
+            <div className="agent-activity__summary-label">Unique Roles</div>
+          </div>
+          <div>
+            <div className="agent-activity__summary-value">
+              {agentLoc > 0 ? `${agentLoc}` : '\u2014'}
+            </div>
+            <div className="agent-activity__summary-label">Agent LOC</div>
+          </div>
+          <div>
+            <div className="agent-activity__summary-value">
+              {totalLoc > 0 ? `${totalLoc}` : '\u2014'}
+            </div>
+            <div className="agent-activity__summary-label">Total LOC</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Project Preview overlay (Screen 25 mockup) ──────────────────
 
 interface ProjectPreviewProps {
@@ -1245,19 +1566,20 @@ function ProjectPreview({
   projectUrl,
   onClose,
 }: ProjectPreviewProps) {
+  const [detailSession, setDetailSession] = useState<Session | null>(null);
   const totalSessions = timeline.reduce((sum, p) => sum + p.sessions.length, 0);
   const maxDuration = sessions.length > 0
     ? Math.max(...sessions.map((s) => s.durationMinutes))
     : 1;
 
-  // Close on Escape key
+  // Close on Escape key (detail overlay handles its own Escape)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && !detailSession) onClose();
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, [onClose, detailSession]);
 
   return (
     <div className="project-preview" role="dialog" aria-label="Project preview">
@@ -1361,6 +1683,9 @@ function ProjectPreview({
           </div>
         </div>
 
+        {/* Agent Activity */}
+        <AgentActivitySection sessions={sessions} />
+
         {/* Timeline */}
         <div className="project-preview__timeline-heading">PROJECT TIMELINE</div>
         <div className="timeline">
@@ -1384,14 +1709,24 @@ function ProjectPreview({
                       className="timeline__card"
                       style={{ cursor: 'pointer' }}
                       onClick={() => {
-                        document.getElementById(`session-${s.sessionId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        const match = sessions.find((sess) => sess.id === s.sessionId);
+                        if (match) {
+                          setDetailSession(match);
+                        } else {
+                          document.getElementById(`session-${s.sessionId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
                       }}
                       role="button"
                       tabIndex={0}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
-                          document.getElementById(`session-${s.sessionId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          const match = sessions.find((sess) => sess.id === s.sessionId);
+                          if (match) {
+                            setDetailSession(match);
+                          } else {
+                            document.getElementById(`session-${s.sessionId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }
                         }
                       }}
                     >
@@ -1442,6 +1777,9 @@ function ProjectPreview({
           totalFiles={project.totalFiles}
         />
 
+        {/* Directory Heatmap */}
+        <DirectoryHeatmap sessions={sessions} />
+
         {/* Published Sessions grid */}
         {sessions.length > 0 && (
           <>
@@ -1458,7 +1796,16 @@ function ProjectPreview({
                   <div
                     key={s.id}
                     id={`session-${s.id}`}
-                    className="project-preview__session-card"
+                    className="project-preview__session-card project-preview__session-card--clickable"
+                    onClick={() => setDetailSession(s)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setDetailSession(s);
+                      }
+                    }}
                   >
                     <div
                       className="project-preview__session-bar"
@@ -1485,6 +1832,14 @@ function ProjectPreview({
           </>
         )}
       </div>
+
+      {detailSession && (
+        <SessionDetailOverlay
+          session={detailSession}
+          projectName={project.name}
+          onClose={() => setDetailSession(null)}
+        />
+      )}
     </div>
   );
 }
