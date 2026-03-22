@@ -12,10 +12,7 @@ defmodule HeyiAm.Release do
   defp repos, do: Application.fetch_env!(@app, :ecto_repos)
 
   defp load_app do
+    Application.ensure_all_started(:ssl)
     Application.load(@app)
-
-    for repo <- Application.fetch_env!(@app, :ecto_repos) do
-      Application.ensure_all_started(repo.__adapter__().application())
-    end
   end
 end

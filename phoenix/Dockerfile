@@ -62,6 +62,7 @@ USER nobody
 
 EXPOSE 4000
 
-# No HEALTHCHECK here — Coolify defines its own so Traefik picks up a single status.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD /app/bin/heyi_am pid || exit 1
 
 CMD ["/app/bin/server"]
