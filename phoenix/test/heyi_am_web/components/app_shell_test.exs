@@ -83,7 +83,7 @@ defmodule HeyiAmWeb.AppShellTest do
       assert html =~ "Hello World"
     end
 
-    test "uses content-center class for max-width centering" do
+    test "uses public-shell-main class on main element" do
       html =
         render_component(&AppShell.public_shell/1,
           logo_text: "heyi.am",
@@ -91,7 +91,7 @@ defmodule HeyiAmWeb.AppShellTest do
           inner_block: [%{__slot__: :inner_block, inner_block: fn _, _ -> "Content" end}]
         )
 
-      assert html =~ "content-center"
+      assert html =~ "public-shell-main"
     end
 
     test "renders without nav items when none provided" do

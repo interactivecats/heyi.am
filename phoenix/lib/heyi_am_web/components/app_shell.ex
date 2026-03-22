@@ -54,7 +54,7 @@ defmodule HeyiAmWeb.AppShell do
     ~H"""
     <div class="public-shell">
       <header class="topbar" role="banner">
-        <div style="display: flex; align-items: center; gap: 2rem;">
+        <div class="topbar-left">
           <a href={@logo_href} class="topbar-logo">
             {@logo_text}
           </a>
@@ -77,7 +77,7 @@ defmodule HeyiAmWeb.AppShell do
         </div>
       </header>
 
-      <main class={["content-center", @class]} style="padding-block: 4rem;">
+      <main class={["public-shell-main", @class]}>
         {render_slot(@inner_block)}
       </main>
 
@@ -159,7 +159,7 @@ defmodule HeyiAmWeb.AppShell do
     ~H"""
     <div class="editor-shell">
       <header class="topbar topbar--editor" role="banner">
-        <div style="display: flex; align-items: center; gap: 2rem;">
+        <div class="topbar-left">
           <a href={@logo_href} class="topbar-logo">
             {@logo_text}
           </a>

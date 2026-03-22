@@ -138,8 +138,8 @@
     <%!-- Highlights --%>
     <section style="margin-block-end: var(--spacing-6);">
       <span class="label-mono" style="display: block; margin-block-end: var(--spacing-3);">Highlights</span>
-      <div style="display: flex; gap: var(--spacing-4); overflow-x: auto; padding-block-end: var(--spacing-2);">
-        <div :for={hl <- @session.highlights} class="highlight-card" style="min-width: 240px; flex: 1; flex-direction: column; align-items: flex-start;">
+      <div class="highlights-row">
+        <div :for={hl <- @session.highlights} class="highlight-card" style="flex-direction: column; align-items: flex-start;">
           <span class={[
             "chip",
             hl["type"] == "pivot" && "chip--primary",
@@ -177,8 +177,8 @@
         Files changed ({@session.files_changed} files)
       </summary>
       <div class="collapsible-content">
-        <div :for={file <- @session.top_files} style="display: flex; justify-content: space-between; padding: var(--spacing-1) 0; font-family: var(--font-mono); font-size: 0.75rem;">
-          <span>{file["path"]}</span>
+        <div :for={file <- @session.top_files} style="display: flex; justify-content: space-between; gap: var(--spacing-2); padding: var(--spacing-1) 0; font-family: var(--font-mono); font-size: 0.75rem;">
+          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;">{file["path"]}</span>
           <span style="color: var(--on-surface-variant);">{file["touches"]}x</span>
         </div>
         <div :if={@session.files_changed > length(@session.top_files)} style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); padding: var(--spacing-2) 0;">
