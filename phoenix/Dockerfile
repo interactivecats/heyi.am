@@ -1,10 +1,6 @@
 # --- Build stage ---
-ARG ELIXIR_VERSION=1.18.2
-ARG OTP_VERSION=27.2.4
-ARG DEBIAN_VERSION=bookworm-20250113-slim
-
-ARG BUILDER_IMAGE="docker.io/hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
-ARG RUNNER_IMAGE="docker.io/debian:${DEBIAN_VERSION}"
+ARG BUILDER_IMAGE="docker.io/hexpm/elixir:1.18.3-erlang-27.3.3-debian-bookworm-20250407-slim"
+ARG RUNNER_IMAGE="docker.io/debian:bookworm-20250407-slim"
 
 FROM ${BUILDER_IMAGE} AS builder
 
@@ -25,13 +21,18 @@ RUN mkdir config
 COPY config/config.exs config/${MIX_ENV}.exs config/
 RUN mix deps.compile
 
+# Install esbuild binary with deps (cached unless mix.exs changes)
+RUN mix esbuild.install --if-missing
+
 COPY priv priv
 COPY lib lib
 
 RUN mix compile
 
-COPY assets assets
+# Cache npm dependencies separately (only re-runs when package.json changes)
+COPY assets/package.json assets/package-lock.json assets/
 RUN cd assets && npm install
+COPY assets assets
 RUN mix assets.deploy
 
 COPY config/runtime.exs config/
@@ -42,7 +43,7 @@ RUN mix release
 FROM ${RUNNER_IMAGE} AS final
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates curl \
+  && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
@@ -61,7 +62,6 @@ USER nobody
 
 EXPOSE 4000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
-  CMD curl -f http://localhost:4000/ || exit 1
+# No HEALTHCHECK here — Coolify defines its own so Traefik picks up a single status.
 
 CMD ["/app/bin/server"]

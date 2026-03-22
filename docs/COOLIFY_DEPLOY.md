@@ -151,6 +151,122 @@ Push to your configured branch. Coolify will:
 4. Start the container
 5. Route traffic once the health check passes
 
+## 8. Production Tuning
+
+### BEAM VM Flags
+
+Add `ERL_FLAGS` to your environment variables. These optimize how the Erlang VM runs inside a container:
+
+```
+ERL_FLAGS=+K true +Q 65536 +P 1048576 +A 32 +sbwt none +sbwtdcpu none +sbwtdio none
+```
+
+| Flag | What it does |
+|------|-------------|
+| `+K true` | Use epoll for I/O polling (faster than default) |
+| `+Q 65536` | Allow up to 65k open ports/connections. Match to your ulimit |
+| `+P 1048576` | Allow up to 1M lightweight BEAM processes |
+| `+A 32` | 32 async I/O threads (default is 1) |
+| `+sbwt none` | **Important for containers**: stops busy-waiting when idle, prevents wasted CPU |
+
+### HTTP Listener Tuning
+
+The app reads these optional env vars to configure Bandit (the HTTP server):
+
+| Variable | Default | Notes |
+|---|---|---|
+| `HTTP_NUM_ACCEPTORS` | `100` | Number of concurrent accept loops. Default is fine for most loads |
+| `HTTP_MAX_CONNECTIONS` | `16384` | Max simultaneous connections. Raise for high-traffic or many LiveView sessions |
+
+### Container ulimits
+
+The BEAM needs file descriptors for every connection. Docker defaults are too low. In Coolify, set container ulimits:
+
+```
+nofile soft: 65536
+nofile hard: 65536
+```
+
+Or set it server-wide in `/etc/docker/daemon.json`:
+
+```json
+{
+  "default-ulimits": {
+    "nofile": { "Name": "nofile", "Hard": 65536, "Soft": 65536 }
+  }
+}
+```
+
+> **Important**: `+Q` in ERL_FLAGS must not exceed your `nofile` ulimit.
+
+### Linux Kernel Tuning (optional)
+
+On the Coolify server, create `/etc/sysctl.d/99-heyi-am.conf`:
+
+```ini
+fs.file-max = 1048576
+fs.nr_open = 1048576
+net.core.somaxconn = 32768
+net.core.netdev_max_backlog = 65535
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_fin_timeout = 15
+net.ipv4.tcp_keepalive_time = 300
+net.ipv4.tcp_keepalive_intvl = 30
+net.ipv4.tcp_keepalive_probes = 5
+vm.swappiness = 1
+```
+
+Apply with `sudo sysctl --system`. No reboot needed.
+
+## Quick Reference: All Environment Variables (raw)
+
+Copy-paste into Coolify's **Developer** / raw env editor:
+
+```env
+# Required
+DATABASE_URL=ecto://user:pass@host:5432/heyi_am_prod
+SECRET_KEY_BASE=
+PHX_HOST=heyi.am
+PHX_SERVER=true
+
+# GitHub OAuth
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+
+# OpenTelemetry / Signoz (optional)
+OTEL_EXPORTER_OTLP_ENDPOINT=http://signoz-otel-collector:4318
+
+# Umami Analytics (optional)
+UMAMI_SCRIPT_URL=https://analytics.example.com/script.js
+UMAMI_WEBSITE_ID=
+
+# LLM Proxy (optional)
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=
+LLM_ANTHROPIC_API_KEY=
+LLM_GEMINI_MODEL=gemini-2.5-flash
+LLM_ANTHROPIC_MODEL=claude-haiku-4-5-20251001
+LLM_MONTHLY_QUOTA=10
+
+# Object Storage (Cloudflare R2)
+OBJECT_STORAGE_ACCESS_KEY_ID=
+OBJECT_STORAGE_SECRET_ACCESS_KEY=
+OBJECT_STORAGE_HOST=
+OBJECT_STORAGE_BUCKET=heyi-am-sessions
+OBJECT_STORAGE_SCHEME=https://
+OBJECT_STORAGE_PORT=443
+
+# BEAM / HTTP tuning
+ERL_FLAGS=+K true +Q 65536 +P 1048576 +A 32 +sbwt none +sbwtdcpu none +sbwtdio none
+HTTP_NUM_ACCEPTORS=100
+HTTP_MAX_CONNECTIONS=16384
+
+# Other optional
+PORT=4000
+POOL_SIZE=10
+ECTO_IPV6=
+```
+
 ## Generating SECRET_KEY_BASE
 
 If you don't have Elixir installed locally:
