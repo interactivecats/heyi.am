@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSessionsContext } from '../SessionsContext';
 import { AppShell } from './AppShell';
+import { fetchProjectEnhanceCache } from '../api';
 import type { Project } from '../types';
 
 const PROJECT_COLORS = ['var(--primary)', 'var(--secondary)', 'var(--tertiary)'];
@@ -57,15 +59,28 @@ function StatCell({ label, value }: { label: string; value: string }) {
 function ProjectCard({ project, index }: { project: Project; index: number }) {
   const navigate = useNavigate();
   const color = PROJECT_COLORS[index % PROJECT_COLORS.length];
+  const [enhancedAt, setEnhancedAt] = useState<string | null>(null);
+  const [isFresh, setIsFresh] = useState(true);
+
+  useEffect(() => {
+    fetchProjectEnhanceCache(project.dirName).then((cache) => {
+      if (cache) {
+        setEnhancedAt(cache.enhancedAt);
+        setIsFresh(cache.isFresh);
+      }
+    });
+  }, [project.dirName]);
+
+  const uploadUrl = `/project/${encodeURIComponent(project.dirName)}/upload`;
 
   return (
     <div
       className="project-card"
-      onClick={() => navigate(`/project/${encodeURIComponent(project.dirName)}/upload`)}
+      onClick={() => navigate(enhancedAt ? `${uploadUrl}?preview=1` : uploadUrl)}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') navigate(`/project/${encodeURIComponent(project.dirName)}/upload`);
+        if (e.key === 'Enter') navigate(enhancedAt ? `${uploadUrl}?preview=1` : uploadUrl);
       }}
     >
       <div className="project-card__header">
@@ -73,6 +88,11 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
           <div className="project-card__title-row">
             <div className="project-card__dot" style={{ background: color }} />
             <h3 className="project-card__name">{project.name}</h3>
+            {enhancedAt && (
+              <span className={`project-card__badge ${isFresh ? '' : 'project-card__badge--stale'}`}>
+                {isFresh ? 'Enhanced' : 'Stale'}
+              </span>
+            )}
           </div>
           {project.description && (
             <p className="project-card__desc">{project.description}</p>
@@ -84,15 +104,28 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
             )}
           </div>
         </div>
-        <button
-          className="btn btn--primary project-card__upload-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/project/${encodeURIComponent(project.dirName)}/upload`);
-          }}
-        >
-          Upload &rarr;
-        </button>
+        <div className="project-card__actions">
+          {enhancedAt && (
+            <button
+              className="btn btn--secondary project-card__upload-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`${uploadUrl}?preview=1`);
+              }}
+            >
+              Preview
+            </button>
+          )}
+          <button
+            className="btn btn--primary project-card__upload-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(uploadUrl);
+            }}
+          >
+            {enhancedAt ? 'Re-enhance' : 'Upload'} &rarr;
+          </button>
+        </div>
       </div>
 
       <div className="project-card__stats">

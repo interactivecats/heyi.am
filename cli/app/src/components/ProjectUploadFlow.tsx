@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSessionsContext } from '../SessionsContext';
 import { AppShell } from './AppShell';
 import { WorkTimeline } from './WorkTimeline';
 import {
   fetchSessions,
   fetchSession,
+  fetchProjectEnhanceCache,
+  saveProjectEnhanceLocally,
   triageProject,
   enhanceProject,
   refineNarrative,
@@ -530,11 +532,24 @@ function EnhanceStep({
   const [progressSkills, setProgressSkills] = useState<string[]>([]);
   const [streamingNarrative, setStreamingNarrative] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [cachedAt, setCachedAt] = useState<string | null>(null);
+  const [forceEnhance, setForceEnhance] = useState(false);
   const controllerRef = useRef<AbortController | null>(null);
   const feedRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const startEnhance = useCallback((force: boolean) => {
     if (!project.dirName) return;
+
+    // Reset state for fresh run
+    if (force) {
+      setCachedAt(null);
+      setResult(null);
+      setNarrativeStatus('waiting');
+      setStreamingNarrative('');
+      setProgressSkills([]);
+      setError(null);
+      setSessionProgress((prev) => prev.map((sp) => ({ ...sp, status: 'pending' as const })));
+    }
 
     const skippedSessions = triageResult.skipped
       .filter((s) => !selectedIds.has(s.sessionId))
@@ -575,6 +590,12 @@ function EnhanceStep({
           case 'narrative_chunk':
             setStreamingNarrative((prev) => prev + event.text);
             break;
+          case 'cached':
+            setCachedAt(event.enhancedAt);
+            // Mark all sessions as done instantly
+            setSessionProgress((prev) => prev.map((sp) => ({ ...sp, status: 'done' as const })));
+            setNarrativeStatus('done');
+            break;
           case 'done':
             setNarrativeStatus('done');
             setResult(event.result);
@@ -584,11 +605,17 @@ function EnhanceStep({
             break;
         }
       },
+      force,
     );
 
     controllerRef.current = controller;
-    return () => controller.abort();
-  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+    return controller;
+  }, [project.dirName, selectedIds, triageResult, sessionMap]);
+
+  useEffect(() => {
+    const controller = startEnhance(forceEnhance);
+    return () => controller?.abort();
+  }, [forceEnhance]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-scroll feed to keep the active/latest completed item visible
   const completedCount = sessionProgress.filter((sp) => sp.status !== 'pending').length;
@@ -635,7 +662,12 @@ function EnhanceStep({
         <div className="enhance-split__narrative-box">
           <div className="enhance-split__narrative-label">PROJECT NARRATIVE</div>
           <div className="enhance-split__narrative-status">
-            {narrativeStatus === 'done' ? (
+            {cachedAt && narrativeStatus === 'done' ? (
+              <>
+                <span className="enhance-feed-item__check">&#10003;</span>
+                <span>Loaded from cache ({new Date(cachedAt).toLocaleDateString()})</span>
+              </>
+            ) : narrativeStatus === 'done' ? (
               <>
                 <span className="enhance-feed-item__check">&#10003;</span>
                 <span>Project story complete</span>
@@ -718,8 +750,19 @@ function EnhanceStep({
 
             {isDone && (
               <div className="upload-flow__actions">
+                {cachedAt && (
+                  <button
+                    className="btn btn--secondary btn--large"
+                    onClick={() => {
+                      controllerRef.current?.abort();
+                      setForceEnhance(true);
+                    }}
+                  >
+                    Re-enhance
+                  </button>
+                )}
                 <button className="btn btn--primary btn--large" onClick={() => onComplete(result!)}>
-                  Answer a few questions &rarr;
+                  {result!.questions.length > 0 ? 'Answer a few questions' : 'Continue'} &rarr;
                 </button>
               </div>
             )}
@@ -2257,6 +2300,7 @@ interface ReviewStepProps {
   projectUrl: string;
   onProjectUrlChange: (url: string) => void;
   onPublish: (result: { url: string; publishedSessions: number }) => void;
+  onSaveLocal: () => void | Promise<void>;
   onBack: () => void;
 }
 
@@ -2276,6 +2320,7 @@ export function ReviewStep({
   projectUrl,
   onProjectUrlChange,
   onPublish,
+  onSaveLocal,
   onBack,
 }: ReviewStepProps) {
   const [showPreview, setShowPreview] = useState(false);
@@ -2384,7 +2429,7 @@ export function ReviewStep({
         &#10003; {selectedCount} sessions enhanced &middot; Project narrative generated &middot; Timeline built
       </div>
 
-      <h2 className="upload-flow__title">Review before publishing</h2>
+      <h2 className="upload-flow__title">Review your project</h2>
 
       {/* ── Project card preview ── */}
       <div className="review-card">
@@ -2538,10 +2583,14 @@ export function ReviewStep({
 
       {/* ── Actions ── */}
       <div className="upload-flow__actions">
-        <button className="btn btn--secondary btn--large" onClick={onBack} disabled={publishing}>
+        <button type="button" className="btn btn--secondary btn--large" onClick={onBack} disabled={publishing}>
           Back to timeline
         </button>
+        <button type="button" className="btn btn--secondary btn--large" onClick={onSaveLocal} disabled={publishing}>
+          Save locally
+        </button>
         <button
+          type="button"
           className="btn btn--primary btn--large"
           onClick={doPublish}
           disabled={publishing || needsAuth}
@@ -2559,15 +2608,20 @@ interface SuccessStepProps {
   project: Project;
   narrative: string;
   selectedCount: number;
-  publishedUrl: string;
-  publishedSessions: number;
+  publishedUrl?: string;
+  publishedSessions?: number;
 }
 
 function SuccessStep({ project, narrative, selectedCount, publishedUrl, publishedSessions }: SuccessStepProps) {
+  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
-  const displayUrl = publishedUrl.startsWith('/') ? `heyi.am${publishedUrl}` : publishedUrl;
+  const isPublished = !!publishedUrl;
+  const displayUrl = publishedUrl
+    ? (publishedUrl.startsWith('/') ? `heyi.am${publishedUrl}` : publishedUrl)
+    : '';
 
   const handleCopy = useCallback(() => {
+    if (!displayUrl) return;
     navigator.clipboard.writeText(`https://${displayUrl}`).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -2577,16 +2631,19 @@ function SuccessStep({ project, narrative, selectedCount, publishedUrl, publishe
   }, [displayUrl]);
 
   const handleViewProject = useCallback(() => {
-    window.open(`https://${displayUrl}`, '_blank', 'noopener');
+    if (displayUrl) {
+      window.open(`https://${displayUrl}`, '_blank', 'noopener');
+    }
   }, [displayUrl]);
 
   const handleViewPortfolio = useCallback(() => {
+    if (!displayUrl) return;
     const parts = displayUrl.split('/');
     const portfolioUrl = parts.length >= 2 ? `https://${parts[0]}/${parts[1]}` : `https://${displayUrl}`;
     window.open(portfolioUrl, '_blank', 'noopener');
   }, [displayUrl]);
 
-  const publishDate = new Date().toLocaleDateString('en-US', {
+  const saveDate = new Date().toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -2606,9 +2663,13 @@ function SuccessStep({ project, narrative, selectedCount, publishedUrl, publishe
           </svg>
         </div>
 
-        <h2 className="success-card__title">Project Published</h2>
+        <h2 className="success-card__title">
+          {isPublished ? 'Project Published' : 'Project Saved'}
+        </h2>
         <p className="success-card__subtitle">
-          Your project is live on your portfolio with {selectedCount} session case {selectedCount === 1 ? 'study' : 'studies'}.
+          {isPublished
+            ? `Your project is live on your portfolio with ${selectedCount} session case ${selectedCount === 1 ? 'study' : 'studies'}.`
+            : `Enhancement saved locally with ${selectedCount} session case ${selectedCount === 1 ? 'study' : 'studies'}. You can preview or publish anytime.`}
         </p>
 
         <div className="success-card__preview">
@@ -2629,31 +2690,43 @@ function SuccessStep({ project, narrative, selectedCount, publishedUrl, publishe
             </div>
             <div className="success-card__preview-stat">
               <span className="success-card__preview-stat-value">{selectedCount}</span>
-              <span className="success-card__preview-stat-label">Published</span>
+              <span className="success-card__preview-stat-label">{isPublished ? 'Published' : 'Enhanced'}</span>
             </div>
           </div>
         </div>
 
-        <div className="success-card__url-bar">
-          <span className="success-card__url-text">{displayUrl}</span>
-          <button className="success-card__url-copy" onClick={handleCopy}>
-            {copied ? 'Copied' : 'Copy'}
-          </button>
-        </div>
+        {isPublished && displayUrl && (
+          <div className="success-card__url-bar">
+            <span className="success-card__url-text">{displayUrl}</span>
+            <button className="success-card__url-copy" onClick={handleCopy}>
+              {copied ? 'Copied' : 'Copy'}
+            </button>
+          </div>
+        )}
 
         <div className="success-card__meta">
-          <span className="success-card__badge">Published</span>
-          <span className="success-card__meta-text">{publishedSessions} sessions uploaded</span>
-          <span className="success-card__meta-text">{publishDate}</span>
+          <span className="success-card__badge">{isPublished ? 'Published' : 'Saved locally'}</span>
+          {isPublished && publishedSessions && (
+            <span className="success-card__meta-text">{publishedSessions} sessions uploaded</span>
+          )}
+          <span className="success-card__meta-text">{saveDate}</span>
         </div>
 
         <div className="success-card__actions">
-          <button className="btn btn--primary btn--large" onClick={handleViewProject}>
-            View Project Page
-          </button>
-          <button className="btn btn--secondary btn--large" onClick={handleViewPortfolio}>
-            View Portfolio
-          </button>
+          {isPublished ? (
+            <>
+              <button type="button" className="btn btn--primary btn--large" onClick={handleViewProject}>
+                View Project Page
+              </button>
+              <button type="button" className="btn btn--secondary btn--large" onClick={handleViewPortfolio}>
+                View Portfolio
+              </button>
+            </>
+          ) : (
+            <button type="button" className="btn btn--primary btn--large" onClick={() => navigate('/')}>
+              Back to Projects
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -2664,6 +2737,7 @@ function SuccessStep({ project, narrative, selectedCount, publishedUrl, publishe
 
 export function ProjectUploadFlow() {
   const { dirName } = useParams<{ dirName: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { projects } = useSessionsContext();
 
@@ -2686,6 +2760,7 @@ export function ProjectUploadFlow() {
   const [repoUrl, setRepoUrl] = useState('');
   const [projectUrl, setProjectUrl] = useState('');
   const [publishResult, setPublishResult] = useState<{ url: string; publishedSessions: number } | null>(null);
+  const [showCachedPreview, setShowCachedPreview] = useState(false);
 
   // Derived from enhance result (or refined)
   const narrative = enhanceResult?.narrative ?? '';
@@ -2705,6 +2780,20 @@ export function ProjectUploadFlow() {
         setLoadingSessions(false);
       });
   }, [dirName]);
+
+  // Auto-load cached preview when ?preview=1 is in URL
+  useEffect(() => {
+    if (!dirName || searchParams.get('preview') !== '1') return;
+    fetchProjectEnhanceCache(dirName).then((cache) => {
+      if (cache) {
+        setEnhanceResult(cache.result);
+        setSelectedIds(new Set(cache.selectedSessionIds));
+        setShowCachedPreview(true);
+      }
+      // Clear the query param so refreshing goes to normal flow
+      setSearchParams({}, { replace: true });
+    });
+  }, [dirName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTriage = useCallback(() => {
     if (!dirName) return;
@@ -2887,6 +2976,16 @@ export function ProjectUploadFlow() {
             setPublishResult(result);
             setStep('done');
           }}
+          onSaveLocal={async () => {
+            if (!dirName || !enhanceResult) return;
+            await saveProjectEnhanceLocally(
+              dirName,
+              [...selectedIds],
+              enhanceResult,
+            );
+            setPublishResult(null);
+            setStep('done');
+          }}
           onBack={() => setStep('timeline')}
         />
       ) : step === 'done' ? (
@@ -2894,10 +2993,24 @@ export function ProjectUploadFlow() {
           project={project}
           narrative={narrative}
           selectedCount={selectedIds.size}
-          publishedUrl={publishResult?.url ?? `/${project.name}`}
-          publishedSessions={publishResult?.publishedSessions ?? selectedIds.size}
+          publishedUrl={publishResult?.url}
+          publishedSessions={publishResult?.publishedSessions}
         />
       ) : null}
+
+      {showCachedPreview && enhanceResult && (
+        <ProjectPreview
+          project={project}
+          narrative={narrative}
+          skills={enhanceSkills.length > 0 ? enhanceSkills : project.skills}
+          timeline={enhanceTimeline}
+          selectedCount={selectedIds.size}
+          sessions={sessions.filter((s) => selectedIds.has(s.id))}
+          repoUrl={repoUrl}
+          projectUrl={projectUrl}
+          onClose={() => setShowCachedPreview(false)}
+        />
+      )}
     </AppShell>
   );
 }

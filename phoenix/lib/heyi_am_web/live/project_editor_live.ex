@@ -4,26 +4,14 @@ defmodule HeyiAmWeb.ProjectEditorLive do
   import HeyiAmWeb.AppShell
 
   alias HeyiAm.Shares
-  alias HeyiAm.Portfolios
+  alias HeyiAm.Projects
 
   @impl true
   def mount(%{"slug" => slug}, _session, socket) do
     user = socket.assigns.current_scope.user
-    portfolio_sessions = Portfolios.list_portfolio_sessions(user.id)
+    db_project = Projects.get_project_with_published_shares(user.id, slug)
 
-    # Find portfolio sessions matching this slug
-    matching_ps =
-      Enum.filter(portfolio_sessions, fn ps ->
-        slugify(ps.project_name) == slug
-      end)
-
-    project_name =
-      case matching_ps do
-        [first | _] -> first.project_name
-        [] -> unslugify(slug)
-      end
-
-    shares = Shares.list_shares_for_user_project(user.id, project_name)
+    shares = if db_project, do: db_project.shares, else: []
 
     all_skills =
       shares
@@ -32,26 +20,21 @@ defmodule HeyiAmWeb.ProjectEditorLive do
       |> Enum.map(&String.upcase/1)
 
     sessions =
-      Enum.map(matching_ps, fn ps ->
-        share = ps.share
-
+      Enum.map(shares, fn share ->
         %{
-          id: ps.id,
-          title: (share && share.title) || "Untitled",
-          status: cond do
-            share && share.sealed -> :sealed
-            true -> :published
-          end,
-          visibility: if(ps.visible, do: :public, else: :private),
+          id: share.id,
+          title: share.title || "Untitled",
+          status: if(share.sealed, do: :sealed, else: :published),
+          visibility: :public,
           featured: false
         }
       end)
 
     project = %{
       slug: slug,
-      name: project_name || "Unnamed Project",
+      name: (db_project && db_project.title) || unslugify(slug) || "Unnamed Project",
       version: "",
-      take: Enum.find_value(shares, "", fn s -> s.dev_take end),
+      take: (db_project && db_project.narrative) || Enum.find_value(shares, "", fn s -> s.dev_take end),
       tags: all_skills,
       github_synced: false,
       sessions: sessions
@@ -66,15 +49,6 @@ defmodule HeyiAmWeb.ProjectEditorLive do
      |> assign(:project, project)
      |> assign(:active_count, active_count)
      |> assign(:archived_count, archived_count)}
-  end
-
-  defp slugify(nil), do: "unnamed-project"
-
-  defp slugify(name) do
-    name
-    |> String.downcase()
-    |> String.replace(~r/[^a-z0-9]+/, "-")
-    |> String.trim("-")
   end
 
   defp unslugify(slug) do
@@ -116,27 +90,11 @@ defmodule HeyiAmWeb.ProjectEditorLive do
 
     if session do
       new_vis = if session.visibility == :public, do: :private, else: :public
-      user = socket.assigns.current_scope.user
-
-      db_result =
-        case Portfolios.get_portfolio_session_for_user(id, user.id) do
-          nil -> {:ok, nil}
-          ps -> Portfolios.toggle_visibility(ps, new_vis == :public)
-        end
-
-      case db_result do
-        {:ok, _} ->
-          sessions =
-            Enum.map(socket.assigns.project.sessions, fn s ->
-              if s.id == id, do: %{s | visibility: new_vis}, else: s
-            end)
-
-          project = %{socket.assigns.project | sessions: sessions}
-          {:noreply, assign(socket, :project, project)}
-
-        {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Failed to update visibility")}
-      end
+      sessions = Enum.map(socket.assigns.project.sessions, fn s ->
+        if s.id == id, do: %{s | visibility: new_vis}, else: s
+      end)
+      project = %{socket.assigns.project | sessions: sessions}
+      {:noreply, assign(socket, :project, project)}
     else
       {:noreply, socket}
     end
@@ -159,10 +117,6 @@ defmodule HeyiAmWeb.ProjectEditorLive do
   end
 
   def handle_event("reorder", %{"ids" => ids}, socket) do
-    user = socket.assigns.current_scope.user
-    int_ids = Enum.map(ids, &String.to_integer/1)
-    Portfolios.reorder(user.id, int_ids)
-
     session_map = Map.new(socket.assigns.project.sessions, &{to_string(&1.id), &1})
     reordered = Enum.map(ids, &Map.fetch!(session_map, &1))
     project = %{socket.assigns.project | sessions: reordered}

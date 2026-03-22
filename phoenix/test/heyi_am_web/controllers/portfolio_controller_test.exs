@@ -13,6 +13,13 @@ defmodule HeyiAmWeb.PortfolioControllerTest do
         bio: "I build things"
       })
 
+    {:ok, project} =
+      HeyiAm.Projects.create_project(%{
+        slug: "heyiam",
+        title: "heyi.am",
+        user_id: user.id
+      })
+
     {:ok, _share} =
       HeyiAm.Shares.create_share(%{
         token: "share-1",
@@ -28,6 +35,7 @@ defmodule HeyiAmWeb.PortfolioControllerTest do
         status: "listed",
         skills: ["Elixir", "Phoenix"],
         user_id: user.id,
+        project_id: project.id,
         top_files: [%{"path" => "lib/auth.ex", "touches" => 12}]
       })
 
@@ -46,10 +54,11 @@ defmodule HeyiAmWeb.PortfolioControllerTest do
         status: "listed",
         skills: ["LiveView", "JavaScript"],
         user_id: user.id,
+        project_id: project.id,
         top_files: []
       })
 
-    %{user: user}
+    %{user: user, project: project}
   end
 
   describe "GET /:username" do

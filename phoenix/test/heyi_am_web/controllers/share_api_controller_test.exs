@@ -87,4 +87,33 @@ defmodule HeyiAmWeb.ShareApiControllerTest do
       assert share.user_id == user.id
     end
   end
+
+  describe "project_id handling" do
+    test "links session to own project when valid project_id supplied", %{conn: _conn} do
+      {conn, user} = api_conn_with_auth()
+      {:ok, project} = HeyiAm.Projects.create_project(%{slug: "my-proj", title: "My Proj", user_id: user.id})
+
+      conn = post(conn, ~p"/api/sessions", %{
+        session: %{title: "Session in Project", project_id: project.id}
+      })
+
+      assert %{"token" => token} = json_response(conn, 201)
+      share = HeyiAm.Shares.get_share_by_token!(token)
+      assert share.project_id == project.id
+    end
+
+    test "silently drops project_id that belongs to another user", %{conn: _conn} do
+      {conn, _user} = api_conn_with_auth()
+      other_user = HeyiAm.AccountsFixtures.user_fixture()
+      {:ok, other_project} = HeyiAm.Projects.create_project(%{slug: "their-proj", title: "Theirs", user_id: other_user.id})
+
+      conn = post(conn, ~p"/api/sessions", %{
+        session: %{title: "Sneaky", project_id: other_project.id}
+      })
+
+      assert %{"token" => token} = json_response(conn, 201)
+      share = HeyiAm.Shares.get_share_by_token!(token)
+      assert is_nil(share.project_id)
+    end
+  end
 end

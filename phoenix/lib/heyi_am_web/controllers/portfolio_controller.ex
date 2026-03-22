@@ -1,10 +1,9 @@
 defmodule HeyiAmWeb.PortfolioController do
   use HeyiAmWeb, :controller
 
-  import HeyiAmWeb.Helpers, only: [format_loc: 1, slugify: 1]
+  import HeyiAmWeb.Helpers, only: [format_loc: 1]
 
   alias HeyiAm.Accounts
-  alias HeyiAm.Portfolios
   alias HeyiAm.Profiles
   alias HeyiAm.Projects
 
@@ -17,23 +16,16 @@ defmodule HeyiAmWeb.PortfolioController do
         |> render(:"404")
 
       user ->
-        portfolio_sessions = Portfolios.list_visible_portfolio_sessions(user.id)
-        shares = Enum.map(portfolio_sessions, fn ps -> ps.share end)
-
-        # Use portfolio_session.project_name (snapshot at publish time) for grouping
-        projects = build_projects(portfolio_sessions)
-        collab_profile = build_collab_profile(shares)
-        metrics = build_metrics(shares)
-        recent_activity = build_recent_activity(shares)
+        projects = Projects.list_user_projects_with_published_shares(user.id)
+        all_shares = Enum.flat_map(projects, & &1.shares)
 
         render(conn, :show,
           portfolio_user: user,
-          projects: projects,
-          collab_profile: collab_profile,
-          metrics: metrics,
-          recent_activity: recent_activity,
-          page_title: user.display_name || user.username,
-          portfolio_layout: user.portfolio_layout || "editorial"
+          projects: build_projects(projects),
+          collab_profile: build_collab_profile(all_shares),
+          metrics: build_metrics(all_shares),
+          recent_activity: build_recent_activity(all_shares),
+          page_title: user.display_name || user.username
         )
     end
   end
@@ -47,25 +39,16 @@ defmodule HeyiAmWeb.PortfolioController do
         |> render(:"404")
 
       user ->
-        portfolio_sessions = Portfolios.list_visible_portfolio_sessions(user.id)
-
-        project_shares =
-          portfolio_sessions
-          |> Enum.filter(fn ps -> slugify(ps.project_name) == slug end)
-          |> Enum.map(& &1.share)
-
-        case project_shares do
-          [] ->
+        case Projects.get_project_with_published_shares(user.id, slug) do
+          nil ->
             conn
             |> put_status(:not_found)
             |> put_view(HeyiAmWeb.ErrorHTML)
             |> render(:"404")
 
-          _ ->
-            project = build_project_detail(project_shares, slug)
-
+          project ->
             sessions =
-              Enum.map(project_shares, fn s ->
+              Enum.map(project.shares, fn s ->
                 %{
                   token: s.token,
                   title: s.title,
@@ -80,28 +63,26 @@ defmodule HeyiAmWeb.PortfolioController do
                 }
               end)
 
-            growth_data = Projects.compute_cumulative_loc(project_shares)
+            growth_data = Projects.Stats.compute_cumulative_loc(project.shares)
             chart = compute_chart(growth_data)
-            heatmap_data = Projects.compute_file_heatmap(project_shares)
-            top_files = Projects.compute_top_files(project_shares) |> Enum.take(10)
+            heatmap_data = Projects.Stats.compute_file_heatmap(project.shares)
+            top_files = Projects.Stats.compute_top_files(project.shares) |> Enum.take(10)
 
-            # Build ordered session tokens for heatmap columns
             heatmap_sessions =
-              project_shares
+              project.shares
               |> Enum.sort_by(& &1.recorded_at, DateTime)
               |> Enum.map(fn s -> %{token: s.token, title: truncate(s.title, 12)} end)
 
             render(conn, :project,
               portfolio_user: user,
-              project: project,
+              project: build_project_detail(project),
               sessions: sessions,
               growth_data: growth_data,
               chart: chart,
               heatmap_data: heatmap_data,
               heatmap_sessions: heatmap_sessions,
               top_files: top_files,
-              page_title: "#{project.title} — #{user.display_name || user.username}",
-              portfolio_layout: user.portfolio_layout || "editorial"
+              page_title: "#{project.title} — #{user.display_name || user.username}"
             )
         end
     end
@@ -109,24 +90,41 @@ defmodule HeyiAmWeb.PortfolioController do
 
   # -- Private helpers --
 
-  defp build_projects(portfolio_sessions) do
-    portfolio_sessions
-    |> Enum.group_by(& &1.project_name)
-    |> Enum.map(fn {project_name, pss} ->
-      project_shares = Enum.map(pss, & &1.share)
-      stats = Projects.compute_project_stats(project_shares)
+  defp build_projects(projects) do
+    Enum.map(projects, fn project ->
+      stats = Projects.Stats.compute_project_stats(project.shares)
 
       %{
-        title: project_name || "Untitled Project",
-        slug: slugify(project_name),
-        description: List.first(project_shares).dev_take,
+        title: project.title,
+        slug: project.slug,
+        description: project.shares |> List.first() |> then(& &1 && &1.dev_take),
         status: "active",
-        skills: project_shares |> Enum.flat_map(& (&1.skills || [])) |> Enum.uniq(),
-        session_count: stats.total_sessions,
-        total_minutes: stats.total_duration,
-        loc_changed: format_loc(stats.total_loc)
+        skills: project.skills || [],
+        session_count: project.total_sessions || stats.total_sessions,
+        total_minutes: project.total_duration_minutes || stats.total_duration,
+        loc_changed: format_loc(project.total_loc || stats.total_loc)
       }
     end)
+  end
+
+  defp build_project_detail(project) do
+    stats = Projects.Stats.compute_project_stats(project.shares)
+    first = List.first(project.shares)
+
+    %{
+      title: project.title,
+      slug: project.slug,
+      description: first && first.dev_take,
+      status: "active",
+      skills: project.skills || [],
+      session_count: project.total_sessions || stats.total_sessions,
+      uploaded_count: length(project.shares),
+      total_minutes: project.total_duration_minutes || stats.total_duration,
+      files_touched: project.total_files_changed || stats.unique_files,
+      loc_changed: format_loc(project.total_loc || stats.total_loc),
+      dev_take: first && first.dev_take,
+      architecture: project.narrative
+    }
   end
 
   defp build_collab_profile(shares) do
@@ -169,62 +167,6 @@ defmodule HeyiAmWeb.PortfolioController do
         date: Calendar.strftime(s.recorded_at || s.inserted_at, "%b %d")
       }
     end)
-  end
-
-  defp build_project_detail([], slug) do
-    %{
-      title: slug,
-      slug: slug,
-      description: nil,
-      status: "active",
-      skills: [],
-      session_count: 0,
-      total_minutes: 0,
-      files_touched: 0,
-      loc_changed: "0",
-      dev_take: nil,
-      architecture: nil
-    }
-  end
-
-  defp build_project_detail(project_shares, slug) do
-    stats = Projects.compute_project_stats(project_shares)
-    first = List.first(project_shares)
-
-    # Use project_meta from the most recently published share if available
-    meta =
-      project_shares
-      |> Enum.sort_by(& &1.recorded_at, {:desc, DateTime})
-      |> Enum.find_value(fn s -> s.project_meta end)
-
-    uploaded_count = stats.total_sessions
-
-    {session_count, total_minutes, files_touched, loc_changed} =
-      if meta do
-        {
-          Map.get(meta, "total_sessions") || uploaded_count,
-          Map.get(meta, "total_duration_minutes") || stats.total_duration,
-          Map.get(meta, "total_files_changed") || stats.unique_files,
-          format_loc(Map.get(meta, "total_loc") || stats.total_loc)
-        }
-      else
-        {uploaded_count, stats.total_duration, stats.unique_files, format_loc(stats.total_loc)}
-      end
-
-    %{
-      title: first.project_name || slug,
-      slug: slug,
-      description: first.dev_take,
-      status: "active",
-      skills: project_shares |> Enum.flat_map(& (&1.skills || [])) |> Enum.uniq(),
-      session_count: session_count,
-      uploaded_count: uploaded_count,
-      total_minutes: total_minutes,
-      files_touched: files_touched,
-      loc_changed: loc_changed,
-      dev_take: first.dev_take,
-      architecture: first.narrative
-    }
   end
 
   defp compute_chart([]), do: nil
@@ -303,5 +245,4 @@ defmodule HeyiAmWeb.PortfolioController do
   defp truncate(nil, _max), do: ""
   defp truncate(str, max) when byte_size(str) <= max, do: str
   defp truncate(str, max), do: String.slice(str, 0, max) <> "…"
-
 end

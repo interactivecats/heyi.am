@@ -397,7 +397,6 @@ defmodule HeyiAm.Accounts do
 
   def export_user_data(%User{} = user) do
     shares = HeyiAm.Shares.list_shares_for_user(user.id)
-    portfolio_sessions = HeyiAm.Portfolios.list_portfolio_sessions(user.id)
     {:ok, %{
       exported_at: DateTime.utc_now(),
       profile: %{
@@ -414,8 +413,7 @@ defmodule HeyiAm.Accounts do
         confirmed_at: user.confirmed_at,
         inserted_at: user.inserted_at
       },
-      shares: Enum.map(shares, &share_to_export/1),
-      portfolio_sessions: Enum.map(portfolio_sessions, &portfolio_session_to_export/1)
+      shares: Enum.map(shares, &share_to_export/1)
     }}
   end
 
@@ -447,7 +445,7 @@ defmodule HeyiAm.Accounts do
 
       # Anonymize portfolio sessions — strip project_name, keep structure for stats
       Repo.update_all(
-        from(ps in HeyiAm.Portfolios.PortfolioSession, where: ps.user_id == ^user.id),
+        from(ps in "portfolio_sessions", where: ps.user_id == ^user.id),
         set: [project_name: nil]
       )
 
@@ -507,15 +505,6 @@ defmodule HeyiAm.Accounts do
     }
   end
 
-  defp portfolio_session_to_export(ps) do
-    %{
-      project_name: ps.project_name,
-      position: ps.position,
-      visible: ps.visible,
-      share_id: ps.share_id,
-      inserted_at: ps.inserted_at
-    }
-  end
 
   ## Token helper
 

@@ -18,14 +18,31 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
         status: "OPEN_FOR_COLLAB"
       })
 
-    # Create shares with portfolio sessions (auto-added by create_share)
+    {:ok, project_alpha} =
+      HeyiAm.Projects.create_project(%{
+        slug: "alpha-engine",
+        title: "Alpha Engine",
+        skills: ["Rust", "PostgreSQL"],
+        user_id: user.id
+      })
+
+    {:ok, project_beta} =
+      HeyiAm.Projects.create_project(%{
+        slug: "beta-sdk",
+        title: "Beta SDK",
+        skills: ["TypeScript"],
+        user_id: user.id
+      })
+
     share1 =
       SharesFixtures.share_fixture(%{
         user_id: user.id,
         title: "Initial Prototype",
         project_name: "Alpha Engine",
         skills: ["Rust", "PostgreSQL"],
-        sealed: true
+        sealed: true,
+        status: "listed",
+        project_id: project_alpha.id
       })
 
     share2 =
@@ -33,7 +50,9 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
         user_id: user.id,
         title: "Memory Tests",
         project_name: "Alpha Engine",
-        skills: ["Rust", "WebAssembly"]
+        skills: ["Rust", "WebAssembly"],
+        status: "listed",
+        project_id: project_alpha.id
       })
 
     share3 =
@@ -41,16 +60,17 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
         user_id: user.id,
         title: "SDK Bootstrap",
         project_name: "Beta SDK",
-        skills: ["TypeScript"]
+        skills: ["TypeScript"],
+        status: "listed",
+        project_id: project_beta.id
       })
-
-    portfolio_sessions = HeyiAm.Portfolios.list_portfolio_sessions(user.id)
 
     %{
       share1: share1,
       share2: share2,
       share3: share3,
-      portfolio_sessions: portfolio_sessions
+      # Provide shares in portfolio_sessions shape for tests that click session buttons
+      portfolio_sessions: [share1, share2]
     }
   end
 
@@ -100,29 +120,6 @@ defmodule HeyiAmWeb.PortfolioEditorLiveTest do
       {:ok, _view, html} = live(conn, ~p"/testuser/edit")
       assert html =~ "RUST"
       assert html =~ "POSTGRESQL"
-    end
-  end
-
-  describe "template picker" do
-    test "shows all 6 templates in dock", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/testuser/edit")
-      assert html =~ "Editorial"
-      assert html =~ "Terminal"
-      assert html =~ "Minimal"
-      assert html =~ "Brutalist"
-      assert html =~ "Campfire"
-      assert html =~ "Neon Night"
-    end
-
-    test "selecting a template updates active state", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/testuser/edit")
-
-      html =
-        view
-        |> element("button[phx-value-template='terminal']")
-        |> render_click()
-
-      assert html =~ "pe-dock-template-btn--active"
     end
   end
 

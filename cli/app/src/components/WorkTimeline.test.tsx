@@ -227,4 +227,57 @@ describe('computeSegments', () => {
     expect(sessionSegs[0].session.id).toBe('s1');
     expect(sessionSegs[1].session.id).toBe('s2');
   });
+
+  it('clusters overlapping sessions into a concurrent segment', () => {
+    const sessions = [
+      makeSession({ id: 's1', date: '2026-03-20T10:00:00Z', durationMinutes: 60 }),
+      makeSession({ id: 's2', date: '2026-03-20T10:30:00Z', durationMinutes: 60 }),
+    ];
+    const segments = computeSegments(sessions);
+    expect(segments.length).toBe(1);
+    expect(segments[0].type).toBe('concurrent');
+    if (segments[0].type === 'concurrent') {
+      expect(segments[0].sessions.length).toBe(2);
+    }
+  });
+
+  it('keeps non-overlapping sessions as separate segments', () => {
+    const sessions = [
+      makeSession({ id: 's1', date: '2026-03-20T10:00:00Z', durationMinutes: 20 }),
+      makeSession({ id: 's2', date: '2026-03-20T10:30:00Z', durationMinutes: 20 }),
+    ];
+    const segments = computeSegments(sessions);
+    expect(segments.length).toBe(2);
+    expect(segments.every((s) => s.type === 'session')).toBe(true);
+  });
+
+  it('clusters three overlapping sessions together', () => {
+    const sessions = [
+      makeSession({ id: 's1', date: '2026-03-20T10:00:00Z', durationMinutes: 60 }),
+      makeSession({ id: 's2', date: '2026-03-20T10:20:00Z', durationMinutes: 60 }),
+      makeSession({ id: 's3', date: '2026-03-20T10:40:00Z', durationMinutes: 60 }),
+    ];
+    const segments = computeSegments(sessions);
+    expect(segments.length).toBe(1);
+    expect(segments[0].type).toBe('concurrent');
+    if (segments[0].type === 'concurrent') {
+      expect(segments[0].sessions.length).toBe(3);
+    }
+  });
+
+  it('creates separate clusters for non-overlapping groups', () => {
+    const sessions = [
+      makeSession({ id: 's1', date: '2026-03-20T10:00:00Z', durationMinutes: 30 }),
+      makeSession({ id: 's2', date: '2026-03-20T10:10:00Z', durationMinutes: 30 }),
+      // gap
+      makeSession({ id: 's3', date: '2026-03-21T14:00:00Z', durationMinutes: 30 }),
+      makeSession({ id: 's4', date: '2026-03-21T14:10:00Z', durationMinutes: 30 }),
+    ];
+    const segments = computeSegments(sessions);
+    // concurrent, gap, concurrent
+    expect(segments.length).toBe(3);
+    expect(segments[0].type).toBe('concurrent');
+    expect(segments[1].type).toBe('gap');
+    expect(segments[2].type).toBe('concurrent');
+  });
 });

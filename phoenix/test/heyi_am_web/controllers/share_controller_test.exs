@@ -224,4 +224,52 @@ defmodule HeyiAmWeb.ShareControllerTest do
       assert html =~ "/s/real-token-123"
     end
   end
+
+  describe "GET /:username/:project/:session (friendly URL)" do
+    setup do
+      user = user_fixture()
+      {:ok, user} = HeyiAm.Accounts.update_user_username(user, %{username: "devuser"})
+
+      {:ok, project} =
+        HeyiAm.Projects.create_project(%{
+          slug: "my-project",
+          title: "My Project",
+          user_id: user.id
+        })
+
+      {:ok, share} =
+        HeyiAm.Shares.create_share(%{
+          token: "friendly-token",
+          slug: "auth-rewrite",
+          title: "Auth Rewrite",
+          dev_take: "Rewrote everything.",
+          status: "listed",
+          user_id: user.id,
+          project_id: project.id
+        })
+
+      %{user: user, project: project, share: share}
+    end
+
+    test "renders session via slug", %{conn: conn} do
+      conn = get(conn, ~p"/devuser/my-project/auth-rewrite")
+      html = html_response(conn, 200)
+      assert html =~ "Auth Rewrite"
+    end
+
+    test "falls back to token when no slug match", %{conn: conn} do
+      conn = get(conn, ~p"/devuser/my-project/friendly-token")
+      assert html_response(conn, 200) =~ "Auth Rewrite"
+    end
+
+    test "returns 404 for non-existent username", %{conn: conn} do
+      conn = get(conn, "/nobody/my-project/some-session")
+      assert html_response(conn, 404)
+    end
+
+    test "returns 404 for non-existent session slug", %{conn: conn} do
+      conn = get(conn, ~p"/devuser/my-project/no-such-session")
+      assert html_response(conn, 404)
+    end
+  end
 end

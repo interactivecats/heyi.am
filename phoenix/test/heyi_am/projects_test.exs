@@ -1,7 +1,7 @@
-defmodule HeyiAm.ProjectsTest do
+defmodule HeyiAm.Projects.StatsTest do
   use ExUnit.Case, async: true
 
-  alias HeyiAm.Projects
+  alias HeyiAm.Projects.Stats, as: Projects
 
   defp make_share(attrs) do
     Map.merge(

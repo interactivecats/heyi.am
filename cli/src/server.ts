@@ -12,7 +12,7 @@ import { API_URL } from './config.js';
 import { getProvider, getEnhanceMode } from './llm/index.js';
 import { triageSessions, type SessionMetaWithStats } from './llm/triage.js';
 import { enhanceProject, refineNarrative, type SessionSummary, type SkippedSessionMeta, type ProjectEnhanceResult } from './llm/project-enhance.js';
-import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData } from './settings.js';
+import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData, loadFreshProjectEnhanceResult, saveProjectEnhanceResult, loadProjectEnhanceResult, buildProjectFingerprint } from './settings.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -498,9 +498,10 @@ export function createApp(sessionsBasePath?: string) {
   // SSE streaming: session_progress, project_enhance, done events
   app.post('/api/projects/:project/enhance-project', async (req: Request, res: Response) => {
     const { project } = req.params;
-    const { selectedSessionIds, skippedSessions } = req.body as {
+    const { selectedSessionIds, skippedSessions, force } = req.body as {
       selectedSessionIds: string[];
       skippedSessions: SkippedSessionMeta[];
+      force?: boolean;
     };
 
     if (!Array.isArray(selectedSessionIds) || selectedSessionIds.length === 0) {
@@ -526,6 +527,26 @@ export function createApp(sessionsBasePath?: string) {
         send({ type: 'error', code: 'PROJECT_NOT_FOUND', message: 'Project not found' });
         res.end();
         return;
+      }
+
+      // Check for cached project enhance result (unless force re-enhance)
+      if (!force) {
+        const cached = loadFreshProjectEnhanceResult(proj.dirName, selectedSessionIds);
+        if (cached) {
+          send({ type: 'cached', enhancedAt: cached.enhancedAt });
+          send({ type: 'done', result: cached.result });
+          res.end();
+          return;
+        }
+      }
+
+      // Check if there's a stale cache (different fingerprint) — inform frontend
+      const staleCache = loadProjectEnhanceResult(proj.dirName);
+      if (staleCache) {
+        const currentFp = buildProjectFingerprint(selectedSessionIds);
+        if (staleCache.fingerprint !== currentFp) {
+          send({ type: 'stale_cache', previousEnhancedAt: staleCache.enhancedAt });
+        }
       }
 
       const provider = getProvider();
@@ -611,12 +632,222 @@ export function createApp(sessionsBasePath?: string) {
         send({ type: event.type, text: event.text });
       });
 
+      // Save to cache for next time
+      saveProjectEnhanceResult(proj.dirName, selectedSessionIds, projectResult);
+
       send({ type: 'done', result: projectResult });
       res.end();
     } catch (err) {
       console.error('[enhance-project] Failed:', (err as Error).message);
       send({ type: 'error', code: 'ENHANCE_FAILED', message: (err as Error).message });
       res.end();
+    }
+  });
+
+  // Save project enhance result explicitly
+  app.post('/api/projects/:project/enhance-save', async (req: Request, res: Response) => {
+    const { project } = req.params;
+    const { selectedSessionIds, result } = req.body as {
+      selectedSessionIds: string[];
+      result: ProjectEnhanceResult;
+    };
+
+    if (!Array.isArray(selectedSessionIds) || !result?.narrative) {
+      res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'selectedSessionIds and result are required' } });
+      return;
+    }
+
+    try {
+      const projects = await getProjects(sessionsBasePath);
+      const proj = projects.find((p) => p.name === project || p.dirName === project);
+      if (!proj) {
+        res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });
+        return;
+      }
+
+      saveProjectEnhanceResult(proj.dirName, selectedSessionIds, result);
+      res.json({ saved: true, enhancedAt: new Date().toISOString() });
+    } catch (err) {
+      res.status(500).json({ error: { code: 'SAVE_FAILED', message: (err as Error).message } });
+    }
+  });
+
+  // Get cached project enhance result (if any)
+  app.get('/api/projects/:project/enhance-cache', async (req: Request, res: Response) => {
+    const { project } = req.params;
+    try {
+      const projects = await getProjects(sessionsBasePath);
+      const proj = projects.find((p) => p.name === project || p.dirName === project);
+      if (!proj) {
+        res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });
+        return;
+      }
+
+      const cached = loadProjectEnhanceResult(proj.dirName);
+      if (!cached) {
+        res.status(404).json({ error: { code: 'NO_CACHE', message: 'No cached enhance result' } });
+        return;
+      }
+
+      // Check freshness against current session set
+      const currentFp = buildProjectFingerprint(cached.selectedSessionIds);
+      const isFresh = cached.fingerprint === currentFp;
+
+      res.json({
+        ...cached,
+        isFresh,
+      });
+    } catch (err) {
+      res.status(500).json({ error: { code: 'CACHE_READ_FAILED', message: (err as Error).message } });
+    }
+  });
+
+  // Publish project — two-step: POST /api/projects then POST /api/sessions per session
+  app.post('/api/projects/:project/publish', async (req: Request, res: Response) => {
+    const { project } = req.params;
+    const auth = getAuthToken();
+
+    if (!auth) {
+      res.status(401).json({ error: { message: 'Authentication required' } });
+      return;
+    }
+
+    try {
+      const {
+        title, slug, narrative, repoUrl, projectUrl,
+        timeline, skills, totalSessions, totalLoc,
+        totalDurationMinutes, totalFilesChanged,
+        skippedSessions, selectedSessionIds,
+      } = req.body as {
+        title: string;
+        slug: string;
+        narrative: string;
+        repoUrl: string;
+        projectUrl: string;
+        timeline: ProjectEnhanceResult['timeline'];
+        skills: string[];
+        totalSessions: number;
+        totalLoc: number;
+        totalDurationMinutes: number;
+        totalFilesChanged: number;
+        skippedSessions: Array<{ title: string; duration: number; loc: number; reason: string }>;
+        selectedSessionIds: string[];
+      };
+
+      // Step 1: Upsert project on Phoenix
+      const projectRes = await fetch(`${API_URL}/api/projects`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${auth.token}`,
+        },
+        body: JSON.stringify({
+          project: {
+            title, slug, narrative,
+            repo_url: repoUrl || null,
+            project_url: projectUrl || null,
+            timeline, skills,
+            total_sessions: totalSessions,
+            total_loc: totalLoc,
+            total_duration_minutes: totalDurationMinutes,
+            total_files_changed: totalFilesChanged,
+            skipped_sessions: skippedSessions,
+          },
+        }),
+      });
+
+      if (projectRes.status === 401) {
+        res.status(401).json({ error: { message: 'Authentication required' } });
+        return;
+      }
+      if (!projectRes.ok) {
+        const err = await projectRes.json().catch(() => ({ error: 'Project creation failed' }));
+        res.status(projectRes.status).json(err);
+        return;
+      }
+
+      const projectData = await projectRes.json() as { project_id: number; slug: string };
+
+      // Step 2: Publish selected sessions
+      const projects = await getProjects(sessionsBasePath);
+      const proj = projects.find((p) => p.dirName === project);
+      let publishedCount = 0;
+
+      if (proj) {
+        for (const sessionId of selectedSessionIds) {
+          const meta = proj.sessions.find((s) => s.sessionId === sessionId);
+          if (!meta) continue;
+
+          try {
+            const session = await loadSession(meta.path, proj.name, sessionId);
+            const enhanced = loadEnhancedData(sessionId);
+            const sessionSlug = (enhanced?.title ?? session.title ?? sessionId)
+              .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+
+            const sessionPayload = {
+              session: {
+                title: enhanced?.title ?? session.title,
+                dev_take: enhanced?.developerTake ?? session.developerTake ?? '',
+                context: enhanced?.context ?? '',
+                duration_minutes: session.durationMinutes ?? 0,
+                turns: session.turns ?? 0,
+                files_changed: session.filesChanged?.length ?? 0,
+                loc_changed: session.linesOfCode ?? 0,
+                recorded_at: session.date ? new Date(session.date).toISOString() : new Date().toISOString(),
+                template: 'editorial',
+                language: null,
+                tools: session.toolBreakdown?.map((t) => t.tool) ?? [],
+                skills: enhanced?.skills ?? session.skills ?? [],
+                beats: (enhanced?.executionSteps ?? session.executionPath ?? []).map((s, i) => ({
+                  label: s.title,
+                  description: 'body' in s ? (s as { body: string }).body : ('description' in s ? (s as { description: string }).description : ''),
+                  position: i,
+                })),
+                qa_pairs: enhanced?.qaPairs ?? session.qaPairs ?? [],
+                highlights: [],
+                tool_breakdown: (session.toolBreakdown ?? []).map((t) => ({ name: t.tool, count: t.count })),
+                top_files: (session.filesChanged ?? []).slice(0, 20).map((f) => (typeof f === 'string' ? { path: f } : f)),
+                narrative: enhanced?.developerTake ?? '',
+                project_name: proj.name,
+                project_id: projectData.project_id,
+                slug: sessionSlug,
+                status: 'listed',
+              },
+            };
+
+            const sessionRes = await fetch(`${API_URL}/api/sessions`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${auth.token}`,
+              },
+              body: JSON.stringify(sessionPayload),
+            });
+
+            if (sessionRes.ok) {
+              publishedCount++;
+              // Mark as uploaded locally
+              if (enhanced) {
+                saveEnhancedData(sessionId, { ...enhanced, uploaded: true });
+              }
+            } else {
+              console.error(`[publish] Failed to publish session ${sessionId}: ${sessionRes.status}`);
+            }
+          } catch (err) {
+            console.error(`[publish] Error publishing session ${sessionId}:`, (err as Error).message);
+          }
+        }
+      }
+
+      res.json({
+        projectId: projectData.project_id,
+        slug: projectData.slug,
+        url: `/${auth.username}/${projectData.slug}`,
+        publishedSessions: publishedCount,
+      });
+    } catch (err) {
+      console.error('[publish] Error:', (err as Error).message);
+      res.status(500).json({ error: { message: (err as Error).message } });
     }
   });
 

@@ -10,7 +10,14 @@ defmodule HeyiAmWeb.ProjectEditorLiveTest do
   setup %{user: user} do
     {:ok, _} = HeyiAm.Accounts.update_user_username(user, %{username: "testuser"})
 
-    # Create shares with portfolio sessions (auto-added by create_share)
+    {:ok, project} =
+      HeyiAm.Projects.create_project(%{
+        slug: "project-alpha",
+        title: "Project Alpha",
+        narrative: "Building a scalable telemetry engine",
+        user_id: user.id
+      })
+
     share1 =
       SharesFixtures.share_fixture(%{
         user_id: user.id,
@@ -18,7 +25,9 @@ defmodule HeyiAmWeb.ProjectEditorLiveTest do
         project_name: "Project Alpha",
         skills: ["Rust", "WASM"],
         dev_take: "Building a scalable telemetry engine",
-        sealed: true
+        sealed: true,
+        status: "listed",
+        project_id: project.id
       })
 
     share2 =
@@ -26,14 +35,13 @@ defmodule HeyiAmWeb.ProjectEditorLiveTest do
         user_id: user.id,
         title: "Memory Tests",
         project_name: "Project Alpha",
-        skills: ["Rust", "WebAssembly"]
+        skills: ["Rust", "WebAssembly"],
+        status: "listed",
+        project_id: project.id
       })
 
-    portfolio_sessions =
-      HeyiAm.Portfolios.list_portfolio_sessions(user.id)
-      |> Enum.filter(&(&1.project_name == "Project Alpha"))
-
-    %{share1: share1, share2: share2, portfolio_sessions: portfolio_sessions}
+    # Provide shares as portfolio_sessions for tests that click session buttons
+    %{share1: share1, share2: share2, portfolio_sessions: [share1, share2]}
   end
 
   @editor_path "/testuser/projects/project-alpha/edit"
@@ -148,8 +156,8 @@ defmodule HeyiAmWeb.ProjectEditorLiveTest do
       # Verify the last session now appears first
       last_ps = List.last(ps)
       first_ps = hd(ps)
-      last_share_title = last_ps.share.title
-      first_share_title = first_ps.share.title
+      last_share_title = last_ps.title
+      first_share_title = first_ps.title
 
       pos_last = :binary.match(html, last_share_title) |> elem(0)
       pos_first = :binary.match(html, first_share_title) |> elem(0)

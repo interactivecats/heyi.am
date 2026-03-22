@@ -201,6 +201,8 @@ export type EnhanceEventType =
   | { type: 'session_progress'; sessionId: string; title: string; status: 'enhancing' | 'done' | 'skipped'; detail?: string; skills?: string[] }
   | { type: 'project_enhance'; status: 'generating' }
   | { type: 'narrative_chunk'; text: string }
+  | { type: 'cached'; enhancedAt: string }
+  | { type: 'stale_cache'; previousEnhancedAt: string }
   | { type: 'done'; result: ProjectEnhanceResult }
   | { type: 'error'; message: string };
 
@@ -211,13 +213,14 @@ export function enhanceProject(
   selectedSessionIds: string[],
   skippedSessions: Array<{ title: string; duration: number; loc: number }>,
   onEvent: (event: EnhanceEventType) => void,
+  force?: boolean,
 ): AbortController {
   const controller = new AbortController();
 
   fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/enhance-project`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ selectedSessionIds, skippedSessions }),
+    body: JSON.stringify({ selectedSessionIds, skippedSessions, force }),
     signal: controller.signal,
   })
     .then(async (res) => {
@@ -265,6 +268,43 @@ export function enhanceProject(
   return controller;
 }
 
+// ── Project Enhance Cache ────────────────────────────────────────
+
+export interface ProjectEnhanceCacheResponse {
+  fingerprint: string;
+  enhancedAt: string;
+  selectedSessionIds: string[];
+  result: ProjectEnhanceResult;
+  isFresh: boolean;
+}
+
+export async function fetchProjectEnhanceCache(dirName: string): Promise<ProjectEnhanceCacheResponse | null> {
+  try {
+    const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/enhance-cache`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function saveProjectEnhanceLocally(
+  dirName: string,
+  selectedSessionIds: string[],
+  result: ProjectEnhanceResult,
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/enhance-save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ selectedSessionIds, result }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // ── Narrative Refinement ─────────────────────────────────────────
 
 export interface RefineAnswer {
@@ -292,6 +332,57 @@ export async function refineNarrative(
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: { message: 'Refine failed' } }));
     throw new Error(err.error?.message ?? 'Refine failed');
+  }
+  return res.json();
+}
+
+// ── Publish ─────────────────────────────────────────────────────
+
+export interface PublishProjectPayload {
+  title: string;
+  slug: string;
+  narrative: string;
+  repoUrl: string;
+  projectUrl: string;
+  timeline: ProjectEnhanceResult['timeline'];
+  skills: string[];
+  totalSessions: number;
+  totalLoc: number;
+  totalDurationMinutes: number;
+  totalFilesChanged: number;
+  skippedSessions: Array<{ title: string; duration: number; loc: number; reason: string }>;
+  selectedSessionIds: string[];
+}
+
+export interface PublishResult {
+  projectId: number;
+  slug: string;
+  url: string;
+  publishedSessions: number;
+}
+
+export class AuthRequiredError extends Error {
+  constructor() {
+    super('Authentication required');
+    this.name = 'AuthRequiredError';
+  }
+}
+
+export async function publishProject(
+  dirName: string,
+  payload: PublishProjectPayload,
+): Promise<PublishResult> {
+  const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/publish`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (res.status === 401) {
+    throw new AuthRequiredError();
+  }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: { message: 'Publish failed' } }));
+    throw new Error(err.error?.message ?? 'Publish failed');
   }
   return res.json();
 }

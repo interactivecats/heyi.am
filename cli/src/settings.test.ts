@@ -11,6 +11,11 @@ import {
   saveEnhancedData,
   loadEnhancedData,
   deleteEnhancedData,
+  saveProjectEnhanceResult,
+  loadProjectEnhanceResult,
+  loadFreshProjectEnhanceResult,
+  deleteProjectEnhanceResult,
+  buildProjectFingerprint,
 } from './settings.js';
 
 describe('settings', () => {
@@ -125,6 +130,100 @@ describe('settings', () => {
       const loaded = loadEnhancedData('session-normal', tmpDir);
       expect(loaded).not.toBeNull();
       expect(loaded!.quickEnhanced).toBe(false);
+    });
+  });
+
+  describe('project enhance cache', () => {
+    const sampleResult = {
+      narrative: 'A test project narrative.',
+      arc: [{ phase: 1, title: 'Setup', description: 'Initial setup' }],
+      skills: ['TypeScript'],
+      timeline: [{
+        period: 'Day 1',
+        label: 'Getting started',
+        sessions: [{ sessionId: 's1', title: 'Init', featured: true }],
+      }],
+      questions: [{
+        id: 'q1',
+        category: 'pattern' as const,
+        question: 'Why?',
+        context: 'Because.',
+      }],
+    };
+
+    const sessionData = {
+      title: 'Test session',
+      developerTake: 'A take',
+      context: 'Context',
+      skills: ['TS'],
+      questions: [{ text: 'Q?', suggestedAnswer: 'A.' }],
+      executionSteps: [{ stepNumber: 1, title: 'Step', body: 'Body' }],
+    };
+
+    it('returns null when no cache exists', () => {
+      expect(loadProjectEnhanceResult('my-project', tmpDir)).toBeNull();
+    });
+
+    it('saves and loads project enhance result', () => {
+      saveProjectEnhanceResult('my-project', ['s1', 's2'], sampleResult, tmpDir);
+      const loaded = loadProjectEnhanceResult('my-project', tmpDir);
+      expect(loaded).not.toBeNull();
+      expect(loaded!.result.narrative).toBe('A test project narrative.');
+      expect(loaded!.selectedSessionIds).toEqual(['s1', 's2']);
+      expect(loaded!.enhancedAt).toBeDefined();
+    });
+
+    it('returns fresh cache when fingerprint matches', () => {
+      // Save session data so fingerprint includes enhancedAt timestamps
+      saveEnhancedData('s1', sessionData, tmpDir);
+      saveEnhancedData('s2', sessionData, tmpDir);
+      saveProjectEnhanceResult('my-project', ['s1', 's2'], sampleResult, tmpDir);
+
+      const fresh = loadFreshProjectEnhanceResult('my-project', ['s1', 's2'], tmpDir);
+      expect(fresh).not.toBeNull();
+      expect(fresh!.result.narrative).toBe('A test project narrative.');
+    });
+
+    it('returns null for stale cache when session set changes', () => {
+      saveEnhancedData('s1', sessionData, tmpDir);
+      saveProjectEnhanceResult('my-project', ['s1'], sampleResult, tmpDir);
+
+      // Request with different session set
+      const fresh = loadFreshProjectEnhanceResult('my-project', ['s1', 's2'], tmpDir);
+      expect(fresh).toBeNull();
+    });
+
+    it('returns null for stale cache when session is re-enhanced', async () => {
+      saveEnhancedData('s1', sessionData, tmpDir);
+      saveProjectEnhanceResult('my-project', ['s1'], sampleResult, tmpDir);
+
+      // Wait so enhancedAt timestamp differs
+      await new Promise((r) => setTimeout(r, 10));
+
+      // Re-enhance the session (changes enhancedAt timestamp)
+      saveEnhancedData('s1', { ...sessionData, title: 'Updated' }, tmpDir);
+
+      const fresh = loadFreshProjectEnhanceResult('my-project', ['s1'], tmpDir);
+      expect(fresh).toBeNull();
+    });
+
+    it('fingerprint is stable for same inputs', () => {
+      saveEnhancedData('s1', sessionData, tmpDir);
+      saveEnhancedData('s2', sessionData, tmpDir);
+      const fp1 = buildProjectFingerprint(['s1', 's2'], tmpDir);
+      const fp2 = buildProjectFingerprint(['s2', 's1'], tmpDir); // different order
+      expect(fp1).toBe(fp2);
+    });
+
+    it('deletes project enhance cache', () => {
+      saveProjectEnhanceResult('my-project', ['s1'], sampleResult, tmpDir);
+      expect(loadProjectEnhanceResult('my-project', tmpDir)).not.toBeNull();
+      deleteProjectEnhanceResult('my-project', tmpDir);
+      expect(loadProjectEnhanceResult('my-project', tmpDir)).toBeNull();
+    });
+
+    it('delete is idempotent', () => {
+      expect(() => deleteProjectEnhanceResult('nonexistent', tmpDir)).not.toThrow();
     });
   });
 });

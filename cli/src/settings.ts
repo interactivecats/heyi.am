@@ -1,10 +1,12 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
+import { createHash } from 'node:crypto';
 import { readConfig, writeConfig } from './auth.js';
 
 const CONFIG_DIR = join(homedir(), '.config', 'heyiam');
 const ENHANCED_DIR = 'enhanced';
+const PROJECT_ENHANCE_DIR = 'project-enhance';
 const SETTINGS_FILE = 'settings.json';
 
 export interface Settings {
@@ -96,5 +98,112 @@ export function markAsUploaded(sessionId: string, configDir?: string): void {
 
 export function deleteEnhancedData(sessionId: string, configDir?: string): void {
   const path = enhancedPath(sessionId, configDir);
+  if (existsSync(path)) unlinkSync(path);
+}
+
+// ── Project enhance cache ─────────────────────────────────────
+
+export interface ProjectEnhanceCache {
+  fingerprint: string;
+  enhancedAt: string;
+  selectedSessionIds: string[];
+  result: {
+    narrative: string;
+    arc: Array<{ phase: number; title: string; description: string }>;
+    skills: string[];
+    timeline: Array<{
+      period: string;
+      label: string;
+      sessions: Array<{
+        sessionId: string;
+        title: string;
+        featured: boolean;
+        tag?: string;
+      }>;
+    }>;
+    questions: Array<{
+      id: string;
+      category: 'pattern' | 'architecture' | 'evolution';
+      question: string;
+      context: string;
+    }>;
+  };
+}
+
+/**
+ * Build a fingerprint from the selected session IDs and their enhanced timestamps.
+ * Changes to session selection or re-enhancement of any session invalidates the cache.
+ */
+export function buildProjectFingerprint(
+  selectedSessionIds: string[],
+  configDir?: string,
+): string {
+  const sorted = [...selectedSessionIds].sort();
+  const parts = sorted.map((id) => {
+    const enhanced = loadEnhancedData(id, configDir);
+    return `${id}:${enhanced?.enhancedAt ?? 'none'}`;
+  });
+  return createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 16);
+}
+
+function projectEnhanceDir(configDir: string = CONFIG_DIR): string {
+  return join(configDir, PROJECT_ENHANCE_DIR);
+}
+
+function projectEnhancePath(projectDirName: string, configDir: string = CONFIG_DIR): string {
+  // Sanitize project dir name for filesystem
+  const safe = projectDirName.replace(/[^a-zA-Z0-9._-]/g, '_');
+  return join(projectEnhanceDir(configDir), `${safe}.json`);
+}
+
+export function saveProjectEnhanceResult(
+  projectDirName: string,
+  selectedSessionIds: string[],
+  result: ProjectEnhanceCache['result'],
+  configDir?: string,
+): void {
+  const dir = projectEnhanceDir(configDir);
+  mkdirSync(dir, { recursive: true });
+  const fingerprint = buildProjectFingerprint(selectedSessionIds, configDir);
+  const cache: ProjectEnhanceCache = {
+    fingerprint,
+    enhancedAt: new Date().toISOString(),
+    selectedSessionIds: [...selectedSessionIds].sort(),
+    result,
+  };
+  writeFileSync(projectEnhancePath(projectDirName, configDir), JSON.stringify(cache, null, 2), { mode: 0o600 });
+}
+
+export function loadProjectEnhanceResult(
+  projectDirName: string,
+  configDir?: string,
+): ProjectEnhanceCache | null {
+  const path = projectEnhancePath(projectDirName, configDir);
+  if (!existsSync(path)) return null;
+  try {
+    return JSON.parse(readFileSync(path, 'utf-8')) as ProjectEnhanceCache;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Check if cached project enhance result is still fresh.
+ * Returns the cached result if fingerprint matches, null if stale or missing.
+ */
+export function loadFreshProjectEnhanceResult(
+  projectDirName: string,
+  selectedSessionIds: string[],
+  configDir?: string,
+): ProjectEnhanceCache | null {
+  const cached = loadProjectEnhanceResult(projectDirName, configDir);
+  if (!cached) return null;
+  const currentFingerprint = buildProjectFingerprint(selectedSessionIds, configDir);
+  if (cached.fingerprint !== currentFingerprint) return null;
+  return cached;
+}
+
+export function deleteProjectEnhanceResult(projectDirName: string, configDir?: string): void {
+  const path = projectEnhancePath(projectDirName, configDir);
   if (existsSync(path)) unlinkSync(path);
 }

@@ -88,12 +88,50 @@ interface SessionSegment {
   endMs: number;
 }
 
+/** Multiple sessions running at the same time */
+interface ConcurrentSegment {
+  type: 'concurrent';
+  sessions: Session[];
+  startMs: number;
+  endMs: number;
+}
+
 interface GapSegment {
   type: 'gap';
   durationMs: number;
 }
 
-type Segment = SessionSegment | GapSegment;
+type Segment = SessionSegment | ConcurrentSegment | GapSegment;
+
+/**
+ * Cluster overlapping sessions into groups.
+ * Uses a sweep-line: sessions that overlap with any session in the current
+ * cluster (by start < clusterEnd) get merged into the same cluster.
+ */
+function clusterOverlapping(
+  sorted: Session[],
+): Array<{ sessions: Session[]; startMs: number; endMs: number }> {
+  const clusters: Array<{ sessions: Session[]; startMs: number; endMs: number }> = [];
+  let current: { sessions: Session[]; startMs: number; endMs: number } | null = null;
+
+  for (const s of sorted) {
+    const start = getSessionStart(s);
+    const end = getSessionEnd(s);
+
+    if (!current || start >= current.endMs) {
+      // No overlap — start a new cluster
+      if (current) clusters.push(current);
+      current = { sessions: [s], startMs: start, endMs: end };
+    } else {
+      // Overlaps with current cluster — merge
+      current.sessions.push(s);
+      if (end > current.endMs) current.endMs = end;
+    }
+  }
+
+  if (current) clusters.push(current);
+  return clusters;
+}
 
 export function computeSegments(sessions: Session[]): Segment[] {
   if (sessions.length === 0) return [];
@@ -102,22 +140,39 @@ export function computeSegments(sessions: Session[]): Segment[] {
     (a, b) => getSessionStart(a) - getSessionStart(b),
   );
 
+  // First, cluster overlapping sessions
+  const clusters = clusterOverlapping(sorted);
+
   const segments: Segment[] = [];
 
-  for (let i = 0; i < sorted.length; i++) {
-    const s = sorted[i];
-    const startMs = getSessionStart(s);
-    const endMs = getSessionEnd(s);
+  for (let i = 0; i < clusters.length; i++) {
+    const cluster = clusters[i];
 
+    // Gap detection between clusters
     if (i > 0) {
-      const prevEnd = getSessionEnd(sorted[i - 1]);
-      const gapMs = startMs - prevEnd;
+      const prevEnd = clusters[i - 1].endMs;
+      const gapMs = cluster.startMs - prevEnd;
       if (gapMs > GAP_THRESHOLD_MS) {
         segments.push({ type: 'gap', durationMs: gapMs });
       }
     }
 
-    segments.push({ type: 'session', session: s, startMs, endMs });
+    if (cluster.sessions.length === 1) {
+      const s = cluster.sessions[0];
+      segments.push({
+        type: 'session',
+        session: s,
+        startMs: cluster.startMs,
+        endMs: cluster.endMs,
+      });
+    } else {
+      segments.push({
+        type: 'concurrent',
+        sessions: cluster.sessions,
+        startMs: cluster.startMs,
+        endMs: cluster.endMs,
+      });
+    }
   }
 
   return segments;
@@ -179,17 +234,19 @@ export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: Work
 
   const svgWidth = PADDING_LEFT + totalContentWidth + PADDING_RIGHT;
 
-  // Compute max lanes needed for fork/join
-  let maxChildLanes = 0;
+  // Compute max lanes needed for fork/join (from child sessions or concurrent sessions)
+  let maxLanes = 0;
   for (const seg of segments) {
     if (seg.type === 'session') {
       const children = seg.session.childSessions ?? [];
-      if (children.length > maxChildLanes) maxChildLanes = children.length;
+      if (children.length > maxLanes) maxLanes = children.length;
+    } else if (seg.type === 'concurrent') {
+      if (seg.sessions.length > maxLanes) maxLanes = seg.sessions.length;
     }
   }
 
   const mainY = LABEL_AREA_TOP + laneHeight / 2;
-  const forkLaneSpacing = Math.min(20, (laneHeight - 20) / Math.max(maxChildLanes, 1));
+  const forkLaneSpacing = Math.min(20, (laneHeight - 20) / Math.max(maxLanes, 1));
   const svgHeight = LABEL_AREA_TOP + laneHeight + AXIS_AREA_BOTTOM;
 
   // Determine if same-day for time label formatting
@@ -229,10 +286,9 @@ export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: Work
   // Compute date ticks
   const dateTicks: DateTick[] = [];
   for (const layout of layouts) {
-    if (layout.seg.type === 'session') {
-      const seg = layout.seg;
+    if (layout.seg.type === 'session' || layout.seg.type === 'concurrent') {
       dateTicks.push({
-        label: sameDay ? formatTimeLabel(seg.startMs) : formatDateLabel(seg.startMs),
+        label: sameDay ? formatTimeLabel(layout.seg.startMs) : formatDateLabel(layout.seg.startMs),
         x: layout.x1,
       });
     }
@@ -328,6 +384,22 @@ export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: Work
               );
             }
 
+            if (layout.seg.type === 'concurrent') {
+              return (
+                <ConcurrentSessionBar
+                  key={`concurrent-${i}`}
+                  x1={layout.x1}
+                  x2={layout.x2}
+                  mainY={mainY}
+                  sessions={layout.seg.sessions}
+                  clusterStartMs={layout.seg.startMs}
+                  clusterEndMs={layout.seg.endMs}
+                  laneSpacing={forkLaneSpacing}
+                  onSessionClick={onSessionClick}
+                />
+              );
+            }
+
             const seg = layout.seg;
             const session = seg.session;
             const children = session.childSessions ?? [];
@@ -352,7 +424,7 @@ export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: Work
                 {/* Title above bar */}
                 <text
                   x={layout.x1 + 6}
-                  y={mainY - (isMultiAgent && hasLoadedChildren ? maxChildLanes * forkLaneSpacing / 2 + 14 : 14)}
+                  y={mainY - (isMultiAgent && hasLoadedChildren ? maxLanes * forkLaneSpacing / 2 + 14 : 14)}
                   fontFamily={SVG_FONT}
                   fontSize={8}
                   fontWeight={600}
@@ -363,7 +435,7 @@ export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: Work
                 </text>
                 <text
                   x={layout.x1 + 6}
-                  y={mainY - (isMultiAgent && hasLoadedChildren ? maxChildLanes * forkLaneSpacing / 2 + 5 : 5)}
+                  y={mainY - (isMultiAgent && hasLoadedChildren ? maxLanes * forkLaneSpacing / 2 + 5 : 5)}
                   fontFamily={SVG_FONT}
                   fontSize={7}
                   fill="#6b7280"
@@ -442,7 +514,7 @@ function ThickAgentBar({
   );
 }
 
-// ── Multi-agent bar with fork/join ─────────────────────────────
+// ── Multi-agent bar with fork/join (child sessions within one session) ──
 
 function MultiAgentBar({
   x1, x2, mainY, children, laneSpacing,
@@ -533,6 +605,143 @@ function MultiAgentBar({
       <circle cx={joinX} cy={mainY} r={3} fill={MAIN_COLOR} data-testid="join-dot" />
 
       {/* Main line after join */}
+      <line x1={joinX} y1={mainY} x2={x2} y2={mainY} stroke={MAIN_COLOR} strokeWidth={2} strokeLinecap="round" />
+      <circle cx={x2} cy={mainY} r={4} fill={MAIN_COLOR} />
+    </g>
+  );
+}
+
+// ── Concurrent top-level sessions (overlapping in time) ─────────
+
+const CONCURRENT_COLORS = ['#084471', '#7c3aed', '#0891b2', '#059669', '#d97706', '#dc2626'];
+
+function ConcurrentSessionBar({
+  x1, x2, mainY, sessions, clusterStartMs, clusterEndMs, laneSpacing,
+  onSessionClick,
+}: {
+  x1: number; x2: number; mainY: number;
+  sessions: Session[];
+  clusterStartMs: number; clusterEndMs: number;
+  laneSpacing: number;
+  onSessionClick?: (session: Session) => void;
+}) {
+  const sorted = [...sessions].sort(
+    (a, b) => getSessionStart(a) - getSessionStart(b),
+  );
+
+  const n = sorted.length;
+  const totalH = (n - 1) * laneSpacing;
+  const curveDx = 15;
+  const forkX = x1 + 12;
+  const joinX = x2 - 12;
+  const laneAreaWidth = joinX - forkX - curveDx * 2 - 8;
+  const clusterDurationMs = clusterEndMs - clusterStartMs;
+
+  return (
+    <g data-testid="concurrent-segment">
+      {/* Main line into fork */}
+      <circle cx={x1} cy={mainY} r={4} fill="none" stroke={MAIN_COLOR} strokeWidth={1.5} />
+      <line x1={x1} y1={mainY} x2={forkX} y2={mainY} stroke={MAIN_COLOR} strokeWidth={2} strokeLinecap="round" />
+      <circle cx={forkX} cy={mainY} r={3} fill={MAIN_COLOR} data-testid="concurrent-fork" />
+
+      {/* Session lanes */}
+      {sorted.map((session, i) => {
+        const laneY = mainY - totalH / 2 + i * laneSpacing;
+        const color = CONCURRENT_COLORS[i % CONCURRENT_COLORS.length];
+
+        // Position lane proportionally within the cluster time range
+        const sessionStart = getSessionStart(session);
+        const sessionEnd = getSessionEnd(session);
+        const startFrac = (sessionStart - clusterStartMs) / clusterDurationMs;
+        const endFrac = (sessionEnd - clusterStartMs) / clusterDurationMs;
+        const laneStartX = forkX + curveDx + 4 + startFrac * laneAreaWidth;
+        const laneEndX = forkX + curveDx + 4 + endFrac * laneAreaWidth;
+        const laneW = Math.max(laneEndX - laneStartX, 16);
+
+        const durationLabel = `${session.durationMinutes}m`;
+        const locLabel = session.linesOfCode > 0 ? `${session.linesOfCode} LOC` : '';
+        const subtitle = [durationLabel, locLabel].filter(Boolean).join(' · ');
+
+        return (
+          <g
+            key={session.id || i}
+            data-testid="concurrent-lane"
+            style={onSessionClick ? { cursor: 'pointer' } : undefined}
+            onClick={onSessionClick ? (e) => { e.stopPropagation(); onSessionClick(session); } : undefined}
+            role={onSessionClick ? 'button' : undefined}
+            tabIndex={onSessionClick ? 0 : undefined}
+          >
+            {/* Fork curve from main line to lane */}
+            <path
+              d={`M${forkX},${mainY} C${forkX + curveDx},${mainY} ${forkX + curveDx},${laneY} ${laneStartX},${laneY}`}
+              stroke={color}
+              strokeWidth={1.5}
+              fill="none"
+              strokeDasharray="4,3"
+            />
+
+            {/* Lane bar */}
+            <rect
+              x={laneStartX}
+              y={laneY - 8}
+              rx={2}
+              ry={2}
+              width={laneW}
+              height={16}
+              fill={color}
+              opacity={0.08}
+            />
+            <line
+              x1={laneStartX}
+              y1={laneY}
+              x2={laneStartX + laneW}
+              y2={laneY}
+              stroke={color}
+              strokeWidth={2.5}
+              strokeLinecap="round"
+            />
+
+            {/* Session title to the left */}
+            <text
+              x={laneStartX - 4}
+              y={laneY + 3}
+              fontFamily={SVG_FONT}
+              fontSize={7}
+              fontWeight={600}
+              fill={color}
+              textAnchor="end"
+              data-testid="concurrent-title"
+            >
+              {session.title.length > 30 ? session.title.slice(0, 28) + '…' : session.title}
+            </text>
+
+            {/* Stats after the lane */}
+            <text
+              x={laneStartX + laneW + 6}
+              y={laneY + 3}
+              fontFamily={SVG_FONT}
+              fontSize={6.5}
+              fill="#6b7280"
+            >
+              {subtitle}
+            </text>
+
+            {/* Join curve from lane to main line */}
+            <path
+              d={`M${laneStartX + laneW},${laneY} C${joinX - curveDx},${laneY} ${joinX - curveDx},${mainY} ${joinX},${mainY}`}
+              stroke={color}
+              strokeWidth={1.5}
+              fill="none"
+              strokeDasharray="4,3"
+            />
+          </g>
+        );
+      })}
+
+      {/* Join dot */}
+      <circle cx={joinX} cy={mainY} r={3} fill={MAIN_COLOR} data-testid="concurrent-join" />
+
+      {/* Main line out */}
       <line x1={joinX} y1={mainY} x2={x2} y2={mainY} stroke={MAIN_COLOR} strokeWidth={2} strokeLinecap="round" />
       <circle cx={x2} cy={mainY} r={4} fill={MAIN_COLOR} />
     </g>

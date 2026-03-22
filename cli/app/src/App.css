@@ -1901,10 +1901,33 @@ details[open] > .collapsible__summary .collapsible__chevron {
   opacity: 0.5;
 }
 
+.project-card__actions {
+  display: flex;
+  gap: var(--spacing-2);
+  flex-shrink: 0;
+}
+
 .project-card__upload-btn {
   font-size: 0.8125rem;
   padding: var(--spacing-2) var(--spacing-5);
   flex-shrink: 0;
+}
+
+.project-card__badge {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: var(--primary-container, #e0ecf6);
+  color: var(--primary, #084471);
+}
+
+.project-card__badge--stale {
+  background: #fef3c7;
+  color: #92400e;
 }
 
 .project-card__stats {

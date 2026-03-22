@@ -3,9 +3,9 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
 
   import HeyiAmWeb.AppShell
 
-  alias HeyiAm.Portfolios
   alias HeyiAm.Shares
   alias HeyiAm.Accounts
+  alias HeyiAm.Projects
 
   @accent_colors [
     %{id: "seal-blue", label: "Seal Blue", hex: "#084471"},
@@ -27,17 +27,40 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
       status: user.status || ""
     }
 
-    portfolio_sessions = Portfolios.list_portfolio_sessions(user.id)
-    projects = build_projects(portfolio_sessions)
-    shares = Shares.list_shares_for_user(user.id)
+    raw_projects = Projects.list_user_projects_with_published_shares(user.id)
+
+    projects =
+      Enum.map(raw_projects, fn p ->
+        first_share = List.first(p.shares)
+
+        %{
+          id: p.slug,
+          slug: p.slug,
+          name: p.title,
+          description: (first_share && first_share.dev_take) || "",
+          category: "project",
+          skills: p.skills || [],
+          visible: true,
+          sessions:
+            Enum.map(p.shares, fn s ->
+              %{
+                id: s.id,
+                title: s.title || "Untitled",
+                status: if(s.sealed, do: :sealed, else: :published),
+                visibility: :public,
+                featured: false
+              }
+            end)
+        }
+      end)
+
+    shares = if raw_projects == [], do: Shares.list_shares_for_user(user.id), else: Enum.flat_map(raw_projects, & &1.shares)
     expertise = compute_expertise(shares)
 
     {:ok,
      socket
      |> assign(:page_title, "Portfolio Editor")
-     |> assign(:templates, HeyiAmWeb.Templates.list())
      |> assign(:accent_colors, @accent_colors)
-     |> assign(:selected_template, user.portfolio_layout || "editorial")
      |> assign(:selected_accent, user.portfolio_accent || "seal-blue")
      |> assign(:visitor_mode, false)
      |> assign(:profile, profile)
@@ -47,12 +70,6 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
   end
 
   @impl true
-  def handle_event("select_template", %{"template" => template_id}, socket) do
-    user = socket.assigns.current_scope.user
-    Accounts.update_user_profile(user, %{portfolio_layout: template_id})
-    {:noreply, assign(socket, :selected_template, template_id)}
-  end
-
   def handle_event("select_accent", %{"accent" => accent_id}, socket) do
     user = socket.assigns.current_scope.user
     Accounts.update_user_profile(user, %{portfolio_accent: accent_id})
@@ -85,16 +102,6 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
       Enum.map(socket.assigns.projects, fn project ->
         if project.id == id do
           new_visible = !project.visible
-
-          user = socket.assigns.current_scope.user
-
-          Enum.each(project.portfolio_session_ids, fn ps_id ->
-            case Portfolios.get_portfolio_session_for_user(ps_id, user.id) do
-              nil -> :ok
-              ps -> Portfolios.toggle_visibility(ps, new_visible)
-            end
-          end)
-
           %{project | visible: new_visible}
         else
           project
@@ -118,14 +125,6 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
           Enum.map(project.sessions, fn session ->
             if session.id == id do
               new_vis = if session.visibility == :public, do: :private, else: :public
-
-              user = socket.assigns.current_scope.user
-
-              case Portfolios.get_portfolio_session_for_user(id, user.id) do
-                nil -> :ok
-                ps -> Portfolios.toggle_visibility(ps, new_vis == :public)
-              end
-
               %{session | visibility: new_vis}
             else
               session
@@ -144,11 +143,6 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
     if is_nil(expanded_id) do
       {:noreply, socket}
     else
-      user = socket.assigns.current_scope.user
-
-      int_ids = Enum.map(ids, &String.to_integer/1)
-      Portfolios.reorder(user.id, int_ids)
-
       projects =
         Enum.map(socket.assigns.projects, fn project ->
           if project.id == expanded_id do
@@ -187,62 +181,6 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
       end)
 
     {:noreply, assign(socket, :projects, projects)}
-  end
-
-  defp build_projects(portfolio_sessions) do
-    portfolio_sessions
-    |> Enum.group_by(&(&1.project_name || "Untitled Project"))
-    |> Enum.map(fn {project_name, ps_list} ->
-      all_skills =
-        ps_list
-        |> Enum.flat_map(fn ps -> (ps.share && ps.share.skills) || [] end)
-        |> Enum.uniq()
-
-      sessions =
-        Enum.map(ps_list, fn ps ->
-          share = ps.share
-
-          %{
-            id: ps.id,
-            title: (share && share.title) || "Untitled",
-            status: cond do
-              share && share.sealed -> :sealed
-              true -> :published
-            end,
-            visibility: if(ps.visible, do: :public, else: :private),
-            featured: false
-          }
-        end)
-
-      slug = slugify(project_name)
-
-      %{
-        id: slug,
-        slug: slug,
-        name: project_name || "Unnamed Project",
-        description: first_dev_take(ps_list),
-        category: "PROJECT",
-        skills: all_skills,
-        visible: Enum.any?(ps_list, & &1.visible),
-        sessions: sessions,
-        portfolio_session_ids: Enum.map(ps_list, & &1.id)
-      }
-    end)
-  end
-
-  defp first_dev_take(ps_list) do
-    ps_list
-    |> Enum.find_value(fn ps -> ps.share && ps.share.dev_take end)
-    |> Kernel.||("")
-  end
-
-  defp slugify(nil), do: "untitled"
-
-  defp slugify(name) do
-    name
-    |> String.downcase()
-    |> String.replace(~r/[^a-z0-9]+/, "-")
-    |> String.trim("-")
   end
 
   defp compute_expertise(shares) do
@@ -489,22 +427,6 @@ defmodule HeyiAmWeb.PortfolioEditorLive do
 
         <%!-- Floating Bottom Dock --%>
         <div class="pe-dock glass-bar">
-          <div class="pe-dock-section">
-            <span class="label-sm">Template</span>
-            <div class="pe-dock-templates">
-              <button
-                :for={template <- @templates}
-                class={["pe-dock-template-btn", @selected_template == template.id && "pe-dock-template-btn--active"]}
-                phx-click="select_template"
-                phx-value-template={template.id}
-              >
-                {template.name}
-              </button>
-            </div>
-          </div>
-
-          <div class="pe-dock-divider"></div>
-
           <div class="pe-dock-section">
             <span class="label-sm">Accent</span>
             <div class="pe-dock-accents">

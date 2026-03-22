@@ -83,6 +83,7 @@ defmodule HeyiAmWeb.Router do
   scope "/api", HeyiAmWeb do
     pipe_through [:api, :api_auth, :rate_limit_api_session]
 
+    post "/projects", ProjectApiController, :create
     post "/sessions", ShareApiController, :create
   end
 
@@ -173,6 +174,13 @@ end
     get "/:token", ShareController, :show
     get "/:token/transcript", ShareController, :transcript
     get "/:token/verify", ShareController, :verify
+  end
+
+  # Friendly session URL within a project — must be before portfolio catch-all
+  scope "/", HeyiAmWeb do
+    pipe_through :browser
+
+    get "/:username/:project/:session", ShareController, :show_in_project
   end
 
   # Portfolio — catch-all, must be last

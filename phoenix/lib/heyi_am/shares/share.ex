@@ -2,7 +2,7 @@ defmodule HeyiAm.Shares.Share do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @valid_templates ~w(editorial terminal minimal brutalist campfire neon-night)
+  @valid_templates ~w(editorial)
   @valid_statuses ~w(draft listed unlisted)
 
   schema "shares" do
@@ -35,9 +35,11 @@ defmodule HeyiAm.Shares.Share do
     field :status, :string, default: "draft"
     field :raw_storage_key, :string
     field :log_storage_key, :string
-    field :project_meta, :map
+    field :slug, :string
+    field :agent_summary, :map
 
     belongs_to :user, HeyiAm.Accounts.User
+    belongs_to :project, HeyiAm.Projects.Project
 
     timestamps(type: :utc_datetime)
   end
@@ -61,7 +63,7 @@ defmodule HeyiAm.Shares.Share do
       :signature, :public_key,
       :status,
       :raw_storage_key, :log_storage_key,
-      :project_meta
+      :slug, :agent_summary, :project_id
     ])
     |> validate_required([:token, :title])
     |> validate_length(:title, max: 200)

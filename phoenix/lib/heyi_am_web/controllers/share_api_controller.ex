@@ -2,6 +2,7 @@ defmodule HeyiAmWeb.ShareApiController do
   use HeyiAmWeb, :controller
 
   alias HeyiAm.Shares
+  alias HeyiAm.Projects
   alias HeyiAm.Signature
 
   @doc """
@@ -23,15 +24,27 @@ defmodule HeyiAmWeb.ShareApiController do
 
       status = if session_params["status"] in ~w(listed unlisted), do: session_params["status"], else: "listed"
 
+      # Verify project ownership before trusting the client-supplied project_id
+      verified_project_id =
+        case session_params["project_id"] do
+          nil -> nil
+          pid -> Projects.get_user_project(user_id, pid) |> case do
+            nil -> nil
+            project -> project.id
+          end
+        end
+
       attrs =
         session_params
         |> Map.delete("user_id")
+        |> Map.delete("project_id")
         |> Map.put("token", token)
         |> Map.put("status", status)
         |> Map.put("raw_storage_key", raw_key)
         |> Map.put("log_storage_key", log_key)
         |> Map.put_new("recorded_at", DateTime.utc_now())
         |> Map.put("user_id", user_id)
+        |> then(fn a -> if verified_project_id, do: Map.put(a, "project_id", verified_project_id), else: a end)
 
       case Shares.create_share(attrs) do
         {:ok, share} ->

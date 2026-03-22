@@ -3,17 +3,8 @@ defmodule HeyiAmWeb.ShareController do
 
   import HeyiAmWeb.Helpers, only: [format_loc: 1, slugify: 1]
 
+  alias HeyiAm.Accounts
   alias HeyiAm.Shares
-
-  @valid_templates MapSet.new(HeyiAm.Shares.Share.valid_templates())
-
-  defp resolve_template(share) do
-    template = Map.get(share, :template, "editorial")
-
-    if MapSet.member?(@valid_templates, template),
-      do: template,
-      else: "editorial"
-  end
 
   @gone_tokens MapSet.new(~w(deleted expired removed))
 
@@ -48,7 +39,33 @@ defmodule HeyiAmWeb.ShareController do
     |> Map.update(:turn_timeline, [], &(&1 || []))
   end
 
-  def show(conn, %{"token" => token} = params) do
+  def show_in_project(conn, %{"username" => username, "project" => project_slug, "session" => session_slug}) do
+    with %{} = user <- Accounts.get_user_by_username(username),
+         %{} = share <- load_share_by_slug_or_token(user.id, project_slug, session_slug) do
+      session = build_session(share)
+
+      render(conn, :show,
+        session: session,
+        page_title: session.title,
+        portfolio_layout: "editorial",
+        breadcrumb: %{username: username, project_slug: project_slug, project_title: share.project_name}
+      )
+    else
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(HeyiAmWeb.ErrorHTML)
+        |> render(:"404")
+    end
+  end
+
+  # Try slug match first (project-aware), fall back to token for backward compat
+  defp load_share_by_slug_or_token(user_id, project_slug, session_slug) do
+    Shares.get_published_share_by_project_slug(user_id, project_slug, session_slug) ||
+      Shares.get_published_share_by_token(session_slug)
+  end
+
+  def show(conn, %{"token" => token}) do
     if MapSet.member?(@gone_tokens, token) do
       conn
       |> put_status(:gone)
@@ -65,19 +82,10 @@ defmodule HeyiAmWeb.ShareController do
         share ->
           session = build_session(share)
 
-          template =
-            case params["template"] do
-              t when is_binary(t) and t != "" ->
-                if MapSet.member?(@valid_templates, t), do: t, else: resolve_template(share)
-
-              _ ->
-                resolve_template(share)
-            end
-
           render(conn, :show,
             session: session,
             page_title: session.title,
-            portfolio_layout: template
+            portfolio_layout: "editorial"
           )
       end
     end
@@ -93,7 +101,6 @@ defmodule HeyiAmWeb.ShareController do
 
       share ->
         session = build_session(share)
-        template = resolve_template(share)
         transcript_lines = share.transcript_excerpt || []
         total_turns = share.turns || 0
         shown_turns = length(transcript_lines)
@@ -103,7 +110,7 @@ defmodule HeyiAmWeb.ShareController do
           transcript: transcript_lines,
           skipped_turns: max(total_turns - shown_turns, 0),
           page_title: "Transcript — #{session.title}",
-          portfolio_layout: template
+          portfolio_layout: "editorial"
         )
     end
   end

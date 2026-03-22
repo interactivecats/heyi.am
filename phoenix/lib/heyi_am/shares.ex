@@ -20,25 +20,21 @@ defmodule HeyiAm.Shares do
     end
   end
 
+  def get_published_share_by_project_slug(user_id, project_slug, session_slug) do
+    Share
+    |> join(:inner, [s], p in assoc(s, :project))
+    |> where([s, p], s.user_id == ^user_id and s.slug == ^session_slug and p.slug == ^project_slug and s.status != "draft")
+    |> preload(:user)
+    |> Repo.one()
+  end
+
   def create_share(attrs) do
     result =
       %Share{}
       |> Share.changeset(attrs)
       |> Repo.insert()
 
-    case result do
-      {:ok, share} ->
-        # Auto-add to portfolio. Failure is intentionally swallowed — a failed
-        # portfolio insert (e.g. duplicate on re-publish) should not fail the publish.
-        if share.user_id do
-          HeyiAm.Portfolios.add_to_portfolio(%HeyiAm.Accounts.User{id: share.user_id}, share)
-        end
-
-        {:ok, share}
-
-      error ->
-        error
-    end
+    result
   end
 
   def update_share(%Share{} = share, attrs) do

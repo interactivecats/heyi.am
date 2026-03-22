@@ -116,6 +116,7 @@ function renderReview(overrides: Partial<Parameters<typeof ReviewStep>[0]> = {})
     projectUrl: '',
     onProjectUrlChange: vi.fn(),
     onPublish: vi.fn(),
+    onSaveLocal: vi.fn(),
     onBack: vi.fn(),
   };
 

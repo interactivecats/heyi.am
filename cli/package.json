@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc && cd app && npm run build",
     "dev": "npx concurrently \"npm:dev:api\" \"npm:dev:app\"",
-    "dev:api": "tsx watch src/server.ts",
+    "dev:api": "tsx watch src/index.ts open --no-open",
     "dev:app": "cd app && npm run dev",
     "test": "vitest run && cd app && npx vitest run",
     "test:backend": "vitest run",
