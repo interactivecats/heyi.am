@@ -35,9 +35,9 @@ defmodule HeyiAm.Shares.Share do
     field :status, :string, default: "draft"
     field :raw_storage_key, :string
     field :log_storage_key, :string
+    field :project_meta, :map
 
     belongs_to :user, HeyiAm.Accounts.User
-    belongs_to :challenge, HeyiAm.Challenges.Challenge
 
     timestamps(type: :utc_datetime)
   end
@@ -59,8 +59,9 @@ defmodule HeyiAm.Shares.Share do
       :tools, :skills, :beats, :qa_pairs, :highlights, :tool_breakdown,
       :top_files, :transcript_excerpt, :turn_timeline, :narrative, :project_name, :user_id,
       :signature, :public_key,
-      :challenge_id, :status,
-      :raw_storage_key, :log_storage_key
+      :status,
+      :raw_storage_key, :log_storage_key,
+      :project_meta
     ])
     |> validate_required([:token, :title])
     |> validate_length(:title, max: 200)

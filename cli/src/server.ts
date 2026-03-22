@@ -87,6 +87,33 @@ function mergeEnhancedData(session: Session): Session {
   };
 }
 
+/** Compute aggregate project stats from all sessions in a project. */
+async function computeProjectMeta(
+  proj: ProjectInfo,
+): Promise<{ total_sessions: number; total_loc: number; total_duration_minutes: number; total_files_changed: number }> {
+  let totalLoc = 0;
+  let totalDuration = 0;
+  let totalFiles = 0;
+
+  for (const meta of proj.sessions) {
+    try {
+      const session = await loadSession(meta.path, proj.name, meta.sessionId);
+      totalLoc += session.linesOfCode ?? 0;
+      totalDuration += session.durationMinutes ?? 0;
+      totalFiles += session.filesChanged?.length ?? 0;
+    } catch {
+      // Skip sessions that fail to parse
+    }
+  }
+
+  return {
+    total_sessions: proj.sessions.length,
+    total_loc: totalLoc,
+    total_duration_minutes: totalDuration,
+    total_files_changed: totalFiles,
+  };
+}
+
 export function createApp(sessionsBasePath?: string) {
   const app = express();
 
@@ -382,6 +409,7 @@ export function createApp(sessionsBasePath?: string) {
     };
 
     const projects = await getProjects(sessionsBasePath);
+    const projectMetaCache = new Map<string, Record<string, unknown>>();
     let uploaded = 0;
     let failedCount = 0;
     let cancelled = false;
@@ -406,6 +434,11 @@ export function createApp(sessionsBasePath?: string) {
 
         const session = await loadSession(meta.path, proj.name, meta.sessionId);
 
+        // Compute project_meta once per project
+        if (!projectMetaCache.has(proj.name)) {
+          projectMetaCache.set(proj.name, await computeProjectMeta(proj));
+        }
+
         // Build publish payload from enhanced session data
         const payload: Record<string, unknown> = {
           title: session.title,
@@ -423,6 +456,7 @@ export function createApp(sessionsBasePath?: string) {
           project_name: session.projectName,
           recorded_at: session.date || new Date().toISOString(),
           template: 'editorial',
+          project_meta: projectMetaCache.get(proj.name),
         };
 
         let fetchRes: globalThis.Response | null = null;
@@ -511,6 +545,19 @@ export function createApp(sessionsBasePath?: string) {
         console.log('[publish] ERROR: Not authenticated (no token in ~/.config/heyiam/auth.json)');
         res.status(401).json({ error: 'Not authenticated. Run: heyiam login' });
         return;
+      }
+
+      // Compute project_meta from all local sessions in the same project
+      if (projectDir && !session.project_meta) {
+        try {
+          const projects = await getProjects(sessionsBasePath);
+          const proj = projects.find((p) => p.dirName === projectDir || p.name === session.project_name);
+          if (proj) {
+            session.project_meta = await computeProjectMeta(proj);
+          }
+        } catch (err) {
+          console.log('[publish] Warning: could not compute project_meta:', err);
+        }
       }
 
       console.log(`[publish] Sending to ${API_URL}/api/sessions (title: "${session.title}", keys: ${Object.keys(session).join(', ')})`);

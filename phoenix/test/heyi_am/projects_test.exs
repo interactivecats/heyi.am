@@ -66,18 +66,31 @@ defmodule HeyiAm.ProjectsTest do
              }
     end
 
-    test "groups by two levels for deeper paths" do
+    test "groups by three levels for deeper paths" do
       share = make_share(%{token: "tok_a", top_files: [
-        "lib/heyi_am/accounts.ex",
+        "lib/heyi_am/accounts/user.ex",
+        "lib/heyi_am/accounts/token.ex",
         "lib/heyi_am/shares.ex",
-        "lib/heyi_am_web/router.ex"
+        "lib/heyi_am_web/controllers/page.ex"
       ]})
       result = Projects.compute_file_heatmap([share])
 
       assert result == %{
-               "lib/heyi_am/" => %{"tok_a" => 2},
-               "lib/heyi_am_web/" => %{"tok_a" => 1}
+               "lib/heyi_am/accounts/" => %{"tok_a" => 2},
+               "lib/heyi_am/" => %{"tok_a" => 1},
+               "lib/heyi_am_web/controllers/" => %{"tok_a" => 1}
              }
+    end
+
+    test "limits to top 10 directories by edit count" do
+      # Create 12 directories, each with 1 edit except the first which has 2
+      files = for i <- 1..12, do: "dir#{String.pad_leading("#{i}", 2, "0")}/file.ex"
+      share = make_share(%{token: "tok_a", top_files: ["dir01/extra.ex" | files]})
+      result = Projects.compute_file_heatmap([share])
+
+      assert map_size(result) == 10
+      # dir01 should be included (has 2 edits)
+      assert result["dir01/"]
     end
 
     test "handles map entries with path key" do

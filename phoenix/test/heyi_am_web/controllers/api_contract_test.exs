@@ -5,8 +5,6 @@ defmodule HeyiAmWeb.ApiContractTest do
   """
   use HeyiAmWeb.ConnCase
 
-  import HeyiAm.AccountsFixtures
-  import HeyiAm.ChallengesFixtures
   import HeyiAm.SharesFixtures
 
   # ──────────────────────────────────────────────────────────────
@@ -179,128 +177,6 @@ defmodule HeyiAmWeb.ApiContractTest do
       conn = get(conn, ~p"/api/sessions/nonexistent-token-xyz/verify")
 
       assert %{"error" => %{"code" => "NOT_FOUND"}} = json_response(conn, 404)
-    end
-  end
-
-  # ──────────────────────────────────────────────────────────────
-  # Challenge response submission
-  # ──────────────────────────────────────────────────────────────
-
-  describe "POST /api/sessions — challenge response" do
-    test "links to active challenge via challenge_slug", %{conn: conn} do
-      user = user_fixture()
-      challenge = challenge_fixture(user)
-
-      conn =
-        conn
-        |> put_req_header("content-type", "application/json")
-        |> post(~p"/api/sessions", %{
-          session: %{title: "Challenge Response", sealed: true},
-          challenge_slug: challenge.slug
-        })
-
-      resp = json_response(conn, 201)
-      share = HeyiAm.Shares.get_share_by_token!(resp["token"])
-      assert share.challenge_id == challenge.id
-    end
-
-    test "rejects response to draft challenge", %{conn: conn} do
-      user = user_fixture()
-      challenge = challenge_fixture(user, %{status: "draft"})
-
-      conn =
-        conn
-        |> put_req_header("content-type", "application/json")
-        |> post(~p"/api/sessions", %{
-          session: %{title: "Response"},
-          challenge_slug: challenge.slug
-        })
-
-      assert %{"error" => %{"code" => "CHALLENGE_NOT_ACTIVE"}} = json_response(conn, 409)
-    end
-
-    test "rejects response to nonexistent challenge", %{conn: conn} do
-      conn =
-        conn
-        |> put_req_header("content-type", "application/json")
-        |> post(~p"/api/sessions", %{
-          session: %{title: "Response"},
-          challenge_slug: "does-not-exist"
-        })
-
-      assert %{"error" => %{"code" => "CHALLENGE_NOT_FOUND"}} = json_response(conn, 404)
-    end
-
-    test "requires access_code for private challenge", %{conn: _conn} do
-      user = user_fixture()
-      challenge = challenge_fixture(user, %{access_code: "my-secret"})
-
-      # Without access code
-      conn1 =
-        build_conn()
-        |> put_req_header("content-type", "application/json")
-        |> post(~p"/api/sessions", %{
-          session: %{title: "Response"},
-          challenge_slug: challenge.slug
-        })
-
-      assert %{"error" => %{"code" => "INVALID_ACCESS_CODE"}} = json_response(conn1, 403)
-
-      # With correct access code
-      conn2 =
-        build_conn()
-        |> put_req_header("content-type", "application/json")
-        |> post(~p"/api/sessions", %{
-          session: %{title: "Response"},
-          challenge_slug: challenge.slug,
-          access_code: "my-secret"
-        })
-
-      assert %{"token" => _} = json_response(conn2, 201)
-    end
-
-    test "anonymous challenge response succeeds without auth", %{conn: conn} do
-      user = user_fixture()
-      challenge = challenge_fixture(user)
-
-      conn =
-        conn
-        |> put_req_header("content-type", "application/json")
-        |> post(~p"/api/sessions", %{
-          session: %{title: "Anonymous Challenge Response", sealed: true},
-          challenge_slug: challenge.slug
-        })
-
-      resp = json_response(conn, 201)
-      assert is_binary(resp["token"])
-      share = HeyiAm.Shares.get_share_by_token!(resp["token"])
-      assert share.challenge_id == challenge.id
-      assert is_nil(share.user_id)
-    end
-
-    test "enforces max_responses limit", %{conn: _conn} do
-      user = user_fixture()
-      challenge = challenge_fixture(user, %{max_responses: 1})
-
-      conn1 =
-        build_conn()
-        |> put_req_header("content-type", "application/json")
-        |> post(~p"/api/sessions", %{
-          session: %{title: "First"},
-          challenge_slug: challenge.slug
-        })
-
-      assert %{"token" => _} = json_response(conn1, 201)
-
-      conn2 =
-        build_conn()
-        |> put_req_header("content-type", "application/json")
-        |> post(~p"/api/sessions", %{
-          session: %{title: "Second"},
-          challenge_slug: challenge.slug
-        })
-
-      assert %{"error" => %{"code" => "MAX_RESPONSES_REACHED"}} = json_response(conn2, 409)
     end
   end
 

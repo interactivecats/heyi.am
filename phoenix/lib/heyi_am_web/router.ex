@@ -151,11 +151,7 @@ defmodule HeyiAmWeb.Router do
     get "/users/settings/export", UserSettingsController, :export
     get "/users/settings/confirm-email/:token", UserSettingsController, :confirm_email
 
-    # Challenge management (authenticated)
-    resources "/challenges", ChallengeController, only: [:new, :create]
-    get "/challenges/:slug/compare", ChallengeController, :compare
-    get "/challenges/:slug/responses/:token", ChallengeController, :deep_dive
-  end
+end
 
   scope "/", HeyiAmWeb do
     pipe_through [:browser]
@@ -168,21 +164,6 @@ defmodule HeyiAmWeb.Router do
     pipe_through [:browser, :rate_limit_auth]
 
     post "/users/log-in", UserSessionController, :create
-  end
-
-  # Challenge public pages — before portfolio catch-all
-  scope "/challenges", HeyiAmWeb do
-    pipe_through :browser
-
-    get "/:slug", ChallengeController, :show
-    get "/:slug/progress", ChallengeController, :in_progress
-    get "/:slug/submitted", ChallengeController, :submitted
-  end
-
-  scope "/challenges", HeyiAmWeb do
-    pipe_through [:browser, :rate_limit_auth]
-
-    post "/:slug/unlock", ChallengeController, :verify_access_code
   end
 
   # Shared session pages — before portfolio catch-all

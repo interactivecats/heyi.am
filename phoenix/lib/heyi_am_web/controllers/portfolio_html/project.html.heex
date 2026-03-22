@@ -40,9 +40,16 @@
         </span>
       </div>
       <%!-- Supporting stats --%>
+      <%
+        sessions_label = if @project.uploaded_count < @project.session_count do
+          "#{@project.session_count} (#{@project.uploaded_count} published)"
+        else
+          "#{@project.session_count}"
+        end
+      %>
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-4);">
         <div :for={{label, value} <- [
-          {"Sessions", "#{@project.session_count}"},
+          {"Sessions", sessions_label},
           {"Files Touched", "#{@project.files_touched}"},
           {"LOC Changed", @project.loc_changed}
         ]} class="card card-padded">
@@ -123,23 +130,24 @@
       <%
         all_counts = @heatmap_data |> Map.values() |> Enum.flat_map(&Map.values/1)
         max_count = if all_counts == [], do: 1, else: Enum.max(all_counts)
-        sorted_dirs = @heatmap_data |> Map.keys() |> Enum.sort()
+        sorted_dirs = @heatmap_data |> Enum.sort_by(fn {_dir, counts} -> -Enum.sum(Map.values(counts)) end) |> Enum.map(&elem(&1, 0))
         session_count = length(@heatmap_sessions)
       %>
       <span class="label-mono" style="display: block; margin-block-end: var(--spacing-4);">Edit Heatmap by Directory</span>
-      <div class="card" style="background: var(--surface-container-lowest); margin-block-end: var(--spacing-6); padding: var(--spacing-5);">
+      <div class="card" style="background: var(--surface-container-lowest); margin-block-end: var(--spacing-6); padding: var(--spacing-5); overflow-x: auto;">
+        <div style={"min-width: #{max(session_count * 44 + 180, 0)}px;"}>
         <%!-- Header row --%>
-        <div style={"display: grid; grid-template-columns: 140px repeat(#{session_count}, 1fr); gap: 2px; margin-block-end: 2px;"}>
+        <div style={"display: grid; grid-template-columns: 180px repeat(#{session_count}, minmax(40px, 1fr)); gap: 2px; margin-block-end: 2px;"}>
           <div></div>
           <%= for hs <- @heatmap_sessions do %>
-            <div style="font-family: var(--font-mono); font-size: 0.5625rem; color: var(--on-surface-variant); text-align: center; padding: 4px;">{hs.title}</div>
+            <div style="font-family: var(--font-mono); font-size: 0.5625rem; color: var(--on-surface-variant); text-align: center; padding: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{hs.title}</div>
           <% end %>
         </div>
         <%!-- Directory rows --%>
         <%= for dir <- sorted_dirs do %>
           <% dir_counts = @heatmap_data[dir] %>
-          <div style={"display: grid; grid-template-columns: 140px repeat(#{session_count}, 1fr); gap: 2px; margin-block-end: 2px;"}>
-            <div style="font-family: var(--font-mono); font-size: 0.6875rem; padding: 8px 4px;">{dir}</div>
+          <div style={"display: grid; grid-template-columns: 180px repeat(#{session_count}, minmax(40px, 1fr)); gap: 2px; margin-block-end: 2px;"}>
+            <div style="font-family: var(--font-mono); font-size: 0.6875rem; padding: 8px 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title={dir}>{dir}</div>
             <%= for hs <- @heatmap_sessions do %>
               <% count = dir_counts[hs.token] || 0 %>
               <% opacity = if max_count > 0, do: Float.round(0.05 + 0.45 * count / max_count, 2), else: 0.02 %>
@@ -148,6 +156,7 @@
             <% end %>
           </div>
         <% end %>
+        </div>
         <%!-- Legend --%>
         <div style="display: flex; align-items: center; gap: var(--spacing-4); margin-block-start: var(--spacing-4); font-family: var(--font-mono); font-size: 0.625rem; color: var(--on-surface-variant);">
           <span>Intensity = edit count</span>

@@ -5,7 +5,6 @@ defmodule HeyiAm.AccountsGDPRTest do
   alias HeyiAm.Repo
   import HeyiAm.AccountsFixtures
   import HeyiAm.SharesFixtures
-  import HeyiAm.ChallengesFixtures
 
   setup do
     user = user_fixture()
@@ -39,21 +38,11 @@ defmodule HeyiAm.AccountsGDPRTest do
       assert data.shares == []
     end
 
-    test "includes user's challenges", %{user: user} do
-      challenge = challenge_fixture(user)
-      {:ok, data} = Accounts.export_user_data(user)
-
-      assert length(data.challenges) == 1
-      assert hd(data.challenges).slug == challenge.slug
-      refute Map.has_key?(hd(data.challenges), :access_code_hash)
-    end
-
     test "returns empty lists when user has no data", %{user: user} do
       {:ok, data} = Accounts.export_user_data(user)
 
       assert data.shares == []
       assert data.portfolio_sessions == []
-      assert data.challenges == []
     end
 
     test "includes exported_at timestamp", %{user: user} do
@@ -86,7 +75,6 @@ defmodule HeyiAm.AccountsGDPRTest do
       anon = Repo.get(Accounts.User, user.id)
       assert anon.username == nil
 
-      # Another user can now claim the same username
       new_user = user_fixture()
       {:ok, new_user} = Accounts.update_user_username(new_user, %{username: "testuser"})
       assert new_user.username == "testuser"
@@ -96,7 +84,6 @@ defmodule HeyiAm.AccountsGDPRTest do
       original_email = user.email
       {:ok, _} = Accounts.delete_user_account(user)
 
-      # Can register with the same email
       {:ok, new_user} = Accounts.register_user(%{email: original_email, password: "new valid password1"})
       assert new_user.email == original_email
     end
@@ -114,28 +101,11 @@ defmodule HeyiAm.AccountsGDPRTest do
       assert anon.top_files == []
       assert anon.beats == []
       assert anon.token =~ "deleted-"
-      # Stats preserved for aggregate counting
       assert anon.duration_minutes == share.duration_minutes
       assert anon.turns == share.turns
       assert anon.files_changed == share.files_changed
       assert anon.tools == share.tools
       assert anon.skills == share.skills
-    end
-
-    test "anonymizes user's challenges", %{user: user} do
-      challenge = challenge_fixture(user)
-      {:ok, _} = Accounts.delete_user_account(user)
-
-      anon = Repo.get(HeyiAm.Challenges.Challenge, challenge.id)
-      assert anon
-      assert anon.title == "deleted"
-      assert anon.problem_statement == ""
-      assert anon.evaluation_criteria == []
-      assert anon.access_code_hash == nil
-      assert anon.status == "closed"
-      # Slug and time_limit preserved for counting
-      assert anon.slug == challenge.slug
-      assert anon.time_limit_minutes == challenge.time_limit_minutes
     end
 
     test "deletes user's tokens", %{user: user} do
@@ -157,7 +127,6 @@ defmodule HeyiAm.AccountsGDPRTest do
     end
 
     test "preserves portfolio_sessions for aggregate stats", %{user: user} do
-      # share_fixture auto-creates a portfolio_session via create_share
       share = share_fixture(%{user_id: user.id})
 
       [ps] = Repo.all(from(ps in HeyiAm.Portfolios.PortfolioSession, where: ps.user_id == ^user.id))
@@ -188,43 +157,19 @@ defmodule HeyiAm.AccountsGDPRTest do
       assert anon1.token != anon2.token
     end
 
-    test "preserves other users' challenge responses when challenge is anonymized", %{user: user} do
-      challenge = challenge_fixture(user)
-      other_user = user_fixture()
-      response = share_fixture(%{user_id: other_user.id, challenge_id: challenge.id})
-
-      {:ok, _} = Accounts.delete_user_account(user)
-
-      # Challenge is anonymized, response share keeps its data and challenge_id link
-      updated_response = Repo.get(HeyiAm.Shares.Share, response.id)
-      assert updated_response
-      assert updated_response.user_id == other_user.id
-      assert updated_response.challenge_id == challenge.id
-    end
-
     test "no orphaned records remain after account deletion", %{user: user} do
-      # share_fixture auto-creates a portfolio_session via create_share
       share = share_fixture(%{user_id: user.id})
-      challenge_fixture(user)
       Accounts.generate_user_session_token(user)
 
       {:ok, _} = Accounts.delete_user_account(user)
 
-      # User anonymized but still exists
       anon_user = Repo.get(Accounts.User, user.id)
       assert anon_user
       assert anon_user.status == "deleted"
       assert anon_user.username == nil
-      # Portfolio sessions preserved (FKs still valid)
       ps_list = Repo.all(from(ps in HeyiAm.Portfolios.PortfolioSession, where: ps.user_id == ^user.id))
       assert length(ps_list) == 1
-      # Tokens deleted
       assert Repo.all(from(t in Accounts.UserToken, where: t.user_id == ^user.id)) == []
-      # Challenges anonymized (still exist)
-      challenges = Repo.all(from(c in HeyiAm.Challenges.Challenge, where: c.creator_id == ^user.id))
-      assert length(challenges) == 1
-      assert hd(challenges).title == "deleted"
-      # Share anonymized (still exists)
       anon_share = Repo.get(HeyiAm.Shares.Share, share.id)
       assert anon_share
       assert anon_share.user_id == nil

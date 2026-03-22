@@ -191,16 +191,37 @@ defmodule HeyiAmWeb.PortfolioController do
     stats = Projects.compute_project_stats(project_shares)
     first = List.first(project_shares)
 
+    # Use project_meta from the most recently published share if available
+    meta =
+      project_shares
+      |> Enum.sort_by(& &1.recorded_at, {:desc, DateTime})
+      |> Enum.find_value(fn s -> s.project_meta end)
+
+    uploaded_count = stats.total_sessions
+
+    {session_count, total_minutes, files_touched, loc_changed} =
+      if meta do
+        {
+          Map.get(meta, "total_sessions") || uploaded_count,
+          Map.get(meta, "total_duration_minutes") || stats.total_duration,
+          Map.get(meta, "total_files_changed") || stats.unique_files,
+          format_loc(Map.get(meta, "total_loc") || stats.total_loc)
+        }
+      else
+        {uploaded_count, stats.total_duration, stats.unique_files, format_loc(stats.total_loc)}
+      end
+
     %{
       title: first.project_name || slug,
       slug: slug,
       description: first.dev_take,
       status: "active",
       skills: project_shares |> Enum.flat_map(& (&1.skills || [])) |> Enum.uniq(),
-      session_count: stats.total_sessions,
-      total_minutes: stats.total_duration,
-      files_touched: stats.unique_files,
-      loc_changed: format_loc(stats.total_loc),
+      session_count: session_count,
+      uploaded_count: uploaded_count,
+      total_minutes: total_minutes,
+      files_touched: files_touched,
+      loc_changed: loc_changed,
       dev_take: first.dev_take,
       architecture: first.narrative
     }

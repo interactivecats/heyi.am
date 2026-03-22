@@ -398,8 +398,6 @@ defmodule HeyiAm.Accounts do
   def export_user_data(%User{} = user) do
     shares = HeyiAm.Shares.list_shares_for_user(user.id)
     portfolio_sessions = HeyiAm.Portfolios.list_portfolio_sessions(user.id)
-    challenges = HeyiAm.Challenges.list_challenges_for_user(user)
-
     {:ok, %{
       exported_at: DateTime.utc_now(),
       profile: %{
@@ -417,8 +415,7 @@ defmodule HeyiAm.Accounts do
         inserted_at: user.inserted_at
       },
       shares: Enum.map(shares, &share_to_export/1),
-      portfolio_sessions: Enum.map(portfolio_sessions, &portfolio_session_to_export/1),
-      challenges: Enum.map(challenges, &challenge_to_export/1)
+      portfolio_sessions: Enum.map(portfolio_sessions, &portfolio_session_to_export/1)
     }}
   end
 
@@ -452,18 +449,6 @@ defmodule HeyiAm.Accounts do
       Repo.update_all(
         from(ps in HeyiAm.Portfolios.PortfolioSession, where: ps.user_id == ^user.id),
         set: [project_name: nil]
-      )
-
-      # Anonymize challenges — strip content, keep counts
-      Repo.update_all(
-        from(c in HeyiAm.Challenges.Challenge, where: c.creator_id == ^user.id),
-        set: [
-          title: "deleted",
-          problem_statement: "",
-          evaluation_criteria: [],
-          access_code_hash: nil,
-          status: "closed"
-        ]
       )
 
       # Delete all session tokens (security)
@@ -529,19 +514,6 @@ defmodule HeyiAm.Accounts do
       visible: ps.visible,
       share_id: ps.share_id,
       inserted_at: ps.inserted_at
-    }
-  end
-
-  defp challenge_to_export(challenge) do
-    %{
-      slug: challenge.slug,
-      title: challenge.title,
-      problem_statement: challenge.problem_statement,
-      evaluation_criteria: challenge.evaluation_criteria,
-      time_limit_minutes: challenge.time_limit_minutes,
-      max_responses: challenge.max_responses,
-      status: challenge.status,
-      inserted_at: challenge.inserted_at
     }
   end
 

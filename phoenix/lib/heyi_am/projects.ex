@@ -48,19 +48,26 @@ defmodule HeyiAm.Projects do
     all_paths = collect_all_paths(shares)
     prefix = common_prefix(all_paths)
 
-    Enum.reduce(shares, %{}, fn share, acc ->
-      files = share.top_files || []
-      token = share.token
+    all_dirs =
+      Enum.reduce(shares, %{}, fn share, acc ->
+        files = share.top_files || []
+        token = share.token
 
-      Enum.reduce(files, acc, fn file, inner_acc ->
-        path = extract_path(file) |> strip_prefix(prefix)
-        dir = extract_directory(path)
+        Enum.reduce(files, acc, fn file, inner_acc ->
+          path = extract_path(file) |> strip_prefix(prefix)
+          dir = extract_directory(path)
 
-        inner_acc
-        |> Map.put_new(dir, %{})
-        |> update_in([dir, token], &((&1 || 0) + 1))
+          inner_acc
+          |> Map.put_new(dir, %{})
+          |> update_in([dir, token], &((&1 || 0) + 1))
+        end)
       end)
-    end)
+
+    # Keep only top 10 directories by total edit count
+    all_dirs
+    |> Enum.sort_by(fn {_dir, counts} -> -Enum.sum(Map.values(counts)) end)
+    |> Enum.take(10)
+    |> Map.new()
   end
 
   @doc """
@@ -175,7 +182,8 @@ defmodule HeyiAm.Projects do
   def extract_directory(file_path) do
     case Path.split(file_path) do
       ["/" | rest] -> extract_directory(Enum.join(rest, "/"))
-      [dir, subdir, _ | _] -> dir <> "/" <> subdir <> "/"
+      [a, b, c, _ | _] -> a <> "/" <> b <> "/" <> c <> "/"
+      [dir, subdir, _file] -> dir <> "/" <> subdir <> "/"
       [dir, _file] -> dir <> "/"
       [file] -> file
       _ -> "."
