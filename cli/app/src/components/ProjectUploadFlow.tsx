@@ -995,6 +995,229 @@ const PLACEHOLDER_TIMELINE: TimelinePeriod[] = [
   },
 ];
 
+// ── Growth Chart ─────────────────────────────────────────────────
+
+interface GrowthChartProps {
+  sessions: Array<{ title: string; linesOfCode: number; date: string }>;
+  totalLoc: number;
+  totalFiles: number;
+}
+
+/** @internal Exported for testing */
+export function formatLocAxis(n: number): string {
+  if (n === 0) return '0';
+  if (n >= 1000) return `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k`;
+  return String(n);
+}
+
+/** @internal Exported for testing */
+export function formatLocDelta(n: number): string {
+  if (n >= 1000) return `+${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k`;
+  return `+${n}`;
+}
+
+/** @internal Exported for testing */
+export function computeAxisTicks(maxVal: number): number[] {
+  if (maxVal <= 0) return [0];
+  const rawStep = maxVal / 4;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const nice = [1, 2, 2.5, 5, 10];
+  let step = magnitude;
+  for (const n of nice) {
+    if (n * magnitude >= rawStep) {
+      step = n * magnitude;
+      break;
+    }
+  }
+  const ticks: number[] = [];
+  for (let v = 0; v <= maxVal + step * 0.1; v += step) {
+    ticks.push(Math.round(v));
+  }
+  if (ticks[ticks.length - 1] < maxVal) {
+    ticks.push(ticks[ticks.length - 1] + Math.round(step));
+  }
+  return ticks;
+}
+
+/** @internal Exported for testing */
+export function GrowthChart({ sessions, totalLoc, totalFiles }: GrowthChartProps) {
+  if (sessions.length === 0) {
+    return (
+      <div className="growth-chart">
+        <div className="growth-chart__svg-container">
+          <p style={{ color: 'var(--on-surface-variant)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
+            No session data available for growth chart.
+          </p>
+        </div>
+        <div className="growth-chart__summary">
+          <div className="growth-chart__total-value">0</div>
+          <div className="growth-chart__total-label">LINES OF CODE</div>
+        </div>
+      </div>
+    );
+  }
+
+  const sorted = [...sessions]
+    .filter((s) => s.date)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  if (sorted.length === 0) {
+    return (
+      <div className="growth-chart">
+        <div className="growth-chart__svg-container">
+          <p style={{ color: 'var(--on-surface-variant)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
+            No dated sessions available for growth chart.
+          </p>
+        </div>
+        <div className="growth-chart__summary">
+          <div className="growth-chart__total-value">{formatLoc(totalLoc)}</div>
+          <div className="growth-chart__total-label">LINES OF CODE</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Compute cumulative LOC
+  const points: Array<{ title: string; cumLoc: number; delta: number }> = [];
+  let cumulative = 0;
+  for (const s of sorted) {
+    const delta = Math.max(0, s.linesOfCode);
+    cumulative += delta;
+    points.push({ title: s.title, cumLoc: cumulative, delta });
+  }
+
+  const maxLoc = Math.max(...points.map((p) => p.cumLoc), 1);
+  const ticks = computeAxisTicks(maxLoc);
+  const axisMax = ticks[ticks.length - 1] || 1;
+
+  // SVG layout constants
+  const svgWidth = 600;
+  const svgHeight = 260;
+  const padLeft = 48;
+  const padRight = 16;
+  const padTop = 32;
+  const padBottom = 48;
+  const chartW = svgWidth - padLeft - padRight;
+  const chartH = svgHeight - padTop - padBottom;
+
+  const xStep = points.length === 1 ? 0 : chartW / (points.length - 1);
+  const toX = (i: number) => padLeft + (points.length === 1 ? chartW / 2 : i * xStep);
+  const toY = (val: number) => padTop + chartH - (val / axisMax) * chartH;
+
+  // Build line path
+  const linePath = points
+    .map((p, i) => `${i === 0 ? 'M' : 'L'}${toX(i).toFixed(1)},${toY(p.cumLoc).toFixed(1)}`)
+    .join(' ');
+
+  // Build area path (line + close along bottom)
+  const areaPath =
+    linePath +
+    ` L${toX(points.length - 1).toFixed(1)},${(padTop + chartH).toFixed(1)}` +
+    ` L${toX(0).toFixed(1)},${(padTop + chartH).toFixed(1)} Z`;
+
+  // Truncate title for x-axis
+  const truncTitle = (t: string, max: number = 12) =>
+    t.length > max ? t.slice(0, max - 1) + '\u2026' : t;
+
+  return (
+    <div className="growth-chart">
+      <div className="growth-chart__svg-container">
+        <svg
+          viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+          width="100%"
+          preserveAspectRatio="xMidYMid meet"
+          role="img"
+          aria-label={`Growth chart showing cumulative lines of code across ${points.length} sessions`}
+        >
+          {/* Y-axis grid lines and labels */}
+          {ticks.map((tick) => (
+            <g key={`y-${tick}`}>
+              <line
+                x1={padLeft}
+                y1={toY(tick)}
+                x2={svgWidth - padRight}
+                y2={toY(tick)}
+                stroke="var(--outline-variant)"
+                strokeWidth="0.5"
+                strokeDasharray="4,4"
+              />
+              <text
+                x={padLeft - 8}
+                y={toY(tick) + 3}
+                textAnchor="end"
+                fontFamily="var(--font-mono)"
+                fontSize="9"
+                fill="var(--on-surface-variant)"
+              >
+                {formatLocAxis(tick)}
+              </text>
+            </g>
+          ))}
+
+          {/* Area fill */}
+          <path d={areaPath} fill="rgba(8,68,113,0.06)" />
+
+          {/* Line */}
+          <path
+            d={linePath}
+            fill="none"
+            stroke="var(--primary)"
+            strokeWidth="2"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+
+          {/* Data points, delta labels, and x-axis labels */}
+          {points.map((p, i) => (
+            <g key={i}>
+              {/* Dot */}
+              <circle cx={toX(i)} cy={toY(p.cumLoc)} r="4" fill="var(--secondary)" />
+
+              {/* Delta label above dot */}
+              {p.delta > 0 && (
+                <text
+                  x={toX(i)}
+                  y={toY(p.cumLoc) - 10}
+                  textAnchor="middle"
+                  fontFamily="var(--font-mono)"
+                  fontSize="9"
+                  fill="var(--secondary)"
+                >
+                  {formatLocDelta(p.delta)}
+                </text>
+              )}
+
+              {/* X-axis label */}
+              <text
+                x={toX(i)}
+                y={padTop + chartH + 16}
+                textAnchor="middle"
+                fontFamily="var(--font-mono)"
+                fontSize="9"
+                fill="var(--on-surface-variant)"
+              >
+                {truncTitle(p.title)}
+              </text>
+            </g>
+          ))}
+        </svg>
+      </div>
+      <div className="growth-chart__summary">
+        <div className="growth-chart__total-value">{formatLoc(totalLoc)}</div>
+        <div className="growth-chart__total-label">LINES OF CODE</div>
+        <div className="growth-chart__stat">
+          <div className="growth-chart__stat-value">{totalFiles}</div>
+          <div className="growth-chart__stat-label">FILES TOUCHED</div>
+        </div>
+        <div className="growth-chart__stat">
+          <div className="growth-chart__stat-value">{sorted.length}</div>
+          <div className="growth-chart__stat-label">SESSIONS</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Project Preview overlay (Screen 25 mockup) ──────────────────
 
 interface ProjectPreviewProps {
@@ -1206,6 +1429,61 @@ function ProjectPreview({
             );
           })}
         </div>
+
+        {/* Project Growth chart */}
+        <div className="project-preview__timeline-heading">PROJECT GROWTH</div>
+        <GrowthChart
+          sessions={sessions.map((s) => ({
+            title: s.title,
+            linesOfCode: s.linesOfCode,
+            date: s.date,
+          }))}
+          totalLoc={project.totalLoc}
+          totalFiles={project.totalFiles}
+        />
+
+        {/* Published Sessions grid */}
+        {sessions.length > 0 && (
+          <>
+            <div className="project-preview__sessions-heading">PUBLISHED SESSIONS</div>
+            <div className="project-preview__sessions-grid">
+              {sessions.map((s, i) => {
+                const barColor = SESSION_BAR_COLORS[i % SESSION_BAR_COLORS.length];
+                const barWidth = maxDuration > 0
+                  ? Math.max(20, Math.round((s.durationMinutes / maxDuration) * 100))
+                  : 100;
+                const filesCount = s.filesChanged?.length ?? 0;
+
+                return (
+                  <div
+                    key={s.id}
+                    id={`session-${s.id}`}
+                    className="project-preview__session-card"
+                  >
+                    <div
+                      className="project-preview__session-bar"
+                      style={{ width: `${barWidth}%`, background: barColor }}
+                    />
+                    <h3 className="project-preview__session-title">{s.title}</h3>
+                    <div className="project-preview__session-stats">
+                      {Math.round(s.durationMinutes)} min
+                      {' \u00B7 '}{s.turns} turns
+                      {filesCount > 0 && <>{' \u00B7 '}{filesCount} files</>}
+                      {' \u00B7 '}{formatLoc(s.linesOfCode)} LOC
+                    </div>
+                    {s.skills && s.skills.length > 0 && (
+                      <div className="project-preview__session-skills">
+                        {s.skills.map((skill) => (
+                          <span key={skill} className="chip">{skill}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -1220,6 +1498,7 @@ interface ReviewStepProps {
   skippedCount: number;
   skills: string[];
   timeline: TimelinePeriod[];
+  sessions: Session[];
   repoUrl: string;
   onRepoUrlChange: (url: string) => void;
   projectUrl: string;
@@ -1236,6 +1515,7 @@ export function ReviewStep({
   skippedCount,
   skills,
   timeline,
+  sessions,
   repoUrl,
   onRepoUrlChange,
   projectUrl,
@@ -1290,6 +1570,7 @@ export function ReviewStep({
           skills={skills}
           timeline={timeline}
           selectedCount={selectedCount}
+          sessions={sessions}
           repoUrl={repoUrl}
           projectUrl={projectUrl}
           onClose={() => setShowPreview(false)}
@@ -1697,6 +1978,7 @@ export function ProjectUploadFlow() {
                 })),
               }))
             : PLACEHOLDER_TIMELINE}
+          sessions={sessions.filter((s) => selectedIds.has(s.id))}
           repoUrl={repoUrl}
           onRepoUrlChange={setRepoUrl}
           projectUrl={projectUrl}

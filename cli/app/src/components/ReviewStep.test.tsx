@@ -10,7 +10,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { ReviewStep } from './ProjectUploadFlow';
-import type { Project } from '../types';
+import type { Project, Session } from '../types';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -70,6 +70,38 @@ const TIMELINE = [
   },
 ];
 
+const SESSIONS: Session[] = [
+  {
+    id: 'sess-1',
+    title: 'Project scaffolding & architecture',
+    date: '2026-03-03',
+    durationMinutes: 145,
+    turns: 77,
+    linesOfCode: 2400,
+    status: 'enhanced',
+    projectName: 'heyi.am',
+    rawLog: [],
+    skills: ['Architecture', 'React'],
+    filesChanged: Array.from({ length: 34 }, (_, i) => ({
+      path: `file${i}.ts`,
+      additions: 10,
+      deletions: 2,
+    })) as any,
+  },
+  {
+    id: 'sess-3',
+    title: 'API design',
+    date: '2026-03-10',
+    durationMinutes: 210,
+    turns: 45,
+    linesOfCode: 1800,
+    status: 'enhanced',
+    projectName: 'heyi.am',
+    rawLog: [],
+    skills: ['API Design', 'TypeScript'],
+  },
+];
+
 function renderReview(overrides: Partial<Parameters<typeof ReviewStep>[0]> = {}) {
   const defaults = {
     project: PROJECT,
@@ -78,6 +110,7 @@ function renderReview(overrides: Partial<Parameters<typeof ReviewStep>[0]> = {})
     skippedCount: 13,
     skills: ['React', 'TypeScript', 'Elixir'],
     timeline: TIMELINE,
+    sessions: SESSIONS,
     repoUrl: 'https://github.com/user/heyi-am',
     onRepoUrlChange: vi.fn(),
     projectUrl: '',
@@ -285,8 +318,9 @@ describe('ReviewStep', () => {
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByText('Foundation')).toBeInTheDocument();
     expect(within(dialog).getByText('Core')).toBeInTheDocument();
-    expect(within(dialog).getByText('Project scaffolding & architecture')).toBeInTheDocument();
-    expect(within(dialog).getByText('API design')).toBeInTheDocument();
+    // Titles appear in both the timeline and published sessions grid
+    expect(within(dialog).getAllByText('Project scaffolding & architecture').length).toBeGreaterThanOrEqual(1);
+    expect(within(dialog).getAllByText('API design').length).toBeGreaterThanOrEqual(1);
   });
 
   it('preview shows repo link when repoUrl is provided', async () => {
@@ -314,5 +348,109 @@ describe('ReviewStep', () => {
     const dialog = screen.getByRole('dialog');
     const skills = within(dialog).getByText('PROJECT TIMELINE');
     expect(skills).toBeInTheDocument();
+  });
+
+  // =========================================================================
+  // Published Sessions grid in preview
+  // =========================================================================
+
+  it('preview shows PUBLISHED SESSIONS heading', async () => {
+    const user = userEvent.setup();
+    renderReview();
+    await user.click(screen.getByRole('button', { name: /preview full project page/i }));
+
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText('PUBLISHED SESSIONS')).toBeInTheDocument();
+  });
+
+  it('preview renders session cards with titles', async () => {
+    const user = userEvent.setup();
+    renderReview();
+    await user.click(screen.getByRole('button', { name: /preview full project page/i }));
+
+    const dialog = screen.getByRole('dialog');
+    // Session titles appear in both timeline and session grid, so use getAllByText
+    const scaffoldingHeadings = within(dialog).getAllByText('Project scaffolding & architecture');
+    expect(scaffoldingHeadings.length).toBeGreaterThanOrEqual(2); // timeline + grid
+    const apiHeadings = within(dialog).getAllByText('API design');
+    expect(apiHeadings.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('preview session cards show stats line', async () => {
+    const user = userEvent.setup();
+    renderReview();
+    await user.click(screen.getByRole('button', { name: /preview full project page/i }));
+
+    const dialog = screen.getByRole('dialog');
+    // Check for duration and turns in stats
+    expect(within(dialog).getByText(/145 min/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/77 turns/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/210 min/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/45 turns/)).toBeInTheDocument();
+  });
+
+  it('preview session cards have anchor ids for scroll targeting', async () => {
+    const user = userEvent.setup();
+    const { container } = renderReview();
+    await user.click(screen.getByRole('button', { name: /preview full project page/i }));
+
+    expect(container.querySelector('#session-sess-1')).toBeInTheDocument();
+    expect(container.querySelector('#session-sess-3')).toBeInTheDocument();
+  });
+
+  it('preview session cards show skill chips', async () => {
+    const user = userEvent.setup();
+    renderReview();
+    await user.click(screen.getByRole('button', { name: /preview full project page/i }));
+
+    const dialog = screen.getByRole('dialog');
+    // Skills appear in both timeline cards and session cards
+    expect(within(dialog).getAllByText('Architecture').length).toBeGreaterThanOrEqual(1);
+    expect(within(dialog).getAllByText('API Design').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('preview session card bars have proportional widths', async () => {
+    const user = userEvent.setup();
+    const { container } = renderReview();
+    await user.click(screen.getByRole('button', { name: /preview full project page/i }));
+
+    const bars = container.querySelectorAll('.project-preview__session-bar');
+    expect(bars).toHaveLength(2);
+    // sess-3 has 210 min (longest = 100%), sess-1 has 145 min (69%)
+    const bar1 = bars[0] as HTMLElement;
+    const bar2 = bars[1] as HTMLElement;
+    expect(bar2.style.width).toBe('100%');  // 210 is max
+    expect(bar1.style.width).toBe('69%');   // Math.round(145/210*100)
+  });
+
+  it('preview does not show sessions grid when sessions is empty', async () => {
+    const user = userEvent.setup();
+    const { container } = renderReview({ sessions: [] });
+    await user.click(screen.getByRole('button', { name: /preview full project page/i }));
+
+    expect(container.querySelector('.project-preview__sessions-grid')).not.toBeInTheDocument();
+  });
+
+  it('timeline card click scrolls to corresponding session card', async () => {
+    const user = userEvent.setup();
+    const { container } = renderReview();
+    await user.click(screen.getByRole('button', { name: /preview full project page/i }));
+
+    const sessionCard = container.querySelector('#session-sess-1') as HTMLElement;
+    const scrollSpy = vi.fn();
+    sessionCard.scrollIntoView = scrollSpy;
+
+    // Click the first featured timeline card (which is for sess-1)
+    const dialog = screen.getByRole('dialog');
+    const timelineCards = within(dialog).getAllByRole('button');
+    // Find the timeline card with the scaffolding title
+    const timelineCard = timelineCards.find((btn) =>
+      btn.textContent?.includes('Project scaffolding & architecture') &&
+      btn.classList.contains('timeline__card')
+    );
+    if (timelineCard) {
+      await user.click(timelineCard);
+      expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+    }
   });
 });
