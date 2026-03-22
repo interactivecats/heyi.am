@@ -89,13 +89,6 @@ defmodule HeyiAm.Repo.Migrations.InitialSchema do
       add :language, :string
       add :tools, {:array, :string}, default: []
       add :skills, {:array, :string}, default: []
-      add :beats, :jsonb, default: "[]"
-      add :qa_pairs, :jsonb, default: "[]"
-      add :highlights, :jsonb, default: "[]"
-      add :tool_breakdown, :jsonb, default: "[]"
-      add :top_files, :jsonb, default: "[]"
-      add :transcript_excerpt, :jsonb, default: "[]"
-      add :turn_timeline, :jsonb, default: "[]"
       add :narrative, :text
       add :project_name, :string
       add :signature, :text
@@ -103,8 +96,12 @@ defmodule HeyiAm.Repo.Migrations.InitialSchema do
       add :status, :string, null: false, default: "draft"
       add :raw_storage_key, :string
       add :log_storage_key, :string
+      add :session_storage_key, :string
       add :slug, :string
-      add :agent_summary, :map
+      add :source_tool, :string, default: "claude"
+      add :end_time, :utc_datetime
+      add :cwd, :string
+      add :wall_clock_minutes, :integer
       add :user_id, references(:users, on_delete: :nilify_all)
       add :project_id, references(:projects, on_delete: :nilify_all)
 

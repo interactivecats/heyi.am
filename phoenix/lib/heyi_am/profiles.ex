@@ -82,8 +82,8 @@ defmodule HeyiAm.Profiles do
   def verification(shares) do
     test_sessions =
       Enum.count(shares, fn share ->
-        tools = Map.get(share, :tool_breakdown) || []
-        Enum.any?(tools, &test_tool?/1)
+        tools = Map.get(share, :tools) || []
+        Enum.any?(tools, &test_tool_name?/1)
       end)
 
     round(test_sessions / max(length(shares), 1) * 100)
@@ -97,9 +97,7 @@ defmodule HeyiAm.Profiles do
   @spec tool_orchestration([map()]) :: non_neg_integer()
   def tool_orchestration(shares) do
     avg_tools = avg(shares, fn s ->
-      Map.get(s, :tool_breakdown)
-      |> Kernel.||([])
-      |> Enum.map(& &1["name"])
+      (Map.get(s, :tools) || [])
       |> Enum.uniq()
       |> length()
     end)
@@ -151,12 +149,12 @@ defmodule HeyiAm.Profiles do
     max(min(score, 100.0), 0.0)
   end
 
-  defp test_tool?(%{"name" => name}) do
+  defp test_tool_name?(name) when is_binary(name) do
     downcased = String.downcase(name)
     String.contains?(downcased, "test") or downcased == "bash"
   end
 
-  defp test_tool?(_), do: false
+  defp test_tool_name?(_), do: false
 
   defp maybe_add_orchestration(dimensions, shares) do
     case orchestration(shares) do

@@ -91,6 +91,8 @@ defmodule HeyiAmWeb.Router do
     pipe_through :api
 
     get "/sessions/:token/verify", ShareApiController, :verify
+    get "/sessions/:token/data", SessionDataController, :show
+    get "/projects/:username/:slug/sessions-data", SessionDataController, :project_sessions
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

@@ -428,12 +428,6 @@ defmodule HeyiAm.Accounts do
           dev_take: nil,
           narrative: nil,
           project_name: nil,
-          beats: fragment("'[]'::jsonb"),
-          qa_pairs: fragment("'[]'::jsonb"),
-          highlights: fragment("'[]'::jsonb"),
-          tool_breakdown: fragment("'[]'::jsonb"),
-          top_files: fragment("'[]'::jsonb"),
-          transcript_excerpt: fragment("'[]'::jsonb"),
           signature: nil,
           public_key: nil,
           sealed: false,
@@ -442,12 +436,6 @@ defmodule HeyiAm.Accounts do
         ]]
       )
       |> Repo.update_all([])
-
-      # Anonymize portfolio sessions — strip project_name, keep structure for stats
-      Repo.update_all(
-        from(ps in "portfolio_sessions", where: ps.user_id == ^user.id),
-        set: [project_name: nil]
-      )
 
       # Delete all session tokens (security)
       Repo.delete_all(from(t in UserToken, where: t.user_id == ^user.id))
@@ -490,12 +478,6 @@ defmodule HeyiAm.Accounts do
       language: share.language,
       tools: share.tools,
       skills: share.skills,
-      beats: share.beats,
-      qa_pairs: share.qa_pairs,
-      highlights: share.highlights,
-      tool_breakdown: share.tool_breakdown,
-      top_files: share.top_files,
-      transcript_excerpt: share.transcript_excerpt,
       narrative: share.narrative,
       project_name: share.project_name,
       signature: share.signature,

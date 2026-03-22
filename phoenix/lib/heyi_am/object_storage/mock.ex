@@ -22,6 +22,21 @@ defmodule HeyiAm.ObjectStorage.Mock do
   end
 
   @impl HeyiAm.ObjectStorage
+  def get_object(_bucket, _key) do
+    {:ok, Jason.encode!(%{
+      "version" => 1,
+      "beats" => [],
+      "qa_pairs" => [],
+      "highlights" => [],
+      "tool_breakdown" => [],
+      "top_files" => [],
+      "transcript_excerpt" => [],
+      "turn_timeline" => [],
+      "agent_summary" => nil
+    })}
+  end
+
+  @impl HeyiAm.ObjectStorage
   def delete_object(_bucket, _key) do
     :ok
   end

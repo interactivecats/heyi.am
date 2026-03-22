@@ -22,6 +22,9 @@ defmodule HeyiAm.ObjectStorage do
   @callback presign_get(bucket :: String.t(), key :: String.t(), expires_in :: pos_integer()) ::
               {:ok, String.t()} | {:error, term()}
 
+  @callback get_object(bucket :: String.t(), key :: String.t()) ::
+              {:ok, binary()} | {:error, term()}
+
   @callback delete_object(bucket :: String.t(), key :: String.t()) ::
               :ok | {:error, term()}
 
@@ -53,6 +56,14 @@ defmodule HeyiAm.ObjectStorage do
   def presign_get(key, opts \\ []) do
     ttl = Keyword.get(opts, :expires_in, expires_in())
     adapter().presign_get(bucket(), key, ttl)
+  end
+
+  @doc """
+  Fetches the object at `key` and returns its body as a binary.
+  """
+  @spec get_object(String.t()) :: {:ok, binary()} | {:error, term()}
+  def get_object(key) do
+    adapter().get_object(bucket(), key)
   end
 
   @doc """

@@ -51,6 +51,14 @@ defmodule HeyiAm.ObjectStorage.ExAwsAdapter do
   end
 
   @impl HeyiAm.ObjectStorage
+  def get_object(bucket, key) do
+    case ExAws.S3.get_object(bucket, key) |> ExAws.request() do
+      {:ok, %{body: body}} -> {:ok, body}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @impl HeyiAm.ObjectStorage
   def delete_object(bucket, key) do
     bucket
     |> ExAws.S3.delete_object(key)

@@ -65,6 +65,13 @@ defmodule HeyiAm.Shares do
     |> Repo.all()
   end
 
+  def get_published_share_by_token_slim(token) do
+    Share
+    |> where([s], s.token == ^token and s.status != "draft")
+    |> select([s], %{token: s.token, status: s.status, session_storage_key: s.session_storage_key})
+    |> Repo.one()
+  end
+
   def generate_token do
     :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
   end

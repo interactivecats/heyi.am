@@ -64,17 +64,11 @@ defmodule HeyiAmWeb.PortfolioController do
               end)
 
             project_detail = build_project_detail(project)
-            work_timeline_json = build_work_timeline_json(project.shares)
-            growth_chart_json = build_growth_chart_json(project.shares, project_detail)
-            heatmap_json = build_heatmap_json(project.shares, project)
 
             render(conn, :project,
               portfolio_user: user,
               project: project_detail,
               sessions: sessions,
-              work_timeline_json: work_timeline_json,
-              growth_chart_json: growth_chart_json,
-              heatmap_json: heatmap_json,
               page_title: "#{project.title} — #{user.display_name || user.username}"
             )
         end
@@ -166,96 +160,4 @@ defmodule HeyiAmWeb.PortfolioController do
   defp format_duration(minutes) when minutes >= 60, do: "#{div(minutes, 60)}h"
   defp format_duration(minutes), do: "#{minutes}m"
 
-  # Serialize shares for GrowthChart React component
-  defp build_growth_chart_json(shares, project_detail) do
-    sessions = build_session_json(shares)
-
-    Jason.encode!(%{
-      sessions: sessions,
-      totalLoc: project_detail.total_loc,
-      totalFiles: project_detail.total_files
-    })
-  end
-
-  # Serialize shares for DirectoryHeatmap React component
-  defp build_heatmap_json(shares, _project) do
-    sessions = build_session_json(shares)
-
-    # Use cwd from the first share that has one — this is the real project root
-    dir_name =
-      shares
-      |> Enum.find_value("", fn s -> s.cwd end)
-
-    Jason.encode!(%{
-      sessions: sessions,
-      projectDirName: dir_name
-    })
-  end
-
-  # Shared session serialization for all React islands
-  defp build_session_json(shares) do
-    shares
-    |> Enum.filter(& &1.recorded_at)
-    |> Enum.sort_by(&DateTime.to_unix(&1.recorded_at, :millisecond))
-    |> Enum.map(&share_to_session_json/1)
-  end
-
-  defp share_to_session_json(s) do
-    dur = s.duration_minutes || 0
-
-    end_time =
-      cond do
-        s.end_time -> DateTime.to_iso8601(s.end_time)
-        s.recorded_at -> DateTime.add(s.recorded_at, dur * 60, :second) |> DateTime.to_iso8601()
-        true -> nil
-      end
-
-    base = %{
-      id: s.token,
-      title: s.title || "",
-      date: DateTime.to_iso8601(s.recorded_at),
-      endTime: end_time,
-      durationMinutes: dur,
-      wallClockMinutes: s.wall_clock_minutes,
-      cwd: s.cwd,
-      linesOfCode: s.loc_changed || 0,
-      turns: s.turns || 0,
-      skills: s.skills || [],
-      filesChanged: Enum.map(s.top_files || [], fn
-        %{"path" => p} -> %{path: p, additions: 0, deletions: 0}
-        p when is_binary(p) -> %{path: p, additions: 0, deletions: 0}
-        %{"path" => p, "additions" => a, "deletions" => d} -> %{path: p, additions: a, deletions: d}
-        _ -> %{path: "", additions: 0, deletions: 0}
-      end),
-      turnTimeline: Enum.map(s.turn_timeline || [], fn t ->
-        %{
-          timestamp: t["timestamp"] || "",
-          type: t["type"] || "response",
-          content: t["content"] || "",
-          tools: t["tools"] || []
-        }
-      end),
-      status: s.status || "listed",
-      projectName: s.project_name || "",
-      rawLog: []
-    }
-
-    case s.agent_summary do
-      %{"is_orchestrated" => true, "agents" => agents} when is_list(agents) and agents != [] ->
-        Map.put(base, :children, Enum.map(agents, fn a ->
-          %{
-            sessionId: a["role"] || "agent",
-            role: a["role"],
-            durationMinutes: a["duration_minutes"] || 0,
-            linesOfCode: a["loc_changed"] || 0
-          }
-        end))
-      _ -> base
-    end
-  end
-
-  # All React islands use the same session JSON shape
-  defp build_work_timeline_json(shares) do
-    Jason.encode!(%{sessions: build_session_json(shares)})
-  end
 end

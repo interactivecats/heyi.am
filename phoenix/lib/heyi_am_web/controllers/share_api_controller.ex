@@ -22,6 +22,7 @@ defmodule HeyiAmWeb.ShareApiController do
       token = Shares.generate_token()
       raw_key = "sessions/#{token}/raw.jsonl"
       log_key = "sessions/#{token}/log.json"
+      session_key = "sessions/#{token}/session.json"
 
       status = if session_params["status"] in ~w(listed unlisted), do: session_params["status"], else: "listed"
 
@@ -43,6 +44,7 @@ defmodule HeyiAmWeb.ShareApiController do
         |> Map.put("status", status)
         |> Map.put("raw_storage_key", raw_key)
         |> Map.put("log_storage_key", log_key)
+        |> Map.put("session_storage_key", session_key)
         |> Map.put_new("recorded_at", DateTime.utc_now())
         |> Map.put("user_id", user_id)
         |> then(fn a -> if verified_project_id, do: Map.put(a, "project_id", verified_project_id), else: a end)
@@ -60,8 +62,15 @@ defmodule HeyiAmWeb.ShareApiController do
             Shares.create_share(attrs)
 
           %Share{} = share ->
-            # Update existing share, keep its token
-            Shares.update_share(share, Map.delete(attrs, "token"))
+            # Update existing share, keep its token and use its storage keys
+            existing_session_key = "sessions/#{share.token}/session.json"
+
+            Shares.update_share(
+              share,
+              attrs
+              |> Map.delete("token")
+              |> Map.put("session_storage_key", existing_session_key)
+            )
 
           nil ->
             Shares.create_share(attrs)
@@ -72,7 +81,8 @@ defmodule HeyiAmWeb.ShareApiController do
           actual_token = share.token
           actual_raw_key = share.raw_storage_key || "sessions/#{actual_token}/raw.jsonl"
           actual_log_key = share.log_storage_key || "sessions/#{actual_token}/log.json"
-          upload_urls = build_upload_urls(actual_raw_key, actual_log_key)
+          actual_session_key = share.session_storage_key || "sessions/#{actual_token}/session.json"
+          upload_urls = build_upload_urls(actual_raw_key, actual_log_key, actual_session_key)
 
           response = %{
             token: actual_token,
@@ -133,10 +143,11 @@ defmodule HeyiAmWeb.ShareApiController do
     end
   end
 
-  defp build_upload_urls(raw_key, log_key) do
+  defp build_upload_urls(raw_key, log_key, session_key) do
     with {:ok, raw_url} <- HeyiAm.ObjectStorage.presign_put(raw_key),
-         {:ok, log_url} <- HeyiAm.ObjectStorage.presign_put(log_key) do
-      %{raw: raw_url, log: log_url}
+         {:ok, log_url} <- HeyiAm.ObjectStorage.presign_put(log_key),
+         {:ok, session_url} <- HeyiAm.ObjectStorage.presign_put(session_key) do
+      %{raw: raw_url, log: log_url, session: session_url}
     else
       _ -> nil
     end

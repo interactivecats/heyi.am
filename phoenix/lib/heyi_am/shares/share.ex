@@ -21,13 +21,6 @@ defmodule HeyiAm.Shares.Share do
     field :language, :string
     field :tools, {:array, :string}, default: []
     field :skills, {:array, :string}, default: []
-    field :beats, {:array, :map}, default: []
-    field :qa_pairs, {:array, :map}, default: []
-    field :highlights, {:array, :map}, default: []
-    field :tool_breakdown, {:array, :map}, default: []
-    field :top_files, {:array, :map}, default: []
-    field :transcript_excerpt, {:array, :map}, default: []
-    field :turn_timeline, {:array, :map}, default: []
     field :narrative, :string
     field :project_name, :string
     field :signature, :string
@@ -35,8 +28,8 @@ defmodule HeyiAm.Shares.Share do
     field :status, :string, default: "draft"
     field :raw_storage_key, :string
     field :log_storage_key, :string
+    field :session_storage_key, :string
     field :slug, :string
-    field :agent_summary, :map
     field :source_tool, :string, default: "claude"
     field :end_time, :utc_datetime
     field :cwd, :string
@@ -62,12 +55,11 @@ defmodule HeyiAm.Shares.Share do
     |> cast(attrs, [
       :token, :title, :dev_take, :context, :duration_minutes, :turns, :files_changed,
       :loc_changed, :recorded_at, :verified_at, :sealed, :template, :language,
-      :tools, :skills, :beats, :qa_pairs, :highlights, :tool_breakdown,
-      :top_files, :transcript_excerpt, :turn_timeline, :narrative, :project_name, :user_id,
+      :tools, :skills, :narrative, :project_name, :user_id,
       :signature, :public_key,
       :status,
-      :raw_storage_key, :log_storage_key,
-      :slug, :agent_summary, :project_id, :source_tool,
+      :raw_storage_key, :log_storage_key, :session_storage_key,
+      :slug, :project_id, :source_tool,
       :end_time, :cwd, :wall_clock_minutes
     ])
     |> validate_required([:token, :title])

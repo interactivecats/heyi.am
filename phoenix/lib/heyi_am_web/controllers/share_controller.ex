@@ -13,30 +13,49 @@ defmodule HeyiAmWeb.ShareController do
   end
 
   defp build_session(share) do
-    share
-    |> Map.from_struct()
-    |> Map.put(:loc_changed, format_loc(share.loc_changed))
-    |> Map.put(:user, %{
-      username: (share.user && share.user.username) || "anonymous",
-      display_name: (share.user && (share.user.display_name || share.user.username)) || "Anonymous"
-    })
-    |> Map.put(:project, %{
-      title: share.project_name,
-      slug: slugify(share.project_name)
-    })
-    # Default nil numeric/list fields so templates don't crash on arithmetic/length
-    |> Map.update(:files_changed, 0, &(&1 || 0))
-    |> Map.update(:turns, 0, &(&1 || 0))
-    |> Map.update(:duration_minutes, 0, &(&1 || 0))
-    |> Map.update(:top_files, [], &(&1 || []))
-    |> Map.update(:beats, [], &(&1 || []))
-    |> Map.update(:qa_pairs, [], &(&1 || []))
-    |> Map.update(:highlights, [], &(&1 || []))
-    |> Map.update(:skills, [], &(&1 || []))
-    |> Map.update(:tools, [], &(&1 || []))
-    |> Map.update(:tool_breakdown, [], &(&1 || []))
-    |> Map.update(:transcript_excerpt, [], &(&1 || []))
-    |> Map.update(:turn_timeline, [], &(&1 || []))
+    base =
+      share
+      |> Map.from_struct()
+      |> Map.put(:loc_changed, format_loc(share.loc_changed))
+      |> Map.put(:user, %{
+        username: (share.user && share.user.username) || "anonymous",
+        display_name: (share.user && (share.user.display_name || share.user.username)) || "Anonymous"
+      })
+      |> Map.put(:project, %{
+        title: share.project_name,
+        slug: slugify(share.project_name)
+      })
+      # Default nil numeric/list fields so templates don't crash on arithmetic/length
+      |> Map.update(:files_changed, 0, &(&1 || 0))
+      |> Map.update(:turns, 0, &(&1 || 0))
+      |> Map.update(:duration_minutes, 0, &(&1 || 0))
+      |> Map.update(:skills, [], &(&1 || []))
+      |> Map.update(:tools, [], &(&1 || []))
+
+    # Fetch detail data from S3 (beats, qa_pairs, etc.)
+    detail = fetch_session_detail(share.session_storage_key)
+
+    base
+    |> Map.put(:beats, detail["beats"] || [])
+    |> Map.put(:qa_pairs, detail["qa_pairs"] || [])
+    |> Map.put(:highlights, detail["highlights"] || [])
+    |> Map.put(:tool_breakdown, detail["tool_breakdown"] || [])
+    |> Map.put(:top_files, detail["top_files"] || [])
+    |> Map.put(:transcript_excerpt, detail["transcript_excerpt"] || [])
+    |> Map.put(:turn_timeline, detail["turn_timeline"] || [])
+    |> Map.put(:agent_summary, detail["agent_summary"])
+  end
+
+  defp fetch_session_detail(nil), do: %{}
+  defp fetch_session_detail(key) do
+    case HeyiAm.ObjectStorage.get_object(key) do
+      {:ok, body} ->
+        case Jason.decode(body) do
+          {:ok, data} when is_map(data) -> data
+          _ -> %{}
+        end
+      _ -> %{}
+    end
   end
 
   def show_in_project(conn, %{"username" => username, "project" => project_slug, "session" => session_slug}) do
@@ -124,8 +143,7 @@ defmodule HeyiAmWeb.ShareController do
         {full_log, 0}
 
       :error ->
-        excerpt = share.transcript_excerpt || []
-        {excerpt, max(total_turns - length(excerpt), 0)}
+        {[], total_turns}
     end
   end
 

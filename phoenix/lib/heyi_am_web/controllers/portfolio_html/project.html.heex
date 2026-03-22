@@ -89,8 +89,8 @@
 
     <%!-- Work Timeline (React island from @heyiam/ui) --%>
     <div style="font-family: var(--font-mono); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">WORK TIMELINE</div>
-    <div data-work-timeline style="margin-block-end: var(--spacing-8);">
-      <script type="application/json"><%= raw(@work_timeline_json) %></script>
+    <div data-work-timeline data-username={@portfolio_user.username} data-project-slug={@project.slug} style="margin-block-end: var(--spacing-8);">
+      <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant);">Loading timeline...</p>
     </div>
 
     <%!-- Project Timeline --%>
@@ -174,13 +174,13 @@
 
     <%!-- Growth Chart (React island from @heyiam/ui) --%>
     <div style="font-family: var(--font-mono); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">PROJECT GROWTH</div>
-    <div data-growth-chart style="margin-block-end: var(--spacing-8);">
-      <script type="application/json"><%= raw(@growth_chart_json) %></script>
+    <div data-growth-chart data-username={@portfolio_user.username} data-project-slug={@project.slug} data-total-loc={@project.total_loc} data-total-files={@project.total_files} style="margin-block-end: var(--spacing-8);">
+      <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant);">Loading chart...</p>
     </div>
 
     <%!-- Directory Heatmap (React island from @heyiam/ui) --%>
-    <div data-directory-heatmap style="margin-block-end: var(--spacing-8);">
-      <script type="application/json"><%= raw(@heatmap_json) %></script>
+    <div data-directory-heatmap data-username={@portfolio_user.username} data-project-slug={@project.slug} data-project-dir="" style="margin-block-end: var(--spacing-8);">
+      <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant);">Loading heatmap...</p>
     </div>
 
     <%!-- Published Sessions — flat grid matching CLI --%>

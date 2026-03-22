@@ -881,6 +881,28 @@ export function createApp(sessionsBasePath?: string) {
             const sessionSlug = (enhanced?.title ?? session.title ?? sessionId)
               .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
 
+            // Build agent summary (shared between POST body and session.json)
+            const agentSummary = await (async () => {
+              const childMetas = meta.children ?? [];
+              if (childMetas.length === 0) return null;
+
+              const seenRoles = new Set<string>();
+              const agents: Array<{ role: string; duration_minutes: number; loc_changed: number }> = [];
+              for (const c of childMetas) {
+                const role = c.agentRole ?? c.sessionId;
+                if (seenRoles.has(role)) continue;
+                seenRoles.add(role);
+                const childStats = await getSessionStats(c, proj.name);
+                agents.push({
+                  role: c.agentRole ?? 'agent',
+                  duration_minutes: childStats.duration,
+                  loc_changed: childStats.loc,
+                });
+              }
+              return agents.length > 0 ? { is_orchestrated: true, agents } : null;
+            })();
+
+            // POST body: scalar/aggregate fields only
             const sessionPayload = {
               session: {
                 title: enhanced?.title ?? session.title,
@@ -898,53 +920,57 @@ export function createApp(sessionsBasePath?: string) {
                 language: null,
                 tools: session.toolBreakdown?.map((t) => t.tool) ?? [],
                 skills: enhanced?.skills ?? session.skills ?? [],
-                beats: (enhanced?.executionSteps ?? session.executionPath ?? []).map((s, i) => ({
-                  label: s.title,
-                  description: 'body' in s ? (s as { body: string }).body : ('description' in s ? (s as { description: string }).description : ''),
-                  position: i,
-                })),
-                qa_pairs: enhanced?.qaPairs ?? session.qaPairs ?? [],
-                highlights: [],
-                tool_breakdown: (session.toolBreakdown ?? []).map((t) => ({ name: t.tool, count: t.count })),
-                top_files: (session.filesChanged ?? []).slice(0, 20).map((f) => (typeof f === 'string' ? { path: f } : f)),
                 narrative: enhanced?.developerTake ?? '',
-                turn_timeline: (session.turnTimeline ?? []).map((t) => ({
-                  timestamp: t.timestamp,
-                  type: t.type,
-                  content: (t.content ?? '').slice(0, 200),
-                  tools: (t as { tools?: string[] }).tools ?? [],
-                })),
-                transcript_excerpt: (session.rawLog ?? []).slice(0, 10).map((line, i) => {
-                  const role = line.startsWith('> ') ? 'dev' : 'ai';
-                  const text = role === 'dev' ? line.slice(2) : line.replace(/^\[AI\] |^\[TOOL\] /, '');
-                  return { role, id: `Turn ${i + 1}`, text, timestamp: null };
-                }),
-                agent_summary: await (async () => {
-                  // Build agent summary from child session metadata
-                  const childMetas = meta.children ?? [];
-                  if (childMetas.length === 0) return null;
-
-                  const seenRoles = new Set<string>();
-                  const agents: Array<{ role: string; duration_minutes: number; loc_changed: number }> = [];
-                  for (const c of childMetas) {
-                    const role = c.agentRole ?? c.sessionId;
-                    if (seenRoles.has(role)) continue;
-                    seenRoles.add(role);
-                    const childStats = await getSessionStats(c, proj.name);
-                    agents.push({
-                      role: c.agentRole ?? 'agent',
-                      duration_minutes: childStats.duration,
-                      loc_changed: childStats.loc,
-                    });
-                  }
-                  return agents.length > 0 ? { is_orchestrated: true, agents } : null;
-                })(),
                 project_name: proj.name,
                 project_id: projectData.project_id,
                 slug: sessionSlug,
                 status: 'listed',
                 source_tool: session.source ?? meta.source ?? 'claude',
               },
+            };
+
+            // session.json: full data including visualization fields for S3
+            const sessionData = {
+              version: 1,
+              title: enhanced?.title ?? session.title,
+              dev_take: enhanced?.developerTake ?? session.developerTake ?? '',
+              context: enhanced?.context ?? '',
+              duration_minutes: session.durationMinutes ?? 0,
+              turns: session.turns ?? 0,
+              files_changed: session.filesChanged?.length ?? 0,
+              loc_changed: session.linesOfCode ?? 0,
+              recorded_at: session.date ? new Date(session.date).toISOString() : new Date().toISOString(),
+              end_time: session.endTime ? new Date(session.endTime).toISOString() : null,
+              cwd: session.cwd ?? null,
+              wall_clock_minutes: session.wallClockMinutes ?? null,
+              template: 'editorial',
+              skills: enhanced?.skills ?? session.skills ?? [],
+              tools: session.toolBreakdown?.map((t) => t.tool) ?? [],
+              source_tool: session.source ?? meta.source ?? 'claude',
+              slug: sessionSlug,
+              project_name: proj.name,
+              narrative: enhanced?.developerTake ?? '',
+              beats: (enhanced?.executionSteps ?? session.executionPath ?? []).map((s, i) => ({
+                label: s.title,
+                description: 'body' in s ? (s as { body: string }).body : ('description' in s ? (s as { description: string }).description : ''),
+                position: i,
+              })),
+              qa_pairs: enhanced?.qaPairs ?? session.qaPairs ?? [],
+              highlights: [],
+              tool_breakdown: (session.toolBreakdown ?? []).map((t) => ({ name: t.tool, count: t.count })),
+              top_files: (session.filesChanged ?? []).slice(0, 20).map((f) => (typeof f === 'string' ? { path: f } : f)),
+              turn_timeline: (session.turnTimeline ?? []).map((t) => ({
+                timestamp: t.timestamp,
+                type: t.type,
+                content: (t.content ?? '').slice(0, 200),
+                tools: (t as { tools?: string[] }).tools ?? [],
+              })),
+              transcript_excerpt: (session.rawLog ?? []).slice(0, 10).map((line, i) => {
+                const role = line.startsWith('> ') ? 'dev' : 'ai';
+                const text = role === 'dev' ? line.slice(2) : line.replace(/^\[AI\] |^\[TOOL\] /, '');
+                return { role, id: `Turn ${i + 1}`, text, timestamp: null };
+              }),
+              agent_summary: agentSummary,
             };
 
             const sessionRes = await fetch(`${API_URL}/api/sessions`, {
@@ -961,7 +987,7 @@ export function createApp(sessionsBasePath?: string) {
 
               // Upload raw JSONL and log JSON to S3 (best-effort, non-fatal)
               try {
-                const sesData = await sessionRes.json() as { upload_urls?: { raw?: string; log?: string } };
+                const sesData = await sessionRes.json() as { upload_urls?: { raw?: string; log?: string; session?: string } };
                 if (sesData.upload_urls) {
                   const { raw: rawUrl, log: logUrl } = sesData.upload_urls;
                   if (rawUrl && meta.path && !meta.path.startsWith('cursor://')) {
@@ -973,6 +999,15 @@ export function createApp(sessionsBasePath?: string) {
                   if (logUrl && session.rawLog && session.rawLog.length > 0) {
                     try {
                       await fetch(logUrl, { method: 'PUT', body: JSON.stringify(session.rawLog), headers: { 'Content-Type': 'application/json' } });
+                    } catch { /* S3 upload is best-effort */ }
+                  }
+                  if (sesData.upload_urls.session) {
+                    try {
+                      await fetch(sesData.upload_urls.session, {
+                        method: 'PUT',
+                        body: JSON.stringify(sessionData),
+                        headers: { 'Content-Type': 'application/json' },
+                      });
                     } catch { /* S3 upload is best-effort */ }
                   }
                 }
