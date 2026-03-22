@@ -117,3 +117,125 @@ export async function pollDeviceAuth(deviceCode: string): Promise<AuthStatus> {
   }
   return res.json();
 }
+
+// ── Project Enhance types ────────────────────────────────────────
+
+export interface ProjectEnhanceResult {
+  narrative: string;
+  arc: Array<{ phase: number; title: string; description: string }>;
+  skills: string[];
+  timeline: Array<{
+    period: string;
+    label: string;
+    sessions: Array<{
+      sessionId: string;
+      title: string;
+      featured: boolean;
+      tag?: string;
+    }>;
+  }>;
+  questions: Array<{
+    id: string;
+    category: 'pattern' | 'architecture' | 'evolution';
+    question: string;
+    context: string;
+  }>;
+}
+
+export type EnhanceEventType =
+  | { type: 'session_progress'; sessionId: string; title: string; status: 'enhancing' | 'done' | 'skipped'; detail?: string }
+  | { type: 'project_enhance'; status: 'generating' }
+  | { type: 'done'; result: ProjectEnhanceResult }
+  | { type: 'error'; message: string };
+
+// ── Project Enhance SSE stream ───────────────────────────────────
+
+export function enhanceProject(
+  dirName: string,
+  selectedSessionIds: string[],
+  skippedSessions: Array<{ title: string; duration: number; loc: number }>,
+  onEvent: (event: EnhanceEventType) => void,
+): AbortController {
+  const controller = new AbortController();
+
+  fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/enhance-project`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ selectedSessionIds, skippedSessions }),
+    signal: controller.signal,
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: { message: 'Enhance failed' } }));
+        onEvent({ type: 'error', message: err.error?.message ?? 'Enhance failed' });
+        return;
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) {
+        onEvent({ type: 'error', message: 'No response stream' });
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const json = line.slice(6).trim();
+          if (!json) continue;
+          try {
+            onEvent(JSON.parse(json) as EnhanceEventType);
+          } catch {
+            // skip malformed SSE lines
+          }
+        }
+      }
+    })
+    .catch((err) => {
+      if ((err as Error).name !== 'AbortError') {
+        onEvent({ type: 'error', message: (err as Error).message });
+      }
+    });
+
+  return controller;
+}
+
+// ── Narrative Refinement ─────────────────────────────────────────
+
+export interface RefineAnswer {
+  questionId: string;
+  question: string;
+  answer: string;
+}
+
+export interface RefineResult {
+  narrative: string;
+  timeline: ProjectEnhanceResult['timeline'];
+}
+
+export async function refineNarrative(
+  dirName: string,
+  draftNarrative: string,
+  draftTimeline: ProjectEnhanceResult['timeline'],
+  answers: RefineAnswer[],
+): Promise<RefineResult> {
+  const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/refine-narrative`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ draftNarrative, draftTimeline, answers }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: { message: 'Refine failed' } }));
+    throw new Error(err.error?.message ?? 'Refine failed');
+  }
+  return res.json();
+}

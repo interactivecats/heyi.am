@@ -450,3 +450,28 @@ describe('POST /api/projects/:project/sessions/:id/enhance', () => {
   });
 });
 
+describe('GET /api/projects/:project/git-remote', () => {
+  it('returns 404 for unknown project', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app).get('/api/projects/nonexistent/git-remote');
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('PROJECT_NOT_FOUND');
+  });
+
+  it('returns url: null when project path is not a git repo', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app).get('/api/projects/myapp/git-remote');
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('url');
+    // The test fixture dir decodes to /Users/test/Dev/myapp which is not a real git repo
+    expect(res.body.url).toBeNull();
+  });
+
+  it('also matches by dirName', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app).get('/api/projects/-Users-test-Dev-myapp/git-remote');
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('url');
+  });
+});
+

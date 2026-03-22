@@ -2,6 +2,7 @@ import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 import type { Server } from 'node:http';
 import { listSessions, parseSession, type SessionMeta } from './parsers/index.js';
 import { bridgeToAnalyzer, bridgeChildSessions, aggregateChildStats, type ChildSessionSummary } from './bridge.js';
@@ -10,6 +11,7 @@ import { checkAuthStatus, getAuthToken, saveAuthToken } from './auth.js';
 import { API_URL } from './config.js';
 import { getProvider, getEnhanceMode } from './llm/index.js';
 import { triageSessions, type SessionMetaWithStats } from './llm/triage.js';
+import { enhanceProject, refineNarrative, type SessionSummary, type SkippedSessionMeta, type ProjectEnhanceResult } from './llm/project-enhance.js';
 import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData } from './settings.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -281,6 +283,48 @@ export function createApp(sessionsBasePath?: string) {
     }
   });
 
+  // Git remote auto-detection — derives repo URL from project path
+  app.get('/api/projects/:project/git-remote', async (req: Request, res: Response) => {
+    try {
+      const { project } = req.params;
+      const projects = await getProjects(sessionsBasePath);
+      const proj = projects.find((p) => p.name === project || p.dirName === project);
+      if (!proj) {
+        res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });
+        return;
+      }
+
+      // Derive the project filesystem path from the dirName.
+      // Claude Code encodes "/Users/ben/Dev/heyi-am" as "-Users-ben-Dev-heyi-am"
+      // (replaces "/" with "-"). Reverse: replace leading "-" with "/".
+      const projectPath = proj.dirName.replace(/^-/, '/').replace(/-/g, '/');
+
+      let remoteUrl: string | null = null;
+      try {
+        // Use execFileSync to avoid shell injection — fixed args, no interpolation
+        const raw = execFileSync('git', ['-C', projectPath, 'remote', 'get-url', 'origin'], {
+          timeout: 5000,
+          encoding: 'utf-8',
+          stdio: ['pipe', 'pipe', 'pipe'],
+        }).trim();
+
+        // Clean the URL:
+        // git@github.com:user/repo.git → github.com/user/repo
+        // https://github.com/user/repo.git → github.com/user/repo
+        remoteUrl = raw
+          .replace(/\.git$/, '')
+          .replace(/^git@([^:]+):/, '$1/')
+          .replace(/^https?:\/\//, '');
+      } catch {
+        // No git remote or not a git repo — return null
+      }
+
+      res.json({ url: remoteUrl });
+    } catch (err) {
+      res.status(500).json({ error: { code: 'GIT_REMOTE_FAILED', message: (err as Error).message } });
+    }
+  });
+
   // Enhance endpoints — AI-powered session summarization
   // Uses provider abstraction: BYOK (local Anthropic SDK) or proxy (Phoenix backend)
   app.post('/api/projects/:project/sessions/:id/enhance', async (req: Request, res: Response) => {
@@ -428,6 +472,153 @@ export function createApp(sessionsBasePath?: string) {
       }
     } catch {
       res.status(500).json({ error: 'Poll failed' });
+    }
+  });
+
+  // Project enhance — enhance selected sessions + generate project narrative
+  // SSE streaming: session_progress, project_enhance, done events
+  app.post('/api/projects/:project/enhance-project', async (req: Request, res: Response) => {
+    const { project } = req.params;
+    const { selectedSessionIds, skippedSessions } = req.body as {
+      selectedSessionIds: string[];
+      skippedSessions: SkippedSessionMeta[];
+    };
+
+    if (!Array.isArray(selectedSessionIds) || selectedSessionIds.length === 0) {
+      res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'selectedSessionIds must be a non-empty array' } });
+      return;
+    }
+
+    // Set up SSE
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    });
+
+    const send = (data: Record<string, unknown>) => {
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    try {
+      const projects = await getProjects(sessionsBasePath);
+      const proj = projects.find((p) => p.name === project || p.dirName === project);
+      if (!proj) {
+        send({ type: 'error', code: 'PROJECT_NOT_FOUND', message: 'Project not found' });
+        res.end();
+        return;
+      }
+
+      const provider = getProvider();
+
+      // Step 1: Enhance each selected session (skip already-enhanced)
+      const sessionSummaries: SessionSummary[] = [];
+      const CONCURRENCY = 3;
+
+      // Process sessions in batches of CONCURRENCY
+      for (let i = 0; i < selectedSessionIds.length; i += CONCURRENCY) {
+        const batch = selectedSessionIds.slice(i, i + CONCURRENCY);
+        await Promise.all(batch.map(async (sessionId) => {
+          const meta = proj.sessions.find((s) => s.sessionId === sessionId);
+          if (!meta) return;
+
+          // Check if already enhanced
+          const existing = loadEnhancedData(sessionId);
+          if (existing) {
+            send({ type: 'session_progress', sessionId, status: 'skipped' });
+            sessionSummaries.push({
+              sessionId,
+              title: existing.title,
+              developerTake: existing.developerTake,
+              skills: existing.skills,
+              executionSteps: existing.executionSteps.map((s) => ({ title: s.title, body: s.body })),
+              duration: 0,
+              loc: 0,
+              turns: 0,
+              files: 0,
+              date: existing.enhancedAt,
+            });
+            return;
+          }
+
+          send({ type: 'session_progress', sessionId, status: 'enhancing' });
+
+          try {
+            const session = await loadSession(meta.path, proj.name, sessionId);
+            const result = await provider.enhance(session);
+            saveEnhancedData(sessionId, result);
+
+            send({ type: 'session_progress', sessionId, status: 'done' });
+
+            sessionSummaries.push({
+              sessionId,
+              title: result.title,
+              developerTake: result.developerTake,
+              skills: result.skills,
+              executionSteps: result.executionSteps.map((s) => ({ title: s.title, body: s.body })),
+              duration: session.durationMinutes ?? 0,
+              loc: session.linesOfCode ?? 0,
+              turns: session.turns ?? 0,
+              files: session.filesChanged?.length ?? 0,
+              date: session.date ?? '',
+            });
+          } catch (err) {
+            console.error(`[enhance-project] Session ${sessionId} failed:`, (err as Error).message);
+            send({ type: 'session_progress', sessionId, status: 'error', message: (err as Error).message });
+          }
+        }));
+      }
+
+      // Fill in stats for already-enhanced sessions that had zeroed stats
+      for (const summary of sessionSummaries) {
+        if (summary.duration === 0) {
+          const meta = proj.sessions.find((s) => s.sessionId === summary.sessionId);
+          if (meta) {
+            const stats = await getSessionStats(meta, proj.name);
+            summary.duration = stats.duration;
+            summary.loc = stats.loc;
+            summary.turns = stats.turns;
+            summary.files = stats.files;
+            summary.date = stats.date || summary.date;
+            summary.correctionCount = undefined; // signals not available for cached
+          }
+        }
+      }
+
+      // Step 2: Generate project narrative
+      send({ type: 'project_enhance', status: 'generating' });
+
+      const projectResult = await enhanceProject(sessionSummaries, skippedSessions ?? []);
+
+      send({ type: 'done', result: projectResult });
+      res.end();
+    } catch (err) {
+      console.error('[enhance-project] Failed:', (err as Error).message);
+      send({ type: 'error', code: 'ENHANCE_FAILED', message: (err as Error).message });
+      res.end();
+    }
+  });
+
+  // Narrative refinement — weave developer's answers into the draft narrative
+  app.post('/api/projects/:project/refine-narrative', async (req: Request, res: Response) => {
+    try {
+      const { draftNarrative, draftTimeline, answers } = req.body as {
+        draftNarrative: string;
+        draftTimeline: ProjectEnhanceResult['timeline'];
+        answers: Array<{ questionId: string; question: string; answer: string }>;
+      };
+
+      if (!draftNarrative || typeof draftNarrative !== 'string') {
+        res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'draftNarrative is required' } });
+        return;
+      }
+
+      const refined = await refineNarrative(draftNarrative, draftTimeline ?? [], answers ?? []);
+      res.json(refined);
+    } catch (err) {
+      res.status(500).json({
+        error: { code: 'REFINE_FAILED', message: (err as Error).message },
+      });
     }
   });
 
