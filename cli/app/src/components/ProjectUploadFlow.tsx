@@ -1232,16 +1232,33 @@ interface FileEditData {
   editCount: number;
 }
 
-function extractDirectory(filePath: string): string {
+/** Strip the project root from an absolute path to make it relative. */
+function stripProjectRoot(filePath: string, projectDirName: string): string {
+  // dirName encodes the root: "-Users-ben-Dev-myapp" → "/Users/ben/Dev/myapp"
+  const root = projectDirName.replace(/^-/, '/').replace(/-/g, '/');
+  if (filePath.startsWith(root)) {
+    const relative = filePath.slice(root.length).replace(/^\//, '');
+    return relative || filePath;
+  }
+  // Try common prefix stripping as fallback
   const segments = filePath.split('/');
-  // Take first 2-3 path segments as directory, excluding the filename
-  const dirSegments = segments.slice(0, -1);
-  if (dirSegments.length === 0) return '/';
-  const depth = Math.min(dirSegments.length, 3);
-  return dirSegments.slice(0, depth).join('/') + '/';
+  // Find where the project name appears and take everything after
+  const projectName = projectDirName.split('-').filter(Boolean).pop() ?? '';
+  const projIdx = segments.findIndex((s) => s === projectName);
+  if (projIdx >= 0 && projIdx < segments.length - 1) {
+    return segments.slice(projIdx + 1).join('/');
+  }
+  return filePath;
 }
 
-function aggregateDirectoryEdits(sessions: Session[]): {
+function extractDirectory(filePath: string): string {
+  const segments = filePath.split('/').filter(Boolean);
+  if (segments.length <= 1) return filePath || '/';
+  const depth = Math.min(segments.length - 1, 3); // exclude filename, max 3 levels
+  return segments.slice(0, depth).join('/') + '/';
+}
+
+function aggregateDirectoryEdits(sessions: Session[], projectDirName: string): {
   directories: DirectoryEditData[];
   files: FileEditData[];
   totalFiles: number;
@@ -1254,9 +1271,10 @@ function aggregateDirectoryEdits(sessions: Session[]): {
     for (const fc of session.filesChanged) {
       if (!fc.path || typeof fc.path !== 'string') continue;
       const edits = fc.editCount ?? (fc.additions + fc.deletions);
-      const dir = extractDirectory(fc.path);
+      const relativePath = stripProjectRoot(fc.path, projectDirName);
+      const dir = extractDirectory(relativePath);
       dirMap.set(dir, (dirMap.get(dir) ?? 0) + edits);
-      fileMap.set(fc.path, (fileMap.get(fc.path) ?? 0) + edits);
+      fileMap.set(relativePath, (fileMap.get(relativePath) ?? 0) + edits);
     }
   }
 
@@ -1280,8 +1298,8 @@ function getBarOpacity(editCount: number, maxEdits: number): number {
 }
 
 /** @internal Exported for testing */
-export function DirectoryHeatmap({ sessions }: { sessions: Session[] }) {
-  const { directories, files, totalFiles } = aggregateDirectoryEdits(sessions);
+export function DirectoryHeatmap({ sessions, projectDirName }: { sessions: Session[]; projectDirName: string }) {
+  const { directories, files, totalFiles } = aggregateDirectoryEdits(sessions, projectDirName);
 
   if (directories.length === 0) {
     return (
@@ -1778,7 +1796,7 @@ function ProjectPreview({
         />
 
         {/* Directory Heatmap */}
-        <DirectoryHeatmap sessions={sessions} />
+        <DirectoryHeatmap sessions={sessions} projectDirName={project.dirName} />
 
         {/* Published Sessions grid */}
         {sessions.length > 0 && (
@@ -1837,6 +1855,7 @@ function ProjectPreview({
         <SessionDetailOverlay
           session={detailSession}
           projectName={project.name}
+          projectDirName={project.dirName}
           onClose={() => setDetailSession(null)}
         />
       )}

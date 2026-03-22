@@ -4,7 +4,23 @@ import type { Session, ExecutionStep, ToolUsage, FileChange, QaPair } from '../t
 export interface SessionDetailOverlayProps {
   session: Session;
   projectName: string;
+  projectDirName: string;
   onClose: () => void;
+}
+
+/** Strip the project root from absolute paths to make them relative. */
+function stripRoot(filePath: string, dirName: string): string {
+  const root = dirName.replace(/^-/, '/').replace(/-/g, '/');
+  if (filePath.startsWith(root)) {
+    return filePath.slice(root.length).replace(/^\//, '') || filePath;
+  }
+  const projectName = dirName.split('-').filter(Boolean).pop() ?? '';
+  const segments = filePath.split('/');
+  const idx = segments.findIndex((s) => s === projectName);
+  if (idx >= 0 && idx < segments.length - 1) {
+    return segments.slice(idx + 1).join('/');
+  }
+  return filePath;
 }
 
 function formatDuration(minutes: number): string {
@@ -206,7 +222,7 @@ function ToolBreakdown({ tools }: { tools: ToolUsage[] }) {
   );
 }
 
-function FilesChanged({ files }: { files: FileChange[] }) {
+function FilesChanged({ files, projectDirName }: { files: FileChange[]; projectDirName: string }) {
   return (
     <details className="session-detail__collapsible">
       <summary className="session-detail__collapsible-summary">
@@ -215,7 +231,7 @@ function FilesChanged({ files }: { files: FileChange[] }) {
       <div className="session-detail__file-list">
         {files.map((f) => (
           <div key={f.path} className="session-detail__file-row">
-            <span className="session-detail__file-path">{f.path}</span>
+            <span className="session-detail__file-path">{stripRoot(f.path, projectDirName)}</span>
             <span className="session-detail__file-additions">+{f.additions}</span>
             <span className="session-detail__file-deletions">-{f.deletions}</span>
           </div>
@@ -227,7 +243,7 @@ function FilesChanged({ files }: { files: FileChange[] }) {
 
 // ── Main component ──────────────────────────────────────────────
 
-export function SessionDetailOverlay({ session, projectName, onClose }: SessionDetailOverlayProps) {
+export function SessionDetailOverlay({ session, projectName, projectDirName, onClose }: SessionDetailOverlayProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -309,7 +325,7 @@ export function SessionDetailOverlay({ session, projectName, onClose }: SessionD
         {/* Full-width sections below */}
         <div className="session-detail__full-width">
           {hasTools && <ToolBreakdown tools={session.toolBreakdown!} />}
-          {hasFiles && <FilesChanged files={session.filesChanged!} />}
+          {hasFiles && <FilesChanged files={session.filesChanged!} projectDirName={projectDirName} />}
         </div>
       </div>
     </div>
