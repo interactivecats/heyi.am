@@ -243,6 +243,7 @@ export interface ChildSessionSummary {
   title?: string;
   durationMinutes?: number;
   linesOfCode?: number;
+  date?: string;
 }
 
 /** Compute aggregated stats from fully-parsed child sessions. */

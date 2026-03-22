@@ -31,6 +31,7 @@ export interface ChildSessionSummary {
   title?: string;
   durationMinutes?: number;
   linesOfCode?: number;
+  date?: string;
 }
 
 export interface QaPair {
@@ -87,4 +88,12 @@ export interface Project {
   skills: string[];
   dateRange: string;
   lastSessionDate: string;
+  /** Whether this project has been published to heyi.am */
+  isPublished?: boolean;
+  /** Number of sessions currently published */
+  publishedSessionCount?: number;
+  /** Session IDs that are currently published */
+  publishedSessions?: string[];
+  /** When the project was last enhanced (null = never) */
+  enhancedAt?: string | null;
 }

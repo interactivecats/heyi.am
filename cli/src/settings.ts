@@ -207,3 +207,47 @@ export function deleteProjectEnhanceResult(projectDirName: string, configDir?: s
   const path = projectEnhancePath(projectDirName, configDir);
   if (existsSync(path)) unlinkSync(path);
 }
+
+// ── Published state persistence ──────────────────────────────
+
+export interface PublishedState {
+  slug: string;
+  projectId: number;
+  publishedAt: string;
+  publishedSessions: string[];
+}
+
+const PUBLISHED_DIR = 'published';
+
+function publishedDir(configDir: string = CONFIG_DIR): string {
+  return join(configDir, PUBLISHED_DIR);
+}
+
+function publishedPath(projectDirName: string, configDir: string = CONFIG_DIR): string {
+  const safe = projectDirName.replace(/[^a-zA-Z0-9._-]/g, '_');
+  return join(publishedDir(configDir), `${safe}.json`);
+}
+
+export function savePublishedState(
+  projectDirName: string,
+  data: Omit<PublishedState, 'publishedAt'>,
+  configDir?: string,
+): void {
+  const dir = publishedDir(configDir);
+  mkdirSync(dir, { recursive: true });
+  const full: PublishedState = {
+    ...data,
+    publishedAt: new Date().toISOString(),
+  };
+  writeFileSync(publishedPath(projectDirName, configDir), JSON.stringify(full, null, 2), { mode: 0o600 });
+}
+
+export function getPublishedState(projectDirName: string, configDir?: string): PublishedState | null {
+  const path = publishedPath(projectDirName, configDir);
+  if (!existsSync(path)) return null;
+  try {
+    return JSON.parse(readFileSync(path, 'utf-8')) as PublishedState;
+  } catch {
+    return null;
+  }
+}

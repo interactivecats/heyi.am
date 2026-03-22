@@ -49,6 +49,10 @@ function toProject(ap: ApiProject): Project {
     skills: ap.skills,
     dateRange: ap.dateRange,
     lastSessionDate: ap.lastSessionDate,
+    isPublished: ap.isPublished,
+    publishedSessionCount: ap.publishedSessionCount,
+    publishedSessions: ap.publishedSessions,
+    enhancedAt: ap.enhancedAt,
   };
 }
 
@@ -60,21 +64,15 @@ export function SessionsProvider({ children }: { children: ReactNode }) {
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Step 1: Load projects on mount (cheap — just directory listing)
+  // Load projects on mount
   useEffect(() => {
     let cancelled = false;
 
     fetchProjects()
       .then((apiProjects) => {
         if (cancelled) return;
-        const mapped = apiProjects.map(toProject);
-        setProjects(mapped);
+        setProjects(apiProjects.map(toProject));
         setLoading(false);
-
-        // Auto-select first project
-        if (mapped.length > 0) {
-          setActiveProject(mapped[0].dirName);
-        }
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -85,7 +83,7 @@ export function SessionsProvider({ children }: { children: ReactNode }) {
     return () => { cancelled = true; };
   }, []);
 
-  // Step 2: Load sessions when active project changes (lazy)
+  // Load sessions only when explicitly requested via selectProject
   useEffect(() => {
     if (!activeProject) return;
     let cancelled = false;

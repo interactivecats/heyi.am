@@ -16,6 +16,8 @@ import {
   loadFreshProjectEnhanceResult,
   deleteProjectEnhanceResult,
   buildProjectFingerprint,
+  savePublishedState,
+  getPublishedState,
 } from './settings.js';
 
 describe('settings', () => {
@@ -224,6 +226,50 @@ describe('settings', () => {
 
     it('delete is idempotent', () => {
       expect(() => deleteProjectEnhanceResult('nonexistent', tmpDir)).not.toThrow();
+    });
+  });
+
+  describe('published state persistence', () => {
+    it('returns null when no published state exists', () => {
+      expect(getPublishedState('my-project', tmpDir)).toBeNull();
+    });
+
+    it('saves and loads published state', () => {
+      savePublishedState('my-project', {
+        slug: 'my-project',
+        projectId: 42,
+        publishedSessions: ['s1', 's2'],
+      }, tmpDir);
+      const loaded = getPublishedState('my-project', tmpDir);
+      expect(loaded).not.toBeNull();
+      expect(loaded!.slug).toBe('my-project');
+      expect(loaded!.projectId).toBe(42);
+      expect(loaded!.publishedSessions).toEqual(['s1', 's2']);
+      expect(loaded!.publishedAt).toBeDefined();
+    });
+
+    it('overwrites previous published state', () => {
+      savePublishedState('my-project', {
+        slug: 'my-project',
+        projectId: 42,
+        publishedSessions: ['s1'],
+      }, tmpDir);
+      savePublishedState('my-project', {
+        slug: 'my-project',
+        projectId: 42,
+        publishedSessions: ['s1', 's2', 's3'],
+      }, tmpDir);
+      const loaded = getPublishedState('my-project', tmpDir);
+      expect(loaded!.publishedSessions).toEqual(['s1', 's2', 's3']);
+    });
+
+    it('creates published/ subdirectory', () => {
+      savePublishedState('my-project', {
+        slug: 'my-project',
+        projectId: 1,
+        publishedSessions: [],
+      }, tmpDir);
+      expect(existsSync(join(tmpDir, 'published', 'my-project.json'))).toBe(true);
     });
   });
 });

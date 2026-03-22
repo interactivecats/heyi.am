@@ -13,6 +13,10 @@ export interface ApiProject {
   skills: string[];
   dateRange: string;
   lastSessionDate: string;
+  isPublished?: boolean;
+  publishedSessionCount?: number;
+  publishedSessions?: string[];
+  enhancedAt?: string | null;
 }
 
 export async function fetchProjects(): Promise<ApiProject[]> {
@@ -42,6 +46,10 @@ export async function fetchSession(projectDirName: string, sessionId: string): P
 export interface TriageResult {
   selected: Array<{ sessionId: string; reason: string }>;
   skipped: Array<{ sessionId: string; reason: string }>;
+  /** True when all sessions were auto-selected (small project, < 5 sessions) */
+  autoSelected?: boolean;
+  /** Method used for triage: 'llm', 'scoring', or 'auto-select' */
+  triageMethod?: string;
 }
 
 export type TriageEvent =
@@ -198,7 +206,7 @@ export interface ProjectEnhanceResult {
 }
 
 export type EnhanceEventType =
-  | { type: 'session_progress'; sessionId: string; title: string; status: 'enhancing' | 'done' | 'skipped'; detail?: string; skills?: string[] }
+  | { type: 'session_progress'; sessionId: string; title: string; status: 'enhancing' | 'done' | 'skipped' | 'failed'; detail?: string; skills?: string[] }
   | { type: 'project_enhance'; status: 'generating' }
   | { type: 'narrative_chunk'; text: string }
   | { type: 'cached'; enhancedAt: string }
@@ -354,12 +362,16 @@ export interface PublishProjectPayload {
   selectedSessionIds: string[];
 }
 
-export interface PublishResult {
-  projectId: number;
-  slug: string;
-  url: string;
-  publishedSessions: number;
+export interface PublishSessionStatus {
+  sessionId: string;
+  status: 'publishing' | 'published' | 'failed';
+  error?: string;
 }
+
+export type PublishEvent =
+  | { type: 'session'; sessionId: string; status: 'publishing' | 'published' | 'failed'; error?: string }
+  | { type: 'done'; projectUrl: string; uploaded: number; failed: number; failedSessions: Array<{ sessionId: string; error: string }> }
+  | { type: 'error'; error: string };
 
 export class AuthRequiredError extends Error {
   constructor() {
@@ -368,21 +380,66 @@ export class AuthRequiredError extends Error {
   }
 }
 
-export async function publishProject(
+export function publishProject(
   dirName: string,
   payload: PublishProjectPayload,
-): Promise<PublishResult> {
-  const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/publish`, {
+  onEvent: (event: PublishEvent) => void,
+): AbortController {
+  const controller = new AbortController();
+
+  fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/publish`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
-  });
-  if (res.status === 401) {
-    throw new AuthRequiredError();
-  }
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: { message: 'Publish failed' } }));
-    throw new Error(err.error?.message ?? 'Publish failed');
-  }
-  return res.json();
+    signal: controller.signal,
+  })
+    .then(async (res) => {
+      if (res.status === 401) {
+        throw new AuthRequiredError();
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: { message: 'Publish failed' } }));
+        onEvent({ type: 'error', error: err.error?.message ?? 'Publish failed' });
+        return;
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) {
+        onEvent({ type: 'error', error: 'No response stream' });
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const json = line.slice(6).trim();
+          if (!json) continue;
+          try {
+            onEvent(JSON.parse(json) as PublishEvent);
+          } catch {
+            // skip malformed SSE lines
+          }
+        }
+      }
+    })
+    .catch((err) => {
+      if ((err as Error).name === 'AbortError') return;
+      if (err instanceof AuthRequiredError) {
+        onEvent({ type: 'error', error: 'AUTH_REQUIRED' });
+      } else {
+        onEvent({ type: 'error', error: (err as Error).message });
+      }
+    });
+
+  return controller;
 }

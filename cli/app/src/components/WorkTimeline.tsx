@@ -1,9 +1,8 @@
-import type { Session } from '../types';
+import { useRef, useCallback } from 'react';
+import type { Session, ChildSessionSummary } from '../types';
 
 export interface WorkTimelineProps {
   sessions: Session[];
-  /** Height in pixels per session lane */
-  laneHeight?: number;
   /** Called when a session bar is clicked */
   onSessionClick?: (session: Session) => void;
 }
@@ -78,8 +77,9 @@ function formatTimeLabel(ms: number): string {
 // ── Segment computation ────────────────────────────────────────
 
 const GAP_THRESHOLD_MS = 60 * 60_000; // 1 hour
-const GAP_PX = 40;
-const PX_PER_MINUTE = 4;
+const GAP_PX = 56;
+const PX_PER_MINUTE = 5;
+const MIN_SESSION_WIDTH = 90;
 
 interface SessionSegment {
   type: 'session';
@@ -119,11 +119,9 @@ function clusterOverlapping(
     const end = getSessionEnd(s);
 
     if (!current || start >= current.endMs) {
-      // No overlap — start a new cluster
       if (current) clusters.push(current);
       current = { sessions: [s], startMs: start, endMs: end };
     } else {
-      // Overlaps with current cluster — merge
       current.sessions.push(s);
       if (end > current.endMs) current.endMs = end;
     }
@@ -140,15 +138,12 @@ export function computeSegments(sessions: Session[]): Segment[] {
     (a, b) => getSessionStart(a) - getSessionStart(b),
   );
 
-  // First, cluster overlapping sessions
   const clusters = clusterOverlapping(sorted);
-
   const segments: Segment[] = [];
 
   for (let i = 0; i < clusters.length; i++) {
     const cluster = clusters[i];
 
-    // Gap detection between clusters
     if (i > 0) {
       const prevEnd = clusters[i - 1].endMs;
       const gapMs = cluster.startMs - prevEnd;
@@ -190,26 +185,84 @@ function isSameDay(ms1: number, ms2: number): boolean {
   );
 }
 
-// ── Compute date tick marks for axis ───────────────────────────
-
 interface DateTick {
   label: string;
   x: number;
 }
 
+// ── Layout constants ────────────────────────────────────────────
+
+const PADDING_LEFT = 32;
+const PADDING_RIGHT = 32;
+const LABEL_AREA_TOP = 36;
+const AXIS_AREA_BOTTOM = 28;
+const LANE_SPACING = 24;
+const FORK_INSET = 24;
+const CURVE_DX = 18;
+
+/**
+ * Get the number of fork lanes a session needs.
+ * Uses childSessions (full data) first, then children (summaries), then childCount.
+ */
+function getChildLaneCount(session: Session): number {
+  if (session.childSessions && session.childSessions.length > 0) return session.childSessions.length;
+  if (session.children && session.children.length > 0) return session.children.length;
+  return 0;
+}
+
+/**
+ * Get the renderable children for fork/join — prefers full childSessions,
+ * falls back to children summaries.
+ */
+function getRenderableChildren(session: Session): Array<{
+  id: string;
+  role?: string;
+  durationMinutes: number;
+  linesOfCode: number;
+  date?: string;
+}> {
+  if (session.childSessions && session.childSessions.length > 0) {
+    return session.childSessions.map((c) => ({
+      id: c.id,
+      role: c.agentRole,
+      durationMinutes: c.durationMinutes,
+      linesOfCode: c.linesOfCode,
+      date: c.date,
+    }));
+  }
+  if (session.children && session.children.length > 0) {
+    return session.children.map((c) => ({
+      id: c.sessionId,
+      role: c.role,
+      durationMinutes: c.durationMinutes ?? 0,
+      linesOfCode: c.linesOfCode ?? 0,
+      date: c.date,
+    }));
+  }
+  return [];
+}
+
 // ── Component ──────────────────────────────────────────────────
 
-const PADDING_LEFT = 20;
-const PADDING_RIGHT = 20;
-const LABEL_AREA_TOP = 16;
-const AXIS_AREA_BOTTOM = 28;
+/** Truncate title to fit within a pixel width (rough: ~5.5px per char at 10px font) */
+function truncateTitle(title: string, maxPx: number): string {
+  const maxChars = Math.floor(maxPx / 5.5);
+  if (title.length <= maxChars) return title;
+  return title.slice(0, Math.max(maxChars - 1, 8)) + '…';
+}
 
-export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: WorkTimelineProps) {
+export function WorkTimeline({ sessions, onSessionClick }: WorkTimelineProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollBy = useCallback((delta: number) => {
+    scrollRef.current?.scrollBy({ left: delta, behavior: 'smooth' });
+  }, []);
+
   if (sessions.length === 0) {
     return (
       <div className="work-timeline" data-testid="work-timeline-empty">
         <p style={{
-          fontFamily: "'IBM Plex Mono', monospace",
+          fontFamily: SVG_FONT,
           fontSize: '0.75rem',
           color: '#6b7280',
         }}>
@@ -228,7 +281,7 @@ export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: Work
       totalContentWidth += GAP_PX;
     } else {
       const durationMin = (seg.endMs - seg.startMs) / 60_000;
-      totalContentWidth += Math.max(durationMin * PX_PER_MINUTE, 60);
+      totalContentWidth += Math.max(durationMin * PX_PER_MINUTE, MIN_SESSION_WIDTH);
     }
   }
 
@@ -238,20 +291,23 @@ export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: Work
   let maxLanes = 0;
   for (const seg of segments) {
     if (seg.type === 'session') {
-      const children = seg.session.childSessions ?? [];
-      if (children.length > maxLanes) maxLanes = children.length;
+      const lanes = getChildLaneCount(seg.session);
+      if (lanes > maxLanes) maxLanes = lanes;
     } else if (seg.type === 'concurrent') {
       if (seg.sessions.length > maxLanes) maxLanes = seg.sessions.length;
     }
   }
 
-  const mainY = LABEL_AREA_TOP + laneHeight / 2;
-  const forkLaneSpacing = Math.min(20, (laneHeight - 20) / Math.max(maxLanes, 1));
-  const svgHeight = LABEL_AREA_TOP + laneHeight + AXIS_AREA_BOTTOM;
+  // Dynamic height based on max lanes
+  const baseLaneHeight = 48;
+  const forkSpread = maxLanes > 0 ? maxLanes * LANE_SPACING + 16 : 0;
+  const laneAreaHeight = Math.max(baseLaneHeight, forkSpread);
+  const mainY = LABEL_AREA_TOP + laneAreaHeight / 2;
+  const svgHeight = LABEL_AREA_TOP + laneAreaHeight + AXIS_AREA_BOTTOM;
 
   // Determine if same-day for time label formatting
   const allSessionSegs = segments.filter(
-    (s): s is SessionSegment => s.type === 'session',
+    (s): s is SessionSegment | ConcurrentSegment => s.type !== 'gap',
   );
   const firstMs = allSessionSegs[0].startMs;
   const lastMs = allSessionSegs[allSessionSegs.length - 1].endMs;
@@ -275,7 +331,7 @@ export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: Work
       cursor = x2;
     } else {
       const durationMin = (seg.endMs - seg.startMs) / 60_000;
-      const w = Math.max(durationMin * PX_PER_MINUTE, 60);
+      const w = Math.max(durationMin * PX_PER_MINUTE, MIN_SESSION_WIDTH);
       const x1 = cursor;
       const x2 = cursor + w;
       layouts.push({ seg, x1, x2 });
@@ -286,7 +342,7 @@ export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: Work
   // Compute date ticks
   const dateTicks: DateTick[] = [];
   for (const layout of layouts) {
-    if (layout.seg.type === 'session' || layout.seg.type === 'concurrent') {
+    if (layout.seg.type !== 'gap') {
       dateTicks.push({
         label: sameDay ? formatTimeLabel(layout.seg.startMs) : formatDateLabel(layout.seg.startMs),
         x: layout.x1,
@@ -298,23 +354,49 @@ export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: Work
   const filteredTicks: DateTick[] = [];
   for (const tick of dateTicks) {
     const prev = filteredTicks[filteredTicks.length - 1];
-    if (!prev || tick.x - prev.x > 50) {
+    if (!prev || tick.x - prev.x > 70) {
       filteredTicks.push(tick);
     }
   }
 
+  const needsScroll = svgWidth > 800;
+
   return (
-    <div className="work-timeline" data-testid="work-timeline">
-      <div className="work-timeline__container" style={{
-        overflowX: 'auto',
-        WebkitOverflowScrolling: 'touch',
-        paddingBottom: 'var(--spacing-2, 0.5rem)',
-      }}>
+    <div className="work-timeline" data-testid="work-timeline" style={{ position: 'relative' }}>
+      {needsScroll && (
+        <div className="work-timeline__scroll-controls">
+          <button
+            type="button"
+            className="work-timeline__scroll-btn"
+            onClick={() => scrollBy(-300)}
+            aria-label="Scroll left"
+          >
+            &#8592;
+          </button>
+          <button
+            type="button"
+            className="work-timeline__scroll-btn"
+            onClick={() => scrollBy(300)}
+            aria-label="Scroll right"
+          >
+            &#8594;
+          </button>
+        </div>
+      )}
+      <div
+        className="work-timeline__container"
+        ref={scrollRef}
+        style={{
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          paddingBottom: 'var(--spacing-2, 0.5rem)',
+        }}
+      >
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
           xmlns="http://www.w3.org/2000/svg"
           role="img"
-          aria-label="Work timeline across sessions"
+          aria-label={`Work timeline showing ${sessions.length} sessions`}
           width={svgWidth}
           height={svgHeight}
           style={{ display: 'block' }}
@@ -345,7 +427,7 @@ export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: Work
                 x={tick.x}
                 y={svgHeight - 6}
                 fontFamily={SVG_FONT}
-                fontSize={7}
+                fontSize={8}
                 fill="#9ca3af"
                 textAnchor="start"
               >
@@ -364,7 +446,7 @@ export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: Work
                     y1={mainY}
                     x2={layout.x2 - 4}
                     y2={mainY}
-                    stroke="#9ca3af"
+                    stroke="#d1d5db"
                     strokeWidth={1.5}
                     strokeDasharray="4,4"
                   />
@@ -372,7 +454,7 @@ export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: Work
                     x={(layout.x1 + layout.x2) / 2}
                     y={mainY - 8}
                     fontFamily={SVG_FONT}
-                    fontSize={7}
+                    fontSize={8}
                     fontStyle="italic"
                     fill="#9ca3af"
                     textAnchor="middle"
@@ -394,7 +476,6 @@ export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: Work
                   sessions={layout.seg.sessions}
                   clusterStartMs={layout.seg.startMs}
                   clusterEndMs={layout.seg.endMs}
-                  laneSpacing={forkLaneSpacing}
                   onSessionClick={onSessionClick}
                 />
               );
@@ -402,14 +483,17 @@ export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: Work
 
             const seg = layout.seg;
             const session = seg.session;
-            const children = session.childSessions ?? [];
+            const renderableChildren = getRenderableChildren(session);
             const childCount = session.childCount ?? session.children?.length ?? 0;
-            const hasLoadedChildren = children.length > 0;
-            const isMultiAgent = hasLoadedChildren || childCount > 0;
+            const hasChildren = renderableChildren.length > 0;
+            const isMultiAgent = hasChildren || childCount > 0;
 
             const durationLabel = `${session.durationMinutes}m`;
             const locLabel = session.linesOfCode > 0 ? `${session.linesOfCode} LOC` : '';
             const subtitle = [durationLabel, locLabel].filter(Boolean).join(' \u00b7 ');
+
+            // Compute label Y: push up when fork/join lanes exist
+            const labelOffsetY = hasChildren ? renderableChildren.length * LANE_SPACING / 2 + 18 : 18;
 
             return (
               <g
@@ -420,37 +504,37 @@ export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: Work
                 role={onSessionClick ? 'button' : undefined}
                 tabIndex={onSessionClick ? 0 : undefined}
                 onKeyDown={onSessionClick ? (e) => { if (e.key === 'Enter') onSessionClick(session); } : undefined}
+                aria-label={`${session.title}, ${durationLabel}${childCount > 0 ? `, ${childCount} agents` : ''}`}
               >
                 {/* Title above bar */}
                 <text
                   x={layout.x1 + 6}
-                  y={mainY - (isMultiAgent && hasLoadedChildren ? maxLanes * forkLaneSpacing / 2 + 14 : 14)}
+                  y={mainY - labelOffsetY}
                   fontFamily={SVG_FONT}
-                  fontSize={8}
+                  fontSize={10}
                   fontWeight={600}
                   fill="#191c1e"
                   data-testid="session-title"
                 >
-                  {session.title}
+                  {truncateTitle(session.title, layout.x2 - layout.x1 - 12)}
                 </text>
                 <text
                   x={layout.x1 + 6}
-                  y={mainY - (isMultiAgent && hasLoadedChildren ? maxLanes * forkLaneSpacing / 2 + 5 : 5)}
+                  y={mainY - labelOffsetY + 12}
                   fontFamily={SVG_FONT}
-                  fontSize={7}
+                  fontSize={8}
                   fill="#6b7280"
                   data-testid="session-subtitle"
                 >
                   {subtitle}
                 </text>
 
-                {hasLoadedChildren ? (
-                  <MultiAgentBar
+                {hasChildren ? (
+                  <ForkJoinBar
                     x1={layout.x1}
                     x2={layout.x2}
                     mainY={mainY}
-                    children={children}
-                    laneSpacing={forkLaneSpacing}
+                    children={renderableChildren}
                   />
                 ) : isMultiAgent ? (
                   <ThickAgentBar
@@ -481,13 +565,13 @@ function SingleBar({ x1, x2, mainY }: { x1: number; x2: number; mainY: number })
   return (
     <g data-testid="single-bar">
       <circle cx={x1} cy={mainY} r={4} fill="none" stroke={MAIN_COLOR} strokeWidth={1.5} />
-      <line x1={x1} y1={mainY} x2={x2} y2={mainY} stroke={MAIN_COLOR} strokeWidth={2} strokeLinecap="round" />
+      <line x1={x1} y1={mainY} x2={x2} y2={mainY} stroke={MAIN_COLOR} strokeWidth={2.5} strokeLinecap="round" />
       <circle cx={x2} cy={mainY} r={4} fill={MAIN_COLOR} />
     </g>
   );
 }
 
-// ── Thick bar for unloaded multi-agent ─────────────────────────
+// ── Thick bar for unloaded multi-agent (count only, no timing data) ──
 
 function ThickAgentBar({
   x1, x2, mainY, agentCount,
@@ -497,13 +581,13 @@ function ThickAgentBar({
   return (
     <g data-testid="thick-bar">
       <circle cx={x1} cy={mainY} r={4} fill="none" stroke={MAIN_COLOR} strokeWidth={1.5} />
-      <line x1={x1} y1={mainY} x2={x2} y2={mainY} stroke={MAIN_COLOR} strokeWidth={4} strokeLinecap="round" />
+      <line x1={x1} y1={mainY} x2={x2} y2={mainY} stroke={MAIN_COLOR} strokeWidth={4.5} strokeLinecap="round" />
       <circle cx={x2} cy={mainY} r={4} fill={MAIN_COLOR} />
       <text
         x={(x1 + x2) / 2}
-        y={mainY + 16}
+        y={mainY + 18}
         fontFamily={SVG_FONT}
-        fontSize={7}
+        fontSize={8}
         fill="#6b7280"
         textAnchor="middle"
         data-testid="agent-count-badge"
@@ -514,27 +598,36 @@ function ThickAgentBar({
   );
 }
 
-// ── Multi-agent bar with fork/join (child sessions within one session) ──
+// ── Fork/join bar for multi-agent sessions ──────────────────────
 
-function MultiAgentBar({
-  x1, x2, mainY, children, laneSpacing,
+interface RenderableChild {
+  id: string;
+  role?: string;
+  durationMinutes: number;
+  linesOfCode: number;
+  date?: string;
+}
+
+function ForkJoinBar({
+  x1, x2, mainY, children,
 }: {
-  x1: number; x2: number; mainY: number; children: Session[]; laneSpacing: number;
+  x1: number; x2: number; mainY: number; children: RenderableChild[];
 }) {
-  const sorted = [...children].sort(
-    (a, b) => getSessionStart(a) - getSessionStart(b),
-  );
+  const sorted = [...children].sort((a, b) => {
+    // Sort by date if available, otherwise keep original order
+    if (a.date && b.date) return new Date(a.date).getTime() - new Date(b.date).getTime();
+    return 0;
+  });
 
   const n = sorted.length;
-  const totalH = (n - 1) * laneSpacing;
-  const curveDx = 15;
+  const totalH = (n - 1) * LANE_SPACING;
 
   // Fork/join points
-  const forkX = x1 + 20;
-  const joinX = x2 - 20;
-  const laneStartX = forkX + curveDx + 4;
-  const laneEndX = joinX - curveDx - 4;
-  const laneWidth = laneEndX - laneStartX;
+  const forkX = x1 + FORK_INSET;
+  const joinX = x2 - FORK_INSET;
+  const laneStartX = forkX + CURVE_DX + 4;
+  const laneEndX = joinX - CURVE_DX - 4;
+  const laneWidth = Math.max(laneEndX - laneStartX, 20);
 
   // Compute proportional widths for each child
   const maxDuration = Math.max(...sorted.map((c) => c.durationMinutes), 1);
@@ -543,26 +636,38 @@ function MultiAgentBar({
     <g data-testid="multi-agent-bar">
       {/* Main line before fork */}
       <circle cx={x1} cy={mainY} r={4} fill="none" stroke={MAIN_COLOR} strokeWidth={1.5} />
-      <line x1={x1} y1={mainY} x2={forkX} y2={mainY} stroke={MAIN_COLOR} strokeWidth={2} strokeLinecap="round" />
+      <line x1={x1} y1={mainY} x2={forkX} y2={mainY} stroke={MAIN_COLOR} strokeWidth={2.5} strokeLinecap="round" />
 
       {/* Fork dot */}
-      <circle cx={forkX} cy={mainY} r={3} fill={MAIN_COLOR} data-testid="fork-dot" />
+      <circle cx={forkX} cy={mainY} r={4} fill={MAIN_COLOR} data-testid="fork-dot" />
 
       {/* Child lanes */}
       {sorted.map((child, i) => {
-        const laneY = mainY - totalH / 2 + i * laneSpacing;
-        const color = getAgentColor(child.agentRole);
-        const childLaneWidth = Math.max(20, (child.durationMinutes / maxDuration) * laneWidth);
+        const laneY = mainY - totalH / 2 + i * LANE_SPACING;
+        const color = getAgentColor(child.role);
+        const childLaneWidth = Math.max(24, (child.durationMinutes / maxDuration) * laneWidth);
 
         return (
           <g key={child.id || i} data-testid="child-lane">
             {/* Fork curve */}
             <path
-              d={`M${forkX},${mainY} C${forkX + curveDx},${mainY} ${forkX + curveDx},${laneY} ${laneStartX},${laneY}`}
+              d={`M${forkX},${mainY} C${forkX + CURVE_DX},${mainY} ${forkX + CURVE_DX},${laneY} ${laneStartX},${laneY}`}
               stroke={color}
               strokeWidth={1.5}
               fill="none"
               strokeDasharray="4,3"
+            />
+
+            {/* Lane background */}
+            <rect
+              x={laneStartX}
+              y={laneY - 10}
+              rx={2}
+              ry={2}
+              width={childLaneWidth}
+              height={20}
+              fill={color}
+              opacity={0.06}
             />
 
             {/* Lane line */}
@@ -576,22 +681,22 @@ function MultiAgentBar({
               strokeLinecap="round"
             />
 
-            {/* Role label */}
+            {/* Role label to the right */}
             <text
               x={laneStartX + childLaneWidth + 6}
               y={laneY + 3}
               fontFamily={SVG_FONT}
-              fontSize={7}
+              fontSize={8}
               fill={color}
               fontWeight={600}
               data-testid="child-role-label"
             >
-              {(child.agentRole ?? 'agent').toUpperCase()}
+              {(child.role ?? 'agent').toUpperCase()}
             </text>
 
             {/* Join curve */}
             <path
-              d={`M${laneStartX + childLaneWidth},${laneY} C${joinX - curveDx},${laneY} ${joinX - curveDx},${mainY} ${joinX},${mainY}`}
+              d={`M${laneStartX + childLaneWidth},${laneY} C${joinX - CURVE_DX},${laneY} ${joinX - CURVE_DX},${mainY} ${joinX},${mainY}`}
               stroke={color}
               strokeWidth={1.5}
               fill="none"
@@ -602,10 +707,10 @@ function MultiAgentBar({
       })}
 
       {/* Join dot */}
-      <circle cx={joinX} cy={mainY} r={3} fill={MAIN_COLOR} data-testid="join-dot" />
+      <circle cx={joinX} cy={mainY} r={4} fill={MAIN_COLOR} data-testid="join-dot" />
 
       {/* Main line after join */}
-      <line x1={joinX} y1={mainY} x2={x2} y2={mainY} stroke={MAIN_COLOR} strokeWidth={2} strokeLinecap="round" />
+      <line x1={joinX} y1={mainY} x2={x2} y2={mainY} stroke={MAIN_COLOR} strokeWidth={2.5} strokeLinecap="round" />
       <circle cx={x2} cy={mainY} r={4} fill={MAIN_COLOR} />
     </g>
   );
@@ -616,13 +721,11 @@ function MultiAgentBar({
 const CONCURRENT_COLORS = ['#084471', '#7c3aed', '#0891b2', '#059669', '#d97706', '#dc2626'];
 
 function ConcurrentSessionBar({
-  x1, x2, mainY, sessions, clusterStartMs, clusterEndMs, laneSpacing,
-  onSessionClick,
+  x1, x2, mainY, sessions, clusterStartMs, clusterEndMs, onSessionClick,
 }: {
   x1: number; x2: number; mainY: number;
   sessions: Session[];
   clusterStartMs: number; clusterEndMs: number;
-  laneSpacing: number;
   onSessionClick?: (session: Session) => void;
 }) {
   const sorted = [...sessions].sort(
@@ -630,33 +733,32 @@ function ConcurrentSessionBar({
   );
 
   const n = sorted.length;
-  const totalH = (n - 1) * laneSpacing;
-  const curveDx = 15;
+  const totalH = (n - 1) * LANE_SPACING;
   const forkX = x1 + 12;
   const joinX = x2 - 12;
-  const laneAreaWidth = joinX - forkX - curveDx * 2 - 8;
+  const laneAreaWidth = joinX - forkX - CURVE_DX * 2 - 8;
   const clusterDurationMs = clusterEndMs - clusterStartMs;
 
   return (
     <g data-testid="concurrent-segment">
       {/* Main line into fork */}
       <circle cx={x1} cy={mainY} r={4} fill="none" stroke={MAIN_COLOR} strokeWidth={1.5} />
-      <line x1={x1} y1={mainY} x2={forkX} y2={mainY} stroke={MAIN_COLOR} strokeWidth={2} strokeLinecap="round" />
-      <circle cx={forkX} cy={mainY} r={3} fill={MAIN_COLOR} data-testid="concurrent-fork" />
+      <line x1={x1} y1={mainY} x2={forkX} y2={mainY} stroke={MAIN_COLOR} strokeWidth={2.5} strokeLinecap="round" />
+      <circle cx={forkX} cy={mainY} r={4} fill={MAIN_COLOR} data-testid="concurrent-fork" />
 
       {/* Session lanes */}
       {sorted.map((session, i) => {
-        const laneY = mainY - totalH / 2 + i * laneSpacing;
+        const laneY = mainY - totalH / 2 + i * LANE_SPACING;
         const color = CONCURRENT_COLORS[i % CONCURRENT_COLORS.length];
 
         // Position lane proportionally within the cluster time range
         const sessionStart = getSessionStart(session);
         const sessionEnd = getSessionEnd(session);
-        const startFrac = (sessionStart - clusterStartMs) / clusterDurationMs;
-        const endFrac = (sessionEnd - clusterStartMs) / clusterDurationMs;
-        const laneStartX = forkX + curveDx + 4 + startFrac * laneAreaWidth;
-        const laneEndX = forkX + curveDx + 4 + endFrac * laneAreaWidth;
-        const laneW = Math.max(laneEndX - laneStartX, 16);
+        const startFrac = clusterDurationMs > 0 ? (sessionStart - clusterStartMs) / clusterDurationMs : 0;
+        const endFrac = clusterDurationMs > 0 ? (sessionEnd - clusterStartMs) / clusterDurationMs : 1;
+        const laneStartX = forkX + CURVE_DX + 4 + startFrac * laneAreaWidth;
+        const laneEndX = forkX + CURVE_DX + 4 + endFrac * laneAreaWidth;
+        const laneW = Math.max(laneEndX - laneStartX, 20);
 
         const durationLabel = `${session.durationMinutes}m`;
         const locLabel = session.linesOfCode > 0 ? `${session.linesOfCode} LOC` : '';
@@ -673,24 +775,26 @@ function ConcurrentSessionBar({
           >
             {/* Fork curve from main line to lane */}
             <path
-              d={`M${forkX},${mainY} C${forkX + curveDx},${mainY} ${forkX + curveDx},${laneY} ${laneStartX},${laneY}`}
+              d={`M${forkX},${mainY} C${forkX + CURVE_DX},${mainY} ${forkX + CURVE_DX},${laneY} ${laneStartX},${laneY}`}
               stroke={color}
               strokeWidth={1.5}
               fill="none"
               strokeDasharray="4,3"
             />
 
-            {/* Lane bar */}
+            {/* Lane background */}
             <rect
               x={laneStartX}
-              y={laneY - 8}
+              y={laneY - 10}
               rx={2}
               ry={2}
               width={laneW}
-              height={16}
+              height={20}
               fill={color}
-              opacity={0.08}
+              opacity={0.06}
             />
+
+            {/* Lane bar */}
             <line
               x1={laneStartX}
               y1={laneY}
@@ -706,7 +810,7 @@ function ConcurrentSessionBar({
               x={laneStartX - 4}
               y={laneY + 3}
               fontFamily={SVG_FONT}
-              fontSize={7}
+              fontSize={8}
               fontWeight={600}
               fill={color}
               textAnchor="end"
@@ -720,15 +824,15 @@ function ConcurrentSessionBar({
               x={laneStartX + laneW + 6}
               y={laneY + 3}
               fontFamily={SVG_FONT}
-              fontSize={6.5}
-              fill="#6b7280"
+              fontSize={7}
+              fill="#9ca3af"
             >
               {subtitle}
             </text>
 
             {/* Join curve from lane to main line */}
             <path
-              d={`M${laneStartX + laneW},${laneY} C${joinX - curveDx},${laneY} ${joinX - curveDx},${mainY} ${joinX},${mainY}`}
+              d={`M${laneStartX + laneW},${laneY} C${joinX - CURVE_DX},${laneY} ${joinX - CURVE_DX},${mainY} ${joinX},${mainY}`}
               stroke={color}
               strokeWidth={1.5}
               fill="none"
@@ -739,10 +843,10 @@ function ConcurrentSessionBar({
       })}
 
       {/* Join dot */}
-      <circle cx={joinX} cy={mainY} r={3} fill={MAIN_COLOR} data-testid="concurrent-join" />
+      <circle cx={joinX} cy={mainY} r={4} fill={MAIN_COLOR} data-testid="concurrent-join" />
 
       {/* Main line out */}
-      <line x1={joinX} y1={mainY} x2={x2} y2={mainY} stroke={MAIN_COLOR} strokeWidth={2} strokeLinecap="round" />
+      <line x1={joinX} y1={mainY} x2={x2} y2={mainY} stroke={MAIN_COLOR} strokeWidth={2.5} strokeLinecap="round" />
       <circle cx={x2} cy={mainY} r={4} fill={MAIN_COLOR} />
     </g>
   );

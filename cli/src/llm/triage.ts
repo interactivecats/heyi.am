@@ -120,6 +120,8 @@ export interface SessionMetaWithStats {
 export interface TriageResult {
   selected: Array<{ sessionId: string; reason: string }>;
   skipped: Array<{ sessionId: string; reason: string }>;
+  triageMethod: 'llm' | 'scoring' | 'auto-select';
+  autoSelected?: boolean;
 }
 
 // ── Hard floor (Layer 1) ─────────────────────────────────────────
@@ -263,6 +265,19 @@ export async function triageSessions(
     }
   }
 
+  // Small project optimization: if fewer than 5 sessions pass hard floor, auto-select all
+  const AUTO_SELECT_THRESHOLD = 5;
+  if (passed.length < AUTO_SELECT_THRESHOLD) {
+    const result: TriageResult = {
+      selected: passed.map((s) => ({ sessionId: s.sessionId, reason: 'Auto-selected (small project)' })),
+      skipped: hardSkipped,
+      triageMethod: 'auto-select',
+      autoSelected: true,
+    };
+    onProgress?.({ type: 'done', selected: result.selected.length, skipped: result.skipped.length });
+    return result;
+  }
+
   // Layer 2: Signal extraction (sequential for progress reporting)
   const sessionsWithSignals: Array<SessionMetaWithStats & { signals: SessionSignals }> = [];
   for (const s of passed) {
@@ -283,9 +298,10 @@ export async function triageSessions(
         ...s,
         reason: 'Over selection cap',
       }));
-      const result = {
+      const result: TriageResult = {
         selected: capped,
         skipped: [...overflow, ...llmResult.skipped, ...hardSkipped],
+        triageMethod: 'llm',
       };
       onProgress?.({ type: 'done', selected: result.selected.length, skipped: result.skipped.length });
       return result;
@@ -322,7 +338,7 @@ export async function triageSessions(
     ...hardSkipped,
   ];
 
-  const result = { selected, skipped };
+  const result: TriageResult = { selected, skipped, triageMethod: 'scoring' };
   onProgress?.({ type: 'done', selected: result.selected.length, skipped: result.skipped.length });
   return result;
 }

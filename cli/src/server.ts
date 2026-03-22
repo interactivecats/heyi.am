@@ -12,7 +12,7 @@ import { API_URL } from './config.js';
 import { getProvider, getEnhanceMode } from './llm/index.js';
 import { triageSessions, type SessionMetaWithStats } from './llm/triage.js';
 import { enhanceProject, refineNarrative, type SessionSummary, type SkippedSessionMeta, type ProjectEnhanceResult } from './llm/project-enhance.js';
-import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData, loadFreshProjectEnhanceResult, saveProjectEnhanceResult, loadProjectEnhanceResult, buildProjectFingerprint } from './settings.js';
+import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData, loadFreshProjectEnhanceResult, saveProjectEnhanceResult, loadProjectEnhanceResult, buildProjectFingerprint, savePublishedState, getPublishedState } from './settings.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -96,11 +96,52 @@ interface SessionStats {
   date: string;
 }
 
+// ── Persistent stats cache ────────────────────────────────────
+// Survives server restarts by writing to disk.
+
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+
+const STATS_CACHE_PATH = join(homedir(), '.config', 'heyiam', 'stats-cache.json');
+
+function loadStatsCache(): Map<string, SessionStats> {
+  try {
+    if (!existsSync(STATS_CACHE_PATH)) return new Map();
+    const data = JSON.parse(readFileSync(STATS_CACHE_PATH, 'utf-8'));
+    return new Map(Object.entries(data));
+  } catch {
+    return new Map();
+  }
+}
+
+function saveStatsCache(cache: Map<string, SessionStats>): void {
+  try {
+    const dir = join(homedir(), '.config', 'heyiam');
+    mkdirSync(dir, { recursive: true });
+    const obj = Object.fromEntries(cache);
+    writeFileSync(STATS_CACHE_PATH, JSON.stringify(obj), { mode: 0o600 });
+  } catch {
+    // Non-critical — cache miss just means a slower first load
+  }
+}
+
 export function createApp(sessionsBasePath?: string) {
   const app = express();
 
-  // In-memory stats cache — survives for server lifetime
-  const statsCache = new Map<string, SessionStats>();
+  // Stats cache — loaded from disk on startup, written back periodically
+  const statsCache = loadStatsCache();
+  let statsCacheDirty = false;
+
+  // Flush dirty cache to disk every 10 seconds
+  const flushInterval = setInterval(() => {
+    if (statsCacheDirty) {
+      saveStatsCache(statsCache);
+      statsCacheDirty = false;
+    }
+  }, 10_000);
+  // Don't let this interval keep the process alive
+  flushInterval.unref?.();
 
   async function getSessionStats(meta: SessionMeta, projectName: string): Promise<SessionStats> {
     const cached = statsCache.get(meta.sessionId);
@@ -117,6 +158,7 @@ export function createApp(sessionsBasePath?: string) {
         date: session.date ?? '',
       };
       statsCache.set(meta.sessionId, stats);
+      statsCacheDirty = true;
       return stats;
     } catch {
       return { loc: 0, duration: 0, files: 0, turns: 0, skills: [], date: '' };
@@ -143,6 +185,9 @@ export function createApp(sessionsBasePath?: string) {
     const firstDate = dates[0] ?? '';
     const lastDate = dates[dates.length - 1] ?? '';
 
+    const published = getPublishedState(proj.dirName);
+    const enhanceCache = loadProjectEnhanceResult(proj.dirName);
+
     return {
       name: proj.name,
       dirName: proj.dirName,
@@ -154,6 +199,10 @@ export function createApp(sessionsBasePath?: string) {
       skills: [...skillSet],
       dateRange: firstDate && lastDate ? `${firstDate}|${lastDate}` : '',
       lastSessionDate: lastDate,
+      isPublished: !!published,
+      publishedSessionCount: published?.publishedSessions.length ?? 0,
+      publishedSessions: published?.publishedSessions ?? [],
+      enhancedAt: enhanceCache?.enhancedAt ?? null,
     };
   }
 
@@ -183,8 +232,8 @@ export function createApp(sessionsBasePath?: string) {
         return;
       }
 
-      // Return parent sessions only — children are lightweight summaries (no full parse).
-      // Deduplicate worktree clones: multiple agents with same role are counted once.
+      // Return parent sessions with enriched child summaries.
+      // Children get stats via the cached getSessionStats — no redundant parsing.
       const sessions = await Promise.all(
         proj.sessions.map(async (meta) => {
           try {
@@ -196,7 +245,14 @@ export function createApp(sessionsBasePath?: string) {
               const role = c.agentRole ?? c.sessionId;
               if (seenRoles.has(role)) continue;
               seenRoles.add(role);
-              children.push({ sessionId: c.sessionId, role: c.agentRole });
+              const childStats = await getSessionStats(c, proj.name);
+              children.push({
+                sessionId: c.sessionId,
+                role: c.agentRole,
+                durationMinutes: childStats.duration,
+                linesOfCode: childStats.loc,
+                date: childStats.date,
+              });
             }
             const childCount = children.length;
             return { ...session, childCount, children: childCount > 0 ? children : undefined };
@@ -293,8 +349,11 @@ export function createApp(sessionsBasePath?: string) {
         send(event as unknown as Record<string, unknown>);
       });
 
-      // Send final result
-      send({ type: 'result', ...result });
+      // Include already-published sessions so frontend can pre-check them
+      const published = getPublishedState(proj.dirName);
+      const alreadyPublished = published?.publishedSessions ?? [];
+
+      send({ type: 'result', ...result, alreadyPublished });
       res.end();
     } catch (err) {
       send({ type: 'error', code: 'TRIAGE_FAILED', message: (err as Error).message });
@@ -604,7 +663,7 @@ export function createApp(sessionsBasePath?: string) {
             });
           } catch (err) {
             console.error(`[enhance-project] Session ${sessionId} failed:`, (err as Error).message);
-            send({ type: 'session_progress', sessionId, status: 'error', message: (err as Error).message });
+            send({ type: 'session_progress', sessionId, status: 'failed', error: (err as Error).message });
           }
         }));
       }
@@ -702,7 +761,7 @@ export function createApp(sessionsBasePath?: string) {
     }
   });
 
-  // Publish project — two-step: POST /api/projects then POST /api/sessions per session
+  // Publish project — SSE stream with per-session progress
   app.post('/api/projects/:project/publish', async (req: Request, res: Response) => {
     const { project } = req.params;
     const auth = getAuthToken();
@@ -712,29 +771,42 @@ export function createApp(sessionsBasePath?: string) {
       return;
     }
 
-    try {
-      const {
-        title, slug, narrative, repoUrl, projectUrl,
-        timeline, skills, totalSessions, totalLoc,
-        totalDurationMinutes, totalFilesChanged,
-        skippedSessions, selectedSessionIds,
-      } = req.body as {
-        title: string;
-        slug: string;
-        narrative: string;
-        repoUrl: string;
-        projectUrl: string;
-        timeline: ProjectEnhanceResult['timeline'];
-        skills: string[];
-        totalSessions: number;
-        totalLoc: number;
-        totalDurationMinutes: number;
-        totalFilesChanged: number;
-        skippedSessions: Array<{ title: string; duration: number; loc: number; reason: string }>;
-        selectedSessionIds: string[];
-      };
+    const {
+      title, slug, narrative, repoUrl, projectUrl,
+      timeline, skills, totalSessions, totalLoc,
+      totalDurationMinutes, totalFilesChanged,
+      skippedSessions, selectedSessionIds,
+    } = req.body as {
+      title: string;
+      slug: string;
+      narrative: string;
+      repoUrl: string;
+      projectUrl: string;
+      timeline: ProjectEnhanceResult['timeline'];
+      skills: string[];
+      totalSessions: number;
+      totalLoc: number;
+      totalDurationMinutes: number;
+      totalFilesChanged: number;
+      skippedSessions: Array<{ title: string; duration: number; loc: number; reason: string }>;
+      selectedSessionIds: string[];
+    };
 
-      // Step 1: Upsert project on Phoenix
+    // Set up SSE
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    });
+
+    const send = (data: Record<string, unknown>) => {
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    try {
+      // Step 1: Upsert project on Phoenix (fatal if this fails)
+      send({ type: 'project', status: 'creating' });
+
       const projectRes = await fetch(`${API_URL}/api/projects`, {
         method: 'POST',
         headers: {
@@ -756,27 +828,29 @@ export function createApp(sessionsBasePath?: string) {
         }),
       });
 
-      if (projectRes.status === 401) {
-        res.status(401).json({ error: { message: 'Authentication required' } });
-        return;
-      }
       if (!projectRes.ok) {
-        const err = await projectRes.json().catch(() => ({ error: 'Project creation failed' }));
-        res.status(projectRes.status).json(err);
+        const errBody = await projectRes.json().catch(() => ({ error: 'Project creation failed' }));
+        const errMsg = (errBody as { error?: string }).error ?? `HTTP ${projectRes.status}`;
+        send({ type: 'project', status: 'failed', error: errMsg, fatal: true });
+        res.end();
         return;
       }
 
       const projectData = await projectRes.json() as { project_id: number; slug: string };
+      send({ type: 'project', status: 'created', projectId: projectData.project_id, slug: projectData.slug });
 
-      // Step 2: Publish selected sessions
+      // Step 2: Publish selected sessions (non-fatal per session)
       const projects = await getProjects(sessionsBasePath);
       const proj = projects.find((p) => p.dirName === project);
-      let publishedCount = 0;
+      let uploadedCount = 0;
+      const failedSessions: Array<{ sessionId: string; error: string }> = [];
 
       if (proj) {
         for (const sessionId of selectedSessionIds) {
           const meta = proj.sessions.find((s) => s.sessionId === sessionId);
           if (!meta) continue;
+
+          send({ type: 'session', sessionId, status: 'publishing' });
 
           try {
             const session = await loadSession(meta.path, proj.name, sessionId);
@@ -825,29 +899,52 @@ export function createApp(sessionsBasePath?: string) {
             });
 
             if (sessionRes.ok) {
-              publishedCount++;
-              // Mark as uploaded locally
+              uploadedCount++;
               if (enhanced) {
                 saveEnhancedData(sessionId, { ...enhanced, uploaded: true });
               }
+              send({ type: 'session', sessionId, status: 'published' });
             } else {
-              console.error(`[publish] Failed to publish session ${sessionId}: ${sessionRes.status}`);
+              const errMsg = `HTTP ${sessionRes.status}`;
+              failedSessions.push({ sessionId, error: errMsg });
+              send({ type: 'session', sessionId, status: 'failed', error: errMsg });
             }
           } catch (err) {
-            console.error(`[publish] Error publishing session ${sessionId}:`, (err as Error).message);
+            const errMsg = (err as Error).message;
+            failedSessions.push({ sessionId, error: errMsg });
+            send({ type: 'session', sessionId, status: 'failed', error: errMsg });
           }
         }
       }
 
-      res.json({
+      // Track published state locally
+      const publishedSessionIds = selectedSessionIds.filter((sid: string) => {
+        const enhanced = loadEnhancedData(sid);
+        return enhanced?.uploaded;
+      });
+      if (proj) {
+        savePublishedState(proj.dirName, {
+          slug: projectData.slug,
+          projectId: projectData.project_id,
+          publishedSessions: publishedSessionIds,
+        });
+      }
+
+      const projectUrl2 = `/${auth.username}/${projectData.slug}`;
+      send({
+        type: 'done',
+        projectUrl: projectUrl2,
         projectId: projectData.project_id,
         slug: projectData.slug,
-        url: `/${auth.username}/${projectData.slug}`,
-        publishedSessions: publishedCount,
+        uploaded: uploadedCount,
+        failed: failedSessions.length,
+        failedSessions,
       });
+      res.end();
     } catch (err) {
       console.error('[publish] Error:', (err as Error).message);
-      res.status(500).json({ error: { message: (err as Error).message } });
+      send({ type: 'error', code: 'PUBLISH_FAILED', message: (err as Error).message });
+      res.end();
     }
   });
 

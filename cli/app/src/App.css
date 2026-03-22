@@ -1930,6 +1930,58 @@ details[open] > .collapsible__summary .collapsible__chevron {
   color: #92400e;
 }
 
+.project-card__badge--published {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.triage-item__published-badge {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #dcfce7;
+  color: #16a34a;
+  margin-left: var(--spacing-2, 0.5rem);
+  vertical-align: middle;
+}
+
+/* ── WorkTimeline scroll controls ─────────────── */
+
+.work-timeline__scroll-controls {
+  display: flex;
+  gap: var(--spacing-2, 0.5rem);
+  justify-content: flex-end;
+  margin-bottom: var(--spacing-2, 0.5rem);
+}
+
+.work-timeline__scroll-btn {
+  width: 32px;
+  height: 28px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+  color: #374151;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s;
+}
+
+.work-timeline__scroll-btn:hover {
+  background: #f3f4f6;
+}
+
+.work-timeline__scroll-btn:active {
+  background: #e5e7eb;
+}
+
 .project-card__stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -2025,6 +2077,16 @@ details[open] > .collapsible__summary .collapsible__chevron {
   font-size: 0.6875rem;
   color: var(--secondary);
   margin-bottom: var(--spacing-4);
+}
+
+.upload-flow__auto-select-banner {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--secondary);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--surface-container, #f5f7fa);
+  border-radius: 6px;
+  margin-bottom: var(--spacing-3);
 }
 
 .upload-flow__actions {
@@ -2123,6 +2185,31 @@ details[open] > .collapsible__summary .collapsible__chevron {
 
 .phase-bar__segment--active {
   background: var(--primary);
+}
+
+/* Triage method info banner */
+.triage-method-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-4);
+  margin-bottom: var(--spacing-4);
+  border-radius: var(--radius-sm);
+  background: var(--surface-container, #f5f7fa);
+  border: 1px solid var(--outline-variant);
+  font-size: 0.8125rem;
+  color: var(--on-surface-variant);
+}
+
+.triage-method-banner__icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.triage-method-banner__link {
+  color: var(--primary);
+  text-decoration: underline;
+  white-space: nowrap;
 }
 
 /* Triage items (Screen 44) */
@@ -2906,6 +2993,108 @@ details[open] > .collapsible__summary .collapsible__chevron {
   background: rgba(220, 38, 38, 0.05);
   color: var(--error, #dc2626);
   font-size: 0.875rem;
+}
+
+/* ── Enhance error recovery ───────────────── */
+
+.enhance-error {
+  padding: var(--spacing-4);
+  border: 1px solid var(--error, #dc2626);
+  border-radius: var(--radius-sm);
+  background: rgba(220, 38, 38, 0.05);
+}
+
+.enhance-error__message {
+  color: var(--error, #dc2626);
+  font-size: 0.875rem;
+  margin-bottom: var(--spacing-3);
+}
+
+.enhance-feed-item--failed {
+  opacity: 1;
+}
+
+.enhance-feed-item__fail {
+  color: #dc2626;
+  font-weight: 700;
+  margin-right: var(--spacing-2);
+}
+
+.enhance-feed-item__title--failed {
+  color: #dc2626;
+}
+
+.enhance-feed-item__detail--failed {
+  color: #dc2626;
+}
+
+.enhance-split__failure-recovery {
+  margin-top: var(--spacing-4);
+  padding: var(--spacing-4);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  background: var(--surface-container, #f5f7fa);
+}
+
+.enhance-split__failure-text {
+  font-size: 0.875rem;
+  color: var(--on-surface-variant);
+  margin: 0 0 var(--spacing-3);
+}
+
+/* ── Publish error recovery ──────────────── */
+
+.publish-error {
+  padding: var(--spacing-4);
+  margin: var(--spacing-4) 0;
+  border: 1px solid var(--error, #dc2626);
+  border-radius: var(--radius-sm);
+  background: rgba(220, 38, 38, 0.05);
+}
+
+.publish-error__message {
+  color: var(--error, #dc2626);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-3);
+}
+
+.publish-error__sessions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+}
+
+.publish-error__session-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: 0.8125rem;
+  font-family: var(--font-mono);
+}
+
+.publish-error__icon--published {
+  color: var(--success-fg, #16a34a);
+}
+
+.publish-error__icon--failed {
+  color: var(--error, #dc2626);
+}
+
+.publish-error__session-title {
+  flex: 1;
+}
+
+.publish-error__session-error {
+  color: var(--on-surface-variant);
+  font-size: 0.75rem;
+}
+
+.publish-error__actions {
+  display: flex;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
 }
 
 /* ==========================================================================

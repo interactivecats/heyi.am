@@ -49,7 +49,7 @@ describe('WorkTimeline', () => {
     expect(getByTestId('work-timeline')).toBeTruthy();
     const svg = container.querySelector('svg');
     expect(svg).toBeTruthy();
-    expect(svg!.getAttribute('aria-label')).toBe('Work timeline across sessions');
+    expect(svg!.getAttribute('aria-label')).toBe('Work timeline showing 1 sessions');
   });
 
   it('renders session segment with title and subtitle', () => {
@@ -97,14 +97,32 @@ describe('WorkTimeline', () => {
     expect(gaps.length).toBe(0);
   });
 
-  it('renders thick bar for multi-agent session without loaded children', () => {
+  it('renders fork/join for multi-agent session with children summaries (no full childSessions)', () => {
     const session = makeSession({
       childCount: 3,
       children: [
-        { sessionId: 'c1', role: 'frontend-dev' },
-        { sessionId: 'c2', role: 'backend-dev' },
-        { sessionId: 'c3', role: 'qa-engineer' },
+        { sessionId: 'c1', role: 'frontend-dev', durationMinutes: 10 },
+        { sessionId: 'c2', role: 'backend-dev', durationMinutes: 15 },
+        { sessionId: 'c3', role: 'qa-engineer', durationMinutes: 8 },
       ],
+    });
+    const { container } = render(<WorkTimeline sessions={[session]} />);
+    // Should render fork/join, not thick bar — children summaries have enough data
+    expect(container.querySelector('[data-testid="multi-agent-bar"]')).toBeTruthy();
+    const forkDot = container.querySelector('[data-testid="fork-dot"]');
+    expect(forkDot).toBeTruthy();
+    const childLanes = container.querySelectorAll('[data-testid="child-lane"]');
+    expect(childLanes.length).toBe(3);
+    const labels = container.querySelectorAll('[data-testid="child-role-label"]');
+    const labelTexts = Array.from(labels).map((l) => l.textContent);
+    expect(labelTexts).toContain('FRONTEND-DEV');
+    expect(labelTexts).toContain('BACKEND-DEV');
+    expect(labelTexts).toContain('QA-ENGINEER');
+  });
+
+  it('renders thick bar when only childCount is available (no children array)', () => {
+    const session = makeSession({
+      childCount: 3,
     });
     const { container } = render(<WorkTimeline sessions={[session]} />);
     expect(container.querySelector('[data-testid="thick-bar"]')).toBeTruthy();

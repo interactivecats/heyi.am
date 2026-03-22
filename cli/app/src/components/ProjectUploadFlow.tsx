@@ -14,13 +14,13 @@ import {
   publishProject,
   startDeviceAuth,
   pollDeviceAuth,
-  AuthRequiredError,
   type TriageResult,
   type TriageEvent,
   type ProjectEnhanceResult,
   type EnhanceEventType,
   type RefineAnswer,
   type PublishProjectPayload,
+  type PublishEvent,
 } from '../api';
 import { useAuth } from '../AuthContext';
 import type { Session, Project } from '../types';
@@ -132,7 +132,11 @@ function SessionOverview({
 
       <div className="upload-flow__actions">
         <button className="btn btn--secondary btn--large" onClick={onCancel}>Cancel</button>
-        <button className="btn btn--primary btn--large" onClick={onTriage}>Let AI pick sessions &rarr;</button>
+        <button className="btn btn--primary btn--large" onClick={onTriage}>
+          {project.sessionCount < 5
+            ? `Enhance all ${project.sessionCount} sessions`
+            : 'Let AI pick sessions'} &rarr;
+        </button>
       </div>
     </div>
   );
@@ -357,6 +361,7 @@ function TriageItem({
   checked,
   onToggle,
   dimTitle,
+  previouslyPublished,
 }: {
   sessionId: string;
   title: string;
@@ -366,6 +371,7 @@ function TriageItem({
   checked: boolean;
   onToggle: () => void;
   dimTitle?: boolean;
+  previouslyPublished?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const isLong = reason.length > (variant === 'selected' ? 60 : 40);
@@ -384,6 +390,9 @@ function TriageItem({
       <div className="triage-item__info">
         <div className="triage-item__name" style={dimTitle ? { color: 'var(--on-surface-variant)' } : undefined}>
           {title}
+          {previouslyPublished && (
+            <span className="triage-item__published-badge">previously published</span>
+          )}
         </div>
         <div className="triage-item__stats">{stats}</div>
       </div>
@@ -408,6 +417,7 @@ function TriageResults({
   onToggle,
   onEnhance,
   onBack,
+  publishedSessionIds,
 }: {
   project: Project;
   sessions: Session[];
@@ -416,6 +426,7 @@ function TriageResults({
   onToggle: (sessionId: string) => void;
   onEnhance: () => void;
   onBack: () => void;
+  publishedSessionIds?: Set<string>;
 }) {
   const sessionMap = new Map(sessions.map((s) => [s.id, s]));
 
@@ -436,6 +447,14 @@ function TriageResults({
         You can override any selection.
       </p>
 
+      {triageResult.triageMethod === 'scoring' && (
+        <div className="triage-method-banner">
+          <span className="triage-method-banner__icon" aria-hidden="true">&#9432;</span>
+          <span>Sessions selected by signal analysis (no API key configured). </span>
+          <a href="/settings" className="triage-method-banner__link">Go to Settings</a>
+        </div>
+      )}
+
       <div className="upload-flow__section-label upload-flow__section-label--selected">
         &#10003; Selected for showcase ({selectedCount})
       </div>
@@ -453,6 +472,7 @@ function TriageResults({
               variant="selected"
               checked={isSelected}
               onToggle={() => onToggle(item.sessionId)}
+              previouslyPublished={publishedSessionIds?.has(item.sessionId)}
             />
           );
         })}
@@ -477,6 +497,7 @@ function TriageResults({
                 checked={isSelected}
                 onToggle={() => onToggle(item.sessionId)}
                 dimTitle={!isSelected}
+                previouslyPublished={publishedSessionIds?.has(item.sessionId)}
               />
             );
           })}
@@ -498,7 +519,7 @@ function TriageResults({
 interface SessionProgress {
   sessionId: string;
   title: string;
-  status: 'pending' | 'enhancing' | 'done' | 'skipped';
+  status: 'pending' | 'enhancing' | 'done' | 'skipped' | 'failed';
   detail?: string;
 }
 
@@ -631,6 +652,31 @@ function EnhanceStep({
 
   const isDone = result !== null;
   const displaySkills = result?.skills ?? progressSkills;
+  const failedSessions = sessionProgress.filter((sp) => sp.status === 'failed');
+  const successfulSessions = sessionProgress.filter((sp) => sp.status === 'done' || sp.status === 'skipped');
+  const allSessionsDone = sessionProgress.every((sp) => sp.status !== 'pending' && sp.status !== 'enhancing');
+  const hasFailures = failedSessions.length > 0;
+  const hasSuccesses = successfulSessions.length > 0;
+
+  const handleRetryFailed = useCallback(() => {
+    // Reset failed sessions to pending and re-run enhance
+    setSessionProgress((prev) => prev.map((sp) => sp.status === 'failed' ? { ...sp, status: 'pending' as const, detail: undefined } : sp));
+    setError(null);
+    controllerRef.current?.abort();
+    setForceEnhance((prev) => !prev);
+  }, []);
+
+  const handlePublishWithoutNarrative = useCallback(() => {
+    // Create a minimal result without narrative
+    const minimalResult: ProjectEnhanceResult = {
+      narrative: '',
+      arc: [],
+      skills: progressSkills,
+      timeline: [],
+      questions: [],
+    };
+    onComplete(minimalResult);
+  }, [progressSkills, onComplete]);
 
   return (
     <div className="enhance-split">
@@ -639,21 +685,23 @@ function EnhanceStep({
         <div className="enhance-split__left-header">Session Processing</div>
         <div className="enhance-split__feed" ref={feedRef}>
           {sessionProgress.map((sp) => (
-            <div key={sp.sessionId} className={`enhance-feed-item ${sp.status === 'pending' ? 'enhance-feed-item--pending' : ''}`}>
+            <div key={sp.sessionId} className={`enhance-feed-item ${sp.status === 'pending' ? 'enhance-feed-item--pending' : ''} ${sp.status === 'failed' ? 'enhance-feed-item--failed' : ''}`}>
               <div className="enhance-feed-item__row">
                 {sp.status === 'done' || sp.status === 'skipped' ? (
                   <span className="enhance-feed-item__check">&#10003;</span>
+                ) : sp.status === 'failed' ? (
+                  <span className="enhance-feed-item__fail">&#10007;</span>
                 ) : sp.status === 'enhancing' ? (
                   <span className="enhance-feed-item__spinner" />
                 ) : (
                   <span className="enhance-feed-item__circle">&#9711;</span>
                 )}
-                <span className={`enhance-feed-item__title ${sp.status === 'enhancing' ? 'enhance-feed-item__title--active' : ''}`}>
+                <span className={`enhance-feed-item__title ${sp.status === 'enhancing' ? 'enhance-feed-item__title--active' : ''} ${sp.status === 'failed' ? 'enhance-feed-item__title--failed' : ''}`}>
                   {sp.title}
                 </span>
               </div>
               {sp.detail && sp.status !== 'pending' && (
-                <div className="enhance-feed-item__detail">{sp.detail}</div>
+                <div className={`enhance-feed-item__detail ${sp.status === 'failed' ? 'enhance-feed-item__detail--failed' : ''}`}>{sp.detail}</div>
               )}
             </div>
           ))}
@@ -689,10 +737,16 @@ function EnhanceStep({
         <PhaseBar current="enhance" />
 
         {error ? (
-          <div className="dashboard-error" style={{ marginTop: 'var(--spacing-4)' }}>
-            {error}
+          <div className="enhance-error" style={{ marginTop: 'var(--spacing-4)' }}>
+            <div className="enhance-error__message">{error}</div>
             <div className="upload-flow__actions">
               <button className="btn btn--secondary btn--large" onClick={onBack}>Back</button>
+              <button className="btn btn--secondary btn--large" onClick={handleRetryFailed}>Retry</button>
+              {hasSuccesses && (
+                <button className="btn btn--primary btn--large" onClick={handlePublishWithoutNarrative}>
+                  Publish without narrative
+                </button>
+              )}
             </div>
           </div>
         ) : (
@@ -747,6 +801,24 @@ function EnhanceStep({
               </>
               );
             })()}
+
+            {allSessionsDone && hasFailures && !isDone && (
+              <div className="enhance-split__failure-recovery">
+                <p className="enhance-split__failure-text">
+                  {failedSessions.length} session{failedSessions.length !== 1 ? 's' : ''} failed to enhance.
+                </p>
+                <div className="upload-flow__actions">
+                  <button className="btn btn--secondary btn--large" onClick={handleRetryFailed}>
+                    Retry failed
+                  </button>
+                  {hasSuccesses && (
+                    <button className="btn btn--primary btn--large" onClick={handlePublishWithoutNarrative}>
+                      Continue with {successfulSessions.length} successful &rarr;
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {isDone && (
               <div className="upload-flow__actions">
@@ -2326,10 +2398,14 @@ export function ReviewStep({
   const [showPreview, setShowPreview] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [publishErrorType, setPublishErrorType] = useState<'project' | 'sessions' | null>(null);
+  const [sessionPublishStatuses, setSessionPublishStatuses] = useState<Map<string, { status: 'published' | 'failed'; error?: string }>>(new Map());
+  const [partialPublishUrl, setPartialPublishUrl] = useState<string | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
   const [deviceCode, setDeviceCode] = useState<{ userCode: string; verificationUri: string; deviceCode: string } | null>(null);
   const [authPolling, setAuthPolling] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const publishControllerRef = useRef<AbortController | null>(null);
   const { refresh: refreshAuth } = useAuth();
 
   const publishedLabel = `${project.sessionCount} (${selectedCount} published)`;
@@ -2363,14 +2439,41 @@ export function ReviewStep({
     };
   }, [project, slug, narrative, repoUrl, projectUrl, timeline, skills, allSessions, selectedIds]);
 
-  const doPublish = useCallback(async () => {
+  const doPublish = useCallback(async (retrySessionIds?: string[]) => {
     setPublishing(true);
     setPublishError(null);
+    setPublishErrorType(null);
     setNeedsAuth(false);
 
     try {
       const payload = buildPayload();
+      if (retrySessionIds) {
+        payload.selectedSessionIds = retrySessionIds;
+      }
       const result = await publishProject(project.dirName, payload);
+
+      // Track per-session statuses if provided
+      if (result.sessionStatuses) {
+        const statusMap = new Map<string, { status: 'published' | 'failed'; error?: string }>();
+        for (const ss of result.sessionStatuses) {
+          statusMap.set(ss.sessionId, { status: ss.status, error: ss.error });
+        }
+        setSessionPublishStatuses((prev) => {
+          const merged = new Map(prev);
+          for (const [k, v] of statusMap) merged.set(k, v);
+          return merged;
+        });
+
+        const failed = result.sessionStatuses.filter((s) => s.status === 'failed');
+        if (failed.length > 0) {
+          setPublishing(false);
+          setPublishErrorType('sessions');
+          setPartialPublishUrl(result.url);
+          setPublishError(`${failed.length} session${failed.length !== 1 ? 's' : ''} failed to publish`);
+          return;
+        }
+      }
+
       await refreshAuth();
       onPublish({ url: result.url, publishedSessions: result.publishedSessions });
     } catch (err) {
@@ -2409,6 +2512,7 @@ export function ReviewStep({
         }
       } else {
         setPublishing(false);
+        setPublishErrorType('project');
         setPublishError((err as Error).message);
       }
     }
@@ -2569,15 +2673,68 @@ export function ReviewStep({
       )}
 
       {publishError && (
-        <div className="upload-flow__error">
-          {publishError}
-          <button
-            className="btn btn--secondary"
-            onClick={() => setPublishError(null)}
-            style={{ marginLeft: 'var(--spacing-3)' }}
-          >
-            Dismiss
-          </button>
+        <div className="publish-error">
+          <div className="publish-error__message">{publishError}</div>
+
+          {publishErrorType === 'sessions' && sessionPublishStatuses.size > 0 && (
+            <div className="publish-error__sessions">
+              {Array.from(sessionPublishStatuses.entries()).map(([sid, st]) => {
+                const s = sessions.find((sess) => sess.id === sid);
+                return (
+                  <div key={sid} className={`publish-error__session-row publish-error__session-row--${st.status}`}>
+                    <span className={`publish-error__icon publish-error__icon--${st.status}`}>
+                      {st.status === 'published' ? '\u2713' : '\u2717'}
+                    </span>
+                    <span className="publish-error__session-title">{s?.title ?? sid}</span>
+                    {st.error && <span className="publish-error__session-error">{st.error}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="publish-error__actions">
+            {publishErrorType === 'sessions' && (
+              <>
+                <button
+                  className="btn btn--secondary"
+                  onClick={() => {
+                    const failedIds = Array.from(sessionPublishStatuses.entries())
+                      .filter(([, st]) => st.status === 'failed')
+                      .map(([sid]) => sid);
+                    doPublish(failedIds);
+                  }}
+                >
+                  Retry failed sessions
+                </button>
+                {partialPublishUrl && (
+                  <button
+                    className="btn btn--primary"
+                    onClick={() => onPublish({
+                      url: partialPublishUrl,
+                      publishedSessions: Array.from(sessionPublishStatuses.values()).filter((s) => s.status === 'published').length,
+                    })}
+                  >
+                    Continue with published sessions
+                  </button>
+                )}
+              </>
+            )}
+            {publishErrorType === 'project' && (
+              <button className="btn btn--secondary" onClick={() => doPublish()}>
+                Retry
+              </button>
+            )}
+            <button
+              className="btn btn--secondary"
+              onClick={() => {
+                setPublishError(null);
+                setPublishErrorType(null);
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
         </div>
       )}
 
@@ -2754,22 +2911,23 @@ export function ProjectUploadFlow() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [triaging, setTriaging] = useState(false);
   const [triageEvents, setTriageEvents] = useState<TriageEvent[]>([]);
+  const [autoSelectMessage, setAutoSelectMessage] = useState<string | null>(null);
   const triageControllerRef = useRef<AbortController | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [enhanceResult, setEnhanceResult] = useState<ProjectEnhanceResult | null>(null);
   const [repoUrl, setRepoUrl] = useState('');
   const [projectUrl, setProjectUrl] = useState('');
   const [publishResult, setPublishResult] = useState<{ url: string; publishedSessions: number } | null>(null);
-  const [showCachedPreview, setShowCachedPreview] = useState(false);
+
 
   // Derived from enhance result (or refined)
   const narrative = enhanceResult?.narrative ?? '';
   const enhanceSkills = enhanceResult?.skills ?? [];
   const enhanceTimeline = enhanceResult?.timeline ?? [];
 
-  // Load sessions on mount
-  useEffect(() => {
-    if (!dirName) return;
+  // Load sessions lazily — only when a step actually needs them
+  const loadSessionsIfNeeded = useCallback(() => {
+    if (sessions.length > 0 || !dirName) return;
     fetchSessions(dirName)
       .then((sess) => {
         setSessions(sess);
@@ -2779,18 +2937,25 @@ export function ProjectUploadFlow() {
         setError((err as Error).message);
         setLoadingSessions(false);
       });
-  }, [dirName]);
+  }, [dirName, sessions.length]);
+
+  // Load sessions when entering a step that needs them
+  useEffect(() => {
+    if (['overview', 'triage', 'enhance'].includes(step)) {
+      loadSessionsIfNeeded();
+    }
+  }, [step, loadSessionsIfNeeded]);
 
   // Auto-load cached preview when ?preview=1 is in URL
   useEffect(() => {
-    if (!dirName || searchParams.get('preview') !== '1') return;
+    const mode = searchParams.get('view') || searchParams.get('preview');
+    if (!dirName || mode !== '1') return;
     fetchProjectEnhanceCache(dirName).then((cache) => {
       if (cache) {
         setEnhanceResult(cache.result);
         setSelectedIds(new Set(cache.selectedSessionIds));
-        setShowCachedPreview(true);
+        setStep('review');
       }
-      // Clear the query param so refreshing goes to normal flow
       setSearchParams({}, { replace: true });
     });
   }, [dirName]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -2808,13 +2973,28 @@ export function ProjectUploadFlow() {
         const result: TriageResult = {
           selected: event.selected,
           skipped: event.skipped,
+          autoSelected: (event as TriageResult & { autoSelected?: boolean }).autoSelected,
+          triageMethod: (event as TriageResult & { triageMethod?: string }).triageMethod,
         };
         setTriageResult(result);
-        setSelectedIds(new Set(result.selected.map((s) => s.sessionId)));
-        // Brief pause then advance to triage results
+        // Pre-check: triage-selected + any previously published sessions
+        const ids = new Set(result.selected.map((s) => s.sessionId));
+        if (project?.publishedSessions) {
+          for (const sid of project.publishedSessions) {
+            ids.add(sid);
+          }
+        }
+        setSelectedIds(ids);
+        // Brief pause then advance
         setTimeout(() => {
           setTriaging(false);
-          setStep('triage');
+          if (result.autoSelected) {
+            // Small project: skip triage results, go straight to enhance
+            setAutoSelectMessage(`All ${ids.size} sessions selected (small project)`);
+            setStep('enhance');
+          } else {
+            setStep('triage');
+          }
         }, 1200);
       }
     });
@@ -2884,9 +3064,9 @@ export function ProjectUploadFlow() {
 
   return (
     <AppShell title="heyi.am" onBack={() => navigate('/')}>
-      {loadingSessions ? (
+      {loadingSessions && step === 'overview' ? (
         <div className="dashboard-loading">Loading sessions...</div>
-      ) : error ? (
+      ) : error && step === 'overview' ? (
         <div className="dashboard-error">{error}</div>
       ) : step === 'overview' ? (
         triaging ? (
@@ -2908,8 +3088,15 @@ export function ProjectUploadFlow() {
           onToggle={handleToggle}
           onEnhance={() => setStep('enhance')}
           onBack={() => setStep('overview')}
+          publishedSessionIds={project.publishedSessions ? new Set(project.publishedSessions) : undefined}
         />
       ) : step === 'enhance' && triageResult ? (
+        <>
+        {autoSelectMessage && (
+          <div className="upload-flow__auto-select-banner">
+            &#10003; {autoSelectMessage}
+          </div>
+        )}
         <EnhanceStep
           project={project}
           sessions={sessions}
@@ -2918,6 +3105,7 @@ export function ProjectUploadFlow() {
           onComplete={handleEnhanceComplete}
           onBack={() => setStep('triage')}
         />
+        </>
       ) : step === 'questions' && enhanceResult ? (
         <QuestionsStep
           enhanceResult={enhanceResult}
@@ -2998,19 +3186,6 @@ export function ProjectUploadFlow() {
         />
       ) : null}
 
-      {showCachedPreview && enhanceResult && (
-        <ProjectPreview
-          project={project}
-          narrative={narrative}
-          skills={enhanceSkills.length > 0 ? enhanceSkills : project.skills}
-          timeline={enhanceTimeline}
-          selectedCount={selectedIds.size}
-          sessions={sessions.filter((s) => selectedIds.has(s.id))}
-          repoUrl={repoUrl}
-          projectUrl={projectUrl}
-          onClose={() => setShowCachedPreview(false)}
-        />
-      )}
     </AppShell>
   );
 }
