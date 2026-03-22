@@ -209,7 +209,7 @@ describe('triageSessions (integration)', () => {
       expect(result.skipped.some((s) => s.sessionId === 'low-turns')).toBe(true);
     });
 
-    it('filters sessions with no file changes', async () => {
+    it('does not filter sessions based on file count (files check removed)', async () => {
       const p1 = writeSessionFile('hf-nofiles', buildSessionJsonl({ turns: 4 }));
       const p2 = writeSessionFile('hf-ok3', buildSessionJsonl({ turns: 4 }));
 
@@ -219,7 +219,9 @@ describe('triageSessions (integration)', () => {
       ];
 
       const result = await triageSessions(sessions, false);
-      expect(result.skipped.some((s) => s.sessionId === 'no-files')).toBe(true);
+      // files: 0 should NOT cause filtering — MIN_FILES was removed
+      // because Cursor/Codex/Gemini sessions often report 0 files
+      expect(result.skipped.some((s) => s.sessionId === 'no-files')).toBe(false);
     });
 
     it('hard floor still filters even for small projects', async () => {

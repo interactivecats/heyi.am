@@ -1,6 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join, basename, dirname } from "node:path";
 import { homedir } from "node:os";
+import { execFile } from "node:child_process";
 import { claudeParser, mapAgentRole } from "./claude.js";
 import { cursorParser, discoverCursorWorkspaces, listConversations, type CursorWorkspace } from "./cursor.js";
 import { codexParser, discoverCodexSessions } from "./codex.js";
@@ -48,7 +49,7 @@ export interface SessionMeta {
  * vs `/`.
  */
 export function encodeDirPath(absolutePath: string): string {
-  return absolutePath.replace(/\//g, "-");
+  return absolutePath.replace(/[/.]/g, "-");
 }
 
 /**
@@ -99,7 +100,169 @@ export async function listSessions(basePath?: string): Promise<SessionMeta[]> {
     }
   } catch { /* gemini discovery failed */ }
 
-  return allSessions;
+  // Build map of encoded projectDir → real absolute path for git checks.
+  // Cursor workspaces and Codex/Gemini sessions have real paths;
+  // Claude dirs can't be reliably decoded (lossy encoding).
+  const realPaths = new Map<string, string>();
+  try {
+    for (const ws of await discoverCursorWorkspaces()) {
+      realPaths.set(encodeDirPath(ws.projectDir), ws.projectDir);
+    }
+  } catch {}
+  try {
+    for (const cf of await discoverCodexSessions()) {
+      realPaths.set(encodeDirPath(cf.cwd), cf.cwd);
+    }
+  } catch {}
+
+  return mergeSubdirectoryProjects(allSessions, realPaths);
+}
+
+/** Get the git remote URL for a directory, or null if not a git repo. */
+function getGitRemote(dirPath: string): Promise<string | null> {
+  return new Promise(resolve => {
+    execFile("git", ["-C", dirPath, "remote", "get-url", "origin"], { timeout: 3000 }, (err, stdout) => {
+      if (err) return resolve(null);
+      const url = stdout.trim();
+      resolve(url || null);
+    });
+  });
+}
+
+/**
+ * Merge sessions from subdirectory projects into their parent when file
+ * evidence confirms they're part of the same codebase.
+ *
+ * Example: sessions from /Dev/heyi.am/cli (encoded: -Dev-heyi-am-cli)
+ * that touch files like /Dev/heyi.am/lib/foo.ex prove they belong to the
+ * parent project /Dev/heyi.am (encoded: -Dev-heyi-am).
+ *
+ * We sample 1-2 sessions from the candidate child, parse them, and check
+ * whether files_touched reference paths outside the subdirectory. This
+ * avoids false merges (e.g., /Dev should NOT absorb /Dev/heyi.am).
+ */
+export async function mergeSubdirectoryProjects(
+  sessions: SessionMeta[],
+  realPaths: Map<string, string>,
+  parseFn: (path: string) => Promise<SessionAnalysis> = parseSession,
+): Promise<SessionMeta[]> {
+  // Group by projectDir
+  const byDir = new Map<string, SessionMeta[]>();
+  for (const s of sessions) {
+    const list = byDir.get(s.projectDir) ?? [];
+    list.push(s);
+    byDir.set(s.projectDir, list);
+  }
+
+  const dirs = [...byDir.keys()].sort((a, b) => a.length - b.length);
+  const mergeMap = new Map<string, string>(); // child → parent
+
+  for (let i = 0; i < dirs.length; i++) {
+    const candidate = dirs[i];
+    if (mergeMap.has(candidate)) continue; // already merged
+
+    // Find potential parents (shorter dirs that are a prefix)
+    const parents: string[] = [];
+    for (let j = 0; j < i; j++) {
+      const potential = mergeMap.get(dirs[j]) ?? dirs[j]; // follow chain
+      if (candidate.startsWith(potential + "-") && candidate !== potential) {
+        parents.push(potential);
+      }
+    }
+    if (parents.length === 0) continue;
+
+    // Pick the longest parent (closest ancestor)
+    const parent = parents.sort((a, b) => b.length - a.length)[0];
+
+    // Signal 1: git remote match — if both dirs resolve to the same repo
+    const parentReal = realPaths.get(parent);
+    const childReal = realPaths.get(candidate);
+    if (parentReal && childReal) {
+      const [parentRemote, childRemote] = await Promise.all([
+        getGitRemote(parentReal),
+        getGitRemote(childReal),
+      ]);
+      if (parentRemote && childRemote && parentRemote === childRemote) {
+        mergeMap.set(candidate, parent);
+        continue;
+      }
+    }
+
+    // Signal 2: file-change sampling — parse 1-2 sessions and check
+    // if files_touched reference paths at the parent level
+    const childSessions = byDir.get(candidate) ?? [];
+    const samples = childSessions
+      .filter(s => !s.isSubagent)
+      .slice(0, 2);
+
+    if (samples.length === 0) continue;
+
+    let shouldMerge = false;
+    for (const sample of samples) {
+      try {
+        const parsed = await parseFn(sample.path);
+
+        // If we got a cwd from parsing, try git remote as a fallback
+        if (!shouldMerge && parsed.cwd && parentReal) {
+          const [pRemote, cRemote] = await Promise.all([
+            getGitRemote(parentReal),
+            getGitRemote(parsed.cwd),
+          ]);
+          if (pRemote && cRemote && pRemote === cRemote) {
+            shouldMerge = true;
+            break;
+          }
+        }
+
+        const filePaths = parsed.files_touched.length > 0
+          ? parsed.files_touched
+          : parsed.tool_calls
+              .map(tc => tc.input.file_path)
+              .filter((p): p is string => typeof p === "string");
+
+        // Check if any file lives at the parent project level but outside
+        // the child's own subtree. Walk up each file's ancestors; if we hit
+        // the child's own projectDir first, this file is just inside its own
+        // project — skip it. Only count it as evidence if we reach the
+        // parent before (or without) hitting the child.
+        for (const fp of filePaths) {
+          const parts = fp.split("/").filter(Boolean);
+          let hitChild = false;
+          for (let k = parts.length - 1; k >= 2; k--) {
+            const ancestor = "/" + parts.slice(0, k).join("/");
+            const encoded = encodeDirPath(ancestor);
+            if (encoded === candidate) {
+              hitChild = true;
+              break; // file is inside child's own tree — not evidence
+            }
+            if (encoded === parent) {
+              shouldMerge = true;
+              break;
+            }
+          }
+          if (shouldMerge) break;
+        }
+        if (shouldMerge) break;
+      } catch {
+        // Parsing failed — skip this sample
+      }
+    }
+
+    if (shouldMerge) {
+      mergeMap.set(candidate, parent);
+    }
+  }
+
+  // Apply merges
+  if (mergeMap.size === 0) return sessions;
+
+  return sessions.map(s => {
+    const newDir = mergeMap.get(s.projectDir);
+    if (newDir) {
+      return { ...s, projectDir: newDir };
+    }
+    return s;
+  });
 }
 
 /** Discover Cursor sessions and convert to SessionMeta[] */
@@ -112,12 +275,20 @@ async function listCursorSessions(): Promise<SessionMeta[]> {
     return sessions;
   }
 
+  // Cursor migrated conversation storage to the global cursorDiskKV table
+  // around August 2025 (composer.planMigrationToHomeDirCompleted). Sessions
+  // before this have metadata (title, date) but no recoverable content.
+  const CURSOR_DATA_CUTOFF = new Date("2025-09-01").getTime();
+
   for (const ws of workspaces) {
     const conversations = listConversations(ws);
     for (const conv of conversations) {
       // Skip conversations without a name — Cursor only generates names for
       // conversations with real interaction. Unnamed ones are empty stubs.
       if (!conv.name) continue;
+
+      // Skip sessions before September 2025 — bubble data not available
+      if (conv.createdAt < CURSOR_DATA_CUTOFF) continue;
 
       // Encode metadata into the cursor:// URL so the parser can use it
       const params = new URLSearchParams();

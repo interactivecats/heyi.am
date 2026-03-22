@@ -106,7 +106,7 @@ import { homedir } from 'node:os';
 const STATS_CACHE_PATH = join(homedir(), '.config', 'heyiam', 'stats-cache.json');
 
 // Bump this when parser logic changes to auto-invalidate stale cache entries.
-const STATS_CACHE_VERSION = 5;
+const STATS_CACHE_VERSION = 6;
 
 interface StatsCacheFile {
   version: number;
@@ -891,6 +891,9 @@ export function createApp(sessionsBasePath?: string) {
                 files_changed: session.filesChanged?.length ?? 0,
                 loc_changed: session.linesOfCode ?? 0,
                 recorded_at: session.date ? new Date(session.date).toISOString() : new Date().toISOString(),
+                end_time: session.endTime ? new Date(session.endTime).toISOString() : null,
+                cwd: session.cwd ?? null,
+                wall_clock_minutes: session.wallClockMinutes ?? null,
                 template: 'editorial',
                 language: null,
                 tools: session.toolBreakdown?.map((t) => t.tool) ?? [],
@@ -905,6 +908,37 @@ export function createApp(sessionsBasePath?: string) {
                 tool_breakdown: (session.toolBreakdown ?? []).map((t) => ({ name: t.tool, count: t.count })),
                 top_files: (session.filesChanged ?? []).slice(0, 20).map((f) => (typeof f === 'string' ? { path: f } : f)),
                 narrative: enhanced?.developerTake ?? '',
+                turn_timeline: (session.turnTimeline ?? []).map((t) => ({
+                  timestamp: t.timestamp,
+                  type: t.type,
+                  content: (t.content ?? '').slice(0, 200),
+                  tools: (t as { tools?: string[] }).tools ?? [],
+                })),
+                transcript_excerpt: (session.rawLog ?? []).slice(0, 10).map((line, i) => {
+                  const role = line.startsWith('> ') ? 'dev' : 'ai';
+                  const text = role === 'dev' ? line.slice(2) : line.replace(/^\[AI\] |^\[TOOL\] /, '');
+                  return { role, id: `Turn ${i + 1}`, text, timestamp: null };
+                }),
+                agent_summary: await (async () => {
+                  // Build agent summary from child session metadata
+                  const childMetas = meta.children ?? [];
+                  if (childMetas.length === 0) return null;
+
+                  const seenRoles = new Set<string>();
+                  const agents: Array<{ role: string; duration_minutes: number; loc_changed: number }> = [];
+                  for (const c of childMetas) {
+                    const role = c.agentRole ?? c.sessionId;
+                    if (seenRoles.has(role)) continue;
+                    seenRoles.add(role);
+                    const childStats = await getSessionStats(c, proj.name);
+                    agents.push({
+                      role: c.agentRole ?? 'agent',
+                      duration_minutes: childStats.duration,
+                      loc_changed: childStats.loc,
+                    });
+                  }
+                  return agents.length > 0 ? { is_orchestrated: true, agents } : null;
+                })(),
                 project_name: proj.name,
                 project_id: projectData.project_id,
                 slug: sessionSlug,
