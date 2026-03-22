@@ -76,6 +76,43 @@ defmodule HeyiAmWeb.ProjectApiController do
     end
   end
 
+  def screenshot(conn, %{"slug" => slug}) do
+    case Projects.get_project_by_slug_any_user(slug) do
+      nil ->
+        conn |> put_status(:not_found) |> json(%{error: "Not found"})
+
+      %{screenshot_key: nil} ->
+        conn |> put_status(:not_found) |> json(%{error: "No screenshot"})
+
+      %{screenshot_key: ""} ->
+        conn |> put_status(:not_found) |> json(%{error: "No screenshot"})
+
+      %{screenshot_key: key} ->
+        case HeyiAm.ObjectStorage.presign_get(key) do
+          {:ok, url} ->
+            case Req.get(url) do
+              {:ok, %{status: 200, body: body, headers: headers}} ->
+                content_type =
+                  case headers do
+                    %{"content-type" => [ct | _]} -> ct
+                    _ -> "image/png"
+                  end
+
+                conn
+                |> put_resp_header("content-type", content_type)
+                |> put_resp_header("cache-control", "public, max-age=86400")
+                |> send_resp(200, body)
+
+              _ ->
+                conn |> put_status(:bad_gateway) |> json(%{error: "Storage fetch failed"})
+            end
+
+          _ ->
+            conn |> put_status(:internal_server_error) |> json(%{error: "Presign failed"})
+        end
+    end
+  end
+
   defp format_errors(changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
       Regex.replace(~r"%{(\w+)}", msg, fn _, key ->

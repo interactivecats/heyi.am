@@ -76,12 +76,12 @@
             <a :for={project <- @projects}
                href={"/" <> @portfolio_user.username <> "/" <> project.slug}
                class="portfolio-project-card"
-               style={if project.screenshot_url, do: "padding: 0; overflow: hidden;", else: ""}>
+               style={if project[:screenshot_url], do: "padding: 0; overflow: hidden;", else: ""}>
               <%!-- Screenshot thumbnail --%>
-              <%= if project.screenshot_url do %>
-                <img src={project.screenshot_url} alt="" style="width: 100%; height: 140px; object-fit: cover; object-position: top; display: block; border-block-end: 1px solid var(--ghost-border);" loading="lazy" />
+              <%= if project[:screenshot_url] do %>
+                <img src={project[:screenshot_url]} alt="" style="width: 100%; height: 140px; object-fit: cover; object-position: top; display: block; border-block-end: 1px solid var(--ghost-border);" loading="lazy" />
               <% end %>
-              <div style={if project.screenshot_url, do: "padding: var(--spacing-4) var(--spacing-6) var(--spacing-6);", else: ""}>
+              <div style={if project[:screenshot_url], do: "padding: var(--spacing-4) var(--spacing-6) var(--spacing-6);", else: ""}>
                 <h3>{project.title}</h3>
                 <%!-- Links row --%>
                 <%= if project.repo_url || project.project_url do %>

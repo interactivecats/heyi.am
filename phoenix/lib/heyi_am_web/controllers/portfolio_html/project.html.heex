@@ -54,9 +54,9 @@
     <% end %>
 
     <%!-- Screenshot (auto-captured from project URL) --%>
-    <%= if @project.screenshot_url do %>
+    <%= if @project[:screenshot_url] do %>
       <div style="margin-block-end: var(--spacing-8); border-radius: 0.375rem; overflow: hidden; border: 1px solid var(--ghost-border);">
-        <img src={@project.screenshot_url} alt={"Screenshot of #{@project.title}"} style="width: 100%; height: auto; display: block;" loading="lazy" />
+        <img src={@project[:screenshot_url]} alt={"Screenshot of #{@project.title}"} style="width: 100%; height: auto; display: block;" loading="lazy" />
       </div>
     <% end %>
 
