@@ -4,7 +4,7 @@
  * Tests Settings page rendering (API key, account status, machine token).
  * Auth-prompt-on-publish tests will be added when ProjectUploadFlow is built.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';

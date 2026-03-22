@@ -409,12 +409,14 @@ function EnhanceStep({
               </div>
             )}
 
-            {result?.arc && result.arc.length > 0 && (
+            {result?.arc && result.arc.length > 0 && (() => {
+              const arc = result.arc;
+              return (
               <>
                 <div className="upload-flow__section-label" style={{ marginTop: 'var(--spacing-6)' }}>Project Arc</div>
                 <div className="enhance-split__arc">
-                  {result.arc.map((phase, i) => (
-                    <div key={i} className={`enhance-split__arc-item ${!isDone && i === result.arc.length - 1 ? 'enhance-split__arc-item--generating' : ''}`}>
+                  {arc.map((phase, i) => (
+                    <div key={i} className={`enhance-split__arc-item ${!isDone && i === arc.length - 1 ? 'enhance-split__arc-item--generating' : ''}`}>
                       <div className="enhance-split__arc-num">{String(phase.phase).padStart(2, '0')}</div>
                       <div>
                         <div className="enhance-split__arc-title">{phase.title}</div>
@@ -424,7 +426,8 @@ function EnhanceStep({
                   ))}
                 </div>
               </>
-            )}
+              );
+            })()}
 
             {isDone && (
               <div className="upload-flow__actions">
@@ -449,12 +452,10 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 function QuestionsStep({
-  project,
   enhanceResult,
   onSkip,
   onWeave,
 }: {
-  project: Project;
   enhanceResult: ProjectEnhanceResult;
   onSkip: () => void;
   onWeave: (answers: RefineAnswer[]) => void;
@@ -1113,7 +1114,6 @@ export function ProjectUploadFlow() {
         />
       ) : step === 'questions' && enhanceResult ? (
         <QuestionsStep
-          project={project}
           enhanceResult={enhanceResult}
           onSkip={handleSkipQuestions}
           onWeave={handleWeaveAnswers}

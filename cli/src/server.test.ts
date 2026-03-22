@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import { writeFile, mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -65,6 +65,13 @@ vi.mock('./auth.js', () => ({
   checkAuthStatus: vi.fn().mockResolvedValue({ authenticated: false }),
   getAuthToken: vi.fn().mockReturnValue(null),
   saveAuthToken: vi.fn(),
+}));
+
+const mockEnhanceProject = vi.fn();
+const mockRefineNarrative = vi.fn();
+vi.mock('./llm/project-enhance.js', () => ({
+  enhanceProject: (...args: unknown[]) => mockEnhanceProject(...args),
+  refineNarrative: (...args: unknown[]) => mockRefineNarrative(...args),
 }));
 
 // --- Test fixtures ---
@@ -472,6 +479,196 @@ describe('GET /api/projects/:project/git-remote', () => {
     const res = await request(app).get('/api/projects/-Users-test-Dev-myapp/git-remote');
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('url');
+  });
+});
+
+// ── Phase 3: Project Enhance endpoints ──────────────────────────
+
+const MOCK_ENHANCE_RESULT = {
+  narrative: 'A full-stack platform built from scratch.',
+  arc: [{ phase: 1, title: 'Foundation', description: 'CLI parser' }],
+  skills: ['TypeScript', 'Elixir'],
+  timeline: [{
+    period: 'Week 1',
+    label: 'Setup',
+    sessions: [{ sessionId: 'abc-123', title: 'Auth rewrite', featured: true }],
+  }],
+  questions: [{
+    id: 'q1',
+    category: 'pattern',
+    question: 'You overrode the AI 3 times. Why?',
+    context: 'High correction count',
+  }],
+};
+
+describe('POST /api/projects/:project/enhance-project (SSE)', () => {
+  beforeEach(() => {
+    mockEnhanceProject.mockReset();
+    mockRefineNarrative.mockReset();
+    mockEnhanceProject.mockResolvedValue(MOCK_ENHANCE_RESULT);
+  });
+
+  it('streams SSE events and ends with done + result', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app)
+      .post('/api/projects/myapp/enhance-project')
+      .send({
+        selectedSessionIds: ['abc-123'],
+        skippedSessions: [{ title: 'Dep update', duration: 3, loc: 12 }],
+      })
+      .buffer(true)
+      .parse((res, cb) => {
+        let data = '';
+        res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+        res.on('end', () => cb(null, data));
+      });
+
+    expect(res.status).toBe(200);
+
+    // Parse SSE events from raw text
+    const events = (res.body as string)
+      .split('\n\n')
+      .filter((s: string) => s.startsWith('data: '))
+      .map((s: string) => JSON.parse(s.replace('data: ', '')));
+
+    // Should have session_progress, project_enhance, and done events
+    const types = events.map((e: { type: string }) => e.type);
+    expect(types).toContain('session_progress');
+    expect(types).toContain('project_enhance');
+    expect(types).toContain('done');
+
+    const doneEvent = events.find((e: { type: string }) => e.type === 'done');
+    expect(doneEvent.result.narrative).toBe('A full-stack platform built from scratch.');
+  });
+
+  it('skips already-enhanced sessions (sends skipped status)', async () => {
+    // Enhance a session first so it has saved data
+    const app = createApp(tmpDir);
+    await request(app)
+      .post('/api/projects/myapp/sessions/abc-123/enhance')
+      .send({});
+
+    const res = await request(app)
+      .post('/api/projects/myapp/enhance-project')
+      .send({
+        selectedSessionIds: ['abc-123'],
+        skippedSessions: [],
+      })
+      .buffer(true)
+      .parse((res, cb) => {
+        let data = '';
+        res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+        res.on('end', () => cb(null, data));
+      });
+
+    const events = (res.body as string)
+      .split('\n\n')
+      .filter((s: string) => s.startsWith('data: '))
+      .map((s: string) => JSON.parse(s.replace('data: ', '')));
+
+    const progressEvents = events.filter((e: { type: string }) => e.type === 'session_progress');
+    // Session was already enhanced, so it should be skipped
+    expect(progressEvents.some((e: { status: string }) => e.status === 'skipped')).toBe(true);
+  });
+
+  it('returns 400 when selectedSessionIds is empty', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app)
+      .post('/api/projects/myapp/enhance-project')
+      .send({ selectedSessionIds: [], skippedSessions: [] });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('INVALID_INPUT');
+  });
+
+  it('returns error SSE event for unknown project', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app)
+      .post('/api/projects/nonexistent/enhance-project')
+      .send({ selectedSessionIds: ['abc-123'], skippedSessions: [] })
+      .buffer(true)
+      .parse((res, cb) => {
+        let data = '';
+        res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+        res.on('end', () => cb(null, data));
+      });
+
+    const events = (res.body as string)
+      .split('\n\n')
+      .filter((s: string) => s.startsWith('data: '))
+      .map((s: string) => JSON.parse(s.replace('data: ', '')));
+
+    expect(events.some((e: { type: string }) => e.type === 'error')).toBe(true);
+  });
+});
+
+describe('POST /api/projects/:project/refine-narrative', () => {
+  beforeEach(() => {
+    mockRefineNarrative.mockReset();
+  });
+
+  it('returns refined narrative from LLM', async () => {
+    mockRefineNarrative.mockResolvedValue({
+      narrative: 'Refined: trust is structural.',
+      timeline: MOCK_ENHANCE_RESULT.timeline,
+    });
+
+    const app = createApp(tmpDir);
+    const res = await request(app)
+      .post('/api/projects/myapp/refine-narrative')
+      .send({
+        draftNarrative: 'Draft narrative.',
+        draftTimeline: MOCK_ENHANCE_RESULT.timeline,
+        answers: [{ questionId: 'q1', question: 'Why override?', answer: 'Backward compat was the problem.' }],
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.narrative).toBe('Refined: trust is structural.');
+    expect(res.body.timeline).toHaveLength(1);
+  });
+
+  it('passes through unchanged when no answers', async () => {
+    mockRefineNarrative.mockResolvedValue({
+      narrative: 'Draft.',
+      timeline: [],
+    });
+
+    const app = createApp(tmpDir);
+    const res = await request(app)
+      .post('/api/projects/myapp/refine-narrative')
+      .send({
+        draftNarrative: 'Draft.',
+        draftTimeline: [],
+        answers: [],
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.narrative).toBe('Draft.');
+  });
+
+  it('returns 400 when draftNarrative is missing', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app)
+      .post('/api/projects/myapp/refine-narrative')
+      .send({ answers: [] });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('INVALID_INPUT');
+  });
+
+  it('returns 500 when LLM fails', async () => {
+    mockRefineNarrative.mockRejectedValue(new Error('API rate limited'));
+
+    const app = createApp(tmpDir);
+    const res = await request(app)
+      .post('/api/projects/myapp/refine-narrative')
+      .send({
+        draftNarrative: 'Draft.',
+        answers: [{ questionId: 'q1', question: 'Q?', answer: 'A.' }],
+      });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error.code).toBe('REFINE_FAILED');
   });
 });
 
