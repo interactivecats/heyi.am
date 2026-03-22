@@ -1772,9 +1772,6 @@ function ProjectPreview({
         <div className="project-preview__timeline-heading">WORK TIMELINE</div>
         <WorkTimeline sessions={sessions} />
 
-        {/* Agent Activity — per-session fork/join detail */}
-        <AgentActivitySection sessions={sessions} projectDirName={project.dirName} />
-
         {/* Timeline */}
         <div className="project-preview__timeline-heading">PROJECT TIMELINE</div>
         <div className="timeline">

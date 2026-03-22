@@ -93,6 +93,7 @@ export function AgentTimeline({ session, variant }: AgentTimelineProps) {
   const minLaneWidth = isCompact ? 30 : 60;
   const maxLaneWidth = isCompact ? 80 : 200;
   const labelSpace = isCompact ? 0 : 100;  // space after lane for label text
+  const leftLabelSpace = isCompact ? 0 : 120; // space for role labels to the left of lanes
   const forkJoinWidth = curveDx * 2;       // space for fork/join curves
 
   // Compute max child duration across ALL waves for proportional sizing
@@ -248,14 +249,15 @@ export function AgentTimeline({ session, variant }: AgentTimelineProps) {
                 strokeWidth={strokeW}
                 strokeLinecap="round"
               />
-              {/* Role label — above lane like the mockup */}
+              {/* Role label — to the left of lane start */}
               <text
-                x={lane.x1 + 6}
-                y={lane.y - rectPadY - 3}
+                x={lane.x1 - 6}
+                y={lane.y + labelSize / 3}
                 fontFamily="var(--font-mono), 'IBM Plex Mono', monospace"
                 fontSize={labelSize}
                 fill={lane.color}
                 fontWeight={600}
+                textAnchor="end"
                 data-testid="role-label"
               >
                 {(lane.child.agentRole ?? 'agent').toUpperCase()}
