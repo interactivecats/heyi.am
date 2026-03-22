@@ -2484,6 +2484,18 @@ export function ReviewStep({
     publishControllerRef.current?.abort();
     const controller = publishProject(project.dirName, payload, (event: PublishEvent) => {
       switch (event.type) {
+        case 'project':
+          if (event.status === 'failed') {
+            setPublishing(false);
+            if (event.error?.includes('Authentication required') || event.error?.includes('AUTH_REQUIRED')) {
+              startAuthFlow();
+            } else {
+              setPublishErrorType('project');
+              setPublishError(event.error ?? 'Project creation failed');
+            }
+          }
+          break;
+
         case 'session':
           setSessionPublishStatuses((prev) => {
             const next = new Map(prev);

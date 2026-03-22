@@ -830,7 +830,10 @@ export function createApp(sessionsBasePath?: string) {
 
       if (!projectRes.ok) {
         const errBody = await projectRes.json().catch(() => ({ error: 'Project creation failed' }));
-        const errMsg = (errBody as { error?: string }).error ?? `HTTP ${projectRes.status}`;
+        const rawErr = (errBody as { error?: unknown }).error;
+        const errMsg = typeof rawErr === 'string' ? rawErr
+          : (rawErr && typeof rawErr === 'object' && 'message' in rawErr) ? (rawErr as { message: string }).message
+          : `HTTP ${projectRes.status}`;
         send({ type: 'project', status: 'failed', error: errMsg, fatal: true });
         res.end();
         return;
@@ -905,7 +908,11 @@ export function createApp(sessionsBasePath?: string) {
               }
               send({ type: 'session', sessionId, status: 'published' });
             } else {
-              const errMsg = `HTTP ${sessionRes.status}`;
+              const sesErrBody = await sessionRes.json().catch(() => null);
+              const rawSesErr = sesErrBody && typeof sesErrBody === 'object' ? (sesErrBody as { error?: unknown }).error : null;
+              const errMsg = typeof rawSesErr === 'string' ? rawSesErr
+                : (rawSesErr && typeof rawSesErr === 'object' && 'message' in rawSesErr) ? (rawSesErr as { message: string }).message
+                : `HTTP ${sessionRes.status}`;
               failedSessions.push({ sessionId, error: errMsg });
               send({ type: 'session', sessionId, status: 'failed', error: errMsg });
             }

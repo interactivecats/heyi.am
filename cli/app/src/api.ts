@@ -370,6 +370,7 @@ export interface PublishSessionStatus {
 }
 
 export type PublishEvent =
+  | { type: 'project'; status: 'creating' | 'created' | 'failed'; error?: string; fatal?: boolean; projectId?: number; slug?: string }
   | { type: 'session'; sessionId: string; status: 'publishing' | 'published' | 'failed'; error?: string }
   | { type: 'done'; projectUrl: string; uploaded: number; failed: number; failedSessions: Array<{ sessionId: string; error: string }> }
   | { type: 'error'; error: string };
