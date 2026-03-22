@@ -186,7 +186,6 @@ The app reads these optional env vars to configure Bandit (the HTTP server):
 | Variable | Default | Notes |
 |---|---|---|
 | `HTTP_NUM_ACCEPTORS` | `100` | Number of concurrent accept loops. Default is fine for most loads |
-| `HTTP_MAX_CONNECTIONS` | `16384` | Max simultaneous connections. Raise for high-traffic or many LiveView sessions |
 
 ### Container ulimits
 
@@ -274,7 +273,6 @@ SES_REGION=us-east-1
 # BEAM / HTTP tuning
 ERL_FLAGS=+K true +Q 65536 +P 1048576 +A 32 +sbwt none +sbwtdcpu none +sbwtdio none
 HTTP_NUM_ACCEPTORS=100
-HTTP_MAX_CONNECTIONS=16384
 
 # Other optional
 PORT=4000
