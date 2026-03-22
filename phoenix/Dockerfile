@@ -33,7 +33,7 @@ RUN mix compile
 COPY assets/package.json assets/package-lock.json assets/
 RUN cd assets && npm install
 COPY assets assets
-RUN mix assets.deploy
+RUN rm -rf priv/static/assets && mix assets.deploy
 
 COPY config/runtime.exs config/
 COPY rel rel
