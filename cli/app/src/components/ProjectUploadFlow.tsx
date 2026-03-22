@@ -2399,7 +2399,7 @@ export function ReviewStep({
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [publishErrorType, setPublishErrorType] = useState<'project' | 'sessions' | null>(null);
-  const [sessionPublishStatuses, setSessionPublishStatuses] = useState<Map<string, { status: 'published' | 'failed'; error?: string }>>(new Map());
+  const [sessionPublishStatuses, setSessionPublishStatuses] = useState<Map<string, { status: 'publishing' | 'published' | 'failed'; error?: string }>>(new Map());
   const [partialPublishUrl, setPartialPublishUrl] = useState<string | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
   const [deviceCode, setDeviceCode] = useState<{ userCode: string; verificationUri: string; deviceCode: string } | null>(null);
@@ -2439,89 +2439,92 @@ export function ReviewStep({
     };
   }, [project, slug, narrative, repoUrl, projectUrl, timeline, skills, allSessions, selectedIds]);
 
-  const doPublish = useCallback(async (retrySessionIds?: string[]) => {
+  const startAuthFlow = useCallback(async () => {
+    setNeedsAuth(true);
+    try {
+      const codeInfo = await startDeviceAuth();
+      setDeviceCode({
+        userCode: codeInfo.user_code,
+        verificationUri: codeInfo.verification_uri,
+        deviceCode: codeInfo.device_code,
+      });
+      setAuthPolling(true);
+      const interval = (codeInfo.interval || 5) * 1000;
+      pollRef.current = setInterval(async () => {
+        try {
+          const status = await pollDeviceAuth(codeInfo.device_code);
+          if (status.authenticated) {
+            if (pollRef.current) clearInterval(pollRef.current);
+            pollRef.current = null;
+            setAuthPolling(false);
+            setNeedsAuth(false);
+            await refreshAuth();
+            doPublish();
+          }
+        } catch {
+          // Keep polling on transient errors
+        }
+      }, interval);
+    } catch (authErr) {
+      setPublishError(`Login failed: ${(authErr as Error).message}`);
+    }
+  }, [refreshAuth]);
+
+  const doPublish = useCallback((retrySessionIds?: string[]) => {
     setPublishing(true);
     setPublishError(null);
     setPublishErrorType(null);
     setNeedsAuth(false);
 
-    try {
-      const payload = buildPayload();
-      if (retrySessionIds) {
-        payload.selectedSessionIds = retrySessionIds;
-      }
-      const result = await publishProject(project.dirName, payload);
-
-      // Track per-session statuses if provided
-      if (result.sessionStatuses) {
-        const statusMap = new Map<string, { status: 'published' | 'failed'; error?: string }>();
-        for (const ss of result.sessionStatuses) {
-          statusMap.set(ss.sessionId, { status: ss.status, error: ss.error });
-        }
-        setSessionPublishStatuses((prev) => {
-          const merged = new Map(prev);
-          for (const [k, v] of statusMap) merged.set(k, v);
-          return merged;
-        });
-
-        const failed = result.sessionStatuses.filter((s) => s.status === 'failed');
-        if (failed.length > 0) {
-          setPublishing(false);
-          setPublishErrorType('sessions');
-          setPartialPublishUrl(result.url);
-          setPublishError(`${failed.length} session${failed.length !== 1 ? 's' : ''} failed to publish`);
-          return;
-        }
-      }
-
-      await refreshAuth();
-      onPublish({ url: result.url, publishedSessions: result.publishedSessions });
-    } catch (err) {
-      if (err instanceof AuthRequiredError) {
-        setPublishing(false);
-        setNeedsAuth(true);
-        // Start device auth flow
-        try {
-          const codeInfo = await startDeviceAuth();
-          setDeviceCode({
-            userCode: codeInfo.user_code,
-            verificationUri: codeInfo.verification_uri,
-            deviceCode: codeInfo.device_code,
-          });
-          // Start polling
-          setAuthPolling(true);
-          const interval = (codeInfo.interval || 5) * 1000;
-          pollRef.current = setInterval(async () => {
-            try {
-              const status = await pollDeviceAuth(codeInfo.device_code);
-              if (status.authenticated) {
-                if (pollRef.current) clearInterval(pollRef.current);
-                pollRef.current = null;
-                setAuthPolling(false);
-                setNeedsAuth(false);
-                await refreshAuth();
-                // Auto-retry publish
-                doPublish();
-              }
-            } catch {
-              // Keep polling on transient errors
-            }
-          }, interval);
-        } catch (authErr) {
-          setPublishError(`Login failed: ${(authErr as Error).message}`);
-        }
-      } else {
-        setPublishing(false);
-        setPublishErrorType('project');
-        setPublishError((err as Error).message);
-      }
+    const payload = buildPayload();
+    if (retrySessionIds) {
+      payload.selectedSessionIds = retrySessionIds;
     }
-  }, [buildPayload, project.dirName, onPublish, refreshAuth]);
 
-  // Cleanup polling on unmount
+    publishControllerRef.current?.abort();
+    const controller = publishProject(project.dirName, payload, (event: PublishEvent) => {
+      switch (event.type) {
+        case 'session':
+          setSessionPublishStatuses((prev) => {
+            const next = new Map(prev);
+            next.set(event.sessionId, { status: event.status === 'publishing' ? 'publishing' as const : event.status, error: event.error });
+            return next;
+          });
+          break;
+
+        case 'done': {
+          setPublishing(false);
+          if (event.failed > 0) {
+            setPublishErrorType('sessions');
+            setPartialPublishUrl(event.projectUrl);
+            setPublishError(`${event.failed} session${event.failed !== 1 ? 's' : ''} failed to publish`);
+          } else {
+            refreshAuth();
+            onPublish({ url: event.projectUrl, publishedSessions: event.uploaded });
+          }
+          break;
+        }
+
+        case 'error':
+          setPublishing(false);
+          if (event.error === 'AUTH_REQUIRED') {
+            startAuthFlow();
+          } else {
+            setPublishErrorType('project');
+            setPublishError(event.error);
+          }
+          break;
+      }
+    });
+
+    publishControllerRef.current = controller;
+  }, [buildPayload, project.dirName, onPublish, refreshAuth, startAuthFlow]);
+
+  // Cleanup polling and publish stream on unmount
   useEffect(() => {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      publishControllerRef.current?.abort();
     };
   }, []);
 
@@ -2672,6 +2675,30 @@ export function ReviewStep({
         </div>
       )}
 
+      {/* Live publish progress */}
+      {publishing && sessionPublishStatuses.size > 0 && (
+        <div className="publish-progress">
+          <div className="upload-flow__section-label" style={{ marginBottom: 'var(--spacing-2)' }}>Publishing sessions...</div>
+          <div className="publish-progress__sessions">
+            {Array.from(sessionPublishStatuses.entries()).map(([sid, st]) => {
+              const s = sessions.find((sess) => sess.id === sid);
+              return (
+                <div key={sid} className="publish-progress__row">
+                  {st.status === 'published' ? (
+                    <span className="publish-error__icon--published">{'\u2713'}</span>
+                  ) : st.status === 'publishing' ? (
+                    <span className="enhance-feed-item__spinner" />
+                  ) : (
+                    <span className="publish-error__icon--failed">{'\u2717'}</span>
+                  )}
+                  <span>{s?.title ?? sid}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {publishError && (
         <div className="publish-error">
           <div className="publish-error__message">{publishError}</div>
@@ -2749,7 +2776,7 @@ export function ReviewStep({
         <button
           type="button"
           className="btn btn--primary btn--large"
-          onClick={doPublish}
+          onClick={() => doPublish()}
           disabled={publishing || needsAuth}
         >
           {publishing ? 'Publishing...' : 'Publish project \u2192'}
@@ -2968,6 +2995,12 @@ export function ProjectUploadFlow() {
 
     const controller = triageProject(dirName, (event: TriageEvent) => {
       setTriageEvents((prev) => [...prev, event]);
+
+      if (event.type === 'error') {
+        setError(event.message);
+        setTriaging(false);
+        return;
+      }
 
       if (event.type === 'result') {
         const result: TriageResult = {

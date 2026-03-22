@@ -1774,6 +1774,29 @@ details[open] > .collapsible__summary .collapsible__chevron {
   gap: var(--spacing-4);
 }
 
+.dashboard-banner {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.8125rem;
+  background: #fef3c7;
+  color: #92400e;
+  padding: var(--spacing-3) var(--spacing-4);
+  border-radius: 4px;
+  margin-bottom: var(--spacing-4);
+  text-align: center;
+}
+
+.dashboard-banner__link {
+  background: none;
+  border: none;
+  color: #084471;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
 .dashboard-loading,
 .dashboard-error {
   display: flex;
@@ -3095,6 +3118,27 @@ details[open] > .collapsible__summary .collapsible__chevron {
   display: flex;
   gap: var(--spacing-3);
   flex-wrap: wrap;
+}
+
+.publish-progress {
+  margin: var(--spacing-4) 0;
+  padding: var(--spacing-4);
+  background: var(--surface-container, #f5f7fa);
+  border-radius: var(--radius-sm);
+}
+
+.publish-progress__sessions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.publish-progress__row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: 0.8125rem;
+  font-family: var(--font-mono);
 }
 
 /* ==========================================================================

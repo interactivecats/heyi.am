@@ -61,6 +61,7 @@ export type TriageEvent =
   | { type: 'llm_ranking'; sessionCount: number }
   | { type: 'scoring_fallback'; sessionCount: number }
   | { type: 'done'; selected: number; skipped: number }
+  | { type: 'error'; message: string }
   | { type: 'result'; selected: Array<{ sessionId: string; reason: string }>; skipped: Array<{ sessionId: string; reason: string }> };
 
 // ── Triage SSE stream ────────────────────────────────────────────
@@ -113,7 +114,7 @@ export function triageProject(
     })
     .catch((err) => {
       if ((err as Error).name !== 'AbortError') {
-        onEvent({ type: 'done', selected: 0, skipped: 0 });
+        onEvent({ type: 'error', message: (err as Error).message });
       }
     });
 

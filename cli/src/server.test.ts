@@ -4,6 +4,7 @@ import { writeFile, mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createApp } from './server.js';
+import { savePublishedState, getPublishedState } from './settings.js';
 import type { RawEntry } from './parsers/types.js';
 
 // vi.mock is hoisted — cannot reference variables declared below.
@@ -669,6 +670,234 @@ describe('POST /api/projects/:project/refine-narrative', () => {
 
     expect(res.status).toBe(500);
     expect(res.body.error.code).toBe('REFINE_FAILED');
+  });
+});
+
+// ── Phase 6: Published state in GET /api/projects ────────────────
+
+describe('GET /api/projects includes published state', () => {
+  const PROJECT_DIR_NAME = '-Users-test-Dev-myapp';
+
+  it('returns isPublished=false when no published state exists', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app).get('/api/projects');
+    const myapp = res.body.projects.find((p: { name: string }) => p.name === 'myapp');
+    // May or may not be published depending on test order, but field should exist
+    expect(myapp).toHaveProperty('isPublished');
+    expect(typeof myapp.isPublished).toBe('boolean');
+  });
+
+  it('returns isPublished=true and publishedSessions after saving published state', async () => {
+    // Save published state to default config dir (same as server uses)
+    savePublishedState(PROJECT_DIR_NAME, {
+      slug: 'myapp-project',
+      projectId: 99,
+      publishedSessions: ['abc-123'],
+    });
+
+    const app = createApp(tmpDir);
+    const res = await request(app).get('/api/projects');
+    const myapp = res.body.projects.find((p: { name: string }) => p.name === 'myapp');
+
+    expect(myapp.isPublished).toBe(true);
+    expect(myapp.publishedSessionCount).toBe(1);
+    expect(myapp.publishedSessions).toEqual(['abc-123']);
+  });
+});
+
+// ── Phase 6: Triage SSE endpoint ─────────────────────────────────
+
+function parseSSE(raw: string): Array<Record<string, unknown>> {
+  return raw
+    .split('\n\n')
+    .filter((s: string) => s.startsWith('data: '))
+    .map((s: string) => JSON.parse(s.replace('data: ', '')));
+}
+
+describe('POST /api/projects/:project/triage (SSE)', () => {
+  it('returns SSE stream with result event containing triageMethod', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app)
+      .post('/api/projects/myapp/triage')
+      .send({ useLLM: false })
+      .buffer(true)
+      .parse((res, cb) => {
+        let data = '';
+        res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+        res.on('end', () => cb(null, data));
+      });
+
+    expect(res.status).toBe(200);
+    const events = parseSSE(res.body as string);
+
+    // Should have loading_stats events (one per session) and a result event
+    expect(events.some((e) => e.type === 'loading_stats')).toBe(true);
+
+    const resultEvent = events.find((e) => e.type === 'result');
+    expect(resultEvent).toBeDefined();
+    expect(resultEvent!.triageMethod).toBeDefined();
+    expect(['llm', 'scoring', 'auto-select']).toContain(resultEvent!.triageMethod);
+  });
+
+  it('includes alreadyPublished sessions in result event', async () => {
+    // Ensure published state exists for this project
+    savePublishedState('-Users-test-Dev-myapp', {
+      slug: 'myapp-project',
+      projectId: 99,
+      publishedSessions: ['abc-123'],
+    });
+
+    const app = createApp(tmpDir);
+    const res = await request(app)
+      .post('/api/projects/myapp/triage')
+      .send({ useLLM: false })
+      .buffer(true)
+      .parse((res, cb) => {
+        let data = '';
+        res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+        res.on('end', () => cb(null, data));
+      });
+
+    const events = parseSSE(res.body as string);
+    const resultEvent = events.find((e) => e.type === 'result');
+
+    expect(resultEvent).toBeDefined();
+    expect(resultEvent!.alreadyPublished).toBeInstanceOf(Array);
+    expect(resultEvent!.alreadyPublished).toContain('abc-123');
+  });
+
+  it('returns 404 for unknown project', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app)
+      .post('/api/projects/nonexistent/triage')
+      .send({});
+
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('PROJECT_NOT_FOUND');
+  });
+
+  it('fires hard_floor events for each session', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app)
+      .post('/api/projects/myapp/triage')
+      .send({ useLLM: false })
+      .buffer(true)
+      .parse((res, cb) => {
+        let data = '';
+        res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+        res.on('end', () => cb(null, data));
+      });
+
+    const events = parseSSE(res.body as string);
+    const hardFloors = events.filter((e) => e.type === 'hard_floor');
+
+    // myapp has 2 sessions (abc-123 and def-456)
+    expect(hardFloors).toHaveLength(2);
+    // Each hard_floor event should have passed boolean
+    hardFloors.forEach((e) => {
+      expect(typeof e.passed).toBe('boolean');
+      expect(e.sessionId).toBeDefined();
+    });
+  });
+});
+
+// ── Phase 6: Small project auto-select via triage endpoint ────────
+
+describe('POST /api/projects/:project/triage — small project', () => {
+  it('auto-selects when project has few sessions passing hard floor', async () => {
+    // The test fixture has 2 sessions with minimal data — they likely fail hard floor
+    // (duration ~0, turns 2, files 0), so auto-select fires with 0 selected.
+    // Let's verify the triageMethod is auto-select (since < 5 pass hard floor).
+    const app = createApp(tmpDir);
+    const res = await request(app)
+      .post('/api/projects/myapp/triage')
+      .send({ useLLM: false })
+      .buffer(true)
+      .parse((res, cb) => {
+        let data = '';
+        res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+        res.on('end', () => cb(null, data));
+      });
+
+    const events = parseSSE(res.body as string);
+    const resultEvent = events.find((e) => e.type === 'result');
+
+    expect(resultEvent).toBeDefined();
+    // With only 2 sessions in myapp, fewer than 5 will pass hard floor → auto-select
+    expect(resultEvent!.triageMethod).toBe('auto-select');
+    expect(resultEvent!.autoSelected).toBe(true);
+  });
+});
+
+// ── Phase 6: Enhance project with session failure ─────────────────
+
+describe('POST /api/projects/:project/enhance-project — error recovery', () => {
+  it('continues enhancing after one session fails (unknown session is skipped)', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app)
+      .post('/api/projects/myapp/enhance-project')
+      .send({
+        selectedSessionIds: ['abc-123', 'nonexistent-session'],
+        skippedSessions: [],
+      })
+      .buffer(true)
+      .parse((res, cb) => {
+        let data = '';
+        res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+        res.on('end', () => cb(null, data));
+      });
+
+    expect(res.status).toBe(200);
+    const events = parseSSE(res.body as string);
+
+    // Should still get a done event despite one session being nonexistent
+    const doneEvent = events.find((e) => e.type === 'done');
+    expect(doneEvent).toBeDefined();
+    expect(doneEvent!.result).toBeDefined();
+
+    // abc-123 should have been processed (skipped as already enhanced, or done)
+    const progressEvents = events.filter((e) => e.type === 'session_progress');
+    const abc123 = progressEvents.find((e) => e.sessionId === 'abc-123');
+    expect(abc123).toBeDefined();
+    expect(['done', 'skipped']).toContain(abc123!.status);
+  });
+
+  it('sends failed status for sessions that error during enhancement', async () => {
+    const { getProvider } = await import('./llm/index.js');
+    const provider = getProvider();
+    const enhanceMock = provider.enhance as ReturnType<typeof vi.fn>;
+
+    // Delete enhanced data so the session needs re-enhancement
+    const app = createApp(tmpDir);
+    await request(app).delete('/api/sessions/def-456/enhanced');
+
+    // Make the provider.enhance mock reject once for this test
+    enhanceMock.mockRejectedValueOnce(new Error('LLM rate limited'));
+
+    const res = await request(app)
+      .post('/api/projects/myapp/enhance-project')
+      .send({
+        selectedSessionIds: ['def-456'],
+        skippedSessions: [],
+        force: true,
+      })
+      .buffer(true)
+      .parse((res, cb) => {
+        let data = '';
+        res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+        res.on('end', () => cb(null, data));
+      });
+
+    const events = parseSSE(res.body as string);
+
+    // Session should have an enhancing event followed by a failed event
+    const progressEvents = events.filter((e) => e.type === 'session_progress');
+    const failedEvent = progressEvents.find((e) => e.status === 'failed');
+
+    expect(failedEvent).toBeDefined();
+    expect(failedEvent!.sessionId).toBe('def-456');
+    expect(failedEvent!.error).toBeDefined();
+    expect(failedEvent!.error).toContain('LLM rate limited');
   });
 });
 

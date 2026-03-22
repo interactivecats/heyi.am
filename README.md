@@ -92,13 +92,14 @@ docker compose -f docker-compose.dev.yml exec phoenix mix compile --warnings-as-
 
 ```bash
 # Reset database (drop + create + migrate)
-docker compose -f docker-compose.dev.yml exec phoenix mix ecto.reset
+# Use `run` instead of `exec` if Phoenix crashed on startup (e.g. migration errors)
+docker compose -f docker-compose.dev.yml run --rm phoenix mix ecto.reset
 
 # Run pending migrations
-docker compose -f docker-compose.dev.yml exec phoenix mix ecto.migrate
+docker compose -f docker-compose.dev.yml run --rm phoenix mix ecto.migrate
 
 # Rollback last migration
-docker compose -f docker-compose.dev.yml exec phoenix mix ecto.rollback
+docker compose -f docker-compose.dev.yml run --rm phoenix mix ecto.rollback
 
 # Full nuke (delete volume and recreate)
 docker compose -f docker-compose.dev.yml down

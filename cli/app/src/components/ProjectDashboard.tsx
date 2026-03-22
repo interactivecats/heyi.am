@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSessionsContext } from '../SessionsContext';
 import { AppShell } from './AppShell';
+import { fetchEnhanceStatus } from '../api';
 import type { Project } from '../types';
 
 const PROJECT_COLORS = ['var(--primary)', 'var(--secondary)', 'var(--tertiary)'];
@@ -154,20 +156,29 @@ function EmptyState() {
 export function ProjectDashboard() {
   const { projects, loading, error } = useSessionsContext();
   const navigate = useNavigate();
+  const [hasApiKey, setHasApiKey] = useState(true);
+
+  useEffect(() => {
+    fetchEnhanceStatus().then((status) => {
+      setHasApiKey(status.mode !== 'none');
+    });
+  }, []);
 
   return (
-    <AppShell
-      title="heyi.am"
-      headerActions={
-        <button
-          className="topbar-icon-btn"
-          onClick={() => navigate('/settings')}
-          aria-label="Settings"
-        >
-          &#9881;
-        </button>
-      }
-    >
+    <AppShell title="heyi.am">
+      {!hasApiKey && (
+        <div className="dashboard-banner">
+          No Anthropic API key configured.{' '}
+          <button
+            type="button"
+            className="dashboard-banner__link"
+            onClick={() => navigate('/settings')}
+          >
+            Add one in Settings
+          </button>{' '}
+          to enable AI enhancement.
+        </div>
+      )}
       {loading ? (
         <div className="dashboard-loading">Loading projects...</div>
       ) : error ? (

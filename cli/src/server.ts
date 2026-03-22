@@ -304,6 +304,11 @@ export function createApp(sessionsBasePath?: string) {
 
   // Triage endpoint — AI selects which sessions are worth showcasing (SSE stream)
   app.post('/api/projects/:project/triage', async (req: Request, res: Response) => {
+    if (!getAnthropicApiKey()) {
+      res.status(400).json({ error: { code: 'NO_API_KEY', message: 'No Anthropic API key configured. Add one in Settings or set ANTHROPIC_API_KEY.' } });
+      return;
+    }
+
     const { project } = req.params;
     const projects = await getProjects(sessionsBasePath);
     const proj = projects.find((p) => p.name === project || p.dirName === project);
@@ -452,21 +457,11 @@ export function createApp(sessionsBasePath?: string) {
   // Enhancement status — returns current mode and remaining quota
   app.get('/api/enhance/status', async (_req: Request, res: Response) => {
     try {
-      const mode = getEnhanceMode();
-      if (mode === 'local') {
+      if (getAnthropicApiKey()) {
         res.json({ mode: 'local', remaining: null });
-        return;
+      } else {
+        res.json({ mode: 'none', remaining: 0, message: 'No API key configured' });
       }
-
-      // Proxy mode — check quota from Phoenix
-      const auth = getAuthToken();
-      if (!auth?.token) {
-        res.json({ mode: 'none', remaining: 0, message: 'Not configured' });
-        return;
-      }
-
-      // We don't have a dedicated quota endpoint yet, so report proxy mode
-      res.json({ mode: 'proxy', remaining: null });
     } catch {
       res.json({ mode: 'unknown', remaining: null });
     }
@@ -565,6 +560,11 @@ export function createApp(sessionsBasePath?: string) {
 
     if (!Array.isArray(selectedSessionIds) || selectedSessionIds.length === 0) {
       res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'selectedSessionIds must be a non-empty array' } });
+      return;
+    }
+
+    if (!getAnthropicApiKey()) {
+      res.status(400).json({ error: { code: 'NO_API_KEY', message: 'No Anthropic API key configured. Add one in Settings or set ANTHROPIC_API_KEY.' } });
       return;
     }
 
