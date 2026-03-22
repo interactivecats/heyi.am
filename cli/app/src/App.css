@@ -2960,6 +2960,54 @@ details[open] > .collapsible__summary .collapsible__chevron {
   color: var(--on-surface-variant);
 }
 
+.review-dropzone--active {
+  border-color: var(--primary);
+  background: rgba(8, 68, 113, 0.06);
+}
+
+.review-screenshot-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.review-screenshot-preview {
+  position: relative;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--ghost-border);
+}
+
+.review-screenshot-preview__img {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 300px;
+  object-fit: cover;
+  object-position: top;
+}
+
+.review-screenshot-preview__remove {
+  position: absolute;
+  top: var(--spacing-2);
+  right: var(--spacing-2);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.review-screenshot-preview__remove:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
 /* ==========================================================================
    REVIEW AUTH — inline login card at publish time
    ========================================================================== */

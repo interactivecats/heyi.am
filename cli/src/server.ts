@@ -782,6 +782,100 @@ export function createApp(sessionsBasePath?: string) {
     }
   });
 
+  // Upload screenshot manually (base64 image from browser)
+  app.post('/api/projects/:project/screenshot-upload', async (req: Request, res: Response) => {
+    const { project } = req.params;
+    const auth = getAuthToken();
+    if (!auth) { res.status(401).json({ error: 'Auth required' }); return; }
+
+    const { image, slug } = req.body as { image: string; slug: string };
+    if (!image) { res.status(400).json({ error: 'No image data' }); return; }
+
+    const projectSlug = slug || String(project);
+    try {
+      // image is "data:image/png;base64,..." or raw base64
+      const base64 = image.includes(',') ? image.split(',')[1] : image;
+      const buffer = Buffer.from(base64, 'base64');
+      const ext = image.startsWith('data:image/jpeg') || image.startsWith('data:image/jpg') ? 'jpg' : 'png';
+
+      // Get presigned PUT URL
+      const ssUrlRes = await fetch(`${API_URL}/api/projects/${projectSlug}/screenshot-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
+        body: JSON.stringify({ ext }),
+      });
+      if (!ssUrlRes.ok) { res.status(502).json({ error: 'Presign failed' }); return; }
+
+      const { upload_url, key } = await ssUrlRes.json() as { upload_url: string; key: string };
+
+      // Upload to S3
+      await fetch(upload_url, {
+        method: 'PUT',
+        body: buffer,
+        headers: { 'Content-Type': `image/${ext}` },
+      });
+
+      // Update screenshot key in DB
+      await fetch(`${API_URL}/api/projects/${projectSlug}/screenshot-key`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
+        body: JSON.stringify({ key }),
+      });
+
+      res.json({ ok: true, key });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
+  // Auto-capture screenshot from URL using headless Chrome
+  app.post('/api/projects/:project/screenshot-capture', async (req: Request, res: Response) => {
+    const { project } = req.params;
+    const auth = getAuthToken();
+    if (!auth) { res.status(401).json({ error: 'Auth required' }); return; }
+
+    const { url, slug } = req.body as { url: string; slug: string };
+    if (!url) { res.status(400).json({ error: 'No URL provided' }); return; }
+
+    const projectSlug = slug || String(project);
+    try {
+      const screenshotPath = await captureScreenshot(url, projectSlug);
+      if (!screenshotPath) {
+        res.status(422).json({ error: 'Chrome not available or capture failed' });
+        return;
+      }
+
+      // Get presigned PUT URL
+      const ssUrlRes = await fetch(`${API_URL}/api/projects/${projectSlug}/screenshot-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
+        body: JSON.stringify({ ext: 'png' }),
+      });
+      if (!ssUrlRes.ok) { res.status(502).json({ error: 'Presign failed' }); return; }
+
+      const { upload_url, key } = await ssUrlRes.json() as { upload_url: string; key: string };
+      const imageData = readFileSync(screenshotPath);
+      await fetch(upload_url, {
+        method: 'PUT',
+        body: imageData,
+        headers: { 'Content-Type': 'image/png' },
+      });
+
+      // Update screenshot key
+      await fetch(`${API_URL}/api/projects/${projectSlug}/screenshot-key`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
+        body: JSON.stringify({ key }),
+      });
+
+      // Return the screenshot as base64 for preview
+      const base64 = imageData.toString('base64');
+      res.json({ ok: true, key, preview: `data:image/png;base64,${base64}` });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
   // Publish project — SSE stream with per-session progress
   app.post('/api/projects/:project/publish', async (req: Request, res: Response) => {
     const { project } = req.params;

@@ -21,6 +21,8 @@ import {
   type RefineAnswer,
   type PublishProjectPayload,
   type PublishEvent,
+  uploadScreenshot,
+  captureScreenshotFromUrl,
 } from '../api';
 import { useAuth } from '../AuthContext';
 import type { Session, Project } from '../types';
@@ -1714,11 +1716,47 @@ export function ReviewStep({
   const [authPolling, setAuthPolling] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const publishControllerRef = useRef<AbortController | null>(null);
+  const screenshotInputRef = useRef<HTMLInputElement>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [screenshotCapturing, setScreenshotCapturing] = useState(false);
   const { refresh: refreshAuth } = useAuth();
 
   const publishedLabel = `${project.sessionCount} (${selectedCount} published)`;
 
   const slug = project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+  const handleScreenshotFile = useCallback((file: File) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+      setScreenshotPreview(base64);
+      // Upload immediately
+      try {
+        await uploadScreenshot(project.dirName, slug, base64);
+      } catch {
+        // Preview still shows; upload will retry on publish
+      }
+    };
+    reader.readAsDataURL(file);
+  }, [project.dirName, slug]);
+
+  const handleAutoCapture = useCallback(async () => {
+    if (!projectUrl) return;
+    setScreenshotCapturing(true);
+    try {
+      const result = await captureScreenshotFromUrl(project.dirName, slug, projectUrl);
+      if (result.ok && result.preview) {
+        setScreenshotPreview(result.preview);
+      } else {
+        setScreenshotPreview(null);
+        alert(result.error || 'Screenshot capture failed. Is Chrome installed?');
+      }
+    } catch {
+      alert('Screenshot capture failed');
+    } finally {
+      setScreenshotCapturing(false);
+    }
+  }, [project.dirName, slug, projectUrl]);
 
   const buildPayload = useCallback((): PublishProjectPayload => {
     const skippedSessions = allSessions
@@ -1960,14 +1998,56 @@ export function ReviewStep({
           />
         </div>
 
-        {projectUrl && (
-          <div className="review-field">
-            <span className="review-field__label">Screenshot</span>
-            <div className="review-field__hint">
-              Auto-captured from project URL on publish
+        <div className="review-field">
+          <span className="review-field__label">Screenshot</span>
+          {screenshotPreview ? (
+            <div className="review-screenshot-preview">
+              <img src={screenshotPreview} alt="Screenshot preview" className="review-screenshot-preview__img" />
+              <button type="button" className="review-screenshot-preview__remove" onClick={() => setScreenshotPreview(null)} aria-label="Remove screenshot">&times;</button>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="review-screenshot-actions">
+              <div
+                className="review-dropzone"
+                role="button"
+                tabIndex={0}
+                onClick={() => screenshotInputRef.current?.click()}
+                onKeyDown={(e) => { if (e.key === 'Enter') screenshotInputRef.current?.click(); }}
+                onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('review-dropzone--active'); }}
+                onDragLeave={(e) => e.currentTarget.classList.remove('review-dropzone--active')}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.remove('review-dropzone--active');
+                  const file = e.dataTransfer.files[0];
+                  if (file && file.type.startsWith('image/')) handleScreenshotFile(file);
+                }}
+              >
+                <span className="review-dropzone__icon" aria-hidden="true">&#128247;</span>
+                <span className="review-dropzone__text">Drop an image or click to upload</span>
+              </div>
+              <input
+                ref={screenshotInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleScreenshotFile(file);
+                }}
+              />
+              {projectUrl && (
+                <button
+                  type="button"
+                  className="btn btn--sm btn--secondary"
+                  disabled={screenshotCapturing}
+                  onClick={handleAutoCapture}
+                >
+                  {screenshotCapturing ? 'Capturing...' : 'Auto-capture from URL'}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Inline auth card ── */}

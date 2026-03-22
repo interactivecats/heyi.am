@@ -446,3 +446,29 @@ export function publishProject(
 
   return controller;
 }
+
+export async function uploadScreenshot(
+  dirName: string,
+  slug: string,
+  imageBase64: string,
+): Promise<{ ok: boolean; key?: string }> {
+  const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/screenshot-upload`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image: imageBase64, slug }),
+  });
+  return res.json();
+}
+
+export async function captureScreenshotFromUrl(
+  dirName: string,
+  slug: string,
+  url: string,
+): Promise<{ ok: boolean; key?: string; preview?: string; error?: string }> {
+  const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/screenshot-capture`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, slug }),
+  });
+  return res.json();
+}
