@@ -4,6 +4,8 @@ export interface WorkTimelineProps {
   sessions: Session[];
   /** Height in pixels per session lane */
   laneHeight?: number;
+  /** Called when a session bar is clicked */
+  onSessionClick?: (session: Session) => void;
 }
 
 // ── Color mapping (shared with AgentTimeline) ──────────────────
@@ -147,7 +149,7 @@ const PADDING_RIGHT = 20;
 const LABEL_AREA_TOP = 16;
 const AXIS_AREA_BOTTOM = 28;
 
-export function WorkTimeline({ sessions, laneHeight = 80 }: WorkTimelineProps) {
+export function WorkTimeline({ sessions, laneHeight = 80, onSessionClick }: WorkTimelineProps) {
   if (sessions.length === 0) {
     return (
       <div className="work-timeline" data-testid="work-timeline-empty">
@@ -338,7 +340,15 @@ export function WorkTimeline({ sessions, laneHeight = 80 }: WorkTimelineProps) {
             const subtitle = [durationLabel, locLabel].filter(Boolean).join(' \u00b7 ');
 
             return (
-              <g key={`session-${i}`} data-testid="session-segment">
+              <g
+                key={`session-${i}`}
+                data-testid="session-segment"
+                style={onSessionClick ? { cursor: 'pointer' } : undefined}
+                onClick={onSessionClick ? () => onSessionClick(session) : undefined}
+                role={onSessionClick ? 'button' : undefined}
+                tabIndex={onSessionClick ? 0 : undefined}
+                onKeyDown={onSessionClick ? (e) => { if (e.key === 'Enter') onSessionClick(session); } : undefined}
+              >
                 {/* Title above bar */}
                 <text
                   x={layout.x1 + 6}

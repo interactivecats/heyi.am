@@ -1011,6 +1011,7 @@ interface GrowthChartProps {
   sessions: Session[];
   totalLoc: number;
   totalFiles: number;
+  onSessionClick?: (session: Session) => void;
 }
 
 /** A point on the cumulative LOC time series */
@@ -1258,7 +1259,7 @@ function truncTitle(t: string, max: number = 14): string {
 }
 
 /** @internal Exported for testing */
-export function GrowthChart({ sessions, totalLoc, totalFiles }: GrowthChartProps) {
+export function GrowthChart({ sessions, totalLoc, totalFiles, onSessionClick }: GrowthChartProps) {
   if (sessions.length === 0) {
     return (
       <div className="growth-chart">
@@ -1292,6 +1293,7 @@ export function GrowthChart({ sessions, totalLoc, totalFiles }: GrowthChartProps
     );
   }
 
+  const sortedSessions = [...dated].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   const { points, boundaries, totalVisualTime } = buildGrowthTimeSeries(dated);
 
   if (points.length === 0) {
@@ -1390,29 +1392,37 @@ export function GrowthChart({ sessions, totalLoc, totalFiles }: GrowthChartProps
           ))}
 
           {/* Session boundary dashed lines and labels */}
-          {uniqueBoundaries.map((b, i) => (
-            <g key={`boundary-${i}`}>
-              <line
-                x1={toX(b.visualTime)}
-                y1={padTop}
-                x2={toX(b.visualTime)}
-                y2={padTop + chartH}
-                stroke="var(--outline-variant)"
-                strokeWidth="0.5"
-                strokeDasharray="3,3"
-              />
-              <text
-                x={toX(b.visualTime)}
-                y={padTop + chartH + 16}
-                textAnchor="middle"
-                fontFamily="var(--font-mono)"
-                fontSize="8"
-                fill="var(--on-surface-variant)"
+          {uniqueBoundaries.map((b, i) => {
+            const clickable = onSessionClick && sortedSessions[b.sessionIndex];
+            return (
+              <g
+                key={`boundary-${i}`}
+                style={clickable ? { cursor: 'pointer' } : undefined}
+                onClick={clickable ? () => onSessionClick(sortedSessions[b.sessionIndex]) : undefined}
               >
-                {truncTitle(b.title)}
-              </text>
-            </g>
-          ))}
+                <line
+                  x1={toX(b.visualTime)}
+                  y1={padTop}
+                  x2={toX(b.visualTime)}
+                  y2={padTop + chartH}
+                  stroke="var(--outline-variant)"
+                  strokeWidth="0.5"
+                  strokeDasharray="3,3"
+                />
+                <text
+                  x={toX(b.visualTime)}
+                  y={padTop + chartH + 16}
+                  textAnchor="middle"
+                  fontFamily="var(--font-mono)"
+                  fontSize="8"
+                  fill={clickable ? 'var(--primary)' : 'var(--on-surface-variant)'}
+                  textDecoration={clickable ? 'underline' : undefined}
+                >
+                  {truncTitle(b.title)}
+                </text>
+              </g>
+            );
+          })}
 
           {/* Area fill */}
           <path d={areaPath} fill="rgba(8,68,113,0.06)" />
@@ -2072,7 +2082,7 @@ function ProjectPreview({
 
         {/* Work Timeline — real time axis with gaps and fork/join */}
         <div className="project-preview__timeline-heading">WORK TIMELINE</div>
-        <WorkTimeline sessions={sessions} />
+        <WorkTimeline sessions={sessions} onSessionClick={setDetailSession} />
 
         {/* Timeline */}
         <div className="project-preview__timeline-heading">PROJECT TIMELINE</div>
@@ -2159,6 +2169,7 @@ function ProjectPreview({
           sessions={sessions}
           totalLoc={project.totalLoc}
           totalFiles={project.totalFiles}
+          onSessionClick={setDetailSession}
         />
 
         {/* Directory Heatmap */}
