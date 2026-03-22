@@ -3499,37 +3499,50 @@ details[open] > .collapsible__summary .collapsible__chevron {
   padding: var(--spacing-4) 0;
 }
 
-.dir-heatmap__rows {
+/* 2D grid heatmap: directories (rows) x sessions (columns) */
+.dir-heatmap__grid {
+  display: grid;
+  gap: 2px;
+  overflow-x: auto;
   margin-bottom: var(--spacing-3);
 }
 
-.dir-heatmap__row {
-  display: grid;
-  grid-template-columns: 180px 1fr 60px;
-  gap: var(--spacing-3);
-  align-items: center;
-  margin-bottom: var(--spacing-2);
+.dir-heatmap__corner {
+  /* Empty top-left corner cell */
 }
 
-.dir-heatmap__dir {
+.dir-heatmap__session-label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  text-align: center;
+  color: var(--on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-bottom: var(--spacing-2);
+}
+
+.dir-heatmap__dir-label {
   font-family: var(--font-mono);
   font-size: 0.75rem;
+  align-self: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--on-surface);
+  padding-inline-end: var(--spacing-2);
 }
 
-.dir-heatmap__bar {
-  height: 16px;
+.dir-heatmap__cell {
+  min-height: 32px;
+  min-width: 80px;
   border-radius: 2px;
+  position: relative;
+  cursor: default;
 }
 
-.dir-heatmap__count {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  text-align: right;
-  color: var(--on-surface-variant);
+.dir-heatmap__cell:hover {
+  outline: 1px solid var(--primary, #084471);
 }
 
 .dir-heatmap__legend {
@@ -3542,25 +3555,27 @@ details[open] > .collapsible__summary .collapsible__chevron {
   margin-bottom: var(--spacing-6);
 }
 
-/* ==========================================================================
-   TOP FILES — most-edited files list
-   ========================================================================== */
-
-.top-files {
+/* Top files — collapsible details */
+.dir-heatmap__top-files {
   margin-bottom: var(--spacing-8);
 }
 
-.top-files__heading {
+.dir-heatmap__top-files-summary {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--on-surface-variant);
+  cursor: pointer;
   margin-bottom: var(--spacing-3);
 }
 
-.top-files__row {
+.dir-heatmap__top-files-summary:hover {
+  color: var(--on-surface);
+}
+
+.dir-heatmap__file-row {
   display: flex;
   justify-content: space-between;
   padding: var(--spacing-2) 0;
@@ -3569,7 +3584,7 @@ details[open] > .collapsible__summary .collapsible__chevron {
   font-size: 0.75rem;
 }
 
-.top-files__path {
+.dir-heatmap__file-path {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3577,7 +3592,7 @@ details[open] > .collapsible__summary .collapsible__chevron {
   margin-inline-end: var(--spacing-3);
 }
 
-.top-files__count {
+.dir-heatmap__file-count {
   flex-shrink: 0;
   color: var(--on-surface-variant);
 }

@@ -29,6 +29,9 @@ const AGENT_COLORS: Record<string, string> = {
 const DEFAULT_COLOR = '#6b7280';
 const MAIN_COLOR = '#084471';
 
+// SVG text cannot resolve CSS custom properties, so use literal font family
+const SVG_FONT = "'IBM Plex Mono', monospace";
+
 function getAgentColor(role?: string): string {
   if (!role) return DEFAULT_COLOR;
   return AGENT_COLORS[role.toLowerCase()] ?? DEFAULT_COLOR;
@@ -149,7 +152,7 @@ export function WorkTimeline({ sessions, laneHeight = 80 }: WorkTimelineProps) {
     return (
       <div className="work-timeline" data-testid="work-timeline-empty">
         <p style={{
-          fontFamily: "var(--font-mono), 'IBM Plex Mono', monospace",
+          fontFamily: "'IBM Plex Mono', monospace",
           fontSize: '0.75rem',
           color: '#6b7280',
         }}>
@@ -283,8 +286,8 @@ export function WorkTimeline({ sessions, laneHeight = 80 }: WorkTimelineProps) {
               <text
                 x={tick.x}
                 y={svgHeight - 6}
-                fontFamily="var(--font-mono), 'IBM Plex Mono', monospace"
-                fontSize={9}
+                fontFamily={SVG_FONT}
+                fontSize={7}
                 fill="#9ca3af"
                 textAnchor="start"
               >
@@ -310,8 +313,9 @@ export function WorkTimeline({ sessions, laneHeight = 80 }: WorkTimelineProps) {
                   <text
                     x={(layout.x1 + layout.x2) / 2}
                     y={mainY - 8}
-                    fontFamily="var(--font-mono), 'IBM Plex Mono', monospace"
-                    fontSize={8}
+                    fontFamily={SVG_FONT}
+                    fontSize={7}
+                    fontStyle="italic"
                     fill="#9ca3af"
                     textAnchor="middle"
                     data-testid="gap-label"
@@ -339,10 +343,10 @@ export function WorkTimeline({ sessions, laneHeight = 80 }: WorkTimelineProps) {
                 <text
                   x={layout.x1 + 6}
                   y={mainY - (isMultiAgent && hasLoadedChildren ? maxChildLanes * forkLaneSpacing / 2 + 14 : 14)}
-                  fontFamily="var(--font-mono), 'IBM Plex Mono', monospace"
-                  fontSize={9}
+                  fontFamily={SVG_FONT}
+                  fontSize={8}
                   fontWeight={600}
-                  fill="#1f2937"
+                  fill="#191c1e"
                   data-testid="session-title"
                 >
                   {session.title}
@@ -350,8 +354,8 @@ export function WorkTimeline({ sessions, laneHeight = 80 }: WorkTimelineProps) {
                 <text
                   x={layout.x1 + 6}
                   y={mainY - (isMultiAgent && hasLoadedChildren ? maxChildLanes * forkLaneSpacing / 2 + 5 : 5)}
-                  fontFamily="var(--font-mono), 'IBM Plex Mono', monospace"
-                  fontSize={7.5}
+                  fontFamily={SVG_FONT}
+                  fontSize={7}
                   fill="#6b7280"
                   data-testid="session-subtitle"
                 >
@@ -416,8 +420,8 @@ function ThickAgentBar({
       <text
         x={(x1 + x2) / 2}
         y={mainY + 16}
-        fontFamily="var(--font-mono), 'IBM Plex Mono', monospace"
-        fontSize={8}
+        fontFamily={SVG_FONT}
+        fontSize={7}
         fill="#6b7280"
         textAnchor="middle"
         data-testid="agent-count-badge"
@@ -494,8 +498,8 @@ function MultiAgentBar({
             <text
               x={laneStartX + childLaneWidth + 6}
               y={laneY + 3}
-              fontFamily="var(--font-mono), 'IBM Plex Mono', monospace"
-              fontSize={7.5}
+              fontFamily={SVG_FONT}
+              fontSize={7}
               fill={color}
               fontWeight={600}
               data-testid="child-role-label"
