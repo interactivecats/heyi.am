@@ -99,6 +99,7 @@ defmodule HeyiAm.Accounts do
 
         case Repo.insert(changeset) do
           {:ok, user} ->
+            UserNotifier.deliver_welcome(user)
             {:ok, user}
 
           {:error, %Ecto.Changeset{errors: errors} = changeset} ->

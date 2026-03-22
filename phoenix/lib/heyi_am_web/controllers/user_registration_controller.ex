@@ -13,6 +13,8 @@ defmodule HeyiAmWeb.UserRegistrationController do
   def create(conn, %{"user" => user_params}) do
     case Accounts.register_user(user_params) do
       {:ok, user} ->
+        Accounts.UserNotifier.deliver_welcome(user)
+
         conn
         |> put_flash(:info, "Account created successfully.")
         |> UserAuth.log_in_user(user, user_params)

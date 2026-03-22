@@ -93,6 +93,16 @@ Presigned URLs expire after 15 minutes (configurable via `presign_expires_in`
 in the app config). The `OBJECT_STORAGE_SECRET_ACCESS_KEY` is never logged or
 returned in API responses.
 
+### Email (Amazon SES)
+
+| Variable | Default | Notes |
+|---|---|---|
+| `SES_ACCESS_KEY_ID` | — | IAM access key with `ses:SendEmail` permission |
+| `SES_SECRET_ACCESS_KEY` | — | IAM secret key |
+| `SES_REGION` | `us-east-1` | AWS region where SES is configured |
+
+When these are unset, the app will fail to start in production. Verify your sending domain is verified in SES before deploying.
+
 ### Other optional
 
 | Variable | Default | Notes |
@@ -255,6 +265,11 @@ OBJECT_STORAGE_HOST=
 OBJECT_STORAGE_BUCKET=heyi-am-sessions
 OBJECT_STORAGE_SCHEME=https://
 OBJECT_STORAGE_PORT=443
+
+# Email (Amazon SES)
+SES_ACCESS_KEY_ID=
+SES_SECRET_ACCESS_KEY=
+SES_REGION=us-east-1
 
 # BEAM / HTTP tuning
 ERL_FLAGS=+K true +Q 65536 +P 1048576 +A 32 +sbwt none +sbwtdcpu none +sbwtdio none
