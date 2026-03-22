@@ -1,6 +1,6 @@
 import Database from "better-sqlite3";
 import { readdir, readFile, access } from "node:fs/promises";
-import { join, basename } from "node:path";
+import { join, basename, resolve } from "node:path";
 import { homedir, platform } from "node:os";
 import type {
   SessionParser,
@@ -67,18 +67,24 @@ interface CursorComposerHead {
 // --- Cursor tool name mapping ---
 
 const CURSOR_TOOL_MAP: Record<string, string> = {
+  // Current Cursor tool names
   read_file: "Read",
+  search_replace: "Edit",
+  write: "Write",
+  list_dir: "Glob",
+  grep: "Grep",
+  codebase_search: "Grep",
+  run_terminal_cmd: "Bash",
+  delete_file: "Bash",
+  // Older Cursor tool names (pre-2025)
   edit_file: "Edit",
   write_file: "Write",
   create_file: "Write",
-  list_dir: "Glob",
   search_files: "Grep",
-  codebase_search: "Grep",
   run_terminal_command: "Bash",
   terminal: "Bash",
   grep_search: "Grep",
   file_search: "Glob",
-  delete_file: "Bash",
 };
 
 function mapCursorToolName(name: string): string {
@@ -298,10 +304,13 @@ function normalizeCursorToolInput(
     normalized.file_path = normalized.targetFile;
   }
 
-  // For edit_file: Cursor uses old_string/new_string same as Claude — pass through
-  // For read_file results: the file content comes in toolFormerData.result
+  // search_replace and edit_file: use old_string/new_string same as Claude — pass through
 
-  // For write_file/create_file: Cursor puts content in "content" field — same as Claude
+  // write: Cursor uses "contents" (plural); Claude uses "content" (singular)
+  if (typeof normalized.contents === "string" && !normalized.content) {
+    normalized.content = normalized.contents;
+  }
+  // create_file: Cursor uses "file_text"
   if (toolName === "create_file" && typeof normalized.file_text === "string") {
     normalized.content = normalized.file_text;
   }
@@ -355,10 +364,10 @@ function countTurnsFromBubbles(bubbles: CursorBubble[]): number {
 
   for (const bubble of bubbles) {
     // type 1 = user, type 2 = AI
-    if (bubble.type === 2 && lastType === 1 && bubble.text) {
+    if (bubble.type === 2 && lastType === 1) {
       turns++;
     }
-    if (bubble.type === 1 || (bubble.type === 2 && bubble.text)) {
+    if (bubble.type === 1 || bubble.type === 2) {
       lastType = bubble.type;
     }
   }
@@ -406,6 +415,11 @@ function computeDurationFromBubbles(bubbles: CursorBubble[]): {
   };
 }
 
+/** Normalize a file path to a consistent absolute form for use as a map/set key. */
+function normalizePath(p: string): string {
+  return resolve(p);
+}
+
 function computeLocFromBubbles(bubbles: CursorBubble[]): LocStats {
   let totalAdded = 0;
   let totalRemoved = 0;
@@ -424,11 +438,12 @@ function computeLocFromBubbles(bubbles: CursorBubble[]): LocStats {
       continue;
     }
 
-    const filePath = args.target_file ?? args.targetFile;
-    if (!filePath) continue;
+    const rawPath = args.file_path ?? args.target_file ?? args.targetFile;
+    if (!rawPath) continue;
+    const filePath = normalizePath(rawPath);
 
-    if (mappedName === "Write" || tfd.name === "create_file") {
-      const content = args.content ?? args.file_text ?? "";
+    if (mappedName === "Write") {
+      const content = args.content ?? args.contents ?? args.file_text ?? "";
       if (!content) continue;
       const lines = content.split("\n").length;
       const prevLines = writeLineCounts.get(filePath) ?? 0;
@@ -452,13 +467,14 @@ function computeLocFromBubbles(bubbles: CursorBubble[]): LocStats {
   for (const bubble of bubbles) {
     if (!bubble.codeBlocks) continue;
     for (const cb of bubble.codeBlocks) {
-      const path = cb.uri?.path ?? cb.uri?._fsPath;
-      if (path && cb.content) {
-        filesChanged.add(path);
+      const rawPath = cb.uri?.path ?? cb.uri?._fsPath;
+      if (rawPath && cb.content) {
+        const cbPath = normalizePath(rawPath);
+        filesChanged.add(cbPath);
         // Only count if not already tracked via tool calls
-        if (!writeLineCounts.has(path)) {
+        if (!writeLineCounts.has(cbPath)) {
           totalAdded += cb.content.split("\n").length;
-          writeLineCounts.set(path, cb.content.split("\n").length);
+          writeLineCounts.set(cbPath, cb.content.split("\n").length);
         }
       }
     }
@@ -532,6 +548,9 @@ function bubblesToRawEntries(bubbles: CursorBubble[], conversationId: string): R
 export interface CursorParseHints {
   name?: string;
   createdAt?: number;
+  lastUpdatedAt?: number;
+  totalLinesAdded?: number;
+  totalLinesRemoved?: number;
 }
 
 export async function parseCursorConversation(
@@ -592,18 +611,42 @@ export async function parseCursorConversation(
 
   // Use hint date when bubbles have no timestamps
   const hintDate = hints?.createdAt ? new Date(hints.createdAt).toISOString() : null;
+  const hintEndDate = hints?.lastUpdatedAt ? new Date(hints.lastUpdatedAt).toISOString() : null;
+
+  // Fall back to workspace metadata for duration when bubble timestamps are missing
+  let finalDuration = duration_ms;
+  let finalWallClock = wall_clock_ms;
+  if (finalDuration === 0 && hints?.createdAt && hints?.lastUpdatedAt) {
+    finalWallClock = hints.lastUpdatedAt - hints.createdAt;
+    finalDuration = finalWallClock; // best estimate without per-bubble idle detection
+  }
+
+  // Fall back to workspace metadata for LOC when bubble tool calls lack detail
+  let finalLoc = loc_stats;
+  if (finalLoc.loc_added === 0 && finalLoc.loc_removed === 0) {
+    const hintAdded = hints?.totalLinesAdded ?? 0;
+    const hintRemoved = hints?.totalLinesRemoved ?? 0;
+    if (hintAdded > 0 || hintRemoved > 0) {
+      finalLoc = {
+        loc_added: hintAdded,
+        loc_removed: hintRemoved,
+        loc_net: hintAdded - hintRemoved,
+        files_changed: loc_stats.files_changed, // keep whatever we found from bubbles
+      };
+    }
+  }
 
   return {
     source: "cursor",
     turns,
     tool_calls: toolCalls,
     files_touched: filesTouched,
-    duration_ms,
-    wall_clock_ms,
-    loc_stats,
+    duration_ms: finalDuration,
+    wall_clock_ms: finalWallClock,
+    loc_stats: finalLoc,
     raw_entries,
     start_time: start_time ?? hintDate,
-    end_time: end_time ?? hintDate,
+    end_time: end_time ?? hintEndDate ?? hintDate,
   };
 }
 
@@ -622,8 +665,14 @@ async function parse(path: string): Promise<SessionAnalysis> {
   const hints: CursorParseHints = {};
   const name = url.searchParams.get("name");
   const createdAt = url.searchParams.get("createdAt");
+  const lastUpdatedAt = url.searchParams.get("lastUpdatedAt");
+  const linesAdded = url.searchParams.get("linesAdded");
+  const linesRemoved = url.searchParams.get("linesRemoved");
   if (name) hints.name = name;
   if (createdAt) hints.createdAt = Number(createdAt);
+  if (lastUpdatedAt) hints.lastUpdatedAt = Number(lastUpdatedAt);
+  if (linesAdded) hints.totalLinesAdded = Number(linesAdded);
+  if (linesRemoved) hints.totalLinesRemoved = Number(linesRemoved);
   return parseCursorConversation(conversationId, globalDbPath, hints);
 }
 

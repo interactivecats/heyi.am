@@ -18,7 +18,8 @@ Everything flows from this.
 ## How It Works
 
 ```
-Code with Claude Code -> Sessions saved locally
+Code with any AI tool -> Sessions saved locally
+  (Claude Code, Cursor, Codex, Gemini CLI)
   -> heyiam open -> See your PROJECTS (not sessions)
   -> Click a project -> "Upload Project"
   -> AI triages sessions (picks the best, skips the noise)

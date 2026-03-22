@@ -7,6 +7,7 @@ import type {
   ContentBlock,
   ToolUseBlock,
   ToolCall,
+  LocStats,
 } from "./parsers/types.js";
 import type {
   SessionAnalysis as AnalyzerInput,
@@ -29,7 +30,7 @@ export function bridgeToAnalyzer(
   opts: BridgeOptions,
 ): AnalyzerInput {
   const turns = entriesToTurns(parsed.raw_entries);
-  const filesChanged = computePerFileChanges(parsed.tool_calls);
+  const filesChanged = computePerFileChanges(parsed.tool_calls, parsed.loc_stats);
   const title = extractTitle(parsed.raw_entries);
   const rawLog = extractRawLog(parsed.raw_entries);
 
@@ -117,7 +118,7 @@ function extractToolInput(block: ToolUseBlock): string | undefined {
   return undefined;
 }
 
-function computePerFileChanges(toolCalls: ToolCall[]): ParsedFileChange[] {
+function computePerFileChanges(toolCalls: ToolCall[], locStats?: LocStats): ParsedFileChange[] {
   const files = new Map<string, { additions: number; deletions: number }>();
 
   // Track writes for dedup (last write wins)
@@ -154,9 +155,30 @@ function computePerFileChanges(toolCalls: ToolCall[]): ParsedFileChange[] {
     }
   }
 
-  return [...files.entries()]
+  const result = [...files.entries()]
     .map(([path, stats]) => ({ path, ...stats }))
     .sort((a, b) => a.path.localeCompare(b.path));
+
+  // When tool-call-based computation yields nothing, fall back to
+  // the parser's loc_stats (which may have data from workspace metadata
+  // or other source-specific mechanisms).
+  if (result.length === 0 && locStats && (locStats.loc_added > 0 || locStats.loc_removed > 0)) {
+    // Use per-file data from loc_stats if available
+    if (locStats.files_changed.length > 0) {
+      const perFile = Math.ceil(locStats.loc_added / locStats.files_changed.length);
+      const perFileDel = Math.ceil(locStats.loc_removed / locStats.files_changed.length);
+      return locStats.files_changed.map((path) => ({
+        path,
+        additions: perFile,
+        deletions: perFileDel,
+      }));
+    }
+    // No per-file paths available — return empty array.
+    // Aggregate LOC data still flows through loc_stats on the parser output.
+    return [];
+  }
+
+  return result;
 }
 
 function extractTitle(entries: RawEntry[]): string {

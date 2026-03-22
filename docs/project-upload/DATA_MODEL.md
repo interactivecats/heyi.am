@@ -12,6 +12,9 @@ Where every piece of data lives: database, object storage, or local disk.
 | **Object Storage** (S3/R2/SeaweedFS) | Presigned PUT/GET | Large blobs: raw JSONL transcripts, log files, screenshots | Permanent |
 | **Local Disk** (CLI) | `~/.config/heyiam/` | Enhanced data cache, auth tokens, settings | Until re-enhanced or deleted |
 | **Local Disk** (CLI) | `~/.claude/projects/` | Raw Claude Code session files (source of truth) | User-managed |
+| **Local Disk** (Cursor) | `~/Library/Application Support/Cursor/User/globalStorage/` | Cursor workspace SQLite databases | User-managed |
+| **Local Disk** (Codex) | `~/.codex/sessions/` | Codex CLI session JSONL files | User-managed |
+| **Local Disk** (Gemini) | `~/.gemini/tmp/` | Gemini CLI session JSON logs | User-managed |
 
 ---
 
@@ -134,6 +137,7 @@ Individual session case studies. Each share belongs to a project via FK.
 | `status` | varchar, NOT NULL | Phoenix | "draft" / "listed" / "unlisted" |
 | `raw_storage_key` | varchar | Phoenix | S3 key for raw JSONL |
 | `log_storage_key` | varchar | Phoenix | S3 key for log JSON |
+| `source_tool` | varchar, default "claude" | CLI parser | Which tool created the session: "claude", "cursor", "codex", "gemini" |
 | `agent_summary` | jsonb | CLI bridge | `{is_orchestrated, agents: [{role, duration, loc}]}` — for agent timeline SVG |
 | `project_id` | FK → projects | Phoenix | Set during project publish |
 | `user_id` | FK → users | Phoenix | ON DELETE SET NULL |
@@ -142,7 +146,7 @@ Individual session case studies. Each share belongs to a project via FK.
 
 **Removed:** `project_meta` (replaced by `projects` table), `challenge_id` (feature removed)
 
-**Added:** `slug` (for friendly URLs), `project_id` (FK to projects), `agent_summary` (for agent timeline SVG)
+**Added:** `slug` (for friendly URLs), `project_id` (FK to projects), `agent_summary` (for agent timeline SVG), `source_tool` (which AI tool created the session)
 
 #### Agent Summary Schema (jsonb)
 
@@ -185,9 +189,9 @@ projects/<slug>/screenshot.png — project screenshot (optional)
 
 #### `sessions/<token>/raw.jsonl`
 
-The original Claude Code session file from `~/.claude/projects/<dir>/<uuid>.jsonl`. This is the source of truth — everything else is derived from it.
+The original session file. For Claude Code sessions, this is from `~/.claude/projects/<dir>/<uuid>.jsonl`. For other tools, the CLI normalizes the data into the same JSONL format before upload. This is the source of truth — everything else is derived from it.
 
-**Format:** Newline-delimited JSON. Each line is a Claude API message:
+**Format:** Newline-delimited JSON. Each line is a message in Claude API format (all tools are normalized to this):
 ```jsonl
 {"type":"human","message":{"role":"user","content":"Look at the auth system..."}}
 {"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"I'll review..."},{"type":"tool_use","name":"Read","input":{"file_path":"lib/auth.ex"}}]}}
@@ -287,9 +291,13 @@ User-uploaded project screenshot. Optional.
 - Cache is invalidated when the file's mtime changes
 - Used by the ProjectDashboard to show aggregate stats without parsing every session
 
-### `~/.claude/projects/`
+### Session Source Paths
 
-Claude Code's own session storage. The CLI reads from here but never writes to it.
+The CLI reads session data from multiple AI tools. It never writes to any of these.
+
+Sessions from all tools are **grouped by working directory** — if you use Claude Code and Cursor on the same project, their sessions appear together under one project in the UI.
+
+#### Claude Code (`~/.claude/projects/`)
 
 ```
 ~/.claude/projects/
@@ -301,6 +309,35 @@ Claude Code's own session storage. The CLI reads from here but never writes to i
   -Users-ben-Dev-agent-sync/
     ...
 ```
+
+#### Cursor (`~/Library/Application Support/Cursor/User/globalStorage/`)
+
+Cursor stores conversations in SQLite databases, not flat files. The parser reads two databases per workspace:
+
+- **Global DB** (`state.vscdb`): `cursorDiskKV` table with `bubbleId:{convId}:{msgId}` entries containing JSON messages
+- **Workspace DB** (`state.vscdb` in workspace storage): `composer.composerData` key containing conversation list with names, timestamps, and mode
+
+Discovery creates synthetic `cursor://{composerId}?name=...&createdAt=...` URLs since conversations aren't files.
+
+#### Codex CLI (`~/.codex/sessions/`)
+
+```
+~/.codex/sessions/
+  2026/03/22/
+    rollout-abc123.jsonl           ← JSONL format, similar to Claude Code
+```
+
+Each line has a `type` field. The `session_meta` entry contains `cwd` for project directory mapping.
+
+#### Gemini CLI (`~/.gemini/tmp/`)
+
+```
+~/.gemini/tmp/
+  abc123def/                       ← SHA-256 hash of project directory
+    logs.json                      ← JSON array, multiple sessions per file
+```
+
+Sessions are grouped by `sessionId` within each `logs.json`. Project directory is resolved by hashing known paths and matching against the directory name.
 
 ---
 
@@ -333,7 +370,8 @@ CLI Local                              Phoenix                          Object S
     top_files, tool_breakdown,
     tools, qa_pairs, narrative,
     project_name, recorded_at,
-    project_id, template}
+    project_id, template,
+    source_tool}
 
    PUT raw JSONL ──────────────────────────────────────────────────→  Store sessions/<token>/raw.jsonl
    PUT log JSON ───────────────────────────────────────────────────→  Store sessions/<token>/log.json

@@ -1,12 +1,12 @@
 # heyi.am
 
-Turn AI coding sessions into portfolio case studies. Developers connect their Claude Code sessions, and heyi.am extracts signal — the decisions, corrections, and architectural thinking — to build project-level narratives that show how they actually work.
+Turn AI coding sessions into portfolio case studies. Developers connect their AI coding tools — Claude Code, Cursor, OpenAI Codex CLI, and Google Gemini CLI — and heyi.am extracts signal across all of them: the decisions, corrections, and architectural thinking that build project-level narratives showing how they actually work.
 
 ## Architecture
 
 ```
-cli/          Node.js CLI + React UI — parses sessions, runs AI triage/enhance, serves local UI
-  src/        Express server, session parsers, LLM prompts
+cli/          Node.js CLI + React UI — parses sessions from all tools, runs AI triage/enhance, serves local UI
+  src/        Express server, multi-tool session parsers, LLM prompts
   app/        React (Vite) frontend for the upload flow
 phoenix/      Elixir/Phoenix web app — public portfolios, auth, API, object storage
 docker-compose.dev.yml   Postgres + SeaweedFS (S3-compatible) + Phoenix
@@ -141,7 +141,7 @@ See [docs/COOLIFY_DEPLOY.md](./docs/COOLIFY_DEPLOY.md) for full Coolify deployme
 
 ### CLI (`cli/`)
 
-- `src/parsers/` — Claude Code session JSONL parsers
+- `src/parsers/` — Multi-tool session parsers (Claude Code, Cursor, Codex, Gemini CLI)
 - `src/llm/triage.ts` — 3-layer AI triage (hard floor + signal extraction + LLM ranking)
 - `src/llm/project-enhance.ts` — Project narrative generation + refinement
 - `src/server.ts` — Express API server (local endpoints + Phoenix proxy)

@@ -106,7 +106,7 @@ import { homedir } from 'node:os';
 const STATS_CACHE_PATH = join(homedir(), '.config', 'heyiam', 'stats-cache.json');
 
 // Bump this when parser logic changes to auto-invalidate stale cache entries.
-const STATS_CACHE_VERSION = 2;
+const STATS_CACHE_VERSION = 5;
 
 interface StatsCacheFile {
   version: number;
@@ -930,7 +930,7 @@ export function createApp(sessionsBasePath?: string) {
                 const sesData = await sessionRes.json() as { upload_urls?: { raw?: string; log?: string } };
                 if (sesData.upload_urls) {
                   const { raw: rawUrl, log: logUrl } = sesData.upload_urls;
-                  if (rawUrl && meta.path) {
+                  if (rawUrl && meta.path && !meta.path.startsWith('cursor://')) {
                     try {
                       const rawBody = readFileSync(meta.path);
                       await fetch(rawUrl, { method: 'PUT', body: rawBody, headers: { 'Content-Type': 'application/octet-stream' } });

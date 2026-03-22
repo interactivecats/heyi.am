@@ -35,8 +35,17 @@ export interface SessionMeta {
 }
 
 /**
- * Convert an absolute directory path to Claude's encoded format.
+ * Convert an absolute directory path to Claude Code's encoded format.
  * "/Users/ben/Dev/heyi-am" → "-Users-ben-Dev-heyi-am"
+ *
+ * This encoding is lossy: `-` in directory names is indistinguishable from
+ * the `-` used as a separator (e.g. `/a/b-c` and `/a/b/c` both encode to
+ * `-a-b-c`). We accept this trade-off because Claude Code uses the same
+ * encoding for its own project directories (~/.claude/projects/-Users-...),
+ * and we must match it so sessions from different tools (Claude, Cursor,
+ * Codex, Gemini) group under the same project key. In practice, users are
+ * unlikely to have two project directories whose paths differ only by `-`
+ * vs `/`.
  */
 export function encodeDirPath(absolutePath: string): string {
   return absolutePath.replace(/\//g, "-");
@@ -114,6 +123,9 @@ async function listCursorSessions(): Promise<SessionMeta[]> {
       const params = new URLSearchParams();
       if (conv.name) params.set("name", conv.name);
       if (conv.createdAt) params.set("createdAt", String(conv.createdAt));
+      if (conv.lastUpdatedAt) params.set("lastUpdatedAt", String(conv.lastUpdatedAt));
+      if (conv.totalLinesAdded) params.set("linesAdded", String(conv.totalLinesAdded));
+      if (conv.totalLinesRemoved) params.set("linesRemoved", String(conv.totalLinesRemoved));
       const qs = params.toString();
 
       sessions.push({

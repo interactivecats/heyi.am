@@ -20,10 +20,39 @@ export interface SessionSignals {
 }
 
 /**
- * Extract cheap signals from a session's raw JSONL file.
- * Scans user messages for patterns without full parsing.
+ * Extract cheap signals from a session's raw JSONL file or parsed entries.
+ * For file paths, streams the JSONL. For non-file paths (cursor://, etc.),
+ * parses the session first to get entries, then extracts signals from those.
  */
 export async function extractSignals(sessionPath: string): Promise<SessionSignals> {
+  // Non-file paths: parse through the parser to get entries, then extract
+  if (sessionPath.includes('://')) {
+    const { parseSession } = await import('../parsers/index.js');
+    const parsed = await parseSession(sessionPath);
+    return extractSignalsFromEntries(parsed.raw_entries);
+  }
+
+  // File paths: stream JSONL line by line (efficient for large files)
+  const entries: Array<{ type: string; message?: { role?: string; content?: unknown } }> = [];
+  const stream = fs.createReadStream(sessionPath, { encoding: 'utf-8' });
+  const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
+
+  for await (const line of rl) {
+    if (!line.trim()) continue;
+    try {
+      entries.push(JSON.parse(line));
+    } catch {
+      // Skip malformed lines
+    }
+  }
+
+  return extractSignalsFromEntries(entries);
+}
+
+/** Core signal extraction that works on any array of entries. */
+function extractSignalsFromEntries(
+  entries: Array<{ type: string; message?: { role?: string; content?: unknown } }>,
+): SessionSignals {
   const signals: SessionSignals = {
     correctionCount: 0,
     avgUserExplanationLength: 0,
@@ -40,47 +69,36 @@ export async function extractSignals(sessionPath: string): Promise<SessionSignal
   const tools = new Set<string>();
   const topDirs = new Set<string>();
 
-  const stream = fs.createReadStream(sessionPath, { encoding: 'utf-8' });
-  const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
+  for (const entry of entries) {
+    totalTurns++;
 
-  for await (const line of rl) {
-    if (!line.trim()) continue;
-    try {
-      const entry = JSON.parse(line);
-      totalTurns++;
+    if (entry.type === 'user' && (entry.message?.role === 'human' || entry.message?.role === 'user')) {
+      userTurnCount++;
+      const text = extractText(entry.message?.content);
+      const words = text.split(/\s+/).filter(Boolean);
+      totalUserWords += words.length;
 
-      if (entry.type === 'user' && entry.message?.role === 'human') {
-        userTurnCount++;
-        const text = extractText(entry.message?.content);
-        const words = text.split(/\s+/).filter(Boolean);
-        totalUserWords += words.length;
+      if (CORRECTION_WORDS.test(text)) signals.correctionCount++;
+      const archMatches = text.match(new RegExp(ARCH_KEYWORDS.source, 'gi'));
+      if (archMatches) signals.architecturalKeywords += archMatches.length;
+    }
 
-        if (CORRECTION_WORDS.test(text)) signals.correctionCount++;
-        // Count all architectural keyword matches
-        const archMatches = text.match(new RegExp(ARCH_KEYWORDS.source, 'gi'));
-        if (archMatches) signals.architecturalKeywords += archMatches.length;
-      }
+    if (entry.type === 'tool_result' || entry.type === 'tool_use') {
+      const text = extractText(entry.message?.content);
+      if (ERROR_WORDS.test(text)) signals.errorRetryCount++;
+    }
 
-      if (entry.type === 'tool_result' || entry.type === 'tool_use') {
-        const text = extractText(entry.message?.content);
-        if (ERROR_WORDS.test(text)) signals.errorRetryCount++;
-      }
-
-      // Track tool diversity
-      if (entry.message?.content && Array.isArray(entry.message.content)) {
-        for (const block of entry.message.content) {
-          if (block.type === 'tool_use' && block.name) {
-            tools.add(block.name);
-          }
-          // Track file paths for directory scope
-          if (block.type === 'tool_use' && block.input?.file_path) {
-            const topDir = String(block.input.file_path).split('/').filter(Boolean)[0];
-            if (topDir) topDirs.add(topDir);
-          }
+    // Track tool diversity
+    if (entry.message?.content && Array.isArray(entry.message.content)) {
+      for (const block of entry.message.content as Array<{ type?: string; name?: string; input?: Record<string, unknown> }>) {
+        if (block.type === 'tool_use' && block.name) {
+          tools.add(block.name);
+        }
+        if (block.type === 'tool_use' && block.input?.file_path) {
+          const topDir = String(block.input.file_path).split('/').filter(Boolean)[0];
+          if (topDir) topDirs.add(topDir);
         }
       }
-    } catch {
-      // Skip malformed lines
     }
   }
 
@@ -128,11 +146,10 @@ export interface TriageResult {
 
 const MIN_DURATION = 5;  // minutes
 const MIN_TURNS = 3;
-const MIN_FILES = 1;     // at least 1 file changed
 const MAX_SELECTED = 10; // cap featured sessions for a focused portfolio
 
 function passesHardFloor(s: SessionMetaWithStats): boolean {
-  return s.duration >= MIN_DURATION && s.turns >= MIN_TURNS && s.files >= MIN_FILES;
+  return s.duration >= MIN_DURATION && s.turns >= MIN_TURNS;
 }
 
 // ── Scoring fallback (no LLM) ────────────────────────────────────
@@ -258,7 +275,6 @@ export async function triageSessions(
       const reasons: string[] = [];
       if (s.duration < MIN_DURATION) reasons.push('Too short');
       if (s.turns < MIN_TURNS) reasons.push('Too few turns');
-      if (s.files < MIN_FILES) reasons.push('No files changed');
       const reason = reasons.join(', ');
       hardSkipped.push({ sessionId: s.sessionId, reason });
       onProgress?.({ type: 'hard_floor', sessionId: s.sessionId, title: s.title, passed: false, reason });
