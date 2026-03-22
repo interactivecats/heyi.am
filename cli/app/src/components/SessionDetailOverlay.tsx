@@ -1,5 +1,7 @@
-import { useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Session, ExecutionStep, ToolUsage, FileChange, QaPair } from '../types';
+import { fetchSession } from '../api';
+import { AgentTimeline } from './AgentTimeline';
 
 export interface SessionDetailOverlayProps {
   session: Session;
@@ -253,6 +255,35 @@ export function SessionDetailOverlay({ session, projectName, projectDirName, onC
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+  // Lazy-load full session for orchestrated sessions with childCount but no childSessions
+  const needsFetch = (session.childCount ?? 0) > 0 && !session.childSessions?.length;
+  const [fullSession, setFullSession] = useState<Session | null>(null);
+  const [timelineLoading, setTimelineLoading] = useState(needsFetch);
+
+  useEffect(() => {
+    if (!needsFetch || !projectDirName) {
+      setTimelineLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setTimelineLoading(true);
+    fetchSession(projectDirName, session.id)
+      .then((full) => {
+        if (!cancelled) setFullSession(full);
+      })
+      .catch(() => {
+        // Fetch failed; timeline will not render
+      })
+      .finally(() => {
+        if (!cancelled) setTimelineLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [needsFetch, projectDirName, session.id]);
+
+  // Use the full session (with childSessions) if available, otherwise the original
+  const timelineSession = fullSession ?? session;
+  const showTimeline = (timelineSession.childSessions?.length ?? 0) > 0;
+
   const highlights = (session.executionPath ?? []).filter(isHighlightStep);
   const hasQA = Array.isArray(session.qaPairs) && session.qaPairs.length > 0;
   const hasSkills = Array.isArray(session.skills) && session.skills.length > 0;
@@ -294,6 +325,19 @@ export function SessionDetailOverlay({ session, projectName, projectDirName, onC
             <h1 className="session-detail__title">{session.title}</h1>
 
             <StatsGrid session={session} />
+
+            {/* Agent Timeline for orchestrated sessions */}
+            {timelineLoading && (
+              <div className="session-detail__timeline-loading" aria-label="Loading agent activity">
+                Loading agent activity...
+              </div>
+            )}
+            {!timelineLoading && showTimeline && (
+              <section className="session-detail__section">
+                <h2 className="session-detail__section-label">AGENT ACTIVITY</h2>
+                <AgentTimeline session={timelineSession} variant="full" />
+              </section>
+            )}
 
             {session.developerTake && <DeveloperTake take={session.developerTake} />}
 

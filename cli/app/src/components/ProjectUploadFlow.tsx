@@ -2,17 +2,25 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSessionsContext } from '../SessionsContext';
 import { AppShell } from './AppShell';
+import { WorkTimeline } from './WorkTimeline';
 import {
   fetchSessions,
+  fetchSession,
   triageProject,
   enhanceProject,
   refineNarrative,
+  publishProject,
+  startDeviceAuth,
+  pollDeviceAuth,
+  AuthRequiredError,
   type TriageResult,
   type TriageEvent,
   type ProjectEnhanceResult,
   type EnhanceEventType,
   type RefineAnswer,
+  type PublishProjectPayload,
 } from '../api';
+import { useAuth } from '../AuthContext';
 import type { Session, Project } from '../types';
 import { AgentTimeline } from './AgentTimeline';
 import { SessionDetailOverlay } from './SessionDetailOverlay';
@@ -1394,15 +1402,63 @@ const AGENT_LEGEND: { role: string; label: string; color: string }[] = [
   { role: 'pm', label: 'PM', color: '#dc2626' },
 ];
 
-export function AgentActivitySection({ sessions }: { sessions: Session[] }) {
+export function AgentActivitySection({ sessions, projectDirName }: { sessions: Session[]; projectDirName?: string }) {
+  // Lazy-load full session data for sessions with childCount > 0 but no childSessions
+  const [loadedSessions, setLoadedSessions] = useState<Record<string, Session>>({});
+  const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
+  const attemptedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!projectDirName) return;
+    const toFetch = sessions.filter(
+      (s) =>
+        (s.childCount ?? 0) > 0 &&
+        !s.childSessions?.length &&
+        !attemptedRef.current.has(s.id),
+    );
+    if (toFetch.length === 0) return;
+
+    for (const s of toFetch) {
+      attemptedRef.current.add(s.id);
+    }
+
+    setLoadingIds((prev) => {
+      const next = new Set(prev);
+      for (const s of toFetch) next.add(s.id);
+      return next;
+    });
+
+    for (const s of toFetch) {
+      fetchSession(projectDirName, s.id)
+        .then((full) => {
+          setLoadedSessions((prev) => ({ ...prev, [s.id]: full }));
+        })
+        .catch(() => {
+          // Fetch failed; leave it out of loadedSessions
+        })
+        .finally(() => {
+          setLoadingIds((prev) => {
+            const next = new Set(prev);
+            next.delete(s.id);
+            return next;
+          });
+        });
+    }
+  }, [sessions, projectDirName]);
+
+  // Merge loaded full sessions into the session list for rendering
+  const resolvedSessions = sessions.map((s) => loadedSessions[s.id] ?? s);
+
   if (sessions.length === 0) return null;
 
-  const orchestrated = sessions.filter((s) => s.isOrchestrated === true);
+  const orchestrated = resolvedSessions.filter(
+    (s) => s.isOrchestrated === true || (s.childCount ?? 0) > 0,
+  );
   const hasOrchestrated = orchestrated.length > 0;
 
-  // Collect unique agent roles across all sessions
+  // Collect unique agent roles across all resolved sessions
   const allRoles = new Set<string>();
-  for (const s of sessions) {
+  for (const s of resolvedSessions) {
     if (s.agentRole) allRoles.add(s.agentRole.toLowerCase());
     if (s.childSessions) {
       for (const c of s.childSessions) {
@@ -1416,10 +1472,10 @@ export function AgentActivitySection({ sessions }: { sessions: Session[] }) {
     }
   }
 
-  // Compute agent LOC from child sessions
+  // Compute agent LOC from resolved sessions
   let agentLoc = 0;
   let totalLoc = 0;
-  for (const s of sessions) {
+  for (const s of resolvedSessions) {
     totalLoc += s.linesOfCode;
     if (s.childSessions) {
       for (const c of s.childSessions) {
@@ -1439,7 +1495,7 @@ export function AgentActivitySection({ sessions }: { sessions: Session[] }) {
     activeLegend.push(AGENT_LEGEND[0]);
   }
 
-  const maxDuration = Math.max(...sessions.map((s) => s.durationMinutes), 1);
+  const maxDuration = Math.max(...resolvedSessions.map((s) => s.durationMinutes), 1);
 
   return (
     <div className="agent-activity">
@@ -1460,15 +1516,28 @@ export function AgentActivitySection({ sessions }: { sessions: Session[] }) {
 
         {/* Session timelines */}
         <div className="agent-activity__timelines">
-          {sessions.map((s) => {
+          {resolvedSessions.map((s) => {
             const hasChildren = (s.childSessions && s.childSessions.length > 0) || false;
-            const canUseFullTimeline = s.isOrchestrated && hasChildren;
+            const isLoading = loadingIds.has(s.id);
+            const canUseFullTimeline = hasChildren;
 
             if (canUseFullTimeline) {
               return (
                 <div key={s.id} className="agent-activity__session">
                   <div className="agent-activity__session-label">{s.title}</div>
                   <AgentTimeline session={s} variant="compact" />
+                </div>
+              );
+            }
+
+            // Show loading state for sessions being fetched
+            if (isLoading) {
+              return (
+                <div key={s.id} className="agent-activity__session">
+                  <div className="agent-activity__session-label">{s.title}</div>
+                  <div className="agent-activity__loading" aria-label="Loading agent activity">
+                    Loading agent activity...
+                  </div>
                 </div>
               );
             }
@@ -1699,8 +1768,12 @@ function ProjectPreview({
           </div>
         </div>
 
-        {/* Agent Activity */}
-        <AgentActivitySection sessions={sessions} />
+        {/* Work Timeline — real time axis with gaps and fork/join */}
+        <div className="project-preview__timeline-heading">WORK TIMELINE</div>
+        <WorkTimeline sessions={sessions} />
+
+        {/* Agent Activity — per-session fork/join detail */}
+        <AgentActivitySection sessions={sessions} projectDirName={project.dirName} />
 
         {/* Timeline */}
         <div className="project-preview__timeline-heading">PROJECT TIMELINE</div>
@@ -1871,11 +1944,13 @@ interface ReviewStepProps {
   skills: string[];
   timeline: TimelinePeriod[];
   sessions: Session[];
+  selectedIds: Set<string>;
+  allSessions: Session[];
   repoUrl: string;
   onRepoUrlChange: (url: string) => void;
   projectUrl: string;
   onProjectUrlChange: (url: string) => void;
-  onPublish: () => void;
+  onPublish: (result: { url: string; publishedSessions: number }) => void;
   onBack: () => void;
 }
 
@@ -1888,6 +1963,8 @@ export function ReviewStep({
   skills,
   timeline,
   sessions,
+  selectedIds,
+  allSessions,
   repoUrl,
   onRepoUrlChange,
   projectUrl,
@@ -1896,7 +1973,102 @@ export function ReviewStep({
   onBack,
 }: ReviewStepProps) {
   const [showPreview, setShowPreview] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [needsAuth, setNeedsAuth] = useState(false);
+  const [deviceCode, setDeviceCode] = useState<{ userCode: string; verificationUri: string; deviceCode: string } | null>(null);
+  const [authPolling, setAuthPolling] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { refresh: refreshAuth } = useAuth();
+
   const publishedLabel = `${project.sessionCount} (${selectedCount} published)`;
+
+  const slug = project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+  const buildPayload = useCallback((): PublishProjectPayload => {
+    const skippedSessions = allSessions
+      .filter((s) => !selectedIds.has(s.id))
+      .map((s) => ({
+        title: s.title,
+        duration: s.durationMinutes ?? 0,
+        loc: s.linesOfCode ?? 0,
+        reason: 'Not selected',
+      }));
+
+    return {
+      title: project.name,
+      slug,
+      narrative,
+      repoUrl,
+      projectUrl,
+      timeline,
+      skills,
+      totalSessions: project.sessionCount,
+      totalLoc: project.totalLoc,
+      totalDurationMinutes: project.totalDuration,
+      totalFilesChanged: project.totalFiles,
+      skippedSessions,
+      selectedSessionIds: [...selectedIds],
+    };
+  }, [project, slug, narrative, repoUrl, projectUrl, timeline, skills, allSessions, selectedIds]);
+
+  const doPublish = useCallback(async () => {
+    setPublishing(true);
+    setPublishError(null);
+    setNeedsAuth(false);
+
+    try {
+      const payload = buildPayload();
+      const result = await publishProject(project.dirName, payload);
+      await refreshAuth();
+      onPublish({ url: result.url, publishedSessions: result.publishedSessions });
+    } catch (err) {
+      if (err instanceof AuthRequiredError) {
+        setPublishing(false);
+        setNeedsAuth(true);
+        // Start device auth flow
+        try {
+          const codeInfo = await startDeviceAuth();
+          setDeviceCode({
+            userCode: codeInfo.user_code,
+            verificationUri: codeInfo.verification_uri,
+            deviceCode: codeInfo.device_code,
+          });
+          // Start polling
+          setAuthPolling(true);
+          const interval = (codeInfo.interval || 5) * 1000;
+          pollRef.current = setInterval(async () => {
+            try {
+              const status = await pollDeviceAuth(codeInfo.device_code);
+              if (status.authenticated) {
+                if (pollRef.current) clearInterval(pollRef.current);
+                pollRef.current = null;
+                setAuthPolling(false);
+                setNeedsAuth(false);
+                await refreshAuth();
+                // Auto-retry publish
+                doPublish();
+              }
+            } catch {
+              // Keep polling on transient errors
+            }
+          }, interval);
+        } catch (authErr) {
+          setPublishError(`Login failed: ${(authErr as Error).message}`);
+        }
+      } else {
+        setPublishing(false);
+        setPublishError((err as Error).message);
+      }
+    }
+  }, [buildPayload, project.dirName, onPublish, refreshAuth]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
 
   return (
     <div className="upload-flow">
@@ -2019,11 +2191,56 @@ export function ReviewStep({
         </div>
       </div>
 
+      {/* ── Inline auth card ── */}
+      {needsAuth && (
+        <div className="review-auth">
+          <div className="review-auth__card">
+            <h3 className="review-auth__title">Sign in to publish</h3>
+            {deviceCode ? (
+              <>
+                <p className="review-auth__instructions">
+                  Open{' '}
+                  <a href={deviceCode.verificationUri} target="_blank" rel="noopener noreferrer">
+                    {deviceCode.verificationUri}
+                  </a>{' '}
+                  and enter:
+                </p>
+                <div className="review-auth__code">{deviceCode.userCode}</div>
+                {authPolling && (
+                  <p className="review-auth__polling">Waiting for authorization...</p>
+                )}
+              </>
+            ) : (
+              <p className="review-auth__polling">Starting login...</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {publishError && (
+        <div className="upload-flow__error">
+          {publishError}
+          <button
+            className="btn btn--secondary"
+            onClick={() => setPublishError(null)}
+            style={{ marginLeft: 'var(--spacing-3)' }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* ── Actions ── */}
       <div className="upload-flow__actions">
-        <button className="btn btn--secondary btn--large" onClick={onBack}>Back to timeline</button>
-        <button className="btn btn--primary btn--large" onClick={onPublish}>
-          Publish project &rarr;
+        <button className="btn btn--secondary btn--large" onClick={onBack} disabled={publishing}>
+          Back to timeline
+        </button>
+        <button
+          className="btn btn--primary btn--large"
+          onClick={doPublish}
+          disabled={publishing || needsAuth}
+        >
+          {publishing ? 'Publishing...' : 'Publish project \u2192'}
         </button>
       </div>
     </div>
@@ -2036,30 +2253,32 @@ interface SuccessStepProps {
   project: Project;
   narrative: string;
   selectedCount: number;
-  projectUrl: string;
+  publishedUrl: string;
+  publishedSessions: number;
 }
 
-function SuccessStep({ project, narrative, selectedCount, projectUrl }: SuccessStepProps) {
+function SuccessStep({ project, narrative, selectedCount, publishedUrl, publishedSessions }: SuccessStepProps) {
   const [copied, setCopied] = useState(false);
+  const displayUrl = publishedUrl.startsWith('/') ? `heyi.am${publishedUrl}` : publishedUrl;
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(`https://${projectUrl}`).then(() => {
+    navigator.clipboard.writeText(`https://${displayUrl}`).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }).catch(() => {
       // clipboard API not available in this context
     });
-  }, [projectUrl]);
+  }, [displayUrl]);
 
   const handleViewProject = useCallback(() => {
-    window.open(`https://${projectUrl}`, '_blank', 'noopener');
-  }, [projectUrl]);
+    window.open(`https://${displayUrl}`, '_blank', 'noopener');
+  }, [displayUrl]);
 
   const handleViewPortfolio = useCallback(() => {
-    const parts = projectUrl.split('/');
-    const portfolioUrl = parts.length >= 2 ? `https://${parts[0]}/${parts[1]}` : `https://${projectUrl}`;
+    const parts = displayUrl.split('/');
+    const portfolioUrl = parts.length >= 2 ? `https://${parts[0]}/${parts[1]}` : `https://${displayUrl}`;
     window.open(portfolioUrl, '_blank', 'noopener');
-  }, [projectUrl]);
+  }, [displayUrl]);
 
   const publishDate = new Date().toLocaleDateString('en-US', {
     month: 'short',
@@ -2110,7 +2329,7 @@ function SuccessStep({ project, narrative, selectedCount, projectUrl }: SuccessS
         </div>
 
         <div className="success-card__url-bar">
-          <span className="success-card__url-text">{projectUrl}</span>
+          <span className="success-card__url-text">{displayUrl}</span>
           <button className="success-card__url-copy" onClick={handleCopy}>
             {copied ? 'Copied' : 'Copy'}
           </button>
@@ -2118,7 +2337,7 @@ function SuccessStep({ project, narrative, selectedCount, projectUrl }: SuccessS
 
         <div className="success-card__meta">
           <span className="success-card__badge">Published</span>
-          <span className="success-card__meta-text">{selectedCount} sessions uploaded</span>
+          <span className="success-card__meta-text">{publishedSessions} sessions uploaded</span>
           <span className="success-card__meta-text">{publishDate}</span>
         </div>
 
@@ -2160,6 +2379,7 @@ export function ProjectUploadFlow() {
   const [enhanceResult, setEnhanceResult] = useState<ProjectEnhanceResult | null>(null);
   const [repoUrl, setRepoUrl] = useState('');
   const [projectUrl, setProjectUrl] = useState('');
+  const [publishResult, setPublishResult] = useState<{ url: string; publishedSessions: number } | null>(null);
 
   // Derived from enhance result (or refined)
   const narrative = enhanceResult?.narrative ?? '';
@@ -2351,11 +2571,16 @@ export function ProjectUploadFlow() {
               }))
             : PLACEHOLDER_TIMELINE}
           sessions={sessions.filter((s) => selectedIds.has(s.id))}
+          selectedIds={selectedIds}
+          allSessions={sessions}
           repoUrl={repoUrl}
           onRepoUrlChange={setRepoUrl}
           projectUrl={projectUrl}
           onProjectUrlChange={setProjectUrl}
-          onPublish={() => setStep('done')}
+          onPublish={(result) => {
+            setPublishResult(result);
+            setStep('done');
+          }}
           onBack={() => setStep('timeline')}
         />
       ) : step === 'done' ? (
@@ -2363,7 +2588,8 @@ export function ProjectUploadFlow() {
           project={project}
           narrative={narrative}
           selectedCount={selectedIds.size}
-          projectUrl={`heyi.am/user/${project.name}`}
+          publishedUrl={publishResult?.url ?? `/${project.name}`}
+          publishedSessions={publishResult?.publishedSessions ?? selectedIds.size}
         />
       ) : null}
     </AppShell>
