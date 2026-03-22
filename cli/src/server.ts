@@ -105,11 +105,28 @@ import { homedir } from 'node:os';
 
 const STATS_CACHE_PATH = join(homedir(), '.config', 'heyiam', 'stats-cache.json');
 
+// Bump this when parser logic changes to auto-invalidate stale cache entries.
+const STATS_CACHE_VERSION = 2;
+
+interface StatsCacheFile {
+  version: number;
+  entries: Record<string, SessionStats>;
+}
+
 function loadStatsCache(): Map<string, SessionStats> {
   try {
     if (!existsSync(STATS_CACHE_PATH)) return new Map();
-    const data = JSON.parse(readFileSync(STATS_CACHE_PATH, 'utf-8'));
-    return new Map(Object.entries(data));
+    const raw = JSON.parse(readFileSync(STATS_CACHE_PATH, 'utf-8'));
+
+    // Versioned format
+    if (raw && typeof raw === 'object' && 'version' in raw) {
+      const file = raw as StatsCacheFile;
+      if (file.version !== STATS_CACHE_VERSION) return new Map(); // stale — rebuild
+      return new Map(Object.entries(file.entries));
+    }
+
+    // Legacy unversioned format — discard
+    return new Map();
   } catch {
     return new Map();
   }
@@ -119,8 +136,11 @@ function saveStatsCache(cache: Map<string, SessionStats>): void {
   try {
     const dir = join(homedir(), '.config', 'heyiam');
     mkdirSync(dir, { recursive: true });
-    const obj = Object.fromEntries(cache);
-    writeFileSync(STATS_CACHE_PATH, JSON.stringify(obj), { mode: 0o600 });
+    const file: StatsCacheFile = {
+      version: STATS_CACHE_VERSION,
+      entries: Object.fromEntries(cache),
+    };
+    writeFileSync(STATS_CACHE_PATH, JSON.stringify(file), { mode: 0o600 });
   } catch {
     // Non-critical — cache miss just means a slower first load
   }
@@ -889,6 +909,7 @@ export function createApp(sessionsBasePath?: string) {
                 project_id: projectData.project_id,
                 slug: sessionSlug,
                 status: 'listed',
+                source_tool: session.source ?? meta.source ?? 'claude',
               },
             };
 
@@ -903,6 +924,26 @@ export function createApp(sessionsBasePath?: string) {
 
             if (sessionRes.ok) {
               uploadedCount++;
+
+              // Upload raw JSONL and log JSON to S3 (best-effort, non-fatal)
+              try {
+                const sesData = await sessionRes.json() as { upload_urls?: { raw?: string; log?: string } };
+                if (sesData.upload_urls) {
+                  const { raw: rawUrl, log: logUrl } = sesData.upload_urls;
+                  if (rawUrl && meta.path) {
+                    try {
+                      const rawBody = readFileSync(meta.path);
+                      await fetch(rawUrl, { method: 'PUT', body: rawBody, headers: { 'Content-Type': 'application/octet-stream' } });
+                    } catch { /* S3 upload is best-effort */ }
+                  }
+                  if (logUrl && session.rawLog && session.rawLog.length > 0) {
+                    try {
+                      await fetch(logUrl, { method: 'PUT', body: JSON.stringify(session.rawLog), headers: { 'Content-Type': 'application/json' } });
+                    } catch { /* S3 upload is best-effort */ }
+                  }
+                }
+              } catch { /* Response already consumed or no upload_urls — not fatal */ }
+
               if (enhanced) {
                 saveEnhancedData(sessionId, { ...enhanced, uploaded: true });
               }

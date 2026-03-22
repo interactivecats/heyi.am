@@ -1,5 +1,14 @@
 export type SessionSource = "claude" | "cursor" | "codex" | "gemini" | "antigravity";
 
+/** Display names for source tools */
+export const SOURCE_DISPLAY_NAMES: Record<SessionSource, string> = {
+  claude: "Claude Code",
+  cursor: "Cursor",
+  codex: "Codex",
+  gemini: "Gemini CLI",
+  antigravity: "Antigravity",
+};
+
 export interface ToolCall {
   id: string;
   name: string;

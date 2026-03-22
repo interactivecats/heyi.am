@@ -8,7 +8,13 @@
     "type": "git",
     "url": "https://github.com/interactivecats/heyi.am"
   },
-  "keywords": ["ai", "portfolio", "claude", "coding-sessions", "developer-tools"],
+  "keywords": [
+    "ai",
+    "portfolio",
+    "claude",
+    "coding-sessions",
+    "developer-tools"
+  ],
   "bin": {
     "heyiam": "./dist/index.js"
   },
@@ -28,12 +34,14 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.79.0",
+    "better-sqlite3": "^12.8.0",
     "commander": "^13.1.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "open": "^10.1.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^22.0.0",

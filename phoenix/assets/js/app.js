@@ -1,6 +1,7 @@
 import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
+import { mount as mountWorkTimeline } from "./islands/work-timeline"
 
 // ── Sortable Hook ──────────────────────────────────────────────
 // Attaches to a container element. Children with [data-sort-id]
@@ -62,3 +63,6 @@ let liveSocket = new LiveSocket("/live", Socket, {
 liveSocket.connect()
 
 window.liveSocket = liveSocket
+
+// Mount React islands
+mountWorkTimeline()

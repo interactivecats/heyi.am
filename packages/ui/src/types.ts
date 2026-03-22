@@ -25,6 +25,11 @@ export interface TurnEvent {
   tools?: string[];
 }
 
+export interface QaPair {
+  question: string;
+  answer: string;
+}
+
 export interface ChildSessionSummary {
   sessionId: string;
   role?: string;
@@ -34,20 +39,12 @@ export interface ChildSessionSummary {
   date?: string;
 }
 
-export interface QaPair {
-  question: string;
-  answer: string;
-}
-
 export interface Session {
   id: string;
   title: string;
   date: string;
-  /** End time as ISO timestamp */
   endTime?: string;
-  /** Active time in minutes (excludes idle gaps > 5 min) */
   durationMinutes: number;
-  /** Wall-clock time in minutes (first to last timestamp, includes idle) */
   wallClockMinutes?: number;
   turns: number;
   linesOfCode: number;
@@ -70,32 +67,7 @@ export interface Session {
   isOrchestrated?: boolean;
   childCount?: number;
   children?: ChildSessionSummary[];
-  /** Working directory where the session was started */
   cwd?: string;
-  /** True when enhanced via bulk mode with auto-accepted AI suggestions */
   quickEnhanced?: boolean;
-  /** Source tool: "claude", "cursor", "codex", "gemini", "antigravity" */
   source?: string;
-}
-
-export interface Project {
-  name: string;
-  /** The raw directory name, used as the stable ID for API calls */
-  dirName: string;
-  sessionCount: number;
-  description: string;
-  totalLoc: number;
-  totalDuration: number;
-  totalFiles: number;
-  skills: string[];
-  dateRange: string;
-  lastSessionDate: string;
-  /** Whether this project has been published to heyi.am */
-  isPublished?: boolean;
-  /** Number of sessions currently published */
-  publishedSessionCount?: number;
-  /** Session IDs that are currently published */
-  publishedSessions?: string[];
-  /** When the project was last enhanced (null = never) */
-  enhancedAt?: string | null;
 }

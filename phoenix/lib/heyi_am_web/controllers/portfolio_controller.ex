@@ -65,6 +65,7 @@ defmodule HeyiAmWeb.PortfolioController do
 
             growth_data = Projects.Stats.compute_cumulative_loc(project.shares)
             chart = compute_chart(growth_data)
+            work_timeline_json = build_work_timeline_json(project.shares)
             heatmap_data = Projects.Stats.compute_file_heatmap(project.shares)
             top_files = Projects.Stats.compute_top_files(project.shares) |> Enum.take(10)
 
@@ -79,6 +80,7 @@ defmodule HeyiAmWeb.PortfolioController do
               sessions: sessions,
               growth_data: growth_data,
               chart: chart,
+              work_timeline_json: work_timeline_json,
               heatmap_data: heatmap_data,
               heatmap_sessions: heatmap_sessions,
               top_files: top_files,
@@ -109,12 +111,13 @@ defmodule HeyiAmWeb.PortfolioController do
 
   defp build_project_detail(project) do
     stats = Projects.Stats.compute_project_stats(project.shares)
-    first = List.first(project.shares)
 
     %{
       title: project.title,
       slug: project.slug,
-      description: first && first.dev_take,
+      narrative: project.narrative,
+      repo_url: project.repo_url,
+      project_url: project.project_url,
       status: "active",
       skills: project.skills || [],
       session_count: project.total_sessions || stats.total_sessions,
@@ -122,8 +125,7 @@ defmodule HeyiAmWeb.PortfolioController do
       total_minutes: project.total_duration_minutes || stats.total_duration,
       files_touched: project.total_files_changed || stats.unique_files,
       loc_changed: format_loc(project.total_loc || stats.total_loc),
-      dev_take: first && first.dev_take,
-      architecture: project.narrative
+      timeline: project.timeline || []
     }
   end
 
@@ -245,4 +247,46 @@ defmodule HeyiAmWeb.PortfolioController do
   defp truncate(nil, _max), do: ""
   defp truncate(str, max) when byte_size(str) <= max, do: str
   defp truncate(str, max), do: String.slice(str, 0, max) <> "…"
+
+  # Serialize shares into the JSON shape the WorkTimeline React component expects
+  defp build_work_timeline_json(shares) do
+    sessions =
+      shares
+      |> Enum.filter(& &1.recorded_at)
+      |> Enum.sort_by(&DateTime.to_unix(&1.recorded_at, :millisecond))
+      |> Enum.map(fn s ->
+        base = %{
+          id: s.token,
+          title: s.title || "",
+          date: DateTime.to_iso8601(s.recorded_at),
+          durationMinutes: s.duration_minutes || 0,
+          linesOfCode: s.loc_changed || 0,
+          turns: s.turns || 0,
+          skills: s.skills || [],
+          filesChanged: Enum.map(s.top_files || [], fn
+            %{"path" => p} -> p
+            p when is_binary(p) -> p
+            _ -> ""
+          end)
+        }
+
+        # Add agent children if orchestrated
+        case s.agent_summary do
+          %{"is_orchestrated" => true, "agents" => agents} when is_list(agents) and agents != [] ->
+            Map.put(base, :children, Enum.map(agents, fn a ->
+              %{
+                sessionId: a["role"] || "agent",
+                role: a["role"],
+                durationMinutes: a["duration_minutes"] || 0,
+                linesOfCode: a["loc_changed"] || 0
+              }
+            end))
+
+          _ ->
+            base
+        end
+      end)
+
+    Jason.encode!(%{sessions: sessions})
+  end
 end

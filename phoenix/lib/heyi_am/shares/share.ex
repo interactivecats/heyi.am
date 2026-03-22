@@ -37,6 +37,7 @@ defmodule HeyiAm.Shares.Share do
     field :log_storage_key, :string
     field :slug, :string
     field :agent_summary, :map
+    field :source_tool, :string, default: "claude"
 
     belongs_to :user, HeyiAm.Accounts.User
     belongs_to :project, HeyiAm.Projects.Project
@@ -63,7 +64,7 @@ defmodule HeyiAm.Shares.Share do
       :signature, :public_key,
       :status,
       :raw_storage_key, :log_storage_key,
-      :slug, :agent_summary, :project_id
+      :slug, :agent_summary, :project_id, :source_tool
     ])
     |> validate_required([:token, :title])
     |> validate_length(:title, max: 200)

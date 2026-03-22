@@ -126,6 +126,10 @@ docker compose -f docker-compose.dev.yml down
 docker compose -f docker-compose.dev.yml down -v
 ```
 
+## Deployment
+
+See [docs/COOLIFY_DEPLOY.md](./docs/COOLIFY_DEPLOY.md) for full Coolify deployment instructions.
+
 ## Environment Variables
 
 | Variable | Default | Description |

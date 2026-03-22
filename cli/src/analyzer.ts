@@ -28,6 +28,8 @@ export interface SessionAnalysis {
   /** Wall-clock minutes (first to last timestamp, includes idle) */
   wallClockMinutes?: number;
   projectName: string;
+  /** Source tool: "claude", "cursor", "codex", "gemini", "antigravity" */
+  source?: string;
   turns: ParsedTurn[];
   filesChanged: ParsedFileChange[];
   rawLog: string[];
@@ -97,6 +99,8 @@ export interface Session {
   cwd?: string;
   /** True when enhanced via bulk mode with auto-accepted AI suggestions */
   quickEnhanced?: boolean;
+  /** Source tool: "claude", "cursor", "codex", "gemini", "antigravity" */
+  source?: string;
 }
 
 // ── Skill extraction ───────────────────────────────────────────
@@ -385,5 +389,6 @@ export function analyzeSession(analysis: SessionAnalysis): Session {
     ...(analysis.agentRole ? { agentRole: analysis.agentRole } : {}),
     ...(isOrchestrated ? { isOrchestrated } : {}),
     ...(analysis.cwd ? { cwd: analysis.cwd } : {}),
+    ...(analysis.source ? { source: analysis.source } : {}),
   };
 }

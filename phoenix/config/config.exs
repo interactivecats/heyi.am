@@ -54,7 +54,8 @@ config :esbuild,
   version: "0.25.4",
   heyi_am: [
     args: ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets/js
-      --external:/fonts/* --external:/images/*),
+      --external:/fonts/* --external:/images/*
+      --loader:.tsx=tsx --loader:.jsx=jsx),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ],

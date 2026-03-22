@@ -53,6 +53,7 @@ export function bridgeToAnalyzer(
     ...(parsed.cwd ? { cwd: parsed.cwd } : {}),
     ...(opts.agentRole ? { agentRole: opts.agentRole } : {}),
     ...(opts.parentSessionId ? { parentSessionId: opts.parentSessionId } : {}),
+    source: parsed.source,
   };
 }
 

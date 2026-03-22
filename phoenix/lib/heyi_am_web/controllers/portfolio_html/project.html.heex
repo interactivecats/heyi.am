@@ -15,16 +15,45 @@
     </div>
 
     <%!-- Project Header --%>
-    <div class="project-header" style="margin-block-end: var(--spacing-8);">
-      <div style="display: flex; align-items: center; gap: var(--spacing-3);">
-        <h1>{@project.title}</h1>
-        <span class="chip chip--secondary">{@project.status}</span>
+    <div class="project-header" style="margin-block-end: var(--spacing-6);">
+      <h1>{@project.title}</h1>
+
+      <%!-- Links (repo / project URL) --%>
+      <%= if @project.repo_url || @project.project_url do %>
+        <div style="display: flex; gap: var(--spacing-4); margin-block-start: var(--spacing-2);">
+          <%= if @project.repo_url do %>
+            <a href={@project.repo_url} target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: var(--spacing-1); font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); text-decoration: none;">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+              </svg>
+              Repo
+            </a>
+          <% end %>
+          <%= if @project.project_url do %>
+            <a href={@project.project_url} target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: var(--spacing-1); font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); text-decoration: none;">
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path d="M5 1H2a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V9M8 1h5v5M13 1L6 8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Live site
+            </a>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <%!-- Narrative --%>
+    <%= if @project.narrative && @project.narrative != "" do %>
+      <div style="border-inline-start: 3px solid var(--primary); padding-inline-start: var(--spacing-5); margin-block-end: var(--spacing-8);">
+        <p style="font-size: 0.9375rem; line-height: 1.7; color: var(--on-surface);">{@project.narrative}</p>
       </div>
-      <p class="project-header-desc">{@project.description}</p>
-      <div class="skills-row">
+    <% end %>
+
+    <%!-- Skills --%>
+    <%= if length(@project.skills) > 0 do %>
+      <div class="skills-row" style="margin-block-end: var(--spacing-8);">
         <span :for={skill <- @project.skills} class="skill-chip">{skill}</span>
       </div>
-    </div>
+    <% end %>
 
     <%!-- Hero Stats --%>
     <div style="display: grid; grid-template-columns: 1fr; gap: var(--spacing-4); margin-block-end: var(--spacing-8);">
@@ -59,17 +88,85 @@
       </div>
     </div>
 
-    <%!-- Project Take --%>
-    <section class="dev-take" style="margin-block-end: var(--spacing-8);">
-      <h3 class="dev-take-heading">Project Take</h3>
-      <p class="dev-take-body">{@project.dev_take}</p>
-    </section>
-
-    <%!-- Architectural Approach --%>
-    <div class="card card-padded" style="margin-block-end: var(--spacing-8);">
-      <span class="label-mono" style="display: block; margin-block-end: var(--spacing-3);">Architectural Approach</span>
-      <p style="font-size: 0.875rem; color: var(--on-surface-variant); line-height: 1.65;">{@project.architecture}</p>
+    <%!-- Work Timeline (same React component as CLI) --%>
+    <span class="label-mono" style="display: block; margin-block-end: var(--spacing-4);">Work Timeline</span>
+    <div data-work-timeline style="margin-block-end: var(--spacing-8);">
+      <script type="application/json">{raw(@work_timeline_json)}</script>
     </div>
+
+    <%!-- Project Timeline --%>
+    <%= if length(@project.timeline) > 0 do %>
+      <span class="label-mono" style="display: block; margin-block-end: var(--spacing-4);">Project Timeline</span>
+      <div style="position: relative; padding-inline-start: var(--spacing-6); margin-block-end: var(--spacing-8);">
+        <%!-- Vertical spine --%>
+        <div style="position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--ghost-border);"></div>
+
+        <%= for period <- @project.timeline do %>
+          <%!-- Period header --%>
+          <div style="display: flex; align-items: center; gap: var(--spacing-2); margin-block-end: var(--spacing-3); padding-block-start: var(--spacing-4);">
+            <span class="label-mono" style="font-size: 0.6875rem; color: var(--on-surface-variant);">{period["period"]}</span>
+            <span style="color: var(--on-surface-variant);">&mdash;</span>
+            <span style="font-family: var(--font-display); font-size: 0.875rem; font-weight: 600; color: var(--on-surface);">{period["label"]}</span>
+          </div>
+
+          <%!-- Featured sessions --%>
+          <%= for s <- Enum.filter(period["sessions"] || [], & &1["featured"]) do %>
+            <div style="position: relative; margin-block-end: var(--spacing-3);">
+              <div style="position: absolute; left: calc(-1 * var(--spacing-6) + 3px); top: 12px; width: 12px; height: 12px; border-radius: 50%; background: var(--primary);"></div>
+              <%= if s["token"] do %>
+                <a href={"/s/" <> s["token"]} style="display: block; text-decoration: none; color: inherit;">
+                  <div class="card card-padded" style="border-inline-start: 3px solid var(--primary);">
+                    <div style="display: flex; justify-content: space-between; align-items: start; gap: var(--spacing-3);">
+                      <span style="font-weight: 600; font-size: 0.875rem;">{s["title"]}</span>
+                      <%= if s["tag"] do %>
+                        <span class="chip chip--primary" style="font-size: 0.625rem; white-space: nowrap;">{s["tag"]}</span>
+                      <% end %>
+                    </div>
+                    <div style="display: flex; gap: var(--spacing-3); margin-block-start: var(--spacing-2); font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant);">
+                      <%= if s["duration_minutes"] do %>
+                        <span>{s["duration_minutes"]}m</span>
+                      <% end %>
+                      <%= if s["date"] do %>
+                        <span>{s["date"]}</span>
+                      <% end %>
+                      <%= if s["loc_changed"] do %>
+                        <span>{s["loc_changed"]} LOC</span>
+                      <% end %>
+                    </div>
+                  </div>
+                </a>
+              <% else %>
+                <div class="card card-padded" style="border-inline-start: 3px solid var(--primary);">
+                  <span style="font-weight: 600; font-size: 0.875rem;">{s["title"]}</span>
+                  <div style="display: flex; gap: var(--spacing-3); margin-block-start: var(--spacing-2); font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant);">
+                    <%= if s["duration_minutes"] do %>
+                      <span>{s["duration_minutes"]}m</span>
+                    <% end %>
+                    <%= if s["date"] do %>
+                      <span>{s["date"]}</span>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+
+          <%!-- Collapsed (non-featured) sessions --%>
+          <% collapsed = Enum.filter(period["sessions"] || [], & !&1["featured"]) %>
+          <%= if length(collapsed) > 0 do %>
+            <div style="position: relative; margin-block-end: var(--spacing-3);">
+              <div style="position: absolute; left: calc(-1 * var(--spacing-6) + 5px); top: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--ghost-border);"></div>
+              <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); padding: var(--spacing-2) 0;">
+                {length(collapsed)} smaller sessions
+                <span style="margin-inline-start: var(--spacing-2);">
+                  &mdash; {Enum.map_join(collapsed, ", ", & &1["title"])}
+                </span>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
 
     <%!-- Growth Chart --%>
     <%= if @chart do %>
@@ -165,7 +262,7 @@
             <div style="width: 16px; height: 10px; background: rgba(8,68,113,0.15); border-radius: 1px;"></div>
             <div style="width: 16px; height: 10px; background: rgba(8,68,113,0.3); border-radius: 1px;"></div>
             <div style="width: 16px; height: 10px; background: rgba(8,68,113,0.5); border-radius: 1px;"></div>
-            <span style="margin-inline-start: 2px;">low → high</span>
+            <span style="margin-inline-start: 2px;">low &rarr; high</span>
           </div>
         </div>
       </div>
@@ -175,7 +272,7 @@
     <%= if length(@top_files) > 0 do %>
       <details style="margin-block-end: var(--spacing-8);">
         <summary style="font-family: var(--font-body); font-size: 0.875rem; font-weight: 500; color: var(--on-surface-variant); cursor: pointer; list-style: none; display: flex; justify-content: space-between; padding: var(--spacing-3) 0;">
-          Top {min(length(@top_files), 10)} most-edited files (of {@project.files_touched} total) <span>→</span>
+          Top {min(length(@top_files), 10)} most-edited files (of {@project.files_touched} total) <span>&rarr;</span>
         </summary>
         <div style="padding: var(--spacing-3) 0;">
           <div style="display: grid; grid-template-columns: 1fr 80px 60px 80px; gap: var(--spacing-2); padding: var(--spacing-2) 0; font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant); border-block-end: 1px solid var(--ghost-border);">
@@ -202,32 +299,34 @@
     <% end %>
 
     <%!-- Published Sessions --%>
-    <div style="margin-block-end: var(--spacing-8);">
-      <span class="label-mono" style="display: block; margin-block-end: var(--spacing-4);">Published Sessions</span>
-      <div class="project-sessions-grid">
-        <a :for={session <- @sessions} href={"/s/" <> session.token} class="session-card">
-          <div class="session-card-bar"></div>
-          <div class="session-card-body">
-            <div class="session-card-title">{session.title}</div>
-            <div class="session-card-desc">{session.description}</div>
-            <div class="session-card-meta">
-              <span class="label-sm">{session.duration_minutes}m</span>
-              <span class="label-sm">{session.turns} turns</span>
-              <span class="label-sm">{session.files_changed} files</span>
-              <span class="label-sm">{session.loc_changed} LOC</span>
-            </div>
-            <div class="skills-row" style="margin-block-start: var(--spacing-2);">
-              <span :for={skill <- session.skills} class="skill-chip">{skill}</span>
-            </div>
-            <%= if session.verified_at do %>
-              <div class="sealed-badge" style="margin-block-start: var(--spacing-2);">
-                <span class="sealed-badge-icon">&#10003;</span>
-                <span class="sealed-badge-text">Verified {Calendar.strftime(session.verified_at, "%b %d, %Y")}</span>
+    <%= if length(@sessions) > 0 do %>
+      <div style="margin-block-end: var(--spacing-8);">
+        <span class="label-mono" style="display: block; margin-block-end: var(--spacing-4);">Published Sessions</span>
+        <div class="project-sessions-grid">
+          <a :for={session <- @sessions} href={"/s/" <> session.token} class="session-card">
+            <div class="session-card-bar"></div>
+            <div class="session-card-body">
+              <div class="session-card-title">{session.title}</div>
+              <div class="session-card-desc">{session.description}</div>
+              <div class="session-card-meta">
+                <span class="label-sm">{session.duration_minutes}m</span>
+                <span class="label-sm">{session.turns} turns</span>
+                <span class="label-sm">{session.files_changed} files</span>
+                <span class="label-sm">{session.loc_changed} LOC</span>
               </div>
-            <% end %>
-          </div>
-        </a>
+              <div class="skills-row" style="margin-block-start: var(--spacing-2);">
+                <span :for={skill <- session.skills} class="skill-chip">{skill}</span>
+              </div>
+              <%= if session.verified_at do %>
+                <div class="sealed-badge" style="margin-block-start: var(--spacing-2);">
+                  <span class="sealed-badge-icon">&#10003;</span>
+                  <span class="sealed-badge-text">Verified {Calendar.strftime(session.verified_at, "%b %d, %Y")}</span>
+                </div>
+              <% end %>
+            </div>
+          </a>
+        </div>
       </div>
-    </div>
+    <% end %>
   </div>
 </.public_shell>

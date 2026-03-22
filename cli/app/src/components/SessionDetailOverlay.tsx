@@ -170,7 +170,9 @@ function SourceInfo({ session, projectName }: { session: Session; projectName: s
       <div className="session-detail__source-list">
         <div className="session-detail__source-row">
           <span className="session-detail__source-key">Source</span>
-          <span className="session-detail__source-val">Claude Code</span>
+          <span className="session-detail__source-val">{
+            { claude: 'Claude Code', cursor: 'Cursor', codex: 'Codex', gemini: 'Gemini CLI', antigravity: 'Antigravity' }[session.source ?? 'claude'] ?? 'Claude Code'
+          }</span>
         </div>
         <div className="session-detail__source-row">
           <span className="session-detail__source-key">Date</span>

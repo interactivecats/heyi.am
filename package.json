@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "cli/app",
+    "phoenix/assets"
+  ]
+}

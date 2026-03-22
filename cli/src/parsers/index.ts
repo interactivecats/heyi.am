@@ -2,11 +2,14 @@ import { readdir, readFile } from "node:fs/promises";
 import { join, basename, dirname } from "node:path";
 import { homedir } from "node:os";
 import { claudeParser, mapAgentRole } from "./claude.js";
+import { cursorParser, discoverCursorWorkspaces, listConversations, type CursorWorkspace } from "./cursor.js";
+import { codexParser, discoverCodexSessions } from "./codex.js";
+import { geminiParser, discoverGeminiSessions } from "./gemini.js";
 import type { SessionParser, SessionAnalysis } from "./types.js";
 
 export type { SessionAnalysis, SessionParser, SessionSource, ToolCall, LocStats, RawEntry } from "./types.js";
 
-const parsers: SessionParser[] = [claudeParser];
+const parsers: SessionParser[] = [claudeParser, cursorParser, codexParser, geminiParser];
 
 /** Detect which parser handles a given file and parse it */
 export async function parseSession(path: string): Promise<SessionAnalysis> {
@@ -31,18 +34,103 @@ export interface SessionMeta {
   children?: SessionMeta[];
 }
 
-/** Scan for all Claude Code session files under a base path.
- *
- * Claude Code stores sessions as:
- *   ~/.claude/projects/{encoded-path}/{uuid}.jsonl                  ← main sessions
- *   ~/.claude/projects/{encoded-path}/{uuid}/subagents/{id}.jsonl   ← subagent sessions
- *
- * Children are linked to parents by matching the directory name ({uuid}/)
- * to the parent's session file ({uuid}.jsonl). By default, only parent
- * sessions are returned at the top level; children are nested in the
- * parent's `children` array.
+/**
+ * Convert an absolute directory path to Claude's encoded format.
+ * "/Users/ben/Dev/heyi-am" → "-Users-ben-Dev-heyi-am"
+ */
+export function encodeDirPath(absolutePath: string): string {
+  return absolutePath.replace(/\//g, "-");
+}
+
+/**
+ * Scan all supported tools for sessions and merge by project directory.
+ * Claude Code, Cursor, Codex, and Gemini sessions for the same directory
+ * are grouped under the same projectDir key.
  */
 export async function listSessions(basePath?: string): Promise<SessionMeta[]> {
+  const allSessions: SessionMeta[] = [];
+
+  // 1. Claude Code sessions
+  const claudeSessions = await listClaudeSessions(basePath);
+  allSessions.push(...claudeSessions);
+
+  // When basePath is provided (tests, custom scan), only scan Claude sessions
+  if (basePath) return allSessions;
+
+  // 2. Cursor sessions
+  const cursorSessions = await listCursorSessions();
+  allSessions.push(...cursorSessions);
+
+  // 3. Codex sessions
+  try {
+    const codexFiles = await discoverCodexSessions();
+    for (const cf of codexFiles) {
+      allSessions.push({
+        path: cf.path,
+        source: "codex",
+        sessionId: cf.sessionId,
+        projectDir: encodeDirPath(cf.cwd),
+        isSubagent: false,
+      });
+    }
+  } catch { /* codex discovery failed */ }
+
+  // 4. Gemini sessions
+  try {
+    const geminiFiles = await discoverGeminiSessions();
+    for (const gf of geminiFiles) {
+      const dir = gf.projectDir ?? gf.projectHash;
+      allSessions.push({
+        path: gf.path,
+        source: "gemini",
+        sessionId: gf.sessionId,
+        projectDir: encodeDirPath(dir),
+        isSubagent: false,
+      });
+    }
+  } catch { /* gemini discovery failed */ }
+
+  return allSessions;
+}
+
+/** Discover Cursor sessions and convert to SessionMeta[] */
+async function listCursorSessions(): Promise<SessionMeta[]> {
+  const sessions: SessionMeta[] = [];
+  let workspaces: CursorWorkspace[];
+  try {
+    workspaces = await discoverCursorWorkspaces();
+  } catch {
+    return sessions;
+  }
+
+  for (const ws of workspaces) {
+    const conversations = listConversations(ws);
+    for (const conv of conversations) {
+      // Skip conversations without a name — Cursor only generates names for
+      // conversations with real interaction. Unnamed ones are empty stubs.
+      if (!conv.name) continue;
+
+      // Encode metadata into the cursor:// URL so the parser can use it
+      const params = new URLSearchParams();
+      if (conv.name) params.set("name", conv.name);
+      if (conv.createdAt) params.set("createdAt", String(conv.createdAt));
+      const qs = params.toString();
+
+      sessions.push({
+        path: `cursor://${conv.composerId}${qs ? '?' + qs : ''}`,
+        source: "cursor",
+        sessionId: conv.composerId,
+        projectDir: encodeDirPath(ws.projectDir),
+        isSubagent: false,
+      });
+    }
+  }
+
+  return sessions;
+}
+
+/** Original Claude Code session scanning, extracted from old listSessions */
+async function listClaudeSessions(basePath?: string): Promise<SessionMeta[]> {
   const base = basePath ?? join(homedir(), ".claude", "projects");
   const parents: SessionMeta[] = [];
   const childrenByParentId = new Map<string, SessionMeta[]>();
@@ -68,12 +156,10 @@ export async function listSessions(basePath?: string): Promise<SessionMeta[]> {
 
     for (const file of files) {
       if (file.name.endsWith(".jsonl") && !file.isDirectory()) {
-        // Main session file
         const fullPath = join(projectPath, file.name);
         const sessionId = file.name.replace(/\.jsonl$/, "");
         await tryAddSession(fullPath, sessionId, projectDir, false, parents);
       } else if (file.isDirectory()) {
-        // Directory name is the parent session UUID
         const parentSessionId = file.name;
         const children = await collectSubagents(join(projectPath, file.name), projectDir, parentSessionId);
         if (children.length > 0) {

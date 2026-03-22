@@ -101,19 +101,65 @@ defmodule HeyiAmWeb.ShareController do
 
       share ->
         session = build_session(share)
-        transcript_lines = share.transcript_excerpt || []
         total_turns = share.turns || 0
-        shown_turns = length(transcript_lines)
+
+        # Try fetching the full log from S3, fall back to the DB excerpt
+        {transcript_lines, skipped_turns} = fetch_transcript(share, total_turns)
 
         render(conn, :transcript,
           session: session,
           transcript: transcript_lines,
-          skipped_turns: max(total_turns - shown_turns, 0),
+          skipped_turns: skipped_turns,
           page_title: "Transcript — #{session.title}",
           portfolio_layout: "editorial"
         )
     end
   end
+
+  # Attempt to load the full transcript log from object storage.
+  # Falls back to the transcript_excerpt stored in the DB.
+  defp fetch_transcript(share, total_turns) do
+    case fetch_log_from_s3(share.log_storage_key) do
+      {:ok, full_log} ->
+        {full_log, 0}
+
+      :error ->
+        excerpt = share.transcript_excerpt || []
+        {excerpt, max(total_turns - length(excerpt), 0)}
+    end
+  end
+
+  defp fetch_log_from_s3(nil), do: :error
+  defp fetch_log_from_s3(key) do
+    with {:ok, url} <- HeyiAm.ObjectStorage.presign_get(key),
+         {:ok, %{status: 200, body: body}} <- Req.get(url) do
+      case Jason.decode(body) do
+        {:ok, lines} when is_list(lines) ->
+          # log.json is a flat string array like ["> prompt", "[AI] ...", "[TOOL] ..."]
+          # Convert to the map format the transcript template expects
+          {:ok, build_transcript_turns(lines)}
+
+        _ ->
+          :error
+      end
+    else
+      _ -> :error
+    end
+  end
+
+  defp build_transcript_turns(lines) do
+    lines
+    |> Enum.with_index(1)
+    |> Enum.map(fn {line, idx} ->
+      {role, text} = classify_log_line(line)
+      %{"role" => role, "id" => "Turn #{idx}", "text" => text, "timestamp" => nil}
+    end)
+  end
+
+  defp classify_log_line("> " <> rest), do: {"dev", rest}
+  defp classify_log_line("[AI] " <> rest), do: {"ai", rest}
+  defp classify_log_line("[TOOL] " <> rest), do: {"ai", "[Tool] " <> rest}
+  defp classify_log_line(line), do: {"ai", line}
 
   def verify(conn, %{"token" => token}) do
     case load_share(token) do
