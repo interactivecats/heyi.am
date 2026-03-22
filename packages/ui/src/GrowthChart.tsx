@@ -208,6 +208,10 @@ export function buildGrowthTimeSeries(
   return { points, boundaries, totalVisualTime: visualTime };
 }
 
+function clamp(v: number, min: number, max: number): number {
+  return v < min ? min : v > max ? max : v;
+}
+
 /**
  * Build a smooth cubic bezier SVG path through the given points.
  * @internal Exported for testing
@@ -230,10 +234,10 @@ export function buildSmoothPath(
     const p2 = coords[i + 1];
     const p3 = coords[Math.min(coords.length - 1, i + 2)];
 
-    const cp1x = p1.x + (p2.x - p0.x) * tension;
-    const cp1y = p1.y + (p2.y - p0.y) * tension;
-    const cp2x = p2.x - (p3.x - p1.x) * tension;
-    const cp2y = p2.y - (p3.y - p1.y) * tension;
+    const cp1x = clamp(p1.x + (p2.x - p0.x) * tension, p1.x, p2.x);
+    const cp1y = clamp(p1.y + (p2.y - p0.y) * tension, Math.min(p1.y, p2.y), Math.max(p1.y, p2.y));
+    const cp2x = clamp(p2.x - (p3.x - p1.x) * tension, p1.x, p2.x);
+    const cp2y = clamp(p2.y - (p3.y - p1.y) * tension, Math.min(p1.y, p2.y), Math.max(p1.y, p2.y));
 
     path += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
   }

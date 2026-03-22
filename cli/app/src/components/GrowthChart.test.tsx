@@ -168,6 +168,42 @@ describe('buildSmoothPath', () => {
     expect(path).not.toContain('NaN');
     expect(path).not.toContain('undefined');
   });
+
+  it('control points stay within segment bounding box (no loops)', () => {
+    // Flat segment followed by steep rise — previously caused loops
+    const coords = [
+      { x: 0, y: 200 },
+      { x: 50, y: 200 },  // flat
+      { x: 60, y: 200 },  // still flat
+      { x: 80, y: 50 },   // steep rise (y decreases in SVG)
+      { x: 120, y: 30 },
+    ];
+    const path = buildSmoothPath(coords);
+    // Extract all cubic bezier segments: C cp1x,cp1y cp2x,cp2y x,y
+    const segments = [...path.matchAll(/C([\d.]+),([\d.]+)\s+([\d.]+),([\d.]+)\s+([\d.]+),([\d.]+)/g)];
+    expect(segments.length).toBeGreaterThan(0);
+
+    let prevEndX = coords[0].x;
+    let prevEndY = coords[0].y;
+    for (const seg of segments) {
+      const [, cp1x, cp1y, cp2x, cp2y, endX, endY] = seg.map(Number);
+      const minX = prevEndX;
+      const maxX = endX;
+      const minY = Math.min(prevEndY, endY);
+      const maxY = Math.max(prevEndY, endY);
+      // Control points must stay within the segment's bounding box
+      expect(cp1x).toBeGreaterThanOrEqual(minX - 0.1);
+      expect(cp1x).toBeLessThanOrEqual(maxX + 0.1);
+      expect(cp2x).toBeGreaterThanOrEqual(minX - 0.1);
+      expect(cp2x).toBeLessThanOrEqual(maxX + 0.1);
+      expect(cp1y).toBeGreaterThanOrEqual(minY - 0.1);
+      expect(cp1y).toBeLessThanOrEqual(maxY + 0.1);
+      expect(cp2y).toBeGreaterThanOrEqual(minY - 0.1);
+      expect(cp2y).toBeLessThanOrEqual(maxY + 0.1);
+      prevEndX = endX;
+      prevEndY = endY;
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
