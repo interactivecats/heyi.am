@@ -658,19 +658,14 @@ function EnhanceStep({
             <div className="upload-flow__label">Project Story</div>
             <h2 className="upload-flow__title">{project.name}</h2>
 
-            {!streamingNarrative && !result?.narrative && displaySkills.length === 0 && (
-              <div className="enhance-split__waiting">
-                <div className="enhance-split__waiting-icon">
-                  <span className="enhance-split__blink-dot" />
-                </div>
-                <p className="enhance-split__waiting-text">
+            {!streamingNarrative && !result?.narrative && (
+              <div className="enhance-split__narrative-placeholder">
+                <span className="enhance-split__blink-dot" />
+                <span>
                   {narrativeStatus === 'generating'
-                    ? 'Generating project narrative...'
-                    : 'Reading and analyzing sessions...'}
-                </p>
-                <p className="enhance-split__waiting-sub">
-                  Skills and narrative will appear here as they're discovered.
-                </p>
+                    ? 'Writing project narrative...'
+                    : 'Analyzing sessions — narrative will appear here...'}
+                </span>
               </div>
             )}
 
@@ -1008,10 +1003,13 @@ interface ProjectPreviewProps {
   skills: string[];
   timeline: TimelinePeriod[];
   selectedCount: number;
+  sessions: Session[];
   repoUrl: string;
   projectUrl: string;
   onClose: () => void;
 }
+
+const SESSION_BAR_COLORS = ['var(--primary)', 'var(--secondary)', 'var(--tertiary)'];
 
 function ProjectPreview({
   project,
@@ -1019,11 +1017,15 @@ function ProjectPreview({
   skills,
   timeline,
   selectedCount,
+  sessions,
   repoUrl,
   projectUrl,
   onClose,
 }: ProjectPreviewProps) {
   const totalSessions = timeline.reduce((sum, p) => sum + p.sessions.length, 0);
+  const maxDuration = sessions.length > 0
+    ? Math.max(...sessions.map((s) => s.durationMinutes))
+    : 1;
 
   // Close on Escape key
   useEffect(() => {
@@ -1158,13 +1160,15 @@ function ProjectPreview({
                     <div
                       className="timeline__card"
                       style={{ cursor: 'pointer' }}
-                      onClick={() => { /* TODO: navigate to session detail */ }}
+                      onClick={() => {
+                        document.getElementById(`session-${s.sessionId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }}
                       role="button"
                       tabIndex={0}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
-                          /* TODO: navigate to session detail */
+                          document.getElementById(`session-${s.sessionId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         }
                       }}
                     >
