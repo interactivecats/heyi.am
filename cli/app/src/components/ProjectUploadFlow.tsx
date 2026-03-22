@@ -658,6 +658,22 @@ function EnhanceStep({
             <div className="upload-flow__label">Project Story</div>
             <h2 className="upload-flow__title">{project.name}</h2>
 
+            {!streamingNarrative && !result?.narrative && displaySkills.length === 0 && (
+              <div className="enhance-split__waiting">
+                <div className="enhance-split__waiting-icon">
+                  <span className="enhance-split__blink-dot" />
+                </div>
+                <p className="enhance-split__waiting-text">
+                  {narrativeStatus === 'generating'
+                    ? 'Generating project narrative...'
+                    : 'Reading and analyzing sessions...'}
+                </p>
+                <p className="enhance-split__waiting-sub">
+                  Skills and narrative will appear here as they're discovered.
+                </p>
+              </div>
+            )}
+
             {(streamingNarrative || result?.narrative) && (
               <div className="enhance-split__narrative-text">
                 {result?.narrative ?? streamingNarrative}
