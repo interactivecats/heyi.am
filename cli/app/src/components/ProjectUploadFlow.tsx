@@ -336,6 +336,58 @@ export function TriageTerminal({
 
 // ── Screen 44: Triage Results ────────────────────────────────────
 
+function TriageItem({
+  sessionId,
+  title,
+  stats,
+  reason,
+  variant,
+  checked,
+  onToggle,
+  dimTitle,
+}: {
+  sessionId: string;
+  title: string;
+  stats: string;
+  reason: string;
+  variant: 'selected' | 'skipped';
+  checked: boolean;
+  onToggle: () => void;
+  dimTitle?: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = reason.length > (variant === 'selected' ? 60 : 40);
+  const truncated = variant === 'selected'
+    ? (reason.length > 60 ? reason.slice(0, 57) + '...' : reason)
+    : (reason.length > 40 ? reason.slice(0, 37) + '...' : reason);
+
+  return (
+    <div className={`triage-item ${checked ? 'triage-item--selected' : 'triage-item--skipped'}`}>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onToggle}
+        className="triage-item__checkbox"
+      />
+      <div className="triage-item__info">
+        <div className="triage-item__name" style={dimTitle ? { color: 'var(--on-surface-variant)' } : undefined}>
+          {title}
+        </div>
+        <div className="triage-item__stats">{stats}</div>
+      </div>
+      <div
+        className={`triage-item__reason triage-item__reason--${variant} ${isLong ? 'triage-item__reason--expandable' : ''}`}
+        onClick={isLong ? () => setExpanded(!expanded) : undefined}
+        role={isLong ? 'button' : undefined}
+        tabIndex={isLong ? 0 : undefined}
+        onKeyDown={isLong ? (e) => { if (e.key === 'Enter') setExpanded(!expanded); } : undefined}
+      >
+        {expanded ? reason : truncated}
+      </div>
+    </div>
+  );
+}
+
 function TriageResults({
   project,
   sessions,
@@ -380,26 +432,16 @@ function TriageResults({
           const s = sessionMap.get(item.sessionId);
           const isSelected = selectedIds.has(item.sessionId);
           return (
-            <div
+            <TriageItem
               key={item.sessionId}
-              className={`triage-item ${isSelected ? 'triage-item--selected' : 'triage-item--skipped'}`}
-            >
-              <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={() => onToggle(item.sessionId)}
-                className="triage-item__checkbox"
-              />
-              <div className="triage-item__info">
-                <div className="triage-item__name">{s?.title ?? item.sessionId}</div>
-                <div className="triage-item__stats">
-                  {s ? `${formatDuration(s.durationMinutes)} \u00b7 ${formatLoc(s.linesOfCode)} LOC \u00b7 ${s.turns} turns` : ''}
-                </div>
-              </div>
-              <div className="triage-item__reason triage-item__reason--selected" title={item.reason}>
-                {item.reason.length > 60 ? item.reason.slice(0, 57) + '...' : item.reason}
-              </div>
-            </div>
+              sessionId={item.sessionId}
+              title={s?.title ?? item.sessionId}
+              stats={s ? `${formatDuration(s.durationMinutes)} \u00b7 ${formatLoc(s.linesOfCode)} LOC \u00b7 ${s.turns} turns` : ''}
+              reason={item.reason}
+              variant="selected"
+              checked={isSelected}
+              onToggle={() => onToggle(item.sessionId)}
+            />
           );
         })}
       </div>
@@ -413,28 +455,17 @@ function TriageResults({
             const s = sessionMap.get(item.sessionId);
             const isSelected = selectedIds.has(item.sessionId);
             return (
-              <div
+              <TriageItem
                 key={item.sessionId}
-                className={`triage-item ${isSelected ? 'triage-item--selected' : 'triage-item--skipped'}`}
-              >
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => onToggle(item.sessionId)}
-                  className="triage-item__checkbox"
-                />
-                <div className="triage-item__info">
-                  <div className="triage-item__name" style={{ color: isSelected ? undefined : 'var(--on-surface-variant)' }}>
-                    {s?.title ?? item.sessionId}
-                  </div>
-                  <div className="triage-item__stats">
-                    {s ? `${formatDuration(s.durationMinutes)} \u00b7 ${formatLoc(s.linesOfCode)} LOC \u00b7 ${s.turns} turns` : ''}
-                  </div>
-                </div>
-                <div className="triage-item__reason triage-item__reason--skipped" title={item.reason}>
-                  {item.reason.length > 40 ? item.reason.slice(0, 37) + '...' : item.reason}
-                </div>
-              </div>
+                sessionId={item.sessionId}
+                title={s?.title ?? item.sessionId}
+                stats={s ? `${formatDuration(s.durationMinutes)} \u00b7 ${formatLoc(s.linesOfCode)} LOC \u00b7 ${s.turns} turns` : ''}
+                reason={item.reason}
+                variant="skipped"
+                checked={isSelected}
+                onToggle={() => onToggle(item.sessionId)}
+                dimTitle={!isSelected}
+              />
             );
           })}
         </div>

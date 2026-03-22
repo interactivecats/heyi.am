@@ -2176,6 +2176,14 @@ details[open] > .collapsible__summary .collapsible__chevron {
   font-size: 0.5625rem;
 }
 
+.triage-item__reason--expandable {
+  cursor: pointer;
+}
+
+.triage-item__reason--expandable:hover {
+  opacity: 0.85;
+}
+
 /* Skipped sessions collapsible */
 .triage-skipped {
   margin-bottom: var(--spacing-8);
