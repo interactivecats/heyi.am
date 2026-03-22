@@ -2112,10 +2112,11 @@ details[open] > .collapsible__summary .collapsible__chevron {
 
 .triage-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--spacing-3);
   padding: var(--spacing-4);
   border-radius: var(--radius-sm);
+  flex-wrap: wrap;
 }
 
 .triage-item--selected {
@@ -2137,7 +2138,7 @@ details[open] > .collapsible__summary .collapsible__chevron {
 
 .triage-item__info {
   flex: 1;
-  min-width: 0;
+  min-width: 200px;
 }
 
 .triage-item__name {
@@ -2152,6 +2153,7 @@ details[open] > .collapsible__summary .collapsible__chevron {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   color: var(--on-surface-variant);
+  white-space: nowrap;
 }
 
 .triage-item__reason {
@@ -2159,8 +2161,8 @@ details[open] > .collapsible__summary .collapsible__chevron {
   font-size: 0.625rem;
   padding: 2px 8px;
   border-radius: var(--radius-sm);
-  flex-shrink: 0;
-  white-space: nowrap;
+  max-width: 280px;
+  line-height: 1.4;
 }
 
 .triage-item__reason--selected {

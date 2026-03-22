@@ -396,7 +396,9 @@ function TriageResults({
                   {s ? `${formatDuration(s.durationMinutes)} \u00b7 ${formatLoc(s.linesOfCode)} LOC \u00b7 ${s.turns} turns` : ''}
                 </div>
               </div>
-              <div className="triage-item__reason triage-item__reason--selected">{item.reason}</div>
+              <div className="triage-item__reason triage-item__reason--selected" title={item.reason}>
+                {item.reason.length > 60 ? item.reason.slice(0, 57) + '...' : item.reason}
+              </div>
             </div>
           );
         })}
@@ -429,7 +431,9 @@ function TriageResults({
                     {s ? `${formatDuration(s.durationMinutes)} \u00b7 ${formatLoc(s.linesOfCode)} LOC \u00b7 ${s.turns} turns` : ''}
                   </div>
                 </div>
-                <div className="triage-item__reason triage-item__reason--skipped">{item.reason}</div>
+                <div className="triage-item__reason triage-item__reason--skipped" title={item.reason}>
+                  {item.reason.length > 40 ? item.reason.slice(0, 37) + '...' : item.reason}
+                </div>
               </div>
             );
           })}
@@ -1197,7 +1201,11 @@ export function ProjectUploadFlow() {
 
   const project = projects.find((p) => p.dirName === dirName);
 
-  const [step, setStep] = useState<Step>('overview');
+  const [step, setStepRaw] = useState<Step>('overview');
+  const setStep = useCallback((s: Step) => {
+    setStepRaw(s);
+    window.scrollTo(0, 0);
+  }, []);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [triageResult, setTriageResult] = useState<TriageResult | null>(null);
