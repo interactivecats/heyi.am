@@ -122,8 +122,7 @@ if config_env() == :prod do
     http: [
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
       thousand_island_options: [
-        num_acceptors: String.to_integer(System.get_env("HTTP_NUM_ACCEPTORS", "100")),
-        max_connections: String.to_integer(System.get_env("HTTP_MAX_CONNECTIONS", "16384"))
+        num_acceptors: String.to_integer(System.get_env("HTTP_NUM_ACCEPTORS", "100"))
       ]
     ],
     secret_key_base: secret_key_base
