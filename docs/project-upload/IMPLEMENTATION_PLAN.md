@@ -18,6 +18,76 @@ This means Phase 5 (Phoenix) should include a migration squash and possibly a `p
 
 ---
 
+## Phase 0: Dead Code Cleanup
+
+**Goal:** Remove dead code before building new code. Clean slate.
+
+**Do this first.** Every file deleted here is code that won't confuse devs, won't show up in searches, and won't accidentally get imported.
+
+### 0.1 Delete old CLI components + update App.tsx
+
+**Delete files:**
+- `cli/app/src/components/SessionList.tsx` + `SessionList.test.tsx`
+- `cli/app/src/components/EnhanceFlow.tsx` + `EnhanceFlow.test.tsx`
+- `cli/app/src/components/SessionEditorPage.tsx` + `SessionEditorPage.test.tsx`
+- `cli/app/src/components/SessionDetail.tsx` + `SessionDetail.test.tsx`
+- `cli/app/src/components/SessionBrowserFlow.test.tsx`
+- `cli/app/src/components/PublishFlow.test.tsx`
+- `cli/app/src/components/StatusChips.test.tsx`
+
+**Update `cli/app/src/App.tsx`:**
+- Remove imports for deleted components
+- Replace routes with placeholder: `/` renders a simple "ProjectDashboard coming soon" div
+- Keep `/settings` route (Settings component stays)
+- Remove `/session/:id`, `/session/:id/enhance`, `/session/:id/edit` routes
+
+### 0.2 Delete dead CLI server endpoints
+
+**File:** `cli/src/server.ts`
+
+Remove these endpoints (replaced by project flow in later phases):
+- `POST /api/publish` (line 534) — replaced by project publish
+- `POST /api/upload/bulk` (line 382) — replaced by project publish
+- `POST /api/enhance/bulk` (line 278) — replaced by project enhance
+- `GET /api/projects/:project/sessions/:id/enhance/stream` (line 251) — never used by React app
+- `computeProjectMeta()` helper (line 91) — interim code, replaced by project flow
+
+**Keep these endpoints** (used by the project flow):
+- `GET /api/projects` — project list (Phase 1)
+- `GET /api/projects/:project/sessions` — session list (Phase 2 triage)
+- `GET /api/projects/:project/sessions/:id` — load single session (Phase 3 enhance)
+- `POST /api/projects/:project/sessions/:id/enhance` — per-session enhance (Phase 3)
+- `DELETE /api/sessions/:id/enhanced` — re-enhance
+- Settings, auth, API key endpoints
+
+### 0.3 Delete old mockups
+
+**Already done.** Deleted:
+- `mockups/full/stitch/` (old design iteration)
+- `mockups/full/stitch2/` (old design iteration)
+- `mockups/new/` (old design iteration)
+- `mockups/full/create_a_challenge/` (challenge feature removed)
+- `mockups/full/interview_comparison_view/` (challenge feature removed)
+- `mockups/full-flow.html`, `full-flow-v2.html`, `happy-flow.html` (superseded by interactive-flow.html)
+- `mockups/portfolio-drilldown.html`, `portfolio-drilldown-light.html` (superseded)
+- `mockups/skill-chips.html` (superseded)
+
+**Remaining mockups (keep):**
+- `mockups/interactive-flow.html` — source of truth for all screens
+- `mockups/agent-timeline.html` — SVG reference for agent timelines
+- `mockups/session-templates.html` — template variations reference
+- `mockups/full/` — per-screen reference mockups (useful for detail work)
+
+### 0.4 Phoenix dead code
+
+**Already done** (challenge removal in previous commit). Verify no stale references:
+- `grep -r "challenge\|Challenge" phoenix/lib/ phoenix/test/` should return zero results
+- `grep -r "portfolio_session\|PortfolioSession" phoenix/lib/` — these stay until Phase 5
+
+**Commit boundary:** Codebase compiles cleanly with dead code removed. App shows placeholder at `/`. All existing tests pass (minus deleted test files).
+
+---
+
 ## Phase 1: CLI — Project Dashboard UI
 
 **Goal:** Replace the session-centric browser (Screen 2) with project cards. No new backend logic yet — just the React UI.
@@ -902,6 +972,7 @@ All UI mockups are in `mockups/interactive-flow.html`. Open in browser and use t
 ## Commit Sequence
 
 ```
+ 0. [Cleanup] Delete dead CLI components, endpoints, old mockups, update App.tsx
  1. [CLI] Add session stats cache + project stats in GET /api/projects
  2. [CLI] ProjectDashboard component (Screen 2)
  3. [CLI] Triage — signal extraction + LLM prompt + endpoint (local provider)
