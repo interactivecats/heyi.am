@@ -38,6 +38,25 @@ export async function fetchSession(projectDirName: string, sessionId: string): P
   return data.session;
 }
 
+// Triage types
+export interface TriageResult {
+  selected: Array<{ sessionId: string; reason: string }>;
+  skipped: Array<{ sessionId: string; reason: string }>;
+}
+
+export async function triageProject(dirName: string): Promise<TriageResult> {
+  const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/triage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: { message: 'Triage failed' } }));
+    throw new Error(err.error?.message ?? 'Triage failed');
+  }
+  return res.json();
+}
+
 export interface EnhanceStatus {
   mode: 'local' | 'proxy' | 'none' | 'unknown';
   remaining: number | null;

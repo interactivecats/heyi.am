@@ -9,6 +9,7 @@ import { analyzeSession, type Session } from './analyzer.js';
 import { checkAuthStatus, getAuthToken, saveAuthToken } from './auth.js';
 import { API_URL } from './config.js';
 import { getProvider, getEnhanceMode } from './llm/index.js';
+import { triageSessions, type SessionMetaWithStats } from './llm/triage.js';
 import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData } from './settings.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -240,6 +241,43 @@ export function createApp(sessionsBasePath?: string) {
       });
     } catch (err) {
       res.status(500).json({ error: { code: 'PARSE_FAILED', message: (err as Error).message } });
+    }
+  });
+
+  // Triage endpoint — AI selects which sessions are worth showcasing
+  app.post('/api/projects/:project/triage', async (req: Request, res: Response) => {
+    try {
+      const { project } = req.params;
+      const projects = await getProjects(sessionsBasePath);
+      const proj = projects.find((p) => p.name === project || p.dirName === project);
+      if (!proj) {
+        res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });
+        return;
+      }
+
+      // Build session metadata with stats for triage
+      const sessionsWithStats: SessionMetaWithStats[] = await Promise.all(
+        proj.sessions.map(async (meta) => {
+          const stats = await getSessionStats(meta, proj.name);
+          return {
+            sessionId: meta.sessionId,
+            path: meta.path,
+            title: stats.date ? `Session ${meta.sessionId.slice(0, 8)}` : meta.sessionId,
+            duration: stats.duration,
+            loc: stats.loc,
+            turns: stats.turns,
+            files: stats.files,
+            skills: stats.skills,
+            date: stats.date,
+          };
+        }),
+      );
+
+      const useLLM = req.body?.useLLM !== false;
+      const result = await triageSessions(sessionsWithStats, useLLM);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: { code: 'TRIAGE_FAILED', message: (err as Error).message } });
     }
   });
 

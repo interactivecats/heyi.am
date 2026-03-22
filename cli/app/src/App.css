@@ -3133,3 +3133,265 @@ details[open] > .collapsible__summary .collapsible__chevron {
   flex-wrap: wrap;
   gap: var(--spacing-2);
 }
+
+/* ==========================================================================
+   UPLOAD FLOW — project upload wizard (Screens 43-47)
+   ========================================================================== */
+
+.upload-flow {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--spacing-8);
+}
+
+.upload-flow__label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+  margin-bottom: var(--spacing-2);
+}
+
+.upload-flow__title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-2);
+}
+
+.upload-flow__date {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--on-surface-variant);
+  margin-bottom: var(--spacing-3);
+}
+
+.upload-flow__desc {
+  font-size: 0.9375rem;
+  color: var(--on-surface-variant);
+  margin-bottom: var(--spacing-8);
+  line-height: 1.6;
+}
+
+.upload-flow__stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-4);
+  margin-bottom: var(--spacing-8);
+}
+
+.upload-flow__section-label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--on-surface-variant);
+  margin-bottom: var(--spacing-3);
+}
+
+.upload-flow__section-label--selected {
+  color: var(--secondary);
+}
+
+.upload-flow__scan-status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--secondary);
+  margin-bottom: var(--spacing-4);
+}
+
+.upload-flow__actions {
+  display: flex;
+  gap: var(--spacing-3);
+  justify-content: flex-end;
+  margin-top: var(--spacing-8);
+}
+
+/* Stat card */
+.stat-card {
+  background: var(--surface-container-lowest);
+  padding: var(--spacing-5);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--ghost-border);
+}
+
+.stat-card__label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--on-surface-variant);
+  margin-bottom: var(--spacing-1);
+}
+
+.stat-card__value {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Session table (Screen 43) */
+.session-table {
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--ghost-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-8);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.session-table__header {
+  display: grid;
+  grid-template-columns: 1fr 70px 60px 60px 60px;
+  padding: var(--spacing-2) var(--spacing-4);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface-variant);
+  background: var(--surface-container-low);
+  position: sticky;
+  top: 0;
+}
+
+.session-table__body {
+  /* scrollable area */
+}
+
+.session-table__row {
+  display: grid;
+  grid-template-columns: 1fr 70px 60px 60px 60px;
+  padding: var(--spacing-3) var(--spacing-4);
+  font-size: 0.8125rem;
+  border-bottom: 1px solid var(--ghost-border);
+}
+
+.session-table__name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-table__cell {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+}
+
+/* Phase bar */
+.phase-bar {
+  display: flex;
+  gap: var(--spacing-1);
+  margin-bottom: var(--spacing-6);
+}
+
+.phase-bar__segment {
+  flex: 1;
+  height: 3px;
+  background: var(--surface-container-high);
+  border-radius: 2px;
+}
+
+.phase-bar__segment--active {
+  background: var(--primary);
+}
+
+/* Triage items (Screen 44) */
+.triage-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-8);
+}
+
+.triage-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+  border-radius: var(--radius-sm);
+}
+
+.triage-item--selected {
+  background: var(--surface-container-lowest);
+  border: 1px solid rgba(0, 106, 97, 0.15);
+}
+
+.triage-item--skipped {
+  background: var(--surface-container-low);
+  opacity: 0.7;
+}
+
+.triage-item__checkbox {
+  accent-color: var(--secondary);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.triage-item__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.triage-item__name {
+  font-weight: 600;
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.triage-item__stats {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--on-surface-variant);
+}
+
+.triage-item__reason {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.triage-item__reason--selected {
+  background: rgba(0, 106, 97, 0.08);
+  color: var(--secondary);
+}
+
+.triage-item__reason--skipped {
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  font-size: 0.5625rem;
+}
+
+/* Skipped sessions collapsible */
+.triage-skipped {
+  margin-bottom: var(--spacing-8);
+}
+
+.triage-skipped__summary {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.triage-skipped__summary::-webkit-details-marker {
+  display: none;
+}

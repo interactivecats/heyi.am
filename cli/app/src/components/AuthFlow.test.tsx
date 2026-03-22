@@ -4,7 +4,7 @@
  * Tests Settings page rendering (API key, account status, machine token).
  * Auth-prompt-on-publish tests will be added when ProjectUploadFlow is built.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -14,6 +14,26 @@ vi.mock('../api', () => ({
   fetchAuthStatus: vi.fn(() => Promise.resolve({ authenticated: false })),
   fetchEnhanceStatus: vi.fn(() => Promise.resolve({ mode: 'local', remaining: null })),
 }));
+
+// Mock fetch for Settings-internal API calls that use relative URLs (broken in jsdom)
+const mockFetch = vi.fn((input: RequestInfo | URL) => {
+  const url = typeof input === 'string' ? input : (input as Request).url;
+  if (url.includes('/api/settings/api-key')) {
+    return Promise.resolve(new Response(JSON.stringify({ hasKey: false, maskedKey: null }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }));
+  }
+  if (url.includes('/api/auth/status')) {
+    return Promise.resolve(new Response(JSON.stringify({ authenticated: false }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }));
+  }
+  return Promise.resolve(new Response('{}', { status: 200 }));
+}) as unknown as typeof fetch;
+
+beforeEach(() => { vi.stubGlobal('fetch', mockFetch); });
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -50,9 +70,9 @@ describe('Settings page — sections', () => {
     expect(input).toHaveAttribute('type', 'password');
   });
 
-  it('renders BYOK help text', () => {
+  it('renders BYOK details section', () => {
     renderSettings();
-    expect(screen.getByText('Uses your own Anthropic account. Bypasses proxy quota.')).toBeInTheDocument();
+    expect(screen.getByText('Use your own API key')).toBeInTheDocument();
   });
 
   it('toggles API key visibility', async () => {
