@@ -10,6 +10,8 @@ defmodule HeyiAmWeb.ShareControllerTest do
     {:ok, user} =
       HeyiAm.Accounts.update_user_profile(user, %{display_name: "Test Developer"})
 
+    # Rich data (beats, qa_pairs, etc.) lives in S3 session.json, not in the DB.
+    # The mock ObjectStorage returns default camelCase test data for any key.
     {:ok, share} =
       HeyiAm.Shares.create_share(%{
         token: "real-token-123",
@@ -29,32 +31,7 @@ defmodule HeyiAmWeb.ShareControllerTest do
         project_name: "heyi.am",
         status: "listed",
         user_id: user.id,
-        beats: [
-          %{"label" => "Review auth flow", "description" => "Found 3 token systems"},
-          %{"label" => "Scaffold fresh", "description" => "Clean phx.gen.auth"}
-        ],
-        qa_pairs: [
-          %{
-            "question" => "Why tear out auth entirely?",
-            "answer" => "Three token systems is a security liability."
-          }
-        ],
-        highlights: [
-          %{"type" => "pivot", "title" => "Rejected patch", "description" => "Chose rewrite."},
-          %{"type" => "win", "title" => "Tests passing", "description" => "309 green."}
-        ],
-        tool_breakdown: [
-          %{"name" => "Read", "count" => 142},
-          %{"name" => "Edit", "count" => 92}
-        ],
-        top_files: [
-          %{"path" => "lib/auth.ex", "touches" => 12}
-        ],
-        transcript_excerpt: [
-          %{"role" => "dev", "text" => "The old auth was frankencode"},
-          %{"role" => "ai", "text" => "I can help patch..."},
-          %{"role" => "dev", "text" => "No. Tear it all out."}
-        ],
+        session_storage_key: "sessions/real-token-123/session.json",
         narrative: "This session rebuilt the authentication system from scratch."
       })
 
@@ -68,18 +45,20 @@ defmodule HeyiAmWeb.ShareControllerTest do
       conn = get(conn, ~p"/s/real-token-123")
       html = html_response(conn, 200)
 
+      # DB fields
       assert html =~ "Rebuilding the auth system"
-      assert html =~ "tpl-editorial"
       assert html =~ "47m"
       assert html =~ "2.4k"
       assert html =~ "The old auth was a mess"
       assert html =~ "skill-chip"
       assert html =~ "Elixir"
+      assert html =~ "Test Developer"
+
+      # S3 session.json data (served by mock, normalized from camelCase)
       assert html =~ "qa-pair"
       assert html =~ "Why tear out auth entirely?"
       assert html =~ "exec-path"
       assert html =~ "Review auth flow"
-      assert html =~ "Test Developer"
       assert html =~ "Pivot"
       assert html =~ "Win"
       assert html =~ "Tool breakdown"
@@ -107,52 +86,11 @@ defmodule HeyiAmWeb.ShareControllerTest do
   describe "template rendering" do
     setup [:create_share_with_user]
 
-    test "defaults to editorial template", %{conn: conn} do
+    test "renders editorial layout", %{conn: conn} do
       conn = get(conn, ~p"/s/real-token-123")
       html = html_response(conn, 200)
-      assert html =~ "tpl-editorial"
-    end
-
-    test "template query param overrides to terminal", %{conn: conn} do
-      conn = get(conn, ~p"/s/real-token-123?template=terminal")
-      html = html_response(conn, 200)
-      assert html =~ "tpl-terminal"
-      assert html =~ "Terminal Session"
-      refute html =~ "tpl-editorial"
-    end
-
-    test "template query param overrides to minimal", %{conn: conn} do
-      conn = get(conn, ~p"/s/real-token-123?template=minimal")
-      html = html_response(conn, 200)
-      assert html =~ "tpl-minimal"
-    end
-
-    test "template query param overrides to brutalist", %{conn: conn} do
-      conn = get(conn, ~p"/s/real-token-123?template=brutalist")
-      html = html_response(conn, 200)
-      assert html =~ "tpl-brutalist"
-      assert html =~ "chip--inverted"
-      assert html =~ "SESSION ID:"
-    end
-
-    test "template query param overrides to campfire", %{conn: conn} do
-      conn = get(conn, ~p"/s/real-token-123?template=campfire")
-      html = html_response(conn, 200)
-      assert html =~ "tpl-campfire"
-      assert html =~ "Your Take"
-    end
-
-    test "template query param overrides to neon-night", %{conn: conn} do
-      conn = get(conn, ~p"/s/real-token-123?template=neon-night")
-      html = html_response(conn, 200)
-      assert html =~ "tpl-neon-night"
-      assert html =~ "System Optimized"
-    end
-
-    test "invalid template name falls back to editorial", %{conn: conn} do
-      conn = get(conn, ~p"/s/real-token-123?template=nonexistent")
-      html = html_response(conn, 200)
-      assert html =~ "tpl-editorial"
+      assert html =~ "Editorial Documentation"
+      assert html =~ "case-study-layout"
     end
   end
 
@@ -177,27 +115,20 @@ defmodule HeyiAmWeb.ShareControllerTest do
   describe "GET /s/:token/transcript" do
     setup [:create_share_with_user]
 
-    test "renders transcript page with turns", %{conn: conn} do
+    test "renders transcript page header", %{conn: conn} do
+      # Transcript body comes from log.json in S3 (fetched via presigned GET URL).
+      # In test env the mock presigned URL isn't a real HTTP endpoint, so we get
+      # the empty-transcript fallback — but the page still renders with metadata.
       conn = get(conn, ~p"/s/real-token-123/transcript")
       html = html_response(conn, 200)
 
       assert html =~ "Rebuilding the auth system"
-      assert html =~ "frankencode"
-      assert html =~ "I can help patch"
-      assert html =~ "Tear it all out"
-      assert html =~ "transcript-avatar--dev"
-      assert html =~ "transcript-avatar--ai"
+      assert html =~ "77 turns total"
     end
 
     test "returns 404 for non-existent token", %{conn: conn} do
       conn = get(conn, ~p"/s/nonexistent-token/transcript")
       assert html_response(conn, 404)
-    end
-
-    test "shows turn count in topbar", %{conn: conn} do
-      conn = get(conn, ~p"/s/real-token-123/transcript")
-      html = html_response(conn, 200)
-      assert html =~ "77 turns total"
     end
   end
 
@@ -270,6 +201,86 @@ defmodule HeyiAmWeb.ShareControllerTest do
     test "returns 404 for non-existent session slug", %{conn: conn} do
       conn = get(conn, ~p"/devuser/my-project/no-such-session")
       assert html_response(conn, 404)
+    end
+  end
+
+  describe "normalize_session_detail/1" do
+    alias HeyiAmWeb.ShareController
+
+    test "normalizes camelCase keys from CLI session.json" do
+      cli_data = %{
+        "executionPath" => [
+          %{"stepNumber" => 1, "title" => "Setup", "description" => "Init project"},
+          %{"stepNumber" => 2, "title" => "Build", "description" => "Core logic"}
+        ],
+        "qaPairs" => [%{"question" => "Why?", "answer" => "Because."}],
+        "highlights" => [%{"type" => "win", "title" => "Done", "description" => "Shipped."}],
+        "toolBreakdown" => [%{"tool" => "Read", "count" => 50}],
+        "topFiles" => [%{"path" => "lib/app.ex", "additions" => 30, "deletions" => 5}],
+        "transcriptExcerpt" => [%{"role" => "dev", "text" => "Hello"}],
+        "turnTimeline" => [%{"timestamp" => "t1", "content" => "Do the thing", "tools" => ["Read"]}],
+        "agentSummary" => %{"is_orchestrated" => true, "agents" => []}
+      }
+
+      result = ShareController.normalize_session_detail(cli_data)
+
+      # Execution path: title → label
+      assert [%{"label" => "Setup"}, %{"label" => "Build"}] = result["beats"]
+      assert hd(result["beats"])["description"] == "Init project"
+
+      # Q&A preserved
+      assert [%{"question" => "Why?", "answer" => "Because."}] = result["qa_pairs"]
+
+      # Highlights preserved
+      assert [%{"type" => "win", "title" => "Done"}] = result["highlights"]
+
+      # Tool breakdown: tool → name
+      assert [%{"name" => "Read", "count" => 50}] = result["tool_breakdown"]
+
+      # Top files: additions+deletions → touches
+      assert [%{"path" => "lib/app.ex", "touches" => 35}] = result["top_files"]
+
+      # Transcript preserved
+      assert [%{"role" => "dev", "text" => "Hello"}] = result["transcript_excerpt"]
+
+      # Turn timeline: content → prompt, index as turn number
+      assert [%{"turn" => 1, "prompt" => "Do the thing", "tools" => ["Read"]}] = result["turn_timeline"]
+
+      # Agent summary preserved
+      assert %{"is_orchestrated" => true} = result["agent_summary"]
+    end
+
+    test "handles snake_case keys (legacy format)" do
+      legacy_data = %{
+        "beats" => [%{"label" => "Step 1", "description" => "Desc"}],
+        "qa_pairs" => [%{"question" => "Q", "answer" => "A"}],
+        "tool_breakdown" => [%{"name" => "Edit", "count" => 10}],
+        "top_files" => [%{"path" => "x.ex", "touches" => 3}],
+        "turn_timeline" => [%{"turn" => 1, "prompt" => "Do it", "tools" => []}],
+        "transcript_excerpt" => [],
+        "highlights" => [],
+        "agent_summary" => nil
+      }
+
+      result = ShareController.normalize_session_detail(legacy_data)
+
+      assert [%{"label" => "Step 1"}] = result["beats"]
+      assert [%{"name" => "Edit", "count" => 10}] = result["tool_breakdown"]
+      assert [%{"path" => "x.ex", "touches" => 3}] = result["top_files"]
+      assert [%{"turn" => 1, "prompt" => "Do it"}] = result["turn_timeline"]
+    end
+
+    test "returns empty detail for nil or non-map input" do
+      result = ShareController.normalize_session_detail(nil)
+      assert result["beats"] == []
+      assert result["qa_pairs"] == []
+      assert result["agent_summary"] == nil
+    end
+
+    test "top_files touches minimum is 1" do
+      data = %{"topFiles" => [%{"path" => "empty.ex", "additions" => 0, "deletions" => 0}]}
+      result = ShareController.normalize_session_detail(data)
+      assert [%{"touches" => 1}] = result["top_files"]
     end
   end
 end

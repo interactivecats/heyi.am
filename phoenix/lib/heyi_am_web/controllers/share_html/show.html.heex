@@ -60,21 +60,19 @@
         </div>
       </section>
 
-      <%!-- Session Q&A --%>
-      <section>
+      <%!-- Session Q&A (only show pairs that have an answer) --%>
+      <% answered_pairs = Enum.filter(@session.qa_pairs, & &1["answer"] && &1["answer"] != "") %>
+      <section :if={answered_pairs != []}>
         <span class="label-mono" style="display: block; margin-block-end: var(--spacing-4);">Session Questions</span>
-        <div :for={qa <- @session.qa_pairs} class="qa-pair">
+        <div :for={qa <- answered_pairs} class="qa-pair">
           <div class="question">{qa["question"]}</div>
           <div class="answer">{qa["answer"]}</div>
         </div>
       </section>
-    </div>
 
-    <%!-- Sidebar --%>
-    <aside class="case-study-sidebar">
-      <%!-- Execution Path --%>
-      <div class="sidebar-card">
-        <span class="sidebar-card-label">Execution Path</span>
+      <%!-- Execution Path (in main column) --%>
+      <section :if={@session.beats != []}>
+        <span class="label-mono" style="display: block; margin-block-end: var(--spacing-4);">Execution Path</span>
         <div class="exec-path">
           <div :for={{beat, idx} <- Enum.with_index(@session.beats)} class="exec-path-step">
             <div class="exec-path-spine">
@@ -87,32 +85,16 @@
             </div>
           </div>
         </div>
-      </div>
+      </section>
+    </div>
 
-      <%!-- Raw Log Preview --%>
-      <div class="terminal">
-        <div class="terminal-header">
-          <span style="font-size: 0.625rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.4);">Raw Log Preview</span>
-        </div>
-        <div :for={line <- @session.transcript_excerpt} class="terminal-line">
-          <span :if={to_string(line["role"]) == "dev"} class="terminal-prompt">&gt; </span>
-          <span :if={to_string(line["role"]) == "ai"} style="color: #60a5fa;">[AI] </span>
-          {line["text"]}
-        </div>
-        <% remaining_turns = max(@session.turns - length(@session.transcript_excerpt), 0) %>
-        <div :if={remaining_turns > 0} class="terminal-line" style="color: rgba(255,255,255,0.3);">... {remaining_turns} more turns</div>
-        <div style="margin-block-start: var(--spacing-3);">
-          <a href={"/s/#{@session.token}/transcript"} style="font-family: var(--font-mono); font-size: 0.625rem; color: #60a5fa; text-decoration: none;">
-            View full transcript &rarr;
-          </a>
-        </div>
-      </div>
-
+    <%!-- Sidebar --%>
+    <aside class="case-study-sidebar">
       <%!-- Source Info --%>
       <div class="sidebar-card">
         <span class="sidebar-card-label">Source</span>
         <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); line-height: 2;">
-          <div>Source: Claude Code</div>
+          <div>Source: {String.capitalize(@session.source_tool || "claude")} Code</div>
           <div>Date: {if @session.recorded_at, do: Calendar.strftime(@session.recorded_at, "%b %d, %Y"), else: "—"}</div>
           <div>
             Author:
@@ -130,13 +112,44 @@
           <span class="sealed-badge-text">Verified {Calendar.strftime(@session.verified_at, "%b %d, %Y")}</span>
         </div>
       </div>
+
+      <%!-- Raw Log Preview — never taller than execution path --%>
+      <% preview_lines = Enum.take(@session.transcript_excerpt, 10) %>
+      <div :if={preview_lines != []} class="terminal session-log-preview">
+        <div class="terminal-header">
+          <span style="font-size: 0.625rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.4);">Raw Log Preview</span>
+        </div>
+        <div :for={line <- preview_lines} class="terminal-line">
+          <span :if={to_string(line["role"]) == "dev"} class="terminal-prompt">&gt; </span>
+          <span :if={to_string(line["role"]) == "ai"} style="color: #60a5fa;">[AI] </span>
+          {line["text"]}
+        </div>
+        <div style="margin-block-start: var(--spacing-2);">
+          <a href={"/s/#{@session.token}/transcript"} style="font-family: var(--font-mono); font-size: 0.625rem; color: #60a5fa; text-decoration: none;">
+            View full transcript &rarr;
+          </a>
+        </div>
+      </div>
     </aside>
   </div>
 
   <%!-- Full-width sections below the 2-column layout --%>
   <div class="case-study-below" style="max-width: var(--content-max-width); margin-inline: auto; padding: 0 var(--spacing-8) var(--spacing-8);">
-    <%!-- Highlights --%>
+
+    <%!-- Work Timeline (React island) --%>
     <section style="margin-block-end: var(--spacing-6);">
+      <span class="label-mono" style="display: block; margin-block-end: var(--spacing-3);">Work Timeline</span>
+      <div
+        data-work-timeline-session
+        data-token={@session.token}
+        style="min-height: 80px; display: flex; align-items: center; justify-content: center;"
+      >
+        <span class="label-mono" style="color: var(--on-surface-variant);">Loading timeline…</span>
+      </div>
+    </section>
+
+    <%!-- Highlights --%>
+    <section :if={@session.highlights != []} style="margin-block-end: var(--spacing-6);">
       <span class="label-mono" style="display: block; margin-block-end: var(--spacing-3);">Highlights</span>
       <div class="highlights-row">
         <div :for={hl <- @session.highlights} class="highlight-card" style="flex-direction: column; align-items: flex-start;">
@@ -155,14 +168,14 @@
     </section>
 
     <%!-- Collapsible: Tool Breakdown --%>
-    <details class="collapsible" style="margin-block-end: var(--spacing-2);">
+    <details :if={@session.tool_breakdown != []} class="collapsible" style="margin-block-end: var(--spacing-2);">
       <summary>
         Tool breakdown ({Enum.reduce(@session.tool_breakdown, 0, &((&1["count"] || 0) + &2))} calls)
       </summary>
       <div class="collapsible-content">
         <% max_count = if @session.tool_breakdown == [], do: 1, else: (Enum.max_by(@session.tool_breakdown, &((&1["count"] || 0)))["count"] || 1) %>
         <div :for={tool <- @session.tool_breakdown} style="display: flex; align-items: center; gap: var(--spacing-3); margin-block-end: var(--spacing-2);">
-          <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); width: 5rem; text-align: end;">{tool["name"]}</span>
+          <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); width: 7rem; text-align: end; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{tool["name"]}</span>
           <div style="flex: 1; height: 6px; background: var(--surface-container-low); border-radius: 3px; overflow: hidden;">
             <div style={"width: #{round((tool["count"] || 0) / max_count * 100)}%; height: 100%; background: var(--primary); border-radius: 3px;"}></div>
           </div>
@@ -172,7 +185,7 @@
     </details>
 
     <%!-- Collapsible: Files Changed --%>
-    <details class="collapsible" style="margin-block-end: var(--spacing-2);">
+    <details :if={@session.top_files != []} class="collapsible" style="margin-block-end: var(--spacing-2);">
       <summary>
         Files changed ({@session.files_changed} files)
       </summary>
@@ -187,13 +200,15 @@
       </div>
     </details>
 
-    <%!-- Collapsible: Turn Timeline --%>
-    <details :if={@session[:turn_timeline] && @session.turn_timeline != []} class="collapsible" style="margin-block-end: var(--spacing-2);">
+    <%!-- Collapsible: Turn Timeline (capped at 30 entries) --%>
+    <% visible_turns = Enum.take(@session[:turn_timeline] || [], 30) %>
+    <% total_turns = length(@session[:turn_timeline] || []) %>
+    <details :if={visible_turns != []} class="collapsible" style="margin-block-end: var(--spacing-2);">
       <summary>
-        Turn timeline ({length(@session.turn_timeline)} turns)
+        Turn timeline ({total_turns} turns)
       </summary>
       <div class="collapsible-content">
-        <div :for={turn <- @session.turn_timeline} style="display: flex; align-items: flex-start; gap: var(--spacing-3); margin-block-end: var(--spacing-3);">
+        <div :for={turn <- visible_turns} style="display: flex; align-items: flex-start; gap: var(--spacing-3); margin-block-end: var(--spacing-3);">
           <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); min-width: 2rem; text-align: end;">
             #{turn["turn"]}
           </span>
@@ -204,11 +219,15 @@
             </div>
           </div>
         </div>
+        <div :if={total_turns > 30} style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); padding: var(--spacing-2) 0;">
+          ... {total_turns - 30} more turns.
+          <a href={"/s/#{@session.token}/transcript"} style="color: var(--primary); text-decoration: none;">View full transcript →</a>
+        </div>
       </div>
     </details>
 
     <%!-- Collapsible: Full Narrative --%>
-    <details :if={@session.narrative} class="collapsible" style="margin-block-end: var(--spacing-2);">
+    <details :if={@session.narrative && @session.narrative != ""} class="collapsible" style="margin-block-end: var(--spacing-2);">
       <summary>Full narrative</summary>
       <div class="collapsible-content" style="font-size: 0.875rem; color: var(--on-surface-variant); line-height: 1.7;">
         <p :for={paragraph <- String.split(@session.narrative, "\n\n")} style="margin-block-end: var(--spacing-4);">

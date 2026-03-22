@@ -32,29 +32,107 @@ defmodule HeyiAmWeb.ShareController do
       |> Map.update(:skills, [], &(&1 || []))
       |> Map.update(:tools, [], &(&1 || []))
 
-    # Fetch detail data from S3 (beats, qa_pairs, etc.)
+    # Fetch detail data from S3 and normalize keys to match template expectations.
+    # CLI uploads session.json with camelCase keys; templates use snake_case with
+    # legacy field names. This function bridges the two.
     detail = fetch_session_detail(share.session_storage_key)
 
     base
-    |> Map.put(:beats, detail["beats"] || [])
-    |> Map.put(:qa_pairs, detail["qa_pairs"] || [])
-    |> Map.put(:highlights, detail["highlights"] || [])
-    |> Map.put(:tool_breakdown, detail["tool_breakdown"] || [])
-    |> Map.put(:top_files, detail["top_files"] || [])
-    |> Map.put(:transcript_excerpt, detail["transcript_excerpt"] || [])
-    |> Map.put(:turn_timeline, detail["turn_timeline"] || [])
+    |> Map.put(:beats, detail["beats"])
+    |> Map.put(:qa_pairs, detail["qa_pairs"])
+    |> Map.put(:highlights, detail["highlights"])
+    |> Map.put(:tool_breakdown, detail["tool_breakdown"])
+    |> Map.put(:top_files, detail["top_files"])
+    |> Map.put(:transcript_excerpt, detail["transcript_excerpt"])
+    |> Map.put(:turn_timeline, detail["turn_timeline"])
     |> Map.put(:agent_summary, detail["agent_summary"])
   end
 
-  defp fetch_session_detail(nil), do: %{}
+  @doc false
+  def normalize_session_detail(data) when is_map(data) do
+    %{
+      "beats" => normalize_beats(data["executionPath"] || data["beats"] || []),
+      "qa_pairs" => data["qaPairs"] || data["qa_pairs"] || [],
+      "highlights" => data["highlights"] || [],
+      "tool_breakdown" => normalize_tool_breakdown(data["toolBreakdown"] || data["tool_breakdown"] || []),
+      "top_files" => normalize_top_files(data["topFiles"] || data["top_files"] || []),
+      "transcript_excerpt" => data["transcriptExcerpt"] || data["transcript_excerpt"] || [],
+      "turn_timeline" => normalize_turn_timeline(data["turnTimeline"] || data["turn_timeline"] || []),
+      "agent_summary" => data["agentSummary"] || data["agent_summary"]
+    }
+  end
+  def normalize_session_detail(_), do: empty_detail()
+
+  defp empty_detail do
+    %{
+      "beats" => [],
+      "qa_pairs" => [],
+      "highlights" => [],
+      "tool_breakdown" => [],
+      "top_files" => [],
+      "transcript_excerpt" => [],
+      "turn_timeline" => [],
+      "agent_summary" => nil
+    }
+  end
+
+  # CLI uses {title, description}; template expects {label, description}
+  defp normalize_beats(steps) when is_list(steps) do
+    Enum.map(steps, fn step ->
+      %{
+        "label" => step["title"] || step["label"] || "",
+        "description" => step["description"] || step["body"] || ""
+      }
+    end)
+  end
+  defp normalize_beats(_), do: []
+
+  # CLI uses {tool, count}; template expects {name, count}
+  defp normalize_tool_breakdown(tools) when is_list(tools) do
+    Enum.map(tools, fn tool ->
+      %{
+        "name" => tool["tool"] || tool["name"] || "",
+        "count" => tool["count"] || 0
+      }
+    end)
+  end
+  defp normalize_tool_breakdown(_), do: []
+
+  # CLI uses {path, additions, deletions}; template expects {path, touches}
+  defp normalize_top_files(files) when is_list(files) do
+    Enum.map(files, fn file ->
+      touches = file["touches"] || (file["additions"] || 0) + (file["deletions"] || 0)
+      %{
+        "path" => file["path"] || "",
+        "touches" => max(touches, 1)
+      }
+    end)
+  end
+  defp normalize_top_files(_), do: []
+
+  # CLI uses {timestamp, type, content, tools}; template expects {turn, prompt, tools}
+  defp normalize_turn_timeline(turns) when is_list(turns) do
+    turns
+    |> Enum.with_index(1)
+    |> Enum.map(fn {turn, idx} ->
+      %{
+        "turn" => turn["turn"] || idx,
+        "prompt" => turn["content"] || turn["prompt"] || "",
+        "tools" => turn["tools"] || []
+      }
+    end)
+  end
+  defp normalize_turn_timeline(_), do: []
+
+  defp fetch_session_detail(nil), do: empty_detail()
   defp fetch_session_detail(key) do
     case HeyiAm.ObjectStorage.get_object(key) do
       {:ok, body} ->
         case Jason.decode(body) do
-          {:ok, data} when is_map(data) -> data
-          _ -> %{}
+          {:ok, data} when is_map(data) -> normalize_session_detail(data)
+          _ -> empty_detail()
         end
-      _ -> %{}
+      _ -> empty_detail()
     end
   end
 

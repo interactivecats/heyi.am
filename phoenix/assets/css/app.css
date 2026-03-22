@@ -2536,6 +2536,14 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-6);
+  align-self: start;
+  position: sticky;
+  top: var(--spacing-4);
+}
+
+.session-log-preview {
+  max-height: 24rem;
+  overflow: hidden;
 }
 
 .case-study-title {
@@ -3366,6 +3374,10 @@ details.collapsible .collapsible-content {
 
 /* ── Mobile: Case Study (768px) ── */
 @media (max-width: 768px) {
+  .case-study-sidebar .terminal {
+    display: none;
+  }
+
   .case-study-layout {
     padding: var(--spacing-4);
     gap: var(--spacing-6);
@@ -4042,36 +4054,20 @@ details.collapsible .collapsible-content {
    Copied from CLI — must stay in sync with cli/app/src/App.css
    ========================================================================== */
 
-/* Work Timeline */
-.work-timeline__scroll-controls {
-  display: flex;
-  gap: var(--spacing-2, 0.5rem);
-  justify-content: flex-end;
-  margin-bottom: var(--spacing-2, 0.5rem);
+/* Work Timeline (React Flow) */
+.work-timeline {
+  width: 100%;
+  min-height: 280px;
 }
 
-.work-timeline__scroll-btn {
-  width: 32px;
-  height: 28px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  background: #fff;
-  color: #374151;
-  font-family: var(--font-mono, monospace);
-  font-size: 0.875rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.1s;
+/* Hide React Flow controls/background we don't use */
+.work-timeline .react-flow__attribution {
+  display: none;
 }
 
-.work-timeline__scroll-btn:hover {
-  background: #f3f4f6;
-}
-
-.work-timeline__scroll-btn:active {
-  background: #e5e7eb;
+/* Session node hover */
+.wt-session-node:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 /* Growth Chart */

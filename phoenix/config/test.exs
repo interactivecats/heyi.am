@@ -8,13 +8,21 @@ config :bcrypt_elixir, :log_rounds, 1
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
-config :heyi_am, HeyiAm.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "heyi_am_test#{System.get_env("MIX_TEST_PARTITION")}",
-  pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: System.schedulers_online() * 2
+# DATABASE_URL overrides defaults when running in docker-compose
+if database_url = System.get_env("DATABASE_URL") do
+  config :heyi_am, HeyiAm.Repo,
+    url: database_url,
+    pool: Ecto.Adapters.SQL.Sandbox,
+    pool_size: System.schedulers_online() * 2
+else
+  config :heyi_am, HeyiAm.Repo,
+    username: "postgres",
+    password: "postgres",
+    hostname: "localhost",
+    database: "heyi_am_test#{System.get_env("MIX_TEST_PARTITION")}",
+    pool: Ecto.Adapters.SQL.Sandbox,
+    pool_size: System.schedulers_online() * 2
+end
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
