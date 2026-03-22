@@ -930,47 +930,58 @@ export function createApp(sessionsBasePath?: string) {
             };
 
             // session.json: full data including visualization fields for S3
+            // session.json uses camelCase keys matching the @heyiam/ui Session type
+            // so React islands can consume it directly without transformation
             const sessionData = {
               version: 1,
+              id: sessionSlug,
               title: enhanced?.title ?? session.title,
-              dev_take: enhanced?.developerTake ?? session.developerTake ?? '',
+              devTake: enhanced?.developerTake ?? session.developerTake ?? '',
               context: enhanced?.context ?? '',
-              duration_minutes: session.durationMinutes ?? 0,
+              durationMinutes: session.durationMinutes ?? 0,
               turns: session.turns ?? 0,
-              files_changed: session.filesChanged?.length ?? 0,
-              loc_changed: session.linesOfCode ?? 0,
-              recorded_at: session.date ? new Date(session.date).toISOString() : new Date().toISOString(),
-              end_time: session.endTime ? new Date(session.endTime).toISOString() : null,
+              filesChanged: (session.filesChanged ?? []).slice(0, 20).map((f) => (typeof f === 'string' ? { path: f, additions: 0, deletions: 0 } : f)),
+              linesOfCode: session.linesOfCode ?? 0,
+              date: session.date ? new Date(session.date).toISOString() : new Date().toISOString(),
+              endTime: session.endTime ? new Date(session.endTime).toISOString() : null,
               cwd: session.cwd ?? null,
-              wall_clock_minutes: session.wallClockMinutes ?? null,
+              wallClockMinutes: session.wallClockMinutes ?? null,
               template: 'editorial',
               skills: enhanced?.skills ?? session.skills ?? [],
               tools: session.toolBreakdown?.map((t) => t.tool) ?? [],
-              source_tool: session.source ?? meta.source ?? 'claude',
+              source: session.source ?? meta.source ?? 'claude',
               slug: sessionSlug,
-              project_name: proj.name,
+              projectName: proj.name,
               narrative: enhanced?.developerTake ?? '',
-              beats: (enhanced?.executionSteps ?? session.executionPath ?? []).map((s, i) => ({
-                label: s.title,
+              status: 'listed' as const,
+              rawLog: [] as string[],
+              executionPath: (enhanced?.executionSteps ?? session.executionPath ?? []).map((s, i) => ({
+                stepNumber: i + 1,
+                title: s.title,
                 description: 'body' in s ? (s as { body: string }).body : ('description' in s ? (s as { description: string }).description : ''),
-                position: i,
               })),
-              qa_pairs: enhanced?.qaPairs ?? session.qaPairs ?? [],
+              qaPairs: enhanced?.qaPairs ?? session.qaPairs ?? [],
               highlights: [],
-              tool_breakdown: (session.toolBreakdown ?? []).map((t) => ({ name: t.tool, count: t.count })),
-              top_files: (session.filesChanged ?? []).slice(0, 20).map((f) => (typeof f === 'string' ? { path: f } : f)),
-              turn_timeline: (session.turnTimeline ?? []).map((t) => ({
+              toolBreakdown: (session.toolBreakdown ?? []).map((t) => ({ tool: t.tool, count: t.count })),
+              topFiles: (session.filesChanged ?? []).slice(0, 20).map((f) => (typeof f === 'string' ? { path: f, additions: 0, deletions: 0 } : f)),
+              turnTimeline: (session.turnTimeline ?? []).map((t) => ({
                 timestamp: t.timestamp,
                 type: t.type,
                 content: (t.content ?? '').slice(0, 200),
                 tools: (t as { tools?: string[] }).tools ?? [],
               })),
-              transcript_excerpt: (session.rawLog ?? []).slice(0, 10).map((line, i) => {
+              transcriptExcerpt: (session.rawLog ?? []).slice(0, 10).map((line, i) => {
                 const role = line.startsWith('> ') ? 'dev' : 'ai';
                 const text = role === 'dev' ? line.slice(2) : line.replace(/^\[AI\] |^\[TOOL\] /, '');
                 return { role, id: `Turn ${i + 1}`, text, timestamp: null };
               }),
-              agent_summary: agentSummary,
+              agentSummary: agentSummary,
+              children: agentSummary?.agents?.map((a: { role: string; duration_minutes: number; loc_changed: number }) => ({
+                sessionId: a.role,
+                role: a.role,
+                durationMinutes: a.duration_minutes,
+                linesOfCode: a.loc_changed,
+              })) ?? [],
             };
 
             const sessionRes = await fetch(`${API_URL}/api/sessions`, {
