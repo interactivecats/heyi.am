@@ -87,14 +87,14 @@ defmodule HeyiAmWeb.ClaimUsernameLiveTest do
   end
 
   describe "save" do
-    test "claims username and redirects to vibe picker", %{conn: conn} do
+    test "claims username and redirects to portfolio", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/onboarding/username")
 
       view
       |> element("form")
       |> render_change(%{user: %{username: "myname"}})
 
-      assert {:error, {:live_redirect, %{to: "/onboarding/vibe"}}} =
+      assert {:error, {:live_redirect, %{to: "/myname"}}} =
                view
                |> element("form")
                |> render_submit(%{user: %{username: "myname"}})

@@ -53,7 +53,7 @@ defmodule HeyiAmWeb.ClaimUsernameLive do
   def handle_event("save", %{"user" => %{"username" => username}}, socket) do
     case Accounts.update_user_username(socket.assigns.user, %{username: username}) do
       {:ok, _user} ->
-        {:noreply, push_navigate(socket, to: "/onboarding/vibe")}
+        {:noreply, push_navigate(socket, to: "/#{username}")}
 
       {:error, changeset} ->
         {:noreply, assign_form(socket, changeset)}

@@ -57,7 +57,7 @@
 3. Type a valid username (3-39 chars, lowercase, hyphens OK)
 4. **Expect:** Live availability check shows green/available
 5. Submit
-6. **Expect:** Redirected to `/onboarding/vibe`
+6. **Expect:** Redirected to `/:username` portfolio page
 
 ### 2.2 Invalid usernames
 Try each: `ab` (too short), `UPPERCASE`, `user@name` (special chars), 40+ chars
@@ -67,13 +67,6 @@ Try each: `ab` (too short), `UPPERCASE`, `user@name` (special chars), 40+ chars
 1. Claim username `taken` with one account
 2. Try `taken` with another account
 3. **Expect:** Shows unavailable
-
-### 2.4 Vibe picker
-1. At `/onboarding/vibe`, see 6 template cards
-2. Click each card -- **Expect:** Visual selection indicator
-3. Pick an accent color
-4. Click Save & Deploy
-5. **Expect:** Redirected to `/:username` portfolio page
 
 ---
 

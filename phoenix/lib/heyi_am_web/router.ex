@@ -135,7 +135,6 @@ defmodule HeyiAmWeb.Router do
 
     live_session :authenticated, on_mount: [{HeyiAmWeb.UserAuth, :ensure_authenticated}] do
       live "/onboarding/username", ClaimUsernameLive
-      live "/onboarding/vibe", VibePickerLive
       live "/device", DeviceAuthLive
     end
 
