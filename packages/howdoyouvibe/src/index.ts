@@ -7,6 +7,14 @@ import { matchArchetype } from "./archetypes.js";
 import { fetchNarrative } from "./narrative.js";
 import { renderCard, formatTextBlock, copyToClipboard, promptYesNo } from "./render.js";
 import { shareVibe } from "./share.js";
+import { execFile } from "node:child_process";
+import { platform } from "node:os";
+
+function openUrl(url: string): void {
+  const cmd = platform() === "darwin" ? "open" : platform() === "win32" ? "cmd" : "xdg-open";
+  const args = platform() === "win32" ? ["/c", "start", url] : [url];
+  execFile(cmd, args, () => {}); // fire-and-forget
+}
 
 // ─── Discover and parse all sessions ─────────────────────────────────────
 
@@ -76,6 +84,7 @@ if (process.stdin.isTTY) {
       console.log(" done!\n");
       console.log(`  ${result.url}`);
       console.log(`  Download card: ${result.card_url}`);
+      openUrl(result.url);
     } else {
       console.log("\n  Couldn't share — your vibe lives on your machine.");
     }
