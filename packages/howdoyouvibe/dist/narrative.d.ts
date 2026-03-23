@@ -6,6 +6,7 @@ import type { ArchetypeMatch } from "./archetypes.js";
  */
 export declare function fetchNarrative(stats: VibeStats, match: ArchetypeMatch): Promise<string>;
 /**
- * Simple template fallback when server is unreachable.
+ * Template fallback when server is unreachable.
+ * Picks the 2 most extreme stats and stitches sentence fragments.
  */
 export declare function templateNarrative(stats: VibeStats, match: ArchetypeMatch): string;

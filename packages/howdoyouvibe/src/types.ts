@@ -42,4 +42,5 @@ export interface VibeStats {
   session_count: number;
   total_duration_min: number;
   sources: SessionSource[];
+  source_breakdown: Record<string, number>; // e.g. { claude: 150, cursor: 50, codex: 16 }
 }

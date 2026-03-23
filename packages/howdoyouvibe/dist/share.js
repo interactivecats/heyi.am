@@ -1,4 +1,6 @@
-const SHARE_URL = "https://howdoyouvibe.com/api/vibes";
+const SHARE_URL = process.env.VIBE_API_URL
+    ? `${process.env.VIBE_API_URL}/api/vibes`
+    : "https://howdoyouvibe.com/api/vibes";
 /**
  * POST computed vibe stats to the server. Returns share URLs on success.
  * Only computed stats leave the machine — never raw session text.

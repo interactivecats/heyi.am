@@ -2659,6 +2659,183 @@ body {
   gap: var(--spacing-3);
 }
 
+/* ── Case Study Breadcrumb ── */
+.case-study-breadcrumb {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+  letter-spacing: 0.01em;
+}
+
+.case-study-breadcrumb-link {
+  color: var(--on-surface-variant);
+  text-decoration: none;
+}
+
+.case-study-breadcrumb-link:hover {
+  color: var(--primary);
+}
+
+.case-study-breadcrumb-sep {
+  margin-inline: var(--spacing-2);
+  opacity: 0.4;
+}
+
+/* ── Case Study Section Labels (CLI-style uppercase mono) ── */
+.case-study-section {
+  /* gap between sections handled by parent flex gap */
+}
+
+.case-study-section-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-block-end: var(--spacing-3);
+}
+
+/* ── Developer Take (CLI-style blockquote with left border) ── */
+.case-study-take {
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--on-surface);
+  border-inline-start: 3px solid var(--primary);
+  padding-inline-start: var(--spacing-4);
+  margin: 0;
+}
+
+/* ── Context ── */
+.case-study-context {
+  font-size: 0.9375rem;
+  color: var(--on-surface-variant);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Highlights (CLI-style horizontal scroll cards) ── */
+.case-study-highlights {
+  display: flex;
+  gap: var(--spacing-4);
+  overflow-x: auto;
+  padding-block-end: var(--spacing-2);
+  scrollbar-width: thin;
+}
+
+.case-study-highlight-card {
+  flex: 0 0 240px;
+  padding: var(--spacing-4);
+  background: var(--surface-container-lowest);
+  border: var(--ghost-border);
+  border-radius: var(--radius-sm);
+}
+
+.case-study-highlight-step {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-block-end: var(--spacing-1);
+}
+
+.case-study-highlight-step--pivot { color: var(--primary); }
+.case-study-highlight-step--win { color: var(--secondary); }
+.case-study-highlight-step--insight { color: var(--tertiary); }
+
+.case-study-highlight-title {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  margin-block-end: 2px;
+}
+
+.case-study-highlight-desc {
+  font-size: 0.8125rem;
+  color: var(--on-surface-variant);
+  line-height: 1.5;
+}
+
+/* ── Sidebar Execution Path (CLI-style dots + connecting line) ── */
+.case-study-exec-path {
+  position: relative;
+  padding-inline-start: var(--spacing-5);
+}
+
+.case-study-exec-path::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 5px;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: var(--outline-variant);
+}
+
+.case-study-exec-step {
+  position: relative;
+  padding-block-end: var(--spacing-4);
+}
+
+.case-study-exec-step:last-child {
+  padding-block-end: 0;
+}
+
+.case-study-exec-dot {
+  position: absolute;
+  inset-inline-start: calc(var(--spacing-5) * -1 + 2px);
+  top: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.case-study-exec-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  line-height: 1.3;
+}
+
+.case-study-exec-desc {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--on-surface-variant);
+  margin-block-start: var(--spacing-1);
+}
+
+/* ── Sidebar Source Info (CLI-style key/value rows) ── */
+.case-study-source-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.case-study-source-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.8125rem;
+}
+
+.case-study-source-key {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.case-study-source-val {
+  font-size: 0.8125rem;
+  color: var(--on-surface);
+}
+
 
 /* ── QA Pairs ── */
 .qa-pair {
@@ -3497,16 +3674,20 @@ details.collapsible .collapsible-content {
     font-size: 0.875rem;
   }
 
-  .dev-take {
-    padding: var(--spacing-6);
-  }
-
   .case-study-below {
     padding: 0 var(--spacing-4) var(--spacing-4) !important;
   }
 
   details.collapsible summary {
     min-height: 44px;
+  }
+
+  .case-study-highlights {
+    gap: var(--spacing-3);
+  }
+
+  .case-study-highlight-card {
+    flex: 0 0 200px;
   }
 }
 
@@ -3544,8 +3725,8 @@ details.collapsible .collapsible-content {
     font-size: 0.6875rem;
   }
 
-  .highlight-card {
-    min-width: 0;
+  .case-study-highlight-card {
+    flex: 0 0 180px;
   }
 
   .case-study-below {
@@ -3562,16 +3743,16 @@ details.collapsible .collapsible-content {
     padding: var(--spacing-3) var(--spacing-4);
   }
 
-  .dev-take {
-    padding: var(--spacing-4);
-  }
-
   .sidebar-card {
     padding: var(--spacing-4);
   }
 
   .qa-pair .answer {
     padding-inline-start: var(--spacing-3);
+  }
+
+  .case-study-breadcrumb {
+    font-size: 0.6875rem;
   }
 }
 
@@ -4386,5 +4567,430 @@ details.collapsible .collapsible-content {
 
   .dir-heatmap__legend {
     flex-wrap: wrap;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * howdoyouvibe.com — Vibe Pages
+ * Dark, bold, personality-forward. Separate visual identity from heyi.am.
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+.vibe-page {
+  --vibe-bg: #0f0f1a;
+  --vibe-surface: #1a1a2e;
+  --vibe-surface-raised: #222240;
+  --vibe-accent: #7c6df0;
+  --vibe-accent-dim: #5a4dc7;
+  --vibe-text: #e8e8f0;
+  --vibe-text-dim: #8888a0;
+  --vibe-text-muted: #55556a;
+  --vibe-border: #2a2a4a;
+  --vibe-green: #4ade80;
+  --vibe-amber: #fbbf24;
+  --vibe-red: #f87171;
+
+  background: var(--vibe-bg);
+  color: var(--vibe-text);
+  min-height: 100vh;
+  font-family: 'IBM Plex Mono', 'SF Mono', 'Fira Code', monospace;
+  padding: 2rem 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Override app layout background for vibe pages */
+body:has(.vibe-page) {
+  background: #0f0f1a !important;
+}
+
+.vibe-label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--vibe-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+/* ── Vibe Card (share page) ──────────────────────────────────────────────── */
+
+.vibe-card {
+  background: var(--vibe-surface);
+  border: 1px solid var(--vibe-border);
+  border-radius: 12px;
+  padding: 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.vibe-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--vibe-accent), var(--vibe-accent-dim), transparent);
+}
+
+.vibe-headline {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.vibe-narrative {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--vibe-text-dim);
+  margin-bottom: 2rem;
+  max-width: 580px;
+}
+
+/* ── Stats — three column layout ── */
+
+.vibe-stats-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+.vibe-stat-col h3 {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--vibe-accent);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--vibe-border);
+}
+
+.vibe-stat-col dl {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.vibe-stat-col dl > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.3rem 0;
+}
+
+.vibe-stat-col dt {
+  font-size: 0.8125rem;
+  color: var(--vibe-text-dim);
+}
+
+.vibe-stat-col dd {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--vibe-text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Footer ── */
+
+.vibe-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--vibe-border);
+  font-size: 0.75rem;
+  color: var(--vibe-text-muted);
+}
+
+/* ── CTAs ── */
+
+.vibe-actions {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.vibe-cta {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.vibe-btn {
+  display: inline-block;
+  padding: 0.625rem 1.5rem;
+  background: var(--vibe-accent);
+  color: #fff;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.vibe-btn:hover {
+  background: var(--vibe-accent-dim);
+}
+
+.vibe-cta-secondary {
+  margin-top: 2.5rem;
+  text-align: center;
+  color: var(--vibe-text-muted);
+  font-size: 0.8125rem;
+}
+
+.vibe-cta-secondary code {
+  display: block;
+  margin: 0.75rem auto;
+  padding: 0.75rem 1.5rem;
+  background: var(--vibe-surface);
+  border: 1px solid var(--vibe-border);
+  border-radius: 8px;
+  color: var(--vibe-green);
+  font-size: 1rem;
+  font-weight: 500;
+  max-width: 320px;
+  user-select: all;
+}
+
+.vibe-cta-secondary p {
+  margin: 0.5rem 0;
+}
+
+.vibe-cta-link a {
+  color: var(--vibe-accent);
+  text-decoration: none;
+}
+
+.vibe-cta-link a:hover {
+  text-decoration: underline;
+}
+
+/* ── Homepage ────────────────────────────────────────────────────────────── */
+
+.vibe-hero {
+  text-align: center;
+  padding: 3rem 0 2.5rem;
+}
+
+.vibe-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.5rem;
+}
+
+.vibe-subtitle {
+  font-size: 1rem;
+  color: var(--vibe-text-dim);
+  margin-bottom: 1.5rem;
+}
+
+.vibe-cmd {
+  display: block;
+  margin: 0 auto 1.25rem;
+  padding: 0.875rem 2rem;
+  background: var(--vibe-surface);
+  border: 1px solid var(--vibe-border);
+  border-radius: 8px;
+  color: var(--vibe-green);
+  font-size: 1.125rem;
+  font-weight: 500;
+  max-width: 340px;
+  user-select: all;
+}
+
+.vibe-counter {
+  font-size: 0.875rem;
+  color: var(--vibe-text-muted);
+}
+
+.vibe-counter strong {
+  color: var(--vibe-text);
+}
+
+/* ── Archetype Distribution ── */
+
+.vibe-distribution {
+  margin-top: 2.5rem;
+}
+
+.vibe-distribution h2 {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--vibe-accent);
+  margin-bottom: 1rem;
+}
+
+.vibe-dist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.vibe-dist-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 1rem;
+  background: var(--vibe-surface);
+  border: 1px solid var(--vibe-border);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+
+.vibe-dist-item:hover {
+  border-color: var(--vibe-accent);
+}
+
+.vibe-dist-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--vibe-text);
+}
+
+.vibe-dist-count {
+  font-size: 0.8125rem;
+  color: var(--vibe-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Recent Vibes Grid ── */
+
+.vibe-recent {
+  margin-top: 2.5rem;
+}
+
+.vibe-recent h2 {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--vibe-accent);
+  margin-bottom: 1rem;
+}
+
+.vibe-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.vibe-card-link {
+  text-decoration: none;
+}
+
+.vibe-card-mini {
+  background: var(--vibe-surface);
+  border: 1px solid var(--vibe-border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  transition: border-color 0.15s, transform 0.1s;
+  height: 100%;
+}
+
+.vibe-card-mini:hover {
+  border-color: var(--vibe-accent);
+  transform: translateY(-1px);
+}
+
+.vibe-card-mini h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.vibe-card-narrative {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--vibe-text-dim);
+  margin-bottom: 0.75rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.vibe-card-meta {
+  font-size: 0.6875rem;
+  color: var(--vibe-text-muted);
+}
+
+/* ── Archetype Detail Page ── */
+
+.vibe-archetype-page {
+  text-align: center;
+  padding: 3rem 0;
+}
+
+.vibe-archetype-page h1 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.75rem;
+}
+
+.vibe-archetype-page .vibe-tagline {
+  font-size: 1.125rem;
+  color: var(--vibe-text-dim);
+  margin-bottom: 1.5rem;
+}
+
+.vibe-archetype-page .vibe-match-count {
+  font-size: 1rem;
+  color: var(--vibe-text-muted);
+  margin-bottom: 2rem;
+}
+
+.vibe-archetype-page .vibe-match-count strong {
+  color: var(--vibe-accent);
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+/* ── Mobile ── */
+
+@media (max-width: 600px) {
+  .vibe-page {
+    padding: 1.25rem 1rem;
+  }
+
+  .vibe-card {
+    padding: 1.5rem;
+  }
+
+  .vibe-headline {
+    font-size: 1.375rem;
+  }
+
+  .vibe-title {
+    font-size: 1.75rem;
+  }
+
+  .vibe-stats-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .vibe-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vibe-cmd {
+    font-size: 0.9375rem;
   }
 }

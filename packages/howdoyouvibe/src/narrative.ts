@@ -2,7 +2,9 @@ import type { VibeStats } from "./types.js";
 import type { ArchetypeMatch } from "./archetypes.js";
 import { SOURCE_DISPLAY_NAMES } from "./parsers/types.js";
 
-const NARRATIVE_URL = "https://howdoyouvibe.com/api/vibes/narrative";
+const NARRATIVE_URL = process.env.VIBE_API_URL
+  ? `${process.env.VIBE_API_URL}/api/vibes/narrative`
+  : "https://howdoyouvibe.com/api/vibes/narrative";
 
 /**
  * Fetch a 2-sentence narrative from the server (Gemini Flash).
@@ -36,15 +38,195 @@ export async function fetchNarrative(
 }
 
 /**
- * Simple template fallback when server is unreachable.
+ * Template fallback when server is unreachable.
+ * Picks the 2 most extreme stats and stitches sentence fragments.
  */
 export function templateNarrative(
   stats: VibeStats,
   match: ArchetypeMatch,
 ): string {
-  const names = stats.sources.map((s) => SOURCE_DISPLAY_NAMES[s] ?? s);
-  const sources = names.length <= 2
-    ? names.join(" and ")
-    : `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
-  return `${match.primary.tagline} ${stats.session_count} sessions across ${sources}.`;
+  // Each stat has templates keyed by severity. Pick the 2 most extreme.
+  const candidates = rankStatsBySurprise(stats);
+  const picked = candidates.slice(0, 2);
+  const sentences = picked.map((c) => c.sentence);
+
+  if (sentences.length === 0) {
+    return match.primary.tagline;
+  }
+
+  return sentences.join(" ");
+}
+
+interface StatCandidate {
+  key: string;
+  surprise: number; // how far from "normal" this stat is
+  sentence: string;
+}
+
+function rankStatsBySurprise(stats: VibeStats): StatCandidate[] {
+  const candidates: StatCandidate[] = [];
+
+  // ─── Your Voice ──
+  if (stats.expletives > 0) {
+    const s = stats.expletives;
+    const sentence = s > 50
+      ? `You dropped ${s} expletives — that's one every ${Math.round(stats.total_turns / s)} turns.`
+      : s > 20
+        ? `${s} expletives across ${stats.session_count} sessions. Things got heated.`
+        : `You swore ${s} times. Restrained, mostly.`;
+    candidates.push({ key: "expletives", surprise: s / 5, sentence });
+  }
+
+  if (stats.please_rate > 0.2) {
+    candidates.push({
+      key: "please_rate",
+      surprise: stats.please_rate * 3,
+      sentence: `You said please in ${Math.round(stats.please_rate * 100)}% of your turns. The AI didn't deserve it.`,
+    });
+  } else if (stats.please_rate < 0.02 && stats.total_turns > 100) {
+    candidates.push({
+      key: "please_rate",
+      surprise: 2,
+      sentence: `You almost never said please. All business.`,
+    });
+  }
+
+  if (stats.avg_prompt_words > 100) {
+    candidates.push({
+      key: "avg_prompt_words",
+      surprise: stats.avg_prompt_words / 40,
+      sentence: `Your average prompt was ${stats.avg_prompt_words} words. You don't give instructions — you write briefs.`,
+    });
+  } else if (stats.avg_prompt_words < 15 && stats.total_turns > 100) {
+    candidates.push({
+      key: "avg_prompt_words",
+      surprise: 2,
+      sentence: `${stats.avg_prompt_words} words per prompt on average. You point, the AI runs.`,
+    });
+  }
+
+  if (stats.corrections > 20) {
+    candidates.push({
+      key: "corrections",
+      surprise: stats.corrections / 8,
+      sentence: stats.override_success_rate > 0.7
+        ? `You corrected the AI ${stats.corrections} times and were right ${Math.round(stats.override_success_rate * 100)}% of the time. Trust your instincts.`
+        : `You pushed back ${stats.corrections} times. You know what you want.`,
+    });
+  }
+
+  if (stats.late_night_rate > 0.3) {
+    candidates.push({
+      key: "late_night_rate",
+      surprise: stats.late_night_rate * 4,
+      sentence: `${Math.round(stats.late_night_rate * 100)}% of your coding happened after midnight. Your best ideas come when everyone else is asleep.`,
+    });
+  }
+
+  if (stats.reasoning_rate > 0.1) {
+    candidates.push({
+      key: "reasoning_rate",
+      surprise: stats.reasoning_rate * 8,
+      sentence: `You explained your reasoning in ${Math.round(stats.reasoning_rate * 100)}% of turns. You don't just ask — you think out loud.`,
+    });
+  }
+
+  // ─── The AI's Habits ──
+  if (stats.longest_tool_chain > 50) {
+    candidates.push({
+      key: "longest_tool_chain",
+      surprise: stats.longest_tool_chain / 20,
+      sentence: stats.longest_tool_chain > 500
+        ? `The AI ran ${stats.longest_tool_chain} tool calls in a row without you saying a word. That's not delegation — that's trust.`
+        : `Longest uninterrupted AI streak: ${stats.longest_tool_chain} tool calls. You let it work.`,
+    });
+  }
+
+  if (stats.self_corrections > 100) {
+    candidates.push({
+      key: "self_corrections",
+      surprise: stats.self_corrections / 50,
+      sentence: stats.self_corrections > 1000
+        ? `The AI corrected itself ${stats.self_corrections.toLocaleString()} times. It was learning on the job.`
+        : `${stats.self_corrections} self-corrections — the AI kept fixing its own mistakes without being asked.`,
+    });
+  }
+
+  if (stats.test_runs > 50) {
+    const failRate = stats.failed_tests / stats.test_runs;
+    candidates.push({
+      key: "test_runs",
+      surprise: stats.test_runs / 20,
+      sentence: failRate > 0.3
+        ? `${stats.test_runs} test runs, ${stats.failed_tests} failures. ${Math.round(failRate * 100)}% fail rate — real debugging, not happy paths.`
+        : `${stats.test_runs} test runs with a ${Math.round((1 - failRate) * 100)}% pass rate. The code actually works.`,
+    });
+  }
+
+  if (stats.apologies > 5) {
+    candidates.push({
+      key: "apologies",
+      surprise: stats.apologies / 3,
+      sentence: `The AI apologized ${stats.apologies} times. It knew it was struggling.`,
+    });
+  }
+
+  if (stats.read_write_ratio > 4) {
+    candidates.push({
+      key: "read_write_ratio",
+      surprise: stats.read_write_ratio / 2,
+      sentence: `Read:write ratio of ${stats.read_write_ratio}:1. You understand the code before you change it.`,
+    });
+  } else if (stats.read_write_ratio < 1.2 && stats.bash_commands > 30) {
+    candidates.push({
+      key: "read_write_ratio",
+      surprise: 2.5,
+      sentence: `Read:write ratio of ${stats.read_write_ratio}:1 and ${stats.bash_commands} bash commands. Ship first, ask questions later.`,
+    });
+  }
+
+  // ─── The Back-and-forth ──
+  if (stats.longest_autopilot > 50) {
+    candidates.push({
+      key: "longest_autopilot",
+      surprise: stats.longest_autopilot / 20,
+      sentence: stats.longest_autopilot > 500
+        ? `You let the AI run for ${stats.longest_autopilot.toLocaleString()} turns straight. At that point it's not assistance — it's a coworker.`
+        : `Longest autopilot: ${stats.longest_autopilot} turns without interrupting. You know when to get out of the way.`,
+    });
+  }
+
+  if (stats.redirects_per_hour < 0.5 && stats.total_duration_min > 60) {
+    candidates.push({
+      key: "redirects_per_hour",
+      surprise: 3 - stats.redirects_per_hour * 4,
+      sentence: `${stats.redirects_per_hour} redirects per hour. You barely touch the wheel.`,
+    });
+  } else if (stats.redirects_per_hour > 5) {
+    candidates.push({
+      key: "redirects_per_hour",
+      surprise: stats.redirects_per_hour / 2,
+      sentence: `${stats.redirects_per_hour} redirects per hour. Every few minutes, you're course-correcting.`,
+    });
+  }
+
+  if (stats.first_blood_min > 30) {
+    candidates.push({
+      key: "first_blood_min",
+      surprise: stats.first_blood_min / 15,
+      sentence: `First correction at ${stats.first_blood_min} minutes on average. You give the AI a long leash before pulling it back.`,
+    });
+  }
+
+  if (stats.scope_creep > 5) {
+    candidates.push({
+      key: "scope_creep",
+      surprise: stats.scope_creep / 2,
+      sentence: `${stats.scope_creep} scope creep moments. "While we're at it" is your catchphrase.`,
+    });
+  }
+
+  // Sort by surprise descending
+  candidates.sort((a, b) => b.surprise - a.surprise);
+  return candidates;
 }

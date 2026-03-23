@@ -16,14 +16,35 @@ function statCol(label, value, width = 28) {
     const text = `${label}: ${value}`;
     return text.padEnd(width);
 }
-/** Check if a stat value is "boring" (zero or default) */
+/** Check if a stat value is "boring" — zero, or too uninteresting to show */
 function isZero(v) {
     return v === 0;
 }
+/** Format large numbers with commas */
+function fmt(n) {
+    return n >= 1000 ? n.toLocaleString() : String(n);
+}
+/** Add a "wow" comment for extreme stat values */
+function wow(label, value, thresholds) {
+    for (const [t, comment] of thresholds) {
+        if (value >= t)
+            return ` ${comment}`;
+    }
+    return "";
+}
+const LOGO = [
+    " _                       _                        _  _          ",
+    "| |_  ___ __ __ __ _  __| |___  _  _ ___ _  ___ _(_)| |__  ___ ",
+    "| ' \\/ _ \\\\ V  V // _` / _ / _ \\| || / _ \\ || \\ V / || '_ \\/ -_)",
+    "|_||_\\___/ \\_/\\_/ \\__,_\\___\\___/ \\_, \\___/\\_,_|\\_/|_||_.__/\\___|",
+    "                                 |__/                            ",
+];
 export function renderCard(stats, match, narrative) {
     const lines = [];
     lines.push("");
-    lines.push(`${INDENT}HOW DO YOU VIBE?`);
+    for (const row of LOGO) {
+        lines.push(`${INDENT}${row}`);
+    }
     lines.push(`${INDENT}${LINE}`);
     lines.push("");
     lines.push(`${INDENT}${match.headline}`);
@@ -37,74 +58,93 @@ export function renderCard(stats, match, narrative) {
     lines.push("");
     lines.push(`${INDENT}${LINE}`);
     // ── Your Voice ──
-    const voiceStats = [];
+    const voiceLines = [];
     if (!isZero(stats.expletives))
-        voiceStats.push(["Expletives", stats.expletives]);
+        voiceLines.push(`    Expletives: ${fmt(stats.expletives)}`);
     if (!isZero(stats.corrections))
-        voiceStats.push(["Corrections", stats.corrections]);
-    if (!isZero(stats.please_rate))
-        voiceStats.push(["Please rate", pct(stats.please_rate)]);
-    voiceStats.push(["Avg prompt", `${stats.avg_prompt_words} words`]);
-    if (!isZero(stats.late_night_rate))
-        voiceStats.push(["Late night", pct(stats.late_night_rate)]);
-    if (!isZero(stats.question_rate))
-        voiceStats.push(["Questions", pct(stats.question_rate)]);
-    if (voiceStats.length > 0) {
+        voiceLines.push(`    Corrections: ${fmt(stats.corrections)}`);
+    if (stats.avg_prompt_words > 50) {
+        voiceLines.push(`    Avg prompt: ${stats.avg_prompt_words} words${wow("prompt", stats.avg_prompt_words, [[150, "(essays)"], [100, "(verbose)"], [80, "(detailed)"]])}`);
+    }
+    if (stats.please_rate > 0.1)
+        voiceLines.push(`    Please rate: ${pct(stats.please_rate)}`);
+    else if (stats.please_rate < 0.02 && stats.total_turns > 100)
+        voiceLines.push(`    Please rate: ${pct(stats.please_rate)} (all business)`);
+    if (stats.question_rate > 0.1)
+        voiceLines.push(`    Questions: ${pct(stats.question_rate)}`);
+    if (stats.late_night_rate > 0.1)
+        voiceLines.push(`    Late night: ${pct(stats.late_night_rate)}`);
+    if (stats.reasoning_rate > 0.05)
+        voiceLines.push(`    Thinks out loud: ${pct(stats.reasoning_rate)} of turns`);
+    if (voiceLines.length > 0) {
         lines.push("");
         lines.push(`${INDENT}Your Voice`);
-        renderStatPairs(voiceStats, lines);
+        lines.push(...voiceLines);
     }
     // ── The AI's Habits ──
-    const aiStats = [];
-    if (!isZero(stats.read_write_ratio))
-        aiStats.push(["Read:write", `${stats.read_write_ratio}:1`]);
-    if (!isZero(stats.apologies))
-        aiStats.push(["Apologies", stats.apologies]);
-    if (!isZero(stats.test_runs)) {
-        const testLabel = stats.failed_tests > 0
-            ? `${stats.test_runs} (${stats.failed_tests} fail)`
-            : `${stats.test_runs}`;
-        aiStats.push(["Test runs", testLabel]);
+    const aiLines = [];
+    if (!isZero(stats.read_write_ratio)) {
+        aiLines.push(`    Read:write: ${stats.read_write_ratio}:1${wow("rw", stats.read_write_ratio, [[5, "(careful)"], [3, "(measured)"]])}`);
     }
-    if (!isZero(stats.longest_tool_chain))
-        aiStats.push(["Longest chain", stats.longest_tool_chain]);
-    if (!isZero(stats.self_corrections))
-        aiStats.push(["Self-corrections", stats.self_corrections]);
-    if (aiStats.length > 0) {
+    if (!isZero(stats.test_runs)) {
+        const failPct = stats.failed_tests > 0 ? `, ${Math.round(stats.failed_tests / stats.test_runs * 100)}% failed` : "";
+        aiLines.push(`    Test runs: ${fmt(stats.test_runs)}${failPct}${wow("tests", stats.test_runs, [[500, " (obsessive)"], [100, " (thorough)"]])}`);
+    }
+    if (stats.longest_tool_chain > 10) {
+        aiLines.push(`    Longest streak: ${fmt(stats.longest_tool_chain)} tool calls${wow("chain", stats.longest_tool_chain, [[500, " (unreal)"], [100, " (deep)"], [50, " (committed)"]])}`);
+    }
+    if (stats.self_corrections > 10) {
+        aiLines.push(`    Self-corrections: ${fmt(stats.self_corrections)}${wow("selfcor", stats.self_corrections, [[2000, " (the AI never stopped fixing itself)"], [500, " (the AI learned on the job)"], [100, " (it kept iterating)"]])}`);
+    }
+    if (stats.apologies > 3)
+        aiLines.push(`    AI apologies: ${stats.apologies}`);
+    if (aiLines.length > 0) {
         lines.push("");
         lines.push(`${INDENT}The AI's Habits`);
-        renderStatPairs(aiStats, lines);
+        lines.push(...aiLines);
     }
     // ── The Back-and-forth ──
-    const interStats = [];
-    if (!isZero(stats.override_success_rate))
-        interStats.push(["Override success", pct(stats.override_success_rate)]);
-    if (!isZero(stats.longest_autopilot))
-        interStats.push(["Autopilot", `${stats.longest_autopilot} turns`]);
-    if (!isZero(stats.first_blood_min))
-        interStats.push(["First blood", `${stats.first_blood_min} min`]);
-    if (!isZero(stats.scope_creep))
-        interStats.push(["Scope creep", stats.scope_creep]);
-    if (!isZero(stats.redirects_per_hour))
-        interStats.push(["Redirects/hr", stats.redirects_per_hour]);
-    if (interStats.length > 0) {
+    const interLines = [];
+    if (!isZero(stats.override_success_rate) && stats.corrections > 0) {
+        interLines.push(`    Override success: ${pct(stats.override_success_rate)} of ${fmt(stats.corrections)} corrections`);
+    }
+    if (stats.longest_autopilot > 5) {
+        interLines.push(`    Longest autopilot: ${fmt(stats.longest_autopilot)} turns${wow("auto", stats.longest_autopilot, [[1000, " (that's a whole workday)"], [200, " (serious trust)"], [50, " (hands off)"]])}`);
+    }
+    if (stats.first_blood_min > 2) {
+        interLines.push(`    First correction: ${stats.first_blood_min} min in${wow("fb", stats.first_blood_min, [[30, " (patient)"], [15, " (long leash)"]])}`);
+    }
+    if (stats.redirects_per_hour < 1 && stats.total_duration_min > 60) {
+        interLines.push(`    Redirects/hr: ${stats.redirects_per_hour} (barely touches the wheel)`);
+    }
+    else if (stats.redirects_per_hour > 3) {
+        interLines.push(`    Redirects/hr: ${stats.redirects_per_hour} (constant course-correcting)`);
+    }
+    if (stats.scope_creep > 2)
+        interLines.push(`    Scope creep: ${stats.scope_creep} "while we're at it" moments`);
+    if (interLines.length > 0) {
         lines.push("");
         lines.push(`${INDENT}The Back-and-forth`);
-        renderStatPairs(interStats, lines);
+        lines.push(...interLines);
     }
     lines.push("");
     lines.push(`${INDENT}${LINE}`);
-    lines.push(`${INDENT}${stats.total_turns} turns across ${stats.session_count} sessions (${formatSources(stats.sources)})`);
+    // Tool breakdown with percentages
+    if (stats.source_breakdown && Object.keys(stats.source_breakdown).length > 0) {
+        const total = Object.values(stats.source_breakdown).reduce((a, b) => a + b, 0);
+        const parts = Object.entries(stats.source_breakdown)
+            .sort(([, a], [, b]) => b - a)
+            .map(([src, count]) => {
+            const name = SOURCE_DISPLAY_NAMES[src] ?? src;
+            const p = Math.round((count / total) * 100);
+            return `${name} ${p}%`;
+        });
+        lines.push(`${INDENT}${parts.join("  ·  ")}`);
+    }
+    lines.push(`${INDENT}${fmt(stats.total_turns)} turns across ${stats.session_count} sessions`);
     lines.push(`${INDENT}All analysis ran locally. No session data left your machine.`);
     lines.push("");
     console.log(lines.join("\n"));
-}
-function renderStatPairs(pairs, lines) {
-    for (let i = 0; i < pairs.length; i += 2) {
-        const left = statCol(pairs[i][0], pairs[i][1]);
-        const right = i + 1 < pairs.length ? `${pairs[i + 1][0]}: ${pairs[i + 1][1]}` : "";
-        lines.push(`${INDENT}  ${left}${right}`);
-    }
 }
 function wordWrap(text, maxWidth) {
     const words = text.split(/\s+/);
@@ -125,38 +165,109 @@ function wordWrap(text, maxWidth) {
 }
 // ─── Copyable text block ─────────────────────────────────────────────────
 /**
- * Format a compact shareable text block (5 lines for Discord/Slack).
- * Picks the 3 most interesting non-zero stats.
+ * Format the full card as a copyable text block for Discord/Slack.
+ * Mirrors the terminal output exactly so what you see is what you share.
  */
 export function formatTextBlock(stats, match, narrative) {
     const lines = [];
+    lines.push("HOW DO YOU VIBE?");
+    lines.push(LINE);
+    lines.push("");
     lines.push(match.headline);
     if (narrative) {
-        lines.push(narrative);
+        lines.push("");
+        for (const wrapped of wordWrap(narrative, 56)) {
+            lines.push(wrapped);
+        }
     }
-    // Pick top 3 interesting stats
-    const interesting = [];
+    lines.push("");
+    lines.push(LINE);
+    // ── Your Voice ──
+    const voice = [];
     if (!isZero(stats.expletives))
-        interesting.push(`Expletives: ${stats.expletives}`);
-    if (!isZero(stats.override_success_rate))
-        interesting.push(`Override success: ${pct(stats.override_success_rate)}`);
-    if (!isZero(stats.read_write_ratio))
-        interesting.push(`Read:write: ${stats.read_write_ratio}:1`);
-    if (!isZero(stats.please_rate))
-        interesting.push(`Please rate: ${pct(stats.please_rate)}`);
-    if (!isZero(stats.late_night_rate))
-        interesting.push(`Late night: ${pct(stats.late_night_rate)}`);
+        voice.push(`  Expletives: ${fmt(stats.expletives)}`);
     if (!isZero(stats.corrections))
-        interesting.push(`Corrections: ${stats.corrections}`);
-    if (!isZero(stats.longest_autopilot))
-        interesting.push(`Autopilot: ${stats.longest_autopilot}`);
-    if (!isZero(stats.scope_creep))
-        interesting.push(`Scope creep: ${stats.scope_creep}`);
-    if (interesting.length > 0) {
-        lines.push(interesting.slice(0, 3).join(" | "));
+        voice.push(`  Corrections: ${fmt(stats.corrections)}`);
+    if (stats.avg_prompt_words > 50) {
+        voice.push(`  Avg prompt: ${stats.avg_prompt_words} words${wow("prompt", stats.avg_prompt_words, [[150, " (essays)"], [100, " (verbose)"], [80, " (detailed)"]])}`);
     }
-    lines.push(`${stats.total_turns} turns across ${stats.session_count} sessions` +
-        ` \u2014 npx howdoyouvibe`);
+    if (stats.please_rate > 0.1)
+        voice.push(`  Please rate: ${pct(stats.please_rate)}`);
+    else if (stats.please_rate < 0.02 && stats.total_turns > 100)
+        voice.push(`  Please rate: ${pct(stats.please_rate)} (all business)`);
+    if (stats.question_rate > 0.1)
+        voice.push(`  Questions: ${pct(stats.question_rate)}`);
+    if (stats.late_night_rate > 0.1)
+        voice.push(`  Late night: ${pct(stats.late_night_rate)}`);
+    if (stats.reasoning_rate > 0.05)
+        voice.push(`  Thinks out loud: ${pct(stats.reasoning_rate)} of turns`);
+    if (voice.length > 0) {
+        lines.push("");
+        lines.push("Your Voice");
+        lines.push(...voice);
+    }
+    // ── The AI's Habits ──
+    const ai = [];
+    if (!isZero(stats.read_write_ratio)) {
+        ai.push(`  Read:write: ${stats.read_write_ratio}:1${wow("rw", stats.read_write_ratio, [[5, " (careful)"], [3, " (measured)"]])}`);
+    }
+    if (!isZero(stats.test_runs)) {
+        const failPct = stats.failed_tests > 0 ? `, ${Math.round(stats.failed_tests / stats.test_runs * 100)}% failed` : "";
+        ai.push(`  Test runs: ${fmt(stats.test_runs)}${failPct}${wow("tests", stats.test_runs, [[500, " (obsessive)"], [100, " (thorough)"]])}`);
+    }
+    if (stats.longest_tool_chain > 10) {
+        ai.push(`  Longest streak: ${fmt(stats.longest_tool_chain)} tool calls${wow("chain", stats.longest_tool_chain, [[500, " (unreal)"], [100, " (deep)"], [50, " (committed)"]])}`);
+    }
+    if (stats.self_corrections > 10) {
+        ai.push(`  Self-corrections: ${fmt(stats.self_corrections)}${wow("selfcor", stats.self_corrections, [[2000, " (the AI never stopped fixing itself)"], [500, " (the AI learned on the job)"], [100, " (it kept iterating)"]])}`);
+    }
+    if (stats.apologies > 3)
+        ai.push(`  AI apologies: ${stats.apologies}`);
+    if (ai.length > 0) {
+        lines.push("");
+        lines.push("The AI's Habits");
+        lines.push(...ai);
+    }
+    // ── The Back-and-forth ──
+    const collab = [];
+    if (!isZero(stats.override_success_rate) && stats.corrections > 0) {
+        collab.push(`  Override success: ${pct(stats.override_success_rate)} of ${fmt(stats.corrections)} corrections`);
+    }
+    if (stats.longest_autopilot > 5) {
+        collab.push(`  Longest autopilot: ${fmt(stats.longest_autopilot)} turns${wow("auto", stats.longest_autopilot, [[1000, " (that's a whole workday)"], [200, " (serious trust)"], [50, " (hands off)"]])}`);
+    }
+    if (stats.first_blood_min > 2) {
+        collab.push(`  First correction: ${stats.first_blood_min} min in${wow("fb", stats.first_blood_min, [[30, " (patient)"], [15, " (long leash)"]])}`);
+    }
+    if (stats.redirects_per_hour < 1 && stats.total_duration_min > 60) {
+        collab.push(`  Redirects/hr: ${stats.redirects_per_hour} (barely touches the wheel)`);
+    }
+    else if (stats.redirects_per_hour > 3) {
+        collab.push(`  Redirects/hr: ${stats.redirects_per_hour} (constant course-correcting)`);
+    }
+    if (stats.scope_creep > 2)
+        collab.push(`  Scope creep: ${stats.scope_creep} "while we're at it" moments`);
+    if (collab.length > 0) {
+        lines.push("");
+        lines.push("The Back-and-forth");
+        lines.push(...collab);
+    }
+    lines.push("");
+    lines.push(LINE);
+    // Tool breakdown with percentages
+    if (stats.source_breakdown && Object.keys(stats.source_breakdown).length > 0) {
+        const total = Object.values(stats.source_breakdown).reduce((a, b) => a + b, 0);
+        const parts = Object.entries(stats.source_breakdown)
+            .sort(([, a], [, b]) => b - a)
+            .map(([src, count]) => {
+            const name = SOURCE_DISPLAY_NAMES[src] ?? src;
+            const p = Math.round((count / total) * 100);
+            return `${name} ${p}%`;
+        });
+        lines.push(parts.join("  ·  "));
+    }
+    lines.push(`${fmt(stats.total_turns)} turns across ${stats.session_count} sessions`);
+    lines.push(`npx howdoyouvibe`);
     return lines.join("\n");
 }
 // ─── Clipboard ───────────────────────────────────────────────────────────

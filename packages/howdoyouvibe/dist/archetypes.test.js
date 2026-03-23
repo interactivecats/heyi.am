@@ -30,6 +30,7 @@ function makeStats(overrides = {}) {
         session_count: 5,
         total_duration_min: 60,
         sources: ["claude"],
+        source_breakdown: { claude: 5 },
         ...overrides,
     };
 }
@@ -46,7 +47,7 @@ describe("Primary archetypes", () => {
         expect(match.primary.id).toBe("backseat-driver");
     });
     it("matches Delegator", () => {
-        const stats = makeStats({ longest_autopilot: 25, one_word_turn_rate: 0.5 });
+        const stats = makeStats({ longest_autopilot: 25, redirects_per_hour: 0.5 });
         const match = matchArchetype(stats);
         expect(match.primary.id).toBe("delegator");
     });
@@ -66,7 +67,7 @@ describe("Primary archetypes", () => {
         expect(match.primary.id).toBe("speed-runner");
     });
     it("matches Debugger", () => {
-        const stats = makeStats({ failed_tests: 8, test_runs: 12 });
+        const stats = makeStats({ failed_tests: 25, test_runs: 80 });
         const match = matchArchetype(stats);
         expect(match.primary.id).toBe("debugger");
     });
@@ -144,8 +145,12 @@ describe("Modifier traits", () => {
         expect(match.modifier?.id).toBe("writes-essays");
     });
     it("adds 'who lets the AI cook' modifier", () => {
-        const stats = makeStats({ longest_autopilot: 30 });
+        // Use Night Owl as primary. Autopilot 25 qualifies "lets AI cook" modifier (>20)
+        // but Delegator also needs autopilot>15 AND redirects_per_hour<2.
+        // Set redirects_per_hour high to disqualify Delegator.
+        const stats = makeStats({ late_night_rate: 0.5, longest_autopilot: 25, redirects_per_hour: 5 });
         const match = matchArchetype(stats);
+        expect(match.primary.id).toBe("night-owl");
         expect(match.modifier?.id).toBe("lets-ai-cook");
     });
     it("adds 'who scope-creeps every session' modifier", () => {
@@ -182,7 +187,7 @@ describe("Modifier exclusion", () => {
         expect(match.modifier?.id).not.toBe("reads-5x-more");
     });
     it("excludes 'who lets the AI cook' when primary is Delegator", () => {
-        const stats = makeStats({ longest_autopilot: 25, one_word_turn_rate: 0.5 });
+        const stats = makeStats({ longest_autopilot: 25, redirects_per_hour: 0.5 });
         const match = matchArchetype(stats);
         expect(match.primary.id).toBe("delegator");
         expect(match.modifier?.id).not.toBe("lets-ai-cook");

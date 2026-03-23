@@ -1,9 +1,11 @@
 // ─── Helpers ─────────────────────────────────────────────────────────────
-/** How far above a threshold a value is, as a ratio. 0 = at threshold, 1 = double. */
+/** How far above a threshold a value is, log-scaled to prevent extreme values from dominating. */
 function overThreshold(value, threshold) {
     if (threshold === 0)
-        return value > 0 ? value : 0;
-    return Math.max(0, (value - threshold) / threshold);
+        return value > 0 ? Math.log2(1 + value) : 0;
+    if (value <= threshold)
+        return 0;
+    return Math.log2(1 + (value - threshold) / threshold);
 }
 /** For "less than" conditions: how far below threshold. */
 function underThreshold(value, threshold) {
@@ -38,10 +40,12 @@ export const PRIMARY_ARCHETYPES = [
         tagline: "Points and lets the AI run.",
         conditions: [
             (s) => s.longest_autopilot > 15,
-            (s) => s.one_word_turn_rate > 0.3,
+            (s) => s.redirects_per_hour < 2,
         ],
-        impliedStats: ["longest_autopilot", "one_word_turn_rate"],
-        score: (s) => (overThreshold(s.longest_autopilot, 15) + overThreshold(s.one_word_turn_rate, 0.3)) / 2,
+        impliedStats: ["longest_autopilot", "redirects_per_hour"],
+        score: (s) => 
+        // Autopilot is the defining trait — weight it 2x
+        (overThreshold(s.longest_autopilot, 15) * 2 + underThreshold(s.redirects_per_hour, 2)) / 3,
     },
     {
         id: "cowboy",
@@ -81,11 +85,13 @@ export const PRIMARY_ARCHETYPES = [
         name: "The Debugger",
         tagline: "Tests, fails, fixes, repeats.",
         conditions: [
-            (s) => s.failed_tests > 3,
-            (s) => s.test_runs > 5,
+            (s) => s.failed_tests > 10,
+            (s) => s.test_runs > 30,
+            (s) => s.failed_tests / Math.max(1, s.test_runs) > 0.15,
         ],
         impliedStats: ["failed_tests", "test_runs"],
-        score: (s) => (overThreshold(s.failed_tests, 3) + overThreshold(s.test_runs, 5)) / 2,
+        score: (s) => (overThreshold(s.failed_tests, 10) + overThreshold(s.test_runs, 30) +
+            overThreshold(s.failed_tests / Math.max(1, s.test_runs), 0.15)) / 3,
     },
     {
         id: "diplomat",

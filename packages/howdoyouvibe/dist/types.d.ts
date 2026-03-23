@@ -33,4 +33,5 @@ export interface VibeStats {
     session_count: number;
     total_duration_min: number;
     sources: SessionSource[];
+    source_breakdown: Record<string, number>;
 }

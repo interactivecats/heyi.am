@@ -59,11 +59,16 @@ defmodule HeyiAmWeb.VibeController do
         headline = build_headline(archetype.name, modifier)
         base_url = HeyiAmWeb.Endpoint.url()
 
+        {voice, ai, collab} = build_stat_columns(vibe.stats)
+
         render(conn, :show,
           vibe: vibe,
           archetype: archetype,
           modifier: modifier,
           headline: headline,
+          voice_stats: voice,
+          ai_stats: ai,
+          collab_stats: collab,
           page_title: headline,
           og_title: "I'm #{headline}",
           og_description: vibe.narrative,
@@ -106,7 +111,7 @@ defmodule HeyiAmWeb.VibeController do
         modifier = Map.get(@modifier_phrases, vibe.modifier_id, nil)
         headline = build_headline(archetype.name, modifier)
 
-        key_stats = pick_key_stats(vibe.stats)
+        {voice, ai, collab} = build_stat_columns(vibe.stats)
 
         svg =
           Phoenix.Template.render_to_string(
@@ -116,7 +121,9 @@ defmodule HeyiAmWeb.VibeController do
             %{
               headline: headline,
               narrative: vibe.narrative,
-              key_stats: key_stats,
+              voice_stats: voice,
+              ai_stats: ai,
+              collab_stats: collab,
               sources: Enum.join(vibe.sources || [], ", "),
               session_count: vibe.session_count,
               total_turns: vibe.total_turns
@@ -133,24 +140,77 @@ defmodule HeyiAmWeb.VibeController do
   defp build_headline(name, nil), do: name
   defp build_headline(name, modifier), do: "#{name} #{modifier}"
 
-  defp pick_key_stats(stats) when is_map(stats) do
-    [
-      {"Please rate", format_pct(stats["please_rate"])},
-      {"Late night", format_pct(stats["late_night_rate"])},
-      {"Read:write", format_ratio(stats["read_write_ratio"])},
-      {"Corrections", stats["corrections"]},
-      {"Avg prompt", "#{stats["avg_prompt_words"]} words"},
-      {"Override", format_pct(stats["override_success_rate"])}
-    ]
-    |> Enum.reject(fn {_label, val} -> is_nil(val) or val == "nil words" or val == "" end)
-    |> Enum.take(4)
-  end
-
-  defp pick_key_stats(_), do: []
-
   defp format_pct(nil), do: nil
   defp format_pct(val) when is_number(val), do: "#{round(val * 100)}%"
 
   defp format_ratio(nil), do: nil
   defp format_ratio(val) when is_number(val), do: "#{Float.round(val * 1.0, 1)}:1"
+
+  defp format_num(n) when is_integer(n) and n >= 1000 do
+    n |> Integer.to_string() |> String.replace(~r/\B(?=(\d{3})+(?!\d))/, ",")
+  end
+  defp format_num(n) when is_number(n), do: "#{n}"
+
+  defp build_stat_columns(stats) when is_map(stats) do
+    voice =
+      [
+        stat(stats, "expletives", "Expletives", &format_num/1),
+        stat(stats, "corrections", "Corrections", &format_num/1),
+        stat(stats, "avg_prompt_words", "Avg prompt", fn v -> "#{v} words" end),
+        stat(stats, "please_rate", "Please rate", &format_pct/1),
+        stat(stats, "question_rate", "Questions", &format_pct/1),
+        stat(stats, "late_night_rate", "Late night", &format_pct/1),
+        stat(stats, "reasoning_rate", "Thinks out loud", &format_pct/1)
+      ]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.take(6)
+
+    ai =
+      [
+        stat(stats, "read_write_ratio", "Read:write", &format_ratio/1),
+        stat(stats, "test_runs", "Test runs", fn v ->
+          case stats["failed_tests"] do
+            ft when is_number(ft) and ft > 0 -> "#{format_num(v)}, #{round(ft / v * 100)}% fail"
+            _ -> format_num(v)
+          end
+        end),
+        stat(stats, "longest_tool_chain", "Longest streak", fn v -> "#{format_num(v)} calls" end),
+        stat(stats, "self_corrections", "Self-corrections", &format_num/1),
+        stat(stats, "apologies", "AI apologies", &format_num/1),
+        stat(stats, "bash_commands", "Bash commands", &format_num/1)
+      ]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.take(6)
+
+    collab =
+      [
+        stat_with(stats, "override_success_rate", "corrections", "Override success", fn rate, corr ->
+          "#{format_pct(rate)} of #{format_num(corr)}"
+        end),
+        stat(stats, "longest_autopilot", "Longest autopilot", fn v -> "#{format_num(v)} turns" end),
+        stat(stats, "first_blood_min", "First correction", fn v -> "#{v} min" end),
+        stat(stats, "redirects_per_hour", "Redirects/hr", &format_num/1),
+        stat(stats, "scope_creep", "Scope creep", &format_num/1)
+      ]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.take(6)
+
+    {voice, ai, collab}
+  end
+  defp build_stat_columns(_), do: {[], [], []}
+
+  defp stat(stats, key, label, fmt) do
+    case stats[key] do
+      v when is_number(v) and v > 0 -> {label, fmt.(v)}
+      _ -> nil
+    end
+  end
+
+  defp stat_with(stats, key1, key2, label, fmt) do
+    v1 = stats[key1]
+    v2 = stats[key2]
+    if is_number(v1) and v1 > 0 and is_number(v2) and v2 > 0,
+      do: {label, fmt.(v1, v2)},
+      else: nil
+  end
 end

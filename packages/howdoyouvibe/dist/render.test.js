@@ -30,6 +30,7 @@ function makeStats(overrides = {}) {
         session_count: 23,
         total_duration_min: 480,
         sources: ["claude", "cursor"],
+        source_breakdown: { claude: 15, cursor: 8 },
         ...overrides,
     };
 }
@@ -54,37 +55,30 @@ function makeMatch(headline = "The Night Owl who cusses under pressure") {
     };
 }
 describe("formatTextBlock", () => {
-    it("produces a compact shareable block", () => {
+    it("mirrors full terminal card with all stats", () => {
         const stats = makeStats();
         const match = makeMatch();
-        const narrative = "You said please in 42% of your turns and coded past midnight more often than not.";
+        const narrative = "You said please in 42% of your turns.";
         const block = formatTextBlock(stats, match, narrative);
-        const lines = block.split("\n");
-        expect(lines[0]).toBe("The Night Owl who cusses under pressure");
-        expect(lines[1]).toContain("42%");
-        // Stats line with pipe separators
-        expect(lines[2]).toContain("|");
-        // Footer
-        expect(lines[lines.length - 1]).toContain("847 turns");
-        expect(lines[lines.length - 1]).toContain("npx howdoyouvibe");
+        // Has the full card structure
+        expect(block).toContain("HOW DO YOU VIBE?");
+        expect(block).toContain("The Night Owl who cusses under pressure");
+        expect(block).toContain("42%");
+        expect(block).toContain("Your Voice");
+        expect(block).toContain("The AI's Habits");
+        expect(block).toContain("The Back-and-forth");
+        expect(block).toContain("npx howdoyouvibe");
+        expect(block).toContain("847 turns");
+        // Has box-drawing line
+        expect(block).toContain("────");
     });
-    it("omits narrative when null", () => {
+    it("includes narrative when provided", () => {
         const stats = makeStats();
         const match = makeMatch();
-        const block = formatTextBlock(stats, match, null);
-        const lines = block.split("\n");
-        expect(lines[0]).toBe("The Night Owl who cusses under pressure");
-        // Second line should be stats, not narrative
-        expect(lines[1]).toContain("|");
-    });
-    it("picks at most 3 interesting stats", () => {
-        const stats = makeStats();
-        const match = makeMatch();
-        const block = formatTextBlock(stats, match, null);
-        const statsLine = block.split("\n")[1];
-        const pipes = (statsLine.match(/\|/g) ?? []).length;
-        // 3 stats = 2 pipe separators
-        expect(pipes).toBe(2);
+        const withNarr = formatTextBlock(stats, match, "Test narrative.");
+        const withoutNarr = formatTextBlock(stats, match, null);
+        expect(withNarr).toContain("Test narrative.");
+        expect(withoutNarr).not.toContain("Test narrative.");
     });
     it("handles all-zero stats gracefully", () => {
         const stats = makeStats({
@@ -115,7 +109,7 @@ describe("renderCard", () => {
         renderCard(stats, match, "You said please in 42% of your turns.");
         expect(spy).toHaveBeenCalledOnce();
         const output = spy.mock.calls[0][0];
-        expect(output).toContain("HOW DO YOU VIBE?");
+        expect(output).toContain("────");
         expect(output).toContain("The Night Owl who cusses under pressure");
         expect(output).toContain("Your Voice");
         expect(output).toContain("The AI's Habits");
@@ -147,7 +141,7 @@ describe("renderCard", () => {
         const match = makeMatch();
         renderCard(stats, match, null);
         const output = spy.mock.calls[0][0];
-        expect(output).toContain("HOW DO YOU VIBE?");
+        expect(output).toContain("────");
         expect(output).toContain("The Night Owl");
         spy.mockRestore();
     });

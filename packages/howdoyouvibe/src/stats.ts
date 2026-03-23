@@ -169,11 +169,13 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
   let totalTurns = 0;
   let totalDurationMin = 0;
   const sourcesSet = new Set<SessionAnalysis["source"]>();
+  const sourceCount: Record<string, number> = {};
 
   for (const session of sessions) {
     const { analysis } = session;
     const entries = analysis.raw_entries;
     sourcesSet.add(analysis.source);
+    sourceCount[analysis.source] = (sourceCount[analysis.source] ?? 0) + 1;
     totalTurns += analysis.turns;
     totalDurationMin += analysis.duration_ms > 0
       ? Math.max(1, Math.round(analysis.duration_ms / 60_000))
@@ -391,6 +393,7 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
     session_count: sessions.length,
     total_duration_min: totalDurationMin,
     sources: [...sourcesSet],
+    source_breakdown: sourceCount,
   };
 }
 
