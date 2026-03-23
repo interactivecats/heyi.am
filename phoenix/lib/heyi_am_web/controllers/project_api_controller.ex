@@ -76,8 +76,10 @@ defmodule HeyiAmWeb.ProjectApiController do
     end
   end
 
-  def screenshot(conn, %{"slug" => slug}) do
-    case Projects.get_project_by_slug_any_user(slug) do
+  def screenshot(conn, %{"username" => username, "slug" => slug}) do
+    user = HeyiAm.Accounts.get_user_by_username(username)
+
+    case user && Projects.get_user_project_by_slug(user.id, slug) do
       nil ->
         conn |> put_status(:not_found) |> json(%{error: "Not found"})
 

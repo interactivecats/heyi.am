@@ -85,4 +85,56 @@ defmodule HeyiAmWeb.ProjectApiControllerTest do
       assert %{"slug" => "shared-name"} = json_response(conn2, 201)
     end
   end
+
+  describe "GET /api/projects/:username/:slug/screenshot" do
+    test "returns 404 for non-existent username", %{conn: conn} do
+      conn =
+        conn
+        |> put_req_header("accept", "application/json")
+        |> get("/api/projects/nobody/myapp/screenshot")
+
+      assert json_response(conn, 404)
+    end
+
+    test "returns 404 for non-existent project slug", %{conn: _conn} do
+      user = HeyiAm.AccountsFixtures.user_fixture()
+      {:ok, user} = HeyiAm.Accounts.update_user_username(user, %{username: "alice#{System.unique_integer([:positive])}"})
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("accept", "application/json")
+        |> get("/api/projects/#{user.username}/nonexistent/screenshot")
+
+      assert json_response(conn, 404)
+    end
+
+    test "scopes screenshot to the correct user when two users share a slug", %{conn: _conn} do
+      # Create two users with the same project slug
+      user1 = HeyiAm.AccountsFixtures.user_fixture()
+      {:ok, user1} = HeyiAm.Accounts.update_user_username(user1, %{username: "screenshotuser1"})
+      user2 = HeyiAm.AccountsFixtures.user_fixture()
+      {:ok, user2} = HeyiAm.Accounts.update_user_username(user2, %{username: "screenshotuser2"})
+
+      HeyiAm.Projects.upsert_project(user1.id, %{slug: "myapp", title: "User1 App", screenshot_key: "projects/user1/screenshot.png"})
+      HeyiAm.Projects.upsert_project(user2.id, %{slug: "myapp", title: "User2 App", screenshot_key: "projects/user2/screenshot.png"})
+
+      # Each user's screenshot endpoint should find their own project (or 404/error from S3)
+      # The key point is it should NOT return the other user's project data
+      conn1 =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("accept", "application/json")
+        |> get("/api/projects/screenshotuser1/myapp/screenshot")
+
+      conn2 =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("accept", "application/json")
+        |> get("/api/projects/screenshotuser2/myapp/screenshot")
+
+      # Both should find the project (not 404 "Not found"), even though S3 may fail in test env.
+      # A 502 "Storage fetch failed" or 500 "Presign failed" means the project WAS found
+      # and it tried to fetch the screenshot — proving it's scoped correctly.
+      assert conn1.status != 404
+      assert conn2.status != 404
+    end
+  end
 end

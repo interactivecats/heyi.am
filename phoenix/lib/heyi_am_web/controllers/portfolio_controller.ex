@@ -21,7 +21,7 @@ defmodule HeyiAmWeb.PortfolioController do
 
         render(conn, :show,
           portfolio_user: user,
-          projects: build_projects(projects),
+          projects: build_projects(projects, user.username),
           collab_profile: build_collab_profile(all_shares),
           metrics: build_metrics(all_shares),
           recent_activity: build_recent_activity(all_shares),
@@ -63,7 +63,7 @@ defmodule HeyiAmWeb.PortfolioController do
                 }
               end)
 
-            project_detail = build_project_detail(project)
+            project_detail = build_project_detail(project, user.username)
 
             render(conn, :project,
               portfolio_user: user,
@@ -77,7 +77,7 @@ defmodule HeyiAmWeb.PortfolioController do
 
   # -- Private helpers --
 
-  defp build_projects(projects) do
+  defp build_projects(projects, username) do
     Enum.map(projects, fn project ->
       stats = Projects.Stats.compute_project_stats(project.shares)
 
@@ -92,12 +92,12 @@ defmodule HeyiAmWeb.PortfolioController do
         loc_changed: format_loc(project.total_loc || stats.total_loc),
         repo_url: project.repo_url,
         project_url: project.project_url,
-        screenshot_url: screenshot_url(project.screenshot_key, project.slug)
+        screenshot_url: screenshot_url(project.screenshot_key, username, project.slug)
       }
     end)
   end
 
-  defp build_project_detail(project) do
+  defp build_project_detail(project, username) do
     stats = Projects.Stats.compute_project_stats(project.shares)
     total_loc = project.total_loc || stats.total_loc
 
@@ -107,7 +107,7 @@ defmodule HeyiAmWeb.PortfolioController do
       narrative: project.narrative,
       repo_url: project.repo_url,
       project_url: project.project_url,
-      screenshot_url: screenshot_url(project.screenshot_key, project.slug),
+      screenshot_url: screenshot_url(project.screenshot_key, username, project.slug),
       skills: project.skills || [],
       session_count: project.total_sessions || stats.total_sessions,
       uploaded_count: length(project.shares),
@@ -164,8 +164,8 @@ defmodule HeyiAmWeb.PortfolioController do
   defp format_duration(minutes) when minutes >= 60, do: "#{div(minutes, 60)}h"
   defp format_duration(minutes), do: "#{minutes}m"
 
-  defp screenshot_url(nil, _slug), do: nil
-  defp screenshot_url("", _slug), do: nil
-  defp screenshot_url(_key, slug), do: "/api/projects/#{slug}/screenshot"
+  defp screenshot_url(nil, _username, _slug), do: nil
+  defp screenshot_url("", _username, _slug), do: nil
+  defp screenshot_url(_key, username, slug), do: "/api/projects/#{username}/#{slug}/screenshot"
 
 end

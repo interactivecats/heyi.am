@@ -60,10 +60,6 @@ defmodule HeyiAm.Projects do
     |> Repo.one()
   end
 
-  def get_project_by_slug_any_user(slug) do
-    Repo.get_by(Project, slug: slug)
-  end
-
   def get_user_project_by_slug(user_id, slug) do
     Repo.get_by(Project, user_id: user_id, slug: slug)
   end
