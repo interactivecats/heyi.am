@@ -17,8 +17,18 @@ const AGENT_COLORS: Record<string, string> = {
   'qa-engineer': '#059669', qa: '#059669',
   'ux-designer': '#d97706', ux: '#d97706',
   'product-manager': '#dc2626', pm: '#dc2626',
-  'security-engineer': '#6b7280', 'team-lead': '#6b7280',
+  'security-engineer': '#475569', 'team-lead': '#475569',
   explore: '#94a3b8',
+  'code-reviewer': '#e11d48', reviewer: '#e11d48',
+  'code-explorer': '#2563eb', explorer: '#2563eb',
+  'code-architect': '#7e22ce', architect: '#7e22ce',
+  'test-runner': '#16a34a', tester: '#16a34a',
+  'build-fix': '#ea580c', fixer: '#ea580c',
+  planner: '#0d9488', plan: '#0d9488',
+  research: '#6366f1', researcher: '#6366f1',
+  agent: '#2563eb',
+  wiring: '#c026d3',
+  enhance: '#0891b2',
 };
 
 const MAIN_COLOR = '#084471';
@@ -27,9 +37,28 @@ const FONT = "'IBM Plex Mono', monospace";
 const TEXT_SECONDARY = '#6b7280';
 const TEXT_MUTED = '#9ca3af';
 
+/** Hash-based color for unknown roles */
+const FALLBACK_PALETTE = [
+  '#e11d48', '#2563eb', '#7e22ce', '#ea580c', '#0d9488',
+  '#6366f1', '#c026d3', '#0891b2', '#ca8a04', '#16a34a',
+  '#be185d', '#4f46e5', '#0e7490', '#b45309', '#059669',
+];
+
+function hashRole(role: string): number {
+  let h = 0;
+  for (let i = 0; i < role.length; i++) h = ((h << 5) - h + role.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
 function agentColor(role?: string): string {
   if (!role) return TEXT_SECONDARY;
-  return AGENT_COLORS[role.toLowerCase()] ?? TEXT_SECONDARY;
+  const lower = role.toLowerCase();
+  if (AGENT_COLORS[lower]) return AGENT_COLORS[lower];
+  // Partial match: "phoenix-reviewer" matches "reviewer"
+  for (const [key, color] of Object.entries(AGENT_COLORS)) {
+    if (lower.includes(key) || key.includes(lower)) return color;
+  }
+  return FALLBACK_PALETTE[hashRole(lower) % FALLBACK_PALETTE.length];
 }
 
 // ── Time helpers ─────────────────────────────────────────────────
@@ -139,16 +168,45 @@ export function timeToX(timeMs: number, rangeStartMs: number, rangeEndMs: number
 
 // ── Children helper ──────────────────────────────────────────────
 
-interface Child { id: string; role?: string; durationMinutes: number; linesOfCode: number }
+interface Child { id: string; role?: string; durationMinutes: number; linesOfCode: number; date?: string }
 
 function getChildren(s: Session): Child[] {
   if (!s.children?.length) return [];
   return s.children.map(c => ({
     id: c.sessionId,
     role: c.role,
-    durationMinutes: c.durationMinutes,
-    linesOfCode: c.linesOfCode,
+    durationMinutes: c.durationMinutes ?? 0,
+    linesOfCode: c.linesOfCode ?? 0,
+    date: c.date,
   }));
+}
+
+/** Assign agent lanes using greedy packing based on their time ranges */
+function assignAgentLanes(children: Child[], parentStartMs: number): { laneMap: Map<string, number>; laneCount: number } {
+  const withTime = children
+    .map(c => {
+      const startMs = c.date ? new Date(c.date).getTime() : parentStartMs;
+      const endMs = startMs + c.durationMinutes * 60_000;
+      return { ...c, startMs, endMs };
+    })
+    .sort((a, b) => a.startMs - b.startMs);
+
+  const laneEnds: number[] = [];
+  const laneMap = new Map<string, number>();
+
+  for (const c of withTime) {
+    let assigned = -1;
+    for (let i = 0; i < laneEnds.length; i++) {
+      if (laneEnds[i] <= c.startMs) { assigned = i; break; }
+    }
+    if (assigned === -1) {
+      assigned = laneEnds.length;
+      laneEnds.push(0);
+    }
+    laneEnds[assigned] = c.endMs;
+    laneMap.set(c.id, assigned);
+  }
+  return { laneMap, laneCount: laneEnds.length };
 }
 
 // ── Tooltip data ─────────────────────────────────────────────────
@@ -319,21 +377,35 @@ function layout(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CONCURRENT)
     if (seg.type === 'session') {
       const s = seg.session;
       const kids = getChildren(s);
-      const dur = (seg.endMs - seg.startMs) / 60_000;
-      const w = Math.min(Math.max(timeToPx(dur), MIN_W), MAX_W);
+      const dur = s.durationMinutes;
+      // Width proportional to duration. Agent sessions get more room to spread.
+      const w = kids.length > 0
+        ? Math.min(Math.max(dur * PX_PER_MIN, MIN_W), MAX_CONCURRENT_W)
+        : Math.min(Math.max(timeToPx(dur), MIN_W), MAX_W);
       const sub = formatDuration(s.durationMinutes);
       const tooltip = buildTooltip(s);
       const ts = formatTimestamp(s.date);
 
       if (kids.length > 0) {
-        // Render every individual agent curve — chaos is the point
+        // Time-positioned agent fork/join: each agent forks when it starts, merges when it ends
         const visible = kids.slice(0, MAX_AGENTS);
-        const n = visible.length;
-        const gap = laneGap(n);
-        const totalSpread = (n - 1) * gap;
+        const parentStartMs = sessionStart(s);
+        // Use the latest agent end time (or session active end) as the range end,
+        // not wall clock endTime which can be hours/days later
+        const activeEndMs = parentStartMs + s.durationMinutes * 60_000;
+        const latestAgentEnd = Math.max(activeEndMs, ...visible.map(k => {
+          const kStart = k.date ? new Date(k.date).getTime() : parentStartMs;
+          return kStart + k.durationMinutes * 60_000;
+        }));
+        const parentEndMs = latestAgentEnd;
+        const { laneMap, laneCount } = assignAgentLanes(visible, parentStartMs);
+
+        const gap = laneGap(laneCount);
+        const maxSpread = Math.min((laneCount - 1) * gap, 300);
+        const agentGap = laneCount > 1 ? maxSpread / (laneCount - 1) : 0;
+        const topLaneY = cY - maxSpread / 2;
         const forkX = cx;
         const joinX = cx + w;
-        const topLaneY = cY - totalSpread / 2;
 
         // Session title above topmost lane
         const titleY = topLaneY - 32;
@@ -341,18 +413,32 @@ function layout(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CONCURRENT)
         nodes.push({ kind: 'label', pos: { x: flatStartX + 8, y: titleY }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
         bound(titleY - 4, 28);
 
-        // Fork dot
+        // Start dot
         nodes.push({ kind: 'dot', pos: { x: forkX, y: cY }, color: MAIN_COLOR, size: 'lg', tooltip });
 
-        // One track per individual agent
-        visible.forEach((kid, i) => {
-          const laneY = topLaneY + i * gap;
+        // Main orchestrator line
+        tracks.push({ path: `M ${forkX} ${cY} L ${joinX} ${cY}`, color: MAIN_COLOR, width: 1.5 });
+
+        // Each agent: fork at its start time, join at its end time
+        visible.forEach((kid) => {
+          const lane = laneMap.get(kid.id) ?? 0;
+          const laneY = topLaneY + lane * agentGap;
           const color = agentColor(kid.role);
-          tracks.push({ path: bezierForkJoin(forkX, joinX, cY, laneY), color, width: 1.5 });
+
+          const kidStartMs = kid.date ? new Date(kid.date).getTime() : parentStartMs;
+          const kidEndMs = kidStartMs + kid.durationMinutes * 60_000;
+
+          // Map agent time to X position within the session bar
+          const kidForkX = timeToX(kidStartMs, parentStartMs, parentEndMs, forkX, joinX);
+          const kidJoinX = timeToX(Math.min(kidEndMs, parentEndMs), parentStartMs, parentEndMs, forkX, joinX);
+          // Ensure minimum width for very short agents
+          const adjustedJoinX = Math.max(kidJoinX, kidForkX + 60);
+
+          tracks.push({ path: bezierForkJoin(kidForkX, Math.min(adjustedJoinX, joinX), cY, laneY), color, width: 1.5 });
           bound(laneY - 2, 4);
         });
 
-        // Join dot
+        // End dot
         nodes.push({ kind: 'dot', pos: { x: joinX, y: cY }, color: MAIN_COLOR, size: 'lg', tooltip });
 
         // Track range for legend
@@ -413,17 +499,18 @@ function layout(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CONCURRENT)
         const sXEnd = sXStart + barW;
 
         if (kids.length > 0) {
-          // Session with agents: fork/join curves from track Y
+          // Time-positioned agent fork/join within this track
           const agentVisible = kids.slice(0, MAX_AGENTS);
-          const n = agentVisible.length;
-          const gap = laneGap(n);
-          // Centered spread — agents fan out symmetrically above/below track line
-          const maxSpread = dynamicTrackGap - 40;
-          const totalSpread = Math.min((n - 1) * gap, maxSpread);
-          const agentGap = n > 1 ? totalSpread / (n - 1) : 0;
-          const topAgentY = trackY - totalSpread / 2;
+          const parentStartMs = sessionStart(s);
+          const parentEndMs = sessionEnd(s);
+          const { laneMap: agentLaneMap, laneCount: agentLaneCount } = assignAgentLanes(agentVisible, parentStartMs);
 
-          // Label above agents — skip if too close to previous label on this lane
+          const agentGapVal = laneGap(agentLaneCount);
+          const agentMaxSpread = Math.min((agentLaneCount - 1) * agentGapVal, dynamicTrackGap - 40);
+          const agentGap = agentLaneCount > 1 ? agentMaxSpread / (agentLaneCount - 1) : 0;
+          const topAgentY = trackY - agentMaxSpread / 2;
+
+          // Label above agents
           const titleY = topAgentY - 32;
           const hasRoom = laneLabelRight[lane] === 0 || sXStart >= laneLabelRight[lane];
           if (hasRoom) {
@@ -432,20 +519,31 @@ function layout(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CONCURRENT)
           }
           bound(titleY - 4, 28);
 
-          // Fork dot
+          // Start dot
           nodes.push({ kind: 'dot', pos: { x: sXStart, y: trackY }, color: MAIN_COLOR, size: 'lg', tooltip });
 
-          // Agent curves relative to trackY — reduce opacity when dense
-          const agentOpacity = n > 15 ? 0.4 : n > 8 ? 0.6 : 0.8;
-          const agentWidth = n > 15 ? 1 : 1.5;
-          agentVisible.forEach((kid, i) => {
-            const agentY = topAgentY + i * agentGap;
+          // Orchestrator line
+          tracks.push({ path: `M ${sXStart} ${trackY} L ${sXEnd} ${trackY}`, color: MAIN_COLOR, width: 1.5 });
+
+          // Each agent forks/joins at its own time position
+          const agentOpacity = agentLaneCount > 15 ? 0.4 : agentLaneCount > 8 ? 0.6 : 0.8;
+          const agentWidth = agentLaneCount > 15 ? 1 : 1.5;
+          agentVisible.forEach((kid) => {
+            const agentLane = agentLaneMap.get(kid.id) ?? 0;
+            const agentY = topAgentY + agentLane * agentGap;
             const color = agentColor(kid.role);
-            tracks.push({ path: bezierForkJoin(sXStart, sXEnd, trackY, agentY), color, width: agentWidth, opacity: agentOpacity });
+
+            const kidStartMs = kid.date ? new Date(kid.date).getTime() : parentStartMs;
+            const kidEndMs = kidStartMs + kid.durationMinutes * 60_000;
+            const kidForkX = timeToX(kidStartMs, parentStartMs, parentEndMs, sXStart, sXEnd);
+            const kidJoinX = Math.min(timeToX(Math.min(kidEndMs, parentEndMs), parentStartMs, parentEndMs, sXStart, sXEnd), sXEnd);
+            const adjustedJoinX = Math.max(kidJoinX, kidForkX + 60);
+
+            tracks.push({ path: bezierForkJoin(kidForkX, Math.min(adjustedJoinX, sXEnd), trackY, agentY), color, width: agentWidth, opacity: agentOpacity });
             bound(agentY - 2, 4);
           });
 
-          // Join dot
+          // End dot
           nodes.push({ kind: 'dot', pos: { x: sXEnd, y: trackY }, color: MAIN_COLOR, size: 'lg', tooltip });
           sessionRanges.push({ session: s, xStart: sXStart, xEnd: sXEnd });
         } else {
