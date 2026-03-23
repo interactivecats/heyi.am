@@ -41,8 +41,9 @@ export function formatLocAxis(n: number): string {
 
 /** @internal Exported for testing */
 export function formatLocDelta(n: number): string {
-  if (n >= 1000) return `+${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k`;
-  return `+${n}`;
+  const rounded = Math.round(n);
+  if (rounded >= 1000) return `+${(rounded / 1000).toFixed(rounded >= 10000 ? 0 : 1)}k`;
+  return `+${rounded}`;
 }
 
 /** @internal Exported for testing */
@@ -336,6 +337,30 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, onSessionClick }: 
     (b, i) => i === 0 || Math.abs(b.visualTime - boundaries[i - 1].visualTime) > 0.001,
   );
 
+  // Thin x-axis labels: only show labels with enough pixel clearance
+  const MIN_LABEL_GAP_PX = 80;
+  const labelledIndices = new Set<number>();
+  if (uniqueBoundaries.length > 0) {
+    labelledIndices.add(0);
+    labelledIndices.add(uniqueBoundaries.length - 1);
+    let lastX = toX(uniqueBoundaries[0].visualTime);
+    for (let i = 1; i < uniqueBoundaries.length - 1; i++) {
+      const x = toX(uniqueBoundaries[i].visualTime);
+      if (x - lastX >= MIN_LABEL_GAP_PX) {
+        labelledIndices.add(i);
+        lastX = x;
+      }
+    }
+    // Ensure last label doesn't overlap the previous labelled one
+    if (uniqueBoundaries.length > 1) {
+      const lastBx = toX(uniqueBoundaries[uniqueBoundaries.length - 1].visualTime);
+      const prevLabelled = [...labelledIndices].filter(i => i < uniqueBoundaries.length - 1).sort((a, b) => b - a)[0];
+      if (prevLabelled !== undefined && lastBx - toX(uniqueBoundaries[prevLabelled].visualTime) < MIN_LABEL_GAP_PX) {
+        labelledIndices.delete(prevLabelled);
+      }
+    }
+  }
+
   const sessionCount = dated.length;
   const isScrollable = svgWidth > baseWidth;
 
@@ -361,11 +386,12 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, onSessionClick }: 
           ))}
 
           {uniqueBoundaries.map((b, i) => {
+            const showLabel = labelledIndices.has(i);
             const clickable = onSessionClick && sortedSessions[b.sessionIndex];
             return (
-              <g key={`boundary-${i}`} style={clickable ? { cursor: 'pointer' } : undefined} onClick={clickable ? () => onSessionClick(sortedSessions[b.sessionIndex]) : undefined}>
-                <line x1={toX(b.visualTime)} y1={padTop} x2={toX(b.visualTime)} y2={padTop + chartH} stroke="var(--outline-variant)" strokeWidth="0.5" strokeDasharray="3,3" />
-                <text x={toX(b.visualTime)} y={padTop + chartH + 16} textAnchor="middle" fontFamily="var(--font-mono)" fontSize="8" fill={clickable ? 'var(--primary)' : 'var(--on-surface-variant)'} textDecoration={clickable ? 'underline' : undefined}>{truncTitle(b.title)}</text>
+              <g key={`boundary-${i}`} style={clickable && showLabel ? { cursor: 'pointer' } : undefined} onClick={clickable && showLabel ? () => onSessionClick(sortedSessions[b.sessionIndex]) : undefined}>
+                {showLabel && <line x1={toX(b.visualTime)} y1={padTop} x2={toX(b.visualTime)} y2={padTop + chartH} stroke="var(--outline-variant)" strokeWidth="0.5" strokeDasharray="3,3" />}
+                {showLabel && <text x={toX(b.visualTime)} y={padTop + chartH + 16} textAnchor="middle" fontFamily="var(--font-mono)" fontSize="8" fill={clickable ? 'var(--primary)' : 'var(--on-surface-variant)'} textDecoration={clickable ? 'underline' : undefined}>{truncTitle(b.title)}</text>}
               </g>
             );
           })}
@@ -374,6 +400,7 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, onSessionClick }: 
           <path d={linePath} fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
 
           {uniqueBoundaries.map((b, i) => {
+            if (!labelledIndices.has(i)) return null;
             const sessionPts = points.filter((p) => p.sessionIndex === b.sessionIndex);
             if (sessionPts.length === 0) return null;
             const lastPt = sessionPts[sessionPts.length - 1];

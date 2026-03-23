@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeSegments } from './WorkTimeline';
+import { computeSegments, formatTimestamp, timeToPx } from './WorkTimeline';
 import type { Session } from './types';
 
 function makeSession(overrides: Partial<Session> & { id: string; title: string }): Session {
@@ -40,7 +40,7 @@ describe('computeSegments', () => {
     const s2 = makeSession({
       id: '2',
       title: 'Second',
-      date: '2026-03-01T14:00:00Z', // 4 hours later (well above GAP_THRESHOLD_MS)
+      date: '2026-03-01T14:00:00Z',
       durationMinutes: 45,
     });
 
@@ -51,7 +51,6 @@ describe('computeSegments', () => {
     expect(result[2].type).toBe('session');
 
     if (result[1].type === 'gap') {
-      // Gap should be about 3.5 hours (4h minus 30min session)
       expect(result[1].durationMs).toBeGreaterThan(3 * 3_600_000);
     }
   });
@@ -66,7 +65,7 @@ describe('computeSegments', () => {
     const s2 = makeSession({
       id: '2',
       title: 'Second',
-      date: '2026-03-01T10:30:00Z', // starts 30min into s1
+      date: '2026-03-01T10:30:00Z',
       durationMinutes: 45,
     });
 
@@ -88,12 +87,11 @@ describe('computeSegments', () => {
     const s2 = makeSession({
       id: '2',
       title: 'Second',
-      date: '2026-03-01T10:45:00Z', // 15 min after s1 ends -- within 1h threshold
+      date: '2026-03-01T10:45:00Z',
       durationMinutes: 30,
     });
 
     const result = computeSegments([s1, s2]);
-    // Should be 2 sessions with no gap between them
     expect(result).toHaveLength(2);
     expect(result[0].type).toBe('session');
     expect(result[1].type).toBe('session');
@@ -114,7 +112,6 @@ describe('computeSegments', () => {
     });
 
     const result = computeSegments([s1, s2]);
-    // Should have early first, gap, then late
     expect(result[0].type).toBe('session');
     if (result[0].type === 'session') {
       expect(result[0].session.id).toBe('early');
@@ -132,7 +129,7 @@ describe('computeSegments', () => {
     const s2 = makeSession({
       id: '2',
       title: 'Second',
-      date: '2026-03-01T11:00:00Z', // within s1's endTime window
+      date: '2026-03-01T11:00:00Z',
       durationMinutes: 30,
     });
 
@@ -144,14 +141,54 @@ describe('computeSegments', () => {
   it('handles a mix of sequential, concurrent, and gap segments', () => {
     const sessions = [
       makeSession({ id: '1', title: 'A', date: '2026-03-01T10:00:00Z', durationMinutes: 30 }),
-      makeSession({ id: '2', title: 'B', date: '2026-03-01T10:15:00Z', durationMinutes: 30 }), // overlaps with A
-      makeSession({ id: '3', title: 'C', date: '2026-03-01T15:00:00Z', durationMinutes: 20 }), // hours later
+      makeSession({ id: '2', title: 'B', date: '2026-03-01T10:15:00Z', durationMinutes: 30 }),
+      makeSession({ id: '3', title: 'C', date: '2026-03-01T15:00:00Z', durationMinutes: 20 }),
     ];
 
     const result = computeSegments(sessions);
     expect(result).toHaveLength(3);
-    expect(result[0].type).toBe('concurrent'); // A + B
+    expect(result[0].type).toBe('concurrent');
     expect(result[1].type).toBe('gap');
-    expect(result[2].type).toBe('session'); // C
+    expect(result[2].type).toBe('session');
+  });
+});
+
+describe('formatTimestamp', () => {
+  it('formats a morning time correctly', () => {
+    const result = formatTimestamp('2026-03-01T10:30:00Z');
+    expect(result).toMatch(/Mar/);
+    expect(result).toMatch(/[AP]M/);
+  });
+
+  it('formats midnight as 12:00 AM', () => {
+    const result = formatTimestamp('2026-03-01T00:00:00');
+    expect(result).toContain('12:00 AM');
+  });
+
+  it('formats noon as 12:00 PM', () => {
+    const result = formatTimestamp('2026-03-01T12:00:00');
+    expect(result).toContain('12:00 PM');
+  });
+});
+
+describe('timeToPx', () => {
+  it('returns minimum width for very short sessions', () => {
+    expect(timeToPx(5)).toBe(160);
+  });
+
+  it('scales linearly for medium sessions', () => {
+    expect(timeToPx(60)).toBe(180);
+    expect(timeToPx(100)).toBe(300);
+  });
+
+  it('caps at maximum width for long sessions', () => {
+    expect(timeToPx(240)).toBe(480);
+    expect(timeToPx(500)).toBe(480);
+  });
+
+  it('maintains proportionality within bounds', () => {
+    const short = timeToPx(60);
+    const long = timeToPx(120);
+    expect(long / short).toBe(2);
   });
 });

@@ -4067,13 +4067,9 @@ details.collapsible .collapsible-content {
   opacity: 0.65;
 }
 
-.wt-pill {
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-
-.wt-pill:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+/* Legend (above scrollable timeline) */
+.work-timeline [data-testid="wt-legend"] {
+  border-bottom: 1px solid rgba(194, 199, 208, 0.15);
 }
 
 /* Growth Chart */
