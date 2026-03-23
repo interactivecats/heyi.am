@@ -29,6 +29,8 @@ export interface VibeStats {
     redirects_per_hour: number;
     turn_density: number;
     scope_creep: number;
+    interruptions: number;
+    secret_leaks: number;
     total_turns: number;
     session_count: number;
     total_duration_min: number;

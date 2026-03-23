@@ -33,6 +33,15 @@ const SCOPE_CREEP_RE = /\b(?:while (?:we'?re|you'?re|I'?m) at it|one more thing|
  */
 const APOLOGY_RE = /\b(?:sorry|apologi[zs]e|apologies|my (?:mistake|bad|apologies))\b/i;
 /**
+ * Secret leaks: API keys, tokens, connection strings pasted into prompts.
+ * Each pattern is specific to avoid false positives on code discussion.
+ */
+const SECRET_LEAK_RE = /(?:sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36}|gho_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9_]{40,}|AKIA[0-9A-Z]{16}|AIzaSy[a-zA-Z0-9_-]{33}|xox[bpoas]-[a-zA-Z0-9-]+|Bearer\s+[a-zA-Z0-9._\-]{20,}|(?:postgres|mysql|mongodb(?:\+srv)?):\/\/[^\s]{10,}|-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----)/;
+/**
+ * Interruptions: user cancelled the AI mid-response.
+ */
+const INTERRUPT_RE = /\[Request interrupted by user\]/;
+/**
  * Question detection: trim trailing whitespace then check for `?`
  */
 function endsWithQuestion(text) {
@@ -144,6 +153,8 @@ export function computeVibeStats(sessions) {
     let longestAutopilot = 0;
     const firstBloodTimes = [];
     let scopeCreep = 0;
+    let interruptions = 0;
+    let secretLeaks = 0;
     let totalTurns = 0;
     let totalDurationMin = 0;
     const sourcesSet = new Set();
@@ -238,6 +249,12 @@ export function computeVibeStats(sessions) {
                 // Scope creep
                 if (SCOPE_CREEP_RE.test(userText))
                     scopeCreep++;
+                // Secret leaks
+                if (SECRET_LEAK_RE.test(userText))
+                    secretLeaks++;
+                // Interruptions
+                if (INTERRUPT_RE.test(userText))
+                    interruptions++;
                 // Reset autopilot and tool chain on user turn
                 if (currentAutopilot > longestAutopilot)
                     longestAutopilot = currentAutopilot;
@@ -353,6 +370,8 @@ export function computeVibeStats(sessions) {
         redirects_per_hour: round1(redirectsPerHour),
         turn_density: round1(turnDensity),
         scope_creep: scopeCreep,
+        interruptions,
+        secret_leaks: secretLeaks,
         total_turns: totalTurns,
         session_count: sessions.length,
         total_duration_min: totalDurationMin,
@@ -376,5 +395,7 @@ export const _patterns = {
     TEST_CMD_RE,
     SCOPE_CREEP_RE,
     APOLOGY_RE,
+    SECRET_LEAK_RE,
+    INTERRUPT_RE,
 };
 //# sourceMappingURL=stats.js.map

@@ -36,6 +36,8 @@ export interface VibeStats {
   redirects_per_hour: number;
   turn_density: number;
   scope_creep: number;
+  interruptions: number;       // times user hit Escape / cancelled AI mid-response
+  secret_leaks: number;        // API keys, tokens, connection strings pasted into prompts
 
   // Metadata
   total_turns: number;

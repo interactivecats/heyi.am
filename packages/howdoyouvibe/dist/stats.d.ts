@@ -9,4 +9,6 @@ export declare const _patterns: {
     TEST_CMD_RE: RegExp;
     SCOPE_CREEP_RE: RegExp;
     APOLOGY_RE: RegExp;
+    SECRET_LEAK_RE: RegExp;
+    INTERRUPT_RE: RegExp;
 };

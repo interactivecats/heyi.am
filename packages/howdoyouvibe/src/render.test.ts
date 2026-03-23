@@ -29,6 +29,8 @@ function makeStats(overrides: Partial<VibeStats> = {}): VibeStats {
     redirects_per_hour: 2.3,
     turn_density: 1.8,
     scope_creep: 2,
+    interruptions: 0,
+    secret_leaks: 0,
     total_turns: 847,
     session_count: 23,
     total_duration_min: 480,

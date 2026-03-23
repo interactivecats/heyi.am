@@ -226,6 +226,24 @@ function rankStatsBySurprise(stats: VibeStats): StatCandidate[] {
     });
   }
 
+  if (stats.secret_leaks > 0) {
+    candidates.push({
+      key: "secret_leaks",
+      surprise: stats.secret_leaks * 5,
+      sentence: stats.secret_leaks > 5
+        ? `You leaked ${stats.secret_leaks} secrets to the AI. Rotate those keys.`
+        : `You pasted ${stats.secret_leaks} secret${stats.secret_leaks > 1 ? "s" : ""} into a prompt. It happens.`,
+    });
+  }
+
+  if (stats.interruptions > 5) {
+    candidates.push({
+      key: "interruptions",
+      surprise: stats.interruptions / 2,
+      sentence: `You interrupted the AI ${stats.interruptions} times. Sometimes you just know it's going the wrong way.`,
+    });
+  }
+
   // Sort by surprise descending
   candidates.sort((a, b) => b.surprise - a.surprise);
   return candidates;

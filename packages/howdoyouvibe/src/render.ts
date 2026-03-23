@@ -88,6 +88,7 @@ export function renderCard(
   if (stats.question_rate > 0.1) voiceLines.push(`    Questions: ${pct(stats.question_rate)}`);
   if (stats.late_night_rate > 0.1) voiceLines.push(`    Late night: ${pct(stats.late_night_rate)}`);
   if (stats.reasoning_rate > 0.05) voiceLines.push(`    Thinks out loud: ${pct(stats.reasoning_rate)} of turns`);
+  if (stats.secret_leaks > 0) voiceLines.push(`    Secrets leaked: ${stats.secret_leaks}${stats.secret_leaks > 3 ? " (yikes)" : ""}`);
 
   if (voiceLines.length > 0) {
     lines.push("");
@@ -135,6 +136,7 @@ export function renderCard(
     interLines.push(`    Redirects/hr: ${stats.redirects_per_hour} (constant course-correcting)`);
   }
   if (stats.scope_creep > 2) interLines.push(`    Scope creep: ${stats.scope_creep} "while we're at it" moments`);
+  if (stats.interruptions > 0) interLines.push(`    Interruptions: ${stats.interruptions}${stats.interruptions > 10 ? " (impatient)" : ""}`);
 
   if (interLines.length > 0) {
     lines.push("");
@@ -223,6 +225,7 @@ export function formatTextBlock(
   if (stats.question_rate > 0.1) voice.push(`  Questions: ${pct(stats.question_rate)}`);
   if (stats.late_night_rate > 0.1) voice.push(`  Late night: ${pct(stats.late_night_rate)}`);
   if (stats.reasoning_rate > 0.05) voice.push(`  Thinks out loud: ${pct(stats.reasoning_rate)} of turns`);
+  if (stats.secret_leaks > 0) voice.push(`  Secrets leaked: ${stats.secret_leaks}${stats.secret_leaks > 3 ? " (yikes)" : ""}`);
 
   if (voice.length > 0) {
     lines.push("");
@@ -270,6 +273,8 @@ export function formatTextBlock(
     collab.push(`  Redirects/hr: ${stats.redirects_per_hour} (constant course-correcting)`);
   }
   if (stats.scope_creep > 2) collab.push(`  Scope creep: ${stats.scope_creep} "while we're at it" moments`);
+  if (stats.interruptions > 0) collab.push(`  Interruptions: ${stats.interruptions}${stats.interruptions > 10 ? " (impatient)" : ""}`);
+
 
   if (collab.length > 0) {
     lines.push("");

@@ -26,6 +26,8 @@ function makeStats(overrides = {}) {
         redirects_per_hour: 0,
         turn_density: 1,
         scope_creep: 0,
+        interruptions: 0,
+        secret_leaks: 0,
         total_turns: 100,
         session_count: 5,
         total_duration_min: 60,
