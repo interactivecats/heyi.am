@@ -83,6 +83,11 @@ defmodule HeyiAmWeb.ProjectApiController do
     end
   end
 
+  defp image_content_type?(ct) when is_binary(ct) do
+    String.starts_with?(ct, "image/")
+  end
+  defp image_content_type?(_), do: false
+
   defp valid_screenshot_key?(key) do
     # Must start with "projects/", end with an image extension,
     # and not contain path traversal sequences
@@ -105,7 +110,7 @@ defmodule HeyiAmWeb.ProjectApiController do
       %{screenshot_key: key} ->
         case HeyiAm.ObjectStorage.presign_get(key) do
           {:ok, url} ->
-            case Req.get(url) do
+            case Req.get(url, redirect: false) do
               {:ok, %{status: 200, body: body, headers: headers}} ->
                 content_type =
                   case headers do
@@ -113,10 +118,19 @@ defmodule HeyiAmWeb.ProjectApiController do
                     _ -> "image/png"
                   end
 
-                conn
-                |> put_resp_header("content-type", content_type)
-                |> put_resp_header("cache-control", "public, max-age=86400")
-                |> send_resp(200, body)
+                cond do
+                  not image_content_type?(content_type) ->
+                    conn |> put_status(:bad_gateway) |> json(%{error: "Invalid content type"})
+
+                  byte_size(body) > 10_000_000 ->
+                    conn |> put_status(:bad_gateway) |> json(%{error: "Response too large"})
+
+                  true ->
+                    conn
+                    |> put_resp_header("content-type", content_type)
+                    |> put_resp_header("cache-control", "public, max-age=86400")
+                    |> send_resp(200, body)
+                end
 
               _ ->
                 conn |> put_status(:bad_gateway) |> json(%{error: "Storage fetch failed"})

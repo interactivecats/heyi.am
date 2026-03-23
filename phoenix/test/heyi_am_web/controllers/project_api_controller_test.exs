@@ -156,6 +156,23 @@ defmodule HeyiAmWeb.ProjectApiControllerTest do
     end
   end
 
+  describe "screenshot proxy hardening" do
+    test "screenshot endpoint returns 404 for project without screenshot", %{conn: _conn} do
+      user = HeyiAm.AccountsFixtures.user_fixture()
+      {:ok, user} = HeyiAm.Accounts.update_user_username(user, %{username: "proxyuser#{System.unique_integer([:positive])}"})
+
+      # Create project without screenshot_key
+      HeyiAm.Projects.upsert_project(user.id, %{slug: "no-screenshot", title: "No Screenshot"})
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("accept", "application/json")
+        |> get("/api/projects/#{user.username}/no-screenshot/screenshot")
+
+      assert %{"error" => "No screenshot"} = json_response(conn, 404)
+    end
+  end
+
   describe "GET /api/projects/:username/:slug/screenshot" do
     test "returns 404 for non-existent username", %{conn: conn} do
       conn =
