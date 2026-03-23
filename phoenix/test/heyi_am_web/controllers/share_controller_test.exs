@@ -248,6 +248,16 @@ defmodule HeyiAmWeb.ShareControllerTest do
       assert ShareController.clean_ai_tags("<antml_thinking>only</antml_thinking>") == ""
     end
 
+    test "removes teammate-message blocks with attributes" do
+      assert ShareController.clean_ai_tags(~s|Before <teammate-message teammate_id="team-lead">coordination</teammate-message> after|) ==
+               "Before  after"
+    end
+
+    test "removes function_calls blocks" do
+      assert ShareController.clean_ai_tags("Text <function_calls>invoke</function_calls> more") ==
+               "Text  more"
+    end
+
     test "passes through clean text unchanged" do
       assert ShareController.clean_ai_tags("Normal text") == "Normal text"
     end

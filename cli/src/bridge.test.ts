@@ -358,6 +358,26 @@ describe("cleanAssistantText", () => {
     expect(cleanAssistantText(input)).toBe("Normal assistant response with <code>html</code> tags");
   });
 
+  it("removes teammate-message blocks with attributes", () => {
+    const input = 'Before <teammate-message teammate_id="team-lead">internal coordination</teammate-message> after';
+    expect(cleanAssistantText(input)).toBe("Before  after");
+  });
+
+  it("removes function_calls blocks", () => {
+    const input = "Text <function_calls><invoke>tool</invoke></function_calls> more";
+    expect(cleanAssistantText(input)).toBe("Text  more");
+  });
+
+  it("removes fast_mode_info blocks", () => {
+    const input = "<fast_mode_info>Fast mode uses same model</fast_mode_info>Answer here";
+    expect(cleanAssistantText(input)).toBe("Answer here");
+  });
+
+  it("removes user-prompt-submit-hook blocks", () => {
+    const input = "Response <user-prompt-submit-hook>hook output</user-prompt-submit-hook> end";
+    expect(cleanAssistantText(input)).toBe("Response  end");
+  });
+
   it("collapses excessive newlines after tag removal", () => {
     const input = "Before\n\n\n<antml_thinking>thought</antml_thinking>\n\n\nAfter";
     expect(cleanAssistantText(input)).toBe("Before\n\nAfter");

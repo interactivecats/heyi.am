@@ -310,6 +310,10 @@ defmodule HeyiAmWeb.ShareController do
     text
     |> String.replace(~r/<antml_[a-z_]+>[\s\S]*?<\/antml_[a-z_]+>/, "")
     |> String.replace(~r/<system-reminder>[\s\S]*?<\/system-reminder>/, "")
+    |> String.replace(~r/<teammate-message[^>]*>[\s\S]*?<\/teammate-message>/, "")
+    |> String.replace(~r/<function_calls>[\s\S]*?<\/function_calls>/, "")
+    |> String.replace(~r/<fast_mode_info>[\s\S]*?<\/fast_mode_info>/, "")
+    |> String.replace(~r/<user-prompt-submit-hook>[\s\S]*?<\/user-prompt-submit-hook>/, "")
     |> String.replace(~r/\n{3,}/, "\n\n")
     |> String.trim()
   end

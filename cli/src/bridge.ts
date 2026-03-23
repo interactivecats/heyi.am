@@ -62,17 +62,23 @@ export function bridgeToAnalyzer(
 
 /**
  * Strip AI-internal XML tags from assistant text content.
- * These tags are model internals that shouldn't appear in user-facing output:
- *   - <antml_thinking>...</antml_thinking> (chain-of-thought)
- *   - <system-reminder>...</system-reminder> (injected context)
- *   - <antml_*>...</antml_*> (any other antml-prefixed tags)
+ * These tags are harness/model internals that shouldn't appear in user-facing output.
  * Returns cleaned text, or empty string if nothing remains.
  */
 export function cleanAssistantText(text: string): string {
+  let cleaned = text;
   // Remove all <antml_*>...</antml_*> blocks (thinking, reasoning, etc.)
-  let cleaned = text.replace(/<antml_[a-z_]+>[\s\S]*?<\/antml_[a-z_]+>/g, "");
-  // Remove all <system-reminder>...</system-reminder> blocks
+  cleaned = cleaned.replace(/<antml_[a-z_]+>[\s\S]*?<\/antml_[a-z_]+>/g, "");
+  // Remove <system-reminder>...</system-reminder>
   cleaned = cleaned.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, "");
+  // Remove <teammate-message ...>...</teammate-message>
+  cleaned = cleaned.replace(/<teammate-message[^>]*>[\s\S]*?<\/teammate-message>/g, "");
+  // Remove <function_calls>...</function_calls>
+  cleaned = cleaned.replace(/<function_calls>[\s\S]*?<\/function_calls>/g, "");
+  // Remove <fast_mode_info>...</fast_mode_info>
+  cleaned = cleaned.replace(/<fast_mode_info>[\s\S]*?<\/fast_mode_info>/g, "");
+  // Remove <user-prompt-submit-hook>...</user-prompt-submit-hook>
+  cleaned = cleaned.replace(/<user-prompt-submit-hook>[\s\S]*?<\/user-prompt-submit-hook>/g, "");
   // Collapse excessive whitespace left behind
   cleaned = cleaned.replace(/\n{3,}/g, "\n\n").trim();
   return cleaned;
