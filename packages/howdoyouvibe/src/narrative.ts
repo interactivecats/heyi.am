@@ -30,6 +30,10 @@ export async function fetchNarrative(
       const data = (await res.json()) as { narrative?: string };
       if (data.narrative) return data.narrative;
     }
+
+    if (res.status === 429) {
+      console.log("  (narrative limit reached for today — using local version)");
+    }
   } catch (err) {
     // Server unreachable — fall through to template
     if (process.env.DEBUG) {

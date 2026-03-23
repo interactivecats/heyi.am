@@ -68,8 +68,13 @@ defmodule HeyiAmWeb.Router do
     plug HeyiAmWeb.Plugs.RateLimit, action: "enhance", limit: 5, period: 60_000
   end
 
-  pipeline :rate_limit_vibe_api do
-    plug HeyiAmWeb.Plugs.RateLimit, action: "vibe_api", limit: 10, period: 60_000
+  pipeline :rate_limit_vibe_share do
+    plug HeyiAmWeb.Plugs.RateLimit, action: "vibe_share", limit: 5, period: 60_000
+  end
+
+  pipeline :rate_limit_vibe_narrative do
+    # 4 per day per IP — this calls Gemini Flash and costs money
+    plug HeyiAmWeb.Plugs.RateLimit, action: "vibe_narrative", limit: 4, period: 86_400_000
   end
 
   pipeline :require_api_auth do
@@ -103,11 +108,17 @@ defmodule HeyiAmWeb.Router do
     get "/projects/:username/:slug/screenshot", ProjectApiController, :screenshot
   end
 
-  # Vibe API (anonymous, rate-limited 10/min per IP)
+  # Vibe API — share (5/min per IP, cheap)
   scope "/api", HeyiAmWeb do
-    pipe_through [:api, :rate_limit_vibe_api]
+    pipe_through [:api, :rate_limit_vibe_share]
 
     post "/vibes", VibeApiController, :create
+  end
+
+  # Vibe API — narrative (4/day per IP, calls Gemini)
+  scope "/api", HeyiAmWeb do
+    pipe_through [:api, :rate_limit_vibe_narrative]
+
     post "/vibes/narrative", VibeApiController, :narrative
   end
 
