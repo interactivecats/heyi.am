@@ -223,7 +223,7 @@ function buildLegendEntries(segments: Seg[], sessionRanges: SessionRange[]): Leg
 // ── Layout ───────────────────────────────────────────────────────
 
 const MAX_AGENTS = 30;
-const COMPACT_AGENTS = 5;
+const COMPACT_AGENTS = 0;
 const LEGENDARY_THRESHOLD = 30;
 const SEG_GAP = 56;
 const CURVE_CP = 50;
@@ -308,7 +308,7 @@ function layout(segments: Seg[], agentLimit: number = MAX_AGENTS): Layout {
       const tooltip = buildTooltip(s);
       const ts = formatTimestamp(s.date);
 
-      if (kids.length > 0) {
+      if (kids.length > 0 && agentLimit > 0) {
         if (kids.length > EXPAND_THRESHOLD) hasExpandableSession = true;
         const visible = kids.slice(0, agentLimit);
         const n = visible.length;
@@ -342,12 +342,14 @@ function layout(segments: Seg[], agentLimit: number = MAX_AGENTS): Layout {
         sessionRanges.push({ session: s, xStart: forkX, xEnd: joinX });
         cx = joinX + SEG_GAP;
       } else {
-        // Solo session
-        nodes.push({ kind: 'label', pos: { x: cx + 14, y: cY - 28 }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
+        // Solo session (or compact mode — flat line, no curves)
+        if (kids.length > 0) hasExpandableSession = true;
+        const agentBadge = kids.length > 0 ? ` [${kids.length}]` : '';
+        nodes.push({ kind: 'label', pos: { x: cx + 14, y: cY - 28 }, title: truncate(s.title, MAX_TITLE) + agentBadge, sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
         bound(cY - 32, 28);
-        nodes.push({ kind: 'dot', pos: { x: cx, y: cY }, color: MAIN_COLOR, size: 'sm', tooltip });
-        nodes.push({ kind: 'dot', pos: { x: cx + w, y: cY }, color: MAIN_COLOR, size: 'sm', tooltip });
-        tracks.push({ path: `M ${cx} ${cY} L ${cx + w} ${cY}`, color: MAIN_COLOR, width: 3 });
+        nodes.push({ kind: 'dot', pos: { x: cx, y: cY }, color: MAIN_COLOR, size: kids.length > 0 ? 'lg' : 'sm', tooltip });
+        nodes.push({ kind: 'dot', pos: { x: cx + w, y: cY }, color: MAIN_COLOR, size: kids.length > 0 ? 'lg' : 'sm', tooltip });
+        tracks.push({ path: `M ${cx} ${cY} L ${cx + w} ${cY}`, color: MAIN_COLOR, width: kids.length > 0 ? 3.5 : 3 });
         sessionRanges.push({ session: s, xStart: cx, xEnd: cx + w });
         cx += w + SEG_GAP;
       }
