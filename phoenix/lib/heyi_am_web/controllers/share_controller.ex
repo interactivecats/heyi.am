@@ -56,7 +56,7 @@ defmodule HeyiAmWeb.ShareController do
       "highlights" => data["highlights"] || [],
       "tool_breakdown" => normalize_tool_breakdown(data["toolBreakdown"] || data["tool_breakdown"] || []),
       "top_files" => normalize_top_files(data["topFiles"] || data["top_files"] || []),
-      "transcript_excerpt" => data["transcriptExcerpt"] || data["transcript_excerpt"] || [],
+      "transcript_excerpt" => clean_transcript_excerpt(data["transcriptExcerpt"] || data["transcript_excerpt"] || []),
       "turn_timeline" => normalize_turn_timeline(data["turnTimeline"] || data["turn_timeline"] || []),
       "agent_summary" => data["agentSummary"] || data["agent_summary"]
     }
@@ -259,8 +259,9 @@ defmodule HeyiAmWeb.ShareController do
     |> Enum.with_index(1)
     |> Enum.map(fn {line, idx} ->
       {role, text} = classify_log_line(line)
-      %{"role" => role, "id" => "Turn #{idx}", "text" => text, "timestamp" => nil}
+      %{"role" => role, "id" => "Turn #{idx}", "text" => clean_ai_tags(text), "timestamp" => nil}
     end)
+    |> Enum.reject(fn turn -> turn["text"] == "" end)
   end
 
   defp build_og_description(share) do
@@ -287,6 +288,30 @@ defmodule HeyiAmWeb.ShareController do
   defp classify_log_line("[AI] " <> rest), do: {"ai", rest}
   defp classify_log_line("[TOOL] " <> rest), do: {"ai", "[Tool] " <> rest}
   defp classify_log_line(line), do: {"ai", line}
+
+  defp clean_transcript_excerpt(lines) when is_list(lines) do
+    lines
+    |> Enum.map(fn
+      %{"text" => text} = entry -> Map.put(entry, "text", clean_ai_tags(text))
+      entry -> entry
+    end)
+    |> Enum.reject(fn
+      %{"text" => ""} -> true
+      _ -> false
+    end)
+  end
+  defp clean_transcript_excerpt(_), do: []
+
+  # Strip AI-internal XML tags that may leak into stored transcripts.
+  # Defense-in-depth: the CLI strips these before upload, but older data may still contain them.
+  @doc false
+  def clean_ai_tags(text) do
+    text
+    |> String.replace(~r/<antml_[a-z_]+>[\s\S]*?<\/antml_[a-z_]+>/, "")
+    |> String.replace(~r/<system-reminder>[\s\S]*?<\/system-reminder>/, "")
+    |> String.replace(~r/\n{3,}/, "\n\n")
+    |> String.trim()
+  end
 
   def verify(conn, %{"token" => token}) do
     case load_share(token) do

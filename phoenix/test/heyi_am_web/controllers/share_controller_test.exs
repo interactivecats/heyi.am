@@ -226,6 +226,33 @@ defmodule HeyiAmWeb.ShareControllerTest do
     end
   end
 
+  describe "clean_ai_tags/1" do
+    alias HeyiAmWeb.ShareController
+
+    test "removes antml_thinking blocks" do
+      assert ShareController.clean_ai_tags("Hello <antml_thinking>thought</antml_thinking> world") ==
+               "Hello  world"
+    end
+
+    test "removes system-reminder blocks" do
+      assert ShareController.clean_ai_tags("Text <system-reminder>hidden</system-reminder> here") ==
+               "Text  here"
+    end
+
+    test "removes multiline blocks" do
+      input = "Before\n<antml_thinking>\nline 1\nline 2\n</antml_thinking>\nAfter"
+      assert ShareController.clean_ai_tags(input) == "Before\n\nAfter"
+    end
+
+    test "returns empty string when only tags remain" do
+      assert ShareController.clean_ai_tags("<antml_thinking>only</antml_thinking>") == ""
+    end
+
+    test "passes through clean text unchanged" do
+      assert ShareController.clean_ai_tags("Normal text") == "Normal text"
+    end
+  end
+
   describe "normalize_session_detail/1" do
     alias HeyiAmWeb.ShareController
 
@@ -297,6 +324,28 @@ defmodule HeyiAmWeb.ShareControllerTest do
       assert result["beats"] == []
       assert result["qa_pairs"] == []
       assert result["agent_summary"] == nil
+    end
+
+    test "transcript_excerpt strips antml tags" do
+      data = %{
+        "transcriptExcerpt" => [
+          %{"role" => "ai", "text" => "<antml_thinking>internal</antml_thinking>Visible answer"},
+          %{"role" => "dev", "text" => "My prompt"}
+        ]
+      }
+      result = ShareController.normalize_session_detail(data)
+      assert [%{"text" => "Visible answer"}, %{"text" => "My prompt"}] = result["transcript_excerpt"]
+    end
+
+    test "transcript_excerpt drops entries that become empty after cleaning" do
+      data = %{
+        "transcriptExcerpt" => [
+          %{"role" => "ai", "text" => "<antml_thinking>only thinking</antml_thinking>"},
+          %{"role" => "dev", "text" => "Real prompt"}
+        ]
+      }
+      result = ShareController.normalize_session_detail(data)
+      assert [%{"text" => "Real prompt"}] = result["transcript_excerpt"]
     end
 
     test "top_files touches minimum is 1" do

@@ -60,6 +60,24 @@ export function bridgeToAnalyzer(
   };
 }
 
+/**
+ * Strip AI-internal XML tags from assistant text content.
+ * These tags are model internals that shouldn't appear in user-facing output:
+ *   - <antml_thinking>...</antml_thinking> (chain-of-thought)
+ *   - <system-reminder>...</system-reminder> (injected context)
+ *   - <antml_*>...</antml_*> (any other antml-prefixed tags)
+ * Returns cleaned text, or empty string if nothing remains.
+ */
+export function cleanAssistantText(text: string): string {
+  // Remove all <antml_*>...</antml_*> blocks (thinking, reasoning, etc.)
+  let cleaned = text.replace(/<antml_[a-z_]+>[\s\S]*?<\/antml_[a-z_]+>/g, "");
+  // Remove all <system-reminder>...</system-reminder> blocks
+  cleaned = cleaned.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, "");
+  // Collapse excessive whitespace left behind
+  cleaned = cleaned.replace(/\n{3,}/g, "\n\n").trim();
+  return cleaned;
+}
+
 function isToolUseBlock(block: ContentBlock): block is ToolUseBlock {
   return block.type === "tool_use";
 }
@@ -89,10 +107,12 @@ function entriesToTurns(entries: RawEntry[], cwd?: string): ParsedTurn[] {
 
       for (const block of blocks) {
         if (block.type === "text") {
+          const cleaned = cleanAssistantText(block.text);
+          if (!cleaned) continue;
           turns.push({
             timestamp: entry.timestamp,
             type: "response",
-            content: block.text,
+            content: cleaned,
           });
         } else if (isToolUseBlock(block)) {
           let toolInput = extractToolInput(block);
@@ -210,7 +230,9 @@ function extractRawLog(entries: RawEntry[], cwd?: string): string[] {
       const blocks = getContentBlocks(entry);
       for (const block of blocks) {
         if (block.type === "text") {
-          log.push(stripHomePathsInText(block.text, cwd));
+          const cleaned = cleanAssistantText(block.text);
+          if (!cleaned) continue;
+          log.push(stripHomePathsInText(cleaned, cwd));
         } else if (isToolUseBlock(block)) {
           let input = extractToolInput(block);
           if (input) input = stripHomePath(input, cwd);

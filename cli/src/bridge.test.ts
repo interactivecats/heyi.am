@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { bridgeToAnalyzer, aggregateChildStats, deduplicateChildren, childDedupeKey } from "./bridge.js";
+import { bridgeToAnalyzer, aggregateChildStats, deduplicateChildren, childDedupeKey, cleanAssistantText } from "./bridge.js";
 import type { Session } from "./analyzer.js";
 import type { SessionAnalysis as ParserOutput, RawEntry } from "./parsers/types.js";
 
@@ -319,6 +319,100 @@ describe("bridgeToAnalyzer", () => {
     });
     expect(result.agentRole).toBe("frontend-dev");
     expect(result.parentSessionId).toBe("parent-1");
+  });
+});
+
+describe("cleanAssistantText", () => {
+  it("removes antml_thinking blocks", () => {
+    const input = "Hello <antml_thinking>internal reasoning here</antml_thinking> world";
+    expect(cleanAssistantText(input)).toBe("Hello  world");
+  });
+
+  it("removes system-reminder blocks", () => {
+    const input = "Some text <system-reminder>injected context</system-reminder> more text";
+    expect(cleanAssistantText(input)).toBe("Some text  more text");
+  });
+
+  it("removes multiline antml blocks", () => {
+    const input = "Before\n<antml_thinking>\nline 1\nline 2\n</antml_thinking>\nAfter";
+    expect(cleanAssistantText(input)).toBe("Before\n\nAfter");
+  });
+
+  it("removes multiple different tag types", () => {
+    const input = "<antml_thinking>thought</antml_thinking>Visible<system-reminder>reminder</system-reminder>";
+    expect(cleanAssistantText(input)).toBe("Visible");
+  });
+
+  it("handles antml_reasoning_effort tags", () => {
+    const input = "Text <antml_reasoning_effort>high</antml_reasoning_effort> here";
+    expect(cleanAssistantText(input)).toBe("Text  here");
+  });
+
+  it("returns empty string when only internal tags remain", () => {
+    const input = "<antml_thinking>just thinking</antml_thinking>";
+    expect(cleanAssistantText(input)).toBe("");
+  });
+
+  it("passes through text with no internal tags", () => {
+    const input = "Normal assistant response with <code>html</code> tags";
+    expect(cleanAssistantText(input)).toBe("Normal assistant response with <code>html</code> tags");
+  });
+
+  it("collapses excessive newlines after tag removal", () => {
+    const input = "Before\n\n\n<antml_thinking>thought</antml_thinking>\n\n\nAfter";
+    expect(cleanAssistantText(input)).toBe("Before\n\nAfter");
+  });
+});
+
+describe("bridgeToAnalyzer - cleanAssistantText integration", () => {
+  it("strips antml tags from assistant response turns", () => {
+    const parsed = makeParserOutput({
+      raw_entries: [
+        makeEntry({
+          type: "assistant",
+          message: {
+            role: "assistant",
+            content: [{ type: "text", text: "<antml_thinking>hmm</antml_thinking>Here is my answer" }],
+          },
+        }),
+      ],
+    });
+    const result = bridgeToAnalyzer(parsed, { sessionId: "x", projectName: "p" });
+    expect(result.turns).toHaveLength(1);
+    expect(result.turns[0].content).toBe("Here is my answer");
+  });
+
+  it("skips turns that become empty after cleaning", () => {
+    const parsed = makeParserOutput({
+      raw_entries: [
+        makeEntry({
+          type: "assistant",
+          message: {
+            role: "assistant",
+            content: [{ type: "text", text: "<antml_thinking>only thinking</antml_thinking>" }],
+          },
+        }),
+      ],
+    });
+    const result = bridgeToAnalyzer(parsed, { sessionId: "x", projectName: "p" });
+    expect(result.turns).toHaveLength(0);
+  });
+
+  it("strips system-reminder from raw log entries", () => {
+    const parsed = makeParserOutput({
+      raw_entries: [
+        makeEntry({
+          type: "assistant",
+          message: {
+            role: "assistant",
+            content: [{ type: "text", text: "Visible text<system-reminder>hidden</system-reminder>" }],
+          },
+        }),
+      ],
+    });
+    const result = bridgeToAnalyzer(parsed, { sessionId: "x", projectName: "p" });
+    expect(result.rawLog).toHaveLength(1);
+    expect(result.rawLog[0]).toBe("Visible text");
   });
 });
 
