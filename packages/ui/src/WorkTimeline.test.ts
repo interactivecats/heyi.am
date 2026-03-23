@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeSegments, formatTimestamp, timeToPx } from './WorkTimeline';
+import { computeSegments, formatTimestamp, timeToPx, assignLanes, timeToX } from './WorkTimeline';
 import type { Session } from './types';
 
 function makeSession(overrides: Partial<Session> & { id: string; title: string }): Session {
@@ -190,5 +190,73 @@ describe('timeToPx', () => {
     const short = timeToPx(60);
     const long = timeToPx(120);
     expect(long / short).toBe(2);
+  });
+});
+
+describe('assignLanes', () => {
+  it('puts non-overlapping sessions on the same lane', () => {
+    const s1 = makeSession({ id: '1', title: 'A', date: '2026-03-01T10:00:00Z', durationMinutes: 30 });
+    const s2 = makeSession({ id: '2', title: 'B', date: '2026-03-01T12:00:00Z', durationMinutes: 30 });
+    const lanes = assignLanes([s1, s2]);
+    expect(lanes.get('1')).toBe(0);
+    expect(lanes.get('2')).toBe(0);
+  });
+
+  it('puts overlapping sessions on different lanes', () => {
+    const s1 = makeSession({ id: '1', title: 'A', date: '2026-03-01T10:00:00Z', durationMinutes: 60 });
+    const s2 = makeSession({ id: '2', title: 'B', date: '2026-03-01T10:30:00Z', durationMinutes: 60 });
+    const lanes = assignLanes([s1, s2]);
+    expect(lanes.get('1')).toBe(0);
+    expect(lanes.get('2')).toBe(1);
+  });
+
+  it('reuses lanes when sessions end before new ones start', () => {
+    const s1 = makeSession({ id: '1', title: 'A', date: '2026-03-01T10:00:00Z', durationMinutes: 30 });
+    const s2 = makeSession({ id: '2', title: 'B', date: '2026-03-01T10:00:00Z', durationMinutes: 60 });
+    const s3 = makeSession({ id: '3', title: 'C', date: '2026-03-01T12:00:00Z', durationMinutes: 30 });
+    const lanes = assignLanes([s1, s2, s3]);
+    expect(lanes.get('1')).toBe(0);
+    expect(lanes.get('2')).toBe(1);
+    // s3 starts well after s1 ends — reuses lane 0
+    expect(lanes.get('3')).toBe(0);
+  });
+
+  it('handles fully nested sessions', () => {
+    const outer = makeSession({ id: 'outer', title: 'Outer', date: '2026-03-01T10:00:00Z', durationMinutes: 120 });
+    const inner = makeSession({ id: 'inner', title: 'Inner', date: '2026-03-01T10:30:00Z', durationMinutes: 30 });
+    const lanes = assignLanes([outer, inner]);
+    expect(lanes.get('outer')).toBe(0);
+    expect(lanes.get('inner')).toBe(1);
+  });
+
+  it('sorts by start time regardless of input order', () => {
+    const s1 = makeSession({ id: 'late', title: 'Late', date: '2026-03-01T14:00:00Z', durationMinutes: 30 });
+    const s2 = makeSession({ id: 'early', title: 'Early', date: '2026-03-01T10:00:00Z', durationMinutes: 30 });
+    const lanes = assignLanes([s1, s2]);
+    expect(lanes.get('early')).toBe(0);
+    expect(lanes.get('late')).toBe(0);
+  });
+});
+
+describe('timeToX', () => {
+  it('maps start of range to xStart', () => {
+    expect(timeToX(1000, 1000, 2000, 100, 500)).toBe(100);
+  });
+
+  it('maps end of range to xEnd', () => {
+    expect(timeToX(2000, 1000, 2000, 100, 500)).toBe(500);
+  });
+
+  it('maps midpoint to middle of x range', () => {
+    expect(timeToX(1500, 1000, 2000, 100, 500)).toBe(300);
+  });
+
+  it('handles zero-length range', () => {
+    expect(timeToX(1000, 1000, 1000, 100, 500)).toBe(100);
+  });
+
+  it('maps linearly for quarter points', () => {
+    expect(timeToX(1250, 1000, 2000, 0, 400)).toBe(100);
+    expect(timeToX(1750, 1000, 2000, 0, 400)).toBe(300);
   });
 });
