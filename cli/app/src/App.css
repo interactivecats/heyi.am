@@ -4608,3 +4608,172 @@ details[open] > .collapsible__summary .collapsible__chevron {
   font-weight: 700;
   color: var(--on-surface);
 }
+
+/* ── Time Page ────────────────────────────────────────────── */
+
+.time-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--spacing-8) var(--spacing-6);
+}
+
+.time-page__loading,
+.time-page__empty {
+  text-align: center;
+  padding: var(--spacing-8);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--on-surface-variant);
+}
+
+.time-page__header {
+  margin-block-end: var(--spacing-8);
+}
+
+.time-page__title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--on-surface);
+  margin: 0;
+}
+
+.time-page__subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+  margin: var(--spacing-2) 0 0 0;
+}
+
+.time-page__hero {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-6);
+  margin-block-end: var(--spacing-6);
+  padding: var(--spacing-6);
+  background: var(--surface-container, #f0f2f5);
+  border-radius: var(--radius-md, 8px);
+}
+
+.time-page__hero-stat {
+  text-align: center;
+}
+
+.time-page__hero-value {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.time-page__hero-value--primary {
+  color: var(--primary, #084471);
+}
+
+.time-page__hero-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface-variant);
+  margin-block-start: var(--spacing-1);
+}
+
+.time-page__hero-divider {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--on-surface-variant);
+}
+
+.time-page__chips {
+  display: flex;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+  margin-block-end: var(--spacing-8);
+}
+
+.time-page__chip {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  padding: var(--spacing-1) var(--spacing-3);
+  background: var(--surface-container, #f0f2f5);
+  border-radius: var(--radius-sm, 4px);
+  color: var(--on-surface-variant);
+}
+
+.time-page__table {
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  margin-block-end: var(--spacing-8);
+}
+
+.time-page__table-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 0.7fr 0.8fr 0.8fr 0.7fr;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--surface-container, #f0f2f5);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface-variant);
+}
+
+.time-page__table-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 0.7fr 0.8fr 0.8fr 0.7fr;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-4);
+  border-top: 1px solid var(--outline-variant);
+  align-items: center;
+}
+
+.time-page__table-row:hover {
+  background: var(--surface-container-low, #f8f9fb);
+}
+
+.time-page__project-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.time-page__section-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface-variant);
+  margin-block-end: var(--spacing-3);
+}
+
+.time-page__roles {
+  margin-block-end: var(--spacing-8);
+}
+
+.time-page__role-chips {
+  display: flex;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
+.time-page__footer {
+  text-align: center;
+  padding-block-start: var(--spacing-6);
+  border-top: 1px solid var(--outline-variant);
+}
+
+.time-page__footer-text {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--on-surface-variant);
+}

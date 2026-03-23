@@ -233,6 +233,8 @@ program
     console.log('  ' + '─'.repeat(60));
     console.log(`  ${'TOTAL'.padEnd(33)} ${(fmtTime(totalYou) + ' / ' + fmtTime(totalAgent)).padEnd(15)} ${projects.reduce((s, p) => s + p.sessions, 0)}`);
     console.log('');
+    console.log('  Detailed view: heyiam open, then visit /time');
+    console.log('');
   });
 
 export { program };

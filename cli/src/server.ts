@@ -321,6 +321,77 @@ export function createApp(sessionsBasePath?: string) {
     }
   });
 
+  // ── Time stats — rich per-project agent breakdown ──────────
+  app.get('/api/time-stats', async (_req: Request, res: Response) => {
+    try {
+      const projects = await getProjects(sessionsBasePath);
+
+      const projectStats = await Promise.all(projects.map(async (proj) => {
+        const parents = proj.sessions.filter(s => !s.isSubagent);
+        let yourMinutes = 0;
+        let agentMinutes = 0;
+        let orchestratedCount = 0;
+        let maxParallelAgents = 0;
+        let totalChildAgents = 0;
+        const roleSet = new Set<string>();
+
+        for (const meta of parents) {
+          const stats = await getSessionStats(meta, proj.name);
+          const dur = stats.duration;
+          yourMinutes += dur;
+          agentMinutes += dur; // primary agent present every session
+
+          const children = meta.children ?? [];
+          if (children.length > 0) {
+            orchestratedCount++;
+            maxParallelAgents = Math.max(maxParallelAgents, children.length);
+            totalChildAgents += children.length;
+          }
+
+          for (const child of children) {
+            const childStats = await getSessionStats(child, proj.name);
+            agentMinutes += childStats.duration;
+            if (child.agentRole) roleSet.add(child.agentRole);
+          }
+        }
+
+        if (yourMinutes === 0) return null;
+
+        return {
+          name: proj.name,
+          dirName: proj.dirName,
+          sessions: parents.length,
+          yourMinutes,
+          agentMinutes,
+          orchestratedSessions: orchestratedCount,
+          maxParallelAgents,
+          avgAgentsPerSession: parents.length > 0
+            ? +((totalChildAgents / parents.length) + 1).toFixed(1) // +1 for primary agent
+            : 1,
+          uniqueRoles: [...roleSet],
+        };
+      }));
+
+      const results = projectStats.filter(Boolean);
+      results.sort((a, b) => b!.agentMinutes - a!.agentMinutes);
+
+      const totalYou = results.reduce((s, p) => s + p!.yourMinutes, 0);
+      const totalAgent = results.reduce((s, p) => s + p!.agentMinutes, 0);
+      const totalSessions = results.reduce((s, p) => s + p!.sessions, 0);
+
+      res.json({
+        projects: results,
+        totals: {
+          yourMinutes: totalYou,
+          agentMinutes: totalAgent,
+          sessions: totalSessions,
+        },
+      });
+    } catch (err) {
+      res.status(500).json({ error: { code: 'STATS_FAILED', message: (err as Error).message } });
+    }
+  });
+
   app.get('/api/projects/:project/sessions', async (req: Request, res: Response) => {
     try {
       const { project } = req.params;
