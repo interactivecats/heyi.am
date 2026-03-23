@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Session, ExecutionStep, ToolUsage, FileChange, QaPair } from '../types';
 import { fetchSession } from '../api';
-import { AgentTimeline } from './AgentTimeline';
+import { WorkTimeline } from '@heyiam/ui';
 
 export interface SessionDetailOverlayProps {
   session: Session;
@@ -337,7 +337,7 @@ export function SessionDetailOverlay({ session, projectName, projectDirName, onC
             {!timelineLoading && showTimeline && (
               <section className="session-detail__section">
                 <h2 className="session-detail__section-label">AGENT ACTIVITY</h2>
-                <AgentTimeline session={timelineSession} variant="full" />
+                <WorkTimeline sessions={[timelineSession]} />
               </section>
             )}
 

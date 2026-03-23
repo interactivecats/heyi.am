@@ -110,7 +110,7 @@
 
     <%!-- Work Timeline (React island from @heyiam/ui) --%>
     <div style="font-family: var(--font-mono); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">WORK TIMELINE</div>
-    <div data-work-timeline data-username={@portfolio_user.username} data-project-slug={@project.slug} style="margin-block-end: var(--spacing-8);">
+    <div data-work-timeline data-username={@portfolio_user.username} data-project-slug={@project.slug} style="margin-block-end: var(--spacing-8); max-height: 300px; overflow-y: auto;">
       <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant);">Loading timeline...</p>
     </div>
 
