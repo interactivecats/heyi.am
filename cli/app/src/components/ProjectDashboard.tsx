@@ -122,10 +122,12 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
 
       <div className="project-card__stats">
         <StatCell label="Sessions" value={String(project.sessionCount)} />
-        <StatCell label={project.totalAgentDuration ? 'Your Time' : 'Time'} value={formatDuration(project.totalDuration)} />
-        {project.totalAgentDuration && project.totalAgentDuration > 0 && (
-          <StatCell label="Agent Time" value={formatDuration(project.totalAgentDuration)} />
-        )}
+        <StatCell
+          label={project.totalAgentDuration ? 'You / Agents' : 'Time'}
+          value={project.totalAgentDuration
+            ? `${formatDuration(project.totalDuration)} / ${formatDuration(project.totalAgentDuration)}`
+            : formatDuration(project.totalDuration)}
+        />
         <StatCell label="LOC" value={formatLoc(project.totalLoc)} />
         <StatCell label="Files" value={String(project.totalFiles)} />
       </div>

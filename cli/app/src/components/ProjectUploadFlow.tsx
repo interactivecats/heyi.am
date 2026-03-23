@@ -105,10 +105,12 @@ function SessionOverview({
 
       <div className="upload-flow__stat-grid">
         <StatCard label="Sessions" value={String(project.sessionCount)} />
-        <StatCard label={project.totalAgentDuration ? 'Your Time' : 'Total Time'} value={formatDuration(project.totalDuration)} />
-        {project.totalAgentDuration != null && project.totalAgentDuration > 0 && (
-          <StatCard label="Agent Time" value={formatDuration(project.totalAgentDuration)} />
-        )}
+        <StatCard
+          label={project.totalAgentDuration ? 'You / Agents' : 'Total Time'}
+          value={project.totalAgentDuration
+            ? `${formatDuration(project.totalDuration)} / ${formatDuration(project.totalAgentDuration)}`
+            : formatDuration(project.totalDuration)}
+        />
         <StatCard label="LOC" value={formatLoc(project.totalLoc)} />
         <StatCard label="Files" value={String(project.totalFiles)} />
       </div>
@@ -1481,18 +1483,12 @@ function ProjectPreview({
         <div className="project-preview__hero-stats">
           <div className="project-preview__hero-stat">
             <div className="project-preview__hero-value project-preview__hero-value--primary">
-              {formatDuration(project.totalDuration)}
+              {project.totalAgentDuration
+                ? `${formatDuration(project.totalDuration)} / ${formatDuration(project.totalAgentDuration)}`
+                : formatDuration(project.totalDuration)}
             </div>
-            <div className="project-preview__hero-label">{project.totalAgentDuration ? 'Your Time' : 'Total Time'}</div>
+            <div className="project-preview__hero-label">{project.totalAgentDuration ? 'You / Agents' : 'Total Time'}</div>
           </div>
-          {project.totalAgentDuration != null && project.totalAgentDuration > 0 && (
-            <div className="project-preview__hero-stat">
-              <div className="project-preview__hero-value">
-                {formatDuration(project.totalAgentDuration)}
-              </div>
-              <div className="project-preview__hero-label">Agent Time</div>
-            </div>
-          )}
           <div className="project-preview__hero-stat">
             <div className="project-preview__hero-value">
               {project.sessionCount} ({selectedCount})
@@ -1909,10 +1905,12 @@ export function ReviewStep({
 
         <div className="upload-flow__stat-grid">
           <StatCard label="Sessions" value={publishedLabel} />
-          <StatCard label={project.totalAgentDuration ? 'Your Time' : 'Total Time'} value={formatDuration(project.totalDuration)} />
-          {project.totalAgentDuration != null && project.totalAgentDuration > 0 && (
-            <StatCard label="Agent Time" value={formatDuration(project.totalAgentDuration)} />
-          )}
+          <StatCard
+            label={project.totalAgentDuration ? 'You / Agents' : 'Total Time'}
+            value={project.totalAgentDuration
+              ? `${formatDuration(project.totalDuration)} / ${formatDuration(project.totalAgentDuration)}`
+              : formatDuration(project.totalDuration)}
+          />
           <StatCard label="LOC" value={formatLoc(project.totalLoc)} />
           <StatCard label="Files" value={String(project.totalFiles)} />
         </div>
@@ -2275,15 +2273,13 @@ function SuccessStep({ project, narrative, selectedCount, publishedUrl, publishe
               <span className="success-card__preview-stat-label">Sessions</span>
             </div>
             <div className="success-card__preview-stat">
-              <span className="success-card__preview-stat-value">{formatDuration(project.totalDuration)}</span>
-              <span className="success-card__preview-stat-label">Your Time</span>
+              <span className="success-card__preview-stat-value">
+                {project.totalAgentDuration
+                  ? `${formatDuration(project.totalDuration)} / ${formatDuration(project.totalAgentDuration)}`
+                  : formatDuration(project.totalDuration)}
+              </span>
+              <span className="success-card__preview-stat-label">{project.totalAgentDuration ? 'You / Agents' : 'Time'}</span>
             </div>
-            {project.totalAgentDuration && project.totalAgentDuration > 0 && (
-              <div className="success-card__preview-stat">
-                <span className="success-card__preview-stat-value">{formatDuration(project.totalAgentDuration)}</span>
-                <span className="success-card__preview-stat-label">Agent Time</span>
-              </div>
-            )}
             <div className="success-card__preview-stat">
               <span className="success-card__preview-stat-value">{formatLoc(project.totalLoc)}</span>
               <span className="success-card__preview-stat-label">LOC</span>

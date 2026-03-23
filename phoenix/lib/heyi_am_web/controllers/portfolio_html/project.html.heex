@@ -89,15 +89,11 @@
     %>
     <div class="project-hero-stats">
       <div class="card card-padded" style="text-align: center;">
-        <div style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 700; color: var(--primary);">{time_display}</div>
-        <div class="label-mono" style="margin-block-start: var(--spacing-1);">{if agent_time_display, do: "Your Time", else: "Total Time"}</div>
-      </div>
-      <%= if agent_time_display do %>
-        <div class="card card-padded" style="text-align: center;">
-          <div style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 700; color: var(--secondary, #6b21a8);">{agent_time_display}</div>
-          <div class="label-mono" style="margin-block-start: var(--spacing-1);">Agent Time</div>
+        <div style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 700; color: var(--primary);">
+          {if agent_time_display, do: "#{time_display} / #{agent_time_display}", else: time_display}
         </div>
-      <% end %>
+        <div class="label-mono" style="margin-block-start: var(--spacing-1);">{if agent_time_display, do: "You / Agents", else: "Total Time"}</div>
+      </div>
       <div class="card card-padded" style="text-align: center;">
         <div style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 700;">{sessions_display}</div>
         <div class="label-mono" style="margin-block-start: var(--spacing-1);">Sessions</div>
