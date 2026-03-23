@@ -174,7 +174,7 @@ defmodule HeyiAmWeb.VibeController do
             _ -> format_num(v)
           end
         end),
-        stat(stats, "longest_tool_chain", "Longest streak", fn v -> "#{format_num(v)} calls" end),
+        stat(stats, "longest_tool_chain", "Longest burst", fn v -> "#{format_num(v)} calls" end),
         stat(stats, "self_corrections", "Self-corrections", &format_num/1),
         stat(stats, "apologies", "AI apologies", &format_num/1),
         stat(stats, "bash_commands", "Bash commands", &format_num/1)
@@ -187,7 +187,7 @@ defmodule HeyiAmWeb.VibeController do
         stat_with(stats, "override_success_rate", "corrections", "Override success", fn rate, corr ->
           "#{format_pct(rate)} of #{format_num(corr)}"
         end),
-        stat(stats, "longest_autopilot", "Longest autopilot", fn v -> "#{format_num(v)} turns" end),
+        stat(stats, "longest_autopilot", "Longest leash", fn v -> "#{format_num(v)} turns" end),
         stat(stats, "first_blood_min", "First correction", fn v -> "#{v} min" end),
         stat(stats, "redirects_per_hour", "Redirects/hr", &format_num/1),
         stat(stats, "scope_creep", "Scope creep", &format_num/1)

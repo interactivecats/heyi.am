@@ -140,8 +140,8 @@ function rankStatsBySurprise(stats: VibeStats): StatCandidate[] {
       key: "longest_tool_chain",
       surprise: stats.longest_tool_chain / 20,
       sentence: stats.longest_tool_chain > 500
-        ? `The AI ran ${stats.longest_tool_chain} tool calls in a row without you saying a word. That's not delegation — that's trust.`
-        : `Longest uninterrupted AI streak: ${stats.longest_tool_chain} tool calls. You let it work.`,
+        ? `The AI ran ${stats.longest_tool_chain} tool calls in one burst without you saying a word. That's not delegation — that's trust.`
+        : `Longest burst: ${stats.longest_tool_chain} tool calls in a row. The AI had a lot to say.`,
     });
   }
 
@@ -194,8 +194,8 @@ function rankStatsBySurprise(stats: VibeStats): StatCandidate[] {
       key: "longest_autopilot",
       surprise: stats.longest_autopilot / 20,
       sentence: stats.longest_autopilot > 500
-        ? `You let the AI run for ${stats.longest_autopilot.toLocaleString()} turns straight. At that point it's not assistance — it's a coworker.`
-        : `Longest autopilot: ${stats.longest_autopilot} turns without interrupting. You know when to get out of the way.`,
+        ? `You gave the AI a ${stats.longest_autopilot.toLocaleString()}-turn leash. At that point it's not assistance — it's a coworker.`
+        : `Longest leash: ${stats.longest_autopilot} turns without correcting. You know when to get out of the way.`,
     });
   }
 

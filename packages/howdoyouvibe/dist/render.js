@@ -95,7 +95,7 @@ export function renderCard(stats, match, narrative) {
         aiLines.push(`    Test runs: ${fmt(stats.test_runs)}${failPct}${wow("tests", stats.test_runs, [[500, " (obsessive)"], [100, " (thorough)"]])}`);
     }
     if (stats.longest_tool_chain > 10) {
-        aiLines.push(`    Longest streak: ${fmt(stats.longest_tool_chain)} tool calls${wow("chain", stats.longest_tool_chain, [[500, " (unreal)"], [100, " (deep)"], [50, " (committed)"]])}`);
+        aiLines.push(`    Longest burst: ${fmt(stats.longest_tool_chain)} tool calls${wow("chain", stats.longest_tool_chain, [[500, " (unreal)"], [100, " (deep)"], [50, " (committed)"]])}`);
     }
     if (stats.self_corrections > 10) {
         aiLines.push(`    Self-corrections: ${fmt(stats.self_corrections)}${wow("selfcor", stats.self_corrections, [[2000, " (the AI never stopped fixing itself)"], [500, " (the AI learned on the job)"], [100, " (it kept iterating)"]])}`);
@@ -113,7 +113,7 @@ export function renderCard(stats, match, narrative) {
         interLines.push(`    Override success: ${pct(stats.override_success_rate)} of ${fmt(stats.corrections)} corrections`);
     }
     if (stats.longest_autopilot > 5) {
-        interLines.push(`    Longest autopilot: ${fmt(stats.longest_autopilot)} turns${wow("auto", stats.longest_autopilot, [[1000, " (that's a whole workday)"], [200, " (serious trust)"], [50, " (hands off)"]])}`);
+        interLines.push(`    Longest leash: ${fmt(stats.longest_autopilot)} turns${wow("auto", stats.longest_autopilot, [[1000, " (that's a whole workday)"], [200, " (serious trust)"], [50, " (hands off)"]])}`);
     }
     if (stats.first_blood_min > 2) {
         interLines.push(`    First correction: ${stats.first_blood_min} min in${wow("fb", stats.first_blood_min, [[30, " (patient)"], [15, " (long leash)"]])}`);
@@ -226,7 +226,7 @@ export function formatTextBlock(stats, match, narrative) {
         ai.push(`  Test runs: ${fmt(stats.test_runs)}${failPct}${wow("tests", stats.test_runs, [[500, " (obsessive)"], [100, " (thorough)"]])}`);
     }
     if (stats.longest_tool_chain > 10) {
-        ai.push(`  Longest streak: ${fmt(stats.longest_tool_chain)} tool calls${wow("chain", stats.longest_tool_chain, [[500, " (unreal)"], [100, " (deep)"], [50, " (committed)"]])}`);
+        ai.push(`  Longest burst: ${fmt(stats.longest_tool_chain)} tool calls${wow("chain", stats.longest_tool_chain, [[500, " (unreal)"], [100, " (deep)"], [50, " (committed)"]])}`);
     }
     if (stats.self_corrections > 10) {
         ai.push(`  Self-corrections: ${fmt(stats.self_corrections)}${wow("selfcor", stats.self_corrections, [[2000, " (the AI never stopped fixing itself)"], [500, " (the AI learned on the job)"], [100, " (it kept iterating)"]])}`);
@@ -244,7 +244,7 @@ export function formatTextBlock(stats, match, narrative) {
         collab.push(`  Override success: ${pct(stats.override_success_rate)} of ${fmt(stats.corrections)} corrections`);
     }
     if (stats.longest_autopilot > 5) {
-        collab.push(`  Longest autopilot: ${fmt(stats.longest_autopilot)} turns${wow("auto", stats.longest_autopilot, [[1000, " (that's a whole workday)"], [200, " (serious trust)"], [50, " (hands off)"]])}`);
+        collab.push(`  Longest leash: ${fmt(stats.longest_autopilot)} turns${wow("auto", stats.longest_autopilot, [[1000, " (that's a whole workday)"], [200, " (serious trust)"], [50, " (hands off)"]])}`);
     }
     if (stats.first_blood_min > 2) {
         collab.push(`  First correction: ${stats.first_blood_min} min in${wow("fb", stats.first_blood_min, [[30, " (patient)"], [15, " (long leash)"]])}`);
