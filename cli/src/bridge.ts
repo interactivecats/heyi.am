@@ -223,14 +223,29 @@ function extractRawLog(entries: RawEntry[], cwd?: string): string[] {
 }
 
 /**
+ * Canonical dedup key for child agents. Buckets by role and 30-second
+ * time window so worktree clones collapse into one entry.
+ *
+ * NOTE: server.ts ~line 1057 has a similar dedup pattern but uses
+ * `c.agentRole ?? c.sessionId` for the key while storing `c.agentRole ?? 'agent'`
+ * for display — this inconsistency means two children without agentRole get
+ * separate keys (different UUIDs) but identical display roles ('agent').
+ * Use this helper in both places to keep behavior consistent.
+ */
+export function childDedupeKey(agentRole: string | undefined, startTime: string): string {
+  const role = agentRole ?? 'agent';
+  const bucket = Math.floor(new Date(startTime).getTime() / 30_000);
+  return `${role}::${bucket}`;
+}
+
+/**
  * Deduplicate worktree clones: agents with same role and start time within
  * 30 seconds are considered duplicates. Keep the one with more turns.
  */
 export function deduplicateChildren(children: Session[]): Session[] {
   const seen = new Map<string, Session>();
   for (const child of children) {
-    const startBucket = Math.floor(new Date(child.date).getTime() / 30_000);
-    const key = `${child.agentRole ?? 'agent'}::${startBucket}`;
+    const key = childDedupeKey(child.agentRole, child.date);
     const existing = seen.get(key);
     if (!existing || child.turns > existing.turns) {
       seen.set(key, child);
@@ -264,14 +279,27 @@ export async function bridgeChildSessions(
   return deduplicateChildren(results);
 }
 
-/** Lightweight child summary for list endpoints — no full parse needed. */
-export interface ChildSessionSummary {
+/** Canonical type for child/agent data — used everywhere. */
+export interface AgentChild {
   sessionId: string;
-  role?: string;
-  title?: string;
-  durationMinutes?: number;
-  linesOfCode?: number;
+  role: string;
+  durationMinutes: number;
+  linesOfCode: number;
   date?: string;
+}
+
+/** @deprecated Use AgentChild instead */
+export type ChildSessionSummary = AgentChild;
+
+/** Convert a fully-parsed Session into the canonical AgentChild shape. */
+export function toAgentChild(session: Session): AgentChild {
+  return {
+    sessionId: session.id,
+    role: session.agentRole ?? 'agent',
+    durationMinutes: session.durationMinutes,
+    linesOfCode: session.linesOfCode,
+    date: session.date,
+  };
 }
 
 /** Compute aggregated stats from fully-parsed child sessions. */

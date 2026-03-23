@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { bridgeToAnalyzer, aggregateChildStats, deduplicateChildren } from "./bridge.js";
+import { bridgeToAnalyzer, aggregateChildStats, deduplicateChildren, childDedupeKey } from "./bridge.js";
 import type { Session } from "./analyzer.js";
 import type { SessionAnalysis as ParserOutput, RawEntry } from "./parsers/types.js";
 
@@ -390,5 +390,41 @@ describe("deduplicateChildren", () => {
     ];
     const result = deduplicateChildren(children);
     expect(result).toHaveLength(2);
+  });
+});
+
+describe("childDedupeKey", () => {
+  it("uses 'agent' as fallback when agentRole is undefined", () => {
+    const key = childDedupeKey(undefined, "2026-03-20T10:00:00.000Z");
+    expect(key).toMatch(/^agent::\d+$/);
+  });
+
+  it("uses the provided agentRole", () => {
+    const key = childDedupeKey("frontend-dev", "2026-03-20T10:00:00.000Z");
+    expect(key).toMatch(/^frontend-dev::\d+$/);
+  });
+
+  it("produces same key for times within same 30-second bucket", () => {
+    const key1 = childDedupeKey("dev", "2026-03-20T10:00:00.000Z");
+    const key2 = childDedupeKey("dev", "2026-03-20T10:00:15.000Z");
+    expect(key1).toBe(key2);
+  });
+
+  it("produces different keys for times in different 30-second buckets", () => {
+    const key1 = childDedupeKey("dev", "2026-03-20T10:00:00.000Z");
+    const key2 = childDedupeKey("dev", "2026-03-20T10:00:31.000Z");
+    expect(key1).not.toBe(key2);
+  });
+
+  it("produces different keys for different roles in same bucket", () => {
+    const key1 = childDedupeKey("frontend", "2026-03-20T10:00:00.000Z");
+    const key2 = childDedupeKey("backend", "2026-03-20T10:00:00.000Z");
+    expect(key1).not.toBe(key2);
+  });
+
+  it("uses consistent fallback — two undefined roles produce same key", () => {
+    const key1 = childDedupeKey(undefined, "2026-03-20T10:00:00.000Z");
+    const key2 = childDedupeKey(undefined, "2026-03-20T10:00:10.000Z");
+    expect(key1).toBe(key2);
   });
 });
