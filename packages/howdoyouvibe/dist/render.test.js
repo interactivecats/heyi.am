@@ -75,8 +75,8 @@ describe("formatTextBlock", () => {
         expect(block).toContain("THE BACK-AND-FORTH");
         expect(block).toContain("npx howdoyouvibe");
         expect(block).toContain("847 turns");
-        // Has box-drawing line
-        expect(block).toContain("═══");
+        // Has paired stats with · separator
+        expect(block).toContain("·");
     });
     it("includes narrative when provided", () => {
         const stats = makeStats();

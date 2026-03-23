@@ -221,70 +221,76 @@ function wordWrap(text: string, maxWidth: number): string[] {
  * Format the full card as a copyable text block for Discord/Slack.
  * Mirrors the terminal output exactly so what you see is what you share.
  */
+/**
+ * Format for messaging apps (WhatsApp, Slack, Discord, iMessage).
+ * Vertical, compact, proportional-font friendly. No columns — they break on mobile.
+ * Stats paired with · on each line for density without requiring monospace.
+ */
 export function formatTextBlock(
   stats: VibeStats,
   match: ArchetypeMatch,
   narrative: string | null,
 ): string {
   const lines: string[] = [];
-  const P = PLAIN_LINE;
-  const W = COL_WIDTH;
+  const { voiceCol, aiCol, collabCol } = buildStatColumns(stats);
 
-  lines.push("HOW DO YOU VIBE?");
-  lines.push(P);
-  lines.push("");
+  lines.push(`HOW DO YOU VIBE?`);
+  lines.push(``);
   lines.push(match.headline);
 
   if (narrative) {
-    lines.push("");
-    for (const wrapped of wordWrap(narrative, 76)) {
-      lines.push(wrapped);
-    }
+    lines.push(``);
+    lines.push(narrative);
   }
 
-  lines.push("");
-  lines.push(P);
-
-  // Build the same three columns as the terminal card
-  const { voiceCol, aiCol, collabCol } = buildStatColumns(stats);
-
-  const columns = [
-    { header: "YOUR VOICE", entries: voiceCol },
-    { header: "THE AI'S HABITS", entries: aiCol },
-    { header: "THE BACK-AND-FORTH", entries: collabCol },
-  ].filter(col => col.entries.length > 0);
-
-  if (columns.length > 0) {
-    lines.push("");
-    lines.push(columns.map(col => col.header.padEnd(W)).join("  "));
-    const maxRows = Math.max(...columns.map(col => col.entries.length));
-    for (let r = 0; r < maxRows; r++) {
-      const row = columns.map(col => {
-        const entry = col.entries[r];
-        if (!entry) return "".padEnd(W);
-        const text = `${entry[0]}: ${entry[1]}`;
-        return text.length > W ? text.slice(0, W) : text.padEnd(W);
-      });
-      lines.push(row.join("  "));
+  // Pair stats on lines with · separator — compact but readable
+  function pairStats(entries: StatEntry[]): string[] {
+    const out: string[] = [];
+    for (let i = 0; i < entries.length; i += 2) {
+      const left = `${entries[i][0]}: ${entries[i][1]}`;
+      if (i + 1 < entries.length) {
+        out.push(`${left} · ${entries[i + 1][0]}: ${entries[i + 1][1]}`);
+      } else {
+        out.push(left);
+      }
     }
+    return out;
   }
 
-  lines.push("");
-  lines.push(P);
+  if (voiceCol.length > 0) {
+    lines.push(``);
+    lines.push(`YOUR VOICE`);
+    lines.push(...pairStats(voiceCol));
+  }
 
+  if (aiCol.length > 0) {
+    lines.push(``);
+    lines.push(`THE AI'S HABITS`);
+    lines.push(...pairStats(aiCol));
+  }
+
+  if (collabCol.length > 0) {
+    lines.push(``);
+    lines.push(`THE BACK-AND-FORTH`);
+    lines.push(...pairStats(collabCol));
+  }
+
+  lines.push(``);
+
+  const footerParts: string[] = [];
   if (stats.source_breakdown && Object.keys(stats.source_breakdown).length > 0) {
     const total = Object.values(stats.source_breakdown).reduce((a, b) => a + b, 0);
     const parts = Object.entries(stats.source_breakdown)
       .sort(([, a], [, b]) => b - a)
       .map(([src, count]) => {
         const name = SOURCE_DISPLAY_NAMES[src as SessionSource] ?? src;
-        const p = Math.round((count / total) * 100);
-        return `${name} ${p}%`;
+        return `${name} ${Math.round((count / total) * 100)}%`;
       });
-    lines.push(parts.join("  ·  "));
+    footerParts.push(parts.join(" · "));
   }
-
-  lines.push(`${fmt(stats.total_turns)} turns across ${stats.session_count} sessions`);
+  footerParts.push(`${fmt(stats.total_turns)} turns · ${stats.session_count} sessions`);
+  if (stats.avg_daily_hours > 0) footerParts.push(`${stats.avg_daily_hours}h/day`);
+  lines.push(footerParts.join(" · "));
   lines.push(`npx howdoyouvibe`);
 
   return lines.join("\n");
