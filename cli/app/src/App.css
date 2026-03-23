@@ -3377,6 +3377,72 @@ details[open] > .collapsible__summary .collapsible__chevron {
   width: 100%;
 }
 
+/* ── Distribution Helpers ─────────────────────────────────────── */
+
+.distribution-helpers {
+  width: 100%;
+  margin-block-start: var(--spacing-6);
+  padding-block-start: var(--spacing-6);
+  border-top: 1px solid var(--outline-variant);
+}
+
+.distribution-helpers__header {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface-variant);
+  margin-block-end: var(--spacing-4);
+}
+
+.distribution-helpers__item {
+  margin-block-end: var(--spacing-4);
+}
+
+.distribution-helpers__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  margin-block-end: var(--spacing-1);
+}
+
+.distribution-helpers__snippet {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-2);
+  background: var(--surface-container, #f0f2f5);
+  border-radius: var(--radius-sm, 4px);
+  padding: var(--spacing-2) var(--spacing-3);
+}
+
+.distribution-helpers__snippet code {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--on-surface);
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.distribution-helpers__copy {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--primary, #084471);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.distribution-helpers__copy:hover {
+  text-decoration: underline;
+}
+
 /* ── Triage Terminal ──────────────────────────────────────────── */
 
 .triage-terminal {

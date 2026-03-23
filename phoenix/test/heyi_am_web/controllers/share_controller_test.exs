@@ -81,6 +81,21 @@ defmodule HeyiAmWeb.ShareControllerTest do
       html = html_response(conn, 200)
       assert html =~ "/testdev"
     end
+
+    test "includes OG meta tags for session", %{conn: conn} do
+      conn = get(conn, ~p"/s/real-token-123")
+      html = html_response(conn, 200)
+      assert html =~ ~s(og:title" content="Rebuilding the auth system — Test Developer")
+      assert html =~ ~s(og:description)
+      assert html =~ ~s(og:url" content=")
+      assert html =~ ~s(twitter:card" content="summary")
+    end
+
+    test "includes create-yours CTA", %{conn: conn} do
+      conn = get(conn, ~p"/s/real-token-123")
+      html = html_response(conn, 200)
+      assert html =~ "Turn yours into proof"
+    end
   end
 
   describe "template rendering" do

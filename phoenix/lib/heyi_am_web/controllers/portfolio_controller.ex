@@ -19,13 +19,34 @@ defmodule HeyiAmWeb.PortfolioController do
         projects = Projects.list_user_projects_with_published_shares(user.id)
         all_shares = Enum.flat_map(projects, & &1.shares)
 
+        display_name = user.display_name || user.username
+        project_count = length(projects)
+        session_count = Enum.sum(Enum.map(projects, fn p -> p.total_sessions || length(p.shares) end))
+
+        og_description =
+          cond do
+            user.bio && user.bio != "" ->
+              user.bio
+
+            project_count > 0 ->
+              "#{project_count} #{if project_count == 1, do: "project", else: "projects"}, " <>
+                "#{session_count} AI-assisted coding #{if session_count == 1, do: "session", else: "sessions"}"
+
+            true ->
+              "AI-assisted development portfolio on heyi.am"
+          end
+
         render(conn, :show,
           portfolio_user: user,
           projects: build_projects(projects, user.username),
           collab_profile: build_collab_profile(all_shares),
           metrics: build_metrics(all_shares),
           recent_activity: build_recent_activity(all_shares),
-          page_title: user.display_name || user.username
+          page_title: display_name,
+          og_title: "#{display_name} — heyi.am",
+          og_description: og_description,
+          og_url: HeyiAmWeb.Endpoint.url() <> "/#{user.username}",
+          og_type: "profile"
         )
     end
   end
@@ -65,11 +86,35 @@ defmodule HeyiAmWeb.PortfolioController do
 
             project_detail = build_project_detail(project, user.username)
 
+            display_name = user.display_name || user.username
+            og_title = "#{project.title} — #{display_name}"
+
+            og_description =
+              cond do
+                project.narrative && project.narrative != "" ->
+                  String.slice(project.narrative, 0, 200)
+
+                true ->
+                  session_count = length(project.shares)
+                  skills_text = if (project.skills || []) != [], do: " using #{Enum.join(Enum.take(project.skills, 3), ", ")}", else: ""
+                  "#{session_count} AI-assisted coding #{if session_count == 1, do: "session", else: "sessions"}#{skills_text}"
+              end
+
+            og_image =
+              case screenshot_url(project.screenshot_key, user.username, project.slug) do
+                nil -> nil
+                path -> HeyiAmWeb.Endpoint.url() <> path
+              end
+
             render(conn, :project,
               portfolio_user: user,
               project: project_detail,
               sessions: sessions,
-              page_title: "#{project.title} — #{user.display_name || user.username}"
+              page_title: "#{project.title} — #{display_name}",
+              og_title: og_title,
+              og_description: og_description,
+              og_url: HeyiAmWeb.Endpoint.url() <> "/#{user.username}/#{project.slug}",
+              og_image: og_image
             )
         end
     end

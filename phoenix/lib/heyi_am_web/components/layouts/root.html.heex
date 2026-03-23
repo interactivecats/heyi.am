@@ -7,6 +7,29 @@
     <.live_title default="heyi.am" suffix=" · heyi.am">
       {assigns[:page_title]}
     </.live_title>
+    <%!-- Open Graph meta tags --%>
+    <meta property="og:site_name" content="heyi.am" />
+    <meta property="og:type" content={assigns[:og_type] || "website"} />
+    <meta property="og:title" content={assigns[:og_title] || assigns[:page_title] || "heyi.am"} />
+    <%= if assigns[:og_description] do %>
+      <meta property="og:description" content={@og_description} />
+      <meta name="description" content={@og_description} />
+    <% end %>
+    <%= if assigns[:og_url] do %>
+      <meta property="og:url" content={@og_url} />
+    <% end %>
+    <%= if assigns[:og_image] do %>
+      <meta property="og:image" content={@og_image} />
+    <% end %>
+    <%!-- Twitter Card --%>
+    <meta name="twitter:card" content={if assigns[:og_image], do: "summary_large_image", else: "summary"} />
+    <meta name="twitter:title" content={assigns[:og_title] || assigns[:page_title] || "heyi.am"} />
+    <%= if assigns[:og_description] do %>
+      <meta name="twitter:description" content={@og_description} />
+    <% end %>
+    <%= if assigns[:og_image] do %>
+      <meta name="twitter:image" content={@og_image} />
+    <% end %>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />

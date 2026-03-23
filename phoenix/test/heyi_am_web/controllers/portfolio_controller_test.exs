@@ -110,6 +110,25 @@ defmodule HeyiAmWeb.PortfolioControllerTest do
       conn = get(conn, "/nobody-here")
       assert html_response(conn, 404)
     end
+
+    test "includes OG meta tags for portfolio", %{conn: conn} do
+      conn = get(conn, ~p"/alice")
+      html = html_response(conn, 200)
+      assert html =~ ~s(og:title" content="Alice Builder — heyi.am")
+      assert html =~ ~s(og:description" content="I build things")
+      assert html =~ ~s(og:type" content="profile")
+      assert html =~ ~s(og:url" content=")
+      assert html =~ ~s(twitter:card" content="summary")
+    end
+
+    test "includes OG meta tags for project page", %{conn: conn} do
+      conn = get(conn, ~p"/alice/heyiam")
+      html = html_response(conn, 200)
+      assert html =~ ~s(og:title" content="heyi.am — Alice Builder")
+      assert html =~ ~s(og:description)
+      assert html =~ ~s(og:url" content=")
+      assert html =~ ~s(twitter:card" content="summary")
+    end
   end
 
   describe "empty portfolio state" do

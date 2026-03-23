@@ -2307,6 +2307,86 @@ function SuccessStep({ project, narrative, selectedCount, publishedUrl, publishe
             </button>
           )}
         </div>
+
+        {isPublished && displayUrl && (
+          <DistributionHelpers projectName={project.name} displayUrl={displayUrl} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Distribution helpers (share snippets) ────────────────────────
+
+interface DistributionHelpersProps {
+  projectName: string;
+  displayUrl: string;
+}
+
+function DistributionHelpers({ projectName, displayUrl }: DistributionHelpersProps) {
+  const fullUrl = `https://${displayUrl}`;
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copySnippet = useCallback((id: string, text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    }).catch(() => {});
+  }, []);
+
+  const readmeSnippet = `[![Built with AI](https://img.shields.io/badge/built%20with%20AI-heyi.am-084471)](${fullUrl})`;
+
+  const xText = `See how I built ${projectName} with AI — decisions, trade-offs, and proof of work:\n${fullUrl}`;
+
+  const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(fullUrl)}`;
+
+  return (
+    <div className="distribution-helpers">
+      <div className="distribution-helpers__header">Share your proof</div>
+
+      <div className="distribution-helpers__item">
+        <div className="distribution-helpers__label">GitHub README</div>
+        <div className="distribution-helpers__snippet">
+          <code>{readmeSnippet}</code>
+          <button
+            className="distribution-helpers__copy"
+            onClick={() => copySnippet('readme', readmeSnippet)}
+          >
+            {copiedId === 'readme' ? 'Copied' : 'Copy'}
+          </button>
+        </div>
+      </div>
+
+      <div className="distribution-helpers__item">
+        <div className="distribution-helpers__label">Share on X</div>
+        <div className="distribution-helpers__snippet">
+          <code>{xText}</code>
+          <button
+            className="distribution-helpers__copy"
+            onClick={() => {
+              window.open(
+                `https://twitter.com/intent/tweet?text=${encodeURIComponent(xText)}`,
+                '_blank',
+                'noopener,width=550,height=420'
+              );
+            }}
+          >
+            Post
+          </button>
+        </div>
+      </div>
+
+      <div className="distribution-helpers__item">
+        <div className="distribution-helpers__label">LinkedIn</div>
+        <div className="distribution-helpers__snippet">
+          <code>{fullUrl}</code>
+          <button
+            className="distribution-helpers__copy"
+            onClick={() => window.open(linkedInUrl, '_blank', 'noopener,width=550,height=420')}
+          >
+            Share
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -140,12 +140,16 @@ defmodule HeyiAmWeb.ShareController do
     with %{} = user <- Accounts.get_user_by_username(username),
          %{} = share <- load_share_by_slug_or_token(user.id, project_slug, session_slug) do
       session = build_session(share)
+      display_name = (share.user && (share.user.display_name || share.user.username)) || username
 
       render(conn, :show,
         session: session,
         page_title: session.title,
         portfolio_layout: "editorial",
-        breadcrumb: %{username: username, project_slug: project_slug, project_title: share.project_name}
+        breadcrumb: %{username: username, project_slug: project_slug, project_title: share.project_name},
+        og_title: "#{session.title} — #{display_name}",
+        og_description: build_og_description(share),
+        og_url: HeyiAmWeb.Endpoint.url() <> "/#{username}/#{project_slug}/#{session_slug}"
       )
     else
       nil ->
@@ -179,10 +183,17 @@ defmodule HeyiAmWeb.ShareController do
         share ->
           session = build_session(share)
 
+          og_description = build_og_description(share)
+          username = (share.user && share.user.username) || "anonymous"
+          og_title = if share.user, do: "#{session.title} — #{share.user.display_name || username}", else: session.title
+
           render(conn, :show,
             session: session,
             page_title: session.title,
-            portfolio_layout: "editorial"
+            portfolio_layout: "editorial",
+            og_title: og_title,
+            og_description: og_description,
+            og_url: HeyiAmWeb.Endpoint.url() <> "/s/#{share.token}"
           )
       end
     end
@@ -250,6 +261,26 @@ defmodule HeyiAmWeb.ShareController do
       {role, text} = classify_log_line(line)
       %{"role" => role, "id" => "Turn #{idx}", "text" => text, "timestamp" => nil}
     end)
+  end
+
+  defp build_og_description(share) do
+    parts = []
+
+    parts =
+      if share.dev_take && share.dev_take != "" do
+        [String.slice(share.dev_take, 0, 160) | parts]
+      else
+        duration = share.duration_minutes || 0
+        turns = share.turns || 0
+        loc = share.loc_changed || 0
+        skills = Enum.join(Enum.take(share.skills || [], 3), ", ")
+
+        summary = "#{duration}min, #{turns} turns, #{loc} LOC"
+        summary = if skills != "", do: summary <> " — #{skills}", else: summary
+        [summary | parts]
+      end
+
+    parts |> Enum.reverse() |> Enum.join(" ")
   end
 
   defp classify_log_line("> " <> rest), do: {"dev", rest}

@@ -81,7 +81,21 @@ defmodule HeyiAmWeb.AppShell do
         {render_slot(@inner_block)}
       </main>
 
-      <footer style="border-top: 1px solid var(--outline-variant); padding-block: var(--spacing-6); margin-block-start: var(--spacing-8);">
+      <aside style="margin-block-start: var(--spacing-8); padding-block: var(--spacing-6); background: var(--surface-container, #f0f2f5); text-align: center;">
+        <div style="max-width: var(--content-max-width); margin-inline: auto; padding-inline: var(--spacing-6);">
+          <p class="body-sm" style="color: var(--on-surface-variant); margin: 0 0 0.25rem 0;">
+            AI coding creates invisible work.
+          </p>
+          <a
+            href="/"
+            style="color: var(--primary, #084471); font-weight: 600; text-decoration: none; font-size: 0.875rem;"
+          >
+            Turn yours into proof &rarr;
+          </a>
+        </div>
+      </aside>
+
+      <footer style="border-top: 1px solid var(--outline-variant); padding-block: var(--spacing-6);">
         <div style="max-width: var(--content-max-width); margin-inline: auto; padding-inline: var(--spacing-6); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-4);">
           <span class="label-sm" style="color: var(--on-surface-variant);">
             heyi.am
