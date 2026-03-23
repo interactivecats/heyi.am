@@ -5,7 +5,7 @@ defmodule HeyiAm.LLM.Usage do
   @valid_statuses ~w(success error)
 
   schema "enhancement_usage" do
-    field :user_id, :id
+    belongs_to :user, HeyiAm.Accounts.User
     field :provider, :string
     field :model, :string
     field :input_tokens, :integer, default: 0
