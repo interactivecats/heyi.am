@@ -149,7 +149,8 @@ export function renderCard(
     lines.push(`${INDENT}${parts.join(`  ${c.gray}·${c.reset}  `)}`);
   }
 
-  lines.push(`${INDENT}${c.gray}${fmt(stats.total_turns)} turns across ${stats.session_count} sessions${c.reset}`);
+  const dailyHours = stats.avg_daily_hours > 0 ? `  ${c.gray}·${c.reset}  ${c.green}${stats.avg_daily_hours}h/day avg${c.reset}` : "";
+  lines.push(`${INDENT}${c.gray}${fmt(stats.total_turns)} turns across ${stats.session_count} sessions${c.reset}${dailyHours}`);
   lines.push(`${INDENT}${c.dim}All analysis ran locally. No session data left your machine.${c.reset}`);
   lines.push("");
 
@@ -182,6 +183,7 @@ function buildStatColumns(stats: VibeStats): { voiceCol: StatEntry[]; aiCol: Sta
   if (stats.self_corrections > 10) aiCol.push(["Self-fixes", `${fmt(stats.self_corrections)}${wow("selfcor", stats.self_corrections, [[500, " yikes"], [100, " learning"]])}`]);
   if (stats.apologies > 3) aiCol.push(["Apologies", `${stats.apologies}`]);
   if (stats.secret_leaks_ai > 0) aiCol.push(["AI leaked", `${stats.secret_leaks_ai}${stats.secret_leaks_ai > 5 ? " rotate!" : ""}`]);
+  if (stats.agent_spawns > 0) aiCol.push(["Agents spawned", `${fmt(stats.agent_spawns)}`]);
 
   const collabCol: StatEntry[] = [];
   if (!isZero(stats.override_success_rate) && stats.corrections > 0) collabCol.push(["Override win", `${pct(stats.override_success_rate)} of ${fmt(stats.corrections)}`]);
@@ -191,6 +193,7 @@ function buildStatColumns(stats: VibeStats): { voiceCol: StatEntry[]; aiCol: Sta
   else if (stats.redirects_per_hour > 3) collabCol.push(["Redirects/hr", `${stats.redirects_per_hour} tight grip`]);
   if (stats.scope_creep > 2) collabCol.push(["Scope creep", `${stats.scope_creep}`]);
   if (stats.interruptions > 0) collabCol.push(["Interrupts", `${stats.interruptions}${stats.interruptions > 10 ? " impatient" : ""}`]);
+  if (stats.plan_mode_uses > 0) collabCol.push(["Plans made", `${stats.plan_mode_uses}`]);
 
   return { voiceCol, aiCol, collabCol };
 }

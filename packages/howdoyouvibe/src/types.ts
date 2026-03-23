@@ -39,6 +39,9 @@ export interface VibeStats {
   interruptions: number;       // times user hit Escape / cancelled AI mid-response
   secret_leaks_user: number;   // secrets YOU pasted into prompts or got back in tool results
   secret_leaks_ai: number;     // secrets the AI wrote into code or echoed back
+  plan_mode_uses: number;      // times EnterPlanMode was called
+  agent_spawns: number;        // times Agent tool was called (multi-agent orchestration)
+  avg_daily_hours: number;     // average coding hours per active day
 
   // Metadata
   total_turns: number;

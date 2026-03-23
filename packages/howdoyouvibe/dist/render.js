@@ -121,7 +121,8 @@ export function renderCard(stats, match, narrative) {
         });
         lines.push(`${INDENT}${parts.join(`  ${c.gray}·${c.reset}  `)}`);
     }
-    lines.push(`${INDENT}${c.gray}${fmt(stats.total_turns)} turns across ${stats.session_count} sessions${c.reset}`);
+    const dailyHours = stats.avg_daily_hours > 0 ? `  ${c.gray}·${c.reset}  ${c.green}${stats.avg_daily_hours}h/day avg${c.reset}` : "";
+    lines.push(`${INDENT}${c.gray}${fmt(stats.total_turns)} turns across ${stats.session_count} sessions${c.reset}${dailyHours}`);
     lines.push(`${INDENT}${c.dim}All analysis ran locally. No session data left your machine.${c.reset}`);
     lines.push("");
     console.log(lines.join("\n"));
@@ -162,6 +163,8 @@ function buildStatColumns(stats) {
         aiCol.push(["Apologies", `${stats.apologies}`]);
     if (stats.secret_leaks_ai > 0)
         aiCol.push(["AI leaked", `${stats.secret_leaks_ai}${stats.secret_leaks_ai > 5 ? " rotate!" : ""}`]);
+    if (stats.agent_spawns > 0)
+        aiCol.push(["Agents spawned", `${fmt(stats.agent_spawns)}`]);
     const collabCol = [];
     if (!isZero(stats.override_success_rate) && stats.corrections > 0)
         collabCol.push(["Override win", `${pct(stats.override_success_rate)} of ${fmt(stats.corrections)}`]);
@@ -177,6 +180,8 @@ function buildStatColumns(stats) {
         collabCol.push(["Scope creep", `${stats.scope_creep}`]);
     if (stats.interruptions > 0)
         collabCol.push(["Interrupts", `${stats.interruptions}${stats.interruptions > 10 ? " impatient" : ""}`]);
+    if (stats.plan_mode_uses > 0)
+        collabCol.push(["Plans made", `${stats.plan_mode_uses}`]);
     return { voiceCol, aiCol, collabCol };
 }
 function wordWrap(text, maxWidth) {

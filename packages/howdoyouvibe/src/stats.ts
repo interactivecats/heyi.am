@@ -221,6 +221,9 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
   let interruptions = 0;
   let secretLeaksUser = 0;
   let secretLeaksAi = 0;
+  let planModeUses = 0;
+  let agentSpawns = 0;
+  const activeDays = new Set<string>(); // track unique days for avg daily hours
 
   let totalTurns = 0;
   let totalDurationMin = 0;
@@ -326,6 +329,11 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
         // Late night
         if (isLateNight(entry.timestamp)) lateNightTurns++;
 
+        // Track active days for daily hours calculation
+        if (entry.timestamp) {
+          try { activeDays.add(new Date(entry.timestamp).toISOString().slice(0, 10)); } catch {}
+        }
+
         // Weekend
         if (isWeekend(entry.timestamp)) weekendTurns++;
 
@@ -384,6 +392,10 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
               }
             }
           }
+
+          // Plan mode and agent spawns
+          if (tool.name === "EnterPlanMode") planModeUses++;
+          if (tool.name === "Agent") agentSpawns++;
 
           // Self-corrections: same file edited again AND there's a signal
           // the AI knows it messed up (error in tool result, or admission in text)
@@ -464,6 +476,9 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
     interruptions,
     secret_leaks_user: secretLeaksUser,
     secret_leaks_ai: secretLeaksAi,
+    plan_mode_uses: planModeUses,
+    agent_spawns: agentSpawns,
+    avg_daily_hours: activeDays.size > 0 ? round1(totalDurationMin / 60 / activeDays.size) : 0,
     total_turns: totalTurns,
     session_count: sessions.length,
     total_duration_min: totalDurationMin,

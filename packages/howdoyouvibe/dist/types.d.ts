@@ -32,6 +32,9 @@ export interface VibeStats {
     interruptions: number;
     secret_leaks_user: number;
     secret_leaks_ai: number;
+    plan_mode_uses: number;
+    agent_spawns: number;
+    avg_daily_hours: number;
     total_turns: number;
     session_count: number;
     total_duration_min: number;
