@@ -19,10 +19,22 @@
       </div>
 
       <%!-- Stats Grid --%>
+      <%
+        agent_mins = case @session.agent_summary do
+          %{"agents" => agents} when is_list(agents) ->
+            Enum.sum(Enum.map(agents, fn a -> a["duration_minutes"] || 0 end))
+          _ -> 0
+        end
+        # Agent time = session duration (primary agent) + child agent time
+        total_agent_mins = (@session.duration_minutes || 0) + agent_mins
+        has_agents = agent_mins > 0
+      %>
       <div class="stats-strip">
         <div class="stat-card">
-          <span class="stat-card-label">Duration</span>
-          <span class="stat-card-value stat-card-value--sm">{@session.duration_minutes}m</span>
+          <span class="stat-card-label">{if has_agents, do: "You / Agents", else: "Duration"}</span>
+          <span class="stat-card-value stat-card-value--sm">
+            {if has_agents, do: "#{@session.duration_minutes}m / #{total_agent_mins}m", else: "#{@session.duration_minutes}m"}
+          </span>
         </div>
         <div class="stat-card">
           <span class="stat-card-label">Turns</span>
