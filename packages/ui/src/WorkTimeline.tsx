@@ -412,9 +412,10 @@ function layout(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CONCURRENT)
       const s = seg.session;
       const kids = getChildren(s);
       const dur = s.durationMinutes;
-      // Width proportional to duration. Agent sessions get more room to spread.
+      // Width proportional to duration. Agent sessions need enough room for wave curves.
+      const agentMinW = kids.length > 0 ? Math.max(MIN_W, kids.length * 30 + 100) : MIN_W;
       const w = kids.length > 0
-        ? Math.min(Math.max(dur * PX_PER_MIN, MIN_W), MAX_CONCURRENT_W)
+        ? Math.min(Math.max(dur * PX_PER_MIN, agentMinW), MAX_CONCURRENT_W)
         : Math.min(Math.max(timeToPx(dur), MIN_W), MAX_W);
       const sub = formatDuration(s.durationMinutes);
       const tooltip = buildTooltip(s);
