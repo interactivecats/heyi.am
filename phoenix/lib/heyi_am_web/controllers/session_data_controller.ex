@@ -26,7 +26,7 @@ defmodule HeyiAmWeb.SessionDataController do
   @doc "Return lightweight session data for a project's timeline (no S3 fetch needed)"
   def project_sessions(conn, %{"username" => username, "slug" => slug}) do
     with user when not is_nil(user) <- HeyiAm.Accounts.get_user_by_username(username),
-         project when not is_nil(project) <- Projects.get_project_with_all_shares(user.id, slug) do
+         project when not is_nil(project) <- Projects.get_project_with_published_shares(user.id, slug) do
 
       sessions =
         Enum.map(project.shares, fn share ->
