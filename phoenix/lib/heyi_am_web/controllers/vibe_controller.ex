@@ -133,6 +133,7 @@ defmodule HeyiAmWeb.VibeController do
         conn
         |> put_resp_content_type("image/svg+xml")
         |> put_resp_header("cache-control", "public, max-age=86400, immutable")
+        |> put_resp_header("content-security-policy", "default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com")
         |> send_resp(200, svg)
     end
   end

@@ -56,6 +56,19 @@ defmodule HeyiAmWeb.VibeApiController do
     end
   end
 
+  @modifier_phrases %{
+    "says-please" => "who says please",
+    "codes-at-3am" => "who codes at 3am",
+    "reads-5x-more" => "who reads 5x more than writes",
+    "never-tests" => "who never tests",
+    "cusses-under-pressure" => "who cusses under pressure",
+    "writes-essays" => "who writes essays for prompts",
+    "lets-ai-cook" => "who lets the AI cook",
+    "asks-more-than-tells" => "who asks more than tells",
+    "scope-creeps" => "who scope-creeps every session",
+    "ships-on-weekends" => "who ships on weekends"
+  }
+
   def narrative(conn, params) do
     stats = params["stats"]
     archetype_id = params["archetype_id"]
@@ -68,18 +81,22 @@ defmodule HeyiAmWeb.VibeApiController do
       |> halt()
     else
       archetype_name = Map.get(@archetype_names, archetype_id, "The Vibe Coder")
+      # Validate modifier_id against allowlist to prevent prompt injection
+      safe_modifier = Map.get(@modifier_phrases, modifier_id)
+      # Only pass numeric stat values to the LLM
+      safe_stats = stats |> Enum.filter(fn {_k, v} -> is_number(v) end) |> Map.new()
 
-      case generate_narrative(stats, archetype_name, modifier_id) do
+      case generate_narrative(safe_stats, archetype_name, safe_modifier) do
         {:ok, text} ->
           json(conn, %{narrative: text})
 
         {:error, _reason} ->
-          json(conn, %{narrative: fallback_narrative(archetype_name, stats)})
+          json(conn, %{narrative: fallback_narrative(archetype_name, safe_stats)})
       end
     end
   end
 
-  defp generate_narrative(stats, archetype_name, modifier_id) do
+  defp generate_narrative(stats, archetype_name, modifier_phrase) do
     system = """
     Write exactly 2 sentences about this developer's AI coding style. \
     Write in second person ("you"), as if roasting a friend at a bar. \
@@ -89,7 +106,7 @@ defmodule HeyiAmWeb.VibeApiController do
     No filler. No compliments. Just observations with personality.\
     """
 
-    modifier_text = if modifier_id, do: " (modifier: #{modifier_id})", else: ""
+    modifier_text = if modifier_phrase, do: " (#{modifier_phrase})", else: ""
 
     user = """
     Archetype: #{archetype_name}#{modifier_text}

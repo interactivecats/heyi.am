@@ -2,6 +2,12 @@ defmodule HeyiAm.Vibes.Vibe do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @valid_archetypes ~w(night-owl backseat-driver delegator cowboy overthinker speed-runner debugger diplomat architect pair-programmer vibe-coder)
+  @valid_modifiers ~w(says-please codes-at-3am reads-5x-more never-tests cusses-under-pressure writes-essays lets-ai-cook asks-more-than-tells scope-creeps ships-on-weekends)
+
+  @max_stat_keys 50
+  @max_stats_bytes 4_096
+
   schema "vibes" do
     field :short_id, :string
     field :delete_code, :string
@@ -24,18 +30,50 @@ defmodule HeyiAm.Vibes.Vibe do
     |> cast(attrs, @required ++ @optional)
     |> validate_required(@required)
     |> validate_length(:short_id, max: 10)
-    |> validate_length(:archetype_id, max: 50)
-    |> validate_length(:modifier_id, max: 50)
-    |> validate_length(:narrative, max: 5000)
-    |> validate_number(:session_count, greater_than: 0)
-    |> validate_number(:total_turns, greater_than_or_equal_to: 0)
+    |> validate_length(:narrative, max: 500)
+    |> validate_number(:session_count, greater_than: 0, less_than: 100_000)
+    |> validate_number(:total_turns, greater_than_or_equal_to: 0, less_than: 10_000_000)
+    |> validate_inclusion(:archetype_id, @valid_archetypes)
+    |> validate_modifier()
     |> validate_stats()
+    |> validate_sources()
     |> unique_constraint(:short_id)
+  end
+
+  def valid_archetypes, do: @valid_archetypes
+  def valid_modifiers, do: @valid_modifiers
+
+  defp validate_modifier(changeset) do
+    validate_change(changeset, :modifier_id, fn :modifier_id, value ->
+      if is_nil(value) or value in @valid_modifiers,
+        do: [],
+        else: [modifier_id: "must be a known modifier"]
+    end)
   end
 
   defp validate_stats(changeset) do
     validate_change(changeset, :stats, fn :stats, value ->
-      if is_map(value), do: [], else: [stats: "must be a map"]
+      cond do
+        not is_map(value) ->
+          [stats: "must be a map"]
+        map_size(value) > @max_stat_keys ->
+          [stats: "too many keys (max #{@max_stat_keys})"]
+        byte_size(Jason.encode!(value)) > @max_stats_bytes ->
+          [stats: "too large (max #{@max_stats_bytes} bytes)"]
+        not Enum.all?(value, fn {_k, v} -> is_number(v) end) ->
+          [stats: "all values must be numbers"]
+        true ->
+          []
+      end
+    end)
+  end
+
+  defp validate_sources(changeset) do
+    validate_change(changeset, :sources, fn :sources, value ->
+      valid = ~w(claude cursor codex gemini)
+      if is_list(value) and Enum.all?(value, &(&1 in valid)),
+        do: [],
+        else: [sources: "must be a list of known tool names"]
     end)
   end
 end
