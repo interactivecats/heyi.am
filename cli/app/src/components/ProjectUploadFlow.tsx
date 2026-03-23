@@ -1483,8 +1483,16 @@ function ProjectPreview({
             <div className="project-preview__hero-value project-preview__hero-value--primary">
               {formatDuration(project.totalDuration)}
             </div>
-            <div className="project-preview__hero-label">Total Time</div>
+            <div className="project-preview__hero-label">{project.totalAgentDuration ? 'Your Time' : 'Total Time'}</div>
           </div>
+          {project.totalAgentDuration != null && project.totalAgentDuration > 0 && (
+            <div className="project-preview__hero-stat">
+              <div className="project-preview__hero-value">
+                {formatDuration(project.totalAgentDuration)}
+              </div>
+              <div className="project-preview__hero-label">Agent Time</div>
+            </div>
+          )}
           <div className="project-preview__hero-stat">
             <div className="project-preview__hero-value">
               {project.sessionCount} ({selectedCount})
