@@ -4,23 +4,31 @@ defmodule HeyiAmWeb.TimeStatsApiController do
   alias HeyiAm.Accounts
 
   def publish(conn, %{"time_stats" => stats_params}) do
-    user = conn.assigns.current_scope_for_user.user
+    user_id = conn.assigns[:current_user_id]
 
-    time_stats = %{
-      "anonymized" => stats_params["anonymized"] || false,
-      "projects" => sanitize_projects(stats_params["projects"] || [], stats_params["anonymized"]),
-      "totals" => stats_params["totals"] || %{},
-      "published_at" => DateTime.utc_now() |> DateTime.to_iso8601(),
-    }
+    if is_nil(user_id) do
+      conn
+      |> put_status(:unauthorized)
+      |> json(%{error: "Authentication required"})
+    else
+      user = Accounts.get_user!(user_id)
 
-    case Accounts.update_user_time_stats(user, time_stats) do
-      {:ok, _user} ->
-        json(conn, %{ok: true, url: "/#{user.username}/time"})
+      time_stats = %{
+        "anonymized" => stats_params["anonymized"] || false,
+        "projects" => sanitize_projects(stats_params["projects"] || [], stats_params["anonymized"]),
+        "totals" => stats_params["totals"] || %{},
+        "published_at" => DateTime.utc_now() |> DateTime.to_iso8601(),
+      }
 
-      {:error, _changeset} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{error: "Failed to save time stats"})
+      case Accounts.update_user_time_stats(user, time_stats) do
+        {:ok, _user} ->
+          json(conn, %{ok: true, url: "/#{user.username}/time"})
+
+        {:error, _changeset} ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{error: "Failed to save time stats"})
+      end
     end
   end
 
