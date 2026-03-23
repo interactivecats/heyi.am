@@ -189,7 +189,8 @@ defmodule HeyiAmWeb.PortfolioController do
   defp build_projects(projects, username) do
     Enum.map(projects, fn project ->
       stats = Projects.Stats.compute_project_stats(project.shares)
-      agent_minutes = project.total_agent_duration_minutes || compute_agent_minutes(project.shares)
+      your_minutes = project.total_duration_minutes || stats.total_duration
+      agent_minutes = project.total_agent_duration_minutes || compute_agent_minutes(your_minutes, project.shares)
 
       %{
         title: project.title,
@@ -211,7 +212,8 @@ defmodule HeyiAmWeb.PortfolioController do
   defp build_project_detail(project, username) do
     stats = Projects.Stats.compute_project_stats(project.shares)
     total_loc = project.total_loc || stats.total_loc
-    agent_minutes = project.total_agent_duration_minutes || compute_agent_minutes(project.shares)
+    total_minutes = project.total_duration_minutes || stats.total_duration
+    agent_minutes = project.total_agent_duration_minutes || compute_agent_minutes(total_minutes, project.shares)
 
     %{
       title: project.title,
@@ -223,7 +225,7 @@ defmodule HeyiAmWeb.PortfolioController do
       skills: project.skills || [],
       session_count: project.total_sessions || stats.total_sessions,
       uploaded_count: length(project.shares),
-      total_minutes: project.total_duration_minutes || stats.total_duration,
+      total_minutes: total_minutes,
       agent_minutes: agent_minutes,
       total_files: project.total_files_changed || stats.unique_files,
       total_loc: total_loc,
@@ -279,7 +281,7 @@ defmodule HeyiAmWeb.PortfolioController do
     |> Enum.map(fn project ->
       shares = project.shares
       your_minutes = project.total_duration_minutes || Enum.sum(Enum.map(shares, &(&1.duration_minutes || 0)))
-      agent_minutes = project.total_agent_duration_minutes || compute_agent_minutes(shares)
+      agent_minutes = project.total_agent_duration_minutes || compute_agent_minutes(your_minutes, shares)
 
       orchestrated_shares = Enum.filter(shares, fn s ->
         match?(%{"is_orchestrated" => true}, s.agent_summary)
@@ -334,10 +336,10 @@ defmodule HeyiAmWeb.PortfolioController do
     |> Enum.sort_by(& &1.agent_minutes, :desc)
   end
 
-  # Agent time = subagent durations from agent_summary only.
-  # The session's duration_minutes is the developer's active coding time.
-  defp compute_agent_minutes(shares) do
-    total =
+  # Agent time = base session time (AI works alongside dev) + subagent durations.
+  # Uses the same total_minutes base as "You" so the numbers are comparable.
+  defp compute_agent_minutes(total_minutes, shares) do
+    child_minutes =
       shares
       |> Enum.map(fn share ->
         case share.agent_summary do
@@ -348,6 +350,7 @@ defmodule HeyiAmWeb.PortfolioController do
       end)
       |> Enum.sum()
 
+    total = (total_minutes || 0) + child_minutes
     if total > 0, do: total, else: nil
   end
 
