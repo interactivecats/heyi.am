@@ -189,8 +189,8 @@ defmodule HeyiAmWeb.PortfolioController do
   defp build_projects(projects, username) do
     Enum.map(projects, fn project ->
       stats = Projects.Stats.compute_project_stats(project.shares)
-      your_minutes = project.total_duration_minutes || stats.total_duration
-      agent_minutes = project.total_agent_duration_minutes || compute_agent_minutes(your_minutes, project.shares)
+      total_minutes = project.total_duration_minutes || stats.total_duration
+      agent_minutes = project.total_agent_duration_minutes || compute_agent_minutes(total_minutes, project.shares)
 
       %{
         title: project.title,
@@ -199,7 +199,7 @@ defmodule HeyiAmWeb.PortfolioController do
         status: "active",
         skills: project.skills || [],
         session_count: project.total_sessions || stats.total_sessions,
-        total_minutes: project.total_duration_minutes || stats.total_duration,
+        total_minutes: total_minutes,
         agent_minutes: agent_minutes,
         loc_changed: format_loc(project.total_loc || stats.total_loc),
         repo_url: project.repo_url,
@@ -336,9 +336,9 @@ defmodule HeyiAmWeb.PortfolioController do
     |> Enum.sort_by(& &1.agent_minutes, :desc)
   end
 
-  # Agent time = base session time (AI works alongside dev) + subagent durations.
-  # Uses the same total_minutes base as "You" so the numbers are comparable.
-  defp compute_agent_minutes(total_minutes, shares) do
+  # Compute agent time matching CLI logic: base session time + subagent durations.
+  # The primary AI agent works alongside the dev every session.
+  defp compute_agent_minutes(your_minutes, shares) do
     child_minutes =
       shares
       |> Enum.map(fn share ->
@@ -350,7 +350,7 @@ defmodule HeyiAmWeb.PortfolioController do
       end)
       |> Enum.sum()
 
-    total = (total_minutes || 0) + child_minutes
+    total = (your_minutes || 0) + child_minutes
     if total > 0, do: total, else: nil
   end
 

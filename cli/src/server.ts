@@ -1280,6 +1280,7 @@ export function createApp(sessionsBasePath?: string) {
                 slug: sessionSlug,
                 status: 'listed',
                 source_tool: session.source ?? meta.source ?? 'claude',
+                agent_summary: agentSummary,
               },
             };
 

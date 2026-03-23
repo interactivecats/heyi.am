@@ -76,7 +76,7 @@
       end
     %>
     <%
-      agent_time_display = if @project[:agent_minutes] && @project.agent_minutes > 0 do
+      agent_time_display = if @project[:agent_minutes] && @project.agent_minutes > @project.total_minutes do
         if @project.agent_minutes >= 60 do
           hours = @project.agent_minutes / 60
           if hours >= 10, do: "#{round(hours)}h", else: "#{Float.round(hours, 1)}h"
