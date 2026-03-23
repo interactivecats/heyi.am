@@ -4,6 +4,8 @@ import type { Session } from './types';
 export interface WorkTimelineProps {
   sessions: Session[];
   onSessionClick?: (session: Session) => void;
+  /** Cap inline height with gradient fade + expand button. Fullscreen shows everything. */
+  maxHeight?: number;
 }
 
 // ── Colors ───────────────────────────────────────────────────────
@@ -613,7 +615,7 @@ function Tooltip({ data, pos }: { data: TooltipData; pos: { x: number; y: number
 
 // ── Renderer ─────────────────────────────────────────────────────
 
-export function WorkTimeline({ sessions, onSessionClick }: WorkTimelineProps) {
+export function WorkTimeline({ sessions, onSessionClick, maxHeight }: WorkTimelineProps) {
   const segments = useMemo(() => computeSegments(sessions), [sessions]);
   const [expanded, setExpanded] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -713,11 +715,6 @@ export function WorkTimeline({ sessions, onSessionClick }: WorkTimelineProps) {
           {L.totalW > 600 && (
             <button onClick={togglePlay} style={btnStyle(playing)}>
               {playing ? 'PAUSE' : 'PLAY'}
-            </button>
-          )}
-          {!fullscreen && (
-            <button onClick={() => { setExpanded(true); setFullscreen(true); }} style={btnStyle()}>
-              EXPAND
             </button>
           )}
         </div>
@@ -828,9 +825,31 @@ export function WorkTimeline({ sessions, onSessionClick }: WorkTimelineProps) {
     );
   }
 
+  const needsClip = maxHeight && L.totalH > maxHeight;
+
   return (
-    <div className="work-timeline" data-testid="work-timeline">
-      {timelineContent}
+    <div className="work-timeline" data-testid="work-timeline" style={{ position: 'relative' }}>
+      <div style={needsClip ? { maxHeight, overflow: 'hidden' } : undefined}>
+        {timelineContent}
+      </div>
+      {needsClip && (
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: 64,
+          background: 'linear-gradient(transparent, #f8f9fb)',
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          paddingBottom: 10,
+        }}>
+          <button onClick={() => { setExpanded(true); setFullscreen(true); }} style={{
+            padding: '5px 16px', fontSize: 11, fontWeight: 700,
+            border: `1px solid ${THREAD_COLOR}`, borderRadius: 4,
+            background: '#fff', color: MAIN_COLOR,
+            cursor: 'pointer', fontFamily: FONT, letterSpacing: '0.03em',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          }}>
+            EXPAND TIMELINE
+          </button>
+        </div>
+      )}
     </div>
   );
 }

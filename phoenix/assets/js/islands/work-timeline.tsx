@@ -15,7 +15,7 @@ export function mount() {
       const sessions = await fetchProjectSessions(username, slug);
       mountTimeline(container, sessions, (session) => {
         window.location.href = `/s/${session.id}`;
-      });
+      }, 300);
     } catch (err) {
       console.error('[work-timeline] Failed to mount:', err);
       showError(container);
@@ -42,6 +42,7 @@ function mountTimeline(
   container: HTMLElement,
   sessions: Session[],
   onSessionClick?: (session: Session) => void,
+  maxHeight?: number,
 ) {
   container.replaceChildren();
   const target = document.createElement('div');
@@ -49,7 +50,7 @@ function mountTimeline(
 
   const root = createRoot(target);
   root.render(
-    <WorkTimeline sessions={sessions} onSessionClick={onSessionClick} />,
+    <WorkTimeline sessions={sessions} onSessionClick={onSessionClick} maxHeight={maxHeight} />,
   );
 }
 
