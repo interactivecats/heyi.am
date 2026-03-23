@@ -4,6 +4,8 @@ defmodule HeyiAmWeb.SessionDataController do
   alias HeyiAm.Shares
   alias HeyiAm.Projects
 
+  import HeyiAmWeb.ShareController, only: [clean_ai_tags: 1]
+
   @doc "Proxy a single session's log.json from S3"
   def show(conn, %{"token" => token}) do
     case Shares.get_published_share_by_token_slim(token) do
@@ -15,7 +17,7 @@ defmodule HeyiAmWeb.SessionDataController do
           {:ok, data} ->
             conn
             |> put_resp_header("cache-control", "private, max-age=300")
-            |> json(data)
+            |> json(clean_session_data(data))
 
           :error ->
             conn |> put_status(:not_found) |> json(%{error: "session_data_unavailable"})
@@ -52,6 +54,37 @@ defmodule HeyiAmWeb.SessionDataController do
       |> json(%{sessions: sessions})
     else
       _ -> conn |> put_status(:not_found) |> json(%{error: "not_found"})
+    end
+  end
+
+  # Clean AI-internal tags from text fields that reach the frontend.
+  # Targets turnTimeline content and rawLog entries specifically.
+  defp clean_session_data(data) when is_map(data) do
+    data
+    |> update_if("turnTimeline", fn turns ->
+      turns
+      |> Enum.map(fn turn ->
+        turn |> update_if("content", &clean_ai_tags/1)
+      end)
+      |> Enum.reject(fn turn -> (turn["content"] || "") == "" end)
+    end)
+    |> update_if("rawLog", fn lines ->
+      lines
+      |> Enum.map(&clean_ai_tags/1)
+      |> Enum.reject(&(&1 == ""))
+    end)
+    |> update_if("transcriptExcerpt", fn entries ->
+      entries
+      |> Enum.map(fn entry -> update_if(entry, "text", &clean_ai_tags/1) end)
+      |> Enum.reject(fn entry -> (entry["text"] || "") == "" end)
+    end)
+  end
+  defp clean_session_data(data), do: data
+
+  defp update_if(map, key, fun) when is_map(map) do
+    case Map.fetch(map, key) do
+      {:ok, val} when is_list(val) -> Map.put(map, key, fun.(val))
+      _ -> map
     end
   end
 
