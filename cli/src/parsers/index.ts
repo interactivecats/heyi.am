@@ -5,7 +5,7 @@ import { execFile } from "node:child_process";
 import { claudeParser, mapAgentRole } from "./claude.js";
 import { cursorParser, discoverCursorWorkspaces, listConversations, type CursorWorkspace } from "./cursor.js";
 import { codexParser, discoverCodexSessions } from "./codex.js";
-import { geminiParser, discoverGeminiSessions } from "./gemini.js";
+import { geminiParser, discoverGeminiSessions, resolveProjectDirs } from "./gemini.js";
 import type { SessionParser, SessionAnalysis } from "./types.js";
 
 export type { SessionAnalysis, SessionParser, SessionSource, ToolCall, LocStats, RawEntry } from "./types.js";
@@ -85,21 +85,6 @@ export async function listSessions(basePath?: string): Promise<SessionMeta[]> {
     }
   } catch { /* codex discovery failed */ }
 
-  // 4. Gemini sessions
-  try {
-    const geminiFiles = await discoverGeminiSessions();
-    for (const gf of geminiFiles) {
-      const dir = gf.projectDir ?? gf.projectHash;
-      allSessions.push({
-        path: gf.path,
-        source: "gemini",
-        sessionId: gf.sessionId,
-        projectDir: encodeDirPath(dir),
-        isSubagent: false,
-      });
-    }
-  } catch { /* gemini discovery failed */ }
-
   // Build map of encoded projectDir → real absolute path for git checks.
   // Cursor workspaces and Codex/Gemini sessions have real paths;
   // Claude dirs can't be reliably decoded (lossy encoding).
@@ -114,6 +99,34 @@ export async function listSessions(basePath?: string): Promise<SessionMeta[]> {
       realPaths.set(encodeDirPath(cf.cwd), cf.cwd);
     }
   } catch {}
+
+  // Collect known real project dirs for Gemini hash resolution
+  const knownDirs = [...realPaths.values()];
+  // Also derive dirs from Claude session projectDir names (decode is lossy
+  // but still useful for hash matching — the hash is computed from the
+  // exact original path, so only exact matches succeed)
+  for (const s of claudeSessions) {
+    // Claude projectDir is encoded like "-Users-ben-Dev-myapp";
+    // attempt to reverse to "/Users/ben/Dev/myapp"
+    const decoded = s.projectDir.replace(/^-/, "/").replace(/-/g, "/");
+    if (decoded.startsWith("/")) knownDirs.push(decoded);
+  }
+
+  // 4. Gemini sessions — resolve SHA-256 hashes to real project paths
+  try {
+    let geminiFiles = await discoverGeminiSessions();
+    geminiFiles = resolveProjectDirs(geminiFiles, knownDirs);
+    for (const gf of geminiFiles) {
+      const dir = gf.projectDir ?? gf.projectHash;
+      allSessions.push({
+        path: gf.path,
+        source: "gemini",
+        sessionId: gf.sessionId,
+        projectDir: encodeDirPath(dir),
+        isSubagent: false,
+      });
+    }
+  } catch { /* gemini discovery failed */ }
 
   return mergeSubdirectoryProjects(allSessions, realPaths);
 }

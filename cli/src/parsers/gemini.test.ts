@@ -257,4 +257,30 @@ describe("resolveProjectDirs", () => {
     expect(resolved[0].projectDir).toBe(dir);
     expect(resolved[1].projectDir).toBeUndefined();
   });
+
+  it("resolved Gemini sessions group with Claude sessions for same directory", async () => {
+    const dir = "/Users/ben/Dev/myproject";
+    const hash = hashProjectDir(dir);
+    const geminiSessions: GeminiSessionFile[] = [
+      { path: "/fake/logs.json", sessionId: "gem-1", projectHash: hash },
+    ];
+
+    const resolved = resolveProjectDirs(geminiSessions, [dir]);
+    expect(resolved[0].projectDir).toBe(dir);
+
+    // When encoded with the same function used for Claude sessions,
+    // the projectDir should match
+    const { encodeDirPath } = await import("./index.js");
+    const geminiEncoded = encodeDirPath(resolved[0].projectDir!);
+    const claudeEncoded = encodeDirPath(dir);
+    expect(geminiEncoded).toBe(claudeEncoded);
+  });
+
+  it("leaves unresolved hashes unchanged", () => {
+    const sessions: GeminiSessionFile[] = [
+      { path: "/fake/logs.json", sessionId: "s1", projectHash: "abc123", projectDir: undefined },
+    ];
+    const resolved = resolveProjectDirs(sessions, ["/some/other/dir"]);
+    expect(resolved[0].projectDir).toBeUndefined();
+  });
 });
