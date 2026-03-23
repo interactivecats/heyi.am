@@ -47,6 +47,7 @@ defmodule HeyiAmWeb.ProjectEditorLive do
      socket
      |> assign(:page_title, "Edit #{project.name}")
      |> assign(:project, project)
+     |> assign(:db_project_id, db_project && db_project.id)
      |> assign(:active_count, active_count)
      |> assign(:archived_count, archived_count)}
   end
@@ -128,10 +129,10 @@ defmodule HeyiAmWeb.ProjectEditorLive do
   end
 
   def handle_event("save", _params, socket) do
-    user = socket.assigns.current_scope.user
     project = socket.assigns.project
+    db_project_id = socket.assigns.db_project_id
 
-    shares = Shares.list_shares_for_user_project(user.id, project.name)
+    shares = if db_project_id, do: Shares.list_shares_for_project(db_project_id), else: []
 
     results =
       Enum.map(shares, fn share ->

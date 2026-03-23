@@ -63,12 +63,16 @@ defmodule HeyiAmWeb.ShareApiController do
 
           %Share{} = share ->
             # Update existing share, keep its token and use its storage keys
+            existing_raw_key = "sessions/#{share.token}/raw.jsonl"
+            existing_log_key = "sessions/#{share.token}/log.json"
             existing_session_key = "sessions/#{share.token}/session.json"
 
             Shares.update_share(
               share,
               attrs
               |> Map.delete("token")
+              |> Map.put("raw_storage_key", existing_raw_key)
+              |> Map.put("log_storage_key", existing_log_key)
               |> Map.put("session_storage_key", existing_session_key)
             )
 

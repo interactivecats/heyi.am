@@ -22,8 +22,8 @@ defmodule HeyiAmWeb.ShareController do
         display_name: (share.user && (share.user.display_name || share.user.username)) || "Anonymous"
       })
       |> Map.put(:project, %{
-        title: share.project_name,
-        slug: slugify(share.project_name)
+        title: if(share.project && share.project.title, do: share.project.title, else: share.project_name),
+        slug: if(share.project && share.project.slug, do: share.project.slug, else: slugify(share.project_name))
       })
       # Default nil numeric/list fields so templates don't crash on arithmetic/length
       |> Map.update(:files_changed, 0, &(&1 || 0))
@@ -45,7 +45,7 @@ defmodule HeyiAmWeb.ShareController do
     |> Map.put(:top_files, detail["top_files"])
     |> Map.put(:transcript_excerpt, detail["transcript_excerpt"])
     |> Map.put(:turn_timeline, detail["turn_timeline"])
-    |> Map.put(:agent_summary, detail["agent_summary"])
+    |> Map.put(:agent_summary, share.agent_summary || detail["agent_summary"])
   end
 
   @doc false

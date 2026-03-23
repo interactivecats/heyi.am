@@ -34,6 +34,7 @@ defmodule HeyiAm.Shares.Share do
     field :end_time, :utc_datetime
     field :cwd, :string
     field :wall_clock_minutes, :integer
+    field :agent_summary, :map
 
     belongs_to :user, HeyiAm.Accounts.User
     belongs_to :project, HeyiAm.Projects.Project
@@ -60,7 +61,8 @@ defmodule HeyiAm.Shares.Share do
       :status,
       :raw_storage_key, :log_storage_key, :session_storage_key,
       :slug, :project_id, :source_tool,
-      :end_time, :cwd, :wall_clock_minutes
+      :end_time, :cwd, :wall_clock_minutes,
+      :agent_summary
     ])
     |> validate_required([:token, :title])
     |> validate_length(:title, max: 200)
@@ -72,6 +74,7 @@ defmodule HeyiAm.Shares.Share do
     |> validate_inclusion(:template, @valid_templates)
     |> validate_inclusion(:status, @valid_statuses)
     |> unique_constraint(:token)
+    |> unique_constraint(:slug, name: :shares_project_id_slug_index)
   end
 
   defp validate_skills_length(changeset) do

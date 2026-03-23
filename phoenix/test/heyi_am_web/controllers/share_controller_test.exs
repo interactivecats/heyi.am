@@ -202,6 +202,13 @@ defmodule HeyiAmWeb.ShareControllerTest do
       conn = get(conn, ~p"/devuser/my-project/no-such-session")
       assert html_response(conn, 404)
     end
+
+    test "breadcrumb passes DB project slug not computed slug", %{conn: conn} do
+      # The show_in_project action passes breadcrumb with the project_slug from the URL/DB
+      conn = get(conn, ~p"/devuser/my-project/auth-rewrite")
+      # The breadcrumb assign uses the DB slug, not a computed one
+      assert conn.assigns[:breadcrumb].project_slug == "my-project"
+    end
   end
 
   describe "normalize_session_detail/1" do

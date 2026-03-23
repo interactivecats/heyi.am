@@ -162,6 +162,82 @@ defmodule HeyiAm.SharesTest do
     end
   end
 
+  describe "agent_summary field" do
+    test "creates share with agent_summary map" do
+      attrs = valid_share_attributes(%{
+        agent_summary: %{"is_orchestrated" => true, "agents" => [%{"name" => "sub1"}]}
+      })
+      {:ok, share} = Shares.create_share(attrs)
+      assert share.agent_summary == %{"is_orchestrated" => true, "agents" => [%{"name" => "sub1"}]}
+    end
+
+    test "agent_summary defaults to nil" do
+      {:ok, share} = Shares.create_share(valid_share_attributes())
+      assert share.agent_summary == nil
+    end
+  end
+
+  describe "unique (project_id, slug) constraint" do
+    test "rejects duplicate project_id + slug" do
+      user = user_fixture()
+      {:ok, project} = HeyiAm.Projects.create_project(%{slug: "dup-test", title: "Dup", user_id: user.id})
+
+      attrs1 = valid_share_attributes(%{slug: "same-slug", project_id: project.id, user_id: user.id})
+      {:ok, _} = Shares.create_share(attrs1)
+
+      attrs2 = valid_share_attributes(%{slug: "same-slug", project_id: project.id, user_id: user.id})
+      {:error, changeset} = Shares.create_share(attrs2)
+      assert {"has already been taken", _} = changeset.errors[:slug]
+    end
+
+    test "allows same slug with different project_id" do
+      user = user_fixture()
+      {:ok, proj1} = HeyiAm.Projects.create_project(%{slug: "proj-a", title: "A", user_id: user.id})
+      {:ok, proj2} = HeyiAm.Projects.create_project(%{slug: "proj-b", title: "B", user_id: user.id})
+
+      attrs1 = valid_share_attributes(%{slug: "same-slug", project_id: proj1.id, user_id: user.id})
+      {:ok, _} = Shares.create_share(attrs1)
+
+      attrs2 = valid_share_attributes(%{slug: "same-slug", project_id: proj2.id, user_id: user.id})
+      {:ok, _} = Shares.create_share(attrs2)
+    end
+
+    test "allows same slug when project_id is nil" do
+      attrs1 = valid_share_attributes(%{slug: "orphan-slug"})
+      {:ok, _} = Shares.create_share(attrs1)
+
+      attrs2 = valid_share_attributes(%{slug: "orphan-slug"})
+      {:ok, _} = Shares.create_share(attrs2)
+    end
+  end
+
+  describe "list_shares_for_project/1" do
+    test "returns published shares for a project" do
+      user = user_fixture()
+      {:ok, project} = HeyiAm.Projects.create_project(%{slug: "list-test", title: "List", user_id: user.id})
+
+      share_fixture(%{project_id: project.id, user_id: user.id, status: "listed"})
+      share_fixture(%{project_id: project.id, user_id: user.id, status: "unlisted"})
+      share_fixture(%{project_id: project.id, user_id: user.id, status: "draft"})
+
+      shares = Shares.list_shares_for_project(project.id)
+      assert length(shares) == 2
+      assert Enum.all?(shares, &(&1.status in ["listed", "unlisted"]))
+    end
+
+    test "does not return shares from other projects" do
+      user = user_fixture()
+      {:ok, proj1} = HeyiAm.Projects.create_project(%{slug: "proj-1", title: "P1", user_id: user.id})
+      {:ok, proj2} = HeyiAm.Projects.create_project(%{slug: "proj-2", title: "P2", user_id: user.id})
+
+      share_fixture(%{project_id: proj1.id, user_id: user.id, status: "listed"})
+      share_fixture(%{project_id: proj2.id, user_id: user.id, status: "listed"})
+
+      shares = Shares.list_shares_for_project(proj1.id)
+      assert length(shares) == 1
+    end
+  end
+
   describe "generate_token/0" do
     test "returns a URL-safe string" do
       token = Shares.generate_token()

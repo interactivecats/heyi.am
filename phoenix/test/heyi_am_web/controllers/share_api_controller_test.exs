@@ -102,6 +102,38 @@ defmodule HeyiAmWeb.ShareApiControllerTest do
       assert share.project_id == project.id
     end
 
+    test "re-publishing preserves all storage keys pointing to original token", %{conn: _conn} do
+      {conn, user} = api_conn_with_auth()
+      {:ok, project} = HeyiAm.Projects.create_project(%{slug: "repub-proj", title: "Repub", user_id: user.id})
+
+      # First publish
+      conn1 = post(conn, ~p"/api/sessions", %{
+        session: %{title: "Original", slug: "my-session", project_id: project.id}
+      })
+      assert %{"token" => original_token} = json_response(conn1, 201)
+      original_share = HeyiAm.Shares.get_share_by_token!(original_token)
+
+      assert original_share.raw_storage_key == "sessions/#{original_token}/raw.jsonl"
+      assert original_share.log_storage_key == "sessions/#{original_token}/log.json"
+      assert original_share.session_storage_key == "sessions/#{original_token}/session.json"
+
+      # Re-publish same (project_id, slug) — should update, not create
+      {conn2, _user} = api_conn_with_auth(user)
+      conn2 = post(conn2, ~p"/api/sessions", %{
+        session: %{title: "Updated", slug: "my-session", project_id: project.id}
+      })
+      assert %{"token" => reused_token} = json_response(conn2, 201)
+
+      # Token should be the same as original
+      assert reused_token == original_token
+
+      updated_share = HeyiAm.Shares.get_share_by_token!(original_token)
+      assert updated_share.title == "Updated"
+      assert updated_share.raw_storage_key == "sessions/#{original_token}/raw.jsonl"
+      assert updated_share.log_storage_key == "sessions/#{original_token}/log.json"
+      assert updated_share.session_storage_key == "sessions/#{original_token}/session.json"
+    end
+
     test "silently drops project_id that belongs to another user", %{conn: _conn} do
       {conn, _user} = api_conn_with_auth()
       other_user = HeyiAm.AccountsFixtures.user_fixture()

@@ -16,7 +16,7 @@ defmodule HeyiAm.Shares do
     case Repo.get_by(Share, token: token) do
       nil -> nil
       %{status: "draft"} -> nil
-      share -> Repo.preload(share, :user)
+      share -> Repo.preload(share, [:user, :project])
     end
   end
 
@@ -28,7 +28,7 @@ defmodule HeyiAm.Shares do
     Share
     |> join(:inner, [s], p in assoc(s, :project))
     |> where([s, p], s.user_id == ^user_id and s.slug == ^session_slug and p.slug == ^project_slug and s.status != "draft")
-    |> preload(:user)
+    |> preload([:user, :project])
     |> Repo.one()
   end
 
@@ -58,10 +58,11 @@ defmodule HeyiAm.Shares do
     |> Repo.all()
   end
 
-  def list_shares_for_user_project(user_id, project_name) do
+  def list_shares_for_project(project_id) do
     Share
-    |> where(user_id: ^user_id, project_name: ^project_name)
-    |> order_by([s], desc: s.inserted_at)
+    |> where(project_id: ^project_id)
+    |> where([s], s.status in ["listed", "unlisted"])
+    |> order_by([s], desc: s.recorded_at)
     |> Repo.all()
   end
 
