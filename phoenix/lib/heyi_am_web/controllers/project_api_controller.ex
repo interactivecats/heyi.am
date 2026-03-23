@@ -66,14 +66,24 @@ defmodule HeyiAmWeb.ProjectApiController do
     if is_nil(user_id) do
       conn |> put_status(:unauthorized) |> json(%{error: "Authentication required"})
     else
-      case Projects.update_screenshot_key(user_id, slug, key) do
-        {:ok, _project} ->
-          json(conn, %{ok: true})
+      if valid_screenshot_key?(key) do
+        case Projects.update_screenshot_key(user_id, slug, key) do
+          {:ok, _project} ->
+            json(conn, %{ok: true})
 
-        {:error, _reason} ->
-          conn |> put_status(:unprocessable_entity) |> json(%{error: "Failed to update screenshot key"})
+          {:error, _reason} ->
+            conn |> put_status(:unprocessable_entity) |> json(%{error: "Failed to update screenshot key"})
+        end
+      else
+        conn |> put_status(:bad_request) |> json(%{error: "Invalid screenshot key"})
       end
     end
+  end
+
+  defp valid_screenshot_key?(key) do
+    # Must start with "projects/", end with an image extension,
+    # and not contain path traversal sequences
+    Regex.match?(~r/\Aprojects\/[a-zA-Z0-9_\-]+\/[a-zA-Z0-9_\-]+\.(png|jpg|jpeg|webp)\z/, key)
   end
 
   def screenshot(conn, %{"username" => username, "slug" => slug}) do

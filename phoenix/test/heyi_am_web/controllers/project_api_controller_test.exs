@@ -86,6 +86,54 @@ defmodule HeyiAmWeb.ProjectApiControllerTest do
     end
   end
 
+  describe "PATCH /api/projects/:slug/screenshot-key" do
+    test "rejects path traversal key", %{conn: _conn} do
+      {conn, _user} = api_conn_with_auth()
+
+      conn = patch(conn, ~p"/api/projects/my-proj/screenshot-key", %{key: "sessions/VICTIM/session.json"})
+
+      assert %{"error" => "Invalid screenshot key"} = json_response(conn, 400)
+    end
+
+    test "rejects key with .. traversal", %{conn: _conn} do
+      {conn, _user} = api_conn_with_auth()
+
+      conn = patch(conn, ~p"/api/projects/my-proj/screenshot-key", %{key: "projects/../sessions/secret/session.json"})
+
+      assert %{"error" => "Invalid screenshot key"} = json_response(conn, 400)
+    end
+
+    test "rejects key not starting with projects/", %{conn: _conn} do
+      {conn, _user} = api_conn_with_auth()
+
+      conn = patch(conn, ~p"/api/projects/my-proj/screenshot-key", %{key: "other/path/screenshot.png"})
+
+      assert %{"error" => "Invalid screenshot key"} = json_response(conn, 400)
+    end
+
+    test "accepts valid screenshot key", %{conn: _conn} do
+      {conn, _user} = api_conn_with_auth()
+
+      # Create the project first
+      post(conn, ~p"/api/projects", %{project: %{slug: "my-proj", title: "Test"}})
+
+      {conn, _user} = api_conn_with_auth()
+      conn = patch(conn, ~p"/api/projects/my-proj/screenshot-key", %{key: "projects/my-proj/screenshot.png"})
+
+      # Should succeed (200) or fail for other reasons (422), but NOT 400
+      assert conn.status != 400
+    end
+
+    test "returns 401 without auth", %{conn: conn} do
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> patch(~p"/api/projects/my-proj/screenshot-key", %{key: "projects/my-proj/screenshot.png"})
+
+      assert %{"error" => _} = json_response(conn, 401)
+    end
+  end
+
   describe "GET /api/projects/:username/:slug/screenshot" do
     test "returns 404 for non-existent username", %{conn: conn} do
       conn =
