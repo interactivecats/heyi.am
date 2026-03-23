@@ -76,11 +76,9 @@ config :hammer,
             [expiry_ms: 60_000 * 60 * 4,
              cleanup_interval_ms: 60_000 * 10]}
 
-# OpenTelemetry — disabled by default, enabled via OTEL_EXPORTER_OTLP_ENDPOINT at runtime
+# OpenTelemetry — configured per-environment (dev.exs sets :none, runtime.exs enables OTLP)
 config :opentelemetry,
-  resource: [service: [name: "heyi-am"]],
-  span_processor: :batch,
-  traces_exporter: :none
+  span_processor: :batch
 
 # ExAws — use Jason for JSON decoding (e.g. STS responses)
 config :ex_aws, json_codec: Jason
