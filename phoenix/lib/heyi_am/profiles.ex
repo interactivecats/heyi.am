@@ -2,11 +2,11 @@ defmodule HeyiAm.Profiles do
   @moduledoc """
   Computes AI collaboration profile from aggregated session data.
 
-  All functions are pure computations — they accept lists of share maps
-  and return computed results. No database queries.
+  All functions are pure computations — they accept lists of Share structs
+  (or maps with the same keys) and return computed results. No database queries.
 
-  Expected share fields: :turns, :duration_minutes, :tool_breakdown (list of
-  %{name: string, count: integer}), :beats (list), :child_sessions (list or nil)
+  Expected share fields: :turns, :duration_minutes, :tools (list of strings),
+  :agent_summary (map with "agents" list, or nil).
   """
 
   @min_sessions 8
@@ -42,37 +42,37 @@ defmodule HeyiAm.Profiles do
   end
 
   @doc """
-  Task scoping score (0-100). Lower steps + shorter duration = tighter scoping.
+  Task scoping score (0-100). Fewer turns + shorter duration = tighter scoping.
 
-  Normalize: <5 steps & <30min = 100, >15 steps & >120min = 0, linear between.
+  Normalize: <5 turns & <30min = 100, >20 turns & >120min = 0, linear between.
   """
   @spec task_scoping([map()]) :: non_neg_integer()
   def task_scoping(shares) do
-    avg_steps = avg(shares, fn s -> length(Map.get(s, :beats) || []) end)
+    avg_turns = avg(shares, fn s -> Map.get(s, :turns) || 0 end)
     avg_duration = avg(shares, fn s -> Map.get(s, :duration_minutes) || 0 end)
 
-    step_score = normalize(avg_steps, 5.0, 15.0, :inverse)
+    turn_score = normalize(avg_turns, 5.0, 20.0, :inverse)
     duration_score = normalize(avg_duration, 30.0, 120.0, :inverse)
 
-    round((step_score + duration_score) / 2)
+    round((turn_score + duration_score) / 2)
   end
 
   @doc """
-  Active redirection score (0-100). Higher turn/step ratio = more dev steering.
+  Active redirection score (0-100). Higher turns-per-minute = more dev steering.
 
-  Normalize: ratio >3 = 100, ratio <1 = 0.
+  Normalize: ratio >3 turns/min = 100, ratio <0.5 = 0.
   """
   @spec active_redirection([map()]) :: non_neg_integer()
   def active_redirection(shares) do
     ratios =
       Enum.map(shares, fn share ->
         turns = Map.get(share, :turns) || 0
-        steps = max(length(Map.get(share, :beats) || []), 1)
-        turns / steps
+        duration = max(Map.get(share, :duration_minutes) || 1, 1)
+        turns / duration
       end)
 
     avg_ratio = Enum.sum(ratios) / max(length(ratios), 1)
-    round(normalize(avg_ratio, 1.0, 3.0, :direct))
+    round(normalize(avg_ratio, 0.5, 3.0, :direct))
   end
 
   @doc """
@@ -106,7 +106,8 @@ defmodule HeyiAm.Profiles do
   end
 
   @doc """
-  Orchestration score (0-100). Only computed if 5+ sessions have child sessions.
+  Orchestration score (0-100). Only computed if 5+ sessions have agent_summary
+  indicating orchestrated sessions.
 
   Returns nil if fewer than 5 orchestrated sessions exist.
   """
@@ -114,16 +115,22 @@ defmodule HeyiAm.Profiles do
   def orchestration(shares) do
     orchestrated =
       Enum.filter(shares, fn s ->
-        children = Map.get(s, :child_sessions) || []
-        length(children) > 0
+        summary = Map.get(s, :agent_summary)
+        is_map(summary) and (Map.get(summary, "agents") || Map.get(summary, :agents) || []) != []
       end)
 
     if length(orchestrated) < 5 do
       nil
     else
-      avg_children = avg(orchestrated, fn s -> length(Map.get(s, :child_sessions) || []) end)
-      # Normalize: 1 child = 0, 5+ children = 100
-      round(normalize(avg_children, 1.0, 5.0, :direct))
+      avg_agents =
+        avg(orchestrated, fn s ->
+          summary = Map.get(s, :agent_summary) || %{}
+          agents = Map.get(summary, "agents") || Map.get(summary, :agents) || []
+          length(agents)
+        end)
+
+      # Normalize: 1 agent = 0, 5+ agents = 100
+      round(normalize(avg_agents, 1.0, 5.0, :direct))
     end
   end
 
