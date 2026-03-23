@@ -17,6 +17,7 @@ export interface ApiProject {
   publishedSessionCount?: number;
   publishedSessions?: string[];
   enhancedAt?: string | null;
+  totalAgentDuration?: number;
 }
 
 export async function fetchProjects(): Promise<ApiProject[]> {

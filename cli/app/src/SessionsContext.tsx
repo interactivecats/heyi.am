@@ -53,6 +53,7 @@ function toProject(ap: ApiProject): Project {
     publishedSessionCount: ap.publishedSessionCount,
     publishedSessions: ap.publishedSessions,
     enhancedAt: ap.enhancedAt,
+    totalAgentDuration: ap.totalAgentDuration,
   };
 }
 
