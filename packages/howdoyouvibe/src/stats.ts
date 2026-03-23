@@ -52,7 +52,7 @@ const SECRET_LEAK_RE = /(?:sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36}|gho_[a-zA-Z0-
 /**
  * Interruptions: user cancelled the AI mid-response.
  */
-const INTERRUPT_RE = /\[Request interrupted by user\]/;
+const INTERRUPT_RE = /\[Request interrupted by user(?:\s+for tool use)?\]/;
 
 /**
  * Question detection: trim trailing whitespace then check for `?`
@@ -76,6 +76,17 @@ function getUserText(entry: RawEntry): string | null {
   if (typeof content === "string") {
     const cleaned = cleanAssistantText(content);
     return cleaned || null;
+  }
+  if (Array.isArray(content)) {
+    const texts = content
+      .filter((b: any): b is { type: "text"; text: string } =>
+        b.type === "text" && typeof b.text === "string"
+      )
+      .map((b) => cleanAssistantText(b.text))
+      .filter(Boolean);
+    // Skip entries that are only tool_result blocks (not real user messages)
+    if (texts.length === 0) return null;
+    return texts.join("\n");
   }
   return null;
 }

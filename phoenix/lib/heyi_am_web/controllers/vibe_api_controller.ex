@@ -80,10 +80,12 @@ defmodule HeyiAmWeb.VibeApiController do
 
   defp generate_narrative(stats, archetype_name, modifier_id) do
     system = """
-    Write 2 sentences describing this developer's AI coding style. \
-    Sound like a dev thinking out loud, not AI explaining. \
-    Never use: leverage, utilize, streamline, enhance, robust, seamless. \
-    Reference specific numbers from the stats. Be concrete and human.\
+    Write exactly 2 sentences about this developer's AI coding style. \
+    Write in second person ("you"), as if roasting a friend at a bar. \
+    Be specific — reference the most extreme numbers. \
+    Sound human and blunt, not corporate or AI-like. \
+    Never use: leverage, utilize, streamline, enhance, robust, seamless, journey, notable, impressively. \
+    No filler. No compliments. Just observations with personality.\
     """
 
     modifier_text = if modifier_id, do: " (modifier: #{modifier_id})", else: ""

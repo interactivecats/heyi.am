@@ -23,8 +23,11 @@ export async function fetchNarrative(stats, match) {
                 return data.narrative;
         }
     }
-    catch {
+    catch (err) {
         // Server unreachable — fall through to template
+        if (process.env.DEBUG) {
+            console.error(`  [debug] Narrative fetch failed: ${err instanceof Error ? err.message : err}`);
+        }
     }
     return templateNarrative(stats, match);
 }

@@ -51,6 +51,9 @@ services:
     working_dir: /app
     stdin_open: true
     tty: true
+    env_file:
+      - path: ./phoenix/.env
+        required: false
     command: >
       sh -c "
       apk add --no-cache git build-base inotify-tools nodejs npm &&
