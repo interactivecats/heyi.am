@@ -9,7 +9,8 @@ defmodule HeyiAmWeb.Endpoint do
     key: "_heyi_am_key",
     signing_salt: "rApT8+FT",
     same_site: "Lax",
-    secure: Mix.env() == :prod
+    secure: Mix.env() == :prod,
+    http_only: true
   ]
 
   socket "/live", Phoenix.LiveView.Socket,
