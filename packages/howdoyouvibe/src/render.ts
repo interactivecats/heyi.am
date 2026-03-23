@@ -7,7 +7,27 @@ import { SOURCE_DISPLAY_NAMES, type SessionSource } from "./parsers/types.js";
 
 // ─── Terminal card rendering ─────────────────────────────────────────────
 
-const LINE = "────────────────────────────────────────";
+const COL_WIDTH = 28;
+
+// ─── ANSI colors (no dependencies) ──────────────────────────────────────────
+const c = {
+  reset: "\x1b[0m",
+  bold: "\x1b[1m",
+  dim: "\x1b[2m",
+  cyan: "\x1b[36m",
+  magenta: "\x1b[35m",
+  yellow: "\x1b[33m",
+  green: "\x1b[32m",
+  red: "\x1b[31m",
+  blue: "\x1b[34m",
+  white: "\x1b[37m",
+  gray: "\x1b[90m",
+  bgBlack: "\x1b[40m",
+};
+
+const LINE = `${c.cyan}${"═".repeat(80)}${c.reset}`;
+const THIN = `${c.cyan}${"─".repeat(80)}${c.reset}`;
+const PLAIN_LINE = "═".repeat(80);
 const INDENT = "  ";
 
 function pct(n: number): string {
@@ -42,13 +62,14 @@ function wow(label: string, value: number, thresholds: [number, string][]): stri
   return "";
 }
 
-const LOGO = [
+const LOGO_LINES = [
   " _                       _                        _  _          ",
   "| |_  ___ __ __ __ _  __| |___  _  _ ___ _  ___ _(_)| |__  ___ ",
   "| ' \\/ _ \\\\ V  V // _` / _ / _ \\| || / _ \\ || \\ V / || '_ \\/ -_)",
   "|_||_\\___/ \\_/\\_/ \\__,_\\___\\___/ \\_, \\___/\\_,_|\\_/|_||_.__/\\___|",
   "                                 |__/                            ",
 ];
+const LOGO_COLORS = [c.cyan, c.magenta, c.yellow, c.green, c.cyan];
 
 export function renderCard(
   stats: VibeStats,
@@ -58,111 +79,109 @@ export function renderCard(
   const lines: string[] = [];
 
   lines.push("");
-  for (const row of LOGO) {
-    lines.push(`${INDENT}${row}`);
+  for (let i = 0; i < LOGO_LINES.length; i++) {
+    lines.push(`${INDENT}${LOGO_COLORS[i]}${LOGO_LINES[i]}${c.reset}`);
   }
   lines.push(`${INDENT}${LINE}`);
   lines.push("");
-  lines.push(`${INDENT}${match.headline}`);
+  lines.push(`${INDENT}${c.bold}${c.white}${match.headline}${c.reset}`);
 
   if (narrative) {
     lines.push("");
-    // Word-wrap narrative to ~56 chars
-    for (const wrapped of wordWrap(narrative, 56)) {
-      lines.push(`${INDENT}${wrapped}`);
+    for (const wrapped of wordWrap(narrative, 76)) {
+      lines.push(`${INDENT}${c.dim}${wrapped}${c.reset}`);
+    }
+  }
+
+  lines.push("");
+  lines.push(`${INDENT}${THIN}`);
+
+  // ── Build three columns of stats ──
+  type StatEntry = [string, string]; // [label, value]
+
+  const voiceCol: StatEntry[] = [];
+  if (!isZero(stats.expletives)) voiceCol.push(["Expletives", fmt(stats.expletives)]);
+  if (!isZero(stats.corrections)) voiceCol.push(["Corrections", fmt(stats.corrections)]);
+  if (stats.avg_prompt_words > 50) voiceCol.push(["Avg prompt", `${stats.avg_prompt_words}w${wow("prompt", stats.avg_prompt_words, [[150, " essays"], [100, " verbose"]])}`]);
+  if (stats.please_rate > 0.1) voiceCol.push(["Please rate", pct(stats.please_rate)]);
+  else if (stats.please_rate < 0.02 && stats.total_turns > 100) voiceCol.push(["Please rate", `${pct(stats.please_rate)} nope`]);
+  if (stats.question_rate > 0.1) voiceCol.push(["Questions", pct(stats.question_rate)]);
+  if (stats.late_night_rate > 0.1) voiceCol.push(["Late night", pct(stats.late_night_rate)]);
+  if (stats.reasoning_rate > 0.05) voiceCol.push(["Thinks aloud", `${pct(stats.reasoning_rate)} turns`]);
+  if (stats.secret_leaks_user > 0) voiceCol.push(["Secrets leaked", `${stats.secret_leaks_user}${stats.secret_leaks_user > 3 ? " yikes" : ""}`]);
+
+  const aiCol: StatEntry[] = [];
+  if (!isZero(stats.read_write_ratio)) aiCol.push(["Read:write", `${stats.read_write_ratio}:1${wow("rw", stats.read_write_ratio, [[5, " careful"], [3, " measured"]])}`]);
+  if (!isZero(stats.test_runs)) {
+    const failPct = stats.failed_tests > 0 ? ` ${Math.round(stats.failed_tests / stats.test_runs * 100)}%F` : "";
+    aiCol.push(["Test runs", `${fmt(stats.test_runs)}${failPct}`]);
+  }
+  if (stats.longest_tool_chain > 10) aiCol.push(["Longest burst", `${fmt(stats.longest_tool_chain)}${wow("chain", stats.longest_tool_chain, [[500, " unreal"], [100, " deep"]])}`]);
+  if (stats.self_corrections > 10) aiCol.push(["Self-fixes", `${fmt(stats.self_corrections)}${wow("selfcor", stats.self_corrections, [[500, " yikes"], [100, " learning"]])}`]);
+  if (stats.apologies > 3) aiCol.push(["Apologies", `${stats.apologies}`]);
+  if (stats.secret_leaks_ai > 0) aiCol.push(["AI leaked", `${stats.secret_leaks_ai}${stats.secret_leaks_ai > 5 ? " rotate!" : ""}`]);
+
+  const collabCol: StatEntry[] = [];
+  if (!isZero(stats.override_success_rate) && stats.corrections > 0) collabCol.push(["Override win", `${pct(stats.override_success_rate)} of ${fmt(stats.corrections)}`]);
+  if (stats.longest_autopilot > 5) collabCol.push(["Leash", `${fmt(stats.longest_autopilot)} turns${wow("auto", stats.longest_autopilot, [[1000, " wow"], [200, " trust"]])}`]);
+  if (stats.first_blood_min > 2) collabCol.push(["1st correction", `${stats.first_blood_min}m${wow("fb", stats.first_blood_min, [[30, " patient"], [15, " chill"]])}`]);
+  if (stats.redirects_per_hour < 1 && stats.total_duration_min > 60) collabCol.push(["Redirects/hr", `${stats.redirects_per_hour} hands off`]);
+  else if (stats.redirects_per_hour > 3) collabCol.push(["Redirects/hr", `${stats.redirects_per_hour} tight grip`]);
+  if (stats.scope_creep > 2) collabCol.push(["Scope creep", `${stats.scope_creep}`]);
+  if (stats.interruptions > 0) collabCol.push(["Interrupts", `${stats.interruptions}${stats.interruptions > 10 ? " impatient" : ""}`]);
+
+  // Render three columns side by side
+  const columns = [
+    { header: "YOUR VOICE", entries: voiceCol },
+    { header: "THE AI'S HABITS", entries: aiCol },
+    { header: "THE BACK-AND-FORTH", entries: collabCol },
+  ].filter(c => c.entries.length > 0);
+
+  if (columns.length > 0) {
+    lines.push("");
+    // Headers — each a different color
+    const headerColors = [c.magenta, c.cyan, c.yellow];
+    lines.push(INDENT + columns.map((col, i) =>
+      `${headerColors[i] || c.white}${col.header.padEnd(COL_WIDTH)}${c.reset}`
+    ).join("  "));
+
+    // Stat rows
+    const maxRows = Math.max(...columns.map(col => col.entries.length));
+    for (let r = 0; r < maxRows; r++) {
+      const row = columns.map((col, i) => {
+        const entry = col.entries[r];
+        if (!entry) return "".padEnd(COL_WIDTH);
+        const [label, value] = entry;
+        // Label in gray, value in column color
+        const color = headerColors[i] || c.white;
+        const raw = `${label}: ${value}`;
+        const padded = raw.length > COL_WIDTH ? raw.slice(0, COL_WIDTH) : raw.padEnd(COL_WIDTH);
+        return `${c.gray}${label}: ${c.reset}${color}${value}${c.reset}${"".padEnd(Math.max(0, COL_WIDTH - raw.length))}`;
+      });
+      lines.push(INDENT + row.join("  "));
     }
   }
 
   lines.push("");
   lines.push(`${INDENT}${LINE}`);
 
-  // ── Your Voice ──
-  const voiceLines: string[] = [];
-  if (!isZero(stats.expletives)) voiceLines.push(`    Expletives: ${fmt(stats.expletives)}`);
-  if (!isZero(stats.corrections)) voiceLines.push(`    Corrections: ${fmt(stats.corrections)}`);
-  if (stats.avg_prompt_words > 50) {
-    voiceLines.push(`    Avg prompt: ${stats.avg_prompt_words} words${wow("prompt", stats.avg_prompt_words, [[150, "(essays)"], [100, "(verbose)"], [80, "(detailed)"]])}`);
-  }
-  if (stats.please_rate > 0.1) voiceLines.push(`    Please rate: ${pct(stats.please_rate)}`);
-  else if (stats.please_rate < 0.02 && stats.total_turns > 100) voiceLines.push(`    Please rate: ${pct(stats.please_rate)} (all business)`);
-  if (stats.question_rate > 0.1) voiceLines.push(`    Questions: ${pct(stats.question_rate)}`);
-  if (stats.late_night_rate > 0.1) voiceLines.push(`    Late night: ${pct(stats.late_night_rate)}`);
-  if (stats.reasoning_rate > 0.05) voiceLines.push(`    Thinks out loud: ${pct(stats.reasoning_rate)} of turns`);
-  if (stats.secret_leaks_user > 0) voiceLines.push(`    Secrets you leaked: ${stats.secret_leaks_user}${stats.secret_leaks_user > 3 ? " (yikes)" : ""}`);
-  if (stats.secret_leaks_ai > 0) voiceLines.push(`    Secrets AI leaked: ${stats.secret_leaks_ai}${stats.secret_leaks_ai > 5 ? " (rotate your keys)" : ""}`);
-
-  if (voiceLines.length > 0) {
-    lines.push("");
-    lines.push(`${INDENT}Your Voice`);
-    lines.push(...voiceLines);
-  }
-
-  // ── The AI's Habits ──
-  const aiLines: string[] = [];
-  if (!isZero(stats.read_write_ratio)) {
-    aiLines.push(`    Read:write: ${stats.read_write_ratio}:1${wow("rw", stats.read_write_ratio, [[5, "(careful)"], [3, "(measured)"]])}`);
-  }
-  if (!isZero(stats.test_runs)) {
-    const failPct = stats.failed_tests > 0 ? `, ${Math.round(stats.failed_tests / stats.test_runs * 100)}% failed` : "";
-    aiLines.push(`    Test runs: ${fmt(stats.test_runs)}${failPct}${wow("tests", stats.test_runs, [[500, " (obsessive)"], [100, " (thorough)"]])}`);
-  }
-  if (stats.longest_tool_chain > 10) {
-    aiLines.push(`    Longest burst: ${fmt(stats.longest_tool_chain)} tool calls${wow("chain", stats.longest_tool_chain, [[500, " (unreal)"], [100, " (deep)"], [50, " (committed)"]])}`);
-  }
-  if (stats.self_corrections > 10) {
-    aiLines.push(`    Self-corrections: ${fmt(stats.self_corrections)}${wow("selfcor", stats.self_corrections, [[2000, " (the AI never stopped fixing itself)"], [500, " (the AI learned on the job)"], [100, " (it kept iterating)"]])}`);
-  }
-  if (stats.apologies > 3) aiLines.push(`    AI apologies: ${stats.apologies}`);
-
-  if (aiLines.length > 0) {
-    lines.push("");
-    lines.push(`${INDENT}The AI's Habits`);
-    lines.push(...aiLines);
-  }
-
-  // ── The Back-and-forth ──
-  const interLines: string[] = [];
-  if (!isZero(stats.override_success_rate) && stats.corrections > 0) {
-    interLines.push(`    Override success: ${pct(stats.override_success_rate)} of ${fmt(stats.corrections)} corrections`);
-  }
-  if (stats.longest_autopilot > 5) {
-    interLines.push(`    Longest leash: ${fmt(stats.longest_autopilot)} turns${wow("auto", stats.longest_autopilot, [[1000, " (that's a whole workday)"], [200, " (serious trust)"], [50, " (hands off)"]])}`);
-  }
-  if (stats.first_blood_min > 2) {
-    interLines.push(`    First correction: ${stats.first_blood_min} min in${wow("fb", stats.first_blood_min, [[30, " (patient)"], [15, " (long leash)"]])}`);
-  }
-  if (stats.redirects_per_hour < 1 && stats.total_duration_min > 60) {
-    interLines.push(`    Redirects/hr: ${stats.redirects_per_hour} (barely touches the wheel)`);
-  } else if (stats.redirects_per_hour > 3) {
-    interLines.push(`    Redirects/hr: ${stats.redirects_per_hour} (constant course-correcting)`);
-  }
-  if (stats.scope_creep > 2) interLines.push(`    Scope creep: ${stats.scope_creep} "while we're at it" moments`);
-  if (stats.interruptions > 0) interLines.push(`    Interruptions: ${stats.interruptions}${stats.interruptions > 10 ? " (impatient)" : ""}`);
-
-  if (interLines.length > 0) {
-    lines.push("");
-    lines.push(`${INDENT}The Back-and-forth`);
-    lines.push(...interLines);
-  }
-
-  lines.push("");
-  lines.push(`${INDENT}${LINE}`);
-
-  // Tool breakdown with percentages
+  // Tool breakdown with percentages — colored per tool
   if (stats.source_breakdown && Object.keys(stats.source_breakdown).length > 0) {
+    const toolColors: Record<string, string> = { claude: c.magenta, cursor: c.cyan, codex: c.green, gemini: c.yellow };
     const total = Object.values(stats.source_breakdown).reduce((a, b) => a + b, 0);
     const parts = Object.entries(stats.source_breakdown)
       .sort(([, a], [, b]) => b - a)
       .map(([src, count]) => {
         const name = SOURCE_DISPLAY_NAMES[src as SessionSource] ?? src;
         const p = Math.round((count / total) * 100);
-        return `${name} ${p}%`;
+        const tc = toolColors[src] || c.white;
+        return `${tc}${name} ${p}%${c.reset}`;
       });
-    lines.push(`${INDENT}${parts.join("  ·  ")}`);
+    lines.push(`${INDENT}${parts.join(`  ${c.gray}·${c.reset}  `)}`);
   }
 
-  lines.push(`${INDENT}${fmt(stats.total_turns)} turns across ${stats.session_count} sessions`);
-  lines.push(`${INDENT}All analysis ran locally. No session data left your machine.`);
+  lines.push(`${INDENT}${c.gray}${fmt(stats.total_turns)} turns across ${stats.session_count} sessions${c.reset}`);
+  lines.push(`${INDENT}${c.dim}All analysis ran locally. No session data left your machine.${c.reset}`);
   lines.push("");
 
   console.log(lines.join("\n"));
@@ -200,19 +219,19 @@ export function formatTextBlock(
   const lines: string[] = [];
 
   lines.push("HOW DO YOU VIBE?");
-  lines.push(LINE);
+  lines.push(PLAIN_LINE);
   lines.push("");
   lines.push(match.headline);
 
   if (narrative) {
     lines.push("");
-    for (const wrapped of wordWrap(narrative, 56)) {
+    for (const wrapped of wordWrap(narrative, 76)) {
       lines.push(wrapped);
     }
   }
 
   lines.push("");
-  lines.push(LINE);
+  lines.push(PLAIN_LINE);
 
   // ── Your Voice ──
   const voice: string[] = [];
@@ -285,9 +304,8 @@ export function formatTextBlock(
   }
 
   lines.push("");
-  lines.push(LINE);
+  lines.push(PLAIN_LINE);
 
-  // Tool breakdown with percentages
   if (stats.source_breakdown && Object.keys(stats.source_breakdown).length > 0) {
     const total = Object.values(stats.source_breakdown).reduce((a, b) => a + b, 0);
     const parts = Object.entries(stats.source_breakdown)

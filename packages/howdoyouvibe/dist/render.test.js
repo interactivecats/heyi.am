@@ -73,7 +73,7 @@ describe("formatTextBlock", () => {
         expect(block).toContain("npx howdoyouvibe");
         expect(block).toContain("847 turns");
         // Has box-drawing line
-        expect(block).toContain("────");
+        expect(block).toContain("═══");
     });
     it("includes narrative when provided", () => {
         const stats = makeStats();
@@ -114,9 +114,9 @@ describe("renderCard", () => {
         const output = spy.mock.calls[0][0];
         expect(output).toContain("────");
         expect(output).toContain("The Night Owl who cusses under pressure");
-        expect(output).toContain("Your Voice");
-        expect(output).toContain("The AI's Habits");
-        expect(output).toContain("The Back-and-forth");
+        expect(output).toContain("YOUR VOICE");
+        expect(output).toContain("THE AI'S HABITS");
+        expect(output).toContain("THE BACK-AND-FORTH");
         expect(output).toContain("847 turns across 23 sessions");
         expect(output).toContain("All analysis ran locally");
         spy.mockRestore();
