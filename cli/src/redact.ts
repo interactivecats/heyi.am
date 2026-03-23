@@ -46,7 +46,6 @@ async function getSecretlintEngine() {
 
   try {
     const { createEngine } = await import("@secretlint/node");
-    const preset = await import("@secretlint/secretlint-rule-preset-recommend");
     _engine = await createEngine({
       color: false,
       formatter: "json",
@@ -54,7 +53,6 @@ async function getSecretlintEngine() {
       configFileJSON: {
         rules: [{
           id: "@secretlint/secretlint-rule-preset-recommend",
-          rule: preset.creator,
         }],
       },
     });

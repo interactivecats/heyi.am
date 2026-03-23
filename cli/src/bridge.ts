@@ -17,6 +17,7 @@ import type {
 } from "./analyzer.js";
 import { analyzeSession } from "./analyzer.js";
 import { parseSession, type SessionMeta } from "./parsers/index.js";
+import { stripHomePath, stripHomePathsInText } from "./redact.js";
 
 export interface BridgeOptions {
   sessionId: string;
@@ -29,10 +30,11 @@ export function bridgeToAnalyzer(
   parsed: ParserOutput,
   opts: BridgeOptions,
 ): AnalyzerInput {
-  const turns = entriesToTurns(parsed.raw_entries);
-  const filesChanged = computePerFileChanges(parsed.tool_calls, parsed.loc_stats);
+  const cwd = parsed.cwd;
+  const turns = entriesToTurns(parsed.raw_entries, cwd);
+  const filesChanged = computePerFileChanges(parsed.tool_calls, parsed.loc_stats, cwd);
   const title = extractTitle(parsed.raw_entries);
-  const rawLog = extractRawLog(parsed.raw_entries);
+  const rawLog = extractRawLog(parsed.raw_entries, cwd);
 
   const wallClockMinutes = parsed.wall_clock_ms > 0
     ? Math.max(1, Math.round(parsed.wall_clock_ms / 60_000))
@@ -68,7 +70,7 @@ function getContentBlocks(entry: RawEntry): ContentBlock[] {
   return content;
 }
 
-function entriesToTurns(entries: RawEntry[]): ParsedTurn[] {
+function entriesToTurns(entries: RawEntry[], cwd?: string): ParsedTurn[] {
   const turns: ParsedTurn[] = [];
 
   for (const entry of entries) {
@@ -93,7 +95,8 @@ function entriesToTurns(entries: RawEntry[]): ParsedTurn[] {
             content: block.text,
           });
         } else if (isToolUseBlock(block)) {
-          const toolInput = extractToolInput(block);
+          let toolInput = extractToolInput(block);
+          if (toolInput) toolInput = stripHomePath(toolInput, cwd);
           turns.push({
             timestamp: entry.timestamp,
             type: "tool",
@@ -118,7 +121,7 @@ function extractToolInput(block: ToolUseBlock): string | undefined {
   return undefined;
 }
 
-function computePerFileChanges(toolCalls: ToolCall[], locStats?: LocStats): ParsedFileChange[] {
+function computePerFileChanges(toolCalls: ToolCall[], locStats?: LocStats, cwd?: string): ParsedFileChange[] {
   const files = new Map<string, { additions: number; deletions: number }>();
 
   // Track writes for dedup (last write wins)
@@ -156,7 +159,7 @@ function computePerFileChanges(toolCalls: ToolCall[], locStats?: LocStats): Pars
   }
 
   const result = [...files.entries()]
-    .map(([path, stats]) => ({ path, ...stats }))
+    .map(([path, stats]) => ({ path: stripHomePath(path, cwd), ...stats }))
     .sort((a, b) => a.path.localeCompare(b.path));
 
   // When tool-call-based computation yields nothing, fall back to
@@ -168,7 +171,7 @@ function computePerFileChanges(toolCalls: ToolCall[], locStats?: LocStats): Pars
       const perFile = Math.ceil(locStats.loc_added / locStats.files_changed.length);
       const perFileDel = Math.ceil(locStats.loc_removed / locStats.files_changed.length);
       return locStats.files_changed.map((path) => ({
-        path,
+        path: stripHomePath(path, cwd),
         additions: perFile,
         deletions: perFileDel,
       }));
@@ -195,7 +198,7 @@ function extractTitle(entries: RawEntry[]): string {
   return "Untitled session";
 }
 
-function extractRawLog(entries: RawEntry[]): string[] {
+function extractRawLog(entries: RawEntry[], cwd?: string): string[] {
   const log: string[] = [];
   for (const entry of entries) {
     if (entry.type === "user") {
@@ -207,9 +210,11 @@ function extractRawLog(entries: RawEntry[]): string[] {
       const blocks = getContentBlocks(entry);
       for (const block of blocks) {
         if (block.type === "text") {
-          log.push(block.text);
+          log.push(stripHomePathsInText(block.text, cwd));
         } else if (isToolUseBlock(block)) {
-          log.push(`[${block.name}] ${extractToolInput(block) ?? ""}`);
+          let input = extractToolInput(block);
+          if (input) input = stripHomePath(input, cwd);
+          log.push(`[${block.name}] ${input ?? ""}`);
         }
       }
     }

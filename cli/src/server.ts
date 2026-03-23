@@ -14,6 +14,7 @@ import { triageSessions, type SessionMetaWithStats } from './llm/triage.js';
 import { enhanceProject, refineNarrative, type SessionSummary, type SkippedSessionMeta, type ProjectEnhanceResult } from './llm/project-enhance.js';
 import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData, loadFreshProjectEnhanceResult, saveProjectEnhanceResult, loadProjectEnhanceResult, buildProjectFingerprint, savePublishedState, getPublishedState } from './settings.js';
 import { captureScreenshot } from './screenshot.js';
+import { redactSession, redactText, scanTextSync, formatFindings, stripHomePathsInText } from './redact.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -1130,13 +1131,25 @@ export function createApp(sessionsBasePath?: string) {
               })) ?? [],
             };
 
+            // Redact secrets & PII, strip home directory paths before publishing
+            const sessionCwd = session.cwd ?? undefined;
+            const redactedPayload = redactSession(sessionPayload, 'high', sessionCwd);
+            const redactedData = redactSession(sessionData as Record<string, unknown>, 'high', sessionCwd);
+
+            // Warn about redacted content in CLI output
+            const payloadFindings = scanTextSync(JSON.stringify(sessionPayload));
+            if (payloadFindings.length > 0) {
+              const summary = formatFindings(payloadFindings);
+              send({ type: 'redaction', sessionId, message: summary });
+            }
+
             const sessionRes = await fetch(`${API_URL}/api/sessions`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${auth.token}`,
               },
-              body: JSON.stringify(sessionPayload),
+              body: JSON.stringify(redactedPayload),
             });
 
             if (sessionRes.ok) {
@@ -1149,20 +1162,27 @@ export function createApp(sessionsBasePath?: string) {
                   const { raw: rawUrl, log: logUrl } = sesData.upload_urls;
                   if (rawUrl && meta.path && !meta.path.startsWith('cursor://')) {
                     try {
-                      const rawBody = readFileSync(meta.path);
-                      await fetch(rawUrl, { method: 'PUT', body: rawBody, headers: { 'Content-Type': 'application/octet-stream' } });
+                      const rawText = readFileSync(meta.path, 'utf-8');
+                      let redactedRaw = redactText(rawText);
+                      redactedRaw = stripHomePathsInText(redactedRaw, sessionCwd);
+                      await fetch(rawUrl, { method: 'PUT', body: Buffer.from(redactedRaw, 'utf-8'), headers: { 'Content-Type': 'application/octet-stream' } });
                     } catch { /* S3 upload is best-effort */ }
                   }
                   if (logUrl && session.rawLog && session.rawLog.length > 0) {
                     try {
-                      await fetch(logUrl, { method: 'PUT', body: JSON.stringify(session.rawLog), headers: { 'Content-Type': 'application/json' } });
+                      const redactedLog = session.rawLog.map((line: string) => {
+                        let cleaned = redactText(line);
+                        cleaned = stripHomePathsInText(cleaned, sessionCwd);
+                        return cleaned;
+                      });
+                      await fetch(logUrl, { method: 'PUT', body: JSON.stringify(redactedLog), headers: { 'Content-Type': 'application/json' } });
                     } catch { /* S3 upload is best-effort */ }
                   }
                   if (sesData.upload_urls.session) {
                     try {
                       await fetch(sesData.upload_urls.session, {
                         method: 'PUT',
-                        body: JSON.stringify(sessionData),
+                        body: JSON.stringify(redactedData),
                         headers: { 'Content-Type': 'application/json' },
                       });
                     } catch { /* S3 upload is best-effort */ }
