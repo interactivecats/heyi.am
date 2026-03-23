@@ -48,11 +48,18 @@ function isHighlightStep(step: ExecutionStep): boolean {
 
 function StatsGrid({ session }: { session: Session }) {
   const filesCount = session.filesChanged?.length ?? 0;
+  const childMinutes = (session.children ?? []).reduce((s, c) => s + (c.durationMinutes ?? 0), 0);
+  const agentMinutes = (session.durationMinutes ?? 0) + childMinutes;
+  const hasAgents = childMinutes > 0;
   return (
     <div className="session-detail__stats-grid">
       <div className="session-detail__stat">
-        <div className="session-detail__stat-value">{formatDuration(session.durationMinutes)}</div>
-        <div className="session-detail__stat-label">Duration</div>
+        <div className="session-detail__stat-value">
+          {hasAgents
+            ? `${formatDuration(session.durationMinutes)} / ${formatDuration(agentMinutes)}`
+            : formatDuration(session.durationMinutes)}
+        </div>
+        <div className="session-detail__stat-label">{hasAgents ? 'You / Agents' : 'Duration'}</div>
       </div>
       <div className="session-detail__stat">
         <div className="session-detail__stat-value">{session.turns}</div>
