@@ -105,7 +105,10 @@ function SessionOverview({
 
       <div className="upload-flow__stat-grid">
         <StatCard label="Sessions" value={String(project.sessionCount)} />
-        <StatCard label="Total Time" value={formatDuration(project.totalDuration)} />
+        <StatCard label={project.totalAgentDuration ? 'Your Time' : 'Total Time'} value={formatDuration(project.totalDuration)} />
+        {project.totalAgentDuration != null && project.totalAgentDuration > 0 && (
+          <StatCard label="Agent Time" value={formatDuration(project.totalAgentDuration)} />
+        )}
         <StatCard label="LOC" value={formatLoc(project.totalLoc)} />
         <StatCard label="Files" value={String(project.totalFiles)} />
       </div>
@@ -1898,7 +1901,10 @@ export function ReviewStep({
 
         <div className="upload-flow__stat-grid">
           <StatCard label="Sessions" value={publishedLabel} />
-          <StatCard label="Total Time" value={formatDuration(project.totalDuration)} />
+          <StatCard label={project.totalAgentDuration ? 'Your Time' : 'Total Time'} value={formatDuration(project.totalDuration)} />
+          {project.totalAgentDuration != null && project.totalAgentDuration > 0 && (
+            <StatCard label="Agent Time" value={formatDuration(project.totalAgentDuration)} />
+          )}
           <StatCard label="LOC" value={formatLoc(project.totalLoc)} />
           <StatCard label="Files" value={String(project.totalFiles)} />
         </div>
