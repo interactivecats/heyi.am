@@ -181,6 +181,40 @@ function getChildren(s: Session): Child[] {
   }));
 }
 
+/** Group children into waves: agents starting within WAVE_THRESHOLD_MS of each other */
+const WAVE_THRESHOLD_MS = 2 * 60_000; // 2 minutes
+
+interface Wave {
+  children: Child[];
+  startMs: number;
+  endMs: number;
+}
+
+function groupIntoWaves(children: Child[], parentStartMs: number): Wave[] {
+  const withTime = children
+    .map(c => ({
+      ...c,
+      startMs: c.date ? new Date(c.date).getTime() : parentStartMs,
+      endMs: (c.date ? new Date(c.date).getTime() : parentStartMs) + c.durationMinutes * 60_000,
+    }))
+    .sort((a, b) => a.startMs - b.startMs);
+
+  const waves: Wave[] = [];
+  let cur: { children: (typeof withTime)[0][]; startMs: number; endMs: number } | null = null;
+
+  for (const c of withTime) {
+    if (!cur || c.startMs > cur.startMs + WAVE_THRESHOLD_MS) {
+      if (cur) waves.push({ children: cur.children, startMs: cur.startMs, endMs: cur.endMs });
+      cur = { children: [c], startMs: c.startMs, endMs: c.endMs };
+    } else {
+      cur.children.push(c);
+      if (c.endMs > cur.endMs) cur.endMs = c.endMs;
+    }
+  }
+  if (cur) waves.push({ children: cur.children, startMs: cur.startMs, endMs: cur.endMs });
+  return waves;
+}
+
 /** Assign agent lanes using greedy packing based on their time ranges */
 function assignAgentLanes(children: Child[], parentStartMs: number): { laneMap: Map<string, number>; laneCount: number } {
   const withTime = children
@@ -387,61 +421,64 @@ function layout(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CONCURRENT)
       const ts = formatTimestamp(s.date);
 
       if (kids.length > 0) {
-        // Time-positioned agent fork/join: each agent forks when it starts, merges when it ends
+        // Wave-based agent rendering: agents that start together fork together,
+        // but each merges back individually at its own end time
         const visible = kids.slice(0, MAX_AGENTS);
         const parentStartMs = sessionStart(s);
-        // Use the latest agent end time (or session active end) as the range end,
-        // not wall clock endTime which can be hours/days later
         const activeEndMs = parentStartMs + s.durationMinutes * 60_000;
         const latestAgentEnd = Math.max(activeEndMs, ...visible.map(k => {
           const kStart = k.date ? new Date(k.date).getTime() : parentStartMs;
           return kStart + k.durationMinutes * 60_000;
         }));
         const parentEndMs = latestAgentEnd;
-        const { laneMap, laneCount } = assignAgentLanes(visible, parentStartMs);
 
-        const gap = laneGap(laneCount);
-        const maxSpread = Math.min((laneCount - 1) * gap, 300);
-        const agentGap = laneCount > 1 ? maxSpread / (laneCount - 1) : 0;
-        const topLaneY = cY - maxSpread / 2;
+        const waves = groupIntoWaves(visible, parentStartMs);
+        // Total max concurrent agents across all waves for vertical spread
+        const maxConcurrentInWave = Math.max(...waves.map(w => w.children.length), 1);
+        const gap = laneGap(maxConcurrentInWave);
+        const maxSpread = Math.min((maxConcurrentInWave - 1) * gap, 300);
+
         const forkX = cx;
         const joinX = cx + w;
+        const topLaneY = cY - maxSpread / 2;
 
-        // Session title above topmost lane
+        // Session title
         const titleY = topLaneY - 32;
         const flatStartX = forkX + CURVE_CP * 2;
         nodes.push({ kind: 'label', pos: { x: flatStartX + 8, y: titleY }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
         bound(titleY - 4, 28);
 
-        // Start dot
+        // Start dot + orchestrator line
         nodes.push({ kind: 'dot', pos: { x: forkX, y: cY }, color: MAIN_COLOR, size: 'lg', tooltip });
-
-        // Main orchestrator line
         tracks.push({ path: `M ${forkX} ${cY} L ${joinX} ${cY}`, color: MAIN_COLOR, width: 1.5 });
 
-        // Each agent: fork at its start time, join at its end time
-        visible.forEach((kid) => {
-          const lane = laneMap.get(kid.id) ?? 0;
-          const laneY = topLaneY + lane * agentGap;
-          const color = agentColor(kid.role);
+        // Render each wave: fork together, merge individually
+        for (const wave of waves) {
+          const n = wave.children.length;
+          const waveSpread = Math.min((n - 1) * gap, maxSpread);
+          const waveGap = n > 1 ? waveSpread / (n - 1) : 0;
+          const waveTopY = cY - waveSpread / 2;
 
-          const kidStartMs = kid.date ? new Date(kid.date).getTime() : parentStartMs;
-          const kidEndMs = kidStartMs + kid.durationMinutes * 60_000;
+          // Shared fork X for the wave
+          const waveForkX = timeToX(wave.startMs, parentStartMs, parentEndMs, forkX, joinX);
 
-          // Map agent time to X position within the session bar
-          const kidForkX = timeToX(kidStartMs, parentStartMs, parentEndMs, forkX, joinX);
-          const kidJoinX = timeToX(Math.min(kidEndMs, parentEndMs), parentStartMs, parentEndMs, forkX, joinX);
-          // Ensure minimum width for very short agents
-          const adjustedJoinX = Math.max(kidJoinX, kidForkX + 60);
+          wave.children.forEach((kid, i) => {
+            const laneY = waveTopY + i * waveGap;
+            const color = agentColor(kid.role);
 
-          tracks.push({ path: bezierForkJoin(kidForkX, Math.min(adjustedJoinX, joinX), cY, laneY), color, width: 1.5 });
-          bound(laneY - 2, 4);
-        });
+            // Individual join X based on this agent's end time
+            const kidEndMs = (kid.date ? new Date(kid.date).getTime() : parentStartMs) + kid.durationMinutes * 60_000;
+            const kidJoinX = timeToX(Math.min(kidEndMs, parentEndMs), parentStartMs, parentEndMs, forkX, joinX);
+            const adjustedJoinX = Math.max(kidJoinX, waveForkX + 100);
+
+            tracks.push({ path: bezierForkJoin(waveForkX, Math.min(adjustedJoinX, joinX), cY, laneY), color, width: 1.5 });
+            bound(laneY - 2, 4);
+          });
+        }
 
         // End dot
         nodes.push({ kind: 'dot', pos: { x: joinX, y: cY }, color: MAIN_COLOR, size: 'lg', tooltip });
 
-        // Track range for legend
         sessionRanges.push({ session: s, xStart: forkX, xEnd: joinX });
         cx = joinX + SEG_GAP;
       } else {
