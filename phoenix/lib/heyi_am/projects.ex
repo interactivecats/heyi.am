@@ -51,6 +51,15 @@ defmodule HeyiAm.Projects do
     |> Repo.one()
   end
 
+  def get_project_with_all_shares(user_id, slug) do
+    all_shares = from(s in Share, order_by: [asc: s.recorded_at])
+
+    Project
+    |> where([p], p.user_id == ^user_id and p.slug == ^slug)
+    |> preload(shares: ^all_shares)
+    |> Repo.one()
+  end
+
   def get_project_by_slug_any_user(slug) do
     Repo.get_by(Project, slug: slug)
   end

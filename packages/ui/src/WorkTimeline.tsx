@@ -457,6 +457,56 @@ function Legend({ entry }: { entry: LegendEntry | null }) {
   );
 }
 
+// ── Legendary Flash ──────────────────────────────────────────────
+
+const FLASH_DURATION_MS = 2400;
+
+function LegendaryFlash({ count }: { count: number }) {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setVisible(false), FLASH_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      pointerEvents: 'none',
+    }}>
+      <div className="wt-legendary-backdrop" style={{
+        position: 'absolute', inset: 0,
+        background: '#f8f9fb',
+        animation: `wtLegendaryFade ${FLASH_DURATION_MS}ms ease-out forwards`,
+      }} />
+      <div style={{
+        position: 'relative', zIndex: 1, textAlign: 'center',
+        fontFamily: FONT,
+        animation: `wtLegendaryText ${FLASH_DURATION_MS}ms ease-out forwards`,
+      }}>
+        <div style={{
+          fontSize: '2.5rem', fontWeight: 700, letterSpacing: '0.12em',
+          color: '#d97706', textTransform: 'uppercase',
+        }}>
+          Legendary Agentic Use
+        </div>
+        <div style={{ fontSize: '5rem', fontWeight: 700, color: MAIN_COLOR, lineHeight: 1, marginTop: 8 }}>
+          {count}
+        </div>
+        <div style={{
+          fontSize: '0.875rem', letterSpacing: '0.08em',
+          color: TEXT_SECONDARY, marginTop: 12, textTransform: 'uppercase',
+        }}>
+          concurrent agents deployed
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Tooltip Component ────────────────────────────────────────────
 
 function Tooltip({ data, pos }: { data: TooltipData; pos: { x: number; y: number } }) {
@@ -531,9 +581,13 @@ export function WorkTimeline({ sessions, onSessionClick }: WorkTimelineProps) {
   }
 
   const hasAgents = legendEntries.some(e => e.agents.length > 0);
+  const legendaryEntry = legendEntries.find(e => e.totalAgents >= LEGENDARY_THRESHOLD);
 
   return (
     <div className="work-timeline" data-testid="work-timeline">
+      {/* Legendary flash overlay */}
+      {legendaryEntry && <LegendaryFlash count={legendaryEntry.totalAgents} />}
+
       {/* Sticky legend above timeline */}
       {hasAgents && <Legend entry={focusedEntry} />}
 

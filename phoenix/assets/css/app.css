@@ -4072,6 +4072,22 @@ details.collapsible .collapsible-content {
   border-bottom: 1px solid rgba(194, 199, 208, 0.15);
 }
 
+/* Legendary flash animation */
+@keyframes wtLegendaryFade {
+  0%   { opacity: 0; }
+  15%  { opacity: 0.92; }
+  50%  { opacity: 0.92; }
+  100% { opacity: 0; }
+}
+
+@keyframes wtLegendaryText {
+  0%   { opacity: 0; transform: scale(0.7); }
+  12%  { opacity: 1; transform: scale(1.05); }
+  20%  { transform: scale(1); }
+  55%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.02); }
+}
+
 /* Growth Chart */
 .growth-chart {
   display: flex;
