@@ -256,35 +256,53 @@ export function createApp(sessionsBasePath?: string) {
 
       // Return parent sessions with enriched child summaries.
       // Children get stats via the cached getSessionStats — no redundant parsing.
+      // If full parsing fails, fall back to a minimal session from stats.
       const sessions = await Promise.all(
         proj.sessions.map(async (meta) => {
+          // Build child summaries (used by both full and fallback paths)
+          const seenRoles = new Set<string>();
+          const children: ChildSessionSummary[] = [];
+          for (const c of meta.children ?? []) {
+            const role = c.agentRole ?? c.sessionId;
+            if (seenRoles.has(role)) continue;
+            seenRoles.add(role);
+            const childStats = await getSessionStats(c, proj.name);
+            children.push({
+              sessionId: c.sessionId,
+              role: c.agentRole,
+              durationMinutes: childStats.duration,
+              linesOfCode: childStats.loc,
+              date: childStats.date,
+            });
+          }
+          const childCount = children.length;
+
           try {
             const session = await loadSession(meta.path, proj.name, meta.sessionId);
-            // Deduplicate children by role (worktree agents create duplicates)
-            const seenRoles = new Set<string>();
-            const children: ChildSessionSummary[] = [];
-            for (const c of meta.children ?? []) {
-              const role = c.agentRole ?? c.sessionId;
-              if (seenRoles.has(role)) continue;
-              seenRoles.add(role);
-              const childStats = await getSessionStats(c, proj.name);
-              children.push({
-                sessionId: c.sessionId,
-                role: c.agentRole,
-                durationMinutes: childStats.duration,
-                linesOfCode: childStats.loc,
-                date: childStats.date,
-              });
-            }
-            const childCount = children.length;
             return { ...session, childCount, children: childCount > 0 ? children : undefined };
           } catch {
-            return null;
+            // Full parse failed — build minimal session from stats so it still appears
+            const stats = await getSessionStats(meta, proj.name);
+            return {
+              id: meta.sessionId,
+              title: 'Untitled session',
+              date: stats.date || '',
+              durationMinutes: stats.duration,
+              turns: stats.turns,
+              linesOfCode: stats.loc,
+              status: 'draft' as const,
+              projectName: proj.name,
+              rawLog: [] as string[],
+              skills: stats.skills,
+              source: meta.source,
+              childCount,
+              children: childCount > 0 ? children : undefined,
+            };
           }
         }),
       );
 
-      res.json({ sessions: sessions.filter(Boolean) });
+      res.json({ sessions: sessions.filter((s) => s.date) });
     } catch (err) {
       res.status(500).json({ error: { code: 'LIST_FAILED', message: (err as Error).message } });
     }
