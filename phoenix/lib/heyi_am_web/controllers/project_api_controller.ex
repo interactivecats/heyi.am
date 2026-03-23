@@ -1,6 +1,8 @@
 defmodule HeyiAmWeb.ProjectApiController do
   use HeyiAmWeb, :controller
 
+  require Logger
+
   alias HeyiAm.Projects
 
   def create(conn, %{"project" => project_params}) do
@@ -50,7 +52,8 @@ defmodule HeyiAmWeb.ProjectApiController do
               json(conn, %{upload_url: url, key: key})
 
             {:error, reason} ->
-              conn |> put_status(:internal_server_error) |> json(%{error: "Presign failed: #{inspect(reason)}"})
+              Logger.error("Presign failed for project #{slug}: #{inspect(reason)}")
+              conn |> put_status(:internal_server_error) |> json(%{error: "Failed to generate upload URL"})
           end
       end
     end

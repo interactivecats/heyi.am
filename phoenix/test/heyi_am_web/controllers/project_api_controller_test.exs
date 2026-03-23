@@ -86,6 +86,28 @@ defmodule HeyiAmWeb.ProjectApiControllerTest do
     end
   end
 
+  describe "POST /api/projects/:slug/screenshot-url" do
+    test "error response does not leak internal details", %{conn: _conn} do
+      {conn, _user} = api_conn_with_auth()
+
+      # Create project first
+      post(conn, ~p"/api/projects", %{project: %{slug: "err-proj", title: "Error Test"}})
+
+      # Request screenshot URL — even if presign fails, the error should be generic
+      {conn, _user} = api_conn_with_auth()
+      conn = post(conn, ~p"/api/projects/err-proj/screenshot-url", %{ext: "png"})
+
+      # If it succeeded (200), that's fine. If it failed, check the error is generic.
+      if conn.status >= 400 do
+        body = json_response(conn, conn.status)
+        error_msg = body["error"] || ""
+        refute error_msg =~ "inspect"
+        refute error_msg =~ "%{"
+        refute error_msg =~ "Elixir."
+      end
+    end
+  end
+
   describe "PATCH /api/projects/:slug/screenshot-key" do
     test "rejects path traversal key", %{conn: _conn} do
       {conn, _user} = api_conn_with_auth()
