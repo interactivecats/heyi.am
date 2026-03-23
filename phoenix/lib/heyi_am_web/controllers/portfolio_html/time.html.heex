@@ -1,0 +1,111 @@
+<.public_shell logo_href={"/" <> @portfolio_user.username} current_page="Time">
+  <:nav_item href={"/" <> @portfolio_user.username} label="Portfolio" />
+  <:nav_item href={"/" <> @portfolio_user.username <> "/time"} label="Time" />
+  <:status>
+    <span class="topbar-status">@{@portfolio_user.username}</span>
+  </:status>
+
+  <div style="max-width: 960px; margin: 0 auto; padding: var(--spacing-8) var(--spacing-6);">
+
+    <%!-- Header --%>
+    <h1 style="font-family: var(--font-display); font-size: 1.75rem; margin: 0;">You / Agents</h1>
+    <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); margin: var(--spacing-2) 0 var(--spacing-8) 0;">
+      {@portfolio_user.display_name || @portfolio_user.username}'s time investment vs. AI agent compute
+    </p>
+
+    <%!-- Hero stats --%>
+    <%
+      fmt = fn mins ->
+        cond do
+          mins >= 600 -> "#{round(mins / 60)}h"
+          mins >= 60 -> "#{Float.round(mins / 60, 1)}h"
+          true -> "#{round(mins)}m"
+        end
+      end
+    %>
+    <div style="display: flex; align-items: center; gap: var(--spacing-6); padding: var(--spacing-6); background: var(--surface-container, #f0f2f5); border-radius: 0.375rem; margin-block-end: var(--spacing-6);">
+      <div style="text-align: center;">
+        <div style="font-family: var(--font-mono); font-size: 2rem; font-weight: 700; color: var(--primary);">
+          {fmt.(@totals.your_minutes)}
+        </div>
+        <div class="label-mono" style="margin-block-start: var(--spacing-1);">Your Time</div>
+      </div>
+      <div style="font-family: var(--font-mono); font-size: 2rem; font-weight: 300; color: var(--on-surface-variant);">/</div>
+      <div style="text-align: center;">
+        <div style="font-family: var(--font-mono); font-size: 2rem; font-weight: 700;">
+          {fmt.(@totals.agent_minutes)}
+        </div>
+        <div class="label-mono" style="margin-block-start: var(--spacing-1);">Agent Time</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-family: var(--font-mono); font-size: 2rem; font-weight: 700;">
+          {if @multiplier >= 1.05, do: "#{@multiplier}x", else: "1x"}
+        </div>
+        <div class="label-mono" style="margin-block-start: var(--spacing-1);">Multiplier</div>
+      </div>
+    </div>
+
+    <%!-- Summary chips --%>
+    <div style="display: flex; gap: var(--spacing-2); flex-wrap: wrap; margin-block-end: var(--spacing-8);">
+      <span style="font-family: var(--font-mono); font-size: 0.6875rem; padding: 0.25rem 0.75rem; background: var(--surface-container, #f0f2f5); border-radius: 0.25rem; color: var(--on-surface-variant);">
+        {@totals.sessions} sessions
+      </span>
+      <span style="font-family: var(--font-mono); font-size: 0.6875rem; padding: 0.25rem 0.75rem; background: var(--surface-container, #f0f2f5); border-radius: 0.25rem; color: var(--on-surface-variant);">
+        {@total_orchestrated} orchestrated
+      </span>
+      <%= if @global_max_parallel > 0 do %>
+        <span style="font-family: var(--font-mono); font-size: 0.6875rem; padding: 0.25rem 0.75rem; background: var(--surface-container, #f0f2f5); border-radius: 0.25rem; color: var(--on-surface-variant);">
+          {@global_max_parallel} max parallel agents
+        </span>
+      <% end %>
+      <%= if length(@all_roles) > 0 do %>
+        <span style="font-family: var(--font-mono); font-size: 0.6875rem; padding: 0.25rem 0.75rem; background: var(--surface-container, #f0f2f5); border-radius: 0.25rem; color: var(--on-surface-variant);">
+          {length(@all_roles)} unique roles
+        </span>
+      <% end %>
+    </div>
+
+    <%!-- Project table --%>
+    <div style="border: 1px solid var(--outline-variant); border-radius: 0.375rem; overflow: hidden; margin-block-end: var(--spacing-8);">
+      <div style="display: grid; grid-template-columns: 2fr 1fr 0.7fr 0.8fr 0.8fr 0.7fr; gap: var(--spacing-3); padding: var(--spacing-3) var(--spacing-4); background: var(--surface-container, #f0f2f5); font-family: var(--font-mono); font-size: 0.625rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-surface-variant);">
+        <span>Project</span>
+        <span style="text-align: right;">You / Agents</span>
+        <span style="text-align: right;">Multiplier</span>
+        <span style="text-align: right;">Sessions</span>
+        <span style="text-align: right;">Max Parallel</span>
+        <span style="text-align: right;">Avg Agents</span>
+      </div>
+      <div :for={p <- @project_stats} style="display: grid; grid-template-columns: 2fr 1fr 0.7fr 0.8fr 0.8fr 0.7fr; gap: var(--spacing-3); padding: var(--spacing-3) var(--spacing-4); border-top: 1px solid var(--outline-variant); align-items: center;">
+        <a href={"/" <> @portfolio_user.username <> "/" <> p.slug} style="font-size: 0.875rem; font-weight: 600; color: var(--on-surface); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          {p.title}
+        </a>
+        <span style="text-align: right; font-family: var(--font-mono); font-size: 0.8125rem;">
+          {fmt.(p.your_minutes)} / {fmt.(p.agent_minutes)}
+        </span>
+        <span style="text-align: right; font-family: var(--font-mono); font-size: 0.8125rem;">
+          {if p.your_minutes > 0 && p.agent_minutes / p.your_minutes >= 1.05, do: "#{Float.round(p.agent_minutes / p.your_minutes, 1)}x", else: "1x"}
+        </span>
+        <span style="text-align: right; font-family: var(--font-mono); font-size: 0.8125rem;">
+          {p.sessions}<%= if p.orchestrated_sessions > 0 do %> ({p.orchestrated_sessions})<% end %>
+        </span>
+        <span style="text-align: right; font-family: var(--font-mono); font-size: 0.8125rem;">
+          {if p.max_parallel_agents > 0, do: p.max_parallel_agents, else: "—"}
+        </span>
+        <span style="text-align: right; font-family: var(--font-mono); font-size: 0.8125rem;">
+          {if p.avg_agents_per_session > 1, do: p.avg_agents_per_session, else: "1"}
+        </span>
+      </div>
+    </div>
+
+    <%!-- Agent roles --%>
+    <%= if length(@all_roles) > 0 do %>
+      <div style="margin-block-end: var(--spacing-8);">
+        <div class="label-mono" style="margin-block-end: var(--spacing-3);">Agent Roles Used</div>
+        <div style="display: flex; gap: var(--spacing-2); flex-wrap: wrap;">
+          <span :for={role <- @all_roles} class="chip">{role}</span>
+        </div>
+      </div>
+    <% end %>
+
+  </div>
+</.public_shell>

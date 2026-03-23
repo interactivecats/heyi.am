@@ -191,6 +191,7 @@ end
   scope "/", HeyiAmWeb do
     pipe_through :browser
 
+    get "/:username/time", PortfolioController, :time
     get "/:username/:project", PortfolioController, :project
     get "/:username", PortfolioController, :show
   end

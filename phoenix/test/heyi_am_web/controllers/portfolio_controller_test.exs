@@ -241,4 +241,31 @@ defmodule HeyiAmWeb.PortfolioControllerTest do
       assert html_response(conn, 404)
     end
   end
+
+  describe "GET /:username/time" do
+    setup [:create_user_with_shares]
+
+    test "renders time breakdown page", %{conn: conn} do
+      conn = get(conn, ~p"/alice/time")
+      html = html_response(conn, 200)
+      assert html =~ "You / Agents"
+      assert html =~ "Your Time"
+      assert html =~ "Agent Time"
+      assert html =~ "Multiplier"
+      assert html =~ "sessions"
+    end
+
+    test "includes OG meta tags for sharing", %{conn: conn} do
+      conn = get(conn, ~p"/alice/time")
+      html = html_response(conn, 200)
+      assert html =~ ~s(og:title)
+      assert html =~ "You / Agents"
+      assert html =~ ~s(og:description)
+    end
+
+    test "returns 404 for non-existent user", %{conn: conn} do
+      conn = get(conn, "/nobody/time")
+      assert html_response(conn, 404)
+    end
+  end
 end

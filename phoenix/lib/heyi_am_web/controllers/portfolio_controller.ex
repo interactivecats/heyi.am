@@ -120,6 +120,53 @@ defmodule HeyiAmWeb.PortfolioController do
     end
   end
 
+  def time(conn, %{"username" => username}) do
+    case Accounts.get_user_by_username(username) do
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(HeyiAmWeb.ErrorHTML)
+        |> render(:"404")
+
+      user ->
+        projects = Projects.list_user_projects_with_published_shares(user.id)
+        display_name = user.display_name || user.username
+
+        project_stats = build_time_stats(projects)
+
+        totals = %{
+          your_minutes: Enum.sum(Enum.map(project_stats, & &1.your_minutes)),
+          agent_minutes: Enum.sum(Enum.map(project_stats, & &1.agent_minutes)),
+          sessions: Enum.sum(Enum.map(project_stats, & &1.sessions)),
+        }
+
+        total_orchestrated = Enum.sum(Enum.map(project_stats, & &1.orchestrated_sessions))
+        global_max_parallel = project_stats |> Enum.map(& &1.max_parallel_agents) |> Enum.max(fn -> 0 end)
+        all_roles = project_stats |> Enum.flat_map(& &1.unique_roles) |> Enum.uniq()
+
+        multiplier = if totals.your_minutes > 0,
+          do: Float.round(totals.agent_minutes / totals.your_minutes, 1),
+          else: 1.0
+
+        og_description = "#{display_name} spent #{format_duration(totals.your_minutes)} coding with AI. " <>
+          "Agents worked #{format_duration(totals.agent_minutes)} (#{multiplier}x multiplier)."
+
+        render(conn, :time,
+          portfolio_user: user,
+          project_stats: project_stats,
+          totals: totals,
+          total_orchestrated: total_orchestrated,
+          global_max_parallel: global_max_parallel,
+          all_roles: all_roles,
+          multiplier: multiplier,
+          page_title: "#{display_name} — You / Agents",
+          og_title: "#{display_name} — You / Agents · heyi.am",
+          og_description: og_description,
+          og_url: HeyiAmWeb.Endpoint.url() <> "/#{user.username}/time"
+        )
+    end
+  end
+
   # -- Private helpers --
 
   defp build_projects(projects, username) do
@@ -208,6 +255,66 @@ defmodule HeyiAmWeb.PortfolioController do
         date: Calendar.strftime(s.recorded_at || s.inserted_at, "%b %d")
       }
     end)
+  end
+
+  defp build_time_stats(projects) do
+    projects
+    |> Enum.map(fn project ->
+      shares = project.shares
+      your_minutes = project.total_duration_minutes || Enum.sum(Enum.map(shares, &(&1.duration_minutes || 0)))
+      agent_minutes = project.total_agent_duration_minutes || compute_agent_minutes(shares)
+
+      orchestrated_shares = Enum.filter(shares, fn s ->
+        match?(%{"is_orchestrated" => true}, s.agent_summary)
+      end)
+
+      max_parallel = orchestrated_shares
+        |> Enum.map(fn s ->
+          case s.agent_summary do
+            %{"agents" => agents} when is_list(agents) -> length(agents)
+            _ -> 0
+          end
+        end)
+        |> Enum.max(fn -> 0 end)
+
+      roles = orchestrated_shares
+        |> Enum.flat_map(fn s ->
+          case s.agent_summary do
+            %{"agents" => agents} when is_list(agents) ->
+              agents |> Enum.map(& &1["role"]) |> Enum.filter(& &1)
+            _ -> []
+          end
+        end)
+        |> Enum.uniq()
+
+      total_child_count = orchestrated_shares
+        |> Enum.map(fn s ->
+          case s.agent_summary do
+            %{"agents" => agents} when is_list(agents) -> length(agents)
+            _ -> 0
+          end
+        end)
+        |> Enum.sum()
+
+      session_count = length(shares)
+      avg_agents = if session_count > 0,
+        do: Float.round(total_child_count / session_count + 1, 1),
+        else: 1.0
+
+      %{
+        title: project.title,
+        slug: project.slug,
+        sessions: session_count,
+        your_minutes: your_minutes || 0,
+        agent_minutes: agent_minutes || 0,
+        orchestrated_sessions: length(orchestrated_shares),
+        max_parallel_agents: max_parallel,
+        avg_agents_per_session: avg_agents,
+        unique_roles: roles,
+      }
+    end)
+    |> Enum.filter(& &1.your_minutes > 0)
+    |> Enum.sort_by(& &1.agent_minutes, :desc)
   end
 
   # Agent time = every session's duration (the AI was working the whole time)
