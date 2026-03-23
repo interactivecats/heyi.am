@@ -25,13 +25,24 @@ defmodule HeyiAmWeb.SessionDataController do
     end
   end
 
-  @doc "Return lightweight session data for a project's timeline (no S3 fetch needed)"
+  @doc "Return session data for a project's visualizations (fetches S3 detail in parallel)"
   def project_sessions(conn, %{"username" => username, "slug" => slug}) do
     with user when not is_nil(user) <- HeyiAm.Accounts.get_user_by_username(username),
          project when not is_nil(project) <- Projects.get_project_with_published_shares(user.id, slug) do
 
+      # Fetch S3 session detail in parallel for all shares
+      details =
+        project.shares
+        |> Enum.map(fn share ->
+          Task.async(fn -> {share.token, fetch_session_detail(share.session_storage_key)} end)
+        end)
+        |> Task.await_many(15_000)
+        |> Map.new()
+
       sessions =
         Enum.map(project.shares, fn share ->
+          detail = Map.get(details, share.token, %{})
+
           %{
             id: share.token,
             title: share.title || "Untitled session",
@@ -45,7 +56,10 @@ defmodule HeyiAmWeb.SessionDataController do
             projectName: share.project_name || project.slug,
             rawLog: [],
             skills: share.skills || [],
-            source: share.source_tool
+            source: share.source_tool,
+            cwd: share.cwd,
+            filesChanged: detail["filesChanged"] || detail["files_changed"] || [],
+            children: detail["children"] || []
           }
         end)
 
@@ -57,29 +71,49 @@ defmodule HeyiAmWeb.SessionDataController do
     end
   end
 
+  defp fetch_session_detail(nil), do: %{}
+  defp fetch_session_detail(key) do
+    case HeyiAm.ObjectStorage.get_object(key) do
+      {:ok, body} ->
+        case Jason.decode(body) do
+          {:ok, data} when is_map(data) -> data
+          _ -> %{}
+        end
+      _ -> %{}
+    end
+  end
+
   # Clean AI-internal tags from text fields that reach the frontend.
   # Targets turnTimeline content and rawLog entries specifically.
   defp clean_session_data(data) when is_map(data) do
     data
-    |> update_if("turnTimeline", fn turns ->
-      turns
-      |> Enum.map(fn turn ->
-        turn |> update_if("content", &clean_ai_tags/1)
-      end)
-      |> Enum.reject(fn turn -> (turn["content"] || "") == "" end)
-    end)
-    |> update_if("rawLog", fn lines ->
-      lines
-      |> Enum.map(&clean_ai_tags/1)
-      |> Enum.reject(&(&1 == ""))
-    end)
-    |> update_if("transcriptExcerpt", fn entries ->
-      entries
-      |> Enum.map(fn entry -> update_if(entry, "text", &clean_ai_tags/1) end)
-      |> Enum.reject(fn entry -> (entry["text"] || "") == "" end)
-    end)
+    # Handle both camelCase and snake_case keys from different upload versions
+    |> update_if("turnTimeline", &clean_turns/1)
+    |> update_if("turn_timeline", &clean_turns/1)
+    |> update_if("rawLog", &clean_log_lines/1)
+    |> update_if("raw_log", &clean_log_lines/1)
+    |> update_if("transcriptExcerpt", &clean_transcript/1)
+    |> update_if("transcript_excerpt", &clean_transcript/1)
   end
   defp clean_session_data(data), do: data
+
+  defp clean_turns(turns) do
+    turns
+    |> Enum.map(fn turn ->
+      turn |> update_if("content", &clean_ai_tags/1)
+    end)
+    |> Enum.reject(fn turn -> (turn["content"] || "") == "" end)
+  end
+
+  defp clean_log_lines(lines) do
+    lines |> Enum.map(&clean_ai_tags/1) |> Enum.reject(&(&1 == ""))
+  end
+
+  defp clean_transcript(entries) do
+    entries
+    |> Enum.map(fn entry -> update_if(entry, "text", &clean_ai_tags/1) end)
+    |> Enum.reject(fn entry -> (entry["text"] || "") == "" end)
+  end
 
   defp update_if(map, key, fun) when is_map(map) do
     case Map.fetch(map, key) do

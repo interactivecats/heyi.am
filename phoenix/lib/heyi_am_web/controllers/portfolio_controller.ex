@@ -334,14 +334,10 @@ defmodule HeyiAmWeb.PortfolioController do
     |> Enum.sort_by(& &1.agent_minutes, :desc)
   end
 
-  # Agent time = every session's duration (the AI was working the whole time)
-  # + child/subagent durations from agent_summary on top.
+  # Agent time = subagent durations from agent_summary only.
+  # The session's duration_minutes is the developer's active coding time.
   defp compute_agent_minutes(shares) do
-    # Base: every session had an AI agent working alongside the developer
-    session_minutes = Enum.sum(Enum.map(shares, &(&1.duration_minutes || 0)))
-
-    # Plus: subagent work from orchestrated sessions
-    child_minutes =
+    total =
       shares
       |> Enum.map(fn share ->
         case share.agent_summary do
@@ -352,7 +348,6 @@ defmodule HeyiAmWeb.PortfolioController do
       end)
       |> Enum.sum()
 
-    total = session_minutes + child_minutes
     if total > 0, do: total, else: nil
   end
 
