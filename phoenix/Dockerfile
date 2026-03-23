@@ -30,8 +30,8 @@ COPY lib lib
 RUN mix compile
 
 # Cache npm dependencies separately (only re-runs when package.json changes)
-COPY assets/package.json assets/package-lock.json assets/
-RUN cd assets && npm install && npm update @heyiam/ui
+COPY assets/package.json assets/
+RUN cd assets && npm install
 COPY assets assets
 RUN rm -rf priv/static/assets && mix assets.deploy
 
