@@ -55,6 +55,28 @@ program
     keepAlive.unref = undefined as unknown as typeof keepAlive.unref; // prevent unref
   });
 
+program
+  .command('open-time')
+  .description('Start the server and open the time breakdown page')
+  .option('-p, --port <number>', 'Port to run on', '17845')
+  .action(async (opts) => {
+    const port = parseInt(opts.port, 10);
+    await startServer(port);
+    const url = `http://localhost:${port}/time`;
+    console.log(`\nheyiam running at http://localhost:${port}`);
+    console.log(`Opening ${url}\n`);
+    console.log('Press Ctrl+C to stop\n');
+    open(url).catch(() => {});
+
+    const shutdown = () => {
+      console.log('\nShutting down...');
+      process.exit(0);
+    };
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+    setInterval(() => {}, 60_000);
+  });
+
 import { API_URL } from './config.js';
 const API_BASE = API_URL;
 
@@ -249,7 +271,7 @@ const isDirectRun = resolvedArgv.endsWith('/dist/index.js') ||
 if (isDirectRun) {
   // If no command given (just `heyiam`), default to `open`
   const args = process.argv.slice(2);
-  const knownCommands = ['open', 'login', 'logout', 'publish', 'time'];
+  const knownCommands = ['open', 'open-time', 'login', 'logout', 'publish', 'time'];
   if (args.length === 0 || !knownCommands.includes(args[0])) {
     process.argv.splice(2, 0, 'open');
   }
