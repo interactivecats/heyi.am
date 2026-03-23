@@ -210,10 +210,14 @@ defmodule HeyiAmWeb.PortfolioController do
     end)
   end
 
-  # Sum agent duration_minutes from agent_summary on shares.
-  # Each share's agent_summary has %{"agents" => [%{"duration_minutes" => N}, ...]}.
+  # Agent time = every session's duration (the AI was working the whole time)
+  # + child/subagent durations from agent_summary on top.
   defp compute_agent_minutes(shares) do
-    total =
+    # Base: every session had an AI agent working alongside the developer
+    session_minutes = Enum.sum(Enum.map(shares, &(&1.duration_minutes || 0)))
+
+    # Plus: subagent work from orchestrated sessions
+    child_minutes =
       shares
       |> Enum.map(fn share ->
         case share.agent_summary do
@@ -224,6 +228,7 @@ defmodule HeyiAmWeb.PortfolioController do
       end)
       |> Enum.sum()
 
+    total = session_minutes + child_minutes
     if total > 0, do: total, else: nil
   end
 

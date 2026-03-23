@@ -256,12 +256,15 @@ export function createApp(sessionsBasePath?: string) {
     const totalLoc = allStats.reduce((s, st) => s + st.loc, 0);
     const totalFiles = allStats.reduce((s, st) => s + st.files, 0);
 
-    // Compute developer wall-clock time by merging overlapping session intervals.
-    // If sessions overlap (running concurrently), count that time once.
-    const totalDuration = mergeSessionIntervals(allStats);
+    // Developer active time: sum of durationMinutes (already excludes idle gaps >5min).
+    // We don't merge overlapping intervals here because durationMinutes is active time,
+    // not wall-clock — if you're actively working two sessions concurrently, both count.
+    const totalDuration = allStats.reduce((s, st) => s + st.duration, 0);
 
-    // Sum agent hours from child sessions (orchestrated sessions only)
-    let totalAgentDuration = 0;
+    // Agent time = every session's duration (the AI was working the whole time)
+    // + child/subagent durations on top (additional parallel agent work).
+    // Use raw sum, not merged intervals — each agent's work is real work.
+    let totalAgentDuration = allStats.reduce((s, st) => s + st.duration, 0);
     for (const meta of proj.sessions) {
       for (const child of meta.children ?? []) {
         const childStats = await getSessionStats(child, proj.name);
@@ -298,7 +301,7 @@ export function createApp(sessionsBasePath?: string) {
       publishedSessionCount: published?.publishedSessions.length ?? 0,
       publishedSessions: published?.publishedSessions ?? [],
       enhancedAt: enhanceCache?.enhancedAt ?? null,
-      ...(totalAgentDuration > 0 ? { totalAgentDuration } : {}),
+      totalAgentDuration,
     };
   }
 
