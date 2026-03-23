@@ -30,7 +30,8 @@ export interface VibeStats {
     turn_density: number;
     scope_creep: number;
     interruptions: number;
-    secret_leaks: number;
+    secret_leaks_user: number;
+    secret_leaks_ai: number;
     total_turns: number;
     session_count: number;
     total_duration_min: number;

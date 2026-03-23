@@ -76,8 +76,10 @@ export function renderCard(stats, match, narrative) {
         voiceLines.push(`    Late night: ${pct(stats.late_night_rate)}`);
     if (stats.reasoning_rate > 0.05)
         voiceLines.push(`    Thinks out loud: ${pct(stats.reasoning_rate)} of turns`);
-    if (stats.secret_leaks > 0)
-        voiceLines.push(`    Secrets leaked: ${stats.secret_leaks}${stats.secret_leaks > 3 ? " (yikes)" : ""}`);
+    if (stats.secret_leaks_user > 0)
+        voiceLines.push(`    Secrets you leaked: ${stats.secret_leaks_user}${stats.secret_leaks_user > 3 ? " (yikes)" : ""}`);
+    if (stats.secret_leaks_ai > 0)
+        voiceLines.push(`    Secrets AI leaked: ${stats.secret_leaks_ai}${stats.secret_leaks_ai > 5 ? " (rotate your keys)" : ""}`);
     if (voiceLines.length > 0) {
         lines.push("");
         lines.push(`${INDENT}Your Voice`);
@@ -205,8 +207,10 @@ export function formatTextBlock(stats, match, narrative) {
         voice.push(`  Late night: ${pct(stats.late_night_rate)}`);
     if (stats.reasoning_rate > 0.05)
         voice.push(`  Thinks out loud: ${pct(stats.reasoning_rate)} of turns`);
-    if (stats.secret_leaks > 0)
-        voice.push(`  Secrets leaked: ${stats.secret_leaks}${stats.secret_leaks > 3 ? " (yikes)" : ""}`);
+    if (stats.secret_leaks_user > 0)
+        voice.push(`  Secrets you leaked: ${stats.secret_leaks_user}${stats.secret_leaks_user > 3 ? " (yikes)" : ""}`);
+    if (stats.secret_leaks_ai > 0)
+        voice.push(`  Secrets AI leaked: ${stats.secret_leaks_ai}${stats.secret_leaks_ai > 5 ? " (rotate your keys)" : ""}`);
     if (voice.length > 0) {
         lines.push("");
         lines.push("Your Voice");

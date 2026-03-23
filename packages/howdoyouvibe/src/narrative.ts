@@ -23,7 +23,7 @@ export async function fetchNarrative(
         archetype_id: match.primary.id,
         modifier_id: match.modifier?.id ?? null,
       }),
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(15000),
     });
 
     if (res.ok) {
@@ -229,13 +229,16 @@ function rankStatsBySurprise(stats: VibeStats): StatCandidate[] {
     });
   }
 
-  if (stats.secret_leaks > 0) {
+  const totalLeaks = (stats.secret_leaks_user || 0) + (stats.secret_leaks_ai || 0);
+  if (totalLeaks > 0) {
     candidates.push({
       key: "secret_leaks",
-      surprise: stats.secret_leaks * 5,
-      sentence: stats.secret_leaks > 5
-        ? `You leaked ${stats.secret_leaks} secrets to the AI. Rotate those keys.`
-        : `You pasted ${stats.secret_leaks} secret${stats.secret_leaks > 1 ? "s" : ""} into a prompt. It happens.`,
+      surprise: totalLeaks * 5,
+      sentence: totalLeaks > 10
+        ? `${totalLeaks} secrets exposed across your sessions. You and the AI both need to be more careful.`
+        : stats.secret_leaks_user > stats.secret_leaks_ai
+          ? `You leaked ${stats.secret_leaks_user} secret${stats.secret_leaks_user > 1 ? "s" : ""} to the AI. It happens.`
+          : `The AI leaked ${stats.secret_leaks_ai} secret${stats.secret_leaks_ai > 1 ? "s" : ""} in its responses. Check your code.`,
     });
   }
 

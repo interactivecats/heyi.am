@@ -37,7 +37,8 @@ export interface VibeStats {
   turn_density: number;
   scope_creep: number;
   interruptions: number;       // times user hit Escape / cancelled AI mid-response
-  secret_leaks: number;        // API keys, tokens, connection strings pasted into prompts
+  secret_leaks_user: number;   // secrets YOU pasted into prompts or got back in tool results
+  secret_leaks_ai: number;     // secrets the AI wrote into code or echoed back
 
   // Metadata
   total_turns: number;

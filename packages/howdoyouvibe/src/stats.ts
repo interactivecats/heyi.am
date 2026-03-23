@@ -122,6 +122,32 @@ function hasToolUse(entry: RawEntry): boolean {
   return getToolUseBlocks(entry).length > 0;
 }
 
+/** Extract ALL text from an entry — text blocks, tool_result content, tool_use input.
+ *  Used for secret detection where we need to scan everything, not just user text. */
+function getAllText(entry: RawEntry): string {
+  const content = entry.message?.content;
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  const parts: string[] = [];
+  for (const block of content as any[]) {
+    if (block.type === "text" && typeof block.text === "string") parts.push(block.text);
+    if (block.type === "tool_result") {
+      if (typeof block.content === "string") parts.push(block.content);
+      if (Array.isArray(block.content)) {
+        for (const sub of block.content) {
+          if (sub.type === "text" && typeof sub.text === "string") parts.push(sub.text);
+        }
+      }
+    }
+    if (block.type === "tool_use" && block.input) {
+      // Scan tool inputs (e.g., Write tool writing a .env file)
+      const inputStr = typeof block.input === "string" ? block.input : JSON.stringify(block.input);
+      parts.push(inputStr);
+    }
+  }
+  return parts.join("\n");
+}
+
 // ─── Helper: check tool_result for errors ────────────────────────────────
 
 function toolResultHasError(entry: RawEntry): boolean {
@@ -188,7 +214,8 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
   const firstBloodTimes: number[] = [];
   let scopeCreep = 0;
   let interruptions = 0;
-  let secretLeaks = 0;
+  let secretLeaksUser = 0;
+  let secretLeaksAi = 0;
 
   let totalTurns = 0;
   let totalDurationMin = 0;
@@ -218,6 +245,13 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
 
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
+
+      // ── Secret detection (all entry types) ──
+      const allText = getAllText(entry);
+      if (allText && SECRET_LEAK_RE.test(allText)) {
+        if (entry.type === "user") secretLeaksUser++;
+        else if (entry.type === "assistant") secretLeaksAi++;
+      }
 
       // ── User turn stats ──
       const userText = getUserText(entry);
@@ -292,8 +326,7 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
         // Scope creep
         if (SCOPE_CREEP_RE.test(userText)) scopeCreep++;
 
-        // Secret leaks
-        if (SECRET_LEAK_RE.test(userText)) secretLeaks++;
+        // Secret leaks — checked separately below for ALL entry types
 
         // Interruptions
         if (INTERRUPT_RE.test(userText)) interruptions++;
@@ -420,7 +453,8 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
     turn_density: round1(turnDensity),
     scope_creep: scopeCreep,
     interruptions,
-    secret_leaks: secretLeaks,
+    secret_leaks_user: secretLeaksUser,
+    secret_leaks_ai: secretLeaksAi,
     total_turns: totalTurns,
     session_count: sessions.length,
     total_duration_min: totalDurationMin,
