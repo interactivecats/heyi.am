@@ -1471,6 +1471,104 @@ body {
 
 
 /* ── Landing Page ── */
+
+.landing-hero {
+  text-align: center;
+  padding-block: var(--spacing-20) var(--spacing-16);
+  max-width: 48rem;
+  margin-inline: auto;
+  padding-inline: var(--spacing-4);
+}
+
+.landing-framing {
+  text-align: center;
+  padding-block: var(--spacing-8);
+  padding-inline: var(--spacing-4);
+  border-block-start: var(--ghost-border);
+  max-width: 40rem;
+  margin-inline: auto;
+}
+
+.landing-positioning {
+  background-color: var(--inverse-surface);
+  color: var(--inverse-on-surface);
+  padding: var(--spacing-20) var(--spacing-6);
+}
+
+.landing-positioning-inner {
+  max-width: var(--content-max-width);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-12);
+}
+
+@media (min-width: 768px) {
+  .landing-positioning-inner {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.landing-positioning-headlines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.landing-positioning-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--inverse-primary);
+}
+
+.landing-section {
+  padding-block: var(--spacing-16);
+  padding-inline: var(--spacing-4);
+  max-width: var(--content-max-width);
+  margin-inline: auto;
+}
+
+.landing-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-8);
+  max-width: 40rem;
+}
+
+.landing-step {
+  display: flex;
+  gap: var(--spacing-6);
+}
+
+.landing-step-number {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 1px solid var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  flex-shrink: 0;
+  background-color: var(--surface-container-lowest);
+}
+
+.landing-step-content {
+  flex: 1;
+  min-width: 0;
+}
+
 .landing-features-grid {
   display: grid;
   grid-template-columns: 1fr;

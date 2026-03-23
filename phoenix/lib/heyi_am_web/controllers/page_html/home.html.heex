@@ -12,16 +12,22 @@
   </:status>
 
   <%!-- ── Hero ── --%>
-  <section style="text-align: center; padding-block: var(--spacing-20) var(--spacing-16); max-width: 48rem; margin-inline: auto; padding-inline: var(--spacing-4);">
+  <section class="landing-hero">
     <h1 class="display-md" style="margin-block-end: var(--spacing-6);">
-      Show How You Think.
+      Proof-of-work for AI-native developers.
     </h1>
-    <p class="body-lg" style="color: var(--on-surface-variant); max-width: 38rem; margin-inline: auto; margin-block-end: var(--spacing-8);">
-      heyi.am turns your AI coding projects into portfolio case studies. The AI reads your sessions, picks the best ones, builds the narrative, and you add your voice.
+    <p class="body-lg" style="color: var(--on-surface-variant); max-width: 38rem; margin-inline: auto; margin-block-end: var(--spacing-6);">
+      heyi.am turns Claude Code, Cursor, Codex, and Gemini sessions into project case studies with timelines, decisions, and real build stats.
+    </p>
+    <p class="title-md" style="margin-block-end: var(--spacing-1);">
+      Not a transcript dump. Not AI fluff.
+    </p>
+    <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-8);">
+      A portfolio that shows judgment, iteration, and execution.
     </p>
     <div style="display: flex; gap: var(--spacing-3); justify-content: center; margin-block-end: var(--spacing-10);">
       <a href={~p"/users/register"} class="btn btn-primary">Publish your first project</a>
-      <a href="#how-it-works" class="btn btn-secondary">See how it works</a>
+      <a href="/ben" class="btn btn-secondary">See example portfolio</a>
     </div>
 
     <%!-- Terminal visual --%>
@@ -44,240 +50,252 @@
     </div>
   </section>
 
+  <%!-- ── Framing Line ── --%>
+  <div class="landing-framing">
+    <p class="body-md" style="color: var(--on-surface-variant);">
+      Your sessions already contain the story. heyi.am turns them into something worth sharing.
+    </p>
+  </div>
+
+  <%!-- ── Positioning (dark) ── --%>
+  <section class="landing-positioning">
+    <div class="landing-positioning-inner">
+      <div class="landing-positioning-headlines">
+        <h2 class="headline-lg" style="color: var(--inverse-on-surface);">GitHub shows code.</h2>
+        <h2 class="headline-lg" style="color: var(--inverse-on-surface);">Resumes show claims.</h2>
+        <h2 class="display-sm" style="color: var(--inverse-primary);">heyi.am shows how you think.</h2>
+      </div>
+      <div class="landing-positioning-body">
+        <p class="body-md" style="color: var(--inverse-on-surface); opacity: 0.85; margin-block-end: var(--spacing-6);">
+          AI coding tools are great at recording the work, but terrible at presenting it.
+          The real signal is buried in long sessions, dead ends, rewrites, and decisions that never make it into a README.
+        </p>
+        <p class="body-md" style="color: var(--inverse-on-surface); opacity: 0.85; margin-block-end: var(--spacing-6);">
+          heyi.am turns that build history into a public artifact people can actually read:
+        </p>
+        <ul class="landing-positioning-list">
+          <li>what you built</li>
+          <li>where it got hard</li>
+          <li>how you used AI</li>
+          <li>what decisions were yours</li>
+          <li>what shipped</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
   <%!-- ── How It Works ── --%>
-  <section id="how-it-works" style="padding-block: var(--spacing-16); padding-inline: var(--spacing-4);">
-    <div class="label-md" style="text-align: center; color: var(--primary); margin-block-end: var(--spacing-8);">How it works</div>
-    <div class="landing-features-grid">
-      <div class="card card-padded">
-        <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-4);">01</div>
-        <h3 class="headline-sm" style="margin-block-end: var(--spacing-3);">One Command</h3>
-        <p class="body-md" style="color: var(--on-surface-variant);">
-          Run <code style="font-family: var(--font-mono); font-size: 0.875em;">npx heyiam</code> and see your projects. Sessions from Claude Code, Cursor, Codex, and Gemini CLI are grouped automatically.
-        </p>
-      </div>
-      <div class="card card-padded">
-        <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-4);">02</div>
-        <h3 class="headline-sm" style="margin-block-end: var(--spacing-3);">AI Picks the Signal</h3>
-        <p class="body-md" style="color: var(--on-surface-variant);">
-          The AI triages your sessions, selects the ones worth showcasing, and builds a project narrative. You answer 2-3 targeted questions so it sounds like you.
-        </p>
-      </div>
-      <div class="card card-padded">
-        <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-4);">03</div>
-        <h3 class="headline-sm" style="margin-block-end: var(--spacing-3);">Publish the Project</h3>
-        <p class="body-md" style="color: var(--on-surface-variant);">
-          One click publishes the project with a timeline, narrative, and accurate stats from all your sessions.
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <%!-- ── Example Projects ── --%>
-  <section id="featured" style="padding-block: var(--spacing-16); padding-inline: var(--spacing-4);">
-    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">Example Projects</div>
-    <h2 class="headline-lg" style="margin-block-end: var(--spacing-8);">What a project page looks like</h2>
-    <div class="landing-takes-grid">
-      <div class="card card-padded">
-        <div style="margin-block-end: var(--spacing-4);">
-          <div class="title-md" style="margin-block-end: var(--spacing-1);">heyi.am</div>
-          <div class="label-sm" style="color: var(--outline);">Sarah Chen</div>
-        </div>
-        <p class="body-sm" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
-          "Built a portfolio platform from scratch. The hardest calls were ripping out auth twice and choosing Ed25519 over JWT for session sealing."
-        </p>
-        <div style="display: flex; gap: var(--spacing-2); flex-wrap: wrap; margin-block-end: var(--spacing-4);">
-          <span class="chip chip--primary">Elixir</span>
-          <span class="chip chip--primary">Phoenix</span>
-          <span class="chip">TypeScript</span>
-          <span class="chip">React</span>
-        </div>
-        <div class="label-sm" style="color: var(--outline); display: flex; gap: var(--spacing-4);">
-          <span>21 sessions (8 published)</span>
-          <span>14.2 hrs</span>
-          <span>8.4k LOC</span>
+  <section id="how-it-works" class="landing-section">
+    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">How it works</div>
+    <h2 class="headline-lg" style="margin-block-end: var(--spacing-12);">Turn session history into a project page</h2>
+    <div class="landing-steps">
+      <div class="landing-step">
+        <div class="landing-step-number">1</div>
+        <div class="landing-step-content">
+          <h3 class="headline-sm" style="margin-block-end: var(--spacing-2);">Scan your sessions</h3>
+          <p class="body-md" style="color: var(--on-surface-variant);">
+            Run <code style="font-family: var(--font-mono); font-size: 0.875em;">npx heyiam</code> and heyi.am reads your local sessions from Claude Code, Cursor, Codex, and Gemini.
+          </p>
         </div>
       </div>
-
-      <div class="card card-padded">
-        <div style="margin-block-end: var(--spacing-4);">
-          <div class="title-md" style="margin-block-end: var(--spacing-1);">sync-engine</div>
-          <div class="label-sm" style="color: var(--outline);">Marcus Rivera</div>
-        </div>
-        <p class="body-sm" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
-          "CRDTs looked elegant in the paper but concurrent deletes nearly killed the project. Had to rethink the merge strategy from scratch with three agents working in parallel."
-        </p>
-        <div style="display: flex; gap: var(--spacing-2); flex-wrap: wrap; margin-block-end: var(--spacing-4);">
-          <span class="chip chip--primary">TypeScript</span>
-          <span class="chip chip--primary">WebSockets</span>
-          <span class="chip">CRDTs</span>
-        </div>
-        <div class="label-sm" style="color: var(--outline); display: flex; gap: var(--spacing-4);">
-          <span>12 sessions (6 published)</span>
-          <span>9.8 hrs</span>
-          <span>5.1k LOC</span>
+      <div class="landing-step">
+        <div class="landing-step-number">2</div>
+        <div class="landing-step-content">
+          <h3 class="headline-sm" style="margin-block-end: var(--spacing-2);">Group them into projects</h3>
+          <p class="body-md" style="color: var(--on-surface-variant);">
+            Sessions from the same build get clustered automatically, even across tools and phases.
+          </p>
         </div>
       </div>
-
-      <div class="card card-padded">
-        <div style="margin-block-end: var(--spacing-4);">
-          <div class="title-md" style="margin-block-end: var(--spacing-1);">ci-migration</div>
-          <div class="label-sm" style="color: var(--outline);">Aisha Patel</div>
-        </div>
-        <p class="body-sm" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
-          "Jenkins had 200+ jobs and nobody understood the dependency graph. I mapped it first, then migrated in waves. The AI caught three circular deps I missed."
-        </p>
-        <div style="display: flex; gap: var(--spacing-2); flex-wrap: wrap; margin-block-end: var(--spacing-4);">
-          <span class="chip chip--primary">DevOps</span>
-          <span class="chip">CI/CD</span>
-          <span class="chip">GitHub Actions</span>
-        </div>
-        <div class="label-sm" style="color: var(--outline); display: flex; gap: var(--spacing-4);">
-          <span>8 sessions (5 published)</span>
-          <span>6.3 hrs</span>
-          <span>2.8k LOC</span>
+      <div class="landing-step">
+        <div class="landing-step-number">3</div>
+        <div class="landing-step-content">
+          <h3 class="headline-sm" style="margin-block-end: var(--spacing-2);">Extract the signal</h3>
+          <p class="body-md" style="color: var(--on-surface-variant);">
+            The AI selects the sessions worth showing, identifies the turning points, and drafts a narrative around the real work.
+          </p>
         </div>
       </div>
-
-      <div class="card card-padded">
-        <div style="margin-block-end: var(--spacing-4);">
-          <div class="title-md" style="margin-block-end: var(--spacing-1);">query-optimizer</div>
-          <div class="label-sm" style="color: var(--outline);">James Okonkwo</div>
+      <div class="landing-step">
+        <div class="landing-step-number">4</div>
+        <div class="landing-step-content">
+          <h3 class="headline-sm" style="margin-block-end: var(--spacing-2);">Add your voice</h3>
+          <p class="body-md" style="color: var(--on-surface-variant);">
+            You answer a few targeted questions so the final writeup sounds like you, not like a summary generator.
+          </p>
         </div>
-        <p class="body-sm" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
-          "EXPLAIN ANALYZE showed a sequential scan on 4M rows. Adding a partial index cut the query from 12s to 8ms. The AI helped me reason through the index strategy."
-        </p>
-        <div style="display: flex; gap: var(--spacing-2); flex-wrap: wrap; margin-block-end: var(--spacing-4);">
-          <span class="chip chip--primary">PostgreSQL</span>
-          <span class="chip">Performance</span>
-          <span class="chip">Indexing</span>
-        </div>
-        <div class="label-sm" style="color: var(--outline); display: flex; gap: var(--spacing-4);">
-          <span>5 sessions (4 published)</span>
-          <span>3.1 hrs</span>
-          <span>1.2k LOC</span>
+      </div>
+      <div class="landing-step">
+        <div class="landing-step-number">5</div>
+        <div class="landing-step-content">
+          <h3 class="headline-sm" style="margin-block-end: var(--spacing-2);">Publish</h3>
+          <p class="body-md" style="color: var(--on-surface-variant);">
+            Share a project page with timeline, case studies, and accurate stats from the full build history.
+          </p>
         </div>
       </div>
     </div>
   </section>
 
-  <%!-- ── What You Get ── --%>
-  <section style="padding-block: var(--spacing-16); padding-inline: var(--spacing-4);">
+  <%!-- ── What Gets Published ── --%>
+  <section class="landing-section">
     <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">What gets published</div>
     <h2 class="headline-lg" style="margin-block-end: var(--spacing-8);">A project page, not a transcript dump</h2>
     <div class="landing-takes-grid">
       <div class="card card-padded">
         <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Project Narrative</h3>
         <p class="body-sm" style="color: var(--on-surface-variant);">
-          AI-generated, refined with your answers. 2-3 sentences that sound like a dev explaining what they built and why — not a summary.
+          A sharp explanation of what you built, why it mattered, and what made it hard.
         </p>
       </div>
       <div class="card card-padded">
-        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Project Timeline</h3>
+        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Timeline</h3>
         <p class="body-sm" style="color: var(--on-surface-variant);">
-          Sessions grouped by phase. Featured sessions expanded as case studies, small sessions collapsed. The story of how the project evolved.
-        </p>
-      </div>
-      <div class="card card-padded">
-        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Accurate Stats</h3>
-        <p class="body-sm" style="color: var(--on-surface-variant);">
-          Total time, LOC, files, and session count computed from all your local sessions — not just the ones you published.
+          Sessions grouped by phase so the project reads like a build story, not a chat archive.
         </p>
       </div>
       <div class="card card-padded">
         <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Session Case Studies</h3>
         <p class="body-sm" style="color: var(--on-surface-variant);">
-          Each published session includes execution paths, key decisions, skills, and the developer's own take on what happened.
+          Featured sessions expanded into mini writeups with execution paths, key decisions, and developer commentary.
+        </p>
+      </div>
+      <div class="card card-padded">
+        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Accurate Stats</h3>
+        <p class="body-sm" style="color: var(--on-surface-variant);">
+          Total time, sessions, files, and code volume computed from the full local history — not just the parts you publish.
+        </p>
+      </div>
+      <div class="card card-padded">
+        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Your Voice</h3>
+        <p class="body-sm" style="color: var(--on-surface-variant);">
+          AI drafts the structure. You shape the final story.
         </p>
       </div>
     </div>
   </section>
 
-  <%!-- ── AI Collaboration Profile ── --%>
-  <section style="padding-block: var(--spacing-16); padding-inline: var(--spacing-4);">
-    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">AI Collaboration Profile</div>
-    <h2 class="headline-lg" style="margin-block-end: var(--spacing-8);">See how developers work with AI <span class="label-sm" style="color: var(--outline); font-weight: 400;">(Example Profile)</span></h2>
-    <div class="card card-padded" style="max-width: 48rem;">
-      <div class="stack stack--lg">
-        <div>
-          <div style="display: flex; justify-content: space-between; margin-block-end: var(--spacing-2);">
-            <span class="title-sm">Task Scoping</span>
-            <span class="label-md" style="color: var(--primary);">87%</span>
+  <%!-- ── Example Portfolio ── --%>
+  <section class="landing-section">
+    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">Example</div>
+    <h2 class="headline-lg" style="margin-block-end: var(--spacing-4);">See what an AI-native portfolio looks like</h2>
+    <p class="body-md" style="color: var(--on-surface-variant); max-width: 40rem; margin-block-end: var(--spacing-8);">
+      A good project page doesn't just show the final product.
+      It shows the path: rewrites, wrong turns, hard decisions, and the moments where the builder had to step in and redirect the work.
+    </p>
+    <a href="/ben" style="text-decoration: none; color: inherit; display: block; max-width: 40rem;">
+      <div class="card card-padded card--elevated" style="transition: box-shadow 0.15s ease;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <div class="headline-sm" style="margin-block-end: var(--spacing-2);">ben</div>
+            <p class="body-sm" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
+              Built heyi.am itself through 100+ sessions spanning spec rewrites, parser audits, editor rebuilds, and security-heavy implementation work.
+            </p>
+            <div style="display: flex; gap: var(--spacing-2); flex-wrap: wrap;">
+              <span class="chip chip--primary">Elixir</span>
+              <span class="chip chip--primary">Phoenix</span>
+              <span class="chip">TypeScript</span>
+              <span class="chip">React</span>
+            </div>
           </div>
-          <div class="progress-bar">
-            <div class="progress-bar-fill" style="width: 87%;"></div>
-          </div>
+          <span class="label-md" style="color: var(--primary); white-space: nowrap; margin-inline-start: var(--spacing-4);">View portfolio &rarr;</span>
         </div>
-        <div>
-          <div style="display: flex; justify-content: space-between; margin-block-end: var(--spacing-2);">
-            <span class="title-sm">Active Redirection</span>
-            <span class="label-md" style="color: var(--primary);">72%</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-bar-fill" style="width: 72%;"></div>
-          </div>
-        </div>
-        <div>
-          <div style="display: flex; justify-content: space-between; margin-block-end: var(--spacing-2);">
-            <span class="title-sm">Verification</span>
-            <span class="label-md" style="color: var(--primary);">94%</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-bar-fill" style="width: 94%;"></div>
-          </div>
-        </div>
-        <div>
-          <div style="display: flex; justify-content: space-between; margin-block-end: var(--spacing-2);">
-            <span class="title-sm">Tool Orchestration</span>
-            <span class="label-md" style="color: var(--primary);">65%</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-bar-fill" style="width: 65%;"></div>
-          </div>
-        </div>
+      </div>
+    </a>
+  </section>
+
+  <%!-- ── Why It Matters ── --%>
+  <section class="landing-section">
+    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">Why it matters</div>
+    <h2 class="headline-lg" style="margin-block-end: var(--spacing-8);">From activity to identity</h2>
+    <div class="landing-dual-grid">
+      <div>
+        <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-6);">
+          Most existing tools help developers look polished, show activity, decorate GitHub, or post updates.
+        </p>
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          Very few help them turn raw work into <strong style="color: var(--on-surface);">credible narrative proof</strong>.
+        </p>
+      </div>
+      <div>
+        <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
+          heyi.am helps AI-native developers show:
+        </p>
+        <ul class="stack stack--sm" style="list-style: none; color: var(--on-surface-variant);">
+          <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--primary);">what they actually built</li>
+          <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--primary);">how they think</li>
+          <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--primary);">how they steer AI</li>
+          <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--primary);">where they apply judgment</li>
+          <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--primary);">what kind of builder they are</li>
+        </ul>
       </div>
     </div>
   </section>
 
-  <%!-- ── Why It Works (dark) ── --%>
-  <section style="background-color: var(--inverse-surface); color: var(--inverse-on-surface); padding: var(--spacing-16) var(--spacing-6);">
-    <div style="max-width: var(--content-max-width); margin-inline: auto;">
-      <h2 class="headline-lg" style="text-align: center; margin-block-end: var(--spacing-12);">Why this works</h2>
-      <div class="landing-dual-grid">
-        <div>
-          <h3 class="headline-sm" style="margin-block-end: var(--spacing-4); color: var(--inverse-primary);">Your sessions are already recorded</h3>
-          <ul class="stack stack--md" style="list-style: none;">
-            <li class="body-md" style="color: var(--inverse-on-surface);">
-              Claude Code, Cursor, Codex, and Gemini CLI all save session data locally. heyi.am reads it directly — no extra work.
-            </li>
-            <li class="body-md" style="color: var(--inverse-on-surface);">
-              Sessions from the same project directory are grouped automatically, even across different tools.
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h3 class="headline-sm" style="margin-block-end: var(--spacing-4); color: var(--inverse-primary);">AI does the heavy lifting</h3>
-          <ul class="stack stack--md" style="list-style: none;">
-            <li class="body-md" style="color: var(--inverse-on-surface);">
-              The AI triages sessions, skips the noise, extracts decisions and execution paths, and writes a project narrative.
-            </li>
-            <li class="body-md" style="color: var(--inverse-on-surface);">
-              Anti-fluff questions force you to explain the hard decisions. The result sounds like you, not a summary.
-            </li>
-          </ul>
-        </div>
+  <%!-- ── Who It's For ── --%>
+  <section class="landing-section">
+    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">Built for</div>
+    <h2 class="headline-lg" style="margin-block-end: var(--spacing-8);">Built for people who build with AI</h2>
+    <div class="landing-features-grid">
+      <div class="card card-padded">
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          Developers using Claude Code as a serious build tool
+        </p>
+      </div>
+      <div class="card card-padded">
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          Cursor, Codex, and Gemini power users
+        </p>
+      </div>
+      <div class="card card-padded">
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          Indie hackers shipping quickly with agents
+        </p>
+      </div>
+      <div class="card card-padded">
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          Freelancers and consultants who need stronger case studies
+        </p>
+      </div>
+      <div class="card card-padded">
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          Job seekers who want more than &ldquo;I used AI to build X&rdquo;
+        </p>
       </div>
     </div>
   </section>
 
-  <%!-- ── Bottom CTA ── --%>
+  <%!-- ── Trust / Control ── --%>
+  <section class="landing-section" style="max-width: 40rem;">
+    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">Trust</div>
+    <h2 class="headline-lg" style="margin-block-end: var(--spacing-4);">You stay in control</h2>
+    <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-6);">
+      Your sessions are messy. Public pages shouldn't be.
+      heyi.am is designed to help you publish the signal without exposing the noise.
+    </p>
+    <ul class="stack stack--sm" style="list-style: none; color: var(--on-surface-variant);">
+      <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--outline-variant);">Review before publishing</li>
+      <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--outline-variant);">Control what gets featured</li>
+      <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--outline-variant);">Keep your voice in the final writeup</li>
+      <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--outline-variant);">Publish polished pages from real build history</li>
+    </ul>
+  </section>
+
+  <%!-- ── Final CTA ── --%>
   <section style="text-align: center; padding-block: var(--spacing-20); padding-inline: var(--spacing-4);">
-    <h2 class="display-sm" style="margin-block-end: var(--spacing-4);">Publish your first project</h2>
+    <h2 class="display-sm" style="margin-block-end: var(--spacing-4);">Publish your first AI-native case study</h2>
+    <p class="body-lg" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-3);">
+      Your sessions already prove the work.
+    </p>
     <p class="body-lg" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-8);">
-      One command. The AI does the rest.
+      heyi.am turns that proof into a portfolio worth sending.
     </p>
     <div class="terminal" style="max-width: 28rem; margin-inline: auto; text-align: start; margin-block-end: var(--spacing-8);">
       <div class="terminal-line"><span class="terminal-prompt">$</span> npx heyiam</div>
     </div>
-    <a href={~p"/users/register"} class="btn btn-primary">Get started</a>
+    <div style="display: flex; gap: var(--spacing-3); justify-content: center;">
+      <a href={~p"/users/register"} class="btn btn-primary">Get started</a>
+      <a href="/ben" class="btn btn-secondary">See example portfolio</a>
+    </div>
   </section>
 </.public_shell>
