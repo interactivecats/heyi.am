@@ -5,10 +5,16 @@ phoenix/priv/static/assets/
 phoenix/.elixir_ls/
 
 # Node
-cli/node_modules/
-cli/app/node_modules/
+node_modules/
 cli/dist/
 cli/app/dist/
+
+# Phoenix build artifacts
+phoenix/priv/static/cache_manifest.json
+phoenix/priv/static/*.gz
+phoenix/priv/static/favicon-*
+phoenix/priv/static/robots-*
+phoenix/priv/static/images/logo-*
 
 # Environment
 .env
