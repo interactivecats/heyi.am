@@ -101,7 +101,7 @@ interface SessionStats {
 // ── Persistent stats cache ────────────────────────────────────
 // Survives server restarts by writing to disk.
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
@@ -281,12 +281,19 @@ export function createApp(sessionsBasePath?: string) {
             const session = await loadSession(meta.path, proj.name, meta.sessionId);
             return { ...session, childCount, children: childCount > 0 ? children : undefined };
           } catch {
-            // Full parse failed — build minimal session from stats so it still appears
+            // Full parse failed — build minimal session from stats so it still appears.
+            // Use file mtime as fallback date so the session isn't filtered out.
             const stats = await getSessionStats(meta, proj.name);
+            let fallbackDate = stats.date || '';
+            if (!fallbackDate) {
+              try {
+                fallbackDate = statSync(meta.path).mtime.toISOString();
+              } catch { /* file gone — will be filtered */ }
+            }
             return {
               id: meta.sessionId,
               title: 'Untitled session',
-              date: stats.date || '',
+              date: fallbackDate,
               durationMinutes: stats.duration,
               turns: stats.turns,
               linesOfCode: stats.loc,
