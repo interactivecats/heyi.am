@@ -77,10 +77,6 @@ function extractFilesTouched(toolCalls: ToolCall[]): string[] {
       case "Edit":
         if (typeof input.file_path === "string") files.add(input.file_path);
         break;
-      case "Glob":
-      case "Grep":
-        if (typeof input.path === "string") files.add(input.path);
-        break;
     }
   }
   return [...files].sort();

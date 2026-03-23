@@ -343,6 +343,88 @@ describe("listSessions", () => {
   });
 });
 
+describe("extractFilesTouched — Glob/Grep exclusion", () => {
+  it("does NOT count Glob paths as files touched", async () => {
+    const entries: RawEntry[] = [
+      userEntry("Search for files", "2026-03-20T10:00:00.000Z"),
+      assistantEntry(
+        [
+          {
+            type: "tool_use",
+            id: "toolu_glob_001",
+            name: "Glob",
+            input: { path: "/app/src", pattern: "**/*.ts" },
+          },
+        ],
+        "2026-03-20T10:00:02.000Z",
+      ),
+      assistantEntry(
+        [{ type: "text", text: "Found files." }],
+        "2026-03-20T10:00:05.000Z",
+      ),
+    ];
+
+    const path = join(tmpDir, "glob-test.jsonl");
+    await writeFile(path, toJsonl(entries));
+    const result = await claudeParser.parse(path);
+    expect(result.files_touched).not.toContain("/app/src");
+    expect(result.files_touched).toHaveLength(0);
+  });
+
+  it("does NOT count Grep paths as files touched", async () => {
+    const entries: RawEntry[] = [
+      userEntry("Search for pattern", "2026-03-20T10:00:00.000Z"),
+      assistantEntry(
+        [
+          {
+            type: "tool_use",
+            id: "toolu_grep_001",
+            name: "Grep",
+            input: { pattern: "TODO", path: "/app" },
+          },
+        ],
+        "2026-03-20T10:00:02.000Z",
+      ),
+      assistantEntry(
+        [{ type: "text", text: "Found matches." }],
+        "2026-03-20T10:00:05.000Z",
+      ),
+    ];
+
+    const path = join(tmpDir, "grep-test.jsonl");
+    await writeFile(path, toJsonl(entries));
+    const result = await claudeParser.parse(path);
+    expect(result.files_touched).not.toContain("/app");
+    expect(result.files_touched).toHaveLength(0);
+  });
+
+  it("still counts Read, Write, and Edit as files touched", async () => {
+    const entries: RawEntry[] = [
+      userEntry("Work on files", "2026-03-20T10:00:00.000Z"),
+      assistantEntry(
+        [
+          { type: "tool_use", id: "t1", name: "Read", input: { file_path: "/app/main.ts" } },
+          { type: "tool_use", id: "t2", name: "Write", input: { file_path: "/app/new.ts", content: "x" } },
+          { type: "tool_use", id: "t3", name: "Edit", input: { file_path: "/app/edit.ts", old_string: "a", new_string: "b" } },
+          { type: "tool_use", id: "t4", name: "Glob", input: { path: "/app/src", pattern: "**/*" } },
+          { type: "tool_use", id: "t5", name: "Grep", input: { pattern: "TODO", path: "/app" } },
+        ],
+        "2026-03-20T10:00:02.000Z",
+      ),
+    ];
+
+    const path = join(tmpDir, "mixed-tools-test.jsonl");
+    await writeFile(path, toJsonl(entries));
+    const result = await claudeParser.parse(path);
+    expect(result.files_touched).toContain("/app/main.ts");
+    expect(result.files_touched).toContain("/app/new.ts");
+    expect(result.files_touched).toContain("/app/edit.ts");
+    expect(result.files_touched).not.toContain("/app/src");
+    expect(result.files_touched).not.toContain("/app");
+    expect(result.files_touched).toHaveLength(3);
+  });
+});
+
 describe("edge cases", () => {
   it("handles session with only system entries", async () => {
     const path = join(tmpDir, "system-only.jsonl");
