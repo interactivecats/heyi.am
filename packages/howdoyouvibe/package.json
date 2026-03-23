@@ -1,13 +1,42 @@
 {
   "name": "howdoyouvibe",
   "version": "0.1.0",
+  "description": "Find out how you vibe with AI. Scans your local coding sessions and generates a personality breakdown.",
   "type": "module",
   "bin": {
     "howdoyouvibe": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "!dist/**/*.test.*"
+  ],
   "scripts": {
     "build": "tsc",
-    "test": "vitest"
+    "test": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "ai",
+    "coding",
+    "personality",
+    "vibe",
+    "claude",
+    "cursor",
+    "codex",
+    "gemini",
+    "developer-tools",
+    "cli"
+  ],
+  "author": "heyi.am",
+  "license": "MIT",
+  "homepage": "https://howdoyouvibe.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/interactivecats/heyi.am",
+    "directory": "packages/howdoyouvibe"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "optionalDependencies": {
     "better-sqlite3": "^12.8.0"

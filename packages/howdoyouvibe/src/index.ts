@@ -70,10 +70,10 @@ let cloudConsent = false;
 if (process.stdin.isTTY) {
   console.log("");
   console.log("  To generate your narrative, we send computed stats (numbers");
-  console.log("  only) to howdoyouvibe.com. No session text, no file paths,");
-  console.log("  no project names. Stats are processed in memory and not");
+  console.log("  only) to heyi.am. No session text, no file paths, no");
+  console.log("  project names. Stats are processed in memory and not");
   console.log("  stored unless you choose to share. Shared vibes are public.");
-  console.log("  Privacy: howdoyouvibe.com/privacy");
+  console.log("  Privacy: heyi.am/privacy");
   console.log("");
   cloudConsent = await promptYesNo("  Send stats to generate narrative?");
   if (!cloudConsent) {
