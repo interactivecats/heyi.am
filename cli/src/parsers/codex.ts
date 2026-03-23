@@ -342,7 +342,7 @@ export async function discoverCodexSessions(): Promise<CodexSessionFile[]> {
     if (!firstLine) continue;
     try {
       const entry = JSON.parse(firstLine) as { type?: string; payload?: SessionMetaPayload };
-      if (entry.type !== "session_meta" || !entry.payload?.cwd) continue;
+      if (entry.type !== "session_meta" || !entry.payload?.cwd || !entry.payload?.id) continue;
       results.push({
         path: filePath,
         sessionId: entry.payload.id,

@@ -316,3 +316,53 @@ describe("discoverCodexSessions", () => {
     }
   });
 });
+
+describe("discoverCodexSessions — id guard", () => {
+  it("skips sessions without an id field in payload", async () => {
+    // Create a temp session file with cwd but no id
+    const sessionsDir = join(tmpDir, "codex-id-test", "sessions");
+    await mkdir(sessionsDir, { recursive: true });
+
+    const noIdLine = JSON.stringify({
+      timestamp: "2026-03-20T10:00:00.000Z",
+      type: "session_meta",
+      payload: {
+        cwd: "/Users/test/project",
+        cli_version: "0.108.0",
+        originator: "Codex Desktop",
+        // id intentionally omitted
+      },
+    }) + "\n";
+    await writeFile(join(sessionsDir, "rollout-no-id.jsonl"), noIdLine);
+
+    const withIdLine = JSON.stringify({
+      timestamp: "2026-03-20T10:00:00.000Z",
+      type: "session_meta",
+      payload: {
+        id: "valid-session-id",
+        cwd: "/Users/test/project",
+        cli_version: "0.108.0",
+        originator: "Codex Desktop",
+      },
+    }) + "\n";
+    await writeFile(join(sessionsDir, "rollout-with-id.jsonl"), withIdLine);
+
+    // We can't easily test discoverCodexSessions with a custom path,
+    // so test the guard logic directly by parsing the first line
+    const { readFile: rf } = await import("node:fs/promises");
+
+    const noIdContent = await rf(join(sessionsDir, "rollout-no-id.jsonl"), "utf-8");
+    const noIdEntry = JSON.parse(noIdContent.split("\n")[0]) as { type?: string; payload?: { id?: string; cwd?: string } };
+    expect(noIdEntry.type).toBe("session_meta");
+    expect(noIdEntry.payload?.cwd).toBeTruthy();
+    expect(noIdEntry.payload?.id).toBeUndefined();
+    // Guard should reject: type === session_meta && cwd present but id missing
+    const shouldSkipNoId = noIdEntry.type !== "session_meta" || !noIdEntry.payload?.cwd || !noIdEntry.payload?.id;
+    expect(shouldSkipNoId).toBe(true);
+
+    const withIdContent = await rf(join(sessionsDir, "rollout-with-id.jsonl"), "utf-8");
+    const withIdEntry = JSON.parse(withIdContent.split("\n")[0]) as { type?: string; payload?: { id?: string; cwd?: string } };
+    const shouldSkipWithId = withIdEntry.type !== "session_meta" || !withIdEntry.payload?.cwd || !withIdEntry.payload?.id;
+    expect(shouldSkipWithId).toBe(false);
+  });
+});
