@@ -1507,8 +1507,15 @@ function ProjectPreview({
 
         {/* Work Timeline — all sessions, not just selected */}
         <div className="project-preview__timeline-heading">WORK TIMELINE</div>
-        <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+        <div style={{ position: 'relative', maxHeight: 180, overflow: 'hidden' }}>
           <WorkTimeline sessions={allSessions} onSessionClick={setDetailSession} />
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: 60,
+            background: 'linear-gradient(transparent, #f8f9fb)',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+            paddingBottom: 8,
+          }}>
+          </div>
         </div>
 
         {/* Timeline */}
