@@ -260,12 +260,12 @@ export function createApp(sessionsBasePath?: string) {
       const sessions = await Promise.all(
         proj.sessions.map(async (meta) => {
           // Build child summaries (used by both full and fallback paths)
-          const seenRoles = new Set<string>();
+          // Deduplicate by sessionId (true duplicates), not by role
+          const seenIds = new Set<string>();
           const children: ChildSessionSummary[] = [];
           for (const c of meta.children ?? []) {
-            const role = c.agentRole ?? c.sessionId;
-            if (seenRoles.has(role)) continue;
-            seenRoles.add(role);
+            if (seenIds.has(c.sessionId)) continue;
+            seenIds.add(c.sessionId);
             const childStats = await getSessionStats(c, proj.name);
             children.push({
               sessionId: c.sessionId,

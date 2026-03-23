@@ -358,37 +358,60 @@ function layout(segments: Seg[], agentLimit: number = MAX_AGENTS): Layout {
 
     if (seg.type === 'concurrent') {
       const sorted = [...seg.sessions].sort((a, b) => sessionStart(a) - sessionStart(b));
-      const n = sorted.length;
-      const laneWs = sorted.map(s => {
-        const dur = (sessionEnd(s) - sessionStart(s)) / 60_000;
-        return Math.min(Math.max(timeToPx(dur), MIN_CW), MAX_W);
-      });
-      const maxLW = Math.max(...laneWs);
-      const totalW = maxLW + CURVE_CP * 4 + 32;
-      const totalSpread = (n - 1) * LANE_GAP;
-      const forkX = cx;
-      const joinX = cx + totalW;
 
-      nodes.push({ kind: 'dot', pos: { x: forkX, y: cY }, color: MAIN_COLOR, size: 'lg' });
+      if (agentLimit === 0) {
+        // Compact mode: render concurrent sessions as sequential flat dots
+        for (const s of sorted) {
+          const kids = getChildren(s);
+          const dur = s.durationMinutes;
+          const w = Math.min(Math.max(timeToPx(dur), MIN_W), MAX_W);
+          const tooltip = buildTooltip(s);
+          const ts = formatTimestamp(s.date);
+          const agentBadge = kids.length > 0 ? ` [${kids.length}]` : '';
+          if (kids.length > 0) hasExpandableSession = true;
 
-      sorted.forEach((s, i) => {
-        const laneY = cY - totalSpread / 2 + i * LANE_GAP;
-        const above = laneY <= cY;
-        const tooltip = buildTooltip(s);
-        const ts = formatTimestamp(s.date);
+          nodes.push({ kind: 'label', pos: { x: cx + 14, y: cY - 28 }, title: truncate(s.title, MAX_TITLE) + agentBadge, sub: formatDuration(dur), timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
+          bound(cY - 32, 28);
+          nodes.push({ kind: 'dot', pos: { x: cx, y: cY }, color: MAIN_COLOR, size: kids.length > 0 ? 'lg' : 'sm', tooltip });
+          nodes.push({ kind: 'dot', pos: { x: cx + w, y: cY }, color: MAIN_COLOR, size: kids.length > 0 ? 'lg' : 'sm', tooltip });
+          tracks.push({ path: `M ${cx} ${cY} L ${cx + w} ${cY}`, color: MAIN_COLOR, width: kids.length > 0 ? 3.5 : 3 });
+          sessionRanges.push({ session: s, xStart: cx, xEnd: cx + w });
+          cx += w + SEG_GAP;
+        }
+      } else {
+        // Expanded mode: vertical fork/join lanes
+        const n = sorted.length;
+        const laneWs = sorted.map(s => {
+          const dur = (sessionEnd(s) - sessionStart(s)) / 60_000;
+          return Math.min(Math.max(timeToPx(dur), MIN_CW), MAX_W);
+        });
+        const maxLW = Math.max(...laneWs);
+        const totalW = maxLW + CURVE_CP * 4 + 32;
+        const totalSpread = (n - 1) * LANE_GAP;
+        const forkX = cx;
+        const joinX = cx + totalW;
 
-        tracks.push({ path: bezierForkJoin(forkX, joinX, cY, laneY), color: MAIN_COLOR, width: 1.5 });
+        nodes.push({ kind: 'dot', pos: { x: forkX, y: cY }, color: MAIN_COLOR, size: 'lg' });
 
-        const labelOff = above ? laneY - 20 : laneY + 6;
-        const labelX = forkX + CURVE_CP * 2 + 12;
-        nodes.push({ kind: 'label', pos: { x: labelX, y: labelOff }, title: truncate(s.title, MAX_TITLE), sub: formatDuration(s.durationMinutes), timestamp: ts, color: MAIN_COLOR, above, session: s, tooltip });
-        bound(above ? labelOff - 4 : laneY - 4, above ? 28 : labelOff + 20 - laneY + 4);
+        sorted.forEach((s, i) => {
+          const laneY = cY - totalSpread / 2 + i * LANE_GAP;
+          const above = laneY <= cY;
+          const tooltip = buildTooltip(s);
+          const ts = formatTimestamp(s.date);
 
-        sessionRanges.push({ session: s, xStart: forkX, xEnd: joinX });
-      });
+          tracks.push({ path: bezierForkJoin(forkX, joinX, cY, laneY), color: MAIN_COLOR, width: 1.5 });
 
-      nodes.push({ kind: 'dot', pos: { x: joinX, y: cY }, color: MAIN_COLOR, size: 'lg' });
-      cx = joinX + SEG_GAP;
+          const labelOff = above ? laneY - 20 : laneY + 6;
+          const labelX = forkX + CURVE_CP * 2 + 12;
+          nodes.push({ kind: 'label', pos: { x: labelX, y: labelOff }, title: truncate(s.title, MAX_TITLE), sub: formatDuration(s.durationMinutes), timestamp: ts, color: MAIN_COLOR, above, session: s, tooltip });
+          bound(above ? labelOff - 4 : laneY - 4, above ? 28 : labelOff + 20 - laneY + 4);
+
+          sessionRanges.push({ session: s, xStart: forkX, xEnd: joinX });
+        });
+
+        nodes.push({ kind: 'dot', pos: { x: joinX, y: cY }, color: MAIN_COLOR, size: 'lg' });
+        cx = joinX + SEG_GAP;
+      }
     }
   }
 
