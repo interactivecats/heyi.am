@@ -3,7 +3,7 @@ import type { ArchetypeMatch } from "./archetypes.js";
 
 const SHARE_URL = process.env.VIBE_API_URL
   ? `${process.env.VIBE_API_URL}/api/vibes`
-  : "https://howdoyouvibe.com/api/vibes";
+  : "https://heyi.am/api/vibes";
 
 interface ShareResponse {
   url: string;

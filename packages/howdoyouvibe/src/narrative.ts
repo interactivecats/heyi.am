@@ -4,7 +4,7 @@ import { SOURCE_DISPLAY_NAMES } from "./parsers/types.js";
 
 const NARRATIVE_URL = process.env.VIBE_API_URL
   ? `${process.env.VIBE_API_URL}/api/vibes/narrative`
-  : "https://howdoyouvibe.com/api/vibes/narrative";
+  : "https://heyi.am/api/vibes/narrative";
 
 /**
  * Fetch a 2-sentence narrative from the server (Gemini Flash).
