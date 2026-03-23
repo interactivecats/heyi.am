@@ -1,0 +1,18 @@
+<div class="vibe-page vibe-archetype">
+  <h1><%= @archetype.name %></h1>
+  <p class="vibe-tagline"><%= @archetype.tagline %></p>
+
+  <div class="vibe-match-count">
+    <%= if @match_count > 0 do %>
+      <p>You're one of <strong><%= @match_count %></strong> <%= @archetype.name %>s</p>
+    <% else %>
+      <p>No matches yet. Be the first.</p>
+    <% end %>
+  </div>
+
+  <div class="vibe-cta-secondary">
+    <p>Find out your archetype</p>
+    <code>npx howdoyouvibe</code>
+    <p><a href={~p"/v"}>Back to all vibes</a></p>
+  </div>
+</div>

@@ -1,0 +1,90 @@
+<div class="vibe-page vibe-show">
+  <div class="vibe-card">
+    <h1 class="vibe-headline"><%= @headline %></h1>
+    <p class="vibe-narrative"><%= @vibe.narrative %></p>
+
+    <div class="vibe-stats-grid">
+      <div class="vibe-stat-group">
+        <h3>Your Voice</h3>
+        <dl>
+          <%= if val = @vibe.stats["expletives"] do %>
+            <div><dt>Expletives</dt><dd><%= val %></dd></div>
+          <% end %>
+          <%= if val = @vibe.stats["corrections"] do %>
+            <div><dt>Corrections</dt><dd><%= val %></dd></div>
+          <% end %>
+          <%= if val = @vibe.stats["please_rate"] do %>
+            <div><dt>Please rate</dt><dd><%= round(val * 100) %>%</dd></div>
+          <% end %>
+          <%= if val = @vibe.stats["avg_prompt_words"] do %>
+            <div><dt>Avg prompt</dt><dd><%= val %> words</dd></div>
+          <% end %>
+          <%= if val = @vibe.stats["late_night_rate"] do %>
+            <div><dt>Late night</dt><dd><%= round(val * 100) %>%</dd></div>
+          <% end %>
+          <%= if val = @vibe.stats["question_rate"] do %>
+            <div><dt>Questions</dt><dd><%= round(val * 100) %>%</dd></div>
+          <% end %>
+        </dl>
+      </div>
+
+      <div class="vibe-stat-group">
+        <h3>The AI's Habits</h3>
+        <dl>
+          <%= if val = @vibe.stats["read_write_ratio"] do %>
+            <div><dt>Read:write</dt><dd><%= Float.round(val * 1.0, 1) %>:1</dd></div>
+          <% end %>
+          <%= if val = @vibe.stats["apologies"] do %>
+            <div><dt>Apologies</dt><dd><%= val %></dd></div>
+          <% end %>
+          <%= if val = @vibe.stats["test_runs"] do %>
+            <div>
+              <dt>Test runs</dt>
+              <dd>
+                <%= val %><%= if ft = @vibe.stats["failed_tests"], do: " (#{ft} fail)" %>
+              </dd>
+            </div>
+          <% end %>
+          <%= if val = @vibe.stats["longest_tool_chain"] do %>
+            <div><dt>Longest chain</dt><dd><%= val %></dd></div>
+          <% end %>
+        </dl>
+      </div>
+
+      <div class="vibe-stat-group">
+        <h3>The Back-and-forth</h3>
+        <dl>
+          <%= if val = @vibe.stats["override_success_rate"] do %>
+            <div><dt>Override success</dt><dd><%= round(val * 100) %>%</dd></div>
+          <% end %>
+          <%= if val = @vibe.stats["longest_autopilot"] do %>
+            <div><dt>Autopilot</dt><dd><%= val %> turns</dd></div>
+          <% end %>
+          <%= if val = @vibe.stats["first_blood_min"] do %>
+            <div><dt>First blood</dt><dd><%= val %> min</dd></div>
+          <% end %>
+          <%= if val = @vibe.stats["scope_creep"] do %>
+            <div><dt>Scope creep</dt><dd><%= val %></dd></div>
+          <% end %>
+        </dl>
+      </div>
+    </div>
+
+    <div class="vibe-footer">
+      <span>
+        <%= @vibe.total_turns %> turns across <%= @vibe.session_count %> sessions
+        (<%= Enum.join(@vibe.sources || [], ", ") %>)
+      </span>
+    </div>
+  </div>
+
+  <div class="vibe-cta">
+    <a href={~p"/v/#{@vibe.short_id}/card.png"} class="vibe-btn" download>Download card</a>
+  </div>
+
+  <div class="vibe-cta-secondary">
+    <p>Get your vibe</p>
+    <code>npx howdoyouvibe</code>
+    <p class="vibe-cta-link"><a href="https://heyi.am">heyi.am</a></p>
+  </div>
+</div>

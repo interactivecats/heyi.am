@@ -68,6 +68,10 @@ defmodule HeyiAmWeb.Router do
     plug HeyiAmWeb.Plugs.RateLimit, action: "enhance", limit: 5, period: 60_000
   end
 
+  pipeline :rate_limit_vibe_api do
+    plug HeyiAmWeb.Plugs.RateLimit, action: "vibe_api", limit: 10, period: 60_000
+  end
+
   pipeline :require_api_auth do
     plug HeyiAmWeb.Plugs.RequireApiAuth
   end
@@ -97,6 +101,25 @@ defmodule HeyiAmWeb.Router do
     get "/sessions/:token/data", SessionDataController, :show
     get "/projects/:username/:slug/sessions-data", SessionDataController, :project_sessions
     get "/projects/:username/:slug/screenshot", ProjectApiController, :screenshot
+  end
+
+  # Vibe API (anonymous, rate-limited 10/min per IP)
+  scope "/api", HeyiAmWeb do
+    pipe_through [:api, :rate_limit_vibe_api]
+
+    post "/vibes", VibeApiController, :create
+    post "/vibes/narrative", VibeApiController, :narrative
+  end
+
+  # Vibe browser pages
+  scope "/v", HeyiAmWeb do
+    pipe_through :browser
+
+    get "/", VibeController, :index
+    # archetypes/:id MUST come before /:short_id to avoid catching "archetypes" as a short_id
+    get "/archetypes/:id", VibeController, :archetype
+    get "/:short_id/card.png", VibeController, :card_image
+    get "/:short_id", VibeController, :show
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
