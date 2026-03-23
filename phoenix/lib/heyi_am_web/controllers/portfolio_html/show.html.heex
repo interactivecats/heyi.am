@@ -103,8 +103,13 @@
                     {project.session_count} sessions
                   </span>
                   <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant);">
-                    {project.total_minutes}m total
+                    {project.total_minutes}m{if project.agent_minutes, do: " you", else: ""}
                   </span>
+                  <%= if project.agent_minutes do %>
+                    <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant);">
+                      {project.agent_minutes}m agents
+                    </span>
+                  <% end %>
                   <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant);">
                     {project.loc_changed} LOC
                   </span>
