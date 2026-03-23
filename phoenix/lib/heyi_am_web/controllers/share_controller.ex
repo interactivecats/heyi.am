@@ -117,10 +117,11 @@ defmodule HeyiAmWeb.ShareController do
     |> Enum.map(fn {turn, idx} ->
       %{
         "turn" => turn["turn"] || idx,
-        "prompt" => turn["content"] || turn["prompt"] || "",
+        "prompt" => clean_ai_tags(turn["content"] || turn["prompt"] || ""),
         "tools" => turn["tools"] || []
       }
     end)
+    |> Enum.reject(fn turn -> turn["prompt"] == "" end)
   end
   defp normalize_turn_timeline(_), do: []
 

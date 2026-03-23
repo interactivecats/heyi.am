@@ -348,6 +348,17 @@ defmodule HeyiAmWeb.ShareControllerTest do
       assert [%{"text" => "Real prompt"}] = result["transcript_excerpt"]
     end
 
+    test "turn_timeline strips antml tags from content" do
+      data = %{
+        "turnTimeline" => [
+          %{"content" => "<antml_thinking>internal</antml_thinking>Real prompt", "tools" => ["Read"]},
+          %{"content" => "<antml_thinking>only thinking</antml_thinking>", "tools" => []}
+        ]
+      }
+      result = ShareController.normalize_session_detail(data)
+      assert [%{"prompt" => "Real prompt", "tools" => ["Read"]}] = result["turn_timeline"]
+    end
+
     test "top_files touches minimum is 1" do
       data = %{"topFiles" => [%{"path" => "empty.ex", "additions" => 0, "deletions" => 0}]}
       result = ShareController.normalize_session_detail(data)
