@@ -196,6 +196,15 @@ export function createApp(sessionsBasePath?: string) {
     const totalDuration = allStats.reduce((s, st) => s + st.duration, 0);
     const totalFiles = allStats.reduce((s, st) => s + st.files, 0);
 
+    // Sum agent hours from child sessions (orchestrated sessions only)
+    let totalAgentDuration = 0;
+    for (const meta of proj.sessions) {
+      for (const child of meta.children ?? []) {
+        const childStats = await getSessionStats(child, proj.name);
+        totalAgentDuration += childStats.duration;
+      }
+    }
+
     // Deduplicated skills across all sessions
     const skillSet = new Set<string>();
     for (const st of allStats) {
@@ -225,6 +234,7 @@ export function createApp(sessionsBasePath?: string) {
       publishedSessionCount: published?.publishedSessions.length ?? 0,
       publishedSessions: published?.publishedSessions ?? [],
       enhancedAt: enhanceCache?.enhancedAt ?? null,
+      ...(totalAgentDuration > 0 ? { totalAgentDuration } : {}),
     };
   }
 
@@ -923,7 +933,8 @@ export function createApp(sessionsBasePath?: string) {
     const {
       title, slug, narrative, repoUrl, projectUrl,
       timeline, skills, totalSessions, totalLoc,
-      totalDurationMinutes, totalFilesChanged,
+      totalDurationMinutes, totalAgentDurationMinutes,
+      totalFilesChanged,
       skippedSessions, selectedSessionIds,
     } = req.body as {
       title: string;
@@ -936,6 +947,7 @@ export function createApp(sessionsBasePath?: string) {
       totalSessions: number;
       totalLoc: number;
       totalDurationMinutes: number;
+      totalAgentDurationMinutes?: number;
       totalFilesChanged: number;
       skippedSessions: Array<{ title: string; duration: number; loc: number; reason: string }>;
       selectedSessionIds: string[];
@@ -971,6 +983,7 @@ export function createApp(sessionsBasePath?: string) {
             total_sessions: totalSessions,
             total_loc: totalLoc,
             total_duration_minutes: totalDurationMinutes,
+            total_agent_duration_minutes: totalAgentDurationMinutes || null,
             total_files_changed: totalFilesChanged,
             skipped_sessions: skippedSessions,
           },

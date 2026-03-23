@@ -99,4 +99,6 @@ export interface Project {
   publishedSessions?: string[];
   /** When the project was last enhanced (null = never) */
   enhancedAt?: string | null;
+  /** Total agent-hours across all orchestrated sessions (minutes) */
+  totalAgentDuration?: number;
 }

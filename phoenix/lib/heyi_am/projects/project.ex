@@ -14,6 +14,7 @@ defmodule HeyiAm.Projects.Project do
     field :total_sessions, :integer
     field :total_loc, :integer
     field :total_duration_minutes, :integer
+    field :total_agent_duration_minutes, :integer
     field :total_files_changed, :integer
     field :skipped_sessions, {:array, :map}, default: []
 
@@ -28,7 +29,7 @@ defmodule HeyiAm.Projects.Project do
     |> cast(attrs, [
       :slug, :title, :narrative, :repo_url, :project_url, :screenshot_key,
       :timeline, :skills, :total_sessions, :total_loc, :total_duration_minutes,
-      :total_files_changed, :skipped_sessions, :user_id
+      :total_agent_duration_minutes, :total_files_changed, :skipped_sessions, :user_id
     ])
     |> validate_required([:slug, :title, :user_id])
     |> validate_length(:slug, max: 100)

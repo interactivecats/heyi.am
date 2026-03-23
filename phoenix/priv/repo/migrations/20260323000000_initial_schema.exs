@@ -60,6 +60,7 @@ defmodule HeyiAm.Repo.Migrations.InitialSchema do
       add :total_sessions, :integer
       add :total_loc, :integer
       add :total_duration_minutes, :integer
+      add :total_agent_duration_minutes, :integer
       add :total_files_changed, :integer
       add :skipped_sessions, :jsonb, default: "[]"
       add :user_id, references(:users, on_delete: :delete_all), null: false

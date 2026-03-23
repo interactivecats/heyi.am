@@ -358,6 +358,7 @@ export interface PublishProjectPayload {
   totalSessions: number;
   totalLoc: number;
   totalDurationMinutes: number;
+  totalAgentDurationMinutes?: number;
   totalFilesChanged: number;
   skippedSessions: Array<{ title: string; duration: number; loc: number; reason: string }>;
   selectedSessionIds: string[];

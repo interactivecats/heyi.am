@@ -1772,6 +1772,7 @@ export function ReviewStep({
       totalSessions: project.sessionCount,
       totalLoc: project.totalLoc,
       totalDurationMinutes: project.totalDuration,
+      totalAgentDurationMinutes: project.totalAgentDuration || undefined,
       totalFilesChanged: project.totalFiles,
       skippedSessions,
       selectedSessionIds: [...selectedIds],
@@ -2261,8 +2262,14 @@ function SuccessStep({ project, narrative, selectedCount, publishedUrl, publishe
             </div>
             <div className="success-card__preview-stat">
               <span className="success-card__preview-stat-value">{formatDuration(project.totalDuration)}</span>
-              <span className="success-card__preview-stat-label">Time</span>
+              <span className="success-card__preview-stat-label">Your Time</span>
             </div>
+            {project.totalAgentDuration && project.totalAgentDuration > 0 && (
+              <div className="success-card__preview-stat">
+                <span className="success-card__preview-stat-value">{formatDuration(project.totalAgentDuration)}</span>
+                <span className="success-card__preview-stat-label">Agent Time</span>
+              </div>
+            )}
             <div className="success-card__preview-stat">
               <span className="success-card__preview-stat-value">{formatLoc(project.totalLoc)}</span>
               <span className="success-card__preview-stat-label">LOC</span>

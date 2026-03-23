@@ -125,6 +125,7 @@ defmodule HeyiAmWeb.PortfolioController do
   defp build_projects(projects, username) do
     Enum.map(projects, fn project ->
       stats = Projects.Stats.compute_project_stats(project.shares)
+      agent_minutes = project.total_agent_duration_minutes || compute_agent_minutes(project.shares)
 
       %{
         title: project.title,
@@ -134,6 +135,7 @@ defmodule HeyiAmWeb.PortfolioController do
         skills: project.skills || [],
         session_count: project.total_sessions || stats.total_sessions,
         total_minutes: project.total_duration_minutes || stats.total_duration,
+        agent_minutes: agent_minutes,
         loc_changed: format_loc(project.total_loc || stats.total_loc),
         repo_url: project.repo_url,
         project_url: project.project_url,
@@ -145,6 +147,7 @@ defmodule HeyiAmWeb.PortfolioController do
   defp build_project_detail(project, username) do
     stats = Projects.Stats.compute_project_stats(project.shares)
     total_loc = project.total_loc || stats.total_loc
+    agent_minutes = project.total_agent_duration_minutes || compute_agent_minutes(project.shares)
 
     %{
       title: project.title,
@@ -157,6 +160,7 @@ defmodule HeyiAmWeb.PortfolioController do
       session_count: project.total_sessions || stats.total_sessions,
       uploaded_count: length(project.shares),
       total_minutes: project.total_duration_minutes || stats.total_duration,
+      agent_minutes: agent_minutes,
       total_files: project.total_files_changed || stats.unique_files,
       total_loc: total_loc,
       loc_display: format_loc(total_loc),
@@ -204,6 +208,23 @@ defmodule HeyiAmWeb.PortfolioController do
         date: Calendar.strftime(s.recorded_at || s.inserted_at, "%b %d")
       }
     end)
+  end
+
+  # Sum agent duration_minutes from agent_summary on shares.
+  # Each share's agent_summary has %{"agents" => [%{"duration_minutes" => N}, ...]}.
+  defp compute_agent_minutes(shares) do
+    total =
+      shares
+      |> Enum.map(fn share ->
+        case share.agent_summary do
+          %{"agents" => agents} when is_list(agents) ->
+            Enum.sum(Enum.map(agents, fn a -> a["duration_minutes"] || 0 end))
+          _ -> 0
+        end
+      end)
+      |> Enum.sum()
+
+    if total > 0, do: total, else: nil
   end
 
   defp format_duration(minutes) when minutes >= 60, do: "#{div(minutes, 60)}h"

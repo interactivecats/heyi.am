@@ -75,11 +75,29 @@
         "#{@project.session_count}"
       end
     %>
+    <%
+      agent_time_display = if @project[:agent_minutes] && @project.agent_minutes > 0 do
+        if @project.agent_minutes >= 60 do
+          hours = @project.agent_minutes / 60
+          if hours >= 10, do: "#{round(hours)}h", else: "#{Float.round(hours, 1)}h"
+        else
+          "#{@project.agent_minutes}m"
+        end
+      else
+        nil
+      end
+    %>
     <div class="project-hero-stats">
       <div class="card card-padded" style="text-align: center;">
         <div style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 700; color: var(--primary);">{time_display}</div>
-        <div class="label-mono" style="margin-block-start: var(--spacing-1);">Total Time</div>
+        <div class="label-mono" style="margin-block-start: var(--spacing-1);">{if agent_time_display, do: "Your Time", else: "Total Time"}</div>
       </div>
+      <%= if agent_time_display do %>
+        <div class="card card-padded" style="text-align: center;">
+          <div style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 700; color: var(--secondary, #6b21a8);">{agent_time_display}</div>
+          <div class="label-mono" style="margin-block-start: var(--spacing-1);">Agent Time</div>
+        </div>
+      <% end %>
       <div class="card card-padded" style="text-align: center;">
         <div style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 700;">{sessions_display}</div>
         <div class="label-mono" style="margin-block-start: var(--spacing-1);">Sessions</div>
