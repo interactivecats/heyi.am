@@ -99,6 +99,42 @@ export function computeSegments(sessions: Session[]): Seg[] {
   return segs;
 }
 
+// ── Parallel track helpers ────────────────────────────────────────
+
+/** Greedy lane packing: assign each session to lowest lane where it fits.
+ *  Adds a visual buffer after each session so bezier flares don't collide. */
+export function assignLanes(sessions: Session[]): Map<string, number> {
+  const sorted = [...sessions].sort((a, b) => sessionStart(a) - sessionStart(b));
+  const laneEnds: number[] = []; // laneEnds[i] = effective visual end of last session on lane i
+  const assignment = new Map<string, number>();
+
+  for (const s of sorted) {
+    const start = sessionStart(s);
+    let assigned = -1;
+    for (let i = 0; i < laneEnds.length; i++) {
+      if (laneEnds[i] <= start) { assigned = i; break; }
+    }
+    if (assigned === -1) {
+      assigned = laneEnds.length;
+      laneEnds.push(0);
+    }
+    // Add buffer: sessions with agents need extra clearance for bezier flares
+    // ~15 min buffer per session, more for agent-heavy sessions
+    const kids = s.childSessions?.length ?? s.children?.length ?? 0;
+    const bufferMs = (kids > 5 ? 30 : 15) * 60_000;
+    laneEnds[assigned] = sessionEnd(s) + bufferMs;
+    assignment.set(s.id, assigned);
+  }
+  return assignment;
+}
+
+/** Linear time-to-pixel mapping within a concurrent segment */
+export function timeToX(timeMs: number, rangeStartMs: number, rangeEndMs: number, xStart: number, xEnd: number): number {
+  if (rangeEndMs === rangeStartMs) return xStart;
+  const ratio = (timeMs - rangeStartMs) / (rangeEndMs - rangeStartMs);
+  return xStart + ratio * (xEnd - xStart);
+}
+
 // ── Children helper ──────────────────────────────────────────────
 
 interface Child { id: string; role?: string; durationMinutes: number; linesOfCode: number }
@@ -202,6 +238,11 @@ const SEG_GAP = 56;
 const CURVE_CP = 50;
 const LANE_GAP = 40;
 const MAX_TITLE = 32;
+const TRACK_GAP = 140;
+const PX_PER_MIN = 4;
+const MIN_CONCURRENT_W = 300;
+const MAX_CONCURRENT_W = 1200;
+const MIN_LABEL_GAP = 140;
 
 /** Dynamic lane gap — shrinks as agent count grows so it doesn't explode vertically */
 function laneGap(agentCount: number): number {
@@ -222,7 +263,7 @@ interface LDot { kind: 'dot'; pos: Pos; color: string; size: 'sm' | 'lg'; toolti
 interface LGap { kind: 'gap'; pos: Pos; label: string; durationMs: number }
 type LNode = LLabel | LDot | LGap;
 
-interface LTrack { path: string; color: string; width: number; dashed?: boolean }
+interface LTrack { path: string; color: string; width: number; dashed?: boolean; opacity?: number }
 
 interface SessionRange { session: Session; xStart: number; xEnd: number }
 
@@ -329,62 +370,108 @@ function layout(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CONCURRENT)
     }
 
     if (seg.type === 'concurrent') {
-      // Render each concurrent session as its own sequential segment
-      // with its own agent fork/join curves (capped by maxConcurrent)
+      // Parallel track layout: sessions on separate Y tracks, X proportional to time
       const sorted = [...seg.sessions].sort((a, b) => sessionStart(a) - sessionStart(b));
       const visible = sorted.slice(0, maxConcurrent);
+      const laneMap = assignLanes(visible);
+      const laneCount = Math.max(...laneMap.values()) + 1;
       const hidden = sorted.length - visible.length;
       if (hidden > 0) hasConcurrentOverflow = true;
 
-      for (const s of visible) {
+      // Dynamic track gap: scale with the most agent-heavy session
+      const maxAgentCount = Math.max(...visible.map(s => getChildren(s).length), 0);
+      const dynamicTrackGap = maxAgentCount > 15
+        ? Math.max(TRACK_GAP, maxAgentCount * 5 + 60)
+        : maxAgentCount > 5
+        ? Math.max(TRACK_GAP, maxAgentCount * 8 + 40)
+        : TRACK_GAP;
+
+      // Time range and pixel width for this concurrent segment
+      const rangeStartMs = seg.startMs;
+      const rangeEndMs = seg.endMs;
+      const rangeDurMin = (rangeEndMs - rangeStartMs) / 60_000;
+      const segW = Math.min(Math.max(rangeDurMin * PX_PER_MIN, MIN_CONCURRENT_W), MAX_CONCURRENT_W);
+      const segXStart = cx;
+      const segXEnd = cx + segW;
+
+      // Per-lane label collision tracking
+      const laneLabelRight: number[] = new Array(laneCount).fill(0);
+
+      for (const s of sorted.slice(0, maxConcurrent)) {
+        const lane = laneMap.get(s.id) ?? 0;
+        const trackY = cY + lane * dynamicTrackGap;
         const kids = getChildren(s);
-        const dur = (sessionEnd(s) - sessionStart(s)) / 60_000;
-        const w = Math.min(Math.max(timeToPx(dur), MIN_W), MAX_W);
-        const sub = formatDuration(s.durationMinutes);
         const tooltip = buildTooltip(s);
         const ts = formatTimestamp(s.date);
+        const sub = formatDuration(s.durationMinutes);
+
+        // X position from real time; width from active duration
+        const sXStart = timeToX(sessionStart(s), rangeStartMs, rangeEndMs, segXStart, segXEnd);
+        const barW = Math.min(Math.max(s.durationMinutes * PX_PER_MIN, 20), segW);
+        const sXEnd = sXStart + barW;
 
         if (kids.length > 0) {
+          // Session with agents: fork/join curves from track Y
           const agentVisible = kids.slice(0, MAX_AGENTS);
           const n = agentVisible.length;
           const gap = laneGap(n);
-          const totalSpread = (n - 1) * gap;
-          const forkX = cx;
-          const joinX = cx + w;
-          const topLaneY = cY - totalSpread / 2;
+          // Centered spread — agents fan out symmetrically above/below track line
+          const maxSpread = dynamicTrackGap - 40;
+          const totalSpread = Math.min((n - 1) * gap, maxSpread);
+          const agentGap = n > 1 ? totalSpread / (n - 1) : 0;
+          const topAgentY = trackY - totalSpread / 2;
 
-          const titleY = topLaneY - 32;
-          const flatStartX = forkX + CURVE_CP * 2;
-          nodes.push({ kind: 'label', pos: { x: flatStartX + 8, y: titleY }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
+          // Label above agents — skip if too close to previous label on this lane
+          const titleY = topAgentY - 32;
+          const hasRoom = laneLabelRight[lane] === 0 || sXStart >= laneLabelRight[lane];
+          if (hasRoom) {
+            nodes.push({ kind: 'label', pos: { x: sXStart + 8, y: titleY }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
+            laneLabelRight[lane] = sXStart + MIN_LABEL_GAP;
+          }
           bound(titleY - 4, 28);
-          nodes.push({ kind: 'dot', pos: { x: forkX, y: cY }, color: MAIN_COLOR, size: 'lg', tooltip });
 
+          // Fork dot
+          nodes.push({ kind: 'dot', pos: { x: sXStart, y: trackY }, color: MAIN_COLOR, size: 'lg', tooltip });
+
+          // Agent curves relative to trackY — reduce opacity when dense
+          const agentOpacity = n > 15 ? 0.4 : n > 8 ? 0.6 : 0.8;
+          const agentWidth = n > 15 ? 1 : 1.5;
           agentVisible.forEach((kid, i) => {
-            const laneY = topLaneY + i * gap;
+            const agentY = topAgentY + i * agentGap;
             const color = agentColor(kid.role);
-            tracks.push({ path: bezierForkJoin(forkX, joinX, cY, laneY), color, width: 1.5 });
-            bound(laneY - 2, 4);
+            tracks.push({ path: bezierForkJoin(sXStart, sXEnd, trackY, agentY), color, width: agentWidth, opacity: agentOpacity });
+            bound(agentY - 2, 4);
           });
 
-          nodes.push({ kind: 'dot', pos: { x: joinX, y: cY }, color: MAIN_COLOR, size: 'lg', tooltip });
-          sessionRanges.push({ session: s, xStart: forkX, xEnd: joinX });
-          cx = joinX + SEG_GAP;
+          // Join dot
+          nodes.push({ kind: 'dot', pos: { x: sXEnd, y: trackY }, color: MAIN_COLOR, size: 'lg', tooltip });
+          sessionRanges.push({ session: s, xStart: sXStart, xEnd: sXEnd });
         } else {
-          nodes.push({ kind: 'label', pos: { x: cx + 14, y: cY - 28 }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
-          bound(cY - 32, 28);
-          nodes.push({ kind: 'dot', pos: { x: cx, y: cY }, color: MAIN_COLOR, size: 'sm', tooltip });
-          nodes.push({ kind: 'dot', pos: { x: cx + w, y: cY }, color: MAIN_COLOR, size: 'sm', tooltip });
-          tracks.push({ path: `M ${cx} ${cY} L ${cx + w} ${cY}`, color: MAIN_COLOR, width: 3 });
-          sessionRanges.push({ session: s, xStart: cx, xEnd: cx + w });
-          cx += w + SEG_GAP;
+          // Solo session on track — skip label if too close to previous
+          const hasRoom = laneLabelRight[lane] === 0 || sXStart >= laneLabelRight[lane];
+          if (hasRoom) {
+            nodes.push({ kind: 'label', pos: { x: sXStart + 8, y: trackY - 28 }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
+            laneLabelRight[lane] = sXStart + MIN_LABEL_GAP;
+          }
+          bound(trackY - 32, 28);
+
+          nodes.push({ kind: 'dot', pos: { x: sXStart, y: trackY }, color: MAIN_COLOR, size: 'sm', tooltip });
+          nodes.push({ kind: 'dot', pos: { x: sXEnd, y: trackY }, color: MAIN_COLOR, size: 'sm', tooltip });
+          tracks.push({ path: `M ${sXStart} ${trackY} L ${sXEnd} ${trackY}`, color: MAIN_COLOR, width: 3 });
+          sessionRanges.push({ session: s, xStart: sXStart, xEnd: sXEnd });
         }
+
+        bound(trackY - 4, 8);
       }
 
-      // "+N more" indicator for hidden concurrent sessions
+      // Overflow indicator
       if (hidden > 0) {
-        nodes.push({ kind: 'label', pos: { x: cx - SEG_GAP + 8, y: cY + 14 }, title: `+${hidden} more sessions`, color: TEXT_MUTED, above: false });
-        bound(cY + 12, 16);
+        const overflowY = cY + laneCount * dynamicTrackGap;
+        nodes.push({ kind: 'label', pos: { x: segXStart + 8, y: overflowY }, title: `+${hidden} more sessions`, color: TEXT_MUTED, above: false });
+        bound(overflowY, 16);
       }
+
+      cx = segXEnd + SEG_GAP;
     }
   }
 
@@ -529,6 +616,9 @@ function Tooltip({ data, pos }: { data: TooltipData; pos: { x: number; y: number
 export function WorkTimeline({ sessions, onSessionClick }: WorkTimelineProps) {
   const segments = useMemo(() => computeSegments(sessions), [sessions]);
   const [expanded, setExpanded] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const playRef = useRef<number | null>(null);
   const concurrentLimit = expanded ? 999 : DEFAULT_MAX_CONCURRENT;
   const L = useMemo(() => layout(segments, concurrentLimit), [segments, concurrentLimit]);
   const legendEntries = useMemo(() => buildLegendEntries(segments, L.sessionRanges), [segments, L.sessionRanges]);
@@ -552,6 +642,42 @@ export function WorkTimeline({ sessions, onSessionClick }: WorkTimelineProps) {
     if (entry) setFocusedEntry(entry);
   }, [legendEntries]);
 
+  // Auto-scroll playback
+  const togglePlay = useCallback(() => {
+    if (playing) {
+      if (playRef.current) cancelAnimationFrame(playRef.current);
+      playRef.current = null;
+      setPlaying(false);
+      return;
+    }
+    setPlaying(true);
+    const speed = 1.2;
+    const step = () => {
+      const s = scrollRef.current;
+      if (!s) return;
+      if (s.scrollLeft >= s.scrollWidth - s.clientWidth - 1) {
+        setPlaying(false);
+        playRef.current = null;
+        return;
+      }
+      s.scrollLeft += speed;
+      playRef.current = requestAnimationFrame(step);
+    };
+    playRef.current = requestAnimationFrame(step);
+  }, [playing]);
+
+  useEffect(() => {
+    return () => { if (playRef.current) cancelAnimationFrame(playRef.current); };
+  }, []);
+
+  // Close fullscreen on Escape
+  useEffect(() => {
+    if (!fullscreen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setFullscreen(false); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [fullscreen]);
+
   const handleHover = useCallback((tooltip: TooltipData | undefined, pos: Pos) => {
     if (tooltip) setHovered({ tooltip, pos });
   }, []);
@@ -567,30 +693,39 @@ export function WorkTimeline({ sessions, onSessionClick }: WorkTimelineProps) {
 
   const hasAgents = legendEntries.some(e => e.agents.length > 0);
 
-  return (
-    <div className="work-timeline" data-testid="work-timeline">
-      {/* Controls: legend + expand */}
+  const btnStyle = (active?: boolean): React.CSSProperties => ({
+    padding: '3px 10px', fontSize: 10, fontWeight: 600,
+    border: `1px solid ${THREAD_COLOR}`, borderRadius: 4,
+    background: active ? MAIN_COLOR : '#fff',
+    color: active ? '#fff' : MAIN_COLOR,
+    cursor: 'pointer', fontFamily: FONT, letterSpacing: '0.03em',
+    flexShrink: 0,
+  });
+
+  const timelineContent = (
+    <>
+      {/* Controls: legend + buttons */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           {hasAgents && <Legend entry={focusedEntry} />}
         </div>
-        {L.hasConcurrentOverflow && (
-          <button onClick={() => setExpanded(!expanded)} style={{
-            padding: '3px 10px', fontSize: 10, fontWeight: 600,
-            border: `1px solid ${THREAD_COLOR}`, borderRadius: 4,
-            background: expanded ? MAIN_COLOR : '#fff',
-            color: expanded ? '#fff' : MAIN_COLOR,
-            cursor: 'pointer', fontFamily: FONT, letterSpacing: '0.03em',
-            flexShrink: 0,
-          }}>
-            {expanded ? 'SHOW LESS' : 'SHOW ALL SESSIONS'}
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+          {L.totalW > 600 && (
+            <button onClick={togglePlay} style={btnStyle(playing)}>
+              {playing ? 'PAUSE' : 'PLAY'}
+            </button>
+          )}
+          {!fullscreen && (
+            <button onClick={() => { setExpanded(true); setFullscreen(true); }} style={btnStyle()}>
+              EXPAND
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Scrollable timeline */}
       <div ref={scrollRef} onScroll={handleScroll}
-        style={{ overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch', paddingBottom: 12 }}>
+        style={{ overflowX: 'auto', overflowY: fullscreen ? 'auto' : 'hidden', WebkitOverflowScrolling: 'touch', paddingBottom: 12, maxHeight: fullscreen ? 'calc(100vh - 80px)' : undefined }}>
         <div style={{ position: 'relative', width: L.totalW, height: L.totalH, fontFamily: FONT }}>
 
           {/* SVG layer: thread + tracks */}
@@ -600,7 +735,7 @@ export function WorkTimeline({ sessions, onSessionClick }: WorkTimelineProps) {
 
             {L.tracks.map((t, i) => (
               <path key={`t-${i}`} d={t.path} fill="none"
-                stroke={t.color} strokeWidth={t.width} opacity={0.8}
+                stroke={t.color} strokeWidth={t.width} opacity={t.opacity ?? 0.8}
                 strokeDasharray={t.dashed ? '6 4' : undefined}
                 transform={`translate(0, ${L.centerY})`} />
             ))}
@@ -666,6 +801,36 @@ export function WorkTimeline({ sessions, onSessionClick }: WorkTimelineProps) {
           {hovered && <Tooltip data={hovered.tooltip} pos={hovered.pos} />}
         </div>
       </div>
+    </>
+  );
+
+  if (fullscreen) {
+    return (
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 9998,
+        background: '#f8f9fb',
+        display: 'flex', flexDirection: 'column',
+        padding: '16px 24px',
+      }}>
+        <button onClick={() => setFullscreen(false)} style={{
+          position: 'absolute', top: 16, right: 24, zIndex: 1,
+          padding: '6px 14px', fontSize: 12, fontWeight: 700,
+          border: `1px solid ${THREAD_COLOR}`, borderRadius: 4,
+          background: '#fff', color: MAIN_COLOR,
+          cursor: 'pointer', fontFamily: FONT,
+        }}>
+          Close
+        </button>
+        <div className="work-timeline" data-testid="work-timeline" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          {timelineContent}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="work-timeline" data-testid="work-timeline">
+      {timelineContent}
     </div>
   );
 }
