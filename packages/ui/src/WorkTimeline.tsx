@@ -15,16 +15,8 @@ const AGENT_COLORS: Record<string, string> = {
   'qa-engineer': '#059669', qa: '#059669',
   'ux-designer': '#d97706', ux: '#d97706',
   'product-manager': '#dc2626', pm: '#dc2626',
-  'security-engineer': '#475569', 'team-lead': '#475569',
+  'security-engineer': '#6b7280', 'team-lead': '#6b7280',
   explore: '#94a3b8',
-  // Extended palette for custom/unknown agent roles
-  'code-reviewer': '#e11d48', reviewer: '#e11d48',
-  'code-explorer': '#2563eb', explorer: '#2563eb',
-  'code-architect': '#7e22ce', architect: '#7e22ce',
-  'test-runner': '#16a34a', tester: '#16a34a',
-  'build-fix': '#ea580c', fixer: '#ea580c',
-  planner: '#0d9488', plan: '#0d9488',
-  research: '#6366f1', researcher: '#6366f1',
 };
 
 const MAIN_COLOR = '#084471';
@@ -33,31 +25,9 @@ const FONT = "'IBM Plex Mono', monospace";
 const TEXT_SECONDARY = '#6b7280';
 const TEXT_MUTED = '#9ca3af';
 
-/** Hash-based color for unknown roles so they don't all end up gray */
-const FALLBACK_PALETTE = [
-  '#e11d48', '#2563eb', '#7e22ce', '#ea580c', '#0d9488',
-  '#6366f1', '#c026d3', '#0891b2', '#ca8a04', '#16a34a',
-  '#be185d', '#4f46e5', '#0e7490', '#b45309', '#059669',
-];
-
-function hashRole(role: string): number {
-  let h = 0;
-  for (let i = 0; i < role.length; i++) {
-    h = ((h << 5) - h + role.charCodeAt(i)) | 0;
-  }
-  return Math.abs(h);
-}
-
 function agentColor(role?: string): string {
   if (!role) return TEXT_SECONDARY;
-  const lower = role.toLowerCase();
-  if (AGENT_COLORS[lower]) return AGENT_COLORS[lower];
-  // Check partial matches (e.g., "phoenix-reviewer" matches "reviewer")
-  for (const [key, color] of Object.entries(AGENT_COLORS)) {
-    if (lower.includes(key) || key.includes(lower)) return color;
-  }
-  // Hash to a color from the fallback palette
-  return FALLBACK_PALETTE[hashRole(lower) % FALLBACK_PALETTE.length];
+  return AGENT_COLORS[role.toLowerCase()] ?? TEXT_SECONDARY;
 }
 
 // ── Time helpers ─────────────────────────────────────────────────
@@ -134,9 +104,13 @@ export function computeSegments(sessions: Session[]): Seg[] {
 interface Child { id: string; role?: string; durationMinutes: number; linesOfCode: number }
 
 function getChildren(s: Session): Child[] {
-  if (s.childSessions?.length) return s.childSessions.map(c => ({ id: c.id, role: c.agentRole, durationMinutes: c.durationMinutes, linesOfCode: c.linesOfCode }));
-  if (s.children?.length) return s.children.map(c => ({ id: c.sessionId, role: c.role, durationMinutes: c.durationMinutes ?? 0, linesOfCode: c.linesOfCode ?? 0 }));
-  return [];
+  if (!s.children?.length) return [];
+  return s.children.map(c => ({
+    id: c.sessionId,
+    role: c.role,
+    durationMinutes: c.durationMinutes,
+    linesOfCode: c.linesOfCode,
+  }));
 }
 
 // ── Tooltip data ─────────────────────────────────────────────────
@@ -223,13 +197,11 @@ function buildLegendEntries(segments: Seg[], sessionRanges: SessionRange[]): Leg
 // ── Layout ───────────────────────────────────────────────────────
 
 const MAX_AGENTS = 30;
-const COMPACT_AGENTS = 0;
 const LEGENDARY_THRESHOLD = 30;
 const SEG_GAP = 56;
 const CURVE_CP = 50;
 const LANE_GAP = 40;
 const MAX_TITLE = 32;
-const EXPAND_THRESHOLD = 8; // Show expand button when agent count exceeds this
 
 /** Dynamic lane gap — shrinks as agent count grows so it doesn't explode vertically */
 function laneGap(agentCount: number): number {
@@ -258,7 +230,7 @@ interface Layout {
   nodes: LNode[];
   tracks: LTrack[];
   sessionRanges: SessionRange[];
-  hasExpandableSession: boolean;
+  hasConcurrentOverflow: boolean;
   threadStart: number;
   threadEnd: number;
   totalW: number;
@@ -277,11 +249,13 @@ function bezierForkJoin(forkX: number, joinX: number, cY: number, laneY: number)
   ].join(' ');
 }
 
-function layout(segments: Seg[], agentLimit: number = MAX_AGENTS): Layout {
+const DEFAULT_MAX_CONCURRENT = 8;
+
+function layout(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CONCURRENT): Layout {
   const nodes: LNode[] = [];
   const tracks: LTrack[] = [];
   const sessionRanges: SessionRange[] = [];
-  let hasExpandableSession = false;
+  let hasConcurrentOverflow = false;
   let cx = 48;
   const cY = 0;
   let minY = 0, maxY = 0;
@@ -308,9 +282,9 @@ function layout(segments: Seg[], agentLimit: number = MAX_AGENTS): Layout {
       const tooltip = buildTooltip(s);
       const ts = formatTimestamp(s.date);
 
-      if (kids.length > 0 && agentLimit > 0) {
-        if (kids.length > EXPAND_THRESHOLD) hasExpandableSession = true;
-        const visible = kids.slice(0, agentLimit);
+      if (kids.length > 0) {
+        // Render every individual agent curve — chaos is the point
+        const visible = kids.slice(0, MAX_AGENTS);
         const n = visible.length;
         const gap = laneGap(n);
         const totalSpread = (n - 1) * gap;
@@ -342,14 +316,12 @@ function layout(segments: Seg[], agentLimit: number = MAX_AGENTS): Layout {
         sessionRanges.push({ session: s, xStart: forkX, xEnd: joinX });
         cx = joinX + SEG_GAP;
       } else {
-        // Solo session (or compact mode — flat line, no curves)
-        if (kids.length > 0) hasExpandableSession = true;
-        const agentBadge = kids.length > 0 ? ` [${kids.length}]` : '';
-        nodes.push({ kind: 'label', pos: { x: cx + 14, y: cY - 28 }, title: truncate(s.title, MAX_TITLE) + agentBadge, sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
+        // Solo session
+        nodes.push({ kind: 'label', pos: { x: cx + 14, y: cY - 28 }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
         bound(cY - 32, 28);
-        nodes.push({ kind: 'dot', pos: { x: cx, y: cY }, color: MAIN_COLOR, size: kids.length > 0 ? 'lg' : 'sm', tooltip });
-        nodes.push({ kind: 'dot', pos: { x: cx + w, y: cY }, color: MAIN_COLOR, size: kids.length > 0 ? 'lg' : 'sm', tooltip });
-        tracks.push({ path: `M ${cx} ${cY} L ${cx + w} ${cY}`, color: MAIN_COLOR, width: kids.length > 0 ? 3.5 : 3 });
+        nodes.push({ kind: 'dot', pos: { x: cx, y: cY }, color: MAIN_COLOR, size: 'sm', tooltip });
+        nodes.push({ kind: 'dot', pos: { x: cx + w, y: cY }, color: MAIN_COLOR, size: 'sm', tooltip });
+        tracks.push({ path: `M ${cx} ${cY} L ${cx + w} ${cY}`, color: MAIN_COLOR, width: 3 });
         sessionRanges.push({ session: s, xStart: cx, xEnd: cx + w });
         cx += w + SEG_GAP;
       }
@@ -357,60 +329,61 @@ function layout(segments: Seg[], agentLimit: number = MAX_AGENTS): Layout {
     }
 
     if (seg.type === 'concurrent') {
+      // Render each concurrent session as its own sequential segment
+      // with its own agent fork/join curves (capped by maxConcurrent)
       const sorted = [...seg.sessions].sort((a, b) => sessionStart(a) - sessionStart(b));
+      const visible = sorted.slice(0, maxConcurrent);
+      const hidden = sorted.length - visible.length;
+      if (hidden > 0) hasConcurrentOverflow = true;
 
-      if (agentLimit === 0) {
-        // Compact mode: render concurrent sessions as sequential flat dots
-        for (const s of sorted) {
-          const kids = getChildren(s);
-          const dur = s.durationMinutes;
-          const w = Math.min(Math.max(timeToPx(dur), MIN_W), MAX_W);
-          const tooltip = buildTooltip(s);
-          const ts = formatTimestamp(s.date);
-          const agentBadge = kids.length > 0 ? ` [${kids.length}]` : '';
-          if (kids.length > 0) hasExpandableSession = true;
+      for (const s of visible) {
+        const kids = getChildren(s);
+        const dur = (sessionEnd(s) - sessionStart(s)) / 60_000;
+        const w = Math.min(Math.max(timeToPx(dur), MIN_W), MAX_W);
+        const sub = formatDuration(s.durationMinutes);
+        const tooltip = buildTooltip(s);
+        const ts = formatTimestamp(s.date);
 
-          nodes.push({ kind: 'label', pos: { x: cx + 14, y: cY - 28 }, title: truncate(s.title, MAX_TITLE) + agentBadge, sub: formatDuration(dur), timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
+        if (kids.length > 0) {
+          const agentVisible = kids.slice(0, MAX_AGENTS);
+          const n = agentVisible.length;
+          const gap = laneGap(n);
+          const totalSpread = (n - 1) * gap;
+          const forkX = cx;
+          const joinX = cx + w;
+          const topLaneY = cY - totalSpread / 2;
+
+          const titleY = topLaneY - 32;
+          const flatStartX = forkX + CURVE_CP * 2;
+          nodes.push({ kind: 'label', pos: { x: flatStartX + 8, y: titleY }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
+          bound(titleY - 4, 28);
+          nodes.push({ kind: 'dot', pos: { x: forkX, y: cY }, color: MAIN_COLOR, size: 'lg', tooltip });
+
+          agentVisible.forEach((kid, i) => {
+            const laneY = topLaneY + i * gap;
+            const color = agentColor(kid.role);
+            tracks.push({ path: bezierForkJoin(forkX, joinX, cY, laneY), color, width: 1.5 });
+            bound(laneY - 2, 4);
+          });
+
+          nodes.push({ kind: 'dot', pos: { x: joinX, y: cY }, color: MAIN_COLOR, size: 'lg', tooltip });
+          sessionRanges.push({ session: s, xStart: forkX, xEnd: joinX });
+          cx = joinX + SEG_GAP;
+        } else {
+          nodes.push({ kind: 'label', pos: { x: cx + 14, y: cY - 28 }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
           bound(cY - 32, 28);
-          nodes.push({ kind: 'dot', pos: { x: cx, y: cY }, color: MAIN_COLOR, size: kids.length > 0 ? 'lg' : 'sm', tooltip });
-          nodes.push({ kind: 'dot', pos: { x: cx + w, y: cY }, color: MAIN_COLOR, size: kids.length > 0 ? 'lg' : 'sm', tooltip });
-          tracks.push({ path: `M ${cx} ${cY} L ${cx + w} ${cY}`, color: MAIN_COLOR, width: kids.length > 0 ? 3.5 : 3 });
+          nodes.push({ kind: 'dot', pos: { x: cx, y: cY }, color: MAIN_COLOR, size: 'sm', tooltip });
+          nodes.push({ kind: 'dot', pos: { x: cx + w, y: cY }, color: MAIN_COLOR, size: 'sm', tooltip });
+          tracks.push({ path: `M ${cx} ${cY} L ${cx + w} ${cY}`, color: MAIN_COLOR, width: 3 });
           sessionRanges.push({ session: s, xStart: cx, xEnd: cx + w });
           cx += w + SEG_GAP;
         }
-      } else {
-        // Expanded mode: vertical fork/join lanes
-        const n = sorted.length;
-        const laneWs = sorted.map(s => {
-          const dur = (sessionEnd(s) - sessionStart(s)) / 60_000;
-          return Math.min(Math.max(timeToPx(dur), MIN_CW), MAX_W);
-        });
-        const maxLW = Math.max(...laneWs);
-        const totalW = maxLW + CURVE_CP * 4 + 32;
-        const totalSpread = (n - 1) * LANE_GAP;
-        const forkX = cx;
-        const joinX = cx + totalW;
+      }
 
-        nodes.push({ kind: 'dot', pos: { x: forkX, y: cY }, color: MAIN_COLOR, size: 'lg' });
-
-        sorted.forEach((s, i) => {
-          const laneY = cY - totalSpread / 2 + i * LANE_GAP;
-          const above = laneY <= cY;
-          const tooltip = buildTooltip(s);
-          const ts = formatTimestamp(s.date);
-
-          tracks.push({ path: bezierForkJoin(forkX, joinX, cY, laneY), color: MAIN_COLOR, width: 1.5 });
-
-          const labelOff = above ? laneY - 20 : laneY + 6;
-          const labelX = forkX + CURVE_CP * 2 + 12;
-          nodes.push({ kind: 'label', pos: { x: labelX, y: labelOff }, title: truncate(s.title, MAX_TITLE), sub: formatDuration(s.durationMinutes), timestamp: ts, color: MAIN_COLOR, above, session: s, tooltip });
-          bound(above ? labelOff - 4 : laneY - 4, above ? 28 : labelOff + 20 - laneY + 4);
-
-          sessionRanges.push({ session: s, xStart: forkX, xEnd: joinX });
-        });
-
-        nodes.push({ kind: 'dot', pos: { x: joinX, y: cY }, color: MAIN_COLOR, size: 'lg' });
-        cx = joinX + SEG_GAP;
+      // "+N more" indicator for hidden concurrent sessions
+      if (hidden > 0) {
+        nodes.push({ kind: 'label', pos: { x: cx - SEG_GAP + 8, y: cY + 14 }, title: `+${hidden} more sessions`, color: TEXT_MUTED, above: false });
+        bound(cY + 12, 16);
       }
     }
   }
@@ -424,7 +397,7 @@ function layout(segments: Seg[], agentLimit: number = MAX_AGENTS): Layout {
     nodes: nodes.map(n => ({ ...n, pos: { x: n.pos.x, y: n.pos.y + yShift } })),
     tracks,
     sessionRanges,
-    hasExpandableSession,
+    hasConcurrentOverflow,
     threadStart,
     threadEnd,
     totalW: cx + 48,
@@ -517,56 +490,6 @@ function Legend({ entry }: { entry: LegendEntry | null }) {
   );
 }
 
-// ── Legendary Flash ──────────────────────────────────────────────
-
-const FLASH_DURATION_MS = 2400;
-
-function LegendaryFlash({ count }: { count: number }) {
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setVisible(false), FLASH_DURATION_MS);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!visible) return null;
-
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 9999,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      pointerEvents: 'none',
-    }}>
-      <div className="wt-legendary-backdrop" style={{
-        position: 'absolute', inset: 0,
-        background: '#f8f9fb',
-        animation: `wtLegendaryFade ${FLASH_DURATION_MS}ms ease-out forwards`,
-      }} />
-      <div style={{
-        position: 'relative', zIndex: 1, textAlign: 'center',
-        fontFamily: FONT,
-        animation: `wtLegendaryText ${FLASH_DURATION_MS}ms ease-out forwards`,
-      }}>
-        <div style={{
-          fontSize: '2.5rem', fontWeight: 700, letterSpacing: '0.12em',
-          color: '#d97706', textTransform: 'uppercase',
-        }}>
-          Legendary Agentic Use
-        </div>
-        <div style={{ fontSize: '5rem', fontWeight: 700, color: MAIN_COLOR, lineHeight: 1, marginTop: 8 }}>
-          {count}
-        </div>
-        <div style={{
-          fontSize: '0.875rem', letterSpacing: '0.08em',
-          color: TEXT_SECONDARY, marginTop: 12, textTransform: 'uppercase',
-        }}>
-          concurrent agents deployed
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Tooltip Component ────────────────────────────────────────────
 
 function Tooltip({ data, pos }: { data: TooltipData; pos: { x: number; y: number } }) {
@@ -606,11 +529,8 @@ function Tooltip({ data, pos }: { data: TooltipData; pos: { x: number; y: number
 export function WorkTimeline({ sessions, onSessionClick }: WorkTimelineProps) {
   const segments = useMemo(() => computeSegments(sessions), [sessions]);
   const [expanded, setExpanded] = useState(false);
-  const [playing, setPlaying] = useState(false);
-  const playRef = useRef<number | null>(null);
-
-  const agentLimit = expanded ? MAX_AGENTS : COMPACT_AGENTS;
-  const L = useMemo(() => layout(segments, agentLimit), [segments, agentLimit]);
+  const concurrentLimit = expanded ? 999 : DEFAULT_MAX_CONCURRENT;
+  const L = useMemo(() => layout(segments, concurrentLimit), [segments, concurrentLimit]);
   const legendEntries = useMemo(() => buildLegendEntries(segments, L.sessionRanges), [segments, L.sessionRanges]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -632,38 +552,6 @@ export function WorkTimeline({ sessions, onSessionClick }: WorkTimelineProps) {
     if (entry) setFocusedEntry(entry);
   }, [legendEntries]);
 
-  // Auto-scroll playback
-  const togglePlay = useCallback(() => {
-    if (playing) {
-      if (playRef.current) cancelAnimationFrame(playRef.current);
-      playRef.current = null;
-      setPlaying(false);
-      return;
-    }
-    setPlaying(true);
-    const el = scrollRef.current;
-    if (!el) return;
-    // Scroll speed: pixels per frame (~1.2px/frame at 60fps ≈ 72px/sec)
-    const speed = 1.2;
-    const step = () => {
-      if (!scrollRef.current) return;
-      const s = scrollRef.current;
-      if (s.scrollLeft >= s.scrollWidth - s.clientWidth - 1) {
-        setPlaying(false);
-        playRef.current = null;
-        return;
-      }
-      s.scrollLeft += speed;
-      playRef.current = requestAnimationFrame(step);
-    };
-    playRef.current = requestAnimationFrame(step);
-  }, [playing]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => { if (playRef.current) cancelAnimationFrame(playRef.current); };
-  }, []);
-
   const handleHover = useCallback((tooltip: TooltipData | undefined, pos: Pos) => {
     if (tooltip) setHovered({ tooltip, pos });
   }, []);
@@ -678,44 +566,26 @@ export function WorkTimeline({ sessions, onSessionClick }: WorkTimelineProps) {
   }
 
   const hasAgents = legendEntries.some(e => e.agents.length > 0);
-  const legendaryEntry = legendEntries.find(e => e.totalAgents >= LEGENDARY_THRESHOLD);
 
   return (
     <div className="work-timeline" data-testid="work-timeline">
-      {/* Legendary flash overlay */}
-      {legendaryEntry && <LegendaryFlash count={legendaryEntry.totalAgents} />}
-
-      {/* Controls bar: legend + expand/play buttons */}
+      {/* Controls: legend + expand */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           {hasAgents && <Legend entry={focusedEntry} />}
         </div>
-        <div style={{ display: 'flex', gap: 6, flexShrink: 0, fontFamily: FONT }}>
-          {/* Play/pause auto-scroll */}
-          {L.totalW > 600 && (
-            <button onClick={togglePlay} className="wt-control-btn" style={{
-              padding: '3px 10px', fontSize: 10, fontWeight: 600,
-              border: `1px solid ${THREAD_COLOR}`, borderRadius: 4,
-              background: playing ? MAIN_COLOR : '#fff',
-              color: playing ? '#fff' : MAIN_COLOR,
-              cursor: 'pointer', fontFamily: FONT, letterSpacing: '0.03em',
-            }}>
-              {playing ? 'PAUSE' : 'PLAY'}
-            </button>
-          )}
-          {/* Expand/collapse agents */}
-          {L.hasExpandableSession && (
-            <button onClick={() => setExpanded(!expanded)} className="wt-control-btn" style={{
-              padding: '3px 10px', fontSize: 10, fontWeight: 600,
-              border: `1px solid ${THREAD_COLOR}`, borderRadius: 4,
-              background: expanded ? MAIN_COLOR : '#fff',
-              color: expanded ? '#fff' : MAIN_COLOR,
-              cursor: 'pointer', fontFamily: FONT, letterSpacing: '0.03em',
-            }}>
-              {expanded ? 'COMPACT' : 'EXPAND AGENTS'}
-            </button>
-          )}
-        </div>
+        {L.hasConcurrentOverflow && (
+          <button onClick={() => setExpanded(!expanded)} style={{
+            padding: '3px 10px', fontSize: 10, fontWeight: 600,
+            border: `1px solid ${THREAD_COLOR}`, borderRadius: 4,
+            background: expanded ? MAIN_COLOR : '#fff',
+            color: expanded ? '#fff' : MAIN_COLOR,
+            cursor: 'pointer', fontFamily: FONT, letterSpacing: '0.03em',
+            flexShrink: 0,
+          }}>
+            {expanded ? 'SHOW LESS' : 'SHOW ALL SESSIONS'}
+          </button>
+        )}
       </div>
 
       {/* Scrollable timeline */}
