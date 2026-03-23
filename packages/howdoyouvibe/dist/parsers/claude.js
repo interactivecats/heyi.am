@@ -152,13 +152,24 @@ async function detect(path) {
         return false;
     try {
         const raw = await readFile(path, "utf-8");
-        const firstLine = raw.split("\n")[0];
-        if (!firstLine)
-            return false;
-        const entry = JSON.parse(firstLine);
-        return (typeof entry.sessionId === "string" &&
-            typeof entry.type === "string" &&
-            typeof entry.version === "string");
+        // Check the first few lines — some sessions start with file-history-snapshot
+        // or progress entries before the first user/assistant entry with sessionId
+        const lines = raw.split("\n").slice(0, 10);
+        for (const line of lines) {
+            if (!line.trim())
+                continue;
+            try {
+                const entry = JSON.parse(line);
+                if (typeof entry.sessionId === "string" &&
+                    typeof entry.type === "string") {
+                    return true;
+                }
+            }
+            catch {
+                continue;
+            }
+        }
+        return false;
     }
     catch {
         return false;
