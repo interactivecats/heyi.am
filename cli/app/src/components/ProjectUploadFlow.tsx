@@ -1370,6 +1370,7 @@ interface ProjectPreviewProps {
   timeline: TimelinePeriod[];
   selectedCount: number;
   sessions: Session[];
+  allSessions: Session[];
   repoUrl: string;
   projectUrl: string;
   onClose: () => void;
@@ -1384,6 +1385,7 @@ function ProjectPreview({
   timeline,
   selectedCount,
   sessions,
+  allSessions,
   repoUrl,
   projectUrl,
   onClose,
@@ -1505,9 +1507,9 @@ function ProjectPreview({
           </div>
         </div>
 
-        {/* Work Timeline — real time axis with gaps and fork/join */}
+        {/* Work Timeline — all sessions, not just selected */}
         <div className="project-preview__timeline-heading">WORK TIMELINE</div>
-        <WorkTimeline sessions={sessions} onSessionClick={setDetailSession} />
+        <WorkTimeline sessions={allSessions} onSessionClick={setDetailSession} />
 
         {/* Timeline */}
         <div className="project-preview__timeline-heading">PROJECT TIMELINE</div>
@@ -1931,6 +1933,7 @@ export function ReviewStep({
           timeline={timeline}
           selectedCount={selectedCount}
           sessions={sessions}
+          allSessions={allSessions}
           repoUrl={repoUrl}
           projectUrl={projectUrl}
           onClose={() => setShowPreview(false)}
