@@ -310,23 +310,21 @@ describe('SessionDetailOverlay', () => {
       id: 'ses-orch',
       isOrchestrated: true,
       childCount: 2,
-      childSessions: [
-        makeSession({
-          id: 'c1',
-          agentRole: 'frontend-dev',
+      children: [
+        {
+          sessionId: 'c1',
+          role: 'frontend-dev',
           date: childStart.toISOString(),
           durationMinutes: 10,
           linesOfCode: 50,
-          parentSessionId: 'ses-orch',
-        }),
-        makeSession({
-          id: 'c2',
-          agentRole: 'backend-dev',
+        },
+        {
+          sessionId: 'c2',
+          role: 'backend-dev',
           date: childStart.toISOString(),
           durationMinutes: 15,
           linesOfCode: 70,
-          parentSessionId: 'ses-orch',
-        }),
+        },
       ],
     });
     mockFetchSession.mockResolvedValueOnce(fullSession);
@@ -368,7 +366,7 @@ describe('SessionDetailOverlay', () => {
     expect(screen.queryByText('AGENT ACTIVITY')).toBeNull();
   });
 
-  it('renders AgentTimeline directly when childSessions already present', () => {
+  it('renders AgentTimeline directly when children already present', () => {
     mockFetchSession.mockClear();
     const childStart = new Date('2026-03-20T10:00:00Z');
     const { container } = render(
@@ -376,21 +374,21 @@ describe('SessionDetailOverlay', () => {
         session={makeSession({
           childCount: 2,
           isOrchestrated: true,
-          childSessions: [
-            makeSession({
-              id: 'c1',
-              agentRole: 'frontend-dev',
+          children: [
+            {
+              sessionId: 'c1',
+              role: 'frontend-dev',
               date: childStart.toISOString(),
               durationMinutes: 10,
               linesOfCode: 50,
-            }),
-            makeSession({
-              id: 'c2',
-              agentRole: 'backend-dev',
+            },
+            {
+              sessionId: 'c2',
+              role: 'backend-dev',
               date: childStart.toISOString(),
               durationMinutes: 15,
               linesOfCode: 70,
-            }),
+            },
           ],
         })}
         projectName="heyi-am"
@@ -398,7 +396,7 @@ describe('SessionDetailOverlay', () => {
         onClose={() => {}}
       />,
     );
-    // Should not fetch since childSessions already present
+    // Should not fetch since children already present
     expect(mockFetchSession).not.toHaveBeenCalled();
     // Should show timeline immediately
     expect(screen.getByText('AGENT ACTIVITY')).toBeTruthy();

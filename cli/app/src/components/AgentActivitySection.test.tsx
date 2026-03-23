@@ -40,17 +40,16 @@ function makeChild(
   startOffset: number,
   duration: number,
   loc: number = 50,
-): Session {
+): { sessionId: string; role: string; date: string; durationMinutes: number; linesOfCode: number } {
   const start = new Date('2026-03-20T10:00:00Z');
   start.setMinutes(start.getMinutes() + startOffset);
-  return makeSession({
-    id,
-    agentRole: role,
+  return {
+    sessionId: id,
+    role,
     date: start.toISOString(),
     durationMinutes: duration,
     linesOfCode: loc,
-    parentSessionId: 'ses-1',
-  });
+  };
 }
 
 describe('AgentActivitySection', () => {
@@ -88,11 +87,11 @@ describe('AgentActivitySection', () => {
     );
   });
 
-  it('uses AgentTimeline for orchestrated sessions with childSessions', () => {
+  it('uses AgentTimeline for orchestrated sessions with children', () => {
     const sessions = [
       makeSession({
         isOrchestrated: true,
-        childSessions: [
+        children: [
           makeChild('c1', 'frontend-dev', 0, 10),
           makeChild('c2', 'backend-dev', 0, 15),
         ],
@@ -113,7 +112,7 @@ describe('AgentActivitySection', () => {
       makeSession({
         id: 'ses-1',
         isOrchestrated: true,
-        childSessions: [
+        children: [
           makeChild('c1', 'frontend-dev', 0, 10),
           makeChild('c2', 'backend-dev', 0, 15),
         ],
@@ -128,12 +127,12 @@ describe('AgentActivitySection', () => {
     expect(screen.getByText('Unique Roles')).toBeTruthy();
   });
 
-  it('computes agent LOC from childSessions', () => {
+  it('computes agent LOC from children', () => {
     const sessions = [
       makeSession({
         linesOfCode: 300,
         isOrchestrated: true,
-        childSessions: [
+        children: [
           makeChild('c1', 'frontend-dev', 0, 10, 120),
           makeChild('c2', 'backend-dev', 0, 15, 80),
         ],
@@ -161,7 +160,7 @@ describe('AgentActivitySection', () => {
     expect(text?.textContent).toContain('(3 agents)');
   });
 
-  it('collects roles from children summaries when childSessions absent', () => {
+  it('collects roles from children summaries', () => {
     const sessions = [
       makeSession({
         children: [
@@ -197,7 +196,7 @@ describe('AgentActivitySection', () => {
       title: 'Orchestrated work',
       isOrchestrated: true,
       childCount: 2,
-      childSessions: [
+      children: [
         makeChild('c1', 'frontend-dev', 0, 10),
         makeChild('c2', 'backend-dev', 0, 15),
       ],

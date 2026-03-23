@@ -8,6 +8,7 @@ export { DirectoryHeatmap } from './DirectoryHeatmap';
 
 export type {
   Session,
+  AgentChild,
   ChildSessionSummary,
   ExecutionStep,
   ToolUsage,

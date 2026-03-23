@@ -1,4 +1,4 @@
-import type { Session } from '../types';
+import type { Session, AgentChild } from '../types';
 
 export interface AgentTimelineProps {
   session: Session;
@@ -34,35 +34,35 @@ function getAgentColor(role?: string): string {
 // ── Wave detection ──────────────────────────────────────────────
 
 interface Wave {
-  children: Session[];
+  children: AgentChild[];
 }
 
-function detectWaves(children: Session[]): Wave[] {
+function detectWaves(children: AgentChild[]): Wave[] {
   if (children.length === 0) return [];
 
   const sorted = [...children].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    (a, b) => new Date(a.date ?? 0).getTime() - new Date(b.date ?? 0).getTime(),
   );
 
   const waves: Wave[] = [];
-  let currentWave: Session[] = [sorted[0]];
+  let currentWave: AgentChild[] = [sorted[0]];
   let currentWaveEnd =
-    new Date(sorted[0].date).getTime() +
-    (sorted[0].wallClockMinutes ?? sorted[0].durationMinutes) * 60000;
+    new Date(sorted[0].date ?? 0).getTime() +
+    sorted[0].durationMinutes * 60000;
 
   for (let i = 1; i < sorted.length; i++) {
-    const childStart = new Date(sorted[i].date).getTime();
+    const childStart = new Date(sorted[i].date ?? 0).getTime();
     if (childStart >= currentWaveEnd) {
       waves.push({ children: currentWave });
       currentWave = [sorted[i]];
       currentWaveEnd =
         childStart +
-        (sorted[i].wallClockMinutes ?? sorted[i].durationMinutes) * 60000;
+        sorted[i].durationMinutes * 60000;
     } else {
       currentWave.push(sorted[i]);
       const thisEnd =
         childStart +
-        (sorted[i].wallClockMinutes ?? sorted[i].durationMinutes) * 60000;
+        sorted[i].durationMinutes * 60000;
       if (thisEnd > currentWaveEnd) currentWaveEnd = thisEnd;
     }
   }
@@ -74,14 +74,14 @@ function detectWaves(children: Session[]): Wave[] {
 
 export function AgentTimeline({ session, variant }: AgentTimelineProps) {
   const isCompact = variant === 'compact';
-  const children = session.childSessions ?? [];
-  const isMultiAgent = children.length > 0;
+  const agentChildren = session.children ?? [];
+  const isMultiAgent = agentChildren.length > 0;
 
   if (!isMultiAgent) {
     return <SingleAgentTimeline session={session} isCompact={isCompact} />;
   }
 
-  const waves = detectWaves(children);
+  const waves = detectWaves(agentChildren);
 
   // ── Structural layout: proportional lane widths based on duration ──
   const laneSpacing = isCompact ? 20 : 60;
@@ -126,7 +126,7 @@ export function AgentTimeline({ session, variant }: AgentTimelineProps) {
 
   // Compute x positions for each wave structurally
   interface LaneInfo {
-    child: Session;
+    child: AgentChild;
     y: number;
     x1: number;
     x2: number;
@@ -153,7 +153,7 @@ export function AgentTimeline({ session, variant }: AgentTimelineProps) {
     const joinX = laneStart + waveLaneWidth + labelSpace + forkJoinWidth;
 
     const sorted = [...wave.children].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+      (a, b) => new Date(a.date ?? 0).getTime() - new Date(b.date ?? 0).getTime(),
     );
 
     const lanes: LaneInfo[] = sorted.map((child, i) => {
@@ -161,13 +161,13 @@ export function AgentTimeline({ session, variant }: AgentTimelineProps) {
       const totalH = (n - 1) * laneSpacing;
       const y = baseY - totalH / 2 + i * laneSpacing;
       const childLaneWidth = Math.max(minLaneWidth, (child.durationMinutes / maxChildDuration) * maxLaneWidth);
-      const offsetMinutes = Math.round((new Date(child.date).getTime() - sessionStartMs) / 60000);
+      const offsetMinutes = Math.round((new Date(child.date ?? 0).getTime() - sessionStartMs) / 60000);
       return {
         child,
         y,
         x1: laneStart,
         x2: laneStart + childLaneWidth,
-        color: getAgentColor(child.agentRole),
+        color: getAgentColor(child.role),
         offsetMinutes,
       };
     });
@@ -260,7 +260,7 @@ export function AgentTimeline({ session, variant }: AgentTimelineProps) {
                 textAnchor="end"
                 data-testid="role-label"
               >
-                {(lane.child.agentRole ?? 'agent').toUpperCase()}
+                {lane.child.role.toUpperCase()}
               </text>
               {/* Detail text: offset + LOC + duration (full variant only) */}
               {!isCompact && detailSize > 0 && (
@@ -271,8 +271,7 @@ export function AgentTimeline({ session, variant }: AgentTimelineProps) {
                   fontSize={detailSize}
                   fill="#6b7280"
                 >
-                  +{lane.offsetMinutes}m · {lane.child.linesOfCode > 0 ? `${lane.child.linesOfCode} LOC · ` : ''}
-                  {lane.child.durationMinutes}m
+                  +{lane.offsetMinutes}m · {lane.child.linesOfCode > 0 ? `${lane.child.linesOfCode} LOC · ` : ''}{lane.child.durationMinutes}m
                 </text>
               )}
             </g>

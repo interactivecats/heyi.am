@@ -328,17 +328,17 @@ describe('Hierarchical session API', () => {
     expect(solo.children).toBeUndefined();
   });
 
-  it('session detail includes fully parsed childSessions', async () => {
+  it('session detail includes children as AgentChild array', async () => {
     const app = createApp(tmpDir);
     const res = await request(app).get('/api/projects/myapp/sessions/abc-123');
     expect(res.status).toBe(200);
     const session = res.body.session;
-    expect(session.childSessions).toBeInstanceOf(Array);
-    expect(session.childSessions).toHaveLength(1);
-    expect(session.childSessions[0].id).toBe('child-001');
-    expect(session.childSessions[0].title).toBe('Build the login UI');
-    expect(session.childSessions[0]).toHaveProperty('rawLog');
-    expect(session.childSessions[0]).toHaveProperty('turns');
+    expect(session.children).toBeInstanceOf(Array);
+    expect(session.children).toHaveLength(1);
+    expect(session.children[0].sessionId).toBe('child-001');
+    expect(session.children[0]).toHaveProperty('role');
+    expect(session.children[0]).toHaveProperty('durationMinutes');
+    expect(session.children[0]).toHaveProperty('linesOfCode');
   });
 
   it('session detail includes aggregated stats', async () => {
@@ -352,11 +352,11 @@ describe('Hierarchical session API', () => {
     expect(typeof session.aggregatedStats.totalDurationMinutes).toBe('number');
   });
 
-  it('session detail without children has no childSessions', async () => {
+  it('session detail without children has no children', async () => {
     const app = createApp(tmpDir);
     const res = await request(app).get('/api/projects/myapp/sessions/def-456');
     expect(res.status).toBe(200);
-    expect(res.body.session.childSessions).toBeUndefined();
+    expect(res.body.session.children).toBeUndefined();
     expect(res.body.session.aggregatedStats).toBeUndefined();
   });
 });

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import type { Server } from 'node:http';
 import { listSessions, parseSession, type SessionMeta } from './parsers/index.js';
-import { bridgeToAnalyzer, bridgeChildSessions, aggregateChildStats, type ChildSessionSummary } from './bridge.js';
+import { bridgeToAnalyzer, bridgeChildSessions, aggregateChildStats, toAgentChild, type AgentChild } from './bridge.js';
 import { analyzeSession, type Session } from './analyzer.js';
 import { checkAuthStatus, getAuthToken, saveAuthToken } from './auth.js';
 import { API_URL } from './config.js';
@@ -262,14 +262,14 @@ export function createApp(sessionsBasePath?: string) {
           // Build child summaries (used by both full and fallback paths)
           // Deduplicate by sessionId (true duplicates), not by role
           const seenIds = new Set<string>();
-          const children: ChildSessionSummary[] = [];
+          const children: AgentChild[] = [];
           for (const c of meta.children ?? []) {
             if (seenIds.has(c.sessionId)) continue;
             seenIds.add(c.sessionId);
             const childStats = await getSessionStats(c, proj.name);
             children.push({
               sessionId: c.sessionId,
-              role: c.agentRole,
+              role: c.agentRole ?? 'agent',
               durationMinutes: childStats.duration,
               linesOfCode: childStats.loc,
               date: childStats.date,
@@ -333,14 +333,15 @@ export function createApp(sessionsBasePath?: string) {
 
       const session = await loadSession(meta.path, proj.name, meta.sessionId);
 
-      // Fully parse and attach child sessions
-      const childSessions = await bridgeChildSessions(meta, proj.name);
-      const aggregated = childSessions.length > 0 ? aggregateChildStats(childSessions) : undefined;
+      // Fully parse child sessions and map to canonical AgentChild shape
+      const parsedChildren = await bridgeChildSessions(meta, proj.name);
+      const children = parsedChildren.map(toAgentChild);
+      const aggregated = children.length > 0 ? aggregateChildStats(parsedChildren) : undefined;
 
       res.json({
         session: {
           ...session,
-          ...(childSessions.length > 0 ? { childSessions, isOrchestrated: true } : {}),
+          ...(children.length > 0 ? { children, isOrchestrated: true } : {}),
           ...(aggregated ? { aggregatedStats: aggregated } : {}),
         },
       });
@@ -424,29 +425,36 @@ export function createApp(sessionsBasePath?: string) {
         return;
       }
 
-      // Derive the project filesystem path from the dirName.
-      // Claude Code encodes "/Users/ben/Dev/heyi-am" as "-Users-ben-Dev-heyi-am"
-      // (replaces "/" with "-"). Reverse: replace leading "-" with "/".
-      const projectPath = proj.dirName.replace(/^-/, '/').replace(/-/g, '/');
+      // C2: The dirName encoding is lossy (both / and . become -), so we
+      // can't decode it back to the original path. Instead, find the real
+      // path by checking session cwd fields from parsed sessions.
+      let projectPath: string | null = null;
+      for (const meta of proj.sessions) {
+        try {
+          const parsed = await loadSession(meta.path, proj.name, meta.sessionId);
+          if (parsed.cwd) {
+            projectPath = parsed.cwd;
+            break;
+          }
+        } catch { /* skip unparseable sessions */ }
+      }
 
       let remoteUrl: string | null = null;
-      try {
-        // Use execFileSync to avoid shell injection — fixed args, no interpolation
-        const raw = execFileSync('git', ['-C', projectPath, 'remote', 'get-url', 'origin'], {
-          timeout: 5000,
-          encoding: 'utf-8',
-          stdio: ['pipe', 'pipe', 'pipe'],
-        }).trim();
+      if (projectPath) {
+        try {
+          const raw = execFileSync('git', ['-C', projectPath, 'remote', 'get-url', 'origin'], {
+            timeout: 5000,
+            encoding: 'utf-8',
+            stdio: ['pipe', 'pipe', 'pipe'],
+          }).trim();
 
-        // Clean the URL:
-        // git@github.com:user/repo.git → github.com/user/repo
-        // https://github.com/user/repo.git → github.com/user/repo
-        remoteUrl = raw
-          .replace(/\.git$/, '')
-          .replace(/^git@([^:]+):/, '$1/')
-          .replace(/^https?:\/\//, '');
-      } catch {
-        // No git remote or not a git repo — return null
+          remoteUrl = raw
+            .replace(/\.git$/, '')
+            .replace(/^git@([^:]+):/, '$1/')
+            .replace(/^https?:\/\//, '');
+        } catch {
+          // No git remote or not a git repo — return null
+        }
       }
 
       res.json({ url: remoteUrl });
@@ -1067,11 +1075,16 @@ export function createApp(sessionsBasePath?: string) {
               return agents.length > 0 ? { is_orchestrated: true, agents } : null;
             })();
 
+            // M3: narrative and dev_take are distinct values
+            // M4: truncate dev_take to Phoenix's 2000-char limit
+            const devTake = (enhanced?.developerTake ?? session.developerTake ?? '').slice(0, 2000);
+            const narrative = (enhanced as { narrative?: string })?.narrative ?? '';
+
             // POST body: scalar/aggregate fields only
             const sessionPayload = {
               session: {
                 title: enhanced?.title ?? session.title,
-                dev_take: enhanced?.developerTake ?? session.developerTake ?? '',
+                dev_take: devTake,
                 context: enhanced?.context ?? '',
                 duration_minutes: session.durationMinutes ?? 0,
                 turns: session.turns ?? 0,
@@ -1085,7 +1098,7 @@ export function createApp(sessionsBasePath?: string) {
                 language: null,
                 tools: session.toolBreakdown?.map((t) => t.tool) ?? [],
                 skills: enhanced?.skills ?? session.skills ?? [],
-                narrative: enhanced?.developerTake ?? '',
+                narrative,
                 project_name: proj.name,
                 project_id: projectData.project_id,
                 slug: sessionSlug,
@@ -1095,59 +1108,58 @@ export function createApp(sessionsBasePath?: string) {
             };
 
             // session.json: full data including visualization fields for S3
-            // session.json uses camelCase keys matching the @heyiam/ui Session type
-            // so React islands can consume it directly without transformation
+            // M1: Use consistent snake_case keys so Phoenix doesn't need dual-variant normalization
+            // M5: Use sessionId (CLI's local UUID), not the slug
             const sessionData = {
               version: 1,
-              id: sessionSlug,
+              id: sessionId,
               title: enhanced?.title ?? session.title,
-              devTake: enhanced?.developerTake ?? session.developerTake ?? '',
+              dev_take: devTake,
               context: enhanced?.context ?? '',
-              durationMinutes: session.durationMinutes ?? 0,
+              duration_minutes: session.durationMinutes ?? 0,
               turns: session.turns ?? 0,
-              filesChanged: (session.filesChanged ?? []).slice(0, 20).map((f) => (typeof f === 'string' ? { path: f, additions: 0, deletions: 0 } : f)),
-              linesOfCode: session.linesOfCode ?? 0,
+              files_changed: (session.filesChanged ?? []).slice(0, 20).map((f) => (typeof f === 'string' ? { path: f, additions: 0, deletions: 0 } : f)),
+              loc_changed: session.linesOfCode ?? 0,
               date: session.date ? new Date(session.date).toISOString() : new Date().toISOString(),
-              // Only use wall-clock endTime when reasonable (≤ 3x active time)
-              // Overnight sessions span 20+ hours which breaks timeline clustering
-              endTime: (() => {
+              end_time: (() => {
                 if (!session.endTime || !session.date) return null;
                 const wallMs = new Date(session.endTime).getTime() - new Date(session.date).getTime();
                 const activeMs = (session.durationMinutes ?? 0) * 60_000;
                 return wallMs <= activeMs * 3 ? new Date(session.endTime).toISOString() : null;
               })(),
               cwd: session.cwd ?? null,
-              wallClockMinutes: session.wallClockMinutes ?? null,
+              wall_clock_minutes: session.wallClockMinutes ?? null,
               template: 'editorial',
               skills: enhanced?.skills ?? session.skills ?? [],
               tools: session.toolBreakdown?.map((t) => t.tool) ?? [],
               source: session.source ?? meta.source ?? 'claude',
               slug: sessionSlug,
-              projectName: proj.name,
-              narrative: enhanced?.developerTake ?? '',
+              project_name: proj.name,
+              narrative,
               status: 'listed' as const,
-              rawLog: [] as string[],
-              executionPath: (enhanced?.executionSteps ?? session.executionPath ?? []).map((s, i) => ({
-                stepNumber: i + 1,
-                title: s.title,
-                description: 'body' in s ? (s as { body: string }).body : ('description' in s ? (s as { description: string }).description : ''),
+              raw_log: [] as string[],
+              // M2: normalize execution_path steps to {label, description}
+              execution_path: (enhanced?.executionSteps ?? session.executionPath ?? []).map((s, i) => ({
+                label: s.title ?? `Step ${i + 1}`,
+                description: (s as { description?: string }).description ?? (s as { body?: string }).body ?? '',
               })),
-              qaPairs: enhanced?.qaPairs ?? session.qaPairs ?? [],
+              qa_pairs: enhanced?.qaPairs ?? session.qaPairs ?? [],
               highlights: [],
-              toolBreakdown: (session.toolBreakdown ?? []).map((t) => ({ tool: t.tool, count: t.count })),
-              topFiles: (session.filesChanged ?? []).slice(0, 20).map((f) => (typeof f === 'string' ? { path: f, additions: 0, deletions: 0 } : f)),
-              turnTimeline: (session.turnTimeline ?? []).map((t) => ({
+              tool_breakdown: (session.toolBreakdown ?? []).map((t) => ({ tool: t.tool, count: t.count })),
+              top_files: (session.filesChanged ?? []).slice(0, 20).map((f) => (typeof f === 'string' ? { path: f, additions: 0, deletions: 0 } : f)),
+              turn_timeline: (session.turnTimeline ?? []).map((t) => ({
                 timestamp: t.timestamp,
                 type: t.type,
                 content: (t.content ?? '').slice(0, 200),
                 tools: (t as { tools?: string[] }).tools ?? [],
               })),
-              transcriptExcerpt: (session.rawLog ?? []).slice(0, 10).map((line, i) => {
+              // M6: Keep tool prefixes in transcript — they're informative
+              transcript_excerpt: (session.rawLog ?? []).slice(0, 10).map((line, i) => {
                 const role = line.startsWith('> ') ? 'dev' : 'ai';
-                const text = role === 'dev' ? line.slice(2) : line.replace(/^\[AI\] |^\[TOOL\] /, '');
+                const text = role === 'dev' ? line.slice(2) : line;
                 return { role, id: `Turn ${i + 1}`, text, timestamp: null };
               }),
-              agentSummary: agentSummary,
+              agent_summary: agentSummary,
               children: agentSummary?.agents?.map((a: { role: string; duration_minutes: number; loc_changed: number }) => ({
                 sessionId: a.role,
                 role: a.role,

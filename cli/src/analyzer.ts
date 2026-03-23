@@ -33,7 +33,7 @@ export interface SessionAnalysis {
   turns: ParsedTurn[];
   filesChanged: ParsedFileChange[];
   rawLog: string[];
-  childSessions?: SessionAnalysis[];
+  childAnalyses?: SessionAnalysis[];
   agentRole?: string;
   parentSessionId?: string | null;
   /** Working directory where the session was started */
@@ -66,6 +66,14 @@ export interface FileChange {
   deletions: number;
 }
 
+export interface AgentChild {
+  sessionId: string;
+  role: string;
+  durationMinutes: number;
+  linesOfCode: number;
+  date?: string;
+}
+
 export interface Session {
   id: string;
   title: string;
@@ -91,7 +99,7 @@ export interface Session {
   context?: string;
   developerTake?: string;
   qaPairs?: Array<{ question: string; answer: string }>;
-  childSessions?: Session[];
+  children?: AgentChild[];
   parentSessionId?: string | null;
   agentRole?: string;
   isOrchestrated?: boolean;
@@ -363,8 +371,15 @@ export function computeLinesOfCode(filesChanged: ParsedFileChange[]): number {
 
 export function analyzeSession(analysis: SessionAnalysis): Session {
   const toolTurns = analysis.turns.filter((t) => t.type === 'tool');
-  const childSessions = analysis.childSessions?.map(analyzeSession);
-  const isOrchestrated = childSessions !== undefined && childSessions.length > 0;
+  const childAnalyses = analysis.childAnalyses?.map(analyzeSession);
+  const children: AgentChild[] | undefined = childAnalyses?.map(c => ({
+    sessionId: c.id,
+    role: c.agentRole ?? 'agent',
+    durationMinutes: c.durationMinutes,
+    linesOfCode: c.linesOfCode,
+    date: c.date,
+  }));
+  const isOrchestrated = children !== undefined && children.length > 0;
 
   return {
     id: analysis.id,
@@ -384,7 +399,7 @@ export function analyzeSession(analysis: SessionAnalysis): Session {
     filesChanged: analysis.filesChanged,
     turnTimeline: buildTurnTimeline(analysis.turns),
     toolCalls: toolTurns.length,
-    ...(childSessions && childSessions.length > 0 ? { childSessions } : {}),
+    ...(children && children.length > 0 ? { children } : {}),
     ...(analysis.parentSessionId != null ? { parentSessionId: analysis.parentSessionId } : {}),
     ...(analysis.agentRole ? { agentRole: analysis.agentRole } : {}),
     ...(isOrchestrated ? { isOrchestrated } : {}),

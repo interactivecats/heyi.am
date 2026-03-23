@@ -231,7 +231,7 @@ describe('Session Data Shape Contract', () => {
   });
 
   describe('Subagent / child session data shape', () => {
-    it('childSessions array contains Session objects', () => {
+    it('children array contains AgentChild objects', () => {
       const childAnalysis: SessionAnalysis = {
         id: 'child-1',
         title: 'Frontend work',
@@ -244,17 +244,17 @@ describe('Session Data Shape Contract', () => {
       };
 
       const session = analyzeSession(makeMinimalAnalysis({
-        childSessions: [childAnalysis],
+        childAnalyses: [childAnalysis],
       }));
 
-      expect(session.childSessions).toBeDefined();
-      expect(session.childSessions!.length).toBe(1);
-      expect(session.childSessions![0]).toHaveProperty('title');
-      expect(session.childSessions![0]).toHaveProperty('durationMinutes');
-      expect(session.childSessions![0]).toHaveProperty('linesOfCode');
+      expect(session.children).toBeDefined();
+      expect(session.children!.length).toBe(1);
+      expect(session.children![0]).toHaveProperty('sessionId');
+      expect(session.children![0]).toHaveProperty('durationMinutes');
+      expect(session.children![0]).toHaveProperty('linesOfCode');
     });
 
-    it('agentRole is preserved on child sessions', () => {
+    it('agentRole is preserved as role on children', () => {
       const childAnalysis: SessionAnalysis = {
         id: 'child-1',
         title: 'Backend work',
@@ -269,16 +269,16 @@ describe('Session Data Shape Contract', () => {
       };
 
       const session = analyzeSession(makeMinimalAnalysis({
-        childSessions: [childAnalysis],
+        childAnalyses: [childAnalysis],
       }));
 
-      expect(session.childSessions![0].agentRole).toBe('backend-dev');
-      expect(session.childSessions![0].parentSessionId).toBe('parent-1');
+      expect(session.children![0].role).toBe('backend-dev');
+      expect(session.children![0].sessionId).toBe('child-1');
     });
 
     it('isOrchestrated flag is set when children exist', () => {
       const session = analyzeSession(makeMinimalAnalysis({
-        childSessions: [{
+        childAnalyses: [{
           id: 'c1', title: 'Child', date: '2026-03-12T14:00:00Z',
           durationMinutes: 5, projectName: 'p', turns: [], filesChanged: [], rawLog: [],
         }],

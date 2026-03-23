@@ -186,7 +186,7 @@ function SourceInfo({ session, projectName }: { session: Session; projectName: s
           <div className="session-detail__source-row">
             <span className="session-detail__source-key">Type</span>
             <span className="session-detail__source-val">
-              Orchestrated ({session.childCount ?? session.childSessions?.length ?? 0} sub-sessions)
+              Orchestrated ({session.childCount ?? session.children?.length ?? 0} sub-sessions)
             </span>
           </div>
         )}
@@ -257,8 +257,8 @@ export function SessionDetailOverlay({ session, projectName, projectDirName, onC
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Lazy-load full session for orchestrated sessions with childCount but no childSessions
-  const needsFetch = (session.childCount ?? 0) > 0 && !session.childSessions?.length;
+  // Lazy-load full session for orchestrated sessions with childCount but no children
+  const needsFetch = (session.childCount ?? 0) > 0 && !session.children?.length;
   const [fullSession, setFullSession] = useState<Session | null>(null);
   const [timelineLoading, setTimelineLoading] = useState(needsFetch);
 
@@ -282,9 +282,9 @@ export function SessionDetailOverlay({ session, projectName, projectDirName, onC
     return () => { cancelled = true; };
   }, [needsFetch, projectDirName, session.id]);
 
-  // Use the full session (with childSessions) if available, otherwise the original
+  // Use the full session (with children) if available, otherwise the original
   const timelineSession = fullSession ?? session;
-  const showTimeline = (timelineSession.childSessions?.length ?? 0) > 0;
+  const showTimeline = (timelineSession.children?.length ?? 0) > 0;
 
   const highlights = (session.executionPath ?? []).filter(isHighlightStep);
   const hasQA = Array.isArray(session.qaPairs) && session.qaPairs.length > 0;

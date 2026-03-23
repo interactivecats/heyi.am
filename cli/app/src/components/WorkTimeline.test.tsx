@@ -23,17 +23,16 @@ function makeChild(
   role: string,
   startOffset: number,
   duration: number,
-): Session {
+): { sessionId: string; role: string; date: string; durationMinutes: number; linesOfCode: number } {
   const start = new Date('2026-03-20T10:00:00Z');
   start.setMinutes(start.getMinutes() + startOffset);
-  return makeSession({
-    id,
-    agentRole: role,
+  return {
+    sessionId: id,
+    role,
     date: start.toISOString(),
     durationMinutes: duration,
     linesOfCode: 50,
-    parentSessionId: 'ses-1',
-  });
+  };
 }
 
 describe('WorkTimeline', () => {
@@ -97,13 +96,13 @@ describe('WorkTimeline', () => {
     expect(gaps.length).toBe(0);
   });
 
-  it('renders fork/join for multi-agent session with children summaries (no full childSessions)', () => {
+  it('renders fork/join for multi-agent session with children summaries', () => {
     const session = makeSession({
       childCount: 3,
       children: [
-        { sessionId: 'c1', role: 'frontend-dev', durationMinutes: 10 },
-        { sessionId: 'c2', role: 'backend-dev', durationMinutes: 15 },
-        { sessionId: 'c3', role: 'qa-engineer', durationMinutes: 8 },
+        { sessionId: 'c1', role: 'frontend-dev', durationMinutes: 10, linesOfCode: 50 },
+        { sessionId: 'c2', role: 'backend-dev', durationMinutes: 15, linesOfCode: 60 },
+        { sessionId: 'c3', role: 'qa-engineer', durationMinutes: 8, linesOfCode: 30 },
       ],
     });
     const { container } = render(<WorkTimeline sessions={[session]} />);
@@ -131,9 +130,9 @@ describe('WorkTimeline', () => {
     expect(badge!.textContent).toBe('(3 agents)');
   });
 
-  it('renders fork/join for multi-agent session with loaded childSessions', () => {
+  it('renders fork/join for multi-agent session with loaded children', () => {
     const session = makeSession({
-      childSessions: [
+      children: [
         makeChild('c1', 'frontend-dev', 2, 10),
         makeChild('c2', 'backend-dev', 2, 15),
       ],

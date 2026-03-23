@@ -1140,7 +1140,7 @@ const AGENT_LEGEND: { role: string; label: string; color: string }[] = [
 ];
 
 export function AgentActivitySection({ sessions, projectDirName }: { sessions: Session[]; projectDirName?: string }) {
-  // Lazy-load full session data for sessions with childCount > 0 but no childSessions
+  // Lazy-load full session data for sessions with childCount > 0 but no children
   const [loadedSessions, setLoadedSessions] = useState<Record<string, Session>>({});
   const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
   const attemptedRef = useRef<Set<string>>(new Set());
@@ -1150,7 +1150,7 @@ export function AgentActivitySection({ sessions, projectDirName }: { sessions: S
     const toFetch = sessions.filter(
       (s) =>
         (s.childCount ?? 0) > 0 &&
-        !s.childSessions?.length &&
+        !s.children?.length &&
         !attemptedRef.current.has(s.id),
     );
     if (toFetch.length === 0) return;
@@ -1197,14 +1197,9 @@ export function AgentActivitySection({ sessions, projectDirName }: { sessions: S
   const allRoles = new Set<string>();
   for (const s of resolvedSessions) {
     if (s.agentRole) allRoles.add(s.agentRole.toLowerCase());
-    if (s.childSessions) {
-      for (const c of s.childSessions) {
-        if (c.agentRole) allRoles.add(c.agentRole.toLowerCase());
-      }
-    }
     if (s.children) {
       for (const c of s.children) {
-        if (c.role) allRoles.add(c.role.toLowerCase());
+        allRoles.add(c.role.toLowerCase());
       }
     }
   }
@@ -1214,13 +1209,9 @@ export function AgentActivitySection({ sessions, projectDirName }: { sessions: S
   let totalLoc = 0;
   for (const s of resolvedSessions) {
     totalLoc += s.linesOfCode;
-    if (s.childSessions) {
-      for (const c of s.childSessions) {
-        agentLoc += c.linesOfCode;
-      }
-    } else if (s.children) {
+    if (s.children) {
       for (const c of s.children) {
-        agentLoc += c.linesOfCode ?? 0;
+        agentLoc += c.linesOfCode;
       }
     }
   }
@@ -1254,7 +1245,7 @@ export function AgentActivitySection({ sessions, projectDirName }: { sessions: S
         {/* Session timelines */}
         <div className="agent-activity__timelines">
           {resolvedSessions.map((s) => {
-            const hasChildren = (s.childSessions && s.childSessions.length > 0) || false;
+            const hasChildren = (s.children && s.children.length > 0) || false;
             const isLoading = loadingIds.has(s.id);
             const canUseFullTimeline = hasChildren;
 

@@ -30,14 +30,16 @@ export interface QaPair {
   answer: string;
 }
 
-export interface ChildSessionSummary {
+export interface AgentChild {
   sessionId: string;
-  role?: string;
-  title?: string;
-  durationMinutes?: number;
-  linesOfCode?: number;
+  role: string;
+  durationMinutes: number;
+  linesOfCode: number;
   date?: string;
 }
+
+/** @deprecated Use AgentChild instead */
+export type ChildSessionSummary = AgentChild;
 
 export interface Session {
   id: string;
@@ -61,12 +63,11 @@ export interface Session {
   turnTimeline?: TurnEvent[];
   toolCalls?: number;
   qaPairs?: QaPair[];
-  childSessions?: Session[];
+  children?: AgentChild[];
   parentSessionId?: string | null;
   agentRole?: string;
   isOrchestrated?: boolean;
   childCount?: number;
-  children?: ChildSessionSummary[];
   cwd?: string;
   quickEnhanced?: boolean;
   source?: string;

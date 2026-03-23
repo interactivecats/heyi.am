@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { AgentTimeline } from './AgentTimeline';
-import type { Session } from '../types';
+import type { Session, AgentChild } from '../types';
 
 function makeSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -23,16 +23,16 @@ function makeChild(
   role: string,
   startOffset: number,
   duration: number,
-): Session {
+): AgentChild {
   const start = new Date('2026-03-20T10:00:00Z');
   start.setMinutes(start.getMinutes() + startOffset);
-  return makeSession({
-    id,
-    agentRole: role,
+  return {
+    sessionId: id,
+    role,
     date: start.toISOString(),
     durationMinutes: duration,
-    parentSessionId: 'ses-100',
-  });
+    linesOfCode: 50,
+  };
 }
 
 describe('AgentTimeline', () => {
@@ -66,7 +66,7 @@ describe('AgentTimeline', () => {
 
   it('multi-agent (3 children): renders fork circles, agent lanes, join circles', () => {
     const session = makeSession({
-      childSessions: [
+      children: [
         makeChild('c1', 'frontend-dev', 5, 12),
         makeChild('c2', 'backend-dev', 5, 18),
         makeChild('c3', 'qa-engineer', 5, 8),
@@ -108,7 +108,7 @@ describe('AgentTimeline', () => {
     // Wave 2: qa at t=25 (after wave 1 ends)
     const session = makeSession({
       durationMinutes: 42,
-      childSessions: [
+      children: [
         makeChild('c1', 'frontend-dev', 3, 15),
         makeChild('c2', 'backend-dev', 3, 18),
         makeChild('c3', 'qa-engineer', 25, 10),
@@ -162,7 +162,7 @@ describe('AgentTimeline', () => {
   it('lane widths are proportional to duration', () => {
     const session = makeSession({
       durationMinutes: 30,
-      childSessions: [
+      children: [
         makeChild('c1', 'frontend-dev', 0, 2),
         makeChild('c2', 'backend-dev', 0, 10),
       ],
@@ -184,7 +184,7 @@ describe('AgentTimeline', () => {
   it('detail labels include start offset', () => {
     const session = makeSession({
       durationMinutes: 30,
-      childSessions: [makeChild('c1', 'frontend-dev', 5, 10)],
+      children: [makeChild('c1', 'frontend-dev', 5, 10)],
     });
     const { container } = render(
       <AgentTimeline session={session} variant="full" />,
@@ -201,7 +201,7 @@ describe('AgentTimeline', () => {
 
   it('unknown agent roles get default gray color', () => {
     const session = makeSession({
-      childSessions: [makeChild('c1', 'custom-agent', 5, 10)],
+      children: [makeChild('c1', 'custom-agent', 5, 10)],
     });
     const { container } = render(
       <AgentTimeline session={session} variant="full" />,
