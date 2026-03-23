@@ -96,6 +96,8 @@ interface SessionStats {
   turns: number;
   skills: string[];
   date: string;
+  /** End time as ISO string (for interval merging of concurrent sessions) */
+  endTime?: string;
 }
 
 // ── Persistent stats cache ────────────────────────────────────
@@ -108,7 +110,7 @@ import { homedir } from 'node:os';
 const STATS_CACHE_PATH = join(homedir(), '.config', 'heyiam', 'stats-cache.json');
 
 // Bump this when parser logic changes to auto-invalidate stale cache entries.
-const STATS_CACHE_VERSION = 6;
+const STATS_CACHE_VERSION = 7;
 
 interface StatsCacheFile {
   version: number;
@@ -171,6 +173,15 @@ export function createApp(sessionsBasePath?: string) {
 
     try {
       const session = await loadSession(meta.path, projectName, meta.sessionId);
+      // Compute end time: prefer endTime, fall back to date + wallClock or duration
+      let endTime = session.endTime;
+      if (!endTime && session.date) {
+        const mins = session.wallClockMinutes ?? session.durationMinutes ?? 0;
+        if (mins > 0) {
+          endTime = new Date(new Date(session.date).getTime() + mins * 60_000).toISOString();
+        }
+      }
+
       const stats: SessionStats = {
         loc: session.linesOfCode ?? 0,
         duration: session.durationMinutes ?? 0,
@@ -178,6 +189,7 @@ export function createApp(sessionsBasePath?: string) {
         turns: session.turns ?? 0,
         skills: session.skills ?? [],
         date: session.date ?? '',
+        endTime,
       };
       statsCache.set(meta.sessionId, stats);
       statsCacheDirty = true;
@@ -187,14 +199,66 @@ export function createApp(sessionsBasePath?: string) {
     }
   }
 
+  /**
+   * Merge overlapping session time intervals to compute real wall-clock developer time.
+   * If two sessions overlap (running concurrently), that time is counted once.
+   * Falls back to simple sum if timestamps are missing.
+   */
+  function mergeSessionIntervals(stats: SessionStats[]): number {
+    // Build [start, end] intervals from sessions that have timestamps
+    const intervals: Array<[number, number]> = [];
+    let fallbackSum = 0;
+
+    for (const st of stats) {
+      if (st.date && st.endTime) {
+        const start = new Date(st.date).getTime();
+        const end = new Date(st.endTime).getTime();
+        if (!isNaN(start) && !isNaN(end) && end > start) {
+          intervals.push([start, end]);
+          continue;
+        }
+      }
+      // No valid interval — add duration to fallback sum
+      fallbackSum += st.duration;
+    }
+
+    if (intervals.length === 0) return fallbackSum;
+
+    // Sort by start time
+    intervals.sort((a, b) => a[0] - b[0]);
+
+    // Merge overlapping intervals
+    let totalMs = 0;
+    let [curStart, curEnd] = intervals[0];
+
+    for (let i = 1; i < intervals.length; i++) {
+      const [start, end] = intervals[i];
+      if (start <= curEnd) {
+        // Overlapping — extend current interval
+        curEnd = Math.max(curEnd, end);
+      } else {
+        // Gap — flush current interval
+        totalMs += curEnd - curStart;
+        curStart = start;
+        curEnd = end;
+      }
+    }
+    totalMs += curEnd - curStart;
+
+    return Math.round(totalMs / 60_000) + fallbackSum;
+  }
+
   async function getProjectWithStats(proj: ProjectInfo) {
     const allStats = await Promise.all(
       proj.sessions.map((m) => getSessionStats(m, proj.name)),
     );
 
     const totalLoc = allStats.reduce((s, st) => s + st.loc, 0);
-    const totalDuration = allStats.reduce((s, st) => s + st.duration, 0);
     const totalFiles = allStats.reduce((s, st) => s + st.files, 0);
+
+    // Compute developer wall-clock time by merging overlapping session intervals.
+    // If sessions overlap (running concurrently), count that time once.
+    const totalDuration = mergeSessionIntervals(allStats);
 
     // Sum agent hours from child sessions (orchestrated sessions only)
     let totalAgentDuration = 0;
