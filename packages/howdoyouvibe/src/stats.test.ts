@@ -423,10 +423,12 @@ describe("computeVibeStats", () => {
     expect(stats.longest_tool_chain).toBe(4);
   });
 
-  it("detects self-corrections (same file edited twice)", () => {
+  it("detects self-corrections (AI admits mistake + re-edits same file)", () => {
     const entries: RawEntry[] = [
       makeEntry("user", "fix the component"),
       makeToolEntry("Edit", { file_path: "comp.tsx", old_string: "a", new_string: "b" }),
+      // AI realizes it made a mistake
+      makeEntry("assistant", "That's not right, let me fix that."),
       makeToolEntry("Edit", { file_path: "comp.tsx", old_string: "b", new_string: "c" }),
       makeEntry("user", "ok"),
     ];
@@ -434,6 +436,21 @@ describe("computeVibeStats", () => {
     const stats = computeVibeStats([makeSession(entries)]);
 
     expect(stats.self_corrections).toBe(1);
+  });
+
+  it("does NOT count normal re-edits as self-corrections", () => {
+    const entries: RawEntry[] = [
+      makeEntry("user", "fix the component"),
+      makeToolEntry("Edit", { file_path: "comp.tsx", old_string: "a", new_string: "b" }),
+      // AI edits same file again but doesn't admit a mistake
+      makeEntry("assistant", "Now I'll add the props."),
+      makeToolEntry("Edit", { file_path: "comp.tsx", old_string: "b", new_string: "c" }),
+      makeEntry("user", "ok"),
+    ];
+
+    const stats = computeVibeStats([makeSession(entries)]);
+
+    expect(stats.self_corrections).toBe(0);
   });
 
   it("computes scope creep count", () => {

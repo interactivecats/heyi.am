@@ -11,4 +11,5 @@ export declare const _patterns: {
     APOLOGY_RE: RegExp;
     SECRET_LEAK_RE: RegExp;
     INTERRUPT_RE: RegExp;
+    AI_ADMISSION_RE: RegExp;
 };

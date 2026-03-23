@@ -55,6 +55,11 @@ const SECRET_LEAK_RE = /(?:sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36}|gho_[a-zA-Z0-
 const INTERRUPT_RE = /\[Request interrupted by user(?:\s+for tool use)?\]/;
 
 /**
+ * AI self-correction signals: the AI realizes it made a mistake.
+ */
+const AI_ADMISSION_RE = /\b(?:let me fix|let me correct|that'?s (?:wrong|not right|incorrect|not correct)|I (?:made a|my) mistake|I should have|oops|that was wrong|actually,? (?:that|this) (?:is|was) wrong|sorry,? (?:that|let me))\b/i;
+
+/**
  * Question detection: trim trailing whitespace then check for `?`
  */
 function endsWithQuestion(text: string): boolean {
@@ -242,6 +247,7 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
 
     // Track files edited per assistant "run" for self-corrections
     const filesEditedInRun = new Set<string>();
+    let aiAdmittedMistakeInRun = false;
 
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
@@ -337,6 +343,7 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
         if (currentToolChain > longestToolChain) longestToolChain = currentToolChain;
         currentToolChain = 0;
         filesEditedInRun.clear();
+        aiAdmittedMistakeInRun = false;
 
         prevEntryHadToolUse = false;
         prevEntryWasAssistant = false;
@@ -347,8 +354,9 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
         currentAutopilot++;
 
         const assistantText = getAssistantText(entry);
-        if (assistantText && APOLOGY_RE.test(assistantText)) {
-          apologies++;
+        if (assistantText) {
+          if (APOLOGY_RE.test(assistantText)) apologies++;
+          if (AI_ADMISSION_RE.test(assistantText)) aiAdmittedMistakeInRun = true;
         }
 
         const toolBlocks = getToolUseBlocks(entry);
@@ -377,11 +385,12 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
             }
           }
 
-          // Self-corrections: same file edited 2+ times in one assistant run
+          // Self-corrections: same file edited again AND there's a signal
+          // the AI knows it messed up (error in tool result, or admission in text)
           if (tool.name === "Edit" || tool.name === "Write") {
             const filePath = typeof tool.input.file_path === "string" ? tool.input.file_path : null;
             if (filePath) {
-              if (filesEditedInRun.has(filePath)) {
+              if (filesEditedInRun.has(filePath) && aiAdmittedMistakeInRun) {
                 selfCorrections++;
               }
               filesEditedInRun.add(filePath);
@@ -484,4 +493,5 @@ export const _patterns = {
   APOLOGY_RE,
   SECRET_LEAK_RE,
   INTERRUPT_RE,
+  AI_ADMISSION_RE,
 };
