@@ -67,9 +67,9 @@ describe("formatTextBlock", () => {
         expect(block).toContain("HOW DO YOU VIBE?");
         expect(block).toContain("The Night Owl who cusses under pressure");
         expect(block).toContain("42%");
-        expect(block).toContain("Your Voice");
-        expect(block).toContain("The AI's Habits");
-        expect(block).toContain("The Back-and-forth");
+        expect(block).toContain("YOUR VOICE");
+        expect(block).toContain("THE AI'S HABITS");
+        expect(block).toContain("THE BACK-AND-FORTH");
         expect(block).toContain("npx howdoyouvibe");
         expect(block).toContain("847 turns");
         // Has box-drawing line
