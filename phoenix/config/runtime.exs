@@ -38,9 +38,15 @@ if config_env() != :test do
 end
 
 # OpenTelemetry — enable OTLP export when endpoint is configured (e.g. Signoz)
-if otel_endpoint = System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") do
-  config :opentelemetry,
-    traces_exporter: {:otlp, endpoint: otel_endpoint}
+if otel_endpoint = System.get_env("OTEL_ENDPOINT") do
+  config :opentelemetry, :resource, service: %{name: "heyi-am"}
+
+  config :opentelemetry, :processors,
+    otel_batch_processor: %{
+      exporter:
+        {:opentelemetry_exporter,
+         %{endpoints: [otel_endpoint]}}
+    }
 end
 
 # GitHub OAuth — required in prod, optional in dev/test
