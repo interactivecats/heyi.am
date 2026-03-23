@@ -87,6 +87,7 @@ defmodule HeyiAmWeb.Router do
     post "/projects/:slug/screenshot-url", ProjectApiController, :screenshot_url
     patch "/projects/:slug/screenshot-key", ProjectApiController, :update_screenshot_key
     post "/sessions", ShareApiController, :create
+    post "/time-stats", TimeStatsApiController, :publish
   end
 
   scope "/api", HeyiAmWeb do

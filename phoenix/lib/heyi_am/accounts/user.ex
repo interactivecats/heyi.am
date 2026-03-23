@@ -21,6 +21,7 @@ defmodule HeyiAm.Accounts.User do
     field :status, :string
     field :portfolio_layout, :string, default: "editorial"
     field :portfolio_accent, :string
+    field :time_stats, :map
 
     timestamps(type: :utc_datetime)
   end

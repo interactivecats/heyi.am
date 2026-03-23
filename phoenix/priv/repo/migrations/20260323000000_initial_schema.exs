@@ -21,6 +21,7 @@ defmodule HeyiAm.Repo.Migrations.InitialSchema do
       add :status, :string
       add :portfolio_layout, :string, default: "editorial"
       add :portfolio_accent, :string
+      add :time_stats, :map
 
       timestamps(type: :utc_datetime)
     end

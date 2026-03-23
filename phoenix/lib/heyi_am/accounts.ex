@@ -379,6 +379,15 @@ defmodule HeyiAm.Accounts do
   end
 
   @doc """
+  Saves published time stats for a user.
+  """
+  def update_user_time_stats(user, time_stats) do
+    user
+    |> Ecto.Changeset.change(%{time_stats: time_stats})
+    |> Repo.update()
+  end
+
+  @doc """
   Returns an `%Ecto.Changeset{}` for changing the username.
   """
   def change_user_username(user, attrs \\ %{}, opts \\ []) do

@@ -4779,3 +4779,56 @@ details[open] > .collapsible__summary .collapsible__chevron {
   font-size: 0.6875rem;
   color: var(--on-surface-variant);
 }
+
+.time-page__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-block-end: var(--spacing-6);
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+}
+
+.time-page__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+}
+
+.time-page__toggle input {
+  accent-color: var(--primary);
+}
+
+.time-page__action-buttons {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.time-page__publish-result {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--success-bg, #dcfce7);
+  color: var(--success-fg, #16a34a);
+  border-radius: var(--radius-sm, 4px);
+  margin-block-end: var(--spacing-6);
+}
+
+.time-page__publish-result a {
+  color: inherit;
+  font-weight: 600;
+}
+
+.time-page__publish-result--error {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.time-page__capture {
+  background: #ffffff;
+  padding: var(--spacing-4);
+}

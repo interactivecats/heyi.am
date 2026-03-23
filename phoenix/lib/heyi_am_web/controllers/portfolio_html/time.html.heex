@@ -76,9 +76,15 @@
         <span style="text-align: right;">Avg Agents</span>
       </div>
       <div :for={p <- @project_stats} style="display: grid; grid-template-columns: 2fr 1fr 0.7fr 0.8fr 0.8fr 0.7fr; gap: var(--spacing-3); padding: var(--spacing-3) var(--spacing-4); border-top: 1px solid var(--outline-variant); align-items: center;">
-        <a href={"/" <> @portfolio_user.username <> "/" <> p.slug} style="font-size: 0.875rem; font-weight: 600; color: var(--on-surface); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-          {p.title}
-        </a>
+        <%= if p.slug do %>
+          <a href={"/" <> @portfolio_user.username <> "/" <> p.slug} style="font-size: 0.875rem; font-weight: 600; color: var(--on-surface); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            {p.title}
+          </a>
+        <% else %>
+          <span style="font-size: 0.875rem; font-weight: 600; color: var(--on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            {p.title}
+          </span>
+        <% end %>
         <span style="text-align: right; font-family: var(--font-mono); font-size: 0.8125rem;">
           {fmt.(p.your_minutes)} / {fmt.(p.agent_minutes)}
         </span>

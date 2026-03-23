@@ -129,10 +129,27 @@ defmodule HeyiAmWeb.PortfolioController do
         |> render(:"404")
 
       user ->
-        projects = Projects.list_user_projects_with_published_shares(user.id)
         display_name = user.display_name || user.username
 
-        project_stats = build_time_stats(projects)
+        # Use published time stats if available, otherwise compute from published projects
+        project_stats = case user.time_stats do
+          %{"projects" => stored} when is_list(stored) and stored != [] ->
+            Enum.map(stored, fn p -> %{
+              title: p["name"],
+              slug: nil,
+              sessions: p["sessions"] || 0,
+              your_minutes: p["your_minutes"] || 0,
+              agent_minutes: p["agent_minutes"] || 0,
+              orchestrated_sessions: p["orchestrated_sessions"] || 0,
+              max_parallel_agents: p["max_parallel_agents"] || 0,
+              avg_agents_per_session: p["avg_agents_per_session"] || 1,
+              unique_roles: p["unique_roles"] || [],
+            } end)
+
+          _ ->
+            projects = Projects.list_user_projects_with_published_shares(user.id)
+            build_time_stats(projects)
+        end
 
         totals = %{
           your_minutes: Enum.sum(Enum.map(project_stats, & &1.your_minutes)),

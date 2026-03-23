@@ -392,6 +392,31 @@ export function createApp(sessionsBasePath?: string) {
     }
   });
 
+  // Proxy publish time stats to Phoenix
+  app.post('/api/publish-time-stats', async (req: Request, res: Response) => {
+    const auth = getAuthToken();
+    if (!auth) {
+      res.status(401).json({ error: 'Authentication required. Run heyiam login first.' });
+      return;
+    }
+
+    try {
+      const phoenixRes = await fetch(`${API_URL}/api/time-stats`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${auth.token}`,
+        },
+        body: JSON.stringify(req.body),
+      });
+
+      const result = await phoenixRes.json();
+      res.status(phoenixRes.status).json(result);
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
   app.get('/api/projects/:project/sessions', async (req: Request, res: Response) => {
     try {
       const { project } = req.params;
