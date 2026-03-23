@@ -111,6 +111,14 @@ defmodule HeyiAmWeb.PortfolioControllerTest do
       assert html_response(conn, 404)
     end
 
+    test "includes favicon link tags", %{conn: conn} do
+      conn = get(conn, ~p"/alice")
+      html = html_response(conn, 200)
+      assert html =~ ~s(rel="icon" type="image/svg+xml")
+      assert html =~ "favicon.svg"
+      assert html =~ ~s(rel="apple-touch-icon")
+    end
+
     test "includes OG meta tags for portfolio", %{conn: conn} do
       conn = get(conn, ~p"/alice")
       html = html_response(conn, 200)
@@ -118,7 +126,9 @@ defmodule HeyiAmWeb.PortfolioControllerTest do
       assert html =~ ~s(og:description" content="I build things")
       assert html =~ ~s(og:type" content="profile")
       assert html =~ ~s(og:url" content=")
-      assert html =~ ~s(twitter:card" content="summary")
+      assert html =~ ~s(twitter:card" content="summary_large_image")
+      assert html =~ ~s(og:image)
+      assert html =~ "og-default.png"
     end
 
     test "includes OG meta tags for project page", %{conn: conn} do
@@ -127,7 +137,8 @@ defmodule HeyiAmWeb.PortfolioControllerTest do
       assert html =~ ~s(og:title" content="heyi.am — Alice Builder")
       assert html =~ ~s(og:description)
       assert html =~ ~s(og:url" content=")
-      assert html =~ ~s(twitter:card" content="summary")
+      assert html =~ ~s(twitter:card" content="summary_large_image")
+      assert html =~ ~s(og:image)
     end
   end
 

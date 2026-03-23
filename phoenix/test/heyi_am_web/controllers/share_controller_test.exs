@@ -57,7 +57,7 @@ defmodule HeyiAmWeb.ShareControllerTest do
       # S3 session.json data (served by mock, normalized from camelCase)
       assert html =~ "qa-pair"
       assert html =~ "Why tear out auth entirely?"
-      assert html =~ "exec-path"
+      assert html =~ "case-study-exec-path"
       assert html =~ "Review auth flow"
       assert html =~ "Pivot"
       assert html =~ "Win"
@@ -88,7 +88,8 @@ defmodule HeyiAmWeb.ShareControllerTest do
       assert html =~ ~s(og:title" content="Rebuilding the auth system — Test Developer")
       assert html =~ ~s(og:description)
       assert html =~ ~s(og:url" content=")
-      assert html =~ ~s(twitter:card" content="summary")
+      assert html =~ ~s(twitter:card" content="summary_large_image")
+      assert html =~ ~s(og:image)
     end
 
     test "includes create-yours CTA", %{conn: conn} do
@@ -104,7 +105,7 @@ defmodule HeyiAmWeb.ShareControllerTest do
     test "renders editorial layout", %{conn: conn} do
       conn = get(conn, ~p"/s/real-token-123")
       html = html_response(conn, 200)
-      assert html =~ "Editorial Documentation"
+      assert html =~ "case-study-breadcrumb"
       assert html =~ "case-study-layout"
     end
   end
