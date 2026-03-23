@@ -137,6 +137,29 @@ defmodule HeyiAmWeb.VibeController do
     end
   end
 
+  def delete(conn, %{"short_id" => short_id} = params) do
+    code = params["code"] || ""
+
+    case Vibes.delete_vibe(short_id, code) do
+      {:ok, _vibe} ->
+        conn
+        |> put_flash(:info, "Vibe deleted.")
+        |> redirect(to: ~p"/v")
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(HeyiAmWeb.ErrorHTML)
+        |> render(:"404")
+
+      {:error, :invalid_code} ->
+        conn
+        |> put_status(:forbidden)
+        |> put_view(HeyiAmWeb.ErrorHTML)
+        |> render(:"404")
+    end
+  end
+
   defp build_headline(name, nil), do: name
   defp build_headline(name, modifier), do: "#{name} #{modifier}"
 

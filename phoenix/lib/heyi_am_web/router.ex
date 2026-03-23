@@ -130,6 +130,7 @@ defmodule HeyiAmWeb.Router do
     # archetypes/:id MUST come before /:short_id to avoid catching "archetypes" as a short_id
     get "/archetypes/:id", VibeController, :archetype
     get "/:short_id/card.png", VibeController, :card_image
+    delete "/:short_id", VibeController, :delete
     get "/:short_id", VibeController, :show
   end
 

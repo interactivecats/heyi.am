@@ -9,6 +9,7 @@ interface ShareResponse {
   url: string;
   short_id: string;
   card_url: string;
+  delete_url: string;
 }
 
 /**

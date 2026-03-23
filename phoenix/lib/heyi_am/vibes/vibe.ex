@@ -4,6 +4,7 @@ defmodule HeyiAm.Vibes.Vibe do
 
   schema "vibes" do
     field :short_id, :string
+    field :delete_code, :string
     field :archetype_id, :string
     field :modifier_id, :string
     field :narrative, :string
@@ -15,7 +16,7 @@ defmodule HeyiAm.Vibes.Vibe do
     timestamps(type: :utc_datetime)
   end
 
-  @required ~w(short_id archetype_id narrative stats session_count total_turns)a
+  @required ~w(short_id delete_code archetype_id narrative stats session_count total_turns)a
   @optional ~w(modifier_id sources)a
 
   def changeset(vibe, attrs) do

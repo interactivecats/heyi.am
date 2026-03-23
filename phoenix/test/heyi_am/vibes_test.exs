@@ -8,26 +8,26 @@ defmodule HeyiAm.VibesTest do
 
   describe "Vibe.changeset/2" do
     test "valid with all required fields" do
-      changeset = Vibe.changeset(%Vibe{}, valid_vibe_attributes(%{"short_id" => "abc1234"}))
+      changeset = Vibe.changeset(%Vibe{}, valid_vibe_attributes(%{"short_id" => "abc1234", "delete_code" => "testcode123"}))
       assert changeset.valid?
     end
 
     test "requires archetype_id" do
-      attrs = valid_vibe_attributes(%{"short_id" => "abc1234"}) |> Map.delete("archetype_id")
+      attrs = valid_vibe_attributes(%{"short_id" => "abc1234", "delete_code" => "testcode123"}) |> Map.delete("archetype_id")
       changeset = Vibe.changeset(%Vibe{}, attrs)
       refute changeset.valid?
       assert %{archetype_id: ["can't be blank"]} = errors_on(changeset)
     end
 
     test "requires narrative" do
-      attrs = valid_vibe_attributes(%{"short_id" => "abc1234"}) |> Map.delete("narrative")
+      attrs = valid_vibe_attributes(%{"short_id" => "abc1234", "delete_code" => "testcode123"}) |> Map.delete("narrative")
       changeset = Vibe.changeset(%Vibe{}, attrs)
       refute changeset.valid?
       assert %{narrative: ["can't be blank"]} = errors_on(changeset)
     end
 
     test "requires stats" do
-      attrs = valid_vibe_attributes(%{"short_id" => "abc1234"}) |> Map.delete("stats")
+      attrs = valid_vibe_attributes(%{"short_id" => "abc1234", "delete_code" => "testcode123"}) |> Map.delete("stats")
       changeset = Vibe.changeset(%Vibe{}, attrs)
       refute changeset.valid?
       assert %{stats: ["can't be blank"]} = errors_on(changeset)

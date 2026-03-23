@@ -38,7 +38,8 @@ defmodule HeyiAmWeb.VibeApiController do
         |> json(%{
           url: "#{base_url}/v/#{vibe.short_id}",
           short_id: vibe.short_id,
-          card_url: "#{base_url}/v/#{vibe.short_id}/card.png"
+          card_url: "#{base_url}/v/#{vibe.short_id}/card.png",
+          delete_url: "#{base_url}/v/#{vibe.short_id}?code=#{vibe.delete_code}"
         })
 
       {:error, changeset} ->

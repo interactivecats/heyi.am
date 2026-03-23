@@ -9,14 +9,21 @@
   <div class="case-study-layout">
     <%!-- Main Column --%>
     <div class="case-study-main">
-      <%!-- Header: chip + session ID + title --%>
-      <div class="case-study-header">
-        <div class="case-study-meta" style="margin-block-end: var(--spacing-4);">
-          <span class="chip chip--primary">Editorial Documentation</span>
-          <span class="label-mono">ID: {@session.token}</span>
-        </div>
-        <h1 class="case-study-title">{@session.title}</h1>
+      <%!-- Breadcrumb --%>
+      <div class="case-study-breadcrumb">
+        <a href={"/" <> @session.user.username} class="case-study-breadcrumb-link">{@session.user.display_name}</a>
+        <span class="case-study-breadcrumb-sep">/</span>
+        <%= if assigns[:breadcrumb] do %>
+          <a href={"/" <> @breadcrumb.username <> "/" <> @breadcrumb.project_slug} class="case-study-breadcrumb-link">{@session.project.title}</a>
+        <% else %>
+          <span>{@session.project.title}</span>
+        <% end %>
+        <span class="case-study-breadcrumb-sep">/</span>
+        <span>{@session.title}</span>
       </div>
+
+      <%!-- Title --%>
+      <h1 class="case-study-title">{@session.title}</h1>
 
       <%!-- Stats Grid --%>
       <%
@@ -25,7 +32,6 @@
             Enum.sum(Enum.map(agents, fn a -> a["duration_minutes"] || 0 end))
           _ -> 0
         end
-        # Agent time = session duration (primary agent) + child agent time
         total_agent_mins = (@session.duration_minutes || 0) + agent_mins
         has_agents = agent_mins > 0
       %>
@@ -50,23 +56,33 @@
         </div>
       </div>
 
-      <%!-- Context / Problem Statement --%>
-      <section :if={@session.context && @session.context != ""} class="case-study-context" style="margin-block-end: var(--spacing-5);">
-        <span class="label-mono" style="display: block; margin-block-end: var(--spacing-2);">Context</span>
-        <p style="font-size: 0.9375rem; color: var(--on-surface-variant); line-height: 1.6; margin: 0;">{@session.context}</p>
+      <%!-- Agent Activity / Work Timeline (in main column, like CLI) --%>
+      <section :if={has_agents} class="case-study-section">
+        <span class="case-study-section-label">Agent Activity</span>
+        <div
+          data-work-timeline-session
+          data-token={@session.token}
+          style="min-height: 80px; display: flex; align-items: center; justify-content: center;"
+        >
+          <span class="label-mono" style="color: var(--on-surface-variant);">Loading timeline…</span>
+        </div>
       </section>
 
       <%!-- Developer Take --%>
-      <section class="dev-take">
-        <h3 class="dev-take-heading">
-          The Developer Take
-        </h3>
-        <p class="dev-take-body">{@session.dev_take}</p>
+      <section :if={@session.dev_take && @session.dev_take != ""} class="case-study-section">
+        <span class="case-study-section-label">Developer Take</span>
+        <blockquote class="case-study-take">{@session.dev_take}</blockquote>
+      </section>
+
+      <%!-- Context / Problem Statement --%>
+      <section :if={@session.context && @session.context != ""} class="case-study-section">
+        <span class="case-study-section-label">Context</span>
+        <p class="case-study-context">{@session.context}</p>
       </section>
 
       <%!-- Applied Skills --%>
-      <section>
-        <span class="label-mono" style="display: block; margin-block-end: var(--spacing-3);">Applied Skills</span>
+      <section :if={@session.skills != []}>
+        <span class="case-study-section-label">Applied Skills</span>
         <div class="skills-row">
           <span :for={skill <- @session.skills} class="skill-chip">{skill}</span>
         </div>
@@ -74,27 +90,29 @@
 
       <%!-- Session Q&A (only show pairs that have an answer) --%>
       <% answered_pairs = Enum.filter(@session.qa_pairs, & &1["answer"] && &1["answer"] != "") %>
-      <section :if={answered_pairs != []}>
-        <span class="label-mono" style="display: block; margin-block-end: var(--spacing-4);">Session Questions</span>
+      <section :if={answered_pairs != []} class="case-study-section">
+        <span class="case-study-section-label">Session Questions</span>
         <div :for={qa <- answered_pairs} class="qa-pair">
           <div class="question">{qa["question"]}</div>
           <div class="answer">{qa["answer"]}</div>
         </div>
       </section>
 
-      <%!-- Execution Path (in main column) --%>
-      <section :if={@session.beats != []}>
-        <span class="label-mono" style="display: block; margin-block-end: var(--spacing-4);">Execution Path</span>
-        <div class="exec-path">
-          <div :for={{beat, idx} <- Enum.with_index(@session.beats)} class="exec-path-step">
-            <div class="exec-path-spine">
-              <div class="exec-path-number">{String.pad_leading(to_string(idx + 1), 2, "0")}</div>
-              <div :if={idx < length(@session.beats) - 1} class="exec-path-line"></div>
-            </div>
-            <div class="exec-path-content">
-              <div class="exec-path-title" style="font-size: 0.875rem;">{beat["label"]}</div>
-              <div :if={beat["description"]} class="exec-path-desc" style="font-size: 0.8125rem;">{beat["description"]}</div>
-            </div>
+      <%!-- Highlights (in main column as horizontal scroll cards, like CLI) --%>
+      <section :if={@session.highlights != []} class="case-study-section">
+        <span class="case-study-section-label">Highlights</span>
+        <div class="case-study-highlights">
+          <div :for={hl <- @session.highlights} class="case-study-highlight-card">
+            <span class={[
+              "case-study-highlight-step",
+              hl["type"] == "pivot" && "case-study-highlight-step--pivot",
+              hl["type"] == "win" && "case-study-highlight-step--win",
+              hl["type"] == "insight" && "case-study-highlight-step--insight"
+            ]}>
+              {String.capitalize(hl["type"] || "highlight")}
+            </span>
+            <div class="case-study-highlight-title">{hl["title"]}</div>
+            <div class="case-study-highlight-desc">{hl["description"]}</div>
           </div>
         </div>
       </section>
@@ -102,34 +120,25 @@
 
     <%!-- Sidebar --%>
     <aside class="case-study-sidebar">
-      <%!-- Source Info --%>
-      <div class="sidebar-card">
-        <span class="sidebar-card-label">Source</span>
-        <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); line-height: 2;">
-          <div>Source: {String.capitalize(@session.source_tool || "claude")} Code</div>
-          <div>Date: {if @session.recorded_at, do: Calendar.strftime(@session.recorded_at, "%b %d, %Y"), else: "—"}</div>
-          <div>
-            Author:
-            <%= if @session.user.username != "anonymous" do %>
-              <a href={"/" <> @session.user.username} style="color: var(--primary); text-decoration: none;">
-                {@session.user.display_name}
-              </a>
-            <% else %>
-              <span style="color: var(--on-surface-variant);">{@session.user.display_name}</span>
-            <% end %>
+      <%!-- Execution Path (moved to sidebar, like CLI) --%>
+      <div :if={@session.beats != []} class="sidebar-card">
+        <span class="sidebar-card-label">Execution Path</span>
+        <div class="case-study-exec-path">
+          <div :for={{beat, _idx} <- Enum.with_index(@session.beats)} class="case-study-exec-step">
+            <div class="case-study-exec-dot"></div>
+            <div class="case-study-exec-content">
+              <div class="case-study-exec-title">{beat["label"]}</div>
+              <div :if={beat["description"]} class="case-study-exec-desc">{beat["description"]}</div>
+            </div>
           </div>
-        </div>
-        <div :if={@session.verified_at} class="sealed-badge" style="margin-block-start: var(--spacing-2);">
-          <span class="sealed-badge-icon">&#10003;</span>
-          <span class="sealed-badge-text">Verified {Calendar.strftime(@session.verified_at, "%b %d, %Y")}</span>
         </div>
       </div>
 
-      <%!-- Raw Log Preview — never taller than execution path --%>
-      <% preview_lines = Enum.take(@session.transcript_excerpt, 10) %>
+      <%!-- Raw Log Preview (4 lines like CLI, not 10) --%>
+      <% preview_lines = Enum.take(@session.transcript_excerpt, 4) %>
       <div :if={preview_lines != []} class="terminal session-log-preview">
         <div class="terminal-header">
-          <span style="font-size: 0.625rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.4);">Raw Log Preview</span>
+          <span style="font-size: 0.625rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.4);">Raw Log</span>
         </div>
         <div :for={line <- preview_lines} class="terminal-line">
           <span :if={to_string(line["role"]) == "dev"} class="terminal-prompt">&gt; </span>
@@ -142,40 +151,64 @@
           </a>
         </div>
       </div>
+
+      <%!-- Source Info --%>
+      <div class="sidebar-card">
+        <span class="sidebar-card-label">Source Info</span>
+        <div class="case-study-source-list">
+          <div class="case-study-source-row">
+            <span class="case-study-source-key">Source</span>
+            <span class="case-study-source-val">{String.capitalize(@session.source_tool || "claude")} Code</span>
+          </div>
+          <div class="case-study-source-row">
+            <span class="case-study-source-key">Date</span>
+            <span class="case-study-source-val">{if @session.recorded_at, do: Calendar.strftime(@session.recorded_at, "%b %d, %Y"), else: "—"}</span>
+          </div>
+          <div class="case-study-source-row">
+            <span class="case-study-source-key">Author</span>
+            <span class="case-study-source-val">
+              <%= if @session.user.username != "anonymous" do %>
+                <a href={"/" <> @session.user.username} style="color: var(--primary); text-decoration: none;">
+                  {@session.user.display_name}
+                </a>
+              <% else %>
+                <span>{@session.user.display_name}</span>
+              <% end %>
+            </span>
+          </div>
+          <div :if={@session.verified_at} class="case-study-source-row">
+            <span class="case-study-source-key">Verified</span>
+            <span class="case-study-source-val">{Calendar.strftime(@session.verified_at, "%b %d, %Y")}</span>
+          </div>
+          <%= if has_agents do %>
+            <div class="case-study-source-row">
+              <span class="case-study-source-key">Type</span>
+              <span class="case-study-source-val">
+                <% agent_count = case @session.agent_summary do
+                  %{"agents" => agents} when is_list(agents) -> length(agents)
+                  _ -> 0
+                end %>
+                Orchestrated ({agent_count} agents)
+              </span>
+            </div>
+          <% end %>
+        </div>
+      </div>
     </aside>
   </div>
 
   <%!-- Full-width sections below the 2-column layout --%>
   <div class="case-study-below" style="max-width: var(--content-max-width); margin-inline: auto; padding: 0 var(--spacing-8) var(--spacing-8);">
 
-    <%!-- Work Timeline (React island) --%>
-    <section style="margin-block-end: var(--spacing-6);">
-      <span class="label-mono" style="display: block; margin-block-end: var(--spacing-3);">Work Timeline</span>
+    <%!-- Work Timeline for non-agent sessions (still show if available) --%>
+    <section :if={!has_agents} style="margin-block-end: var(--spacing-6);">
+      <span class="case-study-section-label">Work Timeline</span>
       <div
         data-work-timeline-session
         data-token={@session.token}
         style="min-height: 80px; display: flex; align-items: center; justify-content: center;"
       >
         <span class="label-mono" style="color: var(--on-surface-variant);">Loading timeline…</span>
-      </div>
-    </section>
-
-    <%!-- Highlights --%>
-    <section :if={@session.highlights != []} style="margin-block-end: var(--spacing-6);">
-      <span class="label-mono" style="display: block; margin-block-end: var(--spacing-3);">Highlights</span>
-      <div class="highlights-row">
-        <div :for={hl <- @session.highlights} class="highlight-card" style="flex-direction: column; align-items: flex-start;">
-          <span class={[
-            "chip",
-            hl["type"] == "pivot" && "chip--primary",
-            hl["type"] == "win" && "chip--secondary",
-            hl["type"] == "insight" && "chip--tertiary"
-          ]} style="margin-block-end: var(--spacing-2);">
-            {String.capitalize(hl["type"])}
-          </span>
-          <div style="font-weight: 600; font-size: 0.875rem; margin-block-end: 2px;">{hl["title"]}</div>
-          <div style="font-size: 0.8125rem; color: var(--on-surface-variant);">{hl["description"]}</div>
-        </div>
       </div>
     </section>
 
@@ -189,7 +222,7 @@
         <div :for={tool <- @session.tool_breakdown} style="display: flex; align-items: center; gap: var(--spacing-3); margin-block-end: var(--spacing-2);">
           <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--on-surface-variant); width: 7rem; text-align: end; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{tool["name"]}</span>
           <div style="flex: 1; height: 6px; background: var(--surface-container-low); border-radius: 3px; overflow: hidden;">
-            <div style={"width: #{round((tool["count"] || 0) / max_count * 100)}%; height: 100%; background: var(--primary); border-radius: 3px;"}></div>
+            <div style={"width: #{max(8, round((tool["count"] || 0) / max_count * 100))}%; height: 100%; background: var(--primary); border-radius: 3px;"}></div>
           </div>
           <span style="font-family: var(--font-mono); font-size: 0.75rem; width: 2rem;">{tool["count"]}</span>
         </div>

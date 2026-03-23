@@ -86,6 +86,7 @@ if (process.stdin.isTTY) {
             console.log(" done!\n");
             console.log(`  ${result.url}`);
             console.log(`  Download card: ${result.card_url}`);
+            console.log(`  Delete your vibe: ${result.delete_url}`);
             openUrl(result.url);
         }
         else {

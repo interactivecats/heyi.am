@@ -9,10 +9,23 @@ defmodule HeyiAm.Vibes do
 
   def create_vibe(attrs) do
     short_id = generate_short_id()
+    delete_code = generate_delete_code()
 
     %Vibe{}
-    |> Vibe.changeset(Map.put(attrs, "short_id", short_id))
+    |> Vibe.changeset(attrs |> Map.put("short_id", short_id) |> Map.put("delete_code", delete_code))
     |> Repo.insert()
+  end
+
+  def delete_vibe(short_id, code) do
+    case get_vibe_by_short_id(short_id) do
+      nil -> {:error, :not_found}
+      vibe ->
+        if Plug.Crypto.secure_compare(vibe.delete_code, code) do
+          Repo.delete(vibe)
+        else
+          {:error, :invalid_code}
+        end
+    end
   end
 
   def get_vibe_by_short_id(short_id) do
@@ -48,6 +61,10 @@ defmodule HeyiAm.Vibes do
     |> select([v], {v.archetype_id, count(v.id)})
     |> order_by([v], desc: count(v.id))
     |> Repo.all()
+  end
+
+  defp generate_delete_code do
+    :crypto.strong_rand_bytes(16) |> Base.url_encode64(padding: false)
   end
 
   defp generate_short_id do

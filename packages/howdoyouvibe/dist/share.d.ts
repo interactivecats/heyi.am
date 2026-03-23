@@ -4,6 +4,7 @@ interface ShareResponse {
     url: string;
     short_id: string;
     card_url: string;
+    delete_url: string;
 }
 /**
  * POST computed vibe stats to the server. Returns share URLs on success.
