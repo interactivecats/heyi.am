@@ -366,9 +366,12 @@ export function computeVibeStats(sessions) {
                             }
                         }
                     }
-                    // Plan mode and agent spawns
-                    if (tool.name === "EnterPlanMode")
+                    // Plan mode (count ExitPlanMode — more reliable than EnterPlanMode
+                    // because plan mode can be entered via /plan command without a tool call,
+                    // but always exits via ExitPlanMode tool)
+                    if (tool.name === "ExitPlanMode")
                         planModeUses++;
+                    // Agent spawns
                     if (tool.name === "Agent")
                         agentSpawns++;
                     // Self-corrections: same file edited again AND there's a signal
