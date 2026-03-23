@@ -2,7 +2,7 @@
 import { listSessions, parseSession } from "./parsers/index.js";
 import { computeVibeStats } from "./stats.js";
 import { matchArchetype } from "./archetypes.js";
-import { fetchNarrative } from "./narrative.js";
+import { fetchNarrative, templateNarrative } from "./narrative.js";
 import { renderCard, formatTextBlock, copyToClipboard, promptYesNo } from "./render.js";
 import { shareVibe } from "./share.js";
 import { execFile } from "node:child_process";
@@ -22,7 +22,8 @@ async function discoverAndParse() {
     }
     // Filter to non-subagent sessions only
     const topLevel = metas.filter((m) => !m.isSubagent);
-    console.log(`  Scanning ${topLevel.length} sessions...`);
+    console.log("  Scanning local AI sessions: ~/.claude, ~/.cursor, ~/.codex, ~/.gemini");
+    console.log(`  Found ${topLevel.length} sessions...`);
     const sessions = [];
     let skipped = 0;
     for (const meta of topLevel) {
@@ -50,7 +51,24 @@ if (sessions.length === 0) {
 }
 const stats = computeVibeStats(sessions);
 const match = matchArchetype(stats);
-const narrative = await fetchNarrative(stats, match);
+// Privacy consent — ask before any network call
+let cloudConsent = false;
+if (process.stdin.isTTY) {
+    console.log("");
+    console.log("  To generate your narrative, we send computed stats (numbers");
+    console.log("  only) to howdoyouvibe.com. No session text, no file paths,");
+    console.log("  no project names. Stats are processed in memory and not");
+    console.log("  stored unless you choose to share. Shared vibes are public.");
+    console.log("  Privacy: howdoyouvibe.com/privacy");
+    console.log("");
+    cloudConsent = await promptYesNo("  Send stats to generate narrative?");
+    if (!cloudConsent) {
+        console.log("  No problem — running fully local.\n");
+    }
+}
+const narrative = cloudConsent
+    ? await fetchNarrative(stats, match)
+    : templateNarrative(stats, match);
 renderCard(stats, match, narrative);
 // Interactive share flow (skip if not a TTY, e.g. piped output)
 if (process.stdin.isTTY) {
@@ -60,7 +78,7 @@ if (process.stdin.isTTY) {
         const ok = copyToClipboard(text);
         console.log(ok ? "  Copied!" : "  Couldn't copy — clipboard not available.");
     }
-    const wantsShare = await promptYesNo("  Share online?");
+    const wantsShare = cloudConsent && await promptYesNo("  Share online?");
     if (wantsShare) {
         process.stdout.write("  Sharing...");
         const result = await shareVibe(stats, match, narrative);
@@ -75,6 +93,11 @@ if (process.stdin.isTTY) {
         }
     }
     console.log("\n  See your full session-by-session breakdown:");
-    console.log("    npx heyiam\n");
+    console.log("    npx heyiam");
+    console.log("");
+    console.log("  This is a personality quiz, not a performance review.");
+    console.log("  Stats are approximate, based on incomplete data, and");
+    console.log("  should not be used for hiring, evaluation, or any");
+    console.log("  employment decision. Have fun with it.\n");
 }
 //# sourceMappingURL=index.js.map
