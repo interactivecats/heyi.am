@@ -402,6 +402,49 @@ describe("bridgeToAnalyzer - cleanAssistantText integration", () => {
     expect(result.turns[0].content).toBe("Here is my answer");
   });
 
+  it("strips tags from session title", () => {
+    const parsed = makeParserOutput({
+      raw_entries: [
+        makeEntry({
+          type: "user",
+          message: { role: "user", content: '<teammate-message teammate_id="team-lead">task details</teammate-message>Fix the auth bug' },
+        }),
+      ],
+    });
+    const result = bridgeToAnalyzer(parsed, { sessionId: "x", projectName: "p" });
+    expect(result.title).toBe("Fix the auth bug");
+  });
+
+  it("skips user prompts that are only internal tags", () => {
+    const parsed = makeParserOutput({
+      raw_entries: [
+        makeEntry({
+          type: "user",
+          message: { role: "user", content: '<teammate-message teammate_id="team-lead">coordination only</teammate-message>' },
+        }),
+        makeEntry({
+          type: "user",
+          message: { role: "user", content: "Real prompt" },
+        }),
+      ],
+    });
+    const result = bridgeToAnalyzer(parsed, { sessionId: "x", projectName: "p" });
+    expect(result.title).toBe("Real prompt");
+  });
+
+  it("cleans tags from user prompt turns", () => {
+    const parsed = makeParserOutput({
+      raw_entries: [
+        makeEntry({
+          type: "user",
+          message: { role: "user", content: '<teammate-message teammate_id="lead">info</teammate-message>Do the thing' },
+        }),
+      ],
+    });
+    const result = bridgeToAnalyzer(parsed, { sessionId: "x", projectName: "p" });
+    expect(result.turns[0].content).toBe("Do the thing");
+  });
+
   it("skips turns that become empty after cleaning", () => {
     const parsed = makeParserOutput({
       raw_entries: [

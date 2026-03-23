@@ -101,10 +101,12 @@ function entriesToTurns(entries: RawEntry[], cwd?: string): ParsedTurn[] {
     if (entry.type === "user") {
       const content = entry.message?.content;
       if (typeof content === "string") {
+        const cleaned = cleanAssistantText(content);
+        if (!cleaned) continue;
         turns.push({
           timestamp: entry.timestamp,
           type: "prompt",
-          content,
+          content: cleaned,
         });
       }
       // tool_result user entries are skipped — they're plumbing, not meaningful turns
@@ -215,9 +217,11 @@ function extractTitle(entries: RawEntry[]): string {
   for (const entry of entries) {
     if (entry.type === "user") {
       const content = entry.message?.content;
-      if (typeof content === "string" && content.trim().length > 0) {
-        const title = content.trim();
-        return title.length > 120 ? title.slice(0, 117) + "..." : title;
+      if (typeof content === "string") {
+        const cleaned = cleanAssistantText(content);
+        if (cleaned.length > 0) {
+          return cleaned.length > 120 ? cleaned.slice(0, 117) + "..." : cleaned;
+        }
       }
     }
   }
@@ -230,7 +234,8 @@ function extractRawLog(entries: RawEntry[], cwd?: string): string[] {
     if (entry.type === "user") {
       const content = entry.message?.content;
       if (typeof content === "string") {
-        log.push(`> ${content}`);
+        const cleaned = cleanAssistantText(content);
+        if (cleaned) log.push(`> ${cleaned}`);
       }
     } else if (entry.type === "assistant") {
       const blocks = getContentBlocks(entry);
