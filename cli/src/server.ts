@@ -1741,6 +1741,7 @@ export function createApp(sessionsBasePath?: string) {
     PREVIEW — this is how your project will appear on heyi.am
   </div>
   ${bodyHtml}
+  <script src="/heyiam-mount.js"></script>
 </body>
 </html>`;
 
@@ -1748,6 +1749,17 @@ export function createApp(sessionsBasePath?: string) {
     } catch (err) {
       console.error('[preview] Error:', (err as Error).message);
       res.status(500).send('Preview rendering failed');
+    }
+  });
+
+  // Serve @heyiam/ui mount script for preview pages
+  app.get('/heyiam-mount.js', (_req: Request, res: Response) => {
+    const mountPath = path.resolve(__dirname, '..', '..', 'packages', 'ui', 'dist', 'mount.js');
+    try {
+      const js = readFileSync(mountPath, 'utf-8');
+      res.type('application/javascript').send(js);
+    } catch {
+      res.status(404).send('// mount.js not built — run: cd packages/ui && npm run build');
     }
   });
 

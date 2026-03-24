@@ -258,12 +258,18 @@ export function ProjectPage({ data }: { data: ProjectRenderData }) {
         </div>
       </div>
 
-      {/* Work Timeline mount point — JS from @heyiam/ui will hydrate this */}
+      {/* Work Timeline mount point — JS from @heyiam/ui reads data-sessions and renders */}
       <div className="project-preview__timeline-heading">WORK TIMELINE</div>
       <div
         data-work-timeline
-        data-username={user.username}
-        data-project-slug={project.slug}
+        data-sessions={JSON.stringify(sessions.map((s) => ({
+          id: s.token, title: s.title, date: s.recordedAt,
+          durationMinutes: s.durationMinutes, turns: s.turns,
+          linesOfCode: s.locChanged, status: 'enhanced' as const,
+          projectName: project.title, rawLog: [],
+          skills: s.skills, source: s.sourceTool,
+          filesChanged: s.filesChanged,
+        })))}
       />
 
       {/* Project Timeline */}
@@ -279,19 +285,18 @@ export function ProjectPage({ data }: { data: ProjectRenderData }) {
         </>
       )}
 
-      {/* Growth Chart mount point — JS from @heyiam/ui will hydrate this */}
+      {/* Growth Chart mount point — JS from @heyiam/ui reads data-sessions and renders */}
       <div className="project-preview__timeline-heading">PROJECT GROWTH</div>
       <div
         data-growth-chart
-        data-username={user.username}
-        data-project-slug={project.slug}
-      />
-
-      {/* Directory Heatmap mount point */}
-      <div
-        data-directory-heatmap
-        data-username={user.username}
-        data-project-slug={project.slug}
+        data-total-loc={project.totalLoc}
+        data-total-files={project.totalFilesChanged}
+        data-sessions={JSON.stringify(sessions.map((s) => ({
+          id: s.token, title: s.title, date: s.recordedAt,
+          durationMinutes: s.durationMinutes, turns: s.turns,
+          linesOfCode: s.locChanged, status: 'enhanced' as const,
+          projectName: project.title, rawLog: [],
+        })))}
       />
 
       {/* Session cards */}

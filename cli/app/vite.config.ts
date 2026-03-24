@@ -9,6 +9,7 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:17845',
       '/preview': 'http://localhost:17845',
+      '/heyiam-mount.js': 'http://localhost:17845',
     },
   },
   test: {
