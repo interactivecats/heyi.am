@@ -26,6 +26,8 @@ defmodule HeyiAm.Projects.Project do
   end
 
   def changeset(project, attrs) do
+    attrs = sanitize_html(attrs)
+
     project
     |> cast(attrs, [
       :slug, :title, :narrative, :repo_url, :project_url, :screenshot_key,
@@ -39,4 +41,12 @@ defmodule HeyiAm.Projects.Project do
     |> unique_constraint([:user_id, :slug])
     |> foreign_key_constraint(:user_id)
   end
+
+  defp sanitize_html(%{"rendered_html" => html} = attrs) when is_binary(html) do
+    Map.put(attrs, "rendered_html", HeyiAm.HtmlSanitizer.sanitize(html))
+  end
+  defp sanitize_html(%{rendered_html: html} = attrs) when is_binary(html) do
+    Map.put(attrs, :rendered_html, HeyiAm.HtmlSanitizer.sanitize(html))
+  end
+  defp sanitize_html(attrs), do: attrs
 end

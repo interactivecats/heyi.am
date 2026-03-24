@@ -3,7 +3,7 @@ defmodule HeyiAmAppWeb.TimeStatsApiController do
 
   alias HeyiAm.Accounts
 
-  def publish(conn, %{"time_stats" => stats_params}) do
+  def upload(conn, %{"time_stats" => stats_params}) do
     user_id = conn.assigns[:current_user_id]
 
     if is_nil(user_id) do
@@ -17,7 +17,7 @@ defmodule HeyiAmAppWeb.TimeStatsApiController do
         "anonymized" => stats_params["anonymized"] || false,
         "projects" => sanitize_projects(stats_params["projects"] || [], stats_params["anonymized"]),
         "totals" => stats_params["totals"] || %{},
-        "published_at" => DateTime.utc_now() |> DateTime.to_iso8601()
+        "uploaded_at" => DateTime.utc_now() |> DateTime.to_iso8601()
       }
 
       case Accounts.update_user_time_stats(user, time_stats) do

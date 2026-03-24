@@ -1,6 +1,8 @@
 defmodule HeyiAmAppWeb.ShareApiController do
   use HeyiAmAppWeb, :controller
 
+  require Logger
+
   alias HeyiAm.Shares
   alias HeyiAm.Shares.Share
   alias HeyiAm.Projects
@@ -73,6 +75,15 @@ defmodule HeyiAmAppWeb.ShareApiController do
 
       case result do
         {:ok, share} ->
+          # Save rendered_html via separate changeset (XSS defense: changeset separation)
+          if is_binary(attrs["rendered_html"]) and attrs["rendered_html"] != "" do
+            case Shares.update_share_rendered_html(share, %{"rendered_html" => attrs["rendered_html"]}) do
+              {:ok, _} -> :ok
+              {:error, reason} ->
+                Logger.warning("Failed to save rendered_html for share #{share.token}: #{inspect(reason)}")
+            end
+          end
+
           actual_token = share.token
           actual_raw_key = share.raw_storage_key || "sessions/#{actual_token}/raw.jsonl"
           actual_log_key = share.log_storage_key || "sessions/#{actual_token}/log.json"

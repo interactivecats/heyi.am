@@ -3,7 +3,7 @@ defmodule HeyiAm.Accounts.User do
   import Ecto.Changeset
 
   # rendered_portfolio_html is intentionally excluded — it is only writable
-  # via rendered_html_changeset/2 (CLI publish pipeline), never the profile API.
+  # via rendered_html_changeset/2 (CLI upload pipeline), never the profile API.
   @profile_fields ~w(display_name bio avatar_url github_url location status portfolio_layout portfolio_accent)a
 
   schema "users" do
@@ -188,13 +188,23 @@ defmodule HeyiAm.Accounts.User do
   end
 
   @doc """
-  A changeset for updating rendered HTML from the CLI publish pipeline only.
+  A changeset for updating rendered HTML from the CLI upload pipeline only.
   This is separate from profile_changeset to prevent stored XSS via the profile API.
   """
   def rendered_html_changeset(user, attrs) do
+    sanitized = sanitize_portfolio_html(attrs)
+
     user
-    |> cast(attrs, [:rendered_portfolio_html])
+    |> cast(sanitized, [:rendered_portfolio_html])
   end
+
+  defp sanitize_portfolio_html(%{"rendered_portfolio_html" => html} = attrs) when is_binary(html) do
+    Map.put(attrs, "rendered_portfolio_html", HeyiAm.HtmlSanitizer.sanitize(html))
+  end
+  defp sanitize_portfolio_html(%{rendered_portfolio_html: html} = attrs) when is_binary(html) do
+    Map.put(attrs, :rendered_portfolio_html, HeyiAm.HtmlSanitizer.sanitize(html))
+  end
+  defp sanitize_portfolio_html(attrs), do: attrs
 
   @doc """
   A changeset for setting or updating the username.

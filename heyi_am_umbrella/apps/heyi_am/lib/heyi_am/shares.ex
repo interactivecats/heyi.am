@@ -48,7 +48,7 @@ defmodule HeyiAm.Shares do
   end
 
   @doc """
-  Updates rendered HTML for a share from the CLI publish pipeline.
+  Updates rendered HTML for a share from the CLI upload pipeline.
   Separate from update_share to prevent stored HTML injection via the session create API.
   """
   def update_share_rendered_html(%Share{} = share, attrs) do

@@ -65,7 +65,7 @@ defmodule HeyiAm.Shares.Share do
       :end_time, :cwd, :wall_clock_minutes,
       :agent_summary
       # rendered_html is intentionally excluded — it is only writable
-      # via rendered_html_changeset/2 (CLI publish pipeline), never the session create API.
+      # via rendered_html_changeset/2 (CLI upload pipeline), never the session create API.
     ])
     |> validate_required([:token, :title])
     |> validate_length(:title, max: 200)
@@ -81,13 +81,23 @@ defmodule HeyiAm.Shares.Share do
   end
 
   @doc """
-  A changeset for updating rendered HTML from the CLI publish pipeline only.
+  A changeset for updating rendered HTML from the CLI upload pipeline only.
   Separate from changeset/2 to prevent stored HTML injection via the session create API.
   """
   def rendered_html_changeset(share, attrs) do
+    sanitized = sanitize_rendered_html(attrs)
+
     share
-    |> cast(attrs, [:rendered_html])
+    |> cast(sanitized, [:rendered_html])
   end
+
+  defp sanitize_rendered_html(%{"rendered_html" => html} = attrs) when is_binary(html) do
+    Map.put(attrs, "rendered_html", HeyiAm.HtmlSanitizer.sanitize(html))
+  end
+  defp sanitize_rendered_html(%{rendered_html: html} = attrs) when is_binary(html) do
+    Map.put(attrs, :rendered_html, HeyiAm.HtmlSanitizer.sanitize(html))
+  end
+  defp sanitize_rendered_html(attrs), do: attrs
 
   defp validate_skills_length(changeset) do
     validate_change(changeset, :skills, fn :skills, skills ->

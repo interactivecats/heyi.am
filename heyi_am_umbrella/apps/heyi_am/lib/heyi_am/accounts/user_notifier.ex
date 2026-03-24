@@ -149,10 +149,10 @@ defmodule HeyiAm.Accounts.UserNotifier do
          (Claude Code, Cursor, Copilot, etc.) and let the CLI
          capture the conversation.
 
-      3. Publish it
+      3. Upload it
          When you're done, run:
 
-          npx heyiam publish
+          npx heyiam upload
 
          Your session becomes a case study on your portfolio
          at https://heyi.am/#{user.username || "your-username"}
@@ -170,9 +170,9 @@ defmodule HeyiAm.Accounts.UserNotifier do
           html_step("2", "Record your first session",
             "Start a coding session with your AI tool of choice " <>
             "(Claude Code, Cursor, Copilot, etc.) and let the CLI capture the conversation.") <>
-          html_step("3", "Publish it",
-            "When you're done, publish your session. It becomes a case study on your portfolio.") <>
-          html_code_block("npx heyiam publish") <>
+          html_step("3", "Upload it",
+            "When you're done, upload your session. It becomes a case study on your portfolio.") <>
+          html_code_block("npx heyiam upload") <>
           html_paragraph("That's it. Ship work, show thinking.") <>
           html_button("View your portfolio", "https://heyi.am/#{user.username || "your-username"}")
       )
@@ -190,7 +190,7 @@ defmodule HeyiAm.Accounts.UserNotifier do
     #{String.trim(body)}
 
     --
-    Benjamin — https://heyi.am
+    The heyi.am team — https://heyiam.com
     """
   end
 
@@ -244,7 +244,7 @@ defmodule HeyiAm.Accounts.UserNotifier do
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="480" style="max-width: 480px; width: 100%;">
               <tr>
                 <td align="center" style="padding: 24px 32px 0 32px; font-family: #{@font_body}; font-size: 12px; line-height: 18px; color: #{@color_text_muted};">
-                  Sent by heyi.am &middot; <a href="https://heyi.am" style="color: #{@color_text_muted}; text-decoration: underline;">heyi.am</a>
+                  Sent by heyi.am &middot; <a href="https://heyiam.com" style="color: #{@color_text_muted}; text-decoration: underline;">heyiam.com</a>
                 </td>
               </tr>
             </table>

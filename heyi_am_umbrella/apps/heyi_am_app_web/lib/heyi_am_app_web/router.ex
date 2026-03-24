@@ -85,7 +85,7 @@ defmodule HeyiAmAppWeb.Router do
     post "/projects/:slug/screenshot-url", ProjectApiController, :screenshot_url
     patch "/projects/:slug/screenshot-key", ProjectApiController, :update_screenshot_key
     post "/sessions", ShareApiController, :create
-    post "/time-stats", TimeStatsApiController, :publish
+    post "/time-stats", TimeStatsApiController, :upload
     patch "/profile", ProfileApiController, :update
   end
 
@@ -124,6 +124,16 @@ defmodule HeyiAmAppWeb.Router do
 
     get "/:provider", OAuthController, :request
     get "/:provider/callback", OAuthController, :callback
+  end
+
+  # -- Public pages (landing, legal) — no auth required ------------------
+
+  scope "/", HeyiAmAppWeb do
+    pipe_through [:browser]
+
+    get "/home", PageController, :home
+    get "/terms", PageController, :terms
+    get "/privacy", PageController, :privacy
   end
 
   # -- Root route --------------------------------------------------------

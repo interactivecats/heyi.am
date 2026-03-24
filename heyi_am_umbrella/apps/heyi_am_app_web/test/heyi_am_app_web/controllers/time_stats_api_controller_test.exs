@@ -2,7 +2,7 @@ defmodule HeyiAmAppWeb.TimeStatsApiControllerTest do
   use HeyiAmAppWeb.ConnCase
 
   describe "POST /api/time-stats" do
-    test "publishes time stats for authenticated user", %{conn: _conn} do
+    test "uploads time stats for authenticated user", %{conn: _conn} do
       {conn, user} = api_conn_with_auth()
       {:ok, user} = HeyiAm.Accounts.update_user_username(user, %{username: "timeuser#{System.unique_integer([:positive])}"})
 

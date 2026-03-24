@@ -18,6 +18,22 @@ defmodule HeyiAmAppWeb.ShareApiControllerTest do
       assert resp["url"] =~ "/s/"
     end
 
+    test "persists rendered_html via separate changeset", %{conn: _conn} do
+      {conn, _user} = api_conn_with_auth()
+
+      conn = post(conn, ~p"/api/sessions", %{
+        session: %{
+          title: "HTML Session",
+          slug: "html-session",
+          rendered_html: "<div class=\"case-study\"><p>rendered</p></div>"
+        }
+      })
+
+      resp = json_response(conn, 201)
+      share = HeyiAm.Shares.get_share_by_token(resp["token"])
+      assert share.rendered_html == "<div class=\"case-study\"><p>rendered</p></div>"
+    end
+
     test "returns 401 without auth", %{conn: conn} do
       conn =
         conn

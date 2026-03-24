@@ -52,7 +52,8 @@ defmodule HeyiAm.MixProject do
       {:opentelemetry, "~> 1.7"},
       {:opentelemetry_api, "~> 1.5"},
       {:opentelemetry_ecto, "~> 1.2"},
-      {:hammer, "~> 6.1"}
+      {:hammer, "~> 6.1"},
+      {:html_sanitize_ex, "~> 1.4"}
     ]
   end
 

@@ -124,8 +124,8 @@ defmodule HeyiAmAppWeb.ClaimUsernameLive do
           <h3 class="label-md">Protocol note</h3>
           <p class="body-sm" style="color: var(--on-surface-variant);">
             Your username is permanently bound to your cryptographic identity.
-            Published sessions are sealed to this URL. Changing it later would
-            break verification chains and shared links.
+            Uploaded sessions are linked to this URL. Changing it later would
+            break shared links.
           </p>
         </div>
       </aside>
