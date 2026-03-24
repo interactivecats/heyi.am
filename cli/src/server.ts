@@ -13,7 +13,7 @@ import { getProvider, getEnhanceMode } from './llm/index.js';
 import { triageSessions, type SessionMetaWithStats } from './llm/triage.js';
 import { enhanceProject, refineNarrative, type SessionSummary, type SkippedSessionMeta, type ProjectEnhanceResult } from './llm/project-enhance.js';
 import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData, loadFreshProjectEnhanceResult, saveProjectEnhanceResult, loadProjectEnhanceResult, buildProjectFingerprint, savePublishedState, getPublishedState } from './settings.js';
-import { captureScreenshot } from './screenshot.js';
+import { captureScreenshot, SCREENSHOTS_DIR } from './screenshot.js';
 import { redactSession, redactText, scanTextSync, formatFindings, stripHomePathsInText } from './redact.js';
 import { renderProjectHtml, renderSessionHtml, renderPortfolioHtml } from './render/index.js';
 import { buildSessionRenderData, buildSessionCard, buildProjectRenderData } from './render/build-render-data.js';
@@ -937,9 +937,12 @@ export function createApp(sessionsBasePath?: string) {
   // Save project enhance result explicitly
   app.post('/api/projects/:project/enhance-save', async (req: Request, res: Response) => {
     const { project } = req.params;
-    const { selectedSessionIds, result } = req.body as {
+    const { selectedSessionIds, result, repoUrl, projectUrl, screenshotBase64 } = req.body as {
       selectedSessionIds: string[];
       result: ProjectEnhanceResult;
+      repoUrl?: string;
+      projectUrl?: string;
+      screenshotBase64?: string;
     };
 
     if (!Array.isArray(selectedSessionIds) || !result?.narrative) {
@@ -955,7 +958,7 @@ export function createApp(sessionsBasePath?: string) {
         return;
       }
 
-      saveProjectEnhanceResult(proj.dirName, selectedSessionIds, result);
+      saveProjectEnhanceResult(proj.dirName, selectedSessionIds, result, undefined, { repoUrl, projectUrl, screenshotBase64 });
       res.json({ saved: true, enhancedAt: new Date().toISOString() });
     } catch (err) {
       res.status(500).json({ error: { code: 'SAVE_FAILED', message: (err as Error).message } });
@@ -996,7 +999,7 @@ export function createApp(sessionsBasePath?: string) {
   app.post('/api/projects/:project/render-preview', express.json(), async (req: Request, res: Response) => {
     try {
       const {
-        username, slug, title, narrative, repoUrl, projectUrl,
+        username, slug, title, narrative, repoUrl, projectUrl, screenshotUrl,
         timeline, skills, totalSessions, totalLoc,
         totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged,
         sessionCards,
@@ -1007,6 +1010,7 @@ export function createApp(sessionsBasePath?: string) {
         narrative: string;
         repoUrl?: string;
         projectUrl?: string;
+        screenshotUrl?: string;
         timeline: Array<{ period: string; label: string; sessions: Array<Record<string, unknown>> }>;
         skills: string[];
         totalSessions: number;
@@ -1020,7 +1024,7 @@ export function createApp(sessionsBasePath?: string) {
       const renderData = buildProjectRenderData({
         username: username || 'preview',
         slug, title, narrative,
-        repoUrl, projectUrl,
+        repoUrl, projectUrl, screenshotUrl,
         timeline: timeline || [],
         skills: skills || [],
         totalSessions: totalSessions || 0,
@@ -1038,62 +1042,12 @@ export function createApp(sessionsBasePath?: string) {
     }
   });
 
-  // Upload screenshot manually (base64 image from browser)
-  app.post('/api/projects/:project/screenshot-upload', async (req: Request, res: Response) => {
-    const { project } = req.params;
-    const auth = getAuthToken();
-    if (!auth) { res.status(401).json({ error: 'Auth required' }); return; }
-
-    const { image, slug } = req.body as { image: string; slug: string };
-    if (!image) { res.status(400).json({ error: 'No image data' }); return; }
-
-    const projectSlug = slug || String(project);
-    try {
-      // image is "data:image/png;base64,..." or raw base64
-      const base64 = image.includes(',') ? image.split(',')[1] : image;
-      const buffer = Buffer.from(base64, 'base64');
-      const ext = image.startsWith('data:image/jpeg') || image.startsWith('data:image/jpg') ? 'jpg' : 'png';
-
-      // Get presigned PUT URL
-      const ssUrlRes = await fetch(`${API_URL}/api/projects/${projectSlug}/screenshot-url`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
-        body: JSON.stringify({ ext }),
-      });
-      if (!ssUrlRes.ok) { res.status(502).json({ error: 'Presign failed' }); return; }
-
-      const { upload_url, key } = await ssUrlRes.json() as { upload_url: string; key: string };
-
-      // Upload to S3
-      await fetch(upload_url, {
-        method: 'PUT',
-        body: buffer,
-        headers: { 'Content-Type': `image/${ext}` },
-      });
-
-      // Update screenshot key in DB
-      await fetch(`${API_URL}/api/projects/${projectSlug}/screenshot-key`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
-        body: JSON.stringify({ key }),
-      });
-
-      res.json({ ok: true, key });
-    } catch (err) {
-      res.status(500).json({ error: (err as Error).message });
-    }
-  });
-
-  // Auto-capture screenshot from URL using headless Chrome
+  // Auto-capture screenshot from URL using headless Chrome (preview only — S3 upload deferred to publish)
   app.post('/api/projects/:project/screenshot-capture', async (req: Request, res: Response) => {
-    const { project } = req.params;
-    const auth = getAuthToken();
-    if (!auth) { res.status(401).json({ error: 'Auth required' }); return; }
-
     const { url, slug } = req.body as { url: string; slug: string };
     if (!url) { res.status(400).json({ error: 'No URL provided' }); return; }
 
-    const projectSlug = slug || String(project);
+    const projectSlug = slug || String(req.params.project);
     try {
       const screenshotPath = await captureScreenshot(url, projectSlug);
       if (!screenshotPath) {
@@ -1101,32 +1055,9 @@ export function createApp(sessionsBasePath?: string) {
         return;
       }
 
-      // Get presigned PUT URL
-      const ssUrlRes = await fetch(`${API_URL}/api/projects/${projectSlug}/screenshot-url`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
-        body: JSON.stringify({ ext: 'png' }),
-      });
-      if (!ssUrlRes.ok) { res.status(502).json({ error: 'Presign failed' }); return; }
-
-      const { upload_url, key } = await ssUrlRes.json() as { upload_url: string; key: string };
       const imageData = readFileSync(screenshotPath);
-      await fetch(upload_url, {
-        method: 'PUT',
-        body: imageData,
-        headers: { 'Content-Type': 'image/png' },
-      });
-
-      // Update screenshot key
-      await fetch(`${API_URL}/api/projects/${projectSlug}/screenshot-key`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
-        body: JSON.stringify({ key }),
-      });
-
-      // Return the screenshot as base64 for preview
       const base64 = imageData.toString('base64');
-      res.json({ ok: true, key, preview: `data:image/png;base64,${base64}` });
+      res.json({ ok: true, preview: `data:image/png;base64,${base64}` });
     } catch (err) {
       res.status(500).json({ error: (err as Error).message });
     }
@@ -1148,6 +1079,7 @@ export function createApp(sessionsBasePath?: string) {
       totalDurationMinutes, totalAgentDurationMinutes,
       totalFilesChanged,
       skippedSessions, selectedSessionIds,
+      screenshotBase64,
     } = req.body as {
       title: string;
       slug: string;
@@ -1163,6 +1095,7 @@ export function createApp(sessionsBasePath?: string) {
       totalFilesChanged: number;
       skippedSessions: Array<{ title: string; duration: number; loc: number; reason: string }>;
       selectedSessionIds: string[];
+      screenshotBase64?: string;
     };
 
     // Set up SSE
@@ -1216,30 +1149,46 @@ export function createApp(sessionsBasePath?: string) {
       const projectData = await projectRes.json() as { project_id: number; slug: string };
       send({ type: 'project', status: 'created', projectId: projectData.project_id, slug: projectData.slug });
 
-      // Step 1b: Auto-capture and upload screenshot from project URL (non-fatal)
-      if (projectUrl) {
+      let screenshotUploaded = false;
+
+      // Step 1b: Upload screenshot (non-fatal)
+      // Priority: manual upload (screenshotBase64) > auto-capture from projectUrl
+      if (screenshotBase64 || projectUrl) {
         try {
-          send({ type: 'screenshot', status: 'capturing' });
-          const screenshotPath = await captureScreenshot(projectUrl, projectData.slug);
-          if (screenshotPath) {
-            // Get presigned PUT URL from Phoenix
+          let imageBuffer: Buffer | null = null;
+          let ext = 'png';
+
+          if (screenshotBase64) {
+            // Manual upload from review step — decode base64
+            send({ type: 'screenshot', status: 'capturing' });
+            const raw = screenshotBase64.includes(',') ? screenshotBase64.split(',')[1] : screenshotBase64;
+            imageBuffer = Buffer.from(raw, 'base64');
+            ext = screenshotBase64.startsWith('data:image/jpeg') || screenshotBase64.startsWith('data:image/jpg') ? 'jpg' : 'png';
+          } else if (projectUrl) {
+            // Auto-capture from URL using headless Chrome
+            send({ type: 'screenshot', status: 'capturing' });
+            const screenshotPath = await captureScreenshot(projectUrl, projectData.slug);
+            if (screenshotPath) {
+              imageBuffer = readFileSync(screenshotPath) as unknown as Buffer;
+            }
+          }
+
+          if (imageBuffer) {
             const ssUrlRes = await fetch(`${API_URL}/api/projects/${projectData.slug}/screenshot-url`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${auth.token}`,
               },
-              body: JSON.stringify({ ext: 'png' }),
+              body: JSON.stringify({ ext }),
             });
             if (ssUrlRes.ok) {
               const { upload_url, key } = await ssUrlRes.json() as { upload_url: string; key: string };
-              const imageData = readFileSync(screenshotPath);
               await fetch(upload_url, {
                 method: 'PUT',
-                body: imageData,
-                headers: { 'Content-Type': 'image/png' },
+                body: imageBuffer,
+                headers: { 'Content-Type': `image/${ext}` },
               });
-              // Update the project's screenshot_key
               await fetch(`${API_URL}/api/projects/${projectData.slug}/screenshot-key`, {
                 method: 'PATCH',
                 headers: {
@@ -1248,6 +1197,7 @@ export function createApp(sessionsBasePath?: string) {
                 },
                 body: JSON.stringify({ key }),
               });
+              screenshotUploaded = true;
               send({ type: 'screenshot', status: 'uploaded' });
             } else {
               send({ type: 'screenshot', status: 'skipped', reason: 'presign failed' });
@@ -1514,6 +1464,9 @@ export function createApp(sessionsBasePath?: string) {
             narrative,
             repoUrl: repoUrl || undefined,
             projectUrl: projectUrl || undefined,
+            screenshotUrl: screenshotUploaded
+              ? `/${auth.username}/${projectData.slug}/screenshot.png`
+              : undefined,
             timeline: (timeline ?? []).map((t) => ({
               period: t.period,
               label: t.label,
@@ -1626,6 +1579,18 @@ export function createApp(sessionsBasePath?: string) {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  // Serve local screenshot files (for preview — proxied by Vite in dev)
+  app.get('/screenshots/:slug.png', (req: Request, res: Response) => {
+    const filePath = path.join(SCREENSHOTS_DIR, `${req.params.slug}.png`);
+    if (existsSync(filePath)) {
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.send(readFileSync(filePath));
+    } else {
+      res.status(404).end();
+    }
+  });
+
   // Preview route — serves full standalone HTML page identical to heyi.am
   app.get('/preview/project/:project', async (req: Request, res: Response) => {
     try {
@@ -1702,8 +1667,14 @@ export function createApp(sessionsBasePath?: string) {
         slug: proj.dirName,
         title: proj.name,
         narrative: enhanceResult?.narrative || proj.description || '',
-        repoUrl: undefined,
-        projectUrl: undefined,
+        repoUrl: (req.query.repoUrl as string) || undefined,
+        projectUrl: (req.query.projectUrl as string) || undefined,
+        screenshotUrl: (() => {
+          const ssSlug = proj.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+          return existsSync(path.join(SCREENSHOTS_DIR, `${ssSlug}.png`))
+            ? `/screenshots/${ssSlug}.png`
+            : undefined;
+        })(),
         timeline: enrichedTimeline,
         skills: enhanceResult?.skills || proj.skills || [],
         totalSessions: proj.sessionCount,

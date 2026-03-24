@@ -3,7 +3,7 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir, platform } from 'node:os';
 
-const SCREENSHOTS_DIR = join(homedir(), '.config', 'heyiam', 'screenshots');
+export const SCREENSHOTS_DIR = join(homedir(), '.config', 'heyiam', 'screenshots');
 
 /** Known Chrome binary paths by platform */
 const CHROME_PATHS: Record<string, string[]> = {

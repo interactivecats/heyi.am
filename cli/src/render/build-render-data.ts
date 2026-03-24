@@ -103,6 +103,7 @@ interface BuildProjectRenderOpts {
   narrative: string;
   repoUrl?: string;
   projectUrl?: string;
+  screenshotUrl?: string;
   timeline: Array<{ period: string; label: string; sessions: Array<Record<string, unknown>> }>;
   skills: string[];
   totalSessions: number;
@@ -126,6 +127,7 @@ export function buildProjectRenderData(opts: BuildProjectRenderOpts): ProjectRen
       narrative: opts.narrative,
       repoUrl: opts.repoUrl,
       projectUrl: opts.projectUrl,
+      screenshotUrl: opts.screenshotUrl,
       timeline: opts.timeline,
       skills: opts.skills,
       totalSessions: opts.totalSessions,

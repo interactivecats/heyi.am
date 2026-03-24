@@ -284,6 +284,9 @@ export interface ProjectEnhanceCacheResponse {
   fingerprint: string;
   enhancedAt: string;
   selectedSessionIds: string[];
+  repoUrl?: string;
+  projectUrl?: string;
+  screenshotBase64?: string;
   result: ProjectEnhanceResult;
   isFresh: boolean;
 }
@@ -302,12 +305,13 @@ export async function saveProjectEnhanceLocally(
   dirName: string,
   selectedSessionIds: string[],
   result: ProjectEnhanceResult,
+  extras?: { repoUrl?: string; projectUrl?: string; screenshotBase64?: string },
 ): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/enhance-save`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ selectedSessionIds, result }),
+      body: JSON.stringify({ selectedSessionIds, result, ...extras }),
     });
     return res.ok;
   } catch {
@@ -410,6 +414,7 @@ export interface PublishProjectPayload {
   totalFilesChanged: number;
   skippedSessions: Array<{ title: string; duration: number; loc: number; reason: string }>;
   selectedSessionIds: string[];
+  screenshotBase64?: string;
 }
 
 export interface PublishSessionStatus {
@@ -496,19 +501,6 @@ export function publishProject(
   return controller;
 }
 
-export async function uploadScreenshot(
-  dirName: string,
-  slug: string,
-  imageBase64: string,
-): Promise<{ ok: boolean; key?: string }> {
-  const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/screenshot-upload`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ image: imageBase64, slug }),
-  });
-  return res.json();
-}
-
 export async function captureScreenshotFromUrl(
   dirName: string,
   slug: string,
@@ -519,5 +511,15 @@ export async function captureScreenshotFromUrl(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url, slug }),
   });
+  return res.json();
+}
+
+// ── Git remote auto-detection ────────────────────────────────────
+
+export async function fetchGitRemote(
+  dirName: string,
+): Promise<{ url: string | null }> {
+  const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/git-remote`);
+  if (!res.ok) return { url: null };
   return res.json();
 }

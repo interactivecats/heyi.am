@@ -214,6 +214,18 @@ export function ProjectPage({ data }: { data: ProjectRenderData }) {
         </div>
       )}
 
+      {/* Screenshot */}
+      {project.screenshotUrl && (
+        <div className="project-preview__screenshot">
+          <img
+            src={project.screenshotUrl}
+            alt={`Screenshot of ${project.title}`}
+            className="project-preview__screenshot-img"
+            loading="lazy"
+          />
+        </div>
+      )}
+
       {/* Narrative */}
       {project.narrative && (
         <div className="project-preview__narrative">

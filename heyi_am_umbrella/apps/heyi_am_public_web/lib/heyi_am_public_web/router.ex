@@ -51,6 +51,7 @@ defmodule HeyiAmPublicWeb.Router do
   scope "/", HeyiAmPublicWeb do
     pipe_through :browser
 
+    get "/:username/:project/screenshot.png", PortfolioController, :screenshot
     get "/:username/:project/:session", ShareController, :show_in_project
     get "/:username/time", PortfolioController, :time
     get "/:username/:project", PortfolioController, :project

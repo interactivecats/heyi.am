@@ -91,6 +91,49 @@ defmodule HeyiAmPublicWeb.PortfolioController do
     end
   end
 
+  @safe_image_types ["image/png", "image/jpeg", "image/webp", "image/gif"]
+
+  def screenshot(conn, %{"username" => username, "project" => slug}) do
+    user = Accounts.get_user_by_username(username)
+
+    case user && Projects.get_project_with_published_shares(user.id, slug) do
+      nil ->
+        conn |> put_status(:not_found) |> text("")
+
+      %{screenshot_key: key} when is_binary(key) and key != "" ->
+        case HeyiAm.ObjectStorage.presign_get(key) do
+          {:ok, url} ->
+            case Req.get(url, redirect: false) do
+              {:ok, %{status: 200, body: body, headers: headers}} ->
+                content_type =
+                  case headers do
+                    %{"content-type" => [ct | _]} -> ct
+                    _ -> "image/png"
+                  end
+
+                if Enum.any?(@safe_image_types, &String.starts_with?(content_type, &1)) and
+                     byte_size(body) <= 10_000_000 do
+                  conn
+                  |> put_resp_header("content-type", content_type)
+                  |> put_resp_header("cache-control", "public, max-age=86400")
+                  |> send_resp(200, body)
+                else
+                  conn |> put_status(:not_found) |> text("")
+                end
+
+              _ ->
+                conn |> put_status(:not_found) |> text("")
+            end
+
+          _ ->
+            conn |> put_status(:not_found) |> text("")
+        end
+
+      _ ->
+        conn |> put_status(:not_found) |> text("")
+    end
+  end
+
   def time(conn, %{"username" => username}) do
     case Accounts.get_user_by_username(username) do
       nil ->

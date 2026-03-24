@@ -157,6 +157,8 @@ function renderReview(overrides: Partial<Parameters<typeof ReviewStep>[0]> = {})
     onRepoUrlChange: vi.fn(),
     projectUrl: '',
     onProjectUrlChange: vi.fn(),
+    screenshotPreview: null,
+    onScreenshotPreviewChange: vi.fn(),
     onPublish: vi.fn(),
     onSaveLocal: vi.fn(),
     onBack: vi.fn(),
@@ -296,7 +298,7 @@ describe('ReviewStep', () => {
     renderReview();
     const link = screen.getByRole('link', { name: /preview full project page/i });
     expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute('href', '/preview/project/heyi-am');
+    expect(link.getAttribute('href')).toContain('/preview/project/heyi-am');
     expect(link).toHaveAttribute('target', '_blank');
   });
 

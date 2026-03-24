@@ -21,8 +21,8 @@ import {
   type RefineAnswer,
   type PublishProjectPayload,
   type PublishEvent,
-  uploadScreenshot,
   captureScreenshotFromUrl,
+  fetchGitRemote,
 } from '../api';
 import { useAuth } from '../AuthContext';
 import type { Session, Project } from '../types';
@@ -1378,6 +1378,8 @@ interface ReviewStepProps {
   onRepoUrlChange: (url: string) => void;
   projectUrl: string;
   onProjectUrlChange: (url: string) => void;
+  screenshotPreview: string | null;
+  onScreenshotPreviewChange: (preview: string | null) => void;
   onPublish: (result: { url: string; publishedSessions: number }) => void;
   onSaveLocal: () => void | Promise<void>;
   onBack: () => void;
@@ -1398,6 +1400,8 @@ export function ReviewStep({
   onRepoUrlChange,
   projectUrl,
   onProjectUrlChange,
+  screenshotPreview,
+  onScreenshotPreviewChange,
   onPublish,
   onSaveLocal,
   onBack,
@@ -1414,7 +1418,7 @@ export function ReviewStep({
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const publishControllerRef = useRef<AbortController | null>(null);
   const screenshotInputRef = useRef<HTMLInputElement>(null);
-  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const setScreenshotPreview = onScreenshotPreviewChange;
   const [screenshotCapturing, setScreenshotCapturing] = useState(false);
   const { refresh: refreshAuth } = useAuth();
 
@@ -1424,18 +1428,12 @@ export function ReviewStep({
 
   const handleScreenshotFile = useCallback((file: File) => {
     const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result as string;
-      setScreenshotPreview(base64);
-      // Upload immediately
-      try {
-        await uploadScreenshot(project.dirName, slug, base64);
-      } catch {
-        // Preview still shows; upload will retry on publish
-      }
+    reader.onload = () => {
+      setScreenshotPreview(reader.result as string);
+      // Upload deferred to publish flow — project may not exist yet
     };
     reader.readAsDataURL(file);
-  }, [project.dirName, slug]);
+  }, []);
 
   const handleAutoCapture = useCallback(async () => {
     if (!projectUrl) return;
@@ -1480,8 +1478,9 @@ export function ReviewStep({
       totalFilesChanged: project.totalFiles,
       skippedSessions,
       selectedSessionIds: [...selectedIds],
+      screenshotBase64: screenshotPreview || undefined,
     };
-  }, [project, slug, narrative, repoUrl, projectUrl, timeline, skills, allSessions, selectedIds]);
+  }, [project, slug, narrative, repoUrl, projectUrl, timeline, skills, allSessions, selectedIds, screenshotPreview]);
 
   const startAuthFlow = useCallback(async () => {
     setNeedsAuth(true);
@@ -1621,7 +1620,10 @@ export function ReviewStep({
 
       <a
         className="review-preview-link"
-        href={`/preview/project/${encodeURIComponent(project.dirName)}`}
+        href={`/preview/project/${encodeURIComponent(project.dirName)}?${new URLSearchParams({
+          ...(repoUrl ? { repoUrl } : {}),
+          ...(projectUrl ? { projectUrl } : {}),
+        }).toString()}`}
         target="_blank"
         rel="noopener noreferrer"
       >
@@ -2120,6 +2122,7 @@ export function ProjectUploadFlow() {
   const [enhanceResult, setEnhanceResult] = useState<ProjectEnhanceResult | null>(null);
   const [repoUrl, setRepoUrl] = useState('');
   const [projectUrl, setProjectUrl] = useState('');
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [publishResult, setPublishResult] = useState<{ url: string; publishedSessions: number } | null>(null);
 
 
@@ -2157,11 +2160,22 @@ export function ProjectUploadFlow() {
       if (cache) {
         setEnhanceResult(cache.result);
         setSelectedIds(new Set(cache.selectedSessionIds));
+        if (cache.repoUrl) setRepoUrl(cache.repoUrl);
+        if (cache.projectUrl) setProjectUrl(cache.projectUrl);
+        if (cache.screenshotBase64) setScreenshotPreview(cache.screenshotBase64);
         setStep('review');
       }
       setSearchParams({}, { replace: true });
     });
   }, [dirName]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-detect git remote URL when entering review step
+  useEffect(() => {
+    if (step !== 'review' || !dirName || repoUrl) return;
+    fetchGitRemote(dirName).then(({ url }) => {
+      if (url) setRepoUrl(url.startsWith('http') ? url : `https://${url}`);
+    }).catch(() => { /* non-fatal */ });
+  }, [step, dirName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTriage = useCallback(() => {
     if (!dirName) return;
@@ -2369,6 +2383,8 @@ export function ProjectUploadFlow() {
           onRepoUrlChange={setRepoUrl}
           projectUrl={projectUrl}
           onProjectUrlChange={setProjectUrl}
+          screenshotPreview={screenshotPreview}
+          onScreenshotPreviewChange={setScreenshotPreview}
           onPublish={(result) => {
             setPublishResult(result);
             setStep('done');
@@ -2379,6 +2395,7 @@ export function ProjectUploadFlow() {
               dirName,
               [...selectedIds],
               enhanceResult,
+              { repoUrl: repoUrl || undefined, projectUrl: projectUrl || undefined, screenshotBase64: screenshotPreview || undefined },
             );
             setPublishResult(null);
             setStep('done');

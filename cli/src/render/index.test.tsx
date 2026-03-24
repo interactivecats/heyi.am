@@ -213,6 +213,20 @@ describe('renderProjectHtml', () => {
     expect(html).not.toContain('project-preview__link');
   });
 
+  it('renders screenshot img when screenshotUrl is provided', () => {
+    const data = makeProjectData();
+    data.project.screenshotUrl = '/testuser/my-project/screenshot.png';
+    const html = renderProjectHtml(data);
+    expect(html).toContain('<img');
+    expect(html).toContain('/testuser/my-project/screenshot.png');
+    expect(html).toContain('project-preview__screenshot');
+  });
+
+  it('omits screenshot when screenshotUrl is not provided', () => {
+    const html = renderProjectHtml(makeProjectData());
+    expect(html).not.toContain('project-preview__screenshot');
+  });
+
   it('throws VALIDATION_ERROR when project slug is missing', () => {
     const bad = makeProjectData();
     (bad.project as any).slug = '';

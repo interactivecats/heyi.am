@@ -107,6 +107,9 @@ export interface ProjectEnhanceCache {
   fingerprint: string;
   enhancedAt: string;
   selectedSessionIds: string[];
+  repoUrl?: string;
+  projectUrl?: string;
+  screenshotBase64?: string;
   result: {
     narrative: string;
     arc: Array<{ phase: number; title: string; description: string }>;
@@ -161,6 +164,7 @@ export function saveProjectEnhanceResult(
   selectedSessionIds: string[],
   result: ProjectEnhanceCache['result'],
   configDir?: string,
+  extras?: { repoUrl?: string; projectUrl?: string; screenshotBase64?: string },
 ): void {
   const dir = projectEnhanceDir(configDir);
   mkdirSync(dir, { recursive: true });
@@ -169,6 +173,9 @@ export function saveProjectEnhanceResult(
     fingerprint,
     enhancedAt: new Date().toISOString(),
     selectedSessionIds: [...selectedSessionIds].sort(),
+    ...(extras?.repoUrl ? { repoUrl: extras.repoUrl } : {}),
+    ...(extras?.projectUrl ? { projectUrl: extras.projectUrl } : {}),
+    ...(extras?.screenshotBase64 ? { screenshotBase64: extras.screenshotBase64 } : {}),
     result,
   };
   writeFileSync(projectEnhancePath(projectDirName, configDir), JSON.stringify(cache, null, 2), { mode: 0o600 });
