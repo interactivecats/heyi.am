@@ -1,0 +1,99 @@
+defmodule HeyiAmAppWeb.UserLive.Login do
+  use HeyiAmAppWeb, :live_view
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div class="auth-page">
+      <div class="auth-card">
+        <div class="auth-card-header">
+          <%= if @current_scope && @current_scope.user do %>
+            <h1 class="headline-lg" style="margin-block-end: var(--spacing-2);">Reauthenticate</h1>
+            <p class="body-sm" style="color: var(--on-surface-variant);">
+              You need to reauthenticate to perform sensitive actions on your account.
+            </p>
+          <% else %>
+            <h1 class="headline-lg" style="margin-block-end: var(--spacing-2);">Welcome back</h1>
+            <p class="body-sm" style="color: var(--on-surface-variant);">
+              Don't have an account?
+              <.link navigate={~p"/users/register"} style="color: var(--primary); font-weight: 600; text-decoration: none;">Sign up</.link>
+            </p>
+          <% end %>
+        </div>
+
+        <a href={~p"/auth/github"} class="btn-github">
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+          </svg>
+          Continue with GitHub
+        </a>
+
+        <div class="auth-divider">or</div>
+
+        <.form
+          :let={f}
+          for={@form}
+          id="login_form"
+          action={~p"/users/log-in"}
+          phx-submit="submit_password"
+          phx-trigger-action={@trigger_submit}
+        >
+          <div class="stack stack--md">
+            <div class="auth-field">
+              <label for="user_email" class="auth-label">Email</label>
+              <input
+                type="email"
+                name={f[:email].name}
+                id="user_email"
+                value={Phoenix.HTML.Form.normalize_value("email", f[:email].value)}
+                class="auth-input"
+                autocomplete="username"
+                spellcheck="false"
+                required
+                readonly={!!(@current_scope && @current_scope.user)}
+                placeholder="you@example.com"
+                phx-mounted={JS.focus()}
+              />
+            </div>
+            <div class="auth-field">
+              <label for="user_password" class="auth-label">Password</label>
+              <input
+                type="password"
+                name={f[:password].name}
+                id="user_password"
+                class="auth-input"
+                autocomplete="current-password"
+                placeholder="Password"
+                required
+              />
+            </div>
+            <button type="submit" name={f[:remember_me].name} value="true" class="btn btn-primary" style="width: 100%; justify-content: center;">
+              Log in
+            </button>
+          </div>
+        </.form>
+
+        <div class="auth-link">
+          <.link navigate={~p"/users/reset-password"}>Forgot your password?</.link>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  @impl true
+  def mount(_params, _session, socket) do
+    email =
+      Phoenix.Flash.get(socket.assigns.flash, :email) ||
+        get_in(socket.assigns, [:current_scope, Access.key(:user), Access.key(:email)])
+
+    form = to_form(%{"email" => email}, as: "user")
+
+    {:ok, assign(socket, form: form, trigger_submit: false)}
+  end
+
+  @impl true
+  def handle_event("submit_password", _params, socket) do
+    {:noreply, assign(socket, :trigger_submit, true)}
+  end
+end

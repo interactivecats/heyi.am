@@ -1,0 +1,56 @@
+<div class="vibe-page vibe-show">
+  <div class="vibe-card">
+    <span class="vibe-label">HOW DO YOU VIBE?</span>
+    <h1 class="vibe-headline"><%= @headline %></h1>
+    <p class="vibe-narrative"><%= @vibe.narrative %></p>
+
+    <div class="vibe-stats-columns">
+      <%= if @voice_stats != [] do %>
+        <div class="vibe-stat-col">
+          <h3>Your Voice</h3>
+          <dl>
+            <%= for {label, value} <- @voice_stats do %>
+              <div><dt><%= label %></dt><dd><%= value %></dd></div>
+            <% end %>
+          </dl>
+        </div>
+      <% end %>
+
+      <%= if @ai_stats != [] do %>
+        <div class="vibe-stat-col">
+          <h3>The AI's Habits</h3>
+          <dl>
+            <%= for {label, value} <- @ai_stats do %>
+              <div><dt><%= label %></dt><dd><%= value %></dd></div>
+            <% end %>
+          </dl>
+        </div>
+      <% end %>
+
+      <%= if @collab_stats != [] do %>
+        <div class="vibe-stat-col">
+          <h3>The Back-and-forth</h3>
+          <dl>
+            <%= for {label, value} <- @collab_stats do %>
+              <div><dt><%= label %></dt><dd><%= value %></dd></div>
+            <% end %>
+          </dl>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="vibe-footer">
+      <%= Integer.to_string(@vibe.total_turns) |> String.replace(~r/\B(?=(\d{3})+(?!\d))/, ",") %> turns · <%= @vibe.session_count %> sessions<%= if @vibe.sources && @vibe.sources != [], do: " · #{Enum.join(@vibe.sources, ", ")}" %>
+    </div>
+  </div>
+
+  <div class="vibe-actions">
+    <a href={~p"/#{@vibe.short_id}/card.png"} class="vibe-btn" download>Download card</a>
+  </div>
+
+  <div class="vibe-cta-secondary">
+    <p>Get your vibe</p>
+    <code>npx howdoyouvibe</code>
+    <p class="vibe-cta-link">Full portfolio at <a href="https://heyi.am">heyi.am</a></p>
+  </div>
+</div>

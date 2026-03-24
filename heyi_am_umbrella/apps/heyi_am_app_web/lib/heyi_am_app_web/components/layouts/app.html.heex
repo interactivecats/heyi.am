@@ -1,0 +1,17 @@
+<HeyiAmAppWeb.AppShell.app_shell>
+  <:status>
+    <%= if @current_scope && @current_scope.user do %>
+      <a href={~p"/users/settings"} class="topbar-nav-link">Settings</a>
+      <.link href={~p"/users/log-out"} method="delete" class="btn btn-secondary btn-sm">
+        Log out
+      </.link>
+    <% else %>
+      <a href={~p"/users/log-in"} class="btn btn-secondary btn-sm">Log in</a>
+      <a href={~p"/users/register"} class="btn btn-primary btn-sm">Sign up</a>
+    <% end %>
+  </:status>
+
+  <.flash_group flash={@flash} />
+
+  {@inner_content}
+</HeyiAmAppWeb.AppShell.app_shell>

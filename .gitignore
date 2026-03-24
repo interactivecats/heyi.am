@@ -37,3 +37,10 @@ heyi_minio/
 .codex/
 .cursor/
 .gemini/
+
+# Umbrella
+heyi_am_umbrella/_build/
+heyi_am_umbrella/deps/
+heyi_am_umbrella/apps/*/priv/static/assets/
+heyi_am_umbrella/apps/*/priv/static/cache_manifest.json
+heyi_am_umbrella/apps/*/.elixir_ls/
