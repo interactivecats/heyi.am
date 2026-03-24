@@ -174,6 +174,17 @@ defmodule HeyiAm.Accounts.User do
     |> validate_length(:location, max: 100)
     |> validate_length(:status, max: 100)
     |> validate_inclusion(:portfolio_layout, ~w(editorial terminal minimal brutalist campfire neon-night))
+    |> validate_url_scheme(:avatar_url)
+    |> validate_url_scheme(:github_url)
+  end
+
+  defp validate_url_scheme(changeset, field) do
+    validate_change(changeset, field, fn _, value ->
+      case URI.parse(value) do
+        %{scheme: scheme} when scheme in ["https", "http"] -> []
+        _ -> [{field, "must be an http or https URL"}]
+      end
+    end)
   end
 
   @doc """

@@ -164,7 +164,12 @@ defmodule HeyiAmAppWeb.Router do
       live "/users/reset-password/:token", UserLive.ResetPassword, :edit
     end
 
-    post "/users/log-in", UserSessionController, :create
     delete "/users/log-out", UserSessionController, :delete
+  end
+
+  scope "/", HeyiAmAppWeb do
+    pipe_through [:browser, :rate_limit_auth]
+
+    post "/users/log-in", UserSessionController, :create
   end
 end

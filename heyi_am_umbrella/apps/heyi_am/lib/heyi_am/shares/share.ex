@@ -63,7 +63,9 @@ defmodule HeyiAm.Shares.Share do
       :raw_storage_key, :log_storage_key, :session_storage_key,
       :slug, :project_id, :source_tool,
       :end_time, :cwd, :wall_clock_minutes,
-      :agent_summary, :rendered_html
+      :agent_summary
+      # rendered_html is intentionally excluded — it is only writable
+      # via rendered_html_changeset/2 (CLI publish pipeline), never the session create API.
     ])
     |> validate_required([:token, :title])
     |> validate_length(:title, max: 200)
@@ -76,6 +78,15 @@ defmodule HeyiAm.Shares.Share do
     |> validate_inclusion(:status, @valid_statuses)
     |> unique_constraint(:token)
     |> unique_constraint(:slug, name: :shares_project_id_slug_index)
+  end
+
+  @doc """
+  A changeset for updating rendered HTML from the CLI publish pipeline only.
+  Separate from changeset/2 to prevent stored HTML injection via the session create API.
+  """
+  def rendered_html_changeset(share, attrs) do
+    share
+    |> cast(attrs, [:rendered_html])
   end
 
   defp validate_skills_length(changeset) do

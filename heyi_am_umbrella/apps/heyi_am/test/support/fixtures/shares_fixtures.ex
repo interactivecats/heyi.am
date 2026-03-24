@@ -11,11 +11,18 @@ defmodule HeyiAm.SharesFixtures do
   end
 
   def share_fixture(attrs \\ %{}) do
+    {rendered_html, attrs} = Map.pop(attrs, :rendered_html)
+
     {:ok, share} =
       attrs
       |> valid_share_attributes()
       |> Shares.create_share()
 
-    share
+    if rendered_html do
+      {:ok, share} = Shares.update_share_rendered_html(share, %{rendered_html: rendered_html})
+      share
+    else
+      share
+    end
   end
 end

@@ -55,42 +55,61 @@ defmodule HeyiAmAppWeb.UserSessionController do
 
   def update_password(conn, %{"user" => user_params} = params) do
     user = conn.assigns.current_scope.user
-    true = Accounts.sudo_mode?(user)
-    {:ok, {_user, expired_tokens}} = Accounts.update_user_password(user, user_params)
 
-    UserAuth.disconnect_sessions(expired_tokens)
+    if Accounts.sudo_mode?(user) do
+      {:ok, {_user, expired_tokens}} = Accounts.update_user_password(user, user_params)
+      UserAuth.disconnect_sessions(expired_tokens)
 
-    conn
-    |> put_session(:user_return_to, ~p"/users/settings")
-    |> create(params, "Password updated successfully!")
+      conn
+      |> put_session(:user_return_to, ~p"/users/settings")
+      |> create(params, "Password updated successfully!")
+    else
+      conn
+      |> put_flash(:error, "You must re-authenticate to perform this action.")
+      |> redirect(to: ~p"/users/log-in")
+    end
   end
 
   def export(conn, _params) do
     user = conn.assigns.current_scope.user
-    {:ok, data} = Accounts.export_user_data(user)
-    json_data = Jason.encode!(data, pretty: true)
-    filename = "heyi-am-export-#{user.username || user.id}-#{Date.utc_today()}.json"
 
-    conn
-    |> put_resp_content_type("application/json")
-    |> put_resp_header("content-disposition", ~s(attachment; filename="#{filename}"))
-    |> send_resp(200, json_data)
+    if Accounts.sudo_mode?(user) do
+      {:ok, data} = Accounts.export_user_data(user)
+      json_data = Jason.encode!(data, pretty: true)
+      filename = "heyi-am-export-#{user.username || user.id}-#{Date.utc_today()}.json"
+
+      conn
+      |> put_resp_content_type("application/json")
+      |> put_resp_header("content-disposition", ~s(attachment; filename="#{filename}"))
+      |> send_resp(200, json_data)
+    else
+      conn
+      |> put_flash(:error, "You must re-authenticate to export your data.")
+      |> redirect(to: ~p"/users/log-in")
+    end
   end
 
   def delete_account(conn, %{"username" => confirmation}) do
     user = conn.assigns.current_scope.user
-    expected = user.username || user.email
 
-    if confirmation == expected do
-      {:ok, _} = Accounts.delete_user_account(user)
+    if Accounts.sudo_mode?(user) do
+      expected = user.username || user.email
 
-      conn
-      |> configure_session(drop: true)
-      |> redirect(to: ~p"/users/log-in")
+      if confirmation == expected do
+        {:ok, _} = Accounts.delete_user_account(user)
+
+        conn
+        |> configure_session(drop: true)
+        |> redirect(to: ~p"/users/log-in")
+      else
+        conn
+        |> put_flash(:error, "Username did not match. Account was not deleted.")
+        |> redirect(to: ~p"/users/settings")
+      end
     else
       conn
-      |> put_flash(:error, "Username did not match. Account was not deleted.")
-      |> redirect(to: ~p"/users/settings")
+      |> put_flash(:error, "You must re-authenticate to delete your account.")
+      |> redirect(to: ~p"/users/log-in")
     end
   end
 

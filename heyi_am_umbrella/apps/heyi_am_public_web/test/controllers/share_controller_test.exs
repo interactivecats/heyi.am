@@ -3,12 +3,25 @@ defmodule HeyiAmPublicWeb.ShareControllerTest do
 
   import HeyiAm.AccountsFixtures
 
+  defp create_share_with_html(attrs) do
+    {rendered_html, attrs} = Map.pop(attrs, :rendered_html)
+
+    {:ok, share} = HeyiAm.Shares.create_share(attrs)
+
+    if rendered_html do
+      {:ok, share} = HeyiAm.Shares.update_share_rendered_html(share, %{rendered_html: rendered_html})
+      share
+    else
+      share
+    end
+  end
+
   describe "GET /s/:token" do
     test "serves rendered_html for a published share", %{conn: conn} do
       user = user_fixture(%{username: "sharedev"})
 
-      {:ok, share} =
-        HeyiAm.Shares.create_share(%{
+      _share =
+        create_share_with_html(%{
           user_id: user.id,
           token: "test-share-token",
           title: "Test Session",
@@ -46,8 +59,8 @@ defmodule HeyiAmPublicWeb.ShareControllerTest do
     test "renders transcript page for published share", %{conn: conn} do
       user = user_fixture(%{username: "txdev"})
 
-      {:ok, _share} =
-        HeyiAm.Shares.create_share(%{
+      _share =
+        create_share_with_html(%{
           user_id: user.id,
           token: "tx-token",
           title: "Transcript Session",
@@ -75,8 +88,8 @@ defmodule HeyiAmPublicWeb.ShareControllerTest do
     test "renders verify page for published share", %{conn: conn} do
       user = user_fixture(%{username: "vfdev"})
 
-      {:ok, _share} =
-        HeyiAm.Shares.create_share(%{
+      _share =
+        create_share_with_html(%{
           user_id: user.id,
           token: "vf-token",
           title: "Verify Session",

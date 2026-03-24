@@ -229,14 +229,16 @@ defmodule HeyiAm.Accounts do
   def authorize_device_code(user_code, user) do
     user_code = user_code |> String.trim() |> String.upcase()
 
-    case Repo.one(DeviceCode.by_user_code_query(user_code)) do
-      nil ->
-        {:error, :not_found}
+    # Atomic update — prevents race condition where two concurrent requests
+    # both read the same pending code and authorize it for different users
+    query =
+      from dc in DeviceCode,
+        where: dc.user_code == ^user_code and dc.status == "pending",
+        select: dc
 
-      %DeviceCode{} = dc ->
-        dc
-        |> Ecto.Changeset.change(%{status: "authorized", user_id: user.id})
-        |> Repo.update()
+    case Repo.update_all(query, set: [status: "authorized", user_id: user.id]) do
+      {1, [dc]} -> {:ok, dc}
+      {0, _} -> {:error, :not_found}
     end
   end
 

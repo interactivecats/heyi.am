@@ -47,6 +47,16 @@ defmodule HeyiAm.Shares do
     |> Repo.update()
   end
 
+  @doc """
+  Updates rendered HTML for a share from the CLI publish pipeline.
+  Separate from update_share to prevent stored HTML injection via the session create API.
+  """
+  def update_share_rendered_html(%Share{} = share, attrs) do
+    share
+    |> Share.rendered_html_changeset(attrs)
+    |> Repo.update()
+  end
+
   def delete_share(%Share{} = share) do
     Repo.delete(share)
   end

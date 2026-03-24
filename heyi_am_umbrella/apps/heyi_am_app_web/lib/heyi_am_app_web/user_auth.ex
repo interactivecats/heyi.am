@@ -14,7 +14,9 @@ defmodule HeyiAmAppWeb.UserAuth do
   @remember_me_options [
     sign: true,
     max_age: @max_cookie_age_in_days * 24 * 60 * 60,
-    same_site: "Lax"
+    same_site: "Lax",
+    secure: true,
+    http_only: true
   ]
 
   # How old the session token should be before a new one is issued. When a request is made
@@ -94,6 +96,8 @@ defmodule HeyiAmAppWeb.UserAuth do
     token_age = Date.diff(Date.utc_today(), DateTime.to_date(token_inserted_at))
 
     if token_age >= @session_reissue_age_in_days do
+      old_token = get_session(conn, :user_token)
+      old_token && Accounts.delete_user_session_token(old_token)
       create_or_extend_session(conn, user, %{})
     else
       conn

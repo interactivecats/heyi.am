@@ -135,7 +135,13 @@ defmodule HeyiAmAppWeb.ProjectApiController do
     end
   end
 
-  defp image_content_type?(ct) when is_binary(ct), do: String.starts_with?(ct, "image/")
+  # Allowlist safe raster image types — reject SVG (can contain executable JS)
+  @safe_image_types ["image/png", "image/jpeg", "image/webp", "image/gif"]
+
+  defp image_content_type?(ct) when is_binary(ct) do
+    Enum.any?(@safe_image_types, &String.starts_with?(ct, &1))
+  end
+
   defp image_content_type?(_), do: false
 
   defp format_errors(changeset) do

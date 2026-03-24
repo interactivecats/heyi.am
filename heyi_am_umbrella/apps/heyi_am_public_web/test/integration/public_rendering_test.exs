@@ -28,18 +28,22 @@ defmodule HeyiAmPublicWeb.PublicRenderingTest do
   test "full share flow: published share with rendered HTML is served", %{conn: conn} do
     user = user_fixture(%{username: "intsharedev"})
 
-    {:ok, _share} =
+    {:ok, share} =
       HeyiAm.Shares.create_share(%{
         user_id: user.id,
         token: "int-share-123",
         title: "Integration Session",
         status: "listed",
-        rendered_html: "<div class=\"session\">Integration Session Content</div>",
         skills: ["elixir", "phoenix"],
         duration_minutes: 45,
         turns: 20,
         files_changed: 10,
         loc_changed: 200
+      })
+
+    {:ok, _share} =
+      HeyiAm.Shares.update_share_rendered_html(share, %{
+        rendered_html: "<div class=\"session\">Integration Session Content</div>"
       })
 
     # Share page serves the rendered HTML
