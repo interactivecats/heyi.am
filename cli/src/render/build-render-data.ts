@@ -112,6 +112,7 @@ interface BuildProjectRenderOpts {
   totalAgentDurationMinutes?: number;
   totalFilesChanged: number;
   sessionCards: SessionCard[];
+  sessionBaseUrl?: string;
 }
 
 /**
@@ -137,5 +138,6 @@ export function buildProjectRenderData(opts: BuildProjectRenderOpts): ProjectRen
       totalFilesChanged: opts.totalFilesChanged,
     },
     sessions: opts.sessionCards,
+    sessionBaseUrl: opts.sessionBaseUrl,
   };
 }

@@ -53,18 +53,20 @@ interface TimelineSessionEntry {
   date?: string;
 }
 
-function SessionCardItem({ session, index, maxDuration }: {
+function SessionCardItem({ session, index, maxDuration, baseUrl }: {
   session: SessionCard;
   index: number;
   maxDuration: number;
+  baseUrl?: string;
 }) {
   const barColor = SESSION_BAR_COLORS[index % SESSION_BAR_COLORS.length];
   const barWidth = maxDuration > 0
     ? Math.max(20, Math.round((session.durationMinutes / maxDuration) * 100))
     : 100;
 
-  return (
-    <div className="project-preview__session-card">
+  const href = baseUrl ? `${baseUrl}/${session.slug || session.token}` : undefined;
+  const card = (
+    <div className={`project-preview__session-card${href ? ' project-preview__session-card--clickable' : ''}`}>
       <div
         className="project-preview__session-bar"
         style={{ width: `${barWidth}%`, background: barColor }}
@@ -76,7 +78,7 @@ function SessionCardItem({ session, index, maxDuration }: {
         {session.filesChanged > 0 && <>{' \u00B7 '}{session.filesChanged} files</>}
         {' \u00B7 '}{formatLoc(session.locChanged)} LOC
       </div>
-      {session.skills.length > 0 && (
+      {session.skills?.length > 0 && (
         <div className="project-preview__session-skills">
           {session.skills.map((skill) => (
             <span key={skill} className="chip">{skill}</span>
@@ -85,6 +87,11 @@ function SessionCardItem({ session, index, maxDuration }: {
       )}
     </div>
   );
+
+  if (href) {
+    return <a href={href} className="project-preview__session-link">{card}</a>;
+  }
+  return card;
 }
 
 interface ParsedPeriod {
@@ -149,6 +156,7 @@ function TimelinePeriodBlock({ period }: { period: ParsedPeriod }) {
 
 export function ProjectPage({ data }: { data: ProjectRenderData }) {
   const { user, project, sessions } = data;
+  const sessionBaseUrl = data.sessionBaseUrl || `/${user.username}/${project.slug}`;
   const maxDuration = sessions.length > 0
     ? Math.max(...sessions.map((s) => s.durationMinutes))
     : 1;
@@ -234,7 +242,7 @@ export function ProjectPage({ data }: { data: ProjectRenderData }) {
       )}
 
       {/* Skills */}
-      {project.skills.length > 0 && (
+      {project.skills?.length > 0 && (
         <div className="project-preview__skills">
           {project.skills.map((skill) => (
             <span key={skill} className="chip">{skill}</span>
@@ -337,6 +345,7 @@ export function ProjectPage({ data }: { data: ProjectRenderData }) {
                 session={session}
                 index={i}
                 maxDuration={maxDuration}
+                baseUrl={sessionBaseUrl}
               />
             ))}
           </div>
@@ -352,6 +361,7 @@ export function ProjectPage({ data }: { data: ProjectRenderData }) {
                     session={session}
                     index={i + INITIAL_SESSIONS}
                     maxDuration={maxDuration}
+                    baseUrl={sessionBaseUrl}
                   />
                 ))}
               </div>

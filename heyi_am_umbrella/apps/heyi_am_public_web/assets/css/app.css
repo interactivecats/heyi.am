@@ -4757,6 +4757,29 @@ body:has(.vibe-page) {
   margin-top: var(--spacing-1);
 }
 
+/* ── Clickable session cards ── */
+
+.project-preview__session-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.project-preview__session-card--clickable {
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.project-preview__session-card--clickable:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.project-preview__session-card--clickable:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 /* ── Project page responsive ── */
 
 @media (max-width: 768px) {

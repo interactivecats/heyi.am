@@ -80,6 +80,15 @@ export function SessionPage({ data }: { data: SessionRenderData }) {
 
   return (
     <div className="session-page" data-render-version="1" data-template={session.template}>
+      <aside className="session-sidebar">
+        {session.toolBreakdown && session.toolBreakdown.length > 0 && (
+          <ToolBreakdown tools={session.toolBreakdown} />
+        )}
+        {session.topFiles && session.topFiles.length > 0 && (
+          <TopFiles files={session.topFiles} />
+        )}
+      </aside>
+
       <nav className="session-breadcrumb">
         <a href={`/@${user.username}`}>{user.username}</a>
         {projectSlug && (
@@ -173,14 +182,6 @@ export function SessionPage({ data }: { data: SessionRenderData }) {
         </section>
       )}
 
-      <aside className="session-sidebar">
-        {session.toolBreakdown && session.toolBreakdown.length > 0 && (
-          <ToolBreakdown tools={session.toolBreakdown} />
-        )}
-        {session.topFiles && session.topFiles.length > 0 && (
-          <TopFiles files={session.topFiles} />
-        )}
-      </aside>
     </div>
   );
 }

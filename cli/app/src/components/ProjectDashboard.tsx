@@ -132,7 +132,7 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
         <StatCell label="Files" value={String(project.totalFiles)} />
       </div>
 
-      {project.skills.length > 0 && (
+      {project.skills?.length > 0 && (
         <div className="project-card__skills">
           {project.skills.map((skill) => (
             <span key={skill} className="skill-chip">{skill}</span>

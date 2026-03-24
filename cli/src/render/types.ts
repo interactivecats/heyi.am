@@ -76,6 +76,8 @@ export interface ProjectRenderData {
   user: UserInfo;
   project: ProjectDetail;
   sessions: SessionCard[];
+  /** Base URL for session links. Defaults to /:username/:project */
+  sessionBaseUrl?: string;
 }
 
 export interface Beat {

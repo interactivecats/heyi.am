@@ -301,7 +301,7 @@ export function createApp(sessionsBasePath?: string) {
       dateRange: firstDate && lastDate ? `${firstDate}|${lastDate}` : '',
       lastSessionDate: lastDate,
       isUploaded: !!published,
-      uploadedSessionCount: published?.uploadedSessions.length ?? 0,
+      uploadedSessionCount: published?.uploadedSessions?.length ?? 0,
       uploadedSessions: published?.uploadedSessions ?? [],
       enhancedAt: enhanceCache?.enhancedAt ?? null,
       totalAgentDuration,
@@ -1705,43 +1705,98 @@ export function createApp(sessionsBasePath?: string) {
         totalAgentDurationMinutes: proj.totalAgentDuration,
         totalFilesChanged: proj.totalFiles,
         sessionCards,
+        sessionBaseUrl: `/preview/project/${encodeURIComponent(projectParam)}/session`,
       });
 
       const bodyHtml = renderProjectHtml(renderData);
+      res.type('html').send(buildPreviewPage(
+        proj.name,
+        bodyHtml,
+        'PREVIEW — this is how your project will appear on heyi.am',
+      ));
+    } catch (err) {
+      console.error('[preview] Error:', (err as Error).message);
+      res.status(500).send('Preview rendering failed');
+    }
+  });
 
-      // Always inline CSS so the preview works regardless of how it's accessed
-      const appCssPath = path.resolve(__dirname, '..', 'app', 'src', 'App.css');
-      const indexCssPath = path.resolve(__dirname, '..', 'app', 'src', 'index.css');
-      let inlineCss = '';
-      try { inlineCss += readFileSync(indexCssPath, 'utf-8'); } catch { /* */ }
-      try { inlineCss += readFileSync(appCssPath, 'utf-8'); } catch { /* */ }
-      const cssTag = `<style>${inlineCss}\n/* Preview override */\nbody { overflow: auto !important; min-height: auto !important; }\n#root { min-height: auto !important; }</style>`;
-
-      const pageHtml = `<!DOCTYPE html>
+  // Helper: build a standalone preview HTML page with inlined CSS
+  function buildPreviewPage(title: string, bodyHtml: string, banner?: string): string {
+    const appCssPath = path.resolve(__dirname, '..', 'app', 'src', 'App.css');
+    const indexCssPath = path.resolve(__dirname, '..', 'app', 'src', 'index.css');
+    let inlineCss = '';
+    try { inlineCss += readFileSync(indexCssPath, 'utf-8'); } catch { /* */ }
+    try { inlineCss += readFileSync(appCssPath, 'utf-8'); } catch { /* */ }
+    const cssTag = `<style>${inlineCss}\n/* Preview override */\nbody { overflow: auto !important; min-height: auto !important; }\n#root { min-height: auto !important; }</style>`;
+    const bannerHtml = banner
+      ? `<div style="background: var(--primary, #084471); color: white; text-align: center; padding: 0.5rem; font-family: 'Inter', sans-serif; font-size: 0.75rem; letter-spacing: 0.05em;">${escapeHtml(banner)}</div>`
+      : '';
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="heyiam-api-base" content="/api" />
-  <title>${escapeHtml(proj.name)} — Preview</title>
+  <title>${escapeHtml(title)} — Preview</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
   ${cssTag}
 </head>
 <body>
-  <div style="background: var(--primary, #084471); color: white; text-align: center; padding: 0.5rem; font-family: 'Inter', sans-serif; font-size: 0.75rem; letter-spacing: 0.05em;">
-    PREVIEW — this is how your project will appear on heyi.am
-  </div>
+  ${bannerHtml}
   ${bodyHtml}
   <script src="/heyiam-mount.js"></script>
 </body>
 </html>`;
+  }
 
-      res.type('html').send(pageHtml);
+  // Session preview — serves full standalone HTML page for a single session
+  app.get('/preview/project/:project/session/:sessionId', async (req: Request, res: Response) => {
+    try {
+      const { project: projectParam, sessionId } = req.params;
+      const rawProjects = await getProjects(sessionsBasePath);
+      const rawProj = rawProjects.find((p) => p.name === projectParam || p.dirName === projectParam);
+      if (!rawProj) { res.status(404).send('Project not found'); return; }
+
+      const meta = rawProj.sessions.find((s) => s.sessionId === sessionId);
+      if (!meta) { res.status(404).send('Session not found'); return; }
+
+      const auth = getAuthToken();
+      const session = await loadSession(meta.path, rawProj.name, sessionId);
+      const enhanced = loadEnhancedData(sessionId);
+
+      let agentSummary: Record<string, unknown> | null = null;
+      const childMetas = meta.children ?? [];
+      if (childMetas.length > 0) {
+        const agents: Array<{ role: string; duration_minutes: number; loc_changed: number }> = [];
+        for (const c of childMetas) {
+          const childStats = await getSessionStats(c, rawProj.name);
+          agents.push({ role: c.agentRole ?? 'agent', duration_minutes: childStats.duration, loc_changed: childStats.loc });
+        }
+        if (agents.length > 0) agentSummary = { is_orchestrated: true, agents };
+      }
+
+      const renderData = buildSessionRenderData({
+        sessionId,
+        session,
+        enhanced,
+        username: auth?.username || 'preview',
+        projectSlug: rawProj.dirName,
+        sessionSlug: sessionId,
+        sourceTool: session.source || 'claude',
+        agentSummary,
+      });
+
+      const bodyHtml = renderSessionHtml(renderData);
+      res.type('html').send(buildPreviewPage(
+        session.title || sessionId,
+        bodyHtml,
+        'PREVIEW — this is how your session will appear on heyi.am',
+      ));
     } catch (err) {
-      console.error('[preview] Error:', (err as Error).message);
-      res.status(500).send('Preview rendering failed');
+      console.error('[session-preview] Error:', (err as Error).message);
+      res.status(500).send('Session preview failed');
     }
   });
 
