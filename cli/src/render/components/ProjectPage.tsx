@@ -156,6 +156,7 @@ function TimelinePeriodBlock({ period }: { period: ParsedPeriod }) {
 
 export function ProjectPage({ data }: { data: ProjectRenderData }) {
   const { user, project, sessions } = data;
+  const allSessions = data.allSessions || sessions;
   const sessionBaseUrl = data.sessionBaseUrl || `/${user.username}/${project.slug}`;
   const maxDuration = sessions.length > 0
     ? Math.max(...sessions.map((s) => s.durationMinutes))
@@ -282,7 +283,7 @@ export function ProjectPage({ data }: { data: ProjectRenderData }) {
       <div className="project-preview__timeline-heading">WORK TIMELINE</div>
       <div
         data-work-timeline
-        data-sessions={JSON.stringify(sessions.map((s) => {
+        data-sessions={JSON.stringify(allSessions.map((s) => {
           const agents = (s.agentSummary as { agents?: Array<{ role: string; duration_minutes: number; loc_changed: number }> })?.agents;
           return {
             id: s.token, title: s.title, date: s.recordedAt,
@@ -324,7 +325,7 @@ export function ProjectPage({ data }: { data: ProjectRenderData }) {
         data-growth-chart
         data-total-loc={project.totalLoc}
         data-total-files={project.totalFilesChanged}
-        data-sessions={JSON.stringify(sessions.map((s) => ({
+        data-sessions={JSON.stringify(allSessions.map((s) => ({
           id: s.token, title: s.title, date: s.recordedAt,
           durationMinutes: s.durationMinutes, turns: s.turns,
           linesOfCode: s.locChanged, status: 'enhanced' as const,

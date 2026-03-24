@@ -75,7 +75,10 @@ export interface SessionCard {
 export interface ProjectRenderData {
   user: UserInfo;
   project: ProjectDetail;
+  /** Curated sessions for the card grid */
   sessions: SessionCard[];
+  /** All sessions for work timeline and growth chart (falls back to sessions if not set) */
+  allSessions?: SessionCard[];
   /** Base URL for session links. Defaults to /:username/:project */
   sessionBaseUrl?: string;
 }

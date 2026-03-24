@@ -1653,7 +1653,9 @@ export function createApp(sessionsBasePath?: string) {
 
       const enhanceResult = cached?.result;
 
-      // Build a lookup of session stats by ID for enriching timeline entries
+      // Build cards for ALL sessions (for work timeline + growth chart)
+      // and a stats lookup for enriching timeline entries
+      const allSessionCards: SessionCard[] = [];
       const sessionStatsMap = new Map<string, { duration: number; date?: string; skills?: string[]; description?: string }>();
       for (const meta of rawProj.sessions) {
         try {
@@ -1665,6 +1667,29 @@ export function createApp(sessionsBasePath?: string) {
             skills: enhanced?.skills ?? s.skills ?? [],
             description: enhanced?.context || '',
           });
+
+          // Build agent summary for this session
+          let allAgentSummary: Record<string, unknown> | null = null;
+          const allChildMetas = meta.children ?? [];
+          if (allChildMetas.length > 0) {
+            const agents: Array<{ role: string; duration_minutes: number; loc_changed: number }> = [];
+            for (const c of allChildMetas) {
+              const childStats = await getSessionStats(c, rawProj.name);
+              agents.push({ role: c.agentRole ?? 'agent', duration_minutes: childStats.duration, loc_changed: childStats.loc });
+            }
+            if (agents.length > 0) allAgentSummary = { is_orchestrated: true, agents };
+          }
+
+          allSessionCards.push(buildSessionCard({
+            sessionId: meta.sessionId,
+            session: s,
+            enhanced,
+            username: auth?.username || 'preview',
+            projectSlug: proj.dirName,
+            sessionSlug: meta.sessionId,
+            sourceTool: s.source || 'claude',
+            agentSummary: allAgentSummary,
+          }));
         } catch { /* skip */ }
       }
 
@@ -1705,6 +1730,7 @@ export function createApp(sessionsBasePath?: string) {
         totalAgentDurationMinutes: proj.totalAgentDuration,
         totalFilesChanged: proj.totalFiles,
         sessionCards,
+        allSessionCards,
         sessionBaseUrl: `/preview/project/${encodeURIComponent(projectParam)}/session`,
       });
 
