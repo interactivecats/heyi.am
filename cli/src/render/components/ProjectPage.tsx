@@ -274,14 +274,27 @@ export function ProjectPage({ data }: { data: ProjectRenderData }) {
       <div className="project-preview__timeline-heading">WORK TIMELINE</div>
       <div
         data-work-timeline
-        data-sessions={JSON.stringify(sessions.map((s) => ({
-          id: s.token, title: s.title, date: s.recordedAt,
-          durationMinutes: s.durationMinutes, turns: s.turns,
-          linesOfCode: s.locChanged, status: 'enhanced' as const,
-          projectName: project.title, rawLog: [],
-          skills: s.skills, source: s.sourceTool,
-          filesChanged: s.filesChanged,
-        })))}
+        data-sessions={JSON.stringify(sessions.map((s) => {
+          const agents = (s.agentSummary as { agents?: Array<{ role: string; duration_minutes: number; loc_changed: number }> })?.agents;
+          return {
+            id: s.token, title: s.title, date: s.recordedAt,
+            durationMinutes: s.durationMinutes, turns: s.turns,
+            linesOfCode: s.locChanged, status: 'enhanced' as const,
+            projectName: project.title, rawLog: [],
+            skills: s.skills, source: s.sourceTool,
+            filesChanged: s.filesChanged,
+            ...(agents ? {
+              isOrchestrated: true,
+              childCount: agents.length,
+              children: agents.map((a, i) => ({
+                sessionId: `${s.token}-agent-${i}`,
+                role: a.role,
+                durationMinutes: a.duration_minutes,
+                linesOfCode: a.loc_changed,
+              })),
+            } : {}),
+          };
+        }))}
       />
 
       {/* Project Timeline */}

@@ -1616,6 +1616,27 @@ export function createApp(sessionsBasePath?: string) {
           try {
             const session = await loadSession(meta.path, rawProj.name, sid);
             const enhanced = loadEnhancedData(sid);
+
+            // Build agent summary from child sessions
+            let agentSummary: Record<string, unknown> | null = null;
+            const childMetas = meta.children ?? [];
+            if (childMetas.length > 0) {
+              const seenRoles = new Set<string>();
+              const agents: Array<{ role: string; duration_minutes: number; loc_changed: number }> = [];
+              for (const c of childMetas) {
+                const role = c.agentRole ?? c.sessionId;
+                if (seenRoles.has(role)) continue;
+                seenRoles.add(role);
+                const childStats = await getSessionStats(c, rawProj.name);
+                agents.push({
+                  role: c.agentRole ?? 'agent',
+                  duration_minutes: childStats.duration,
+                  loc_changed: childStats.loc,
+                });
+              }
+              if (agents.length > 0) agentSummary = { is_orchestrated: true, agents };
+            }
+
             sessionCards.push(buildSessionCard({
               sessionId: sid,
               session,
@@ -1624,6 +1645,7 @@ export function createApp(sessionsBasePath?: string) {
               projectSlug: proj.dirName,
               sessionSlug: sid,
               sourceTool: session.source || 'claude',
+              agentSummary,
             }));
           } catch { /* skip sessions that fail to parse */ }
         }
