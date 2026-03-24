@@ -10,9 +10,9 @@
 
 1. In Coolify, click **New Resource** > **Application** > select your Git repo.
 2. Set **Build Pack** to **Dockerfile**.
-3. Set **Base Directory** to `/phoenix` — this scopes the build to the Phoenix app directory.
+3. Set **Base Directory** to `/heyi_am_umbrella` — this scopes the build to the umbrella app directory.
 4. Set **Dockerfile Location** to `/Dockerfile` (relative to the base directory).
-5. Set **Ports Exposes** to `4000`.
+5. Set **Ports Exposes** to `4000,4001,4002` (three endpoints: public_web, app_web, vibe_web).
 
 ## 2. Environment Variables
 
@@ -24,7 +24,10 @@ Add these in the Coolify **Environment Variables** tab:
 |---|---|---|
 | `DATABASE_URL` | `ecto://user:pass@host:5432/heyi_am_prod` | Use the Coolify-managed Postgres connection string |
 | `SECRET_KEY_BASE` | *(64+ char random string)* | Generate with `mix phx.gen.secret` |
-| `PHX_HOST` | `heyi.am` | Your public domain |
+| `PHX_HOST` | `heyi.am` | Primary domain (used for URL generation) |
+| `PUBLIC_HOST` | `heyi.am` | Public portfolio domain (port 4000, pre-rendered HTML, strict CSP) |
+| `APP_HOST` | `heyiam.com` | App domain (port 4001, auth, API, settings — session cookies scoped here) |
+| `VIBE_HOST` | `howdoyouvibe.com` | Vibe domain (port 4002, anonymous vibes, no cookies) |
 | `PHX_SERVER` | `true` | Starts the HTTP listener |
 
 ### GitHub OAuth
@@ -107,14 +110,37 @@ When these are unset, the app will fail to start in production. Verify your send
 
 | Variable | Default | Notes |
 |---|---|---|
-| `PORT` | `4000` | HTTP listen port |
+| `PUBLIC_PORT` | `4000` | public_web HTTP listen port |
+| `APP_PORT` | `4001` | app_web HTTP listen port |
+| `VIBE_PORT` | `4002` | vibe_web HTTP listen port |
 | `POOL_SIZE` | `10` | Ecto connection pool size |
 | `ECTO_IPV6` | — | Set to `true` if your Postgres needs IPv6 |
 
-## 3. Network / Ports
+## 3. Network / Ports / Domains
 
-- Coolify's built-in Traefik proxy handles HTTPS termination. Configure your domain in the **Domains** tab.
-- The container listens on port `4000` (set in step 1).
+- Coolify's built-in Traefik proxy handles HTTPS termination.
+- The container listens on three ports: `4000` (public_web), `4001` (app_web), `4002` (vibe_web).
+- In the **Domains** tab, map each domain to its port: `https://heyi.am:4000,https://heyiam.com:4001,https://howdoyouvibe.com:4002`
+- Traefik provisions TLS certs for all three via Let's Encrypt automatically.
+- Each domain routes to a separate Phoenix endpoint with its own plug pipeline.
+
+### DNS Setup
+
+All three domains need A records pointing at your Coolify server IP:
+
+```
+heyi.am             A  → <server-ip>
+heyiam.com          A  → <server-ip>
+howdoyouvibe.com    A  → <server-ip>
+```
+
+### Security Model
+
+- **heyi.am** (port 4000) — public portfolios. Serves pre-rendered HTML from DB. Strict CSP (`script-src 'self'`). No session cookies, no CSRF.
+- **heyiam.com** (port 4001) — auth, API, settings, LiveView. Session cookies scoped to `heyiam.com` only. CSRF protection on all forms.
+- **howdoyouvibe.com** (port 4002) — anonymous vibes. No session cookies, no auth.
+
+XSS in user-generated portfolio HTML cannot steal auth cookies (different registrable domain = complete cookie isolation).
 
 ## 4. Health Check
 
@@ -156,7 +182,7 @@ The `.dockerignore` excludes `_build/`, `deps/`, `node_modules/`, and `test/` to
 Push to your configured branch. Coolify will:
 
 1. Pull the repo
-2. Build the Docker image from `/phoenix/Dockerfile`
+2. Build the Docker image from `/heyi_am_umbrella/Dockerfile`
 3. Run the pre-deploy migration command (`/app/bin/migrate`)
 4. Start the container
 5. Route traffic once the health check passes
@@ -236,6 +262,9 @@ Copy-paste into Coolify's **Developer** / raw env editor:
 DATABASE_URL=ecto://user:pass@host:5432/heyi_am_prod
 SECRET_KEY_BASE=
 PHX_HOST=heyi.am
+PUBLIC_HOST=heyi.am
+APP_HOST=heyiam.com
+VIBE_HOST=howdoyouvibe.com
 PHX_SERVER=true
 
 # GitHub OAuth
@@ -274,8 +303,12 @@ SES_REGION=us-east-1
 ERL_FLAGS=+K true +Q 65536 +P 1048576 +A 32 +sbwt none +sbwtdcpu none +sbwtdio none
 HTTP_NUM_ACCEPTORS=100
 
+# Ports (optional, defaults shown)
+PUBLIC_PORT=4000
+APP_PORT=4001
+VIBE_PORT=4002
+
 # Other optional
-PORT=4000
 POOL_SIZE=10
 ECTO_IPV6=
 ```

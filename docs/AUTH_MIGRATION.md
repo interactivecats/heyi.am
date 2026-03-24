@@ -77,17 +77,17 @@ Added two new LiveViews:
 
 Uses same hashed-email-token pattern as magic links but with `"reset_password"` context and 1-day expiry.
 
-### Step 7: Security hardening (pending)
+### Step 7: Security hardening (done)
 
-From security review + red team analysis:
+From security review + red team analysis. All items fixed in commits `0f7acfa` and `6b792c2`:
 
 | # | Severity | Issue | Status |
 |---|----------|-------|--------|
-| 1 | High | Missing sudo mode on `export` and `delete_account` controller actions | Pending |
-| 2 | Medium | Remember-me cookie missing `secure` and `http_only` flags | Pending |
-| 3 | Medium | Sudo check crashes with MatchError (500) instead of proper 403 | Pending |
-| 4 | Medium | No rate limiting on `POST /users/log-in` | Pending |
-| 5 | Medium | Share.rendered_html changeset separation (same pattern as User.rendered_portfolio_html) | Pending |
+| 1 | High | Missing sudo mode on `export` and `delete_account` controller actions | Fixed |
+| 2 | Medium | Remember-me cookie missing `secure` and `http_only` flags | Fixed |
+| 3 | Medium | Sudo check crashes with MatchError (500) instead of proper 403 | Fixed |
+| 4 | Medium | No rate limiting on `POST /users/log-in` | Fixed |
+| 5 | Medium | Share.rendered_html changeset separation (same pattern as User.rendered_portfolio_html) | Fixed |
 
 ## XSS Defense Architecture
 

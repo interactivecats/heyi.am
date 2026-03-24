@@ -5,7 +5,7 @@ defmodule HeyiAmAppWeb.AppShell do
   """
   use Phoenix.Component
 
-  attr :logo_text, :string, default: "heyi.am"
+  attr :logo_text, :string, default: "heyiam"
   attr :logo_href, :string, default: "/"
   attr :current_page, :string, default: nil
   attr :class, :string, default: nil
@@ -52,7 +52,7 @@ defmodule HeyiAmAppWeb.AppShell do
       <footer style="border-top: 1px solid var(--outline-variant); padding-block: var(--spacing-6);">
         <div style="max-width: var(--content-max-width); margin-inline: auto; padding-inline: var(--spacing-6); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-4);">
           <span class="label-sm" style="color: var(--on-surface-variant);">
-            heyi.am
+            heyiam
           </span>
           <nav aria-label="Footer" style="display: flex; gap: var(--spacing-6);">
             <a href="/terms" class="label-sm" style="color: var(--on-surface-variant); text-decoration: none;">Terms</a>

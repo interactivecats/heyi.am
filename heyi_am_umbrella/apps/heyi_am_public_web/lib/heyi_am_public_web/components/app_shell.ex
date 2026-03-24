@@ -54,7 +54,7 @@ defmodule HeyiAmPublicWeb.AppShell do
             AI coding creates invisible work.
           </p>
           <a
-            href="/"
+            href={HeyiAmPublicWeb.Helpers.app_url("/home")}
             style="color: var(--primary, #084471); font-weight: 600; text-decoration: none; font-size: 0.875rem;"
           >
             Turn yours into proof &rarr;
@@ -68,8 +68,8 @@ defmodule HeyiAmPublicWeb.AppShell do
             heyi.am
           </span>
           <nav aria-label="Footer" style="display: flex; gap: var(--spacing-6);">
-            <a href="/terms" class="label-sm" style="color: var(--on-surface-variant); text-decoration: none;">Terms</a>
-            <a href="/privacy" class="label-sm" style="color: var(--on-surface-variant); text-decoration: none;">Privacy</a>
+            <a href={HeyiAmPublicWeb.Helpers.app_url("/terms")} class="label-sm" style="color: var(--on-surface-variant); text-decoration: none;">Terms</a>
+            <a href={HeyiAmPublicWeb.Helpers.app_url("/privacy")} class="label-sm" style="color: var(--on-surface-variant); text-decoration: none;">Privacy</a>
           </nav>
         </div>
       </footer>

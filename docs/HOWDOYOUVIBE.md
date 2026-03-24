@@ -329,16 +329,16 @@ Server-rendered SVG → PNG (1200x630, standard OG size).
 SVG → PNG: Use `resvg` (Rust-based, available as Elixir NIF via `resvg_nif` hex package) or shell out to `rsvg-convert` (installed in Docker image). Cache the PNG — vibes are immutable.
 
 **Files:**
-- Create `phoenix/lib/heyi_am/vibes/vibe.ex` — Ecto schema
-- Create `phoenix/lib/heyi_am/vibes.ex` — context (create, get, list_recent)
+- Create `apps/heyi_am/lib/heyi_am/vibes/vibe.ex` — Ecto schema
+- Create `apps/heyi_am/lib/heyi_am/vibes.ex` — context (create, get, list_recent)
 - Create migration `create_vibes`
-- Create `phoenix/lib/heyi_am_web/controllers/vibe_api_controller.ex`
-- Create `phoenix/lib/heyi_am_web/controllers/vibe_controller.ex`
-- Create `phoenix/lib/heyi_am_web/controllers/vibe_html.ex`
-- Create `phoenix/lib/heyi_am_web/controllers/vibe_html/show.html.heex`
-- Create `phoenix/lib/heyi_am_web/controllers/vibe_html/index.html.heex`
-- Create `phoenix/lib/heyi_am_web/controllers/vibe_html/card.svg.heex` — OG image SVG template
-- Modify `phoenix/lib/heyi_am_web/router.ex`
+- Create `apps/heyi_am_vibe_web/lib/heyi_am_vibe_web/controllers/vibe_api_controller.ex`
+- Create `apps/heyi_am_vibe_web/lib/heyi_am_vibe_web/controllers/vibe_controller.ex`
+- Create `apps/heyi_am_vibe_web/lib/heyi_am_vibe_web/controllers/vibe_html.ex`
+- Create `apps/heyi_am_vibe_web/lib/heyi_am_vibe_web/controllers/vibe_html/show.html.heex`
+- Create `apps/heyi_am_vibe_web/lib/heyi_am_vibe_web/controllers/vibe_html/index.html.heex`
+- Create `apps/heyi_am_vibe_web/lib/heyi_am_vibe_web/controllers/vibe_html/card_svg.html.heex` — OG image SVG template
+- Modify `apps/heyi_am_vibe_web/lib/heyi_am_vibe_web/router.ex`
 - Create tests for controllers + context
 
 ---
@@ -424,10 +424,10 @@ See your full session-by-session breakdown:
 - Uses same `"type": "module"`, NodeNext resolution, and TS patterns as `cli/`
 - Designed so the vibe modules can be moved into `cli/src/vibe/` later with minimal changes
 
-**Phoenix (new):**
-- `phoenix/lib/heyi_am/vibes/` — schema + context
-- `phoenix/lib/heyi_am_web/controllers/vibe_*` — API + HTML controllers
-- `phoenix/lib/heyi_am_web/router.ex` — add routes
+**Phoenix (umbrella):**
+- `apps/heyi_am/lib/heyi_am/vibes/` — schema + context
+- `apps/heyi_am_vibe_web/lib/heyi_am_vibe_web/controllers/vibe_*` — API + HTML controllers
+- `apps/heyi_am_vibe_web/lib/heyi_am_vibe_web/router.ex` — add routes
 
 ---
 
@@ -435,7 +435,7 @@ See your full session-by-session breakdown:
 
 1. `cd packages/howdoyouvibe && npm test` — stat computation, archetype, narrative tests pass
 2. `cd packages/howdoyouvibe && npm run build && node dist/index.js` — scans real sessions, renders terminal card
-4. `cd phoenix && mix test` — vibe API + controller + context tests pass
-5. `curl -X POST localhost:4000/api/vibes -H 'Content-Type: application/json' -d '{"stats":{...},"archetype_id":"night-owl","modifier_id":"cusses-under-pressure","narrative":"...","sources":["claude"],"session_count":23,"total_turns":847}'` — returns 201 + short_id
-6. `open localhost:4000/v/{short_id}` — share page renders with OG tags, card download works
-7. `open localhost:4000/v` — gallery shows recent vibes
+4. `cd heyi_am_umbrella && mix test` — vibe API + controller + context tests pass
+5. `curl -X POST localhost:4002/api/vibes -H 'Content-Type: application/json' -d '{"stats":{...},"archetype_id":"night-owl","modifier_id":"cusses-under-pressure","narrative":"...","sources":["claude"],"session_count":23,"total_turns":847}'` — returns 201 + short_id
+6. `open localhost:4002/{short_id}` — share page renders with OG tags, card download works
+7. `open localhost:4002` — gallery shows recent vibes

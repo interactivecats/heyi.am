@@ -8,7 +8,7 @@ defmodule HeyiAmAppWeb.UserSessionController do
     if conn.assigns.current_scope && conn.assigns.current_scope.user do
       redirect(conn, to: ~p"/users/settings")
     else
-      redirect(conn, to: ~p"/users/log-in")
+      redirect(conn, to: ~p"/home")
     end
   end
 

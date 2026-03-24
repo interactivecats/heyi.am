@@ -67,6 +67,7 @@ defmodule HeyiAmAppWeb do
     quote do
       import Phoenix.HTML
       import HeyiAmAppWeb.CoreComponents
+      import HeyiAmAppWeb.AppShell
       import HeyiAmAppWeb.Gettext
 
       alias Phoenix.LiveView.JS

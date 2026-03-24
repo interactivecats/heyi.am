@@ -162,18 +162,6 @@ Computed from session data. Shows how you work with AI:
 
 ---
 
-## Portfolio Editor (`heyi.am/:username/edit`)
-
-WYSIWYG — the editor IS the portfolio with editing controls overlaid.
-
-- Dark sticky topbar with template picker + accent color dots
-- Inline profile editing (name, bio)
-- Project cards with expand/collapse, drag-to-reorder
-- Session on/off toggles per project
-- Expertise ledger (categorized skill bars)
-
----
-
 ## CLI Experience
 
 ### Project Dashboard (`/`)
@@ -232,7 +220,7 @@ See `mockups/full/DESIGN.md` for the canonical spec ("The Calibrated Archive").
 | CLI | Node.js + Express + React (Vite) |
 | Web | Phoenix 1.8 + LiveView |
 | Database | PostgreSQL (Ecto) |
-| Storage | S3-compatible (SeaweedFS) via ExAws |
+| Storage | S3-compatible (Cloudflare R2) via ExAws |
 | Auth | phx.gen.auth + GitHub OAuth + Device Auth (RFC 8628) |
 | AI | Claude API (Haiku for triage, Sonnet for enhancement/narrative) |
 | Fonts | Google Fonts (Space Grotesk + IBM Plex Mono) |
