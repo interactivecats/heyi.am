@@ -15,6 +15,9 @@ import { enhanceProject, refineNarrative, type SessionSummary, type SkippedSessi
 import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData, loadFreshProjectEnhanceResult, saveProjectEnhanceResult, loadProjectEnhanceResult, buildProjectFingerprint, savePublishedState, getPublishedState } from './settings.js';
 import { captureScreenshot } from './screenshot.js';
 import { redactSession, redactText, scanTextSync, formatFindings, stripHomePathsInText } from './redact.js';
+import { renderProjectHtml, renderSessionHtml, renderPortfolioHtml } from './render/index.js';
+import { buildSessionRenderData, buildSessionCard, buildProjectRenderData } from './render/build-render-data.js';
+import type { SessionCard } from './render/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -103,7 +106,7 @@ interface SessionStats {
 // ── Persistent stats cache ────────────────────────────────────
 // Survives server restarts by writing to disk.
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
@@ -989,6 +992,52 @@ export function createApp(sessionsBasePath?: string) {
     }
   });
 
+  // Render project preview HTML — returns the same body HTML that gets uploaded
+  app.post('/api/projects/:project/render-preview', express.json(), async (req: Request, res: Response) => {
+    try {
+      const {
+        username, slug, title, narrative, repoUrl, projectUrl,
+        timeline, skills, totalSessions, totalLoc,
+        totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged,
+        sessionCards,
+      } = req.body as {
+        username: string;
+        slug: string;
+        title: string;
+        narrative: string;
+        repoUrl?: string;
+        projectUrl?: string;
+        timeline: Array<{ period: string; label: string; sessions: Array<Record<string, unknown>> }>;
+        skills: string[];
+        totalSessions: number;
+        totalLoc: number;
+        totalDurationMinutes: number;
+        totalAgentDurationMinutes?: number;
+        totalFilesChanged: number;
+        sessionCards: SessionCard[];
+      };
+
+      const renderData = buildProjectRenderData({
+        username: username || 'preview',
+        slug, title, narrative,
+        repoUrl, projectUrl,
+        timeline: timeline || [],
+        skills: skills || [],
+        totalSessions: totalSessions || 0,
+        totalLoc: totalLoc || 0,
+        totalDurationMinutes: totalDurationMinutes || 0,
+        totalAgentDurationMinutes,
+        totalFilesChanged: totalFilesChanged || 0,
+        sessionCards: sessionCards || [],
+      });
+
+      const html = renderProjectHtml(renderData);
+      res.json({ html });
+    } catch (err) {
+      res.status(500).json({ error: { code: 'RENDER_FAILED', message: (err as Error).message } });
+    }
+  });
+
   // Upload screenshot manually (base64 image from browser)
   app.post('/api/projects/:project/screenshot-upload', async (req: Request, res: Response) => {
     const { project } = req.params;
@@ -1216,6 +1265,7 @@ export function createApp(sessionsBasePath?: string) {
       const proj = projects.find((p) => p.dirName === project);
       let uploadedCount = 0;
       const failedSessions: Array<{ sessionId: string; error: string }> = [];
+      const publishedSessionCards: SessionCard[] = [];
 
       if (proj) {
         for (const sessionId of selectedSessionIds) {
@@ -1254,33 +1304,62 @@ export function createApp(sessionsBasePath?: string) {
             // M3: narrative and dev_take are distinct values
             // M4: truncate dev_take to Phoenix's 2000-char limit
             const devTake = (enhanced?.developerTake ?? session.developerTake ?? '').slice(0, 2000);
-            const narrative = (enhanced as { narrative?: string })?.narrative ?? '';
+            const sessionNarrative = (enhanced as { narrative?: string })?.narrative ?? '';
+            const sessionTitle = enhanced?.title ?? session.title;
+            const sessionSkills = enhanced?.skills ?? session.skills ?? [];
+            const sessionSourceTool = session.source ?? meta.source ?? 'claude';
+            const sessionRecordedAt = session.date ? new Date(session.date).toISOString() : new Date().toISOString();
+
+            // Build render data for this session
+            const renderOpts = {
+              sessionId,
+              session,
+              enhanced,
+              username: auth.username,
+              projectSlug: projectData.slug,
+              sessionSlug,
+              sourceTool: sessionSourceTool,
+              agentSummary,
+            };
+
+            // Render static HTML for the session page (non-fatal)
+            let sessionRenderedHtml: string | null = null;
+            try {
+              const sessionRenderData = buildSessionRenderData(renderOpts);
+              sessionRenderedHtml = renderSessionHtml(sessionRenderData);
+            } catch (renderErr) {
+              console.error(`[publish] Session render failed for ${sessionId}:`, (renderErr as Error).message);
+            }
+
+            // Collect session card for project render
+            publishedSessionCards.push(buildSessionCard(renderOpts));
 
             // POST body: scalar/aggregate fields only
             const sessionPayload = {
               session: {
-                title: enhanced?.title ?? session.title,
+                title: sessionTitle,
                 dev_take: devTake,
                 context: enhanced?.context ?? '',
                 duration_minutes: session.durationMinutes ?? 0,
                 turns: session.turns ?? 0,
                 files_changed: session.filesChanged?.length ?? 0,
                 loc_changed: session.linesOfCode ?? 0,
-                recorded_at: session.date ? new Date(session.date).toISOString() : new Date().toISOString(),
+                recorded_at: sessionRecordedAt,
                 end_time: session.endTime ? new Date(session.endTime).toISOString() : null,
                 cwd: session.cwd ?? null,
                 wall_clock_minutes: session.wallClockMinutes ?? null,
                 template: 'editorial',
                 language: null,
                 tools: session.toolBreakdown?.map((t) => t.tool) ?? [],
-                skills: enhanced?.skills ?? session.skills ?? [],
-                narrative,
+                skills: sessionSkills,
+                narrative: sessionNarrative,
                 project_name: proj.name,
                 project_id: projectData.project_id,
                 slug: sessionSlug,
                 status: 'listed',
-                source_tool: session.source ?? meta.source ?? 'claude',
+                source_tool: sessionSourceTool,
                 agent_summary: agentSummary,
+                rendered_html: sessionRenderedHtml,
               },
             };
 
@@ -1290,14 +1369,14 @@ export function createApp(sessionsBasePath?: string) {
             const sessionData = {
               version: 1,
               id: sessionId,
-              title: enhanced?.title ?? session.title,
+              title: sessionTitle,
               dev_take: devTake,
               context: enhanced?.context ?? '',
               duration_minutes: session.durationMinutes ?? 0,
               turns: session.turns ?? 0,
               files_changed: (session.filesChanged ?? []).slice(0, 20).map((f) => (typeof f === 'string' ? { path: f, additions: 0, deletions: 0 } : f)),
               loc_changed: session.linesOfCode ?? 0,
-              date: session.date ? new Date(session.date).toISOString() : new Date().toISOString(),
+              date: sessionRecordedAt,
               end_time: (() => {
                 if (!session.endTime || !session.date) return null;
                 const wallMs = new Date(session.endTime).getTime() - new Date(session.date).getTime();
@@ -1307,12 +1386,12 @@ export function createApp(sessionsBasePath?: string) {
               cwd: session.cwd ?? null,
               wall_clock_minutes: session.wallClockMinutes ?? null,
               template: 'editorial',
-              skills: enhanced?.skills ?? session.skills ?? [],
+              skills: sessionSkills,
               tools: session.toolBreakdown?.map((t) => t.tool) ?? [],
-              source: session.source ?? meta.source ?? 'claude',
+              source: sessionSourceTool,
               slug: sessionSlug,
               project_name: proj.name,
-              narrative,
+              narrative: sessionNarrative,
               status: 'listed' as const,
               raw_log: [] as string[],
               // M2: normalize execution_path steps to {label, description}
@@ -1425,6 +1504,70 @@ export function createApp(sessionsBasePath?: string) {
         }
       }
 
+      // Step 3: Render project HTML and update on Phoenix (non-fatal)
+      if (publishedSessionCards.length > 0) {
+        try {
+          const projectRenderData = buildProjectRenderData({
+            username: auth.username,
+            slug: projectData.slug,
+            title,
+            narrative,
+            repoUrl: repoUrl || undefined,
+            projectUrl: projectUrl || undefined,
+            timeline: (timeline ?? []).map((t) => ({
+              period: t.period,
+              label: t.label,
+              sessions: t.sessions as Array<Record<string, unknown>>,
+            })),
+            skills,
+            totalSessions,
+            totalLoc,
+            totalDurationMinutes,
+            totalAgentDurationMinutes: totalAgentDurationMinutes ?? undefined,
+            totalFilesChanged,
+            sessionCards: publishedSessionCards,
+          });
+          const projectHtml = renderProjectHtml(projectRenderData);
+
+          // Re-POST the project with rendered_html (upsert updates existing record)
+          send({ type: 'project', status: 'rendering' });
+          const renderRes = await fetch(`${API_URL}/api/projects`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${auth.token}`,
+            },
+            body: JSON.stringify({
+              project: {
+                title, slug, narrative,
+                repo_url: repoUrl || null,
+                project_url: projectUrl || null,
+                timeline, skills,
+                total_sessions: totalSessions,
+                total_loc: totalLoc,
+                total_duration_minutes: totalDurationMinutes,
+                total_agent_duration_minutes: totalAgentDurationMinutes || null,
+                total_files_changed: totalFilesChanged,
+                skipped_sessions: skippedSessions,
+                rendered_html: projectHtml,
+              },
+            }),
+          });
+          if (renderRes.ok) {
+            send({ type: 'project', status: 'rendered' });
+          } else {
+            console.error('[publish] Project render update failed:', renderRes.status);
+          }
+        } catch (renderErr) {
+          console.error('[publish] Project render failed:', (renderErr as Error).message);
+        }
+      }
+
+      // Step 4: Render portfolio HTML and update profile (non-fatal)
+      // TODO: Fetch user's full project list from Phoenix (GET /api/projects returns local projects, not Phoenix data).
+      // For now, we only have the current project's data. Portfolio render is skipped until
+      // a Phoenix endpoint exists to list the user's published projects with stats.
+
       // Track published state locally
       const publishedSessionIds = selectedSessionIds.filter((sid: string) => {
         const enhanced = loadEnhancedData(sid);
@@ -1476,6 +1619,135 @@ export function createApp(sessionsBasePath?: string) {
       res.status(500).json({
         error: { code: 'REFINE_FAILED', message: (err as Error).message },
       });
+    }
+  });
+
+  function escapeHtml(str: string): string {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // Preview route — serves full standalone HTML page identical to heyi.am
+  app.get('/preview/project/:project', async (req: Request, res: Response) => {
+    try {
+      const { project: projectParam } = req.params;
+      const rawProjects = await getProjects(sessionsBasePath);
+      const rawProj = rawProjects.find((p) => p.name === projectParam || p.dirName === projectParam);
+      if (!rawProj) {
+        res.status(404).send('Project not found');
+        return;
+      }
+      const proj = await getProjectWithStats(rawProj);
+
+      // Load cached enhance result for narrative, timeline, skills, session cards
+      const cached = loadProjectEnhanceResult(proj.dirName);
+      const auth = getAuthToken();
+
+      // Build session cards from parsed sessions + enhanced data
+      const sessionCards: SessionCard[] = [];
+      if (cached?.selectedSessionIds) {
+        for (const sid of cached.selectedSessionIds) {
+          const meta = rawProj.sessions.find((s) => s.sessionId === sid);
+          if (!meta) continue;
+          try {
+            const session = await loadSession(meta.path, rawProj.name, sid);
+            const enhanced = loadEnhancedData(sid);
+            sessionCards.push(buildSessionCard({
+              sessionId: sid,
+              session,
+              enhanced,
+              username: auth?.username || 'preview',
+              projectSlug: proj.dirName,
+              sessionSlug: sid,
+              sourceTool: session.source || 'claude',
+            }));
+          } catch { /* skip sessions that fail to parse */ }
+        }
+      }
+
+      const enhanceResult = cached?.result;
+
+      // Build a lookup of session stats by ID for enriching timeline entries
+      const sessionStatsMap = new Map<string, { duration: number; date?: string; skills?: string[]; description?: string }>();
+      for (const meta of rawProj.sessions) {
+        try {
+          const s = await loadSession(meta.path, rawProj.name, meta.sessionId);
+          const enhanced = loadEnhancedData(meta.sessionId);
+          sessionStatsMap.set(meta.sessionId, {
+            duration: s.durationMinutes ?? 0,
+            date: s.date || undefined,
+            skills: enhanced?.skills ?? s.skills ?? [],
+            description: enhanced?.context || '',
+          });
+        } catch { /* skip */ }
+      }
+
+      // Enrich timeline sessions with real stats
+      const enrichedTimeline = (enhanceResult?.timeline || []).map((period) => ({
+        period: period.period,
+        label: period.label,
+        sessions: period.sessions.map((s) => {
+          const stats = sessionStatsMap.get(s.sessionId);
+          return {
+            ...s,
+            duration: stats?.duration ?? 0,
+            date: stats?.date,
+            skills: stats?.skills,
+            description: stats?.description,
+          };
+        }),
+      }));
+
+      const renderData = buildProjectRenderData({
+        username: auth?.username || 'preview',
+        slug: proj.dirName,
+        title: proj.name,
+        narrative: enhanceResult?.narrative || proj.description || '',
+        repoUrl: undefined,
+        projectUrl: undefined,
+        timeline: enrichedTimeline,
+        skills: enhanceResult?.skills || proj.skills || [],
+        totalSessions: proj.sessionCount,
+        totalLoc: proj.totalLoc,
+        totalDurationMinutes: proj.totalDuration,
+        totalAgentDurationMinutes: proj.totalAgentDuration,
+        totalFilesChanged: proj.totalFiles,
+        sessionCards,
+      });
+
+      const bodyHtml = renderProjectHtml(renderData);
+
+      // Always inline CSS so the preview works regardless of how it's accessed
+      const appCssPath = path.resolve(__dirname, '..', 'app', 'src', 'App.css');
+      const indexCssPath = path.resolve(__dirname, '..', 'app', 'src', 'index.css');
+      let inlineCss = '';
+      try { inlineCss += readFileSync(indexCssPath, 'utf-8'); } catch { /* */ }
+      try { inlineCss += readFileSync(appCssPath, 'utf-8'); } catch { /* */ }
+      const cssTag = `<style>${inlineCss}\n/* Preview override */\nbody { overflow: auto !important; min-height: auto !important; }\n#root { min-height: auto !important; }</style>`;
+
+      const pageHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="heyiam-api-base" content="/api" />
+  <title>${escapeHtml(proj.name)} — Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  ${cssTag}
+</head>
+<body>
+  <div style="background: var(--primary, #084471); color: white; text-align: center; padding: 0.5rem; font-family: 'Inter', sans-serif; font-size: 0.75rem; letter-spacing: 0.05em;">
+    PREVIEW — this is how your project will appear on heyi.am
+  </div>
+  ${bodyHtml}
+</body>
+</html>`;
+
+      res.type('html').send(pageHtml);
+    } catch (err) {
+      console.error('[preview] Error:', (err as Error).message);
+      res.status(500).send('Preview rendering failed');
     }
   });
 

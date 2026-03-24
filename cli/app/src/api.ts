@@ -346,6 +346,53 @@ export async function refineNarrative(
   return res.json();
 }
 
+// ── Render Preview ──────────────────────────────────────────────
+
+export interface RenderPreviewPayload {
+  username: string;
+  slug: string;
+  title: string;
+  narrative: string;
+  repoUrl?: string;
+  projectUrl?: string;
+  timeline: Array<{ period: string; label: string; sessions: Array<Record<string, unknown>> }>;
+  skills: string[];
+  totalSessions: number;
+  totalLoc: number;
+  totalDurationMinutes: number;
+  totalAgentDurationMinutes?: number;
+  totalFilesChanged: number;
+  sessionCards: Array<{
+    token: string;
+    slug: string;
+    title: string;
+    devTake: string;
+    durationMinutes: number;
+    turns: number;
+    locChanged: number;
+    filesChanged: number;
+    skills: string[];
+    recordedAt: string;
+    sourceTool: string;
+  }>;
+}
+
+export async function fetchRenderPreview(
+  dirName: string,
+  payload: RenderPreviewPayload,
+): Promise<{ html: string }> {
+  const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/render-preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: { message: 'Render failed' } }));
+    throw new Error(err.error?.message ?? 'Render failed');
+  }
+  return res.json();
+}
+
 // ── Publish ─────────────────────────────────────────────────────
 
 export interface PublishProjectPayload {

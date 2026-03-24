@@ -9,6 +9,7 @@
     "src"
   ],
   "scripts": {
+    "build": "esbuild src/mount.tsx --bundle --outfile=dist/mount.js --format=esm --target=es2022 --jsx=automatic --loader:.tsx=tsx",
     "test": "vitest run"
   },
   "peerDependencies": {
@@ -16,6 +17,7 @@
     "react-dom": ">=18"
   },
   "devDependencies": {
+    "esbuild": "^0.25.0",
     "vitest": "^3.0.0"
   },
   "license": "MIT"
