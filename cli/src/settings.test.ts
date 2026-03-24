@@ -16,8 +16,8 @@ import {
   loadFreshProjectEnhanceResult,
   deleteProjectEnhanceResult,
   buildProjectFingerprint,
-  savePublishedState,
-  getPublishedState,
+  saveUploadedState,
+  getUploadedState,
 } from './settings.js';
 
 describe('settings', () => {
@@ -229,45 +229,45 @@ describe('settings', () => {
     });
   });
 
-  describe('published state persistence', () => {
-    it('returns null when no published state exists', () => {
-      expect(getPublishedState('my-project', tmpDir)).toBeNull();
+  describe('uploaded state persistence', () => {
+    it('returns null when no uploaded state exists', () => {
+      expect(getUploadedState('my-project', tmpDir)).toBeNull();
     });
 
-    it('saves and loads published state', () => {
-      savePublishedState('my-project', {
+    it('saves and loads uploaded state', () => {
+      saveUploadedState('my-project', {
         slug: 'my-project',
         projectId: 42,
-        publishedSessions: ['s1', 's2'],
+        uploadedSessions: ['s1', 's2'],
       }, tmpDir);
-      const loaded = getPublishedState('my-project', tmpDir);
+      const loaded = getUploadedState('my-project', tmpDir);
       expect(loaded).not.toBeNull();
       expect(loaded!.slug).toBe('my-project');
       expect(loaded!.projectId).toBe(42);
-      expect(loaded!.publishedSessions).toEqual(['s1', 's2']);
-      expect(loaded!.publishedAt).toBeDefined();
+      expect(loaded!.uploadedSessions).toEqual(['s1', 's2']);
+      expect(loaded!.uploadedAt).toBeDefined();
     });
 
-    it('overwrites previous published state', () => {
-      savePublishedState('my-project', {
+    it('overwrites previous uploaded state', () => {
+      saveUploadedState('my-project', {
         slug: 'my-project',
         projectId: 42,
-        publishedSessions: ['s1'],
+        uploadedSessions: ['s1'],
       }, tmpDir);
-      savePublishedState('my-project', {
+      saveUploadedState('my-project', {
         slug: 'my-project',
         projectId: 42,
-        publishedSessions: ['s1', 's2', 's3'],
+        uploadedSessions: ['s1', 's2', 's3'],
       }, tmpDir);
-      const loaded = getPublishedState('my-project', tmpDir);
-      expect(loaded!.publishedSessions).toEqual(['s1', 's2', 's3']);
+      const loaded = getUploadedState('my-project', tmpDir);
+      expect(loaded!.uploadedSessions).toEqual(['s1', 's2', 's3']);
     });
 
-    it('creates published/ subdirectory', () => {
-      savePublishedState('my-project', {
+    it('creates uploaded/ subdirectory', () => {
+      saveUploadedState('my-project', {
         slug: 'my-project',
         projectId: 1,
-        publishedSessions: [],
+        uploadedSessions: [],
       }, tmpDir);
       expect(existsSync(join(tmpDir, 'published', 'my-project.json'))).toBe(true);
     });

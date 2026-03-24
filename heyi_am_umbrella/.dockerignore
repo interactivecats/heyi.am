@@ -1,0 +1,28 @@
+_build/
+deps/
+.elixir_ls/
+.claude/
+erl_crash.dump
+
+# Test directories
+apps/*/test/
+test/
+
+# Node modules (rebuilt in Docker)
+apps/*/assets/node_modules/
+
+# Dev/test config
+.env
+*.secret.exs
+
+# Git
+.git/
+.gitignore
+
+# Docs / IDE
+*.md
+.vscode/
+.idea/
+
+# Temp
+tmp/

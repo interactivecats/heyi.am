@@ -49,9 +49,9 @@ function toProject(ap: ApiProject): Project {
     skills: ap.skills,
     dateRange: ap.dateRange,
     lastSessionDate: ap.lastSessionDate,
-    isPublished: ap.isPublished,
-    publishedSessionCount: ap.publishedSessionCount,
-    publishedSessions: ap.publishedSessions,
+    isUploaded: ap.isUploaded,
+    uploadedSessionCount: ap.uploadedSessionCount,
+    uploadedSessions: ap.uploadedSessions,
     enhancedAt: ap.enhancedAt,
     totalAgentDuration: ap.totalAgentDuration,
   };

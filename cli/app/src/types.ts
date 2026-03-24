@@ -53,7 +53,7 @@ export interface Session {
   wallClockMinutes?: number;
   turns: number;
   linesOfCode: number;
-  status: 'draft' | 'enhanced' | 'published' | 'archived' | 'sealed';
+  status: 'draft' | 'enhanced' | 'uploaded' | 'archived' | 'sealed';
   projectName: string;
   rawLog: string[];
   sessionRef?: string;
@@ -91,12 +91,12 @@ export interface Project {
   skills: string[];
   dateRange: string;
   lastSessionDate: string;
-  /** Whether this project has been published to heyi.am */
-  isPublished?: boolean;
-  /** Number of sessions currently published */
-  publishedSessionCount?: number;
-  /** Session IDs that are currently published */
-  publishedSessions?: string[];
+  /** Whether this project has been uploaded to heyi.am */
+  isUploaded?: boolean;
+  /** Number of sessions currently uploaded */
+  uploadedSessionCount?: number;
+  /** Session IDs that are currently uploaded */
+  uploadedSessions?: string[];
   /** When the project was last enhanced (null = never) */
   enhancedAt?: string | null;
   /** Total agent-hours across all orchestrated sessions (minutes) */

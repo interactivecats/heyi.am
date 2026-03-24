@@ -85,9 +85,9 @@ export function Settings() {
       : 'Not configured';
 
   const modeDotClass = enhanceStatus?.mode === 'local'
-    ? 'badge--published'
+    ? 'badge--uploaded'
     : enhanceStatus?.mode === 'proxy'
-      ? 'badge--published'
+      ? 'badge--uploaded'
       : 'badge--draft';
 
   return (
@@ -204,7 +204,7 @@ export function Settings() {
             <div className="settings-row">
               <span className="settings-row__label">Status</span>
               {isConnected ? (
-                <span className="badge badge--published">
+                <span className="badge badge--uploaded">
                   Connected {username}
                 </span>
               ) : (
@@ -248,7 +248,7 @@ export function Settings() {
                 {machineToken}
               </div>
               <p className="settings-help">
-                Used for cryptographic signing of published sessions
+                Used for cryptographic signing of uploaded sessions
               </p>
             </div>
 

@@ -28,7 +28,7 @@ Add these in the Coolify **Environment Variables** tab:
 | `PUBLIC_HOST` | `heyi.am` | Public portfolio domain (port 4000, pre-rendered HTML, strict CSP) |
 | `APP_HOST` | `heyiam.com` | App domain (port 4001, auth, API, settings — session cookies scoped here) |
 | `VIBE_HOST` | `howdoyouvibe.com` | Vibe domain (port 4002, anonymous vibes, no cookies) |
-| `PHX_SERVER` | `true` | Starts the HTTP listener |
+| `PHX_SERVER` | `true` | Starts the HTTP listeners (set automatically by `bin/server`, but required if using `bin/heyi_am start` directly) |
 
 ### GitHub OAuth
 
@@ -41,7 +41,7 @@ Add these in the Coolify **Environment Variables** tab:
 
 | Variable | Example | Notes |
 |---|---|---|
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://signoz-otel-collector:4318` | OTLP HTTP endpoint of your Signoz collector |
+| `OTEL_ENDPOINT` | `http://signoz-otel-collector:4318` | OTLP HTTP endpoint of your Signoz collector |
 
 When this variable is unset, tracing is disabled (no overhead). Set Signoz retention to 60 days max for GDPR compliance.
 
@@ -69,7 +69,7 @@ When no LLM API key is configured, the enhance endpoint returns 502. Users with 
 
 ### Object Storage (Cloudflare R2)
 
-heyi.am uses an S3-compatible store for session recording files. We use
+heyi.am uses an S3-compatible store for session recording files and screenshots. We use
 Cloudflare R2 in production. All credentials are injected at runtime — never
 hardcoded.
 
@@ -96,7 +96,7 @@ Presigned URLs expire after 15 minutes (configurable via `presign_expires_in`
 in the app config). The `OBJECT_STORAGE_SECRET_ACCESS_KEY` is never logged or
 returned in API responses.
 
-### Email (Amazon SES)
+### Email (Amazon SES) — optional
 
 | Variable | Default | Notes |
 |---|---|---|
@@ -104,7 +104,7 @@ returned in API responses.
 | `SES_SECRET_ACCESS_KEY` | — | IAM secret key |
 | `SES_REGION` | `us-east-1` | AWS region where SES is configured |
 
-When these are unset, the app will fail to start in production. Verify your sending domain is verified in SES before deploying.
+When these are unset, the app falls back to `Swoosh.Adapters.Local` (emails are logged but not sent). Verify your sending domain is verified in SES before deploying.
 
 ### Other optional
 
@@ -118,11 +118,19 @@ When these are unset, the app will fail to start in production. Verify your send
 
 ## 3. Network / Ports / Domains
 
-- Coolify's built-in Traefik proxy handles HTTPS termination.
-- The container listens on three ports: `4000` (public_web), `4001` (app_web), `4002` (vibe_web).
-- In the **Domains** tab, map each domain to its port: `https://heyi.am:4000,https://heyiam.com:4001,https://howdoyouvibe.com:4002`
-- Traefik provisions TLS certs for all three via Let's Encrypt automatically.
-- Each domain routes to a separate Phoenix endpoint with its own plug pipeline.
+Coolify's built-in Traefik proxy handles HTTPS termination and domain-to-port routing.
+
+The container listens on three ports: `4000` (public_web), `4001` (app_web), `4002` (vibe_web).
+
+### Domains Tab
+
+In the Coolify **Domains** field, use comma-separated entries with the port after the domain:
+
+```
+https://heyi.am:4000,https://heyiam.com:4001,https://howdoyouvibe.com:4002
+```
+
+This tells Traefik: route `heyi.am` traffic to container port 4000, `heyiam.com` to 4001, and `howdoyouvibe.com` to 4002. Traefik provisions TLS certs for all three via Let's Encrypt automatically.
 
 ### DNS Setup
 
@@ -144,15 +152,22 @@ XSS in user-generated portfolio HTML cannot steal auth cookies (different regist
 
 ## 4. Health Check
 
-The Dockerfile includes a `HEALTHCHECK` on `GET /`. Coolify uses this automatically to determine when the container is ready for traffic.
+The Dockerfile includes a `HEALTHCHECK` that curls the public_web landing page:
+
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl -sf http://localhost:4000/ || exit 1
+```
+
+Coolify uses this automatically to determine when the container is ready for traffic.
 
 ## 5. Database Migrations
 
-Migrations run automatically on each deploy via the release migration overlay.
+Migrations run via the release migration overlay.
 
-The migration infrastructure is already in place:
-- `rel/overlays/bin/migrate` — shell script that calls the release migration task
-- `lib/heyi_am/release.ex` — Elixir module that runs `Ecto.Migrator`
+The migration infrastructure:
+- `rel/overlays/bin/migrate` — shell script that calls `HeyiAm.Release.migrate`
+- `apps/heyi_am/lib/heyi_am/release.ex` — Elixir module that runs `Ecto.Migrator`
 
 In Coolify, set **Pre-deploy Command** to:
 
@@ -166,10 +181,12 @@ This runs migrations before the new container starts receiving traffic.
 
 The Dockerfile uses a multi-stage build optimized for layer caching:
 
-1. **Dependencies first** — `mix.exs` and `mix.lock` are copied before app code, so `mix deps.get` and `mix deps.compile` are cached unless dependencies change.
-2. **Config before code** — compile-time config is copied before `lib/`, so config-only changes don't invalidate the deps cache.
-3. **Assets last** — `assets/` are copied and built after Elixir compilation, keeping the two pipelines independent.
-4. **Slim runtime** — the final image is a bare Debian slim with only runtime dependencies (no Elixir, no build tools).
+1. **Dependencies first** — all `mix.exs` and `mix.lock` are copied before app code, so `mix deps.get` and `mix deps.compile` are cached unless dependencies change.
+2. **Config before code** — compile-time config (`config.exs`, `prod.exs`) is copied before `apps/`, so config-only changes don't invalidate the deps cache.
+3. **Code compilation** — all four umbrella apps are compiled together.
+4. **Assets** — npm dependencies are installed for `app_web` (React for LiveView islands), then `mix assets.deploy` runs esbuild for all web apps (JS + CSS) and `phx.digest` for fingerprinting.
+5. **Release** — `mix release heyi_am` bundles all four apps into a single OTP release.
+6. **Slim runtime** — the final image is a bare Debian slim with only runtime dependencies (no Elixir, no build tools).
 
 To maximize cache hits in Coolify:
 - Enable **Docker BuildKit** (Coolify v4 does this by default)
@@ -184,7 +201,7 @@ Push to your configured branch. Coolify will:
 1. Pull the repo
 2. Build the Docker image from `/heyi_am_umbrella/Dockerfile`
 3. Run the pre-deploy migration command (`/app/bin/migrate`)
-4. Start the container
+4. Start the container (`/app/bin/server` sets `PHX_SERVER=true` and starts the BEAM)
 5. Route traffic once the health check passes
 
 ## 8. Production Tuning
@@ -272,7 +289,7 @@ GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 
 # OpenTelemetry / Signoz (optional)
-OTEL_EXPORTER_OTLP_ENDPOINT=http://signoz-otel-collector:4318
+OTEL_ENDPOINT=http://signoz-otel-collector:4318
 
 # Umami Analytics (optional)
 UMAMI_SCRIPT_URL=https://analytics.example.com/script.js
@@ -294,7 +311,7 @@ OBJECT_STORAGE_BUCKET=heyi-am-sessions
 OBJECT_STORAGE_SCHEME=https://
 OBJECT_STORAGE_PORT=443
 
-# Email (Amazon SES)
+# Email (Amazon SES, optional)
 SES_ACCESS_KEY_ID=
 SES_SECRET_ACCESS_KEY=
 SES_REGION=us-east-1
@@ -318,6 +335,6 @@ ECTO_IPV6=
 If you don't have Elixir installed locally:
 
 ```bash
-docker run --rm hexpm/elixir:1.18.2-erlang-27.2.4-alpine-3.21.3 \
+docker run --rm hexpm/elixir:1.18.3-erlang-27.3.3-alpine-3.21.3 \
   sh -c "mix local.hex --force > /dev/null && mix phx.gen.secret"
 ```

@@ -4,7 +4,7 @@ import { writeFile, mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createApp } from './server.js';
-import { savePublishedState, getPublishedState } from './settings.js';
+import { saveUploadedState, getUploadedState } from './settings.js';
 import type { RawEntry } from './parsers/types.js';
 
 // vi.mock is hoisted — cannot reference variables declared below.
@@ -681,35 +681,35 @@ describe('POST /api/projects/:project/refine-narrative', () => {
   });
 });
 
-// ── Phase 6: Published state in GET /api/projects ────────────────
+// ── Phase 6: Uploaded state in GET /api/projects ────────────────
 
-describe('GET /api/projects includes published state', () => {
+describe('GET /api/projects includes uploaded state', () => {
   const PROJECT_DIR_NAME = '-Users-test-Dev-myapp';
 
-  it('returns isPublished=false when no published state exists', async () => {
+  it('returns isUploaded=false when no uploaded state exists', async () => {
     const app = createApp(tmpDir);
     const res = await request(app).get('/api/projects');
     const myapp = res.body.projects.find((p: { name: string }) => p.name === 'myapp');
     // May or may not be published depending on test order, but field should exist
-    expect(myapp).toHaveProperty('isPublished');
-    expect(typeof myapp.isPublished).toBe('boolean');
+    expect(myapp).toHaveProperty('isUploaded');
+    expect(typeof myapp.isUploaded).toBe('boolean');
   });
 
-  it('returns isPublished=true and publishedSessions after saving published state', async () => {
-    // Save published state to default config dir (same as server uses)
-    savePublishedState(PROJECT_DIR_NAME, {
+  it('returns isUploaded=true and uploadedSessions after saving uploaded state', async () => {
+    // Save uploaded state to default config dir (same as server uses)
+    saveUploadedState(PROJECT_DIR_NAME, {
       slug: 'myapp-project',
       projectId: 99,
-      publishedSessions: ['abc-123'],
+      uploadedSessions: ['abc-123'],
     });
 
     const app = createApp(tmpDir);
     const res = await request(app).get('/api/projects');
     const myapp = res.body.projects.find((p: { name: string }) => p.name === 'myapp');
 
-    expect(myapp.isPublished).toBe(true);
+    expect(myapp.isUploaded).toBe(true);
     expect(myapp.publishedSessionCount).toBe(1);
-    expect(myapp.publishedSessions).toEqual(['abc-123']);
+    expect(myapp.uploadedSessions).toEqual(['abc-123']);
   });
 });
 
@@ -748,11 +748,11 @@ describe('POST /api/projects/:project/triage (SSE)', () => {
   });
 
   it('includes alreadyPublished sessions in result event', async () => {
-    // Ensure published state exists for this project
-    savePublishedState('-Users-test-Dev-myapp', {
+    // Ensure uploaded state exists for this project
+    saveUploadedState('-Users-test-Dev-myapp', {
       slug: 'myapp-project',
       projectId: 99,
-      publishedSessions: ['abc-123'],
+      uploadedSessions: ['abc-123'],
     });
 
     const app = createApp(tmpDir);

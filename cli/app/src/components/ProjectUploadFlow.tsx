@@ -11,7 +11,7 @@ import {
   triageProject,
   enhanceProject,
   refineNarrative,
-  publishProject,
+  uploadProject,
   startDeviceAuth,
   pollDeviceAuth,
   type TriageResult,
@@ -19,8 +19,8 @@ import {
   type ProjectEnhanceResult,
   type EnhanceEventType,
   type RefineAnswer,
-  type PublishProjectPayload,
-  type PublishEvent,
+  type UploadProjectPayload,
+  type UploadEvent,
   captureScreenshotFromUrl,
   fetchGitRemote,
 } from '../api';
@@ -368,7 +368,7 @@ function TriageItem({
   checked,
   onToggle,
   dimTitle,
-  previouslyPublished,
+  previouslyUploaded,
 }: {
   sessionId: string;
   title: string;
@@ -378,7 +378,7 @@ function TriageItem({
   checked: boolean;
   onToggle: () => void;
   dimTitle?: boolean;
-  previouslyPublished?: boolean;
+  previouslyUploaded?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const isLong = reason.length > (variant === 'selected' ? 60 : 40);
@@ -397,8 +397,8 @@ function TriageItem({
       <div className="triage-item__info">
         <div className="triage-item__name" style={dimTitle ? { color: 'var(--on-surface-variant)' } : undefined}>
           {title}
-          {previouslyPublished && (
-            <span className="triage-item__published-badge">previously published</span>
+          {previouslyUploaded && (
+            <span className="triage-item__uploaded-badge">previously uploaded</span>
           )}
         </div>
         <div className="triage-item__stats">{stats}</div>
@@ -424,7 +424,7 @@ function TriageResults({
   onToggle,
   onEnhance,
   onBack,
-  publishedSessionIds,
+  uploadedSessionIds,
 }: {
   project: Project;
   sessions: Session[];
@@ -433,7 +433,7 @@ function TriageResults({
   onToggle: (sessionId: string) => void;
   onEnhance: () => void;
   onBack: () => void;
-  publishedSessionIds?: Set<string>;
+  uploadedSessionIds?: Set<string>;
 }) {
   const sessionMap = new Map(sessions.map((s) => [s.id, s]));
 
@@ -479,7 +479,7 @@ function TriageResults({
               variant="selected"
               checked={isSelected}
               onToggle={() => onToggle(item.sessionId)}
-              previouslyPublished={publishedSessionIds?.has(item.sessionId)}
+              previouslyUploaded={uploadedSessionIds?.has(item.sessionId)}
             />
           );
         })}
@@ -504,7 +504,7 @@ function TriageResults({
                 checked={isSelected}
                 onToggle={() => onToggle(item.sessionId)}
                 dimTitle={!isSelected}
-                previouslyPublished={publishedSessionIds?.has(item.sessionId)}
+                previouslyUploaded={uploadedSessionIds?.has(item.sessionId)}
               />
             );
           })}
@@ -673,7 +673,7 @@ function EnhanceStep({
     setForceEnhance((prev) => !prev);
   }, []);
 
-  const handlePublishWithoutNarrative = useCallback(() => {
+  const handleUploadWithoutNarrative = useCallback(() => {
     // Create a minimal result without narrative
     const minimalResult: ProjectEnhanceResult = {
       narrative: '',
@@ -750,8 +750,8 @@ function EnhanceStep({
               <button className="btn btn--secondary btn--large" onClick={onBack}>Back</button>
               <button className="btn btn--secondary btn--large" onClick={handleRetryFailed}>Retry</button>
               {hasSuccesses && (
-                <button className="btn btn--primary btn--large" onClick={handlePublishWithoutNarrative}>
-                  Publish without narrative
+                <button className="btn btn--primary btn--large" onClick={handleUploadWithoutNarrative}>
+                  Upload without narrative
                 </button>
               )}
             </div>
@@ -819,7 +819,7 @@ function EnhanceStep({
                     Retry failed
                   </button>
                   {hasSuccesses && (
-                    <button className="btn btn--primary btn--large" onClick={handlePublishWithoutNarrative}>
+                    <button className="btn btn--primary btn--large" onClick={handleUploadWithoutNarrative}>
                       Continue with {successfulSessions.length} successful &rarr;
                     </button>
                   )}
@@ -1042,7 +1042,7 @@ function TimelineView({
 
       <div className="upload-flow__actions">
         <button className="btn btn--secondary btn--large" onClick={onBack}>Back</button>
-        <button className="btn btn--primary btn--large" onClick={onReview}>Review &amp; publish &rarr;</button>
+        <button className="btn btn--primary btn--large" onClick={onReview}>Review &amp; upload &rarr;</button>
       </div>
     </div>
   );
@@ -1362,7 +1362,7 @@ export function AgentActivitySection({ sessions, projectDirName }: { sessions: S
 // ProjectPreview removed — preview now opens in a new tab at /preview/project/:dirName
 // The preview page is a full standalone HTML page served by Express, identical to heyi.am
 
-// ── Screen 47: Review before publishing ──────────────────────────
+// ── Screen 47: Review before uploading ──────────────────────────
 
 interface ReviewStepProps {
   project: Project;
@@ -1380,7 +1380,7 @@ interface ReviewStepProps {
   onProjectUrlChange: (url: string) => void;
   screenshotPreview: string | null;
   onScreenshotPreviewChange: (preview: string | null) => void;
-  onPublish: (result: { url: string; publishedSessions: number }) => void;
+  onUpload: (result: { url: string; uploadedSessions: number }) => void;
   onSaveLocal: () => void | Promise<void>;
   onBack: () => void;
 }
@@ -1402,27 +1402,27 @@ export function ReviewStep({
   onProjectUrlChange,
   screenshotPreview,
   onScreenshotPreviewChange,
-  onPublish,
+  onUpload,
   onSaveLocal,
   onBack,
 }: ReviewStepProps) {
   // Preview opens in a new tab via /preview/project/:dirName
-  const [publishing, setPublishing] = useState(false);
-  const [publishError, setPublishError] = useState<string | null>(null);
-  const [publishErrorType, setPublishErrorType] = useState<'project' | 'sessions' | null>(null);
-  const [sessionPublishStatuses, setSessionPublishStatuses] = useState<Map<string, { status: 'publishing' | 'published' | 'failed'; error?: string }>>(new Map());
-  const [partialPublishUrl, setPartialPublishUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadErrorType, setUploadErrorType] = useState<'project' | 'sessions' | null>(null);
+  const [sessionUploadStatuses, setSessionUploadStatuses] = useState<Map<string, { status: 'uploading' | 'uploaded' | 'failed'; error?: string }>>(new Map());
+  const [partialUploadUrl, setPartialUploadUrl] = useState<string | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
   const [deviceCode, setDeviceCode] = useState<{ userCode: string; verificationUri: string; deviceCode: string } | null>(null);
   const [authPolling, setAuthPolling] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const publishControllerRef = useRef<AbortController | null>(null);
+  const uploadControllerRef = useRef<AbortController | null>(null);
   const screenshotInputRef = useRef<HTMLInputElement>(null);
   const setScreenshotPreview = onScreenshotPreviewChange;
   const [screenshotCapturing, setScreenshotCapturing] = useState(false);
   const { refresh: refreshAuth } = useAuth();
 
-  const publishedLabel = `${project.sessionCount} (${selectedCount} published)`;
+  const uploadedLabel = `${project.sessionCount} (${selectedCount} uploaded)`;
 
   const slug = project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
@@ -1430,7 +1430,7 @@ export function ReviewStep({
     const reader = new FileReader();
     reader.onload = () => {
       setScreenshotPreview(reader.result as string);
-      // Upload deferred to publish flow — project may not exist yet
+      // Upload deferred to upload flow — project may not exist yet
     };
     reader.readAsDataURL(file);
   }, []);
@@ -1453,7 +1453,7 @@ export function ReviewStep({
     }
   }, [project.dirName, slug, projectUrl]);
 
-  const buildPayload = useCallback((): PublishProjectPayload => {
+  const buildPayload = useCallback((): UploadProjectPayload => {
     const skippedSessions = allSessions
       .filter((s) => !selectedIds.has(s.id))
       .map((s) => ({
@@ -1502,21 +1502,21 @@ export function ReviewStep({
             setAuthPolling(false);
             setNeedsAuth(false);
             await refreshAuth();
-            doPublish();
+            doUpload();
           }
         } catch {
           // Keep polling on transient errors
         }
       }, interval);
     } catch (authErr) {
-      setPublishError(`Login failed: ${(authErr as Error).message}`);
+      setUploadError(`Login failed: ${(authErr as Error).message}`);
     }
   }, [refreshAuth]);
 
-  const doPublish = useCallback((retrySessionIds?: string[]) => {
-    setPublishing(true);
-    setPublishError(null);
-    setPublishErrorType(null);
+  const doUpload = useCallback((retrySessionIds?: string[]) => {
+    setUploading(true);
+    setUploadError(null);
+    setUploadErrorType(null);
     setNeedsAuth(false);
 
     const payload = buildPayload();
@@ -1524,62 +1524,62 @@ export function ReviewStep({
       payload.selectedSessionIds = retrySessionIds;
     }
 
-    publishControllerRef.current?.abort();
-    const controller = publishProject(project.dirName, payload, (event: PublishEvent) => {
+    uploadControllerRef.current?.abort();
+    const controller = uploadProject(project.dirName, payload, (event: UploadEvent) => {
       switch (event.type) {
         case 'project':
           if (event.status === 'failed') {
-            setPublishing(false);
+            setUploading(false);
             if (event.error?.includes('Authentication required') || event.error?.includes('AUTH_REQUIRED')) {
               startAuthFlow();
             } else {
-              setPublishErrorType('project');
-              setPublishError(event.error ?? 'Project creation failed');
+              setUploadErrorType('project');
+              setUploadError(event.error ?? 'Project creation failed');
             }
           }
           break;
 
         case 'session':
-          setSessionPublishStatuses((prev) => {
+          setSessionUploadStatuses((prev) => {
             const next = new Map(prev);
-            next.set(event.sessionId, { status: event.status === 'publishing' ? 'publishing' as const : event.status, error: event.error });
+            next.set(event.sessionId, { status: event.status === 'uploading' ? 'uploading' as const : event.status, error: event.error });
             return next;
           });
           break;
 
         case 'done': {
-          setPublishing(false);
+          setUploading(false);
           if (event.failed > 0) {
-            setPublishErrorType('sessions');
-            setPartialPublishUrl(event.projectUrl);
-            setPublishError(`${event.failed} session${event.failed !== 1 ? 's' : ''} failed to publish`);
+            setUploadErrorType('sessions');
+            setPartialUploadUrl(event.projectUrl);
+            setUploadError(`${event.failed} session${event.failed !== 1 ? 's' : ''} failed to upload`);
           } else {
             refreshAuth();
-            onPublish({ url: event.projectUrl, publishedSessions: event.uploaded });
+            onUpload({ url: event.projectUrl, uploadedSessions: event.uploaded });
           }
           break;
         }
 
         case 'error':
-          setPublishing(false);
+          setUploading(false);
           if (event.error === 'AUTH_REQUIRED') {
             startAuthFlow();
           } else {
-            setPublishErrorType('project');
-            setPublishError(event.error);
+            setUploadErrorType('project');
+            setUploadError(event.error);
           }
           break;
       }
     });
 
-    publishControllerRef.current = controller;
-  }, [buildPayload, project.dirName, onPublish, refreshAuth, startAuthFlow]);
+    uploadControllerRef.current = controller;
+  }, [buildPayload, project.dirName, onUpload, refreshAuth, startAuthFlow]);
 
-  // Cleanup polling and publish stream on unmount
+  // Cleanup polling and upload stream on unmount
   useEffect(() => {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
-      publishControllerRef.current?.abort();
+      uploadControllerRef.current?.abort();
     };
   }, []);
 
@@ -1600,7 +1600,7 @@ export function ReviewStep({
         {narrative && <p className="review-card__narrative">{narrative}</p>}
 
         <div className="upload-flow__stat-grid">
-          <StatCard label="Sessions" value={publishedLabel} />
+          <StatCard label="Sessions" value={uploadedLabel} />
           <StatCard
             label={project.totalAgentDuration ? 'You / Agents' : 'Total Time'}
             value={project.totalAgentDuration
@@ -1630,9 +1630,9 @@ export function ReviewStep({
         Preview full project page &rarr;
       </a>
 
-      {/* ── What gets published ── */}
+      {/* ── What gets uploaded ── */}
       <div className="review-checklist">
-        <div className="upload-flow__section-label" style={{ marginBottom: 'var(--spacing-3)' }}>What gets published</div>
+        <div className="upload-flow__section-label" style={{ marginBottom: 'var(--spacing-3)' }}>What gets uploaded</div>
         <div className="review-checklist__item">
           <span className="review-checklist__icon review-checklist__icon--checked" aria-hidden="true">&#10003;</span>
           <span>Project narrative and timeline</span>
@@ -1747,7 +1747,7 @@ export function ReviewStep({
       {needsAuth && (
         <div className="review-auth">
           <div className="review-auth__card">
-            <h3 className="review-auth__title">Sign in to publish</h3>
+            <h3 className="review-auth__title">Sign in to upload</h3>
             {deviceCode ? (
               <>
                 <p className="review-auth__instructions">
@@ -1769,21 +1769,21 @@ export function ReviewStep({
         </div>
       )}
 
-      {/* Live publish progress */}
-      {publishing && sessionPublishStatuses.size > 0 && (
-        <div className="publish-progress">
-          <div className="upload-flow__section-label" style={{ marginBottom: 'var(--spacing-2)' }}>Publishing sessions...</div>
-          <div className="publish-progress__sessions">
-            {Array.from(sessionPublishStatuses.entries()).map(([sid, st]) => {
+      {/* Live upload progress */}
+      {uploading && sessionUploadStatuses.size > 0 && (
+        <div className="upload-progress">
+          <div className="upload-flow__section-label" style={{ marginBottom: 'var(--spacing-2)' }}>Uploading sessions...</div>
+          <div className="upload-progress__sessions">
+            {Array.from(sessionUploadStatuses.entries()).map(([sid, st]) => {
               const s = sessions.find((sess) => sess.id === sid);
               return (
-                <div key={sid} className="publish-progress__row">
-                  {st.status === 'published' ? (
-                    <span className="publish-error__icon--published">{'\u2713'}</span>
-                  ) : st.status === 'publishing' ? (
+                <div key={sid} className="upload-progress__row">
+                  {st.status === 'uploaded' ? (
+                    <span className="upload-error__icon--uploaded">{'\u2713'}</span>
+                  ) : st.status === 'uploading' ? (
                     <span className="enhance-feed-item__spinner" />
                   ) : (
-                    <span className="publish-error__icon--failed">{'\u2717'}</span>
+                    <span className="upload-error__icon--failed">{'\u2717'}</span>
                   )}
                   <span>{s?.title ?? sid}</span>
                 </div>
@@ -1793,64 +1793,64 @@ export function ReviewStep({
         </div>
       )}
 
-      {publishError && (
-        <div className="publish-error">
-          <div className="publish-error__message">{publishError}</div>
+      {uploadError && (
+        <div className="upload-error">
+          <div className="upload-error__message">{uploadError}</div>
 
-          {publishErrorType === 'sessions' && sessionPublishStatuses.size > 0 && (
-            <div className="publish-error__sessions">
-              {Array.from(sessionPublishStatuses.entries()).map(([sid, st]) => {
+          {uploadErrorType === 'sessions' && sessionUploadStatuses.size > 0 && (
+            <div className="upload-error__sessions">
+              {Array.from(sessionUploadStatuses.entries()).map(([sid, st]) => {
                 const s = sessions.find((sess) => sess.id === sid);
                 return (
-                  <div key={sid} className={`publish-error__session-row publish-error__session-row--${st.status}`}>
-                    <span className={`publish-error__icon publish-error__icon--${st.status}`}>
-                      {st.status === 'published' ? '\u2713' : '\u2717'}
+                  <div key={sid} className={`upload-error__session-row upload-error__session-row--${st.status}`}>
+                    <span className={`upload-error__icon upload-error__icon--${st.status}`}>
+                      {st.status === 'uploaded' ? '\u2713' : '\u2717'}
                     </span>
-                    <span className="publish-error__session-title">{s?.title ?? sid}</span>
-                    {st.error && <span className="publish-error__session-error">{st.error}</span>}
+                    <span className="upload-error__session-title">{s?.title ?? sid}</span>
+                    {st.error && <span className="upload-error__session-error">{st.error}</span>}
                   </div>
                 );
               })}
             </div>
           )}
 
-          <div className="publish-error__actions">
-            {publishErrorType === 'sessions' && (
+          <div className="upload-error__actions">
+            {uploadErrorType === 'sessions' && (
               <>
                 <button
                   className="btn btn--secondary"
                   onClick={() => {
-                    const failedIds = Array.from(sessionPublishStatuses.entries())
+                    const failedIds = Array.from(sessionUploadStatuses.entries())
                       .filter(([, st]) => st.status === 'failed')
                       .map(([sid]) => sid);
-                    doPublish(failedIds);
+                    doUpload(failedIds);
                   }}
                 >
                   Retry failed sessions
                 </button>
-                {partialPublishUrl && (
+                {partialUploadUrl && (
                   <button
                     className="btn btn--primary"
-                    onClick={() => onPublish({
-                      url: partialPublishUrl,
-                      publishedSessions: Array.from(sessionPublishStatuses.values()).filter((s) => s.status === 'published').length,
+                    onClick={() => onUpload({
+                      url: partialUploadUrl,
+                      uploadedSessions: Array.from(sessionUploadStatuses.values()).filter((s) => s.status === 'uploaded').length,
                     })}
                   >
-                    Continue with published sessions
+                    Continue with uploaded sessions
                   </button>
                 )}
               </>
             )}
-            {publishErrorType === 'project' && (
-              <button className="btn btn--secondary" onClick={() => doPublish()}>
+            {uploadErrorType === 'project' && (
+              <button className="btn btn--secondary" onClick={() => doUpload()}>
                 Retry
               </button>
             )}
             <button
               className="btn btn--secondary"
               onClick={() => {
-                setPublishError(null);
-                setPublishErrorType(null);
+                setUploadError(null);
+                setUploadErrorType(null);
               }}
             >
               Dismiss
@@ -1861,19 +1861,19 @@ export function ReviewStep({
 
       {/* ── Actions ── */}
       <div className="upload-flow__actions">
-        <button type="button" className="btn btn--secondary btn--large" onClick={onBack} disabled={publishing}>
+        <button type="button" className="btn btn--secondary btn--large" onClick={onBack} disabled={uploading}>
           Back to timeline
         </button>
-        <button type="button" className="btn btn--secondary btn--large" onClick={onSaveLocal} disabled={publishing}>
+        <button type="button" className="btn btn--secondary btn--large" onClick={onSaveLocal} disabled={uploading}>
           Save locally
         </button>
         <button
           type="button"
           className="btn btn--primary btn--large"
-          onClick={() => doPublish()}
-          disabled={publishing || needsAuth}
+          onClick={() => doUpload()}
+          disabled={uploading || needsAuth}
         >
-          {publishing ? 'Publishing...' : 'Publish project \u2192'}
+          {uploading ? 'Uploading...' : 'Upload project \u2192'}
         </button>
       </div>
     </div>
@@ -1886,16 +1886,16 @@ interface SuccessStepProps {
   project: Project;
   narrative: string;
   selectedCount: number;
-  publishedUrl?: string;
-  publishedSessions?: number;
+  uploadedUrl?: string;
+  uploadedSessions?: number;
 }
 
-function SuccessStep({ project, narrative, selectedCount, publishedUrl, publishedSessions }: SuccessStepProps) {
+function SuccessStep({ project, narrative, selectedCount, uploadedUrl, uploadedSessions }: SuccessStepProps) {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
-  const isPublished = !!publishedUrl;
-  const displayUrl = publishedUrl
-    ? (publishedUrl.startsWith('/') ? `heyi.am${publishedUrl}` : publishedUrl)
+  const isUploaded = !!uploadedUrl;
+  const displayUrl = uploadedUrl
+    ? (uploadedUrl.startsWith('/') ? `heyi.am${uploadedUrl}` : uploadedUrl)
     : '';
 
   const handleCopy = useCallback(() => {
@@ -1942,12 +1942,12 @@ function SuccessStep({ project, narrative, selectedCount, publishedUrl, publishe
         </div>
 
         <h2 className="success-card__title">
-          {isPublished ? 'Project Published' : 'Project Saved'}
+          {isUploaded ? 'Project Uploaded' : 'Project Saved'}
         </h2>
         <p className="success-card__subtitle">
-          {isPublished
+          {isUploaded
             ? `Your project is live on your portfolio with ${selectedCount} session case ${selectedCount === 1 ? 'study' : 'studies'}.`
-            : `Enhancement saved locally with ${selectedCount} session case ${selectedCount === 1 ? 'study' : 'studies'}. You can preview or publish anytime.`}
+            : `Enhancement saved locally with ${selectedCount} session case ${selectedCount === 1 ? 'study' : 'studies'}. You can preview or upload anytime.`}
         </p>
 
         <div className="success-card__preview">
@@ -1972,12 +1972,12 @@ function SuccessStep({ project, narrative, selectedCount, publishedUrl, publishe
             </div>
             <div className="success-card__preview-stat">
               <span className="success-card__preview-stat-value">{selectedCount}</span>
-              <span className="success-card__preview-stat-label">{isPublished ? 'Published' : 'Enhanced'}</span>
+              <span className="success-card__preview-stat-label">{isUploaded ? 'Uploaded' : 'Enhanced'}</span>
             </div>
           </div>
         </div>
 
-        {isPublished && displayUrl && (
+        {isUploaded && displayUrl && (
           <div className="success-card__url-bar">
             <span className="success-card__url-text">{displayUrl}</span>
             <button className="success-card__url-copy" onClick={handleCopy}>
@@ -1987,15 +1987,15 @@ function SuccessStep({ project, narrative, selectedCount, publishedUrl, publishe
         )}
 
         <div className="success-card__meta">
-          <span className="success-card__badge">{isPublished ? 'Published' : 'Saved locally'}</span>
-          {isPublished && publishedSessions && (
-            <span className="success-card__meta-text">{publishedSessions} sessions uploaded</span>
+          <span className="success-card__badge">{isUploaded ? 'Uploaded' : 'Saved locally'}</span>
+          {isUploaded && uploadedSessions && (
+            <span className="success-card__meta-text">{uploadedSessions} sessions uploaded</span>
           )}
           <span className="success-card__meta-text">{saveDate}</span>
         </div>
 
         <div className="success-card__actions">
-          {isPublished ? (
+          {isUploaded ? (
             <>
               <button type="button" className="btn btn--primary btn--large" onClick={handleViewProject}>
                 View Project Page
@@ -2011,7 +2011,7 @@ function SuccessStep({ project, narrative, selectedCount, publishedUrl, publishe
           )}
         </div>
 
-        {isPublished && displayUrl && (
+        {isUploaded && displayUrl && (
           <DistributionHelpers projectName={project.name} displayUrl={displayUrl} />
         )}
       </div>
@@ -2123,7 +2123,7 @@ export function ProjectUploadFlow() {
   const [repoUrl, setRepoUrl] = useState('');
   const [projectUrl, setProjectUrl] = useState('');
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
-  const [publishResult, setPublishResult] = useState<{ url: string; publishedSessions: number } | null>(null);
+  const [uploadResult, setUploadResult] = useState<{ url: string; uploadedSessions: number } | null>(null);
 
 
   // Derived from enhance result (or refined)
@@ -2200,10 +2200,10 @@ export function ProjectUploadFlow() {
           triageMethod: (event as TriageResult & { triageMethod?: string }).triageMethod,
         };
         setTriageResult(result);
-        // Pre-check: triage-selected + any previously published sessions
+        // Pre-check: triage-selected + any previously uploaded sessions
         const ids = new Set(result.selected.map((s) => s.sessionId));
-        if (project?.publishedSessions) {
-          for (const sid of project.publishedSessions) {
+        if (project?.uploadedSessions) {
+          for (const sid of project.uploadedSessions) {
             ids.add(sid);
           }
         }
@@ -2311,7 +2311,7 @@ export function ProjectUploadFlow() {
           onToggle={handleToggle}
           onEnhance={() => setStep('enhance')}
           onBack={() => setStep('overview')}
-          publishedSessionIds={project.publishedSessions ? new Set(project.publishedSessions) : undefined}
+          uploadedSessionIds={project.uploadedSessions ? new Set(project.uploadedSessions) : undefined}
         />
       ) : step === 'enhance' && triageResult ? (
         <>
@@ -2385,8 +2385,8 @@ export function ProjectUploadFlow() {
           onProjectUrlChange={setProjectUrl}
           screenshotPreview={screenshotPreview}
           onScreenshotPreviewChange={setScreenshotPreview}
-          onPublish={(result) => {
-            setPublishResult(result);
+          onUpload={(result) => {
+            setUploadResult(result);
             setStep('done');
           }}
           onSaveLocal={async () => {
@@ -2397,7 +2397,7 @@ export function ProjectUploadFlow() {
               enhanceResult,
               { repoUrl: repoUrl || undefined, projectUrl: projectUrl || undefined, screenshotBase64: screenshotPreview || undefined },
             );
-            setPublishResult(null);
+            setUploadResult(null);
             setStep('done');
           }}
           onBack={() => setStep('timeline')}
@@ -2407,8 +2407,8 @@ export function ProjectUploadFlow() {
           project={project}
           narrative={narrative}
           selectedCount={selectedIds.size}
-          publishedUrl={publishResult?.url}
-          publishedSessions={publishResult?.publishedSessions}
+          uploadedUrl={uploadResult?.url}
+          uploadedSessions={uploadResult?.uploadedSessions}
         />
       ) : null}
 

@@ -77,9 +77,9 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
           <div className="project-card__title-row">
             <div className="project-card__dot" style={{ background: color }} />
             <h3 className="project-card__name">{project.name}</h3>
-            {project.isPublished && (
-              <span className="project-card__badge project-card__badge--published">
-                Published
+            {project.isUploaded && (
+              <span className="project-card__badge project-card__badge--uploaded">
+                Uploaded
               </span>
             )}
             {enhancedAt && (
@@ -115,7 +115,7 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
               navigate(uploadUrl);
             }}
           >
-            {project.isPublished ? 'Update Project' : enhancedAt ? 'Re-enhance' : 'Upload'} &rarr;
+            {project.isUploaded ? 'Update Project' : enhancedAt ? 'Re-enhance' : 'Upload'} &rarr;
           </button>
         </div>
       </div>

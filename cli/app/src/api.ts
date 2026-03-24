@@ -13,9 +13,9 @@ export interface ApiProject {
   skills: string[];
   dateRange: string;
   lastSessionDate: string;
-  isPublished?: boolean;
-  publishedSessionCount?: number;
-  publishedSessions?: string[];
+  isUploaded?: boolean;
+  uploadedSessionCount?: number;
+  uploadedSessions?: string[];
   enhancedAt?: string | null;
   totalAgentDuration?: number;
 }
@@ -397,9 +397,9 @@ export async function fetchRenderPreview(
   return res.json();
 }
 
-// ── Publish ─────────────────────────────────────────────────────
+// ── Upload ─────────────────────────────────────────────────────
 
-export interface PublishProjectPayload {
+export interface UploadProjectPayload {
   title: string;
   slug: string;
   narrative: string;
@@ -417,16 +417,16 @@ export interface PublishProjectPayload {
   screenshotBase64?: string;
 }
 
-export interface PublishSessionStatus {
+export interface UploadSessionStatus {
   sessionId: string;
-  status: 'publishing' | 'published' | 'failed';
+  status: 'uploading' | 'uploaded' | 'failed';
   error?: string;
 }
 
-export type PublishEvent =
+export type UploadEvent =
   | { type: 'project'; status: 'creating' | 'created' | 'failed'; error?: string; fatal?: boolean; projectId?: number; slug?: string }
   | { type: 'screenshot'; status: 'capturing' | 'uploaded' | 'skipped'; reason?: string }
-  | { type: 'session'; sessionId: string; status: 'publishing' | 'published' | 'failed'; error?: string }
+  | { type: 'session'; sessionId: string; status: 'uploading' | 'uploaded' | 'failed'; error?: string }
   | { type: 'done'; projectUrl: string; uploaded: number; failed: number; failedSessions: Array<{ sessionId: string; error: string }> }
   | { type: 'error'; error: string };
 
@@ -437,14 +437,14 @@ export class AuthRequiredError extends Error {
   }
 }
 
-export function publishProject(
+export function uploadProject(
   dirName: string,
-  payload: PublishProjectPayload,
-  onEvent: (event: PublishEvent) => void,
+  payload: UploadProjectPayload,
+  onEvent: (event: UploadEvent) => void,
 ): AbortController {
   const controller = new AbortController();
 
-  fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/publish`, {
+  fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/upload`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -455,8 +455,8 @@ export function publishProject(
         throw new AuthRequiredError();
       }
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: { message: 'Publish failed' } }));
-        onEvent({ type: 'error', error: err.error?.message ?? 'Publish failed' });
+        const err = await res.json().catch(() => ({ error: { message: 'Upload failed' } }));
+        onEvent({ type: 'error', error: err.error?.message ?? 'Upload failed' });
         return;
       }
 
@@ -482,7 +482,7 @@ export function publishProject(
           const json = line.slice(6).trim();
           if (!json) continue;
           try {
-            onEvent(JSON.parse(json) as PublishEvent);
+            onEvent(JSON.parse(json) as UploadEvent);
           } catch {
             // skip malformed SSE lines
           }

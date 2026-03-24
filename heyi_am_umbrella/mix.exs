@@ -8,6 +8,7 @@ defmodule HeyiAm.Umbrella.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
+      releases: releases(),
       listeners: [Phoenix.CodeReloader]
     ]
   end
@@ -30,6 +31,21 @@ defmodule HeyiAm.Umbrella.MixProject do
   #
   # Dependencies listed here are available only for this project
   # and cannot be accessed from applications inside the apps/ folder.
+  defp releases do
+    [
+      heyi_am: [
+        version: "0.1.0",
+        applications: [
+          heyi_am: :permanent,
+          heyi_am_public_web: :permanent,
+          heyi_am_app_web: :permanent,
+          heyi_am_vibe_web: :permanent
+        ],
+        overlay: "rel/overlays"
+      ]
+    ]
+  end
+
   defp deps do
     []
   end
@@ -45,9 +61,15 @@ defmodule HeyiAm.Umbrella.MixProject do
   # and cannot be accessed from applications inside the apps/ folder.
   defp aliases do
     [
-      # run `mix setup` in all child apps
       setup: ["cmd mix setup"],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"],
+      "assets.deploy": [
+        "esbuild heyi_am_app_web --minify",
+        "esbuild heyi_am_app_web_css --minify",
+        "esbuild heyi_am_public_web_css --minify",
+        "esbuild heyi_am_vibe_web_css --minify",
+        "phx.digest"
+      ]
     ]
   end
 end

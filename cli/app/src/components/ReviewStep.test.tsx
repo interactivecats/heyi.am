@@ -201,7 +201,7 @@ describe('ReviewStep', () => {
 
   it('renders stat cards with correct values', () => {
     renderReview();
-    expect(screen.getByText('21 (8 published)')).toBeInTheDocument();
+    expect(screen.getByText('21 (8 uploaded)')).toBeInTheDocument();
     expect(screen.getByText('16h')).toBeInTheDocument(); // 980 min, rounds at >= 10h
     expect(screen.getByText('14.2k')).toBeInTheDocument(); // 14200 LOC
     expect(screen.getByText('87')).toBeInTheDocument();     // files

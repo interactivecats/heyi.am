@@ -215,45 +215,45 @@ export function deleteProjectEnhanceResult(projectDirName: string, configDir?: s
   if (existsSync(path)) unlinkSync(path);
 }
 
-// ── Published state persistence ──────────────────────────────
+// ── Uploaded state persistence ──────────────────────────────
 
-export interface PublishedState {
+export interface UploadedState {
   slug: string;
   projectId: number;
-  publishedAt: string;
-  publishedSessions: string[];
+  uploadedAt: string;
+  uploadedSessions: string[];
 }
 
-const PUBLISHED_DIR = 'published';
+const UPLOADED_DIR = 'published';
 
-function publishedDir(configDir: string = CONFIG_DIR): string {
-  return join(configDir, PUBLISHED_DIR);
+function uploadedDir(configDir: string = CONFIG_DIR): string {
+  return join(configDir, UPLOADED_DIR);
 }
 
-function publishedPath(projectDirName: string, configDir: string = CONFIG_DIR): string {
+function uploadedPath(projectDirName: string, configDir: string = CONFIG_DIR): string {
   const safe = projectDirName.replace(/[^a-zA-Z0-9._-]/g, '_');
-  return join(publishedDir(configDir), `${safe}.json`);
+  return join(uploadedDir(configDir), `${safe}.json`);
 }
 
-export function savePublishedState(
+export function saveUploadedState(
   projectDirName: string,
-  data: Omit<PublishedState, 'publishedAt'>,
+  data: Omit<UploadedState, 'uploadedAt'>,
   configDir?: string,
 ): void {
-  const dir = publishedDir(configDir);
+  const dir = uploadedDir(configDir);
   mkdirSync(dir, { recursive: true });
-  const full: PublishedState = {
+  const full: UploadedState = {
     ...data,
-    publishedAt: new Date().toISOString(),
+    uploadedAt: new Date().toISOString(),
   };
-  writeFileSync(publishedPath(projectDirName, configDir), JSON.stringify(full, null, 2), { mode: 0o600 });
+  writeFileSync(uploadedPath(projectDirName, configDir), JSON.stringify(full, null, 2), { mode: 0o600 });
 }
 
-export function getPublishedState(projectDirName: string, configDir?: string): PublishedState | null {
-  const path = publishedPath(projectDirName, configDir);
+export function getUploadedState(projectDirName: string, configDir?: string): UploadedState | null {
+  const path = uploadedPath(projectDirName, configDir);
   if (!existsSync(path)) return null;
   try {
-    return JSON.parse(readFileSync(path, 'utf-8')) as PublishedState;
+    return JSON.parse(readFileSync(path, 'utf-8')) as UploadedState;
   } catch {
     return null;
   }

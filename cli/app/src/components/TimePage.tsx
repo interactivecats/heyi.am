@@ -41,8 +41,8 @@ export function TimePage() {
   const [data, setData] = useState<TimeStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [anonymize, setAnonymize] = useState(false);
-  const [publishing, setPublishing] = useState(false);
-  const [publishResult, setPublishResult] = useState<{ ok: boolean; url?: string; error?: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<{ ok: boolean; url?: string; error?: string } | null>(null);
   const [copyingImage, setCopyingImage] = useState(false);
   const captureRef = useRef<HTMLDivElement>(null);
 
@@ -53,10 +53,10 @@ export function TimePage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const handlePublish = useCallback(async () => {
+  const handleUpload = useCallback(async () => {
     if (!data) return;
-    setPublishing(true);
-    setPublishResult(null);
+    setUploading(true);
+    setUploadResult(null);
 
     const payload = {
       time_stats: {
@@ -80,23 +80,23 @@ export function TimePage() {
     };
 
     try {
-      const res = await fetch('/api/publish-time-stats', {
+      const res = await fetch('/api/upload-time-stats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       const result = await res.json();
       if (res.ok) {
-        setPublishResult({ ok: true, url: result.url });
+        setUploadResult({ ok: true, url: result.url });
       } else if (res.status === 401) {
-        setPublishResult({ ok: false, error: 'Not logged in. Run heyiam login in your terminal, or go to Settings.' });
+        setUploadResult({ ok: false, error: 'Not logged in. Run heyiam login in your terminal, or go to Settings.' });
       } else {
-        setPublishResult({ ok: false, error: result.error || 'Failed to publish' });
+        setUploadResult({ ok: false, error: result.error || 'Failed to upload' });
       }
     } catch {
-      setPublishResult({ ok: false, error: 'Network error' });
+      setUploadResult({ ok: false, error: 'Network error' });
     } finally {
-      setPublishing(false);
+      setUploading(false);
     }
   }, [data, anonymize]);
 
@@ -173,24 +173,24 @@ export function TimePage() {
           {auth.authenticated ? (
             <button
               className="btn btn--primary btn--small"
-              onClick={handlePublish}
-              disabled={publishing}
+              onClick={handleUpload}
+              disabled={uploading}
             >
-              {publishing ? 'Publishing...' : 'Publish to heyi.am'}
+              {uploading ? 'Uploading...' : 'Upload to heyi.am'}
             </button>
           ) : (
             <a href="/settings" className="btn btn--primary btn--small" style={{ textDecoration: 'none' }}>
-              Log in to publish
+              Log in to upload
             </a>
           )}
         </div>
       </div>
 
-      {publishResult && (
-        <div className={`time-page__publish-result ${publishResult.ok ? '' : 'time-page__publish-result--error'}`}>
-          {publishResult.ok
-            ? <>Published! Share: <a href={`https://heyi.am${publishResult.url}`} target="_blank" rel="noopener">heyi.am{publishResult.url}</a></>
-            : publishResult.error}
+      {uploadResult && (
+        <div className={`time-page__upload-result ${uploadResult.ok ? '' : 'time-page__upload-result--error'}`}>
+          {uploadResult.ok
+            ? <>Uploaded! Share: <a href={`https://heyi.am${uploadResult.url}`} target="_blank" rel="noopener">heyi.am{uploadResult.url}</a></>
+            : uploadResult.error}
         </div>
       )}
 

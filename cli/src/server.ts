@@ -12,7 +12,7 @@ import { API_URL } from './config.js';
 import { getProvider, getEnhanceMode } from './llm/index.js';
 import { triageSessions, type SessionMetaWithStats } from './llm/triage.js';
 import { enhanceProject, refineNarrative, type SessionSummary, type SkippedSessionMeta, type ProjectEnhanceResult } from './llm/project-enhance.js';
-import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData, loadFreshProjectEnhanceResult, saveProjectEnhanceResult, loadProjectEnhanceResult, buildProjectFingerprint, savePublishedState, getPublishedState } from './settings.js';
+import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData, loadFreshProjectEnhanceResult, saveProjectEnhanceResult, loadProjectEnhanceResult, buildProjectFingerprint, saveUploadedState, getUploadedState } from './settings.js';
 import { captureScreenshot, SCREENSHOTS_DIR } from './screenshot.js';
 import { redactSession, redactText, scanTextSync, formatFindings, stripHomePathsInText } from './redact.js';
 import { renderProjectHtml, renderSessionHtml, renderPortfolioHtml } from './render/index.js';
@@ -87,7 +87,7 @@ function mergeEnhancedData(session: Session): Session {
       description: s.body,
     })),
     qaPairs: enhanced.qaPairs,
-    status: enhanced.uploaded ? 'published' : 'enhanced',
+    status: enhanced.uploaded ? 'uploaded' : 'enhanced',
     quickEnhanced: enhanced.quickEnhanced ?? false,
   };
 }
@@ -286,7 +286,7 @@ export function createApp(sessionsBasePath?: string) {
     const firstDate = dates[0] ?? '';
     const lastDate = dates[dates.length - 1] ?? '';
 
-    const published = getPublishedState(proj.dirName);
+    const published = getUploadedState(proj.dirName);
     const enhanceCache = loadProjectEnhanceResult(proj.dirName);
 
     return {
@@ -300,9 +300,9 @@ export function createApp(sessionsBasePath?: string) {
       skills: [...skillSet],
       dateRange: firstDate && lastDate ? `${firstDate}|${lastDate}` : '',
       lastSessionDate: lastDate,
-      isPublished: !!published,
-      publishedSessionCount: published?.publishedSessions.length ?? 0,
-      publishedSessions: published?.publishedSessions ?? [],
+      isUploaded: !!published,
+      uploadedSessionCount: published?.uploadedSessions.length ?? 0,
+      uploadedSessions: published?.uploadedSessions ?? [],
       enhancedAt: enhanceCache?.enhancedAt ?? null,
       totalAgentDuration,
     };
@@ -396,7 +396,7 @@ export function createApp(sessionsBasePath?: string) {
   });
 
   // Proxy publish time stats to Phoenix
-  app.post('/api/publish-time-stats', async (req: Request, res: Response) => {
+  app.post('/api/upload-time-stats', async (req: Request, res: Response) => {
     const auth = getAuthToken();
     if (!auth) {
       res.status(401).json({ error: 'Authentication required. Run heyiam login first.' });
@@ -579,10 +579,10 @@ export function createApp(sessionsBasePath?: string) {
       });
 
       // Include already-published sessions so frontend can pre-check them
-      const published = getPublishedState(proj.dirName);
-      const alreadyPublished = published?.publishedSessions ?? [];
+      const published = getUploadedState(proj.dirName);
+      const alreadyUploaded = published?.uploadedSessions ?? [];
 
-      send({ type: 'result', ...result, alreadyPublished });
+      send({ type: 'result', ...result, alreadyUploaded });
       res.end();
     } catch (err) {
       send({ type: 'error', code: 'TRIAGE_FAILED', message: (err as Error).message });
@@ -1064,7 +1064,7 @@ export function createApp(sessionsBasePath?: string) {
   });
 
   // Publish project — SSE stream with per-session progress
-  app.post('/api/projects/:project/publish', async (req: Request, res: Response) => {
+  app.post('/api/projects/:project/upload', async (req: Request, res: Response) => {
     const { project } = req.params;
     const auth = getAuthToken();
 
@@ -1215,14 +1215,14 @@ export function createApp(sessionsBasePath?: string) {
       const proj = projects.find((p) => p.dirName === project);
       let uploadedCount = 0;
       const failedSessions: Array<{ sessionId: string; error: string }> = [];
-      const publishedSessionCards: SessionCard[] = [];
+      const uploadedSessionCards: SessionCard[] = [];
 
       if (proj) {
         for (const sessionId of selectedSessionIds) {
           const meta = proj.sessions.find((s) => s.sessionId === sessionId);
           if (!meta) continue;
 
-          send({ type: 'session', sessionId, status: 'publishing' });
+          send({ type: 'session', sessionId, status: 'uploading' });
 
           try {
             const session = await loadSession(meta.path, proj.name, sessionId);
@@ -1278,11 +1278,11 @@ export function createApp(sessionsBasePath?: string) {
               const sessionRenderData = buildSessionRenderData(renderOpts);
               sessionRenderedHtml = renderSessionHtml(sessionRenderData);
             } catch (renderErr) {
-              console.error(`[publish] Session render failed for ${sessionId}:`, (renderErr as Error).message);
+              console.error(`[upload] Session render failed for ${sessionId}:`, (renderErr as Error).message);
             }
 
             // Collect session card for project render
-            publishedSessionCards.push(buildSessionCard(renderOpts));
+            uploadedSessionCards.push(buildSessionCard(renderOpts));
 
             // POST body: scalar/aggregate fields only
             const sessionPayload = {
@@ -1436,7 +1436,7 @@ export function createApp(sessionsBasePath?: string) {
               if (enhanced) {
                 saveEnhancedData(sessionId, { ...enhanced, uploaded: true });
               }
-              send({ type: 'session', sessionId, status: 'published' });
+              send({ type: 'session', sessionId, status: 'uploaded' });
             } else {
               const sesErrBody = await sessionRes.json().catch(() => null);
               const rawSesErr = sesErrBody && typeof sesErrBody === 'object' ? (sesErrBody as { error?: unknown }).error : null;
@@ -1455,7 +1455,7 @@ export function createApp(sessionsBasePath?: string) {
       }
 
       // Step 3: Render project HTML and update on Phoenix (non-fatal)
-      if (publishedSessionCards.length > 0) {
+      if (uploadedSessionCards.length > 0) {
         try {
           const projectRenderData = buildProjectRenderData({
             username: auth.username,
@@ -1478,7 +1478,7 @@ export function createApp(sessionsBasePath?: string) {
             totalDurationMinutes,
             totalAgentDurationMinutes: totalAgentDurationMinutes ?? undefined,
             totalFilesChanged,
-            sessionCards: publishedSessionCards,
+            sessionCards: uploadedSessionCards,
           });
           const projectHtml = renderProjectHtml(projectRenderData);
 
@@ -1509,10 +1509,10 @@ export function createApp(sessionsBasePath?: string) {
           if (renderRes.ok) {
             send({ type: 'project', status: 'rendered' });
           } else {
-            console.error('[publish] Project render update failed:', renderRes.status);
+            console.error('[upload] Project render update failed:', renderRes.status);
           }
         } catch (renderErr) {
-          console.error('[publish] Project render failed:', (renderErr as Error).message);
+          console.error('[upload] Project render failed:', (renderErr as Error).message);
         }
       }
 
@@ -1522,15 +1522,15 @@ export function createApp(sessionsBasePath?: string) {
       // a Phoenix endpoint exists to list the user's published projects with stats.
 
       // Track published state locally
-      const publishedSessionIds = selectedSessionIds.filter((sid: string) => {
+      const uploadedSessionIds = selectedSessionIds.filter((sid: string) => {
         const enhanced = loadEnhancedData(sid);
         return enhanced?.uploaded;
       });
       if (proj) {
-        savePublishedState(proj.dirName, {
+        saveUploadedState(proj.dirName, {
           slug: projectData.slug,
           projectId: projectData.project_id,
-          publishedSessions: publishedSessionIds,
+          uploadedSessions: uploadedSessionIds,
         });
       }
 
@@ -1546,8 +1546,8 @@ export function createApp(sessionsBasePath?: string) {
       });
       res.end();
     } catch (err) {
-      console.error('[publish] Error:', (err as Error).message);
-      send({ type: 'error', code: 'PUBLISH_FAILED', message: (err as Error).message });
+      console.error('[upload] Error:', (err as Error).message);
+      send({ type: 'error', code: 'UPLOAD_FAILED', message: (err as Error).message });
       res.end();
     }
   });
