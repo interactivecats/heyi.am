@@ -29,7 +29,7 @@ config :heyi_am, HeyiAmWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Set PHX_IP=0.0.0.0 (e.g. in docker-compose) to allow access from outside.
   http: [ip: if(System.get_env("PHX_IP") == "0.0.0.0", do: {0, 0, 0, 0}, else: {127, 0, 0, 1})],
-  check_origin: false,
+  check_origin: ["//heyi.am.localhost", "//heyiam.com.localhost", "//localhost"],
   code_reloader: true,
   debug_errors: true,
   secret_key_base: "e9OPp6ipXBwRBRpQlq9Cw0HhPMEFhBI8lfYVYOfrmOj0KxLqTtfJwpWjRsJjLZuy",

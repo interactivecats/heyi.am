@@ -4,7 +4,7 @@ import { listSessions, parseSession } from "./parsers/index.js";
 import type { ParsedSession } from "./types.js";
 import { computeVibeStats } from "./stats.js";
 import { matchArchetype } from "./archetypes.js";
-import { fetchNarrative, templateNarrative } from "./narrative.js";
+import { fetchNarrative, localResult } from "./narrative.js";
 import { renderCard, formatTextBlock, copyToClipboard, promptYesNo } from "./render.js";
 import { shareVibe } from "./share.js";
 import { execFile } from "node:child_process";
@@ -81,17 +81,17 @@ if (process.stdin.isTTY) {
   }
 }
 
-const narrative = cloudConsent
+const { headline, narrative } = cloudConsent
   ? await fetchNarrative(stats, match)
-  : templateNarrative(stats, match);
+  : localResult(stats, match);
 
-renderCard(stats, match, narrative);
+renderCard(stats, headline, narrative);
 
 // Interactive share flow (skip if not a TTY, e.g. piped output)
 if (process.stdin.isTTY) {
   const wantsCopy = await promptYesNo("  Copy to clipboard?");
   if (wantsCopy) {
-    const text = formatTextBlock(stats, match, narrative);
+    const text = formatTextBlock(stats, headline, narrative);
     const ok = copyToClipboard(text);
     console.log(ok ? "  Copied!" : "  Couldn't copy — clipboard not available.");
   }
@@ -99,7 +99,7 @@ if (process.stdin.isTTY) {
   const wantsShare = cloudConsent && await promptYesNo("  Share online?");
   if (wantsShare) {
     process.stdout.write("  Sharing...");
-    const result = await shareVibe(stats, match, narrative);
+    const result = await shareVibe(stats, match, headline, narrative);
     if (result) {
       console.log(" done!\n");
       console.log(`  ${result.url}`);

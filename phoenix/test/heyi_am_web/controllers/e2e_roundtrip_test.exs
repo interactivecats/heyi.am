@@ -41,7 +41,8 @@ defmodule HeyiAmWeb.E2ERoundtripTest do
               %{role: "ai", text: "Let me trace the data flow."}
             ],
             narrative: "This session replaced mock data with real database queries.",
-            project_name: "heyi.am"
+            project_name: "heyi.am",
+            rendered_html: "<div class=\"e2e-session\"><h1>E2E: Wiring real database queries</h1><p>Mock data was hiding broken render paths.</p><span>32m</span><span>1.2k</span><span>Elixir</span><span>Phoenix</span><p>Read controllers</p><p>Why were pages blank?</p><p>Mock data hid bugs</p><p>The pages render but the data is fake.</p></div>"
           }
         })
 
@@ -65,11 +66,10 @@ defmodule HeyiAmWeb.E2ERoundtripTest do
       assert html =~ "Mock data hid bugs"
       assert html =~ "The pages render but the data is fake."
 
-      # Verify transcript route
+      # Verify transcript route renders (content comes from S3, not DB)
       transcript_conn = get(conn, "/s/#{token}/transcript")
       transcript_html = html_response(transcript_conn, 200)
       assert transcript_html =~ "E2E: Wiring real database queries"
-      assert transcript_html =~ "The pages render but the data is fake."
 
       # Verify verification route
       verify_conn = get(conn, "/s/#{token}/verify")
@@ -79,15 +79,28 @@ defmodule HeyiAmWeb.E2ERoundtripTest do
     end
   end
 
-  describe "publish with user → portfolio" do
-    test "session published with user_id appears on portfolio page", %{conn: conn} do
-      # Create a user
+  describe "publish with user → portfolio (pre-rendered)" do
+    test "portfolio with rendered_html serves pre-rendered content", %{conn: conn} do
+      # Create a user with pre-rendered portfolio HTML
       user = user_fixture()
       {:ok, user} = HeyiAm.Accounts.update_user_username(user, %{username: "e2e-dev"})
-      {:ok, _} = HeyiAm.Accounts.update_user_profile(user, %{display_name: "E2E Developer"})
 
-      # Publish a session with user_id (simulating authenticated publish)
-      {:ok, share} =
+      {:ok, _} =
+        HeyiAm.Accounts.update_user_profile(user, %{
+          display_name: "E2E Developer",
+          rendered_portfolio_html: "<div class=\"e2e-portfolio\"><h1>E2E Developer</h1><p>test-project</p><a href=\"/e2e-dev/test-project\">test-project</a></div>"
+        })
+
+      # Create a project with pre-rendered HTML
+      {:ok, project} =
+        HeyiAm.Projects.create_project(%{
+          slug: "test-project",
+          title: "Test Project",
+          rendered_html: "<div class=\"e2e-project\"><h1>Test Project</h1><p>E2E portfolio integration</p></div>",
+          user_id: user.id
+        })
+
+      {:ok, _share} =
         HeyiAm.Shares.create_share(%{
           token: HeyiAm.Shares.generate_token(),
           title: "E2E portfolio integration",
@@ -100,10 +113,11 @@ defmodule HeyiAmWeb.E2ERoundtripTest do
           recorded_at: ~U[2026-03-20 12:00:00Z],
           project_name: "test-project",
           skills: ["Testing"],
-          user_id: user.id
+          user_id: user.id,
+          project_id: project.id
         })
 
-      # View portfolio
+      # View portfolio -- serves pre-rendered HTML
       portfolio_conn = get(conn, "/e2e-dev")
       portfolio_html = html_response(portfolio_conn, 200)
 
@@ -111,12 +125,11 @@ defmodule HeyiAmWeb.E2ERoundtripTest do
       assert portfolio_html =~ "test-project"
       assert portfolio_html =~ "/e2e-dev/test-project"
 
-      # View project page
+      # View project page -- serves pre-rendered HTML
       project_conn = get(conn, "/e2e-dev/test-project")
       project_html = html_response(project_conn, 200)
 
       assert project_html =~ "E2E portfolio integration"
-      assert project_html =~ "/s/#{share.token}"
     end
   end
 end

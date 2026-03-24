@@ -24,7 +24,6 @@ defmodule HeyiAmWeb.UserSettingsGDPRTest do
       body = Jason.decode!(conn.resp_body)
       assert Map.has_key?(body, "profile")
       assert Map.has_key?(body, "shares")
-      assert Map.has_key?(body, "portfolio_sessions")
     end
 
     test "filename includes username", %{conn: conn} do

@@ -1,0 +1,287 @@
+<%!-- ── Hero ── --%>
+  <section class="landing-hero">
+    <h1 class="display-md" style="margin-block-end: var(--spacing-6);">
+      Proof-of-work for AI-native developers.
+    </h1>
+    <p class="body-lg" style="color: var(--on-surface-variant); max-width: 38rem; margin-inline: auto; margin-block-end: var(--spacing-6);">
+      heyi.am turns Claude Code, Cursor, Codex, and Gemini sessions into project case studies with timelines, decisions, and real build stats.
+    </p>
+    <p class="title-md" style="margin-block-end: var(--spacing-1);">
+      Not a transcript dump. Not AI fluff.
+    </p>
+    <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-8);">
+      A portfolio that shows judgment, iteration, and execution.
+    </p>
+    <div style="display: flex; gap: var(--spacing-3); justify-content: center; margin-block-end: var(--spacing-10);">
+      <a href="/users/register" class="btn btn-primary">Upload your first project</a>
+      <a href={HeyiAmAppWeb.Helpers.public_url("/ben")} class="btn btn-secondary">See example portfolio</a>
+    </div>
+
+    <%!-- Terminal visual --%>
+    <div class="terminal" style="max-width: 34rem; margin-inline: auto; text-align: start;">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <span class="terminal-dot terminal-dot--red"></span>
+          <span class="terminal-dot terminal-dot--yellow"></span>
+          <span class="terminal-dot terminal-dot--green"></span>
+        </div>
+        <span style="font-size: 0.625rem; color: rgba(255,255,255,0.4);">terminal</span>
+      </div>
+      <div class="terminal-line"><span class="terminal-prompt">$</span> npx heyiam</div>
+      <div class="terminal-line"><span style="color: var(--inverse-primary);">[INFO]</span> Found 3 projects (21 sessions)</div>
+      <div class="terminal-line"><span style="color: var(--inverse-primary);">[INFO]</span> Sources: Claude Code, Cursor, Gemini CLI</div>
+      <div class="terminal-line" style="margin-block-start: 0.25rem;"><span class="terminal-success">&#10003;</span> AI selected 8 of 21 sessions</div>
+      <div class="terminal-line"><span class="terminal-success">&#10003;</span> Project narrative generated</div>
+      <div class="terminal-line"><span class="terminal-success">&#10003;</span> Uploaded: heyi.am/ben/heyi-am</div>
+      <div class="terminal-line"><span class="terminal-prompt">$</span> <span class="terminal-cursor"></span></div>
+    </div>
+  </section>
+
+  <%!-- ── Framing Line ── --%>
+  <div class="landing-framing">
+    <p class="body-md" style="color: var(--on-surface-variant);">
+      Your sessions already contain the story. heyi.am turns them into something worth sharing.
+    </p>
+  </div>
+
+  <%!-- ── Positioning (dark) ── --%>
+  <section class="landing-positioning">
+    <div class="landing-positioning-inner">
+      <div class="landing-positioning-headlines">
+        <h2 class="headline-lg" style="color: var(--inverse-on-surface);">GitHub shows code.</h2>
+        <h2 class="headline-lg" style="color: var(--inverse-on-surface);">Resumes show claims.</h2>
+        <h2 class="display-sm" style="color: var(--inverse-primary);">heyi.am shows how you think.</h2>
+      </div>
+      <div class="landing-positioning-body">
+        <p class="body-md" style="color: var(--inverse-on-surface); opacity: 0.85; margin-block-end: var(--spacing-6);">
+          AI coding tools are great at recording the work, but terrible at presenting it.
+          The real signal is buried in long sessions, dead ends, rewrites, and decisions that never make it into a README.
+        </p>
+        <p class="body-md" style="color: var(--inverse-on-surface); opacity: 0.85; margin-block-end: var(--spacing-6);">
+          heyi.am turns that build history into a public artifact people can actually read:
+        </p>
+        <ul class="landing-positioning-list">
+          <li>what you built</li>
+          <li>where it got hard</li>
+          <li>how you used AI</li>
+          <li>what decisions were yours</li>
+          <li>what shipped</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ── How It Works ── --%>
+  <section id="how-it-works" class="landing-section">
+    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">How it works</div>
+    <h2 class="headline-lg" style="margin-block-end: var(--spacing-12);">Turn session history into a project page</h2>
+    <div class="landing-steps">
+      <div class="landing-step">
+        <div class="landing-step-number">1</div>
+        <div class="landing-step-content">
+          <h3 class="headline-sm" style="margin-block-end: var(--spacing-2);">Scan your sessions</h3>
+          <p class="body-md" style="color: var(--on-surface-variant);">
+            Run <code style="font-family: var(--font-mono); font-size: 0.875em;">npx heyiam</code> and heyi.am reads your local sessions from Claude Code, Cursor, Codex, and Gemini.
+          </p>
+        </div>
+      </div>
+      <div class="landing-step">
+        <div class="landing-step-number">2</div>
+        <div class="landing-step-content">
+          <h3 class="headline-sm" style="margin-block-end: var(--spacing-2);">Group them into projects</h3>
+          <p class="body-md" style="color: var(--on-surface-variant);">
+            Sessions from the same build get clustered automatically, even across tools and phases.
+          </p>
+        </div>
+      </div>
+      <div class="landing-step">
+        <div class="landing-step-number">3</div>
+        <div class="landing-step-content">
+          <h3 class="headline-sm" style="margin-block-end: var(--spacing-2);">Extract the signal</h3>
+          <p class="body-md" style="color: var(--on-surface-variant);">
+            The AI selects the sessions worth showing, identifies the turning points, and drafts a narrative around the real work.
+          </p>
+        </div>
+      </div>
+      <div class="landing-step">
+        <div class="landing-step-number">4</div>
+        <div class="landing-step-content">
+          <h3 class="headline-sm" style="margin-block-end: var(--spacing-2);">Add your voice</h3>
+          <p class="body-md" style="color: var(--on-surface-variant);">
+            You answer a few targeted questions so the final writeup sounds like you, not like a summary generator.
+          </p>
+        </div>
+      </div>
+      <div class="landing-step">
+        <div class="landing-step-number">5</div>
+        <div class="landing-step-content">
+          <h3 class="headline-sm" style="margin-block-end: var(--spacing-2);">Upload</h3>
+          <p class="body-md" style="color: var(--on-surface-variant);">
+            Share a project page with timeline, case studies, and accurate stats from the full build history.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ── What Gets Uploaded ── --%>
+  <section class="landing-section">
+    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">What gets uploaded</div>
+    <h2 class="headline-lg" style="margin-block-end: var(--spacing-8);">A project page, not a transcript dump</h2>
+    <div class="landing-takes-grid">
+      <div class="card card-padded">
+        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Project Narrative</h3>
+        <p class="body-sm" style="color: var(--on-surface-variant);">
+          A sharp explanation of what you built, why it mattered, and what made it hard.
+        </p>
+      </div>
+      <div class="card card-padded">
+        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Timeline</h3>
+        <p class="body-sm" style="color: var(--on-surface-variant);">
+          Sessions grouped by phase so the project reads like a build story, not a chat archive.
+        </p>
+      </div>
+      <div class="card card-padded">
+        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Session Case Studies</h3>
+        <p class="body-sm" style="color: var(--on-surface-variant);">
+          Featured sessions expanded into mini writeups with execution paths, key decisions, and developer commentary.
+        </p>
+      </div>
+      <div class="card card-padded">
+        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Accurate Stats</h3>
+        <p class="body-sm" style="color: var(--on-surface-variant);">
+          Total time, sessions, files, and code volume computed from the full local history — not just the parts you upload.
+        </p>
+      </div>
+      <div class="card card-padded">
+        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Your Voice</h3>
+        <p class="body-sm" style="color: var(--on-surface-variant);">
+          AI drafts the structure. You shape the final story.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ── Example Portfolio ── --%>
+  <section class="landing-section">
+    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">Example</div>
+    <h2 class="headline-lg" style="margin-block-end: var(--spacing-4);">See what an AI-native portfolio looks like</h2>
+    <p class="body-md" style="color: var(--on-surface-variant); max-width: 40rem; margin-block-end: var(--spacing-8);">
+      A good project page doesn't just show the final product.
+      It shows the path: rewrites, wrong turns, hard decisions, and the moments where the builder had to step in and redirect the work.
+    </p>
+    <a href={HeyiAmAppWeb.Helpers.public_url("/ben")} style="text-decoration: none; color: inherit; display: block; max-width: 40rem;">
+      <div class="card card-padded card--elevated" style="transition: box-shadow 0.15s ease;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <div class="headline-sm" style="margin-block-end: var(--spacing-2);">ben</div>
+            <p class="body-sm" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
+              Built heyi.am itself through 100+ sessions spanning spec rewrites, parser audits, editor rebuilds, and security-heavy implementation work.
+            </p>
+            <div style="display: flex; gap: var(--spacing-2); flex-wrap: wrap;">
+              <span class="chip chip--primary">Elixir</span>
+              <span class="chip chip--primary">Phoenix</span>
+              <span class="chip">TypeScript</span>
+              <span class="chip">React</span>
+            </div>
+          </div>
+          <span class="label-md" style="color: var(--primary); white-space: nowrap; margin-inline-start: var(--spacing-4);">View portfolio &rarr;</span>
+        </div>
+      </div>
+    </a>
+  </section>
+
+  <%!-- ── Why It Matters ── --%>
+  <section class="landing-section">
+    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">Why it matters</div>
+    <h2 class="headline-lg" style="margin-block-end: var(--spacing-8);">From activity to identity</h2>
+    <div class="landing-dual-grid">
+      <div>
+        <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-6);">
+          Most existing tools help developers look polished, show activity, decorate GitHub, or post updates.
+        </p>
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          Very few help them turn raw work into <strong style="color: var(--on-surface);">credible narrative proof</strong>.
+        </p>
+      </div>
+      <div>
+        <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
+          heyi.am helps AI-native developers show:
+        </p>
+        <ul class="stack stack--sm" style="list-style: none; color: var(--on-surface-variant);">
+          <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--primary);">what they actually built</li>
+          <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--primary);">how they think</li>
+          <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--primary);">how they steer AI</li>
+          <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--primary);">where they apply judgment</li>
+          <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--primary);">what kind of builder they are</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ── Who It's For ── --%>
+  <section class="landing-section">
+    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">Built for</div>
+    <h2 class="headline-lg" style="margin-block-end: var(--spacing-8);">Built for people who build with AI</h2>
+    <div class="landing-features-grid">
+      <div class="card card-padded">
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          Developers using Claude Code as a serious build tool
+        </p>
+      </div>
+      <div class="card card-padded">
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          Cursor, Codex, and Gemini power users
+        </p>
+      </div>
+      <div class="card card-padded">
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          Indie hackers shipping quickly with agents
+        </p>
+      </div>
+      <div class="card card-padded">
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          Freelancers and consultants who need stronger case studies
+        </p>
+      </div>
+      <div class="card card-padded">
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          Job seekers who want more than &ldquo;I used AI to build X&rdquo;
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ── Trust / Control ── --%>
+  <section class="landing-section" style="max-width: 40rem;">
+    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">Trust</div>
+    <h2 class="headline-lg" style="margin-block-end: var(--spacing-4);">You stay in control</h2>
+    <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-6);">
+      Your sessions are messy. Public pages shouldn't be.
+      heyi.am is designed to help you upload the signal without exposing the noise.
+    </p>
+    <ul class="stack stack--sm" style="list-style: none; color: var(--on-surface-variant);">
+      <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--outline-variant);">Review before uploading</li>
+      <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--outline-variant);">Control what gets featured</li>
+      <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--outline-variant);">Keep your voice in the final writeup</li>
+      <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--outline-variant);">Upload polished pages from real build history</li>
+    </ul>
+  </section>
+
+  <%!-- ── Final CTA ── --%>
+  <section style="text-align: center; padding-block: var(--spacing-20); padding-inline: var(--spacing-4);">
+    <h2 class="display-sm" style="margin-block-end: var(--spacing-4);">Upload your first AI-native case study</h2>
+    <p class="body-lg" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-3);">
+      Your sessions already prove the work.
+    </p>
+    <p class="body-lg" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-8);">
+      heyi.am turns that proof into a portfolio worth sending.
+    </p>
+    <div class="terminal" style="max-width: 28rem; margin-inline: auto; text-align: start; margin-block-end: var(--spacing-8);">
+      <div class="terminal-line"><span class="terminal-prompt">$</span> npx heyiam</div>
+    </div>
+    <div style="display: flex; gap: var(--spacing-3); justify-content: center;">
+      <a href="/users/register" class="btn btn-primary">Get started</a>
+      <a href={HeyiAmAppWeb.Helpers.public_url("/ben")} class="btn btn-secondary">See example portfolio</a>
+    </div>
+  </section>

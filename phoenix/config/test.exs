@@ -49,6 +49,10 @@ config :heyi_am, HeyiAm.LLM, provider: "mock", monthly_quota: 10
 config :heyi_am, HeyiAm.ObjectStorage,
   adapter: HeyiAm.ObjectStorage.Mock
 
+# Disable host-based routing in tests (no /etc/hosts needed)
+config :heyi_am, public_host: nil
+config :heyi_am, app_host: nil
+
 # Disable rate limiting in tests (tested explicitly in rate_limit_test.exs)
 config :heyi_am, rate_limiting_enabled: false
 

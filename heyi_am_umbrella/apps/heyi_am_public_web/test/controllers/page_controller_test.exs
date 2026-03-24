@@ -1,19 +1,19 @@
 defmodule HeyiAmPublicWeb.PageControllerTest do
   use HeyiAmPublicWeb.ConnCase
 
-  test "GET / renders the landing page", %{conn: conn} do
+  test "GET / redirects to app domain", %{conn: conn} do
     conn = get(conn, ~p"/")
-    assert html_response(conn, 200) =~ "Proof-of-work for AI-native developers"
+    assert redirected_to(conn) =~ "/home"
   end
 
-  test "GET /terms renders the terms page", %{conn: conn} do
+  test "GET /terms redirects to app domain", %{conn: conn} do
     conn = get(conn, ~p"/terms")
-    assert html_response(conn, 200) =~ "Terms of Use"
+    assert redirected_to(conn) =~ "/terms"
   end
 
-  test "GET /privacy renders the privacy page", %{conn: conn} do
+  test "GET /privacy redirects to app domain", %{conn: conn} do
     conn = get(conn, ~p"/privacy")
-    assert html_response(conn, 200) =~ "Privacy Policy"
+    assert redirected_to(conn) =~ "/privacy"
   end
 
   test "GET /v/some-id redirects to howdoyouvibe.com", %{conn: conn} do

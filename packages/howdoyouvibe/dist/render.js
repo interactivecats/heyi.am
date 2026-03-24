@@ -58,7 +58,7 @@ const LOGO_LINES = [
     "                                 |__/                            ",
 ];
 const LOGO_COLORS = [c.cyan, c.magenta, c.yellow, c.green, c.cyan];
-export function renderCard(stats, match, narrative) {
+export function renderCard(stats, headline, narrative) {
     const lines = [];
     lines.push("");
     for (let i = 0; i < LOGO_LINES.length; i++) {
@@ -66,7 +66,7 @@ export function renderCard(stats, match, narrative) {
     }
     lines.push(`${INDENT}${LINE}`);
     lines.push("");
-    lines.push(`${INDENT}${c.bold}${c.white}${match.headline}${c.reset}`);
+    lines.push(`${INDENT}${c.bold}${c.white}${headline}${c.reset}`);
     if (narrative) {
         lines.push("");
         for (const wrapped of wordWrap(narrative, 76)) {
@@ -211,12 +211,12 @@ function wordWrap(text, maxWidth) {
  * Vertical, compact, proportional-font friendly. No columns — they break on mobile.
  * Stats paired with · on each line for density without requiring monospace.
  */
-export function formatTextBlock(stats, match, narrative) {
+export function formatTextBlock(stats, headline, narrative) {
     const lines = [];
     const { voiceCol, aiCol, collabCol } = buildStatColumns(stats);
     lines.push(`HOW DO YOU VIBE?`);
     lines.push(``);
-    lines.push(match.headline);
+    lines.push(headline);
     if (narrative) {
         lines.push(``);
         lines.push(narrative);

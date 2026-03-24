@@ -88,6 +88,13 @@ config :heyi_am, HeyiAm.ObjectStorage,
   bucket: "heyi-am-sessions",
   presign_expires_in: 900
 
+# Domain routing: public site vs app site
+# Dev uses .localhost domains (add to /etc/hosts)
+# Test uses nil (disables host matching so tests work without setup)
+# Prod: set via runtime.exs from env vars
+config :heyi_am, public_host: "heyi.am.localhost"
+config :heyi_am, app_host: "heyiam.com.localhost"
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 

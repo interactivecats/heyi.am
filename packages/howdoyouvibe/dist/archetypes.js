@@ -126,6 +126,87 @@ export const PRIMARY_ARCHETYPES = [
         impliedStats: ["turn_density", "corrections"],
         score: (s) => (overThreshold(s.turn_density, 1.5) + overThreshold(s.corrections, 10)) / 2,
     },
+    {
+        id: "marathon-runner",
+        name: "The Marathon Runner",
+        tagline: "Sessions that never end.",
+        conditions: [
+            (s) => s.total_duration_min / Math.max(1, s.session_count) > 120,
+            (s) => s.avg_daily_hours > 4,
+        ],
+        impliedStats: ["avg_daily_hours"],
+        score: (s) => (overThreshold(s.total_duration_min / Math.max(1, s.session_count), 120) +
+            overThreshold(s.avg_daily_hours, 4)) / 2,
+    },
+    {
+        id: "scientist",
+        name: "The Scientist",
+        tagline: "Hypothesize, test, repeat.",
+        conditions: [
+            (s) => s.test_runs > 50,
+            (s) => s.question_rate > 0.3,
+            (s) => s.reasoning_rate > 0.1,
+        ],
+        impliedStats: ["test_runs", "question_rate", "reasoning_rate"],
+        score: (s) => (overThreshold(s.test_runs, 50) + overThreshold(s.question_rate, 0.3) +
+            overThreshold(s.reasoning_rate, 0.1)) / 3,
+    },
+    {
+        id: "puppeteer",
+        name: "The Puppeteer",
+        tagline: "Pulls every string.",
+        conditions: [
+            (s) => s.redirects_per_hour > 5,
+            (s) => s.corrections > 15,
+            (s) => s.longest_autopilot < 10,
+        ],
+        impliedStats: ["redirects_per_hour", "corrections", "longest_autopilot"],
+        score: (s) => (overThreshold(s.redirects_per_hour, 5) + overThreshold(s.corrections, 15) +
+            underThreshold(s.longest_autopilot, 10)) / 3,
+    },
+    {
+        id: "weekend-warrior",
+        name: "The Weekend Warrior",
+        tagline: "Saves the real coding for Saturday.",
+        conditions: [
+            (s) => s.weekend_rate > 0.4,
+        ],
+        impliedStats: ["weekend_rate"],
+        score: (s) => overThreshold(s.weekend_rate, 0.4),
+    },
+    {
+        id: "orchestrator",
+        name: "The Orchestrator",
+        tagline: "Spawns agents like they're threads.",
+        conditions: [
+            (s) => s.agent_spawns > 10,
+            (s) => s.plan_mode_uses > 5,
+        ],
+        impliedStats: ["agent_spawns", "plan_mode_uses"],
+        score: (s) => (overThreshold(s.agent_spawns, 10) + overThreshold(s.plan_mode_uses, 5)) / 2,
+    },
+    {
+        id: "minimalist",
+        name: "The Minimalist",
+        tagline: "Says less. Gets more.",
+        conditions: [
+            (s) => s.avg_prompt_words < 12,
+            (s) => s.one_word_turn_rate > 0.2,
+            (s) => s.total_turns > 100,
+        ],
+        impliedStats: ["avg_prompt_words", "one_word_turn_rate"],
+        score: (s) => (underThreshold(s.avg_prompt_words, 12) + overThreshold(s.one_word_turn_rate, 0.2)) / 2,
+    },
+    {
+        id: "secret-spiller",
+        name: "The Secret Spiller",
+        tagline: "Accidentally shares everything.",
+        conditions: [
+            (s) => (s.secret_leaks_user + s.secret_leaks_ai) > 5,
+        ],
+        impliedStats: ["secret_leaks_user", "secret_leaks_ai"],
+        score: (s) => overThreshold(s.secret_leaks_user + s.secret_leaks_ai, 5),
+    },
 ];
 export const FALLBACK_ARCHETYPE = {
     id: "vibe-coder",
@@ -206,6 +287,48 @@ export const MODIFIER_TRAITS = [
         condition: (s) => s.weekend_rate > 0.3,
         statKey: "weekend_rate",
         score: (s) => overThreshold(s.weekend_rate, 0.3),
+    },
+    {
+        id: "spawns-agents",
+        phrase: "who spawns agents for everything",
+        condition: (s) => s.agent_spawns > 10,
+        statKey: "agent_spawns",
+        score: (s) => overThreshold(s.agent_spawns, 10),
+    },
+    {
+        id: "plans-first",
+        phrase: "who plans before coding",
+        condition: (s) => s.plan_mode_uses > 5,
+        statKey: "plan_mode_uses",
+        score: (s) => overThreshold(s.plan_mode_uses, 5),
+    },
+    {
+        id: "interrupts-often",
+        phrase: "who interrupts mid-thought",
+        condition: (s) => s.interruptions > 10,
+        statKey: "interruptions",
+        score: (s) => overThreshold(s.interruptions, 10),
+    },
+    {
+        id: "marathon-sessions",
+        phrase: "who codes for hours straight",
+        condition: (s) => s.avg_daily_hours > 5,
+        statKey: "avg_daily_hours",
+        score: (s) => overThreshold(s.avg_daily_hours, 5),
+    },
+    {
+        id: "one-word-prompts",
+        phrase: "who speaks in commands",
+        condition: (s) => s.one_word_turn_rate > 0.25,
+        statKey: "one_word_turn_rate",
+        score: (s) => overThreshold(s.one_word_turn_rate, 0.25),
+    },
+    {
+        id: "leaks-secrets",
+        phrase: "who leaks secrets to the AI",
+        condition: (s) => s.secret_leaks_user > 3,
+        statKey: "secret_leaks_user",
+        score: (s) => overThreshold(s.secret_leaks_user, 3),
     },
 ];
 // ─── Matching Algorithm ──────────────────────────────────────────────────

@@ -2,7 +2,6 @@ import { createInterface } from "node:readline";
 import { execFileSync } from "node:child_process";
 import { platform } from "node:os";
 import type { VibeStats } from "./types.js";
-import type { ArchetypeMatch } from "./archetypes.js";
 import { SOURCE_DISPLAY_NAMES, type SessionSource } from "./parsers/types.js";
 
 // ─── Terminal card rendering ─────────────────────────────────────────────
@@ -73,7 +72,7 @@ const LOGO_COLORS = [c.cyan, c.magenta, c.yellow, c.green, c.cyan];
 
 export function renderCard(
   stats: VibeStats,
-  match: ArchetypeMatch,
+  headline: string,
   narrative: string | null,
 ): void {
   const lines: string[] = [];
@@ -84,7 +83,7 @@ export function renderCard(
   }
   lines.push(`${INDENT}${LINE}`);
   lines.push("");
-  lines.push(`${INDENT}${c.bold}${c.white}${match.headline}${c.reset}`);
+  lines.push(`${INDENT}${c.bold}${c.white}${headline}${c.reset}`);
 
   if (narrative) {
     lines.push("");
@@ -228,7 +227,7 @@ function wordWrap(text: string, maxWidth: number): string[] {
  */
 export function formatTextBlock(
   stats: VibeStats,
-  match: ArchetypeMatch,
+  headline: string,
   narrative: string | null,
 ): string {
   const lines: string[] = [];
@@ -236,7 +235,7 @@ export function formatTextBlock(
 
   lines.push(`HOW DO YOU VIBE?`);
   lines.push(``);
-  lines.push(match.headline);
+  lines.push(headline);
 
   if (narrative) {
     lines.push(``);

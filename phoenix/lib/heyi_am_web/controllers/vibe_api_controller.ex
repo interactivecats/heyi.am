@@ -15,6 +15,13 @@ defmodule HeyiAmWeb.VibeApiController do
     "diplomat" => "The Diplomat",
     "architect" => "The Architect",
     "pair-programmer" => "The Pair Programmer",
+    "marathon-runner" => "The Marathon Runner",
+    "scientist" => "The Scientist",
+    "puppeteer" => "The Puppeteer",
+    "weekend-warrior" => "The Weekend Warrior",
+    "orchestrator" => "The Orchestrator",
+    "minimalist" => "The Minimalist",
+    "secret-spiller" => "The Secret Spiller",
     "vibe-coder" => "The Vibe Coder"
   }
 
@@ -22,6 +29,7 @@ defmodule HeyiAmWeb.VibeApiController do
     attrs = %{
       "archetype_id" => params["archetype_id"],
       "modifier_id" => params["modifier_id"],
+      "headline" => params["headline"],
       "narrative" => params["narrative"],
       "stats" => params["stats"],
       "sources" => params["sources"] || [],
@@ -66,7 +74,13 @@ defmodule HeyiAmWeb.VibeApiController do
     "lets-ai-cook" => "who lets the AI cook",
     "asks-more-than-tells" => "who asks more than tells",
     "scope-creeps" => "who scope-creeps every session",
-    "ships-on-weekends" => "who ships on weekends"
+    "ships-on-weekends" => "who ships on weekends",
+    "spawns-agents" => "who spawns agents for everything",
+    "plans-first" => "who plans before coding",
+    "interrupts-often" => "who interrupts mid-thought",
+    "marathon-sessions" => "who codes for hours straight",
+    "one-word-prompts" => "who speaks in commands",
+    "leaks-secrets" => "who leaks secrets to the AI"
   }
 
   def narrative(conn, params) do
@@ -86,13 +100,60 @@ defmodule HeyiAmWeb.VibeApiController do
       # Only pass numeric stat values to the LLM
       safe_stats = stats |> Enum.filter(fn {_k, v} -> is_number(v) end) |> Map.new()
 
-      case generate_narrative(safe_stats, archetype_name, safe_modifier) do
-        {:ok, text} ->
-          json(conn, %{narrative: text})
+      headline_task = Task.async(fn -> generate_headline(safe_stats, archetype_name, safe_modifier) end)
+      narrative_task = Task.async(fn -> generate_narrative(safe_stats, archetype_name, safe_modifier) end)
 
-        {:error, _reason} ->
-          json(conn, %{narrative: fallback_narrative(archetype_name, safe_stats)})
+      headline_result = Task.await(headline_task, 20_000)
+      narrative_result = Task.await(narrative_task, 20_000)
+
+      headline = case headline_result do
+        {:ok, h} -> h
+        _ -> fallback_headline(archetype_name, safe_modifier)
       end
+
+      narrative = case narrative_result do
+        {:ok, text} -> text
+        _ -> fallback_narrative(archetype_name, safe_stats)
+      end
+
+      json(conn, %{headline: headline, narrative: narrative})
+    end
+  end
+
+  defp generate_headline(stats, archetype_name, modifier_phrase) do
+    examples = @archetype_names |> Map.values() |> Enum.reject(& &1 == "The Vibe Coder") |> Enum.join(", ")
+
+    modifier_text = if modifier_phrase, do: " (#{modifier_phrase})", else: ""
+
+    system = """
+    Generate a creative developer personality headline. Rules:
+    - Always start with "The" (e.g. "The 3AM Alchemist", "The 847-Turn Marathon Runner")
+    - Fold the modifier trait into the title creatively — don't append "who ..." separately
+    - You may reference one extreme stat number in the title if it's striking
+    - Keep it under 76 characters
+    - Keep it work-safe, witty, and specific to this developer's actual data
+    - Never use: leverage, utilize, streamline, enhance, robust, journey, impressive
+    - Sound like a dev naming a build config, not a horoscope
+    - Output ONLY the headline. No quotes, no explanation, no punctuation at the end
+    """
+
+    user = """
+    Static match: #{archetype_name}#{modifier_text}
+    Example titles from the static pool: #{examples}
+    Stats: #{Jason.encode!(stats)}
+
+    Generate a headline for this developer.
+    """
+
+    provider = Provider.provider()
+    provider.complete(system, user)
+  end
+
+  defp fallback_headline(archetype_name, modifier_phrase) do
+    if modifier_phrase do
+      "#{archetype_name} #{modifier_phrase}"
+    else
+      archetype_name
     end
   end
 

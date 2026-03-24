@@ -1,8 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { formatTextBlock, renderCard } from "./render.js";
 import type { VibeStats } from "./types.js";
-import type { ArchetypeMatch } from "./archetypes.js";
-import { FALLBACK_ARCHETYPE } from "./archetypes.js";
 
 function makeStats(overrides: Partial<VibeStats> = {}): VibeStats {
   return {
@@ -44,36 +42,15 @@ function makeStats(overrides: Partial<VibeStats> = {}): VibeStats {
   };
 }
 
-function makeMatch(headline = "The Night Owl who cusses under pressure"): ArchetypeMatch {
-  return {
-    primary: {
-      id: "night-owl",
-      name: "The Night Owl",
-      tagline: "Codes when the world sleeps.",
-      conditions: [],
-      impliedStats: [],
-      score: () => 1,
-    },
-    modifier: {
-      id: "cusses-under-pressure",
-      phrase: "who cusses under pressure",
-      condition: () => true,
-      statKey: "expletives",
-      score: () => 1,
-    },
-    headline,
-  };
-}
+const TEST_HEADLINE = "The Night Owl who cusses under pressure";
 
 describe("formatTextBlock", () => {
   it("mirrors full terminal card with all stats", () => {
     const stats = makeStats();
-    const match = makeMatch();
     const narrative = "You said please in 42% of your turns.";
 
-    const block = formatTextBlock(stats, match, narrative);
+    const block = formatTextBlock(stats, TEST_HEADLINE, narrative);
 
-    // Has the full card structure
     expect(block).toContain("HOW DO YOU VIBE?");
     expect(block).toContain("The Night Owl who cusses under pressure");
     expect(block).toContain("42%");
@@ -82,16 +59,14 @@ describe("formatTextBlock", () => {
     expect(block).toContain("THE BACK-AND-FORTH");
     expect(block).toContain("npx howdoyouvibe");
     expect(block).toContain("847 turns");
-    // Has paired stats with · separator
     expect(block).toContain("·");
   });
 
   it("includes narrative when provided", () => {
     const stats = makeStats();
-    const match = makeMatch();
 
-    const withNarr = formatTextBlock(stats, match, "Test narrative.");
-    const withoutNarr = formatTextBlock(stats, match, null);
+    const withNarr = formatTextBlock(stats, TEST_HEADLINE, "Test narrative.");
+    const withoutNarr = formatTextBlock(stats, TEST_HEADLINE, null);
 
     expect(withNarr).toContain("Test narrative.");
     expect(withoutNarr).not.toContain("Test narrative.");
@@ -108,13 +83,8 @@ describe("formatTextBlock", () => {
       longest_autopilot: 0,
       scope_creep: 0,
     });
-    const match: ArchetypeMatch = {
-      primary: FALLBACK_ARCHETYPE,
-      modifier: null,
-      headline: "The Vibe Coder",
-    };
 
-    const block = formatTextBlock(stats, match, null);
+    const block = formatTextBlock(stats, "The Vibe Coder", null);
     expect(block).toContain("The Vibe Coder");
     expect(block).toContain("npx howdoyouvibe");
   });
@@ -124,9 +94,8 @@ describe("renderCard", () => {
   it("outputs terminal card without crashing", () => {
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
     const stats = makeStats();
-    const match = makeMatch();
 
-    renderCard(stats, match, "You said please in 42% of your turns.");
+    renderCard(stats, TEST_HEADLINE, "You said please in 42% of your turns.");
 
     expect(spy).toHaveBeenCalledOnce();
     const output = spy.mock.calls[0][0] as string;
@@ -149,9 +118,8 @@ describe("renderCard", () => {
       apologies: 0,
       self_corrections: 0,
     });
-    const match = makeMatch();
 
-    renderCard(stats, match, null);
+    renderCard(stats, TEST_HEADLINE, null);
 
     const output = spy.mock.calls[0][0] as string;
     expect(output).not.toContain("Expletives:");
@@ -165,9 +133,8 @@ describe("renderCard", () => {
   it("renders without narrative", () => {
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
     const stats = makeStats();
-    const match = makeMatch();
 
-    renderCard(stats, match, null);
+    renderCard(stats, TEST_HEADLINE, null);
 
     const output = spy.mock.calls[0][0] as string;
     expect(output).toContain("────");

@@ -1,0 +1,15 @@
+defmodule HeyiAmAppWeb.PageController do
+  use HeyiAmAppWeb, :controller
+
+  def home(conn, _params) do
+    render(conn, :home)
+  end
+
+  def terms(conn, _params) do
+    render(conn, :terms)
+  end
+
+  def privacy(conn, _params) do
+    render(conn, :privacy)
+  end
+end

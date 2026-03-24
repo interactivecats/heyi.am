@@ -6,14 +6,19 @@ const NARRATIVE_URL = process.env.VIBE_API_URL
   ? `${process.env.VIBE_API_URL}/api/vibes/narrative`
   : "https://heyi.am/api/vibes/narrative";
 
+export interface NarrativeResult {
+  headline: string;
+  narrative: string;
+}
+
 /**
- * Fetch a 2-sentence narrative from the server (Gemini Flash).
- * Falls back to a simple template if the server is unreachable.
+ * Fetch a headline + 2-sentence narrative from the server (Gemini Flash).
+ * Falls back to static archetype match and template if the server is unreachable.
  */
 export async function fetchNarrative(
   stats: VibeStats,
   match: ArchetypeMatch,
-): Promise<string> {
+): Promise<NarrativeResult> {
   try {
     const res = await fetch(NARRATIVE_URL, {
       method: "POST",
@@ -27,8 +32,11 @@ export async function fetchNarrative(
     });
 
     if (res.ok) {
-      const data = (await res.json()) as { narrative?: string };
-      if (data.narrative) return data.narrative;
+      const data = (await res.json()) as { headline?: string; narrative?: string };
+      return {
+        headline: data.headline || match.headline,
+        narrative: data.narrative || templateNarrative(stats, match),
+      };
     }
 
     if (res.status === 429) {
@@ -41,7 +49,21 @@ export async function fetchNarrative(
     }
   }
 
-  return templateNarrative(stats, match);
+  return {
+    headline: match.headline,
+    narrative: templateNarrative(stats, match),
+  };
+}
+
+/** Build a fully local result (no network). */
+export function localResult(
+  stats: VibeStats,
+  match: ArchetypeMatch,
+): NarrativeResult {
+  return {
+    headline: match.headline,
+    narrative: templateNarrative(stats, match),
+  };
 }
 
 /**

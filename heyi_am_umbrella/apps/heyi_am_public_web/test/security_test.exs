@@ -5,10 +5,21 @@ defmodule HeyiAmPublicWeb.SecurityTest do
   """
   use HeyiAmPublicWeb.ConnCase
 
-  describe "no session cookies" do
-    test "public endpoint does not set session cookies", %{conn: conn} do
+  describe "landing redirects to app domain" do
+    test "GET / redirects (landing is on app domain now)", %{conn: conn} do
       conn = get(conn, ~p"/")
-      assert html_response(conn, 200)
+      assert conn.status == 302
+    end
+
+    test "GET /terms redirects to app domain", %{conn: conn} do
+      conn = get(conn, ~p"/terms")
+      assert conn.status == 302
+    end
+  end
+
+  describe "no session cookies" do
+    test "public endpoint does not set session cookies on redirect", %{conn: conn} do
+      conn = get(conn, ~p"/")
 
       set_cookie_headers =
         conn.resp_headers
@@ -20,34 +31,16 @@ defmodule HeyiAmPublicWeb.SecurityTest do
              "Public endpoint must not set any cookies, got: #{inspect(set_cookie_headers)}"
     end
 
-    test "terms page does not set session cookies", %{conn: conn} do
+    test "terms redirect does not set session cookies", %{conn: conn} do
       conn = get(conn, ~p"/terms")
       set_cookies = for {"set-cookie", v} <- conn.resp_headers, do: v
       assert set_cookies == []
     end
   end
 
-  describe "no CSRF token" do
-    test "public endpoint does not expose CSRF token in HTML", %{conn: conn} do
-      conn = get(conn, ~p"/")
-      body = html_response(conn, 200)
-
-      refute body =~ "csrf-token",
-             "Public endpoint HTML must not contain csrf-token meta tag"
-
-      refute body =~ "_csrf_token",
-             "Public endpoint HTML must not contain _csrf_token"
-    end
-
-    test "terms page does not expose CSRF token", %{conn: conn} do
-      conn = get(conn, ~p"/terms")
-      body = html_response(conn, 200)
-      refute body =~ "csrf-token"
-    end
-  end
-
   describe "strict CSP headers" do
     test "public endpoint serves strict CSP headers", %{conn: conn} do
+      # Test against a route that still renders on public_web (vibe redirect also goes through pipeline)
       conn = get(conn, ~p"/")
 
       csp =
@@ -77,17 +70,6 @@ defmodule HeyiAmPublicWeb.SecurityTest do
     test "GET /v/archetypes/foo redirects with nested path", %{conn: conn} do
       conn = get(conn, "/v/archetypes/foo")
       assert redirected_to(conn) == "https://howdoyouvibe.com/v/archetypes/foo"
-    end
-  end
-
-  describe "no LiveView" do
-    test "public endpoint does not serve /live websocket", %{conn: conn} do
-      # The endpoint should not have a /live socket at all
-      # We verify this by checking the HTML doesn't include LiveView JS hooks
-      conn = get(conn, ~p"/")
-      body = html_response(conn, 200)
-      refute body =~ "phx-socket"
-      refute body =~ "liveSocket"
     end
   end
 end

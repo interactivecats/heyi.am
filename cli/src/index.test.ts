@@ -22,7 +22,7 @@ describe('CLI commands', () => {
 
   it('has correct program name and version', () => {
     expect(program.name()).toBe('heyiam');
-    expect(program.version()).toBe('0.1.0');
+    expect(program.version()).toBe('0.1.2');
   });
 
   it('open command accepts --port option', () => {

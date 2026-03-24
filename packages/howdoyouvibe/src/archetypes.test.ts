@@ -111,6 +111,48 @@ describe("Primary archetypes", () => {
     expect(match.primary.id).toBe("pair-programmer");
   });
 
+  it("matches Marathon Runner", () => {
+    const stats = makeStats({ total_duration_min: 5000, session_count: 10, avg_daily_hours: 6 });
+    const match = matchArchetype(stats);
+    expect(match.primary.id).toBe("marathon-runner");
+  });
+
+  it("matches Scientist", () => {
+    const stats = makeStats({ test_runs: 80, question_rate: 0.5, reasoning_rate: 0.2 });
+    const match = matchArchetype(stats);
+    expect(match.primary.id).toBe("scientist");
+  });
+
+  it("matches Puppeteer", () => {
+    const stats = makeStats({ redirects_per_hour: 8, corrections: 25, longest_autopilot: 5 });
+    const match = matchArchetype(stats);
+    expect(match.primary.id).toBe("puppeteer");
+  });
+
+  it("matches Weekend Warrior", () => {
+    const stats = makeStats({ weekend_rate: 0.6 });
+    const match = matchArchetype(stats);
+    expect(match.primary.id).toBe("weekend-warrior");
+  });
+
+  it("matches Orchestrator", () => {
+    const stats = makeStats({ agent_spawns: 20, plan_mode_uses: 10 });
+    const match = matchArchetype(stats);
+    expect(match.primary.id).toBe("orchestrator");
+  });
+
+  it("matches Minimalist", () => {
+    const stats = makeStats({ avg_prompt_words: 8, one_word_turn_rate: 0.35, total_turns: 200 });
+    const match = matchArchetype(stats);
+    expect(match.primary.id).toBe("minimalist");
+  });
+
+  it("matches Secret Spiller", () => {
+    const stats = makeStats({ secret_leaks_user: 4, secret_leaks_ai: 3 });
+    const match = matchArchetype(stats);
+    expect(match.primary.id).toBe("secret-spiller");
+  });
+
   it("falls back to Vibe Coder when nothing qualifies", () => {
     const stats = makeStats(); // all defaults, no thresholds met
     const match = matchArchetype(stats);
@@ -195,7 +237,8 @@ describe("Modifier traits", () => {
   });
 
   it("adds 'who ships on weekends' modifier", () => {
-    const stats = makeStats({ weekend_rate: 0.5 });
+    // Use a rate that triggers the modifier (>0.3) but not the Weekend Warrior primary (>0.4)
+    const stats = makeStats({ weekend_rate: 0.35 });
     const match = matchArchetype(stats);
     expect(match.modifier?.id).toBe("ships-on-weekends");
   });
@@ -299,14 +342,14 @@ describe("Edge cases", () => {
     expect(match.headline).toBeTruthy();
   });
 
-  it("all 10 primaries have unique IDs", () => {
+  it("all primaries have unique IDs", () => {
     const ids = PRIMARY_ARCHETYPES.map((a) => a.id);
-    expect(new Set(ids).size).toBe(10);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("all 10 modifiers have unique IDs", () => {
+  it("all modifiers have unique IDs", () => {
     const ids = MODIFIER_TRAITS.map((m) => m.id);
-    expect(new Set(ids).size).toBe(10);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it("conditions fail partially — only all-pass archetypes qualify", () => {

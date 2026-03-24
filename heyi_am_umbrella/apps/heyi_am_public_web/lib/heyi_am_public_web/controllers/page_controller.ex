@@ -2,15 +2,15 @@ defmodule HeyiAmPublicWeb.PageController do
   use HeyiAmPublicWeb, :controller
 
   def home(conn, _params) do
-    render(conn, :home)
+    redirect(conn, external: HeyiAmPublicWeb.Helpers.app_url("/home"))
   end
 
   def terms(conn, _params) do
-    render(conn, :terms)
+    redirect(conn, external: HeyiAmPublicWeb.Helpers.app_url("/terms"))
   end
 
   def privacy(conn, _params) do
-    render(conn, :privacy)
+    redirect(conn, external: HeyiAmPublicWeb.Helpers.app_url("/privacy"))
   end
 
   def redirect_vibes(conn, %{"path" => path}) do

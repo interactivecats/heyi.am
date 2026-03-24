@@ -14,20 +14,33 @@ defmodule HeyiAmWeb.VibeController do
     "diplomat" => %{name: "The Diplomat", tagline: "Thanks the AI, trusts the AI."},
     "architect" => %{name: "The Architect", tagline: "Reads 5x more than writes."},
     "pair-programmer" => %{name: "The Pair Programmer", tagline: "Treats the AI like a colleague."},
+    "marathon-runner" => %{name: "The Marathon Runner", tagline: "Sessions that never end."},
+    "scientist" => %{name: "The Scientist", tagline: "Hypothesize, test, repeat."},
+    "puppeteer" => %{name: "The Puppeteer", tagline: "Pulls every string."},
+    "weekend-warrior" => %{name: "The Weekend Warrior", tagline: "Saves the real coding for Saturday."},
+    "orchestrator" => %{name: "The Orchestrator", tagline: "Spawns agents like they're threads."},
+    "minimalist" => %{name: "The Minimalist", tagline: "Says less. Gets more."},
+    "secret-spiller" => %{name: "The Secret Spiller", tagline: "Accidentally shares everything."},
     "vibe-coder" => %{name: "The Vibe Coder", tagline: "Vibes with the machine."}
   }
 
   @modifier_phrases %{
     "says-please" => "who says please",
     "codes-at-3am" => "who codes at 3am",
-    "reads-5x" => "who reads 5x more than writes",
+    "reads-5x-more" => "who reads 5x more than writes",
     "never-tests" => "who never tests",
     "cusses-under-pressure" => "who cusses under pressure",
-    "essay-prompts" => "who writes essays for prompts",
+    "writes-essays" => "who writes essays for prompts",
     "lets-ai-cook" => "who lets the AI cook",
-    "asks-more" => "who asks more than tells",
+    "asks-more-than-tells" => "who asks more than tells",
     "scope-creeps" => "who scope-creeps every session",
-    "ships-weekends" => "who ships on weekends"
+    "ships-on-weekends" => "who ships on weekends",
+    "spawns-agents" => "who spawns agents for everything",
+    "plans-first" => "who plans before coding",
+    "interrupts-often" => "who interrupts mid-thought",
+    "marathon-sessions" => "who codes for hours straight",
+    "one-word-prompts" => "who speaks in commands",
+    "leaks-secrets" => "who leaks secrets to the AI"
   }
 
   def index(conn, _params) do
@@ -56,7 +69,7 @@ defmodule HeyiAmWeb.VibeController do
       vibe ->
         archetype = Map.get(@archetype_meta, vibe.archetype_id, %{name: "The Vibe Coder", tagline: ""})
         modifier = Map.get(@modifier_phrases, vibe.modifier_id, nil)
-        headline = build_headline(archetype.name, modifier)
+        headline = vibe.headline || build_headline(archetype.name, modifier)
         base_url = HeyiAmWeb.Endpoint.url()
 
         {voice, ai, collab} = build_stat_columns(vibe.stats)
@@ -109,7 +122,7 @@ defmodule HeyiAmWeb.VibeController do
       vibe ->
         archetype = Map.get(@archetype_meta, vibe.archetype_id, %{name: "The Vibe Coder", tagline: ""})
         modifier = Map.get(@modifier_phrases, vibe.modifier_id, nil)
-        headline = build_headline(archetype.name, modifier)
+        headline = vibe.headline || build_headline(archetype.name, modifier)
 
         {voice, ai, collab} = build_stat_columns(vibe.stats)
 

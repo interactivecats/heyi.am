@@ -2,8 +2,8 @@ const NARRATIVE_URL = process.env.VIBE_API_URL
     ? `${process.env.VIBE_API_URL}/api/vibes/narrative`
     : "https://heyi.am/api/vibes/narrative";
 /**
- * Fetch a 2-sentence narrative from the server (Gemini Flash).
- * Falls back to a simple template if the server is unreachable.
+ * Fetch a headline + 2-sentence narrative from the server (Gemini Flash).
+ * Falls back to static archetype match and template if the server is unreachable.
  */
 export async function fetchNarrative(stats, match) {
     try {
@@ -19,8 +19,10 @@ export async function fetchNarrative(stats, match) {
         });
         if (res.ok) {
             const data = (await res.json());
-            if (data.narrative)
-                return data.narrative;
+            return {
+                headline: data.headline || match.headline,
+                narrative: data.narrative || templateNarrative(stats, match),
+            };
         }
         if (res.status === 429) {
             console.log("  (narrative limit reached for today — using local version)");
@@ -32,7 +34,17 @@ export async function fetchNarrative(stats, match) {
             console.error(`  [debug] Narrative fetch failed: ${err instanceof Error ? err.message : err}`);
         }
     }
-    return templateNarrative(stats, match);
+    return {
+        headline: match.headline,
+        narrative: templateNarrative(stats, match),
+    };
+}
+/** Build a fully local result (no network). */
+export function localResult(stats, match) {
+    return {
+        headline: match.headline,
+        narrative: templateNarrative(stats, match),
+    };
 }
 /**
  * Template fallback when server is unreachable.

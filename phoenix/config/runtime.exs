@@ -122,11 +122,18 @@ if config_env() == :prod do
       """
 
   host = System.get_env("PHX_HOST") || "example.com"
+  public_host = System.get_env("PUBLIC_HOST") || "heyi.am"
+  app_host = System.get_env("APP_HOST") || "heyiam.com"
 
   config :heyi_am, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
+  # Domain routing
+  config :heyi_am, public_host: public_host
+  config :heyi_am, app_host: app_host
+
   config :heyi_am, HeyiAmWeb.Endpoint,
-    url: [host: host, port: 443, scheme: "https"],
+    url: [host: public_host, port: 443, scheme: "https"],
+    check_origin: ["https://#{public_host}", "https://#{app_host}"],
     http: [
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
       thousand_island_options: [

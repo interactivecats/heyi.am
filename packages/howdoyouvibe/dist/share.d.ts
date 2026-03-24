@@ -10,5 +10,5 @@ interface ShareResponse {
  * POST computed vibe stats to the server. Returns share URLs on success.
  * Only computed stats leave the machine — never raw session text.
  */
-export declare function shareVibe(stats: VibeStats, match: ArchetypeMatch, narrative: string): Promise<ShareResponse | null>;
+export declare function shareVibe(stats: VibeStats, match: ArchetypeMatch, headline: string, narrative: string): Promise<ShareResponse | null>;
 export {};

@@ -19,6 +19,7 @@ interface ShareResponse {
 export async function shareVibe(
   stats: VibeStats,
   match: ArchetypeMatch,
+  headline: string,
   narrative: string,
 ): Promise<ShareResponse | null> {
   try {
@@ -29,6 +30,7 @@ export async function shareVibe(
         stats,
         archetype_id: match.primary.id,
         modifier_id: match.modifier?.id ?? null,
+        headline,
         narrative,
         sources: stats.sources,
         session_count: stats.session_count,

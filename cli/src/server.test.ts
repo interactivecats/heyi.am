@@ -68,6 +68,14 @@ vi.mock('./auth.js', () => ({
   saveAuthToken: vi.fn(),
 }));
 
+vi.mock('./settings.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./settings.js')>();
+  return {
+    ...actual,
+    getAnthropicApiKey: vi.fn().mockReturnValue('test-fake-api-key'),
+  };
+});
+
 const mockEnhanceProject = vi.fn();
 const mockRefineNarrative = vi.fn();
 vi.mock('./llm/project-enhance.js', () => ({

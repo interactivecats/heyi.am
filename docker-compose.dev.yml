@@ -52,7 +52,7 @@ services:
     stdin_open: true
     tty: true
     env_file:
-      - path: ./phoenix/.env
+      - path: ./heyi_am_umbrella/.env
         required: false
     command: >
       sh -c "
@@ -60,7 +60,7 @@ services:
       mix local.hex --force &&
       mix local.rebar --force &&
       mix deps.get &&
-      cd assets && npm install && cd .. &&
+      (cd apps/heyi_am_app_web/assets && npm install) &&
       mix ecto.create &&
       mix ecto.migrate &&
       iex -S mix phx.server
@@ -70,6 +70,7 @@ services:
       DATABASE_URL: ecto://postgres:postgres@postgres:5432/heyi_am_dev
       PHX_HOST: localhost
       PHX_IP: "0.0.0.0"
+      PHX_SERVER: "true"
       SECRET_KEY_BASE: dev-only-not-for-production-at-least-64-chars-long-xxxxxxxxxxxxxxxxxx
       OBJECT_STORAGE_HOST: seaweedfs
       OBJECT_STORAGE_PORT: "8333"
@@ -78,12 +79,17 @@ services:
       OBJECT_STORAGE_SECRET_ACCESS_KEY: heyi_secret_key
       OBJECT_STORAGE_BUCKET: heyi-am-sessions
       OBJECT_STORAGE_EXTERNAL_HOST: localhost
+      PUBLIC_PORT: "4000"
+      APP_PORT: "4001"
+      VIBE_PORT: "4002"
     ports:
-      - "4000:4000"
+      - "4000:4000"  # public_web (heyi.am)
+      - "4001:4001"  # app_web (heyiam.com)
+      - "4002:4002"  # vibe_web (howdoyouvibe.com)
     volumes:
-      - ./phoenix:/app
-      - phoenix_build:/app/_build
-      - phoenix_deps:/app/deps
+      - ./heyi_am_umbrella:/app
+      - umbrella_build:/app/_build
+      - umbrella_deps:/app/deps
     depends_on:
       postgres:
         condition: service_healthy
@@ -93,5 +99,5 @@ services:
 volumes:
   heyi_pgdata:
   heyi_seaweed:
-  phoenix_build:
-  phoenix_deps:
+  umbrella_build:
+  umbrella_deps:
