@@ -11,18 +11,18 @@ import type { RawEntry } from './parsers/types.js';
 // Inline the mock data directly in the factory.
 vi.mock('./summarize.js', () => {
   const mockResult = {
-    title: 'Refactored auth module to use Ed25519',
-    developerTake: 'The old HS256 approach was a liability. Switched to Ed25519 for proper asymmetric signing.',
-    context: 'Auth module was using HS256 shared secrets, needed upgrade to asymmetric keys.',
-    skills: ['TypeScript', 'Cryptography'],
+    title: 'Refactored auth module to use token-based auth',
+    developerTake: 'The old HS256 approach was a liability. Switched to proper token-based auth.',
+    context: 'Auth module was using HS256 shared secrets, needed upgrade.',
+    skills: ['TypeScript', 'Authentication'],
     questions: [
-      { text: 'Why did you choose Ed25519 over RSA?', suggestedAnswer: 'Ed25519 has smaller keys and faster verification.' },
+      { text: 'Why did you choose this auth approach?', suggestedAnswer: 'Simpler key management and better security.' },
       { text: 'How did you handle key rotation?', suggestedAnswer: 'Added a key ID header to support multiple active keys.' },
       { text: 'What was the migration strategy?', suggestedAnswer: 'Dual-read for 24h, then cut over.' },
     ],
     executionSteps: [
       { stepNumber: 1, title: 'Analyzed existing auth flow', body: 'Read auth.ts to understand HS256 usage patterns.' },
-      { stepNumber: 2, title: 'Implemented Ed25519 signing', body: 'Replaced HMAC with Ed25519 key pair generation.' },
+      { stepNumber: 2, title: 'Implemented token-based auth', body: 'Replaced HMAC with proper token generation.' },
     ],
   };
 
@@ -441,8 +441,8 @@ describe('POST /api/projects/:project/sessions/:id/enhance', () => {
       .send({});
     expect(res.status).toBe(200);
     expect(res.body.result).toBeDefined();
-    expect(res.body.result.title).toBe('Refactored auth module to use Ed25519');
-    expect(res.body.result.skills).toEqual(['TypeScript', 'Cryptography']);
+    expect(res.body.result.title).toBe('Refactored auth module to use token-based auth');
+    expect(res.body.result.skills).toEqual(['TypeScript', 'Authentication']);
     expect(res.body.result.questions).toHaveLength(3);
     expect(res.body.result.executionSteps).toHaveLength(2);
   });

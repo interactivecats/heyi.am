@@ -99,7 +99,7 @@ Return valid JSON matching this exact structure:
     "id": "q1",
     "category": "pattern",
     "question": "You overrode the AI 4 times across sessions. Was that a conscious strategy?",
-    "context": "High correction count detected across auth and sealing sessions"
+    "context": "High correction count detected across auth and config sessions"
   }]
 }`;
 

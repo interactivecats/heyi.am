@@ -30,7 +30,7 @@ function makeSession(overrides: Partial<Session> = {}): Session {
     skills: ['TypeScript', 'Node.js'],
     executionPath: [
       { stepNumber: 1, title: 'Analyzed auth.ts', description: 'Read existing middleware', type: 'analysis' },
-      { stepNumber: 2, title: 'Rewrote token logic', description: 'Switched to Ed25519', type: 'implementation' },
+      { stepNumber: 2, title: 'Rewrote token logic', description: 'Switched to proper token auth', type: 'implementation' },
     ],
     toolBreakdown: [
       { tool: 'Read', count: 28 },
@@ -50,18 +50,18 @@ function makeSession(overrides: Partial<Session> = {}): Session {
 }
 
 const VALID_AI_RESPONSE = JSON.stringify({
-  title: 'Rebuilt auth middleware with Ed25519 signing',
-  context: 'Legacy auth used HS256 with single token. Needed asymmetric signing for microservice verification.',
-  developerTake: 'The hard part was getting token rotation right without race conditions on concurrent requests. Ed25519 simplified the verification chain.',
-  skills: ['TypeScript', 'Ed25519', 'Node.js'],
+  title: 'Rebuilt auth middleware with token-based auth',
+  context: 'Legacy auth used HS256 with single token. Needed proper token auth for microservice verification.',
+  developerTake: 'The hard part was getting token rotation right without race conditions on concurrent requests. Proper tokens simplified the auth chain.',
+  skills: ['TypeScript', 'Authentication', 'Node.js'],
   questions: [
     { text: 'Why did you tear out auth entirely instead of patching?', suggestedAnswer: 'Three overlapping token systems — patching would have preserved the mess.' },
-    { text: 'What broke during the Ed25519 migration?', suggestedAnswer: 'Key distribution to edge nodes needed a new config path.' },
+    { text: 'What broke during the auth migration?', suggestedAnswer: 'Key distribution to edge nodes needed a new config path.' },
     { text: 'Would you write migration tests first next time?', suggestedAnswer: 'Yes — manual migration was error-prone.' },
   ],
   executionSteps: [
     { stepNumber: 1, title: 'Audited legacy auth', body: 'Found three overlapping token systems in auth.ts. None properly revocable.' },
-    { stepNumber: 2, title: 'Stripped HS256 dependency', body: 'Removed symmetric signing. Replaced with Ed25519 keypair generation.' },
+    { stepNumber: 2, title: 'Stripped HS256 dependency', body: 'Removed symmetric signing. Replaced with proper token generation.' },
     { stepNumber: 3, title: 'Added refresh token rotation', body: 'Built Redis-backed rotation with 30s grace window for concurrent requests.' },
     { stepNumber: 4, title: 'Fixed edge node verification', body: 'Distributed public keys via config service instead of shared secrets.' },
     { stepNumber: 5, title: 'Ran full test suite', body: '42 specs passing. Zero regressions from the rewrite.' },
@@ -93,8 +93,8 @@ describe('banned words', () => {
 describe('parseEnhancementResult', () => {
   it('parses valid JSON response', () => {
     const result = parseEnhancementResult(VALID_AI_RESPONSE);
-    expect(result.title).toBe('Rebuilt auth middleware with Ed25519 signing');
-    expect(result.skills).toEqual(['TypeScript', 'Ed25519', 'Node.js']);
+    expect(result.title).toBe('Rebuilt auth middleware with token-based auth');
+    expect(result.skills).toEqual(['TypeScript', 'Authentication', 'Node.js']);
     expect(result.questions).toHaveLength(3);
     expect(result.executionSteps).toHaveLength(5);
   });
@@ -102,7 +102,7 @@ describe('parseEnhancementResult', () => {
   it('parses JSON wrapped in markdown code fences', () => {
     const wrapped = '```json\n' + VALID_AI_RESPONSE + '\n```';
     const result = parseEnhancementResult(wrapped);
-    expect(result.title).toBe('Rebuilt auth middleware with Ed25519 signing');
+    expect(result.title).toBe('Rebuilt auth middleware with token-based auth');
   });
 
   it('enforces title max length of 80 chars', () => {
@@ -278,8 +278,8 @@ describe('summarizeSession', () => {
 
     const result = await summarizeSession(session, { client: mockClient });
 
-    expect(result.title).toBe('Rebuilt auth middleware with Ed25519 signing');
-    expect(result.skills).toContain('Ed25519');
+    expect(result.title).toBe('Rebuilt auth middleware with token-based auth');
+    expect(result.skills).toContain('Authentication');
     expect(result.questions).toHaveLength(3);
     expect(result.executionSteps).toHaveLength(5);
 

@@ -92,7 +92,6 @@ defmodule HeyiAmAppWeb.Router do
   scope "/api", HeyiAmAppWeb do
     pipe_through [:api]
 
-    get "/sessions/:token/verify", ShareApiController, :verify
     get "/projects/:username/:slug/screenshot", ProjectApiController, :screenshot
   end
 

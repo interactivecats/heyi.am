@@ -84,32 +84,4 @@ defmodule HeyiAmPublicWeb.ShareControllerTest do
     end
   end
 
-  describe "GET /s/:token/verify" do
-    test "renders verify page for published share", %{conn: conn} do
-      user = user_fixture(%{username: "vfdev"})
-
-      _share =
-        create_share_with_html(%{
-          user_id: user.id,
-          token: "vf-token",
-          title: "Verify Session",
-          status: "listed",
-          rendered_html: "<div>content</div>",
-          skills: [],
-          duration_minutes: 20,
-          turns: 8,
-          files_changed: 3,
-          loc_changed: 75
-        })
-
-      conn = get(conn, "/s/vf-token/verify")
-      response = html_response(conn, 200)
-      assert response =~ "Session Verification"
-    end
-
-    test "returns 404 for unknown token", %{conn: conn} do
-      conn = get(conn, "/s/nonexistent/verify")
-      assert html_response(conn, 404) =~ "Page not found"
-    end
-  end
 end

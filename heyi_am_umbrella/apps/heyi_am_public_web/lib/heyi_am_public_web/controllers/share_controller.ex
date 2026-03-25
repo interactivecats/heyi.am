@@ -94,42 +94,6 @@ defmodule HeyiAmPublicWeb.ShareController do
     end
   end
 
-  def verify(conn, %{"token" => token}) do
-    case Shares.get_published_share_by_token(token) do
-      nil ->
-        conn
-        |> put_status(:not_found)
-        |> put_view(HeyiAmPublicWeb.ErrorHTML)
-        |> render(:"404")
-
-      share ->
-        content_hash = HeyiAm.Signature.content_hash(share)
-        signed = HeyiAm.Signature.signed?(share)
-        verified = HeyiAm.Signature.verify(share) == :ok
-
-        signature_status =
-          cond do
-            verified -> "verified"
-            signed -> "invalid"
-            true -> "unverified"
-          end
-
-        render(conn, :verify,
-          session: build_transcript_session(share),
-          verification: %{
-            token: token,
-            hash: content_hash,
-            signature: share.signature,
-            public_key: share.public_key,
-            signature_status: signature_status,
-            recorded_at: share.recorded_at,
-            verified_at: share.verified_at
-          },
-          page_title: "Verify — #{share.title}"
-        )
-    end
-  end
-
   # -- Private --
 
   defp load_share_by_slug_or_token(user_id, project_slug, session_slug) do
@@ -151,9 +115,6 @@ defmodule HeyiAmPublicWeb.ShareController do
       files_changed: share.files_changed || 0,
       loc_changed: share.loc_changed || 0,
       recorded_at: share.recorded_at,
-      sealed: share.sealed,
-      signature: share.signature,
-      public_key: share.public_key,
       user: %{username: username, display_name: display_name},
       project: %{title: project_title, slug: project_slug}
     }

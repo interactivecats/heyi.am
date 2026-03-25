@@ -14,16 +14,12 @@ defmodule HeyiAm.Repo.Migrations.CreateShares do
       add :files_changed, :integer
       add :loc_changed, :integer
       add :recorded_at, :utc_datetime
-      add :verified_at, :utc_datetime
-      add :sealed, :boolean, default: false, null: false
       add :template, :string, default: "editorial"
       add :language, :string
       add :tools, {:array, :string}, default: []
       add :skills, {:array, :string}, default: []
       add :narrative, :text
       add :project_name, :string
-      add :signature, :text
-      add :public_key, :text
       add :status, :string, null: false, default: "draft"
       add :raw_storage_key, :string
       add :log_storage_key, :string

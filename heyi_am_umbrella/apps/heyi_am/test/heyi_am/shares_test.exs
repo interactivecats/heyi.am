@@ -148,20 +148,6 @@ defmodule HeyiAm.SharesTest do
     end
   end
 
-  describe "sealed immutability" do
-    test "sealed shares cannot be modified" do
-      share = share_fixture(%{sealed: true})
-      {:error, changeset} = Shares.update_share(share, %{title: "Hacked"})
-      assert %{sealed: ["sealed sessions cannot be modified"]} = errors_on(changeset)
-    end
-
-    test "non-sealed shares can be modified" do
-      share = share_fixture(%{sealed: false})
-      {:ok, updated} = Shares.update_share(share, %{title: "Updated"})
-      assert updated.title == "Updated"
-    end
-  end
-
   describe "agent_summary field" do
     test "creates share with agent_summary map" do
       attrs = valid_share_attributes(%{

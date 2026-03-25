@@ -615,8 +615,7 @@
   background: rgba(8, 68, 113, 0.08);
 }
 
-.chip--published,
-.chip--sealed {
+.chip--published {
   background: var(--secondary-container);
   color: var(--secondary);
   font-weight: 600;
@@ -775,7 +774,7 @@
 }
 
 /* ==========================================================================
-   STATUS BADGE — sealed, draft, published, archived
+   STATUS BADGE — draft, published, archived
    ========================================================================== */
 
 .badge {
@@ -791,11 +790,6 @@
   letter-spacing: 0.02em;
 }
 
-.badge--sealed {
-  background: var(--primary-container);
-  color: var(--on-primary-fixed);
-  border: 1px solid rgba(8, 68, 113, 0.1);
-}
 
 .badge--draft {
   background: var(--surface-container-high);

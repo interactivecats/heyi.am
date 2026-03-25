@@ -16,12 +16,6 @@ export interface DeviceCodeResponse {
   interval: number;
 }
 
-export interface PublishPayload {
-  session: unknown;
-  signature: string;
-  publicKey: string;
-}
-
 const CONFIG_DIR = join(homedir(), '.config', 'heyiam');
 const AUTH_FILE = 'auth.json';
 
@@ -141,14 +135,6 @@ export async function deviceAuthFlow(
   }
 
   throw new Error('Device authorization timed out.');
-}
-
-export function buildPublishPayload(
-  session: unknown,
-  signature: string,
-  publicKey: string,
-): PublishPayload {
-  return { session, signature, publicKey };
 }
 
 function sleep(ms: number): Promise<void> {

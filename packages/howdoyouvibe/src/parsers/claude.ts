@@ -7,6 +7,7 @@ import {
   type LocStats,
   type ToolUseBlock,
   type ContentBlock,
+  type TokenUsage,
 } from "./types.js";
 
 function parseEntries(raw: string): RawEntry[] {
@@ -207,6 +208,54 @@ export function mapAgentRole(subagentType: string): string {
   return subagentType.toLowerCase();
 }
 
+/** Aggregate token usage across all assistant messages. */
+function aggregateTokenUsage(entries: RawEntry[]): TokenUsage | undefined {
+  let hasUsage = false;
+  const totals: TokenUsage = {
+    input_tokens: 0,
+    output_tokens: 0,
+    cache_read_input_tokens: 0,
+    cache_creation_input_tokens: 0,
+  };
+  for (const entry of entries) {
+    if (entry.type !== "assistant") continue;
+    const usage = entry.message?.usage;
+    if (!usage) continue;
+    hasUsage = true;
+    totals.input_tokens += (usage as TokenUsage).input_tokens ?? 0;
+    totals.output_tokens += (usage as TokenUsage).output_tokens ?? 0;
+    totals.cache_read_input_tokens += (usage as TokenUsage).cache_read_input_tokens ?? 0;
+    totals.cache_creation_input_tokens += (usage as TokenUsage).cache_creation_input_tokens ?? 0;
+  }
+  return hasUsage ? totals : undefined;
+}
+
+/** Collect unique model names used across assistant messages. */
+function extractModels(entries: RawEntry[]): string[] | undefined {
+  const models = new Set<string>();
+  for (const entry of entries) {
+    if (entry.type !== "assistant") continue;
+    const model = entry.message?.model;
+    if (model) models.add(model);
+  }
+  return models.size > 0 ? [...models].sort() : undefined;
+}
+
+/** Extract custom title from custom-title entries, or slug from any entry. */
+function extractSessionMeta(entries: RawEntry[]): { customTitle?: string; slug?: string } {
+  let customTitle: string | undefined;
+  let slug: string | undefined;
+  for (const entry of entries) {
+    if (entry.type === "custom-title" && typeof entry.customTitle === "string") {
+      customTitle = entry.customTitle;
+    }
+    if (entry.slug && !slug) {
+      slug = entry.slug;
+    }
+  }
+  return { customTitle, slug };
+}
+
 async function parse(path: string): Promise<SessionAnalysis> {
   const raw = await readFile(path, "utf-8");
   const entries = parseEntries(raw);
@@ -215,6 +264,9 @@ async function parse(path: string): Promise<SessionAnalysis> {
   const turns = countTurns(entries);
   const { duration_ms, wall_clock_ms, start_time, end_time } = computeDuration(entries);
   const loc_stats = computeLocStats(entries);
+  const token_usage = aggregateTokenUsage(entries);
+  const models_used = extractModels(entries);
+  const { customTitle, slug } = extractSessionMeta(entries);
 
   const cwd = entries.find((e) => e.cwd)?.cwd;
 
@@ -230,6 +282,10 @@ async function parse(path: string): Promise<SessionAnalysis> {
     start_time,
     end_time,
     cwd,
+    token_usage,
+    models_used,
+    custom_title: customTitle,
+    slug,
   };
 }
 

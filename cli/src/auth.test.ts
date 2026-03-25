@@ -10,7 +10,6 @@ import {
   saveAuthToken,
   checkAuthStatus,
   deviceAuthFlow,
-  buildPublishPayload,
 } from './auth.js';
 
 describe('auth', () => {
@@ -228,15 +227,4 @@ describe('auth', () => {
     });
   });
 
-  describe('buildPublishPayload', () => {
-    it('constructs payload with session, signature, and publicKey', () => {
-      const session = { title: 'test session', turns: 10 };
-      const payload = buildPublishPayload(session, 'sig_abc', 'pub_xyz');
-      expect(payload).toEqual({
-        session,
-        signature: 'sig_abc',
-        publicKey: 'pub_xyz',
-      });
-    });
-  });
 });

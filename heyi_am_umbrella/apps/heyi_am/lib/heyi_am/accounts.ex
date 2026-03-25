@@ -344,9 +344,6 @@ defmodule HeyiAm.Accounts do
           dev_take: nil,
           narrative: nil,
           project_name: nil,
-          signature: nil,
-          public_key: nil,
-          sealed: false,
           status: "unlisted",
           token: fragment("'deleted-' || gen_random_uuid()::text")
         ]]
@@ -386,16 +383,12 @@ defmodule HeyiAm.Accounts do
       files_changed: share.files_changed,
       loc_changed: share.loc_changed,
       recorded_at: share.recorded_at,
-      verified_at: share.verified_at,
-      sealed: share.sealed,
       template: share.template,
       language: share.language,
       tools: share.tools,
       skills: share.skills,
       narrative: share.narrative,
       project_name: share.project_name,
-      signature: share.signature,
-      public_key: share.public_key,
       status: share.status,
       inserted_at: share.inserted_at
     }

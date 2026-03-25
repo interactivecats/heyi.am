@@ -19,7 +19,7 @@ export interface FileChange {
 
 export interface TurnEvent {
   timestamp: string;
-  type: 'prompt' | 'response' | 'tool' | 'error';
+  type: 'prompt' | 'response' | 'tool' | 'error' | 'thinking';
   content: string;
   turnNumber?: number;
   tools?: string[];
@@ -53,7 +53,7 @@ export interface Session {
   wallClockMinutes?: number;
   turns: number;
   linesOfCode: number;
-  status: 'draft' | 'enhanced' | 'uploaded' | 'archived' | 'sealed';
+  status: 'draft' | 'enhanced' | 'uploaded' | 'archived';
   projectName: string;
   rawLog: string[];
   sessionRef?: string;

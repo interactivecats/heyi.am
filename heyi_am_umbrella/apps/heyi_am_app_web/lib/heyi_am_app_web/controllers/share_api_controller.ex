@@ -6,7 +6,6 @@ defmodule HeyiAmAppWeb.ShareApiController do
   alias HeyiAm.Shares
   alias HeyiAm.Shares.Share
   alias HeyiAm.Projects
-  alias HeyiAm.Signature
 
   def create(conn, %{"session" => session_params}) do
     user_id = conn.assigns[:current_user_id]
@@ -52,9 +51,6 @@ defmodule HeyiAmAppWeb.ShareApiController do
 
       result =
         case existing do
-          %Share{sealed: true} ->
-            Shares.create_share(attrs)
-
           %Share{} = share ->
             existing_raw_key = "sessions/#{share.token}/raw.jsonl"
             existing_log_key = "sessions/#{share.token}/log.json"
@@ -92,9 +88,7 @@ defmodule HeyiAmAppWeb.ShareApiController do
 
           response = %{
             token: actual_token,
-            url: "/s/#{actual_token}",
-            sealed: share.sealed || false,
-            content_hash: Signature.content_hash(share)
+            url: "/s/#{actual_token}"
           }
 
           response = if upload_urls, do: Map.put(response, :upload_urls, upload_urls), else: response
@@ -122,28 +116,6 @@ defmodule HeyiAmAppWeb.ShareApiController do
     conn
     |> put_status(:bad_request)
     |> json(%{error: %{code: "MISSING_SESSION", message: "Missing 'session' parameter"}})
-  end
-
-  def verify(conn, %{"token" => token}) do
-    case Shares.get_share_by_token(token) do
-      nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: %{code: "NOT_FOUND", message: "Session not found"}})
-
-      share ->
-        verification_result = Signature.verify(share)
-
-        json(conn, %{
-          token: share.token,
-          content_hash: Signature.content_hash(share),
-          signed: Signature.signed?(share),
-          verified: verification_result == :ok,
-          sealed: share.sealed || false,
-          recorded_at: share.recorded_at,
-          verified_at: share.verified_at
-        })
-    end
   end
 
   defp build_upload_urls(raw_key, log_key, session_key) do

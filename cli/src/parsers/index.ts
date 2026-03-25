@@ -7,8 +7,9 @@ import { cursorParser, discoverCursorWorkspaces, listConversations, type CursorW
 import { codexParser, discoverCodexSessions } from "./codex.js";
 import { geminiParser, discoverGeminiSessions, resolveProjectDirs } from "./gemini.js";
 import type { SessionParser, SessionAnalysis } from "./types.js";
+import { getArchiveDir } from "../settings.js";
 
-export type { SessionAnalysis, SessionParser, SessionSource, ToolCall, LocStats, RawEntry } from "./types.js";
+export type { SessionAnalysis, SessionParser, SessionSource, ToolCall, LocStats, RawEntry, TokenUsage } from "./types.js";
 
 const parsers: SessionParser[] = [claudeParser, cursorParser, codexParser, geminiParser];
 
@@ -325,17 +326,18 @@ async function listCursorSessions(): Promise<SessionMeta[]> {
   return sessions;
 }
 
-/** Original Claude Code session scanning, extracted from old listSessions */
-async function listClaudeSessions(basePath?: string): Promise<SessionMeta[]> {
-  const base = basePath ?? join(homedir(), ".claude", "projects");
-  const parents: SessionMeta[] = [];
-  const childrenByParentId = new Map<string, SessionMeta[]>();
-
+/** Scan a single base directory for Claude-format sessions. */
+async function scanClaudeDir(
+  base: string,
+  parents: SessionMeta[],
+  childrenByParentId: Map<string, SessionMeta[]>,
+  seenSessionIds: Set<string>,
+): Promise<void> {
   let projectDirs;
   try {
     projectDirs = await readdir(base, { withFileTypes: true });
   } catch {
-    return parents;
+    return;
   }
 
   for (const projectEntry of projectDirs) {
@@ -352,9 +354,12 @@ async function listClaudeSessions(basePath?: string): Promise<SessionMeta[]> {
 
     for (const file of files) {
       if (file.name.endsWith(".jsonl") && !file.isDirectory()) {
-        const fullPath = join(projectPath, file.name);
         const sessionId = file.name.replace(/\.jsonl$/, "");
+        // Deduplicate: live sessions (scanned first) take precedence over archive
+        if (seenSessionIds.has(sessionId)) continue;
+        const fullPath = join(projectPath, file.name);
         await tryAddSession(fullPath, sessionId, projectDir, false, parents);
+        seenSessionIds.add(sessionId);
       } else if (file.isDirectory()) {
         const parentSessionId = file.name;
         const children = await collectSubagents(join(projectPath, file.name), projectDir, parentSessionId);
@@ -365,6 +370,23 @@ async function listClaudeSessions(basePath?: string): Promise<SessionMeta[]> {
         }
       }
     }
+  }
+}
+
+/** Claude Code session scanning — scans live dir then archive for deleted sessions. */
+async function listClaudeSessions(basePath?: string): Promise<SessionMeta[]> {
+  const parents: SessionMeta[] = [];
+  const childrenByParentId = new Map<string, SessionMeta[]>();
+  const seenSessionIds = new Set<string>();
+
+  // 1. Scan live Claude sessions first (these take precedence)
+  const liveBase = basePath ?? join(homedir(), ".claude", "projects");
+  await scanClaudeDir(liveBase, parents, childrenByParentId, seenSessionIds);
+
+  // 2. Scan archive for sessions Claude may have deleted (skip basePath override for tests)
+  if (!basePath) {
+    const archiveBase = getArchiveDir();
+    await scanClaudeDir(archiveBase, parents, childrenByParentId, seenSessionIds);
   }
 
   // Link children to parents

@@ -653,3 +653,92 @@ describe("listSessions — parent-child linking", () => {
     expect(sessions).toHaveLength(0);
   });
 });
+
+// --- Token usage extraction ---
+
+describe("token usage extraction", () => {
+  it("aggregates token usage across assistant messages", async () => {
+    const path = join(tmpDir, "token-usage.jsonl");
+    await writeFile(path, toJsonl(BASIC_SESSION));
+    const result = await claudeParser.parse(path);
+    // BASIC_SESSION has 2 assistant entries with usage: { input_tokens: 100, output_tokens: 50 }
+    expect(result.token_usage).toBeDefined();
+    expect(result.token_usage!.input_tokens).toBe(200);
+    expect(result.token_usage!.output_tokens).toBe(100);
+  });
+
+  it("returns undefined when no assistant messages have usage", async () => {
+    const path = join(tmpDir, "no-usage.jsonl");
+    const entries = [
+      userEntry("hello", "2026-03-20T10:00:00.000Z"),
+      makeEntry({
+        type: "assistant",
+        timestamp: "2026-03-20T10:00:01.000Z",
+        message: { role: "assistant", content: "hi" },
+      }),
+    ];
+    await writeFile(path, toJsonl(entries));
+    const result = await claudeParser.parse(path);
+    expect(result.token_usage).toBeUndefined();
+  });
+});
+
+// --- Model extraction ---
+
+describe("model extraction", () => {
+  it("extracts unique models from assistant messages", async () => {
+    const path = join(tmpDir, "models.jsonl");
+    await writeFile(path, toJsonl(BASIC_SESSION));
+    const result = await claudeParser.parse(path);
+    // Both assistant entries in BASIC_SESSION use "claude-opus-4-6"
+    expect(result.models_used).toEqual(["claude-opus-4-6"]);
+  });
+
+  it("returns undefined when no model info is present", async () => {
+    const path = join(tmpDir, "no-models.jsonl");
+    const entries = [
+      userEntry("hello", "2026-03-20T10:00:00.000Z"),
+      makeEntry({
+        type: "assistant",
+        timestamp: "2026-03-20T10:00:01.000Z",
+        message: { role: "assistant", content: "hi" },
+      }),
+    ];
+    await writeFile(path, toJsonl(entries));
+    const result = await claudeParser.parse(path);
+    expect(result.models_used).toBeUndefined();
+  });
+});
+
+// --- Custom title and slug extraction ---
+
+describe("session metadata extraction", () => {
+  it("extracts custom-title when present", async () => {
+    const path = join(tmpDir, "custom-title.jsonl");
+    const entries: RawEntry[] = [
+      ...BASIC_SESSION,
+      makeEntry({ type: "custom-title", customTitle: "Fix the auth bug" } as any),
+    ];
+    await writeFile(path, toJsonl(entries));
+    const result = await claudeParser.parse(path);
+    expect(result.custom_title).toBe("Fix the auth bug");
+  });
+
+  it("extracts slug from first entry that has one", async () => {
+    const path = join(tmpDir, "slug.jsonl");
+    const entries: RawEntry[] = BASIC_SESSION.map((e, i) =>
+      i === 0 ? { ...e, slug: "zesty-singing-newell" } : e
+    );
+    await writeFile(path, toJsonl(entries));
+    const result = await claudeParser.parse(path);
+    expect(result.slug).toBe("zesty-singing-newell");
+  });
+
+  it("returns undefined when no title/slug present", async () => {
+    const path = join(tmpDir, "no-meta.jsonl");
+    await writeFile(path, toJsonl(BASIC_SESSION));
+    const result = await claudeParser.parse(path);
+    expect(result.custom_title).toBeUndefined();
+    expect(result.slug).toBeUndefined();
+  });
+});

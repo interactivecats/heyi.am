@@ -3,8 +3,7 @@
 import { Command } from 'commander';
 import { startServer } from './server.js';
 import open from 'open';
-import { checkAuthStatus, deviceAuthFlow, getAuthToken, deleteAuthToken, buildPublishPayload } from './auth.js';
-import { loadOrCreateKeyPair, signPayload, getFingerprint } from './machine-key.js';
+import { checkAuthStatus, deviceAuthFlow, getAuthToken, deleteAuthToken } from './auth.js';
 import { getAnthropicApiKey } from './settings.js';
 
 const program = new Command();
@@ -126,15 +125,9 @@ program
       return;
     }
 
-    const keyPair = loadOrCreateKeyPair();
-    const fingerprint = getFingerprint(keyPair.publicKey);
-    console.log(`Using machine key: ${fingerprint}`);
-
     // TODO: session data will come from the parser pipeline once Task 8.3+ are complete
     const sessionData = { placeholder: true };
-    const payloadStr = JSON.stringify(sessionData);
-    const signature = signPayload(payloadStr, keyPair.privateKey);
-    const body = buildPublishPayload(sessionData, signature, keyPair.publicKey);
+    const body = { session: sessionData };
 
     try {
       const res = await fetch(`${opts.apiUrl}/api/shares`, {
@@ -163,6 +156,7 @@ program
 
 import { listSessions, parseSession, type SessionMeta } from './parsers/index.js';
 import { bridgeToAnalyzer } from './bridge.js';
+import { archiveSessionFiles } from './archive.js';
 import { analyzeSession } from './analyzer.js';
 
 program
@@ -170,6 +164,7 @@ program
   .description('Show your time vs agent time per project')
   .action(async () => {
     const allSessions = await listSessions();
+    await archiveSessionFiles(allSessions);
 
     // Group by project directory
     const byDir = new Map<string, SessionMeta[]>();

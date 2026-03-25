@@ -5,7 +5,7 @@
 
 export interface ParsedTurn {
   timestamp: string;           // ISO or HH:mm:ss
-  type: 'prompt' | 'response' | 'tool' | 'error';
+  type: 'prompt' | 'response' | 'tool' | 'error' | 'thinking';
   content: string;
   toolName?: string;           // e.g. "Read", "Edit", "Bash", "Grep", "Write"
   toolInput?: string;          // e.g. file path or command
@@ -56,7 +56,7 @@ export interface ToolUsage {
 
 export interface TurnEvent {
   timestamp: string;
-  type: 'prompt' | 'response' | 'tool' | 'error';
+  type: 'prompt' | 'response' | 'tool' | 'error' | 'thinking';
   content: string;
 }
 

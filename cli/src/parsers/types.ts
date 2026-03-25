@@ -39,6 +39,22 @@ export interface SessionAnalysis {
   parent_session_id?: string | null;
   /** Working directory where the session was started */
   cwd?: string;
+  /** Aggregated token usage across all assistant messages */
+  token_usage?: TokenUsage;
+  /** Models used in the session (deduplicated) */
+  models_used?: string[];
+  /** Session title from custom-title entry or slug */
+  custom_title?: string;
+  /** Human-readable slug (e.g. "zesty-singing-newell") */
+  slug?: string;
+}
+
+/** Token usage from assistant messages */
+export interface TokenUsage {
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_input_tokens: number;
+  cache_creation_input_tokens: number;
 }
 
 /** Minimal shape of a JSONL entry from Claude Code sessions */
@@ -52,16 +68,24 @@ export interface RawEntry {
     content?: string | ContentBlock[];
     model?: string;
     id?: string;
-    usage?: Record<string, unknown>;
+    stop_reason?: string;
+    usage?: TokenUsage | Record<string, unknown>;
   };
   subtype?: string;
   durationMs?: number;
   parentUuid?: string | null;
   isSidechain?: boolean;
+  isMeta?: boolean;
+  isCompactSummary?: boolean;
+  compactMetadata?: { trigger?: string; preTokens?: number };
   cwd?: string;
   version?: string;
   gitBranch?: string;
   agentId?: string;
+  slug?: string;
+  customTitle?: string;
+  /** Top-level field on user entries with tool output data */
+  toolUseResult?: unknown;
 }
 
 export type ContentBlock = TextBlock | ThinkingBlock | ToolUseBlock | ToolResultBlock | ImageBlock;

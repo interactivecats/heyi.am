@@ -45,7 +45,6 @@ describe('Settings', () => {
     renderSettings();
     expect(screen.getByText('AI Enhancement')).toBeInTheDocument();
     expect(screen.getByText('Authentication')).toBeInTheDocument();
-    expect(screen.getByText('Machine Identity')).toBeInTheDocument();
   });
 
   it('renders mode indicator', async () => {
@@ -101,13 +100,6 @@ describe('Settings', () => {
     expect(screen.getByText(/heyiam login/)).toBeInTheDocument();
   });
 
-  it('renders machine token section', () => {
-    renderSettings();
-    expect(screen.getByText('Machine Token')).toBeInTheDocument();
-    expect(screen.getByText('ed25519:a4f2...8b3c')).toBeInTheDocument();
-    expect(screen.getByText('SHA256:kR7x...Qm4w')).toBeInTheDocument();
-  });
-
   it('renders BYOK details section', () => {
     renderSettings();
     // The "Use your own API key" label is the <details> summary
@@ -130,7 +122,6 @@ describe('Settings', () => {
     const labelTexts = Array.from(labels).map((el) => el.textContent);
     expect(labelTexts).toContain('AI Enhancement');
     expect(labelTexts).toContain('Authentication');
-    expect(labelTexts).toContain('Machine Identity');
   });
 });
 

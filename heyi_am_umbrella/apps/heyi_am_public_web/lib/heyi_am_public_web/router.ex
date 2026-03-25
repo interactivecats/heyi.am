@@ -44,7 +44,6 @@ defmodule HeyiAmPublicWeb.Router do
 
     get "/:token", ShareController, :show
     get "/:token/transcript", ShareController, :transcript
-    get "/:token/verify", ShareController, :verify
   end
 
   # Public portfolio pages — MUST be last (/:username is a catch-all)

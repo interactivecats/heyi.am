@@ -34,8 +34,6 @@ export function Settings() {
 
   const isConnected = auth.authenticated;
   const username = auth.username ?? '';
-  const machineToken = 'ed25519:a4f2...8b3c';
-  const tokenFingerprint = 'SHA256:kR7x...Qm4w';
 
   useEffect(() => {
     fetchEnhanceStatus().then(setEnhanceStatus);
@@ -233,34 +231,6 @@ export function Settings() {
           </div>
         </section>
 
-        <hr className="divider" />
-
-        {/* Machine Identity */}
-        <section className="settings-section">
-          <span className="label">Machine Identity</span>
-          <div className="card">
-            <div className="settings-input-group">
-              <span className="text-label">Machine Token</span>
-              <div
-                className="terminal"
-                style={{ fontSize: '0.75rem', padding: 'var(--spacing-3)' }}
-              >
-                {machineToken}
-              </div>
-              <p className="settings-help">
-                Used for cryptographic signing of uploaded sessions
-              </p>
-            </div>
-
-            <div
-              className="settings-row"
-              style={{ marginTop: 'var(--spacing-4)' }}
-            >
-              <span className="settings-row__label">Token fingerprint</span>
-              <span className="settings-row__value">{tokenFingerprint}</span>
-            </div>
-          </div>
-        </section>
       </div>
     </AppShell>
   );

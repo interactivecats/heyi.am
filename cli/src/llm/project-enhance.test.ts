@@ -27,11 +27,11 @@ function makeSessionSummary(overrides: Partial<SessionSummary> = {}): SessionSum
   return {
     sessionId: 'ses-001',
     title: 'Auth middleware rewrite',
-    developerTake: 'Tore out HS256, replaced with Ed25519.',
-    skills: ['TypeScript', 'Cryptography'],
+    developerTake: 'Tore out HS256, replaced with proper token handling.',
+    skills: ['TypeScript', 'Authentication'],
     executionSteps: [
       { title: 'Audited legacy auth', body: 'Found three overlapping token systems.' },
-      { title: 'Implemented Ed25519', body: 'Replaced HMAC with Ed25519.' },
+      { title: 'Implemented new token system', body: 'Replaced HMAC with proper auth tokens.' },
     ],
     duration: 47,
     loc: 312,
@@ -44,14 +44,14 @@ function makeSessionSummary(overrides: Partial<SessionSummary> = {}): SessionSum
 }
 
 const VALID_ENHANCE_RESULT: ProjectEnhanceResult = {
-  narrative: 'A developer identity platform built from scratch with cryptographic verification.',
+  narrative: 'A developer identity platform built from scratch with portfolio rendering.',
   arc: [
     { phase: 1, title: 'Foundation', description: 'CLI parser pipeline' },
     { phase: 2, title: 'Identity', description: 'Auth rewrite' },
-    { phase: 3, title: 'Trust', description: 'Ed25519 sealing' },
+    { phase: 3, title: 'Upload', description: 'Publish pipeline' },
     { phase: 4, title: 'Presentation', description: 'Portfolio rendering' },
   ],
-  skills: ['TypeScript', 'Elixir', 'Ed25519'],
+  skills: ['TypeScript', 'Elixir', 'Authentication'],
   timeline: [{
     period: 'Week 1',
     label: 'Foundation and auth',
@@ -70,8 +70,8 @@ const VALID_ENHANCE_RESULT: ProjectEnhanceResult = {
     {
       id: 'q2',
       category: 'architecture',
-      question: 'Why Ed25519 over RSA?',
-      context: 'Crypto implementation detected',
+      question: 'Why this auth approach over alternatives?',
+      context: 'Auth implementation detected',
     },
   ],
 };
@@ -139,7 +139,7 @@ describe('enhanceProject', () => {
 
     expect(result.narrative).toBe(VALID_ENHANCE_RESULT.narrative);
     expect(result.arc).toHaveLength(4);
-    expect(result.skills).toEqual(['TypeScript', 'Elixir', 'Ed25519']);
+    expect(result.skills).toEqual(['TypeScript', 'Elixir', 'Authentication']);
     expect(result.timeline).toHaveLength(1);
     expect(result.questions).toHaveLength(2);
 
@@ -240,7 +240,7 @@ describe('enhanceProject', () => {
     // executionSteps should be title-only strings, not objects
     expect(parsed.sessions[0].executionSteps).toEqual([
       'Audited legacy auth',
-      'Implemented Ed25519',
+      'Implemented new token system',
     ]);
   });
 
@@ -311,7 +311,7 @@ describe('refineNarrative', () => {
     await refineNarrative(
       'Draft.',
       [],
-      [{ questionId: 'q1', question: 'Why Ed25519?', answer: 'Trust is the product.' }],
+      [{ questionId: 'q1', question: 'Why this approach?', answer: 'Trust is the product.' }],
     );
 
     const call = mockCreate.mock.calls[0][0];

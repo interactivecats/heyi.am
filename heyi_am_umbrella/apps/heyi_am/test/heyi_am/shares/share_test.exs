@@ -37,10 +37,4 @@ defmodule HeyiAm.Shares.ShareTest do
     end
   end
 
-  describe "changeset/2 sealed protection" do
-    test "sealed sessions cannot be modified" do
-      changeset = Share.changeset(%Share{sealed: true}, %{title: "new title"})
-      assert %{sealed: ["sealed sessions cannot be modified"]} = errors_on(changeset)
-    end
-  end
 end

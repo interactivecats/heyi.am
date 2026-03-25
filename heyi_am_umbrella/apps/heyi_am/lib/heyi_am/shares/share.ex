@@ -15,16 +15,12 @@ defmodule HeyiAm.Shares.Share do
     field :files_changed, :integer
     field :loc_changed, :integer
     field :recorded_at, :utc_datetime
-    field :verified_at, :utc_datetime
-    field :sealed, :boolean, default: false
     field :template, :string, default: "editorial"
     field :language, :string
     field :tools, {:array, :string}, default: []
     field :skills, {:array, :string}, default: []
     field :narrative, :string
     field :project_name, :string
-    field :signature, :string
-    field :public_key, :string
     field :status, :string, default: "draft"
     field :raw_storage_key, :string
     field :log_storage_key, :string
@@ -46,19 +42,12 @@ defmodule HeyiAm.Shares.Share do
   def valid_templates, do: @valid_templates
   def valid_statuses, do: @valid_statuses
 
-  def changeset(%{sealed: true} = share, _attrs) do
-    share
-    |> change()
-    |> add_error(:sealed, "sealed sessions cannot be modified")
-  end
-
   def changeset(share, attrs) do
     share
     |> cast(attrs, [
       :token, :title, :dev_take, :context, :duration_minutes, :turns, :files_changed,
-      :loc_changed, :recorded_at, :verified_at, :sealed, :template, :language,
+      :loc_changed, :recorded_at, :template, :language,
       :tools, :skills, :narrative, :project_name, :user_id,
-      :signature, :public_key,
       :status,
       :raw_storage_key, :log_storage_key, :session_storage_key,
       :slug, :project_id, :source_tool,

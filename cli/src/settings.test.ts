@@ -83,11 +83,11 @@ describe('settings', () => {
 
   describe('enhanced data persistence', () => {
     const sampleData = {
-      title: 'Refactored auth to Ed25519',
+      title: 'Refactored auth module',
       developerTake: 'HS256 was a liability.',
       context: 'Auth module needed upgrade.',
-      skills: ['TypeScript', 'Cryptography'],
-      questions: [{ text: 'Why Ed25519?', suggestedAnswer: 'Smaller keys, faster.' }],
+      skills: ['TypeScript', 'Authentication'],
+      questions: [{ text: 'Why this approach?', suggestedAnswer: 'Simpler and more secure.' }],
       executionSteps: [{ stepNumber: 1, title: 'Analyzed auth', body: 'Read auth.ts.' }],
     };
 
@@ -99,8 +99,8 @@ describe('settings', () => {
       saveEnhancedData('session-123', sampleData, tmpDir);
       const loaded = loadEnhancedData('session-123', tmpDir);
       expect(loaded).not.toBeNull();
-      expect(loaded!.title).toBe('Refactored auth to Ed25519');
-      expect(loaded!.skills).toEqual(['TypeScript', 'Cryptography']);
+      expect(loaded!.title).toBe('Refactored auth module');
+      expect(loaded!.skills).toEqual(['TypeScript', 'Authentication']);
       expect(loaded!.enhancedAt).toBeDefined();
     });
 

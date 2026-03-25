@@ -335,7 +335,7 @@ describe('analyzeSession', () => {
       makeTurn({ type: 'tool', timestamp: '14:01:00', toolName: 'Read', toolInput: 'src/auth.ts', content: 'Read src/auth.ts' }),
       makeTurn({ type: 'tool', timestamp: '14:02:00', toolName: 'Grep', toolInput: 'src/', content: 'Grep src/' }),
       makeTurn({ type: 'response', timestamp: '14:03:00', content: 'Found HS256 dependency' }),
-      makeTurn({ type: 'prompt', timestamp: '14:05:00', content: 'Refactor to Ed25519' }),
+      makeTurn({ type: 'prompt', timestamp: '14:05:00', content: 'Refactor auth module' }),
       makeTurn({ type: 'tool', timestamp: '14:06:00', toolName: 'Edit', toolInput: 'src/auth.ts', content: 'Edit src/auth.ts' }),
       makeTurn({ type: 'tool', timestamp: '14:07:00', toolName: 'Write', toolInput: 'src/crypto.ts', content: 'Write src/crypto.ts' }),
       makeTurn({ type: 'tool', timestamp: '14:08:00', toolName: 'Bash', content: 'npm test' }),
@@ -346,7 +346,7 @@ describe('analyzeSession', () => {
       { path: 'src/crypto.ts', additions: 60, deletions: 0 },
       { path: 'test/auth.test.ts', additions: 40, deletions: 10 },
     ],
-    rawLog: ['> Read the auth module', '...', '> Refactor to Ed25519'],
+    rawLog: ['> Read the auth module', '...', '> Refactor auth module'],
   };
 
   it('produces a complete Session object', () => {

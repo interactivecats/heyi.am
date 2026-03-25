@@ -8,6 +8,8 @@ import type {
   ToolUseBlock,
   ToolCall,
   LocStats,
+  TokenUsage,
+  ThinkingBlock,
 } from "./parsers/types.js";
 import type {
   SessionAnalysis as AnalyzerInput,
@@ -33,7 +35,7 @@ export function bridgeToAnalyzer(
   const cwd = parsed.cwd;
   const turns = entriesToTurns(parsed.raw_entries, cwd);
   const filesChanged = computePerFileChanges(parsed.tool_calls, parsed.loc_stats, cwd);
-  const title = extractTitle(parsed.raw_entries);
+  const title = parsed.custom_title || extractTitle(parsed.raw_entries);
   const rawLog = extractRawLog(parsed.raw_entries, cwd);
 
   const wallClockMinutes = parsed.wall_clock_ms > 0
@@ -88,6 +90,10 @@ function isToolUseBlock(block: ContentBlock): block is ToolUseBlock {
   return block.type === "tool_use";
 }
 
+function isThinkingBlock(block: ContentBlock): block is ThinkingBlock {
+  return block.type === "thinking";
+}
+
 function getContentBlocks(entry: RawEntry): ContentBlock[] {
   const content = entry.message?.content;
   if (!content || typeof content === "string") return [];
@@ -114,7 +120,16 @@ function entriesToTurns(entries: RawEntry[], cwd?: string): ParsedTurn[] {
       const blocks = getContentBlocks(entry);
 
       for (const block of blocks) {
-        if (block.type === "text") {
+        if (isThinkingBlock(block)) {
+          // Thinking blocks show the model's reasoning process
+          const thinking = block.thinking?.trim();
+          if (!thinking) continue;
+          turns.push({
+            timestamp: entry.timestamp,
+            type: "thinking",
+            content: thinking,
+          });
+        } else if (block.type === "text") {
           const cleaned = cleanAssistantText(block.text);
           if (!cleaned) continue;
           turns.push({
@@ -240,7 +255,10 @@ function extractRawLog(entries: RawEntry[], cwd?: string): string[] {
     } else if (entry.type === "assistant") {
       const blocks = getContentBlocks(entry);
       for (const block of blocks) {
-        if (block.type === "text") {
+        if (isThinkingBlock(block)) {
+          const thinking = block.thinking?.trim();
+          if (thinking) log.push(`[thinking] ${thinking.length > 200 ? thinking.slice(0, 197) + "..." : thinking}`);
+        } else if (block.type === "text") {
           const cleaned = cleanAssistantText(block.text);
           if (!cleaned) continue;
           log.push(stripHomePathsInText(cleaned, cwd));

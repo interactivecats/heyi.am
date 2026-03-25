@@ -11,6 +11,19 @@ const SETTINGS_FILE = 'settings.json';
 
 export interface Settings {
   anthropicApiKey?: string;
+  /** Auto-archive Claude sessions to prevent loss from 30-day cleanup. Default: true. */
+  archiveSessions?: boolean;
+}
+
+const SESSIONS_DIR = 'sessions';
+
+/** Directory where archived session hard links are stored. */
+export function getArchiveDir(configDir: string = CONFIG_DIR): string {
+  return join(configDir, SESSIONS_DIR);
+}
+
+export function isArchiveEnabled(configDir?: string): boolean {
+  return getSettings(configDir).archiveSessions !== false;
 }
 
 export function getSettings(configDir?: string): Settings {

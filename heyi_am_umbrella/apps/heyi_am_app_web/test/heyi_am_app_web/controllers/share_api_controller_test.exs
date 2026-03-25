@@ -50,10 +50,4 @@ defmodule HeyiAmAppWeb.ShareApiControllerTest do
     end
   end
 
-  describe "GET /api/sessions/:token/verify" do
-    test "returns 404 for non-existent token", %{conn: conn} do
-      conn = get(conn, ~p"/api/sessions/nonexistent/verify")
-      assert %{"error" => %{"code" => "NOT_FOUND"}} = json_response(conn, 404)
-    end
-  end
 end

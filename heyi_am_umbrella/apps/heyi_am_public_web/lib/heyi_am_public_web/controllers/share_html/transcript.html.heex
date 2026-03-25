@@ -1,7 +1,6 @@
 <.public_shell logo_href={"/s/#{@session.token}"} current_page="Transcript">
   <:nav_item href={"/s/#{@session.token}"} label="← Case Study" />
   <:status>
-    <span :if={@session.sealed} class="chip chip--primary">SEALED</span>
     <span class="topbar-status">{@session.turns} turns total</span>
   </:status>
 

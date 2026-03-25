@@ -1,7 +1,7 @@
 /**
  * Integration tests: Auth States
  *
- * Tests Settings page rendering (API key, account status, machine token).
+ * Tests Settings page rendering (API key, account status, auth status).
  * Auth-prompt-on-publish tests will be added when ProjectUploadFlow is built.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -48,15 +48,14 @@ function renderSettings() {
 }
 
 // ===========================================================================
-// Settings page — API key, account status, machine token
+// Settings page — API key, account status, auth status
 // ===========================================================================
 
 describe('Settings page — sections', () => {
-  it('renders all three settings sections', () => {
+  it('renders all settings sections', () => {
     renderSettings();
     expect(screen.getByText('AI Enhancement')).toBeInTheDocument();
     expect(screen.getByText('Authentication')).toBeInTheDocument();
-    expect(screen.getByText('Machine Identity')).toBeInTheDocument();
   });
 
   it('renders collapsible API key section', () => {
@@ -103,22 +102,6 @@ describe('Settings page — sections', () => {
   it('shows em dash for username when not connected', () => {
     renderSettings();
     expect(screen.getByText('\u2014')).toBeInTheDocument();
-  });
-
-  it('renders machine token value', () => {
-    renderSettings();
-    expect(screen.getByText('Machine Token')).toBeInTheDocument();
-    expect(screen.getByText('ed25519:a4f2...8b3c')).toBeInTheDocument();
-  });
-
-  it('renders token fingerprint', () => {
-    renderSettings();
-    expect(screen.getByText('SHA256:kR7x...Qm4w')).toBeInTheDocument();
-  });
-
-  it('renders signing explanation', () => {
-    renderSettings();
-    expect(screen.getByText('Used for cryptographic signing of published sessions')).toBeInTheDocument();
   });
 
   it('renders back button', () => {

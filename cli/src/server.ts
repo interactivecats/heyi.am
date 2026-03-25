@@ -13,6 +13,7 @@ import { getProvider, getEnhanceMode } from './llm/index.js';
 import { triageSessions, type SessionMetaWithStats } from './llm/triage.js';
 import { enhanceProject, refineNarrative, type SessionSummary, type SkippedSessionMeta, type ProjectEnhanceResult } from './llm/project-enhance.js';
 import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, saveEnhancedData, loadEnhancedData, deleteEnhancedData, loadFreshProjectEnhanceResult, saveProjectEnhanceResult, loadProjectEnhanceResult, buildProjectFingerprint, saveUploadedState, getUploadedState } from './settings.js';
+import { archiveSessionFiles } from './archive.js';
 import { captureScreenshot, SCREENSHOTS_DIR } from './screenshot.js';
 import { redactSession, redactText, scanTextSync, formatFindings, stripHomePathsInText } from './redact.js';
 import { renderProjectHtml, renderSessionHtml, renderPortfolioHtml } from './render/index.js';
@@ -46,6 +47,14 @@ interface ProjectInfo {
 
 async function getProjects(basePath?: string): Promise<ProjectInfo[]> {
   const allSessions = await listSessions(basePath);
+
+  // Archive session files via hard links to prevent loss from auto-cleanup
+  if (!basePath) {
+    const archiveResult = await archiveSessionFiles(allSessions);
+    if (archiveResult.archived > 0) {
+      console.log(`Preserved ${archiveResult.archived} sessions → ~/.config/heyiam/sessions/`);
+    }
+  }
 
   // Group by projectDir (set by the scanner)
   const byDir = new Map<string, SessionMeta[]>();
