@@ -19,6 +19,8 @@ import { redactSession, redactText, scanTextSync, formatFindings, stripHomePaths
 import { renderProjectHtml, renderSessionHtml, renderPortfolioHtml } from './render/index.js';
 import { buildSessionRenderData, buildSessionCard, buildProjectRenderData } from './render/build-render-data.js';
 import type { SessionCard } from './render/types.js';
+import { getSourceAudit, getArchiveStats } from './source-audit.js';
+import { exportMarkdown, exportHtml } from './export.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -1843,6 +1845,168 @@ export function createApp(sessionsBasePath?: string) {
       res.type('application/javascript').send(js);
     } catch {
       res.status(404).send('// mount.js not built — run: cd packages/ui && npm run build');
+    }
+  });
+
+  // ── Source Audit & Archive ─────────────────────────────────────
+
+  app.get('/api/source-audit', async (_req: Request, res: Response) => {
+    try {
+      const result = await getSourceAudit();
+      res.json(result);
+    } catch (err) {
+      console.error('[source-audit]', (err as Error).message);
+      res.status(500).json({ error: 'Source audit failed' });
+    }
+  });
+
+  app.get('/api/archive/stats', async (_req: Request, res: Response) => {
+    try {
+      const stats = await getArchiveStats();
+      res.json(stats);
+    } catch (err) {
+      console.error('[archive-stats]', (err as Error).message);
+      res.status(500).json({ error: 'Archive stats failed' });
+    }
+  });
+
+  app.get('/api/archive/health', async (_req: Request, res: Response) => {
+    try {
+      const audit = await getSourceAudit();
+      const health = audit.sources.map((s) => ({
+        name: s.name,
+        health: s.health,
+        retentionRisk: s.retentionRisk ?? null,
+      }));
+      res.json({ sources: health });
+    } catch (err) {
+      console.error('[archive-health]', (err as Error).message);
+      res.status(500).json({ error: 'Archive health failed' });
+    }
+  });
+
+  app.post('/api/archive/sync', async (_req: Request, res: Response) => {
+    try {
+      const allSessions = await listSessions();
+      const result = await archiveSessionFiles(allSessions);
+      res.json({ archived: result.archived, alreadyArchived: result.alreadyArchived });
+    } catch (err) {
+      console.error('[archive-sync]', (err as Error).message);
+      res.status(500).json({ error: 'Archive sync failed' });
+    }
+  });
+
+  // ── Boundaries ────────────────────────────────────────────────
+
+  app.get('/api/projects/:project/boundaries', (_req: Request, res: Response) => {
+    // TODO: load boundary config from settings
+    res.json({ included: [], excluded: [], rules: [] });
+  });
+
+  app.put('/api/projects/:project/boundaries', (req: Request, res: Response) => {
+    // TODO: save boundary config to settings
+    res.json({ ok: true });
+  });
+
+  // ── Export ────────────────────────────────────────────────────
+
+  app.post('/api/projects/:project/save-local', async (req: Request, res: Response) => {
+    try {
+      const dirName = String(req.params.project);
+      const cache = loadProjectEnhanceResult(dirName);
+      if (!cache) {
+        res.status(404).json({ error: 'No enhance result found' });
+        return;
+      }
+      const allSessions = await listSessions();
+      const projectSessions = allSessions.filter((s) => s.projectDir === dirName);
+      const sessions: Session[] = [];
+      for (const meta of projectSessions) {
+        try {
+          const parsed = await parseSession(meta.path);
+          const bridged = bridgeToAnalyzer(parsed, { sessionId: meta.sessionId, projectName: dirName });
+          sessions.push(analyzeSession(bridged));
+        } catch { /* skip unparseable sessions */ }
+      }
+      const outputPath = path.resolve(process.env.HOME || '~', '.config', 'heyiam', 'exports', dirName, 'markdown');
+      const result = await exportMarkdown(dirName, cache, sessions, outputPath);
+      res.json(result);
+    } catch (err) {
+      console.error('[save-local]', (err as Error).message);
+      res.status(500).json({ error: 'Save local failed' });
+    }
+  });
+
+  app.post('/api/projects/:project/export-markdown', async (req: Request, res: Response) => {
+    try {
+      const dirName = String(req.params.project);
+      const outputPath = req.body?.outputPath as string | undefined;
+      const cache = loadProjectEnhanceResult(dirName);
+      if (!cache) {
+        res.status(404).json({ error: 'No enhance result found' });
+        return;
+      }
+      const allSessions = await listSessions();
+      const projectSessions = allSessions.filter((s) => s.projectDir === dirName);
+      const sessions: Session[] = [];
+      for (const meta of projectSessions) {
+        try {
+          const parsed = await parseSession(meta.path);
+          const bridged = bridgeToAnalyzer(parsed, { sessionId: meta.sessionId, projectName: dirName });
+          sessions.push(analyzeSession(bridged));
+        } catch { /* skip unparseable sessions */ }
+      }
+      const outDir: string = outputPath || path.resolve(process.env.HOME || '~', '.config', 'heyiam', 'exports', dirName, 'markdown');
+      const result = await exportMarkdown(dirName, cache, sessions, outDir);
+      res.json(result);
+    } catch (err) {
+      console.error('[export-markdown]', (err as Error).message);
+      res.status(500).json({ error: 'Markdown export failed' });
+    }
+  });
+
+  app.post('/api/projects/:project/export-html', async (req: Request, res: Response) => {
+    try {
+      const dirName = String(req.params.project);
+      const outputPath = req.body?.outputPath as string | undefined;
+      const cache = loadProjectEnhanceResult(dirName);
+      if (!cache) {
+        res.status(404).json({ error: 'No enhance result found' });
+        return;
+      }
+      const allSessions = await listSessions();
+      const projectSessions = allSessions.filter((s) => s.projectDir === dirName);
+      const sessions: Session[] = [];
+      for (const meta of projectSessions) {
+        try {
+          const parsed = await parseSession(meta.path);
+          const bridged = bridgeToAnalyzer(parsed, { sessionId: meta.sessionId, projectName: dirName });
+          sessions.push(analyzeSession(bridged));
+        } catch { /* skip unparseable sessions */ }
+      }
+      const outDir: string = outputPath || path.resolve(process.env.HOME || '~', '.config', 'heyiam', 'exports', dirName, 'html');
+      const result = await exportHtml(dirName, cache, sessions, outDir);
+      res.json(result);
+    } catch (err) {
+      console.error('[export-html]', (err as Error).message);
+      res.status(500).json({ error: 'HTML export failed' });
+    }
+  });
+
+  // ── Open directory (macOS) ────────────────────────────────────
+
+  app.post('/api/open-directory', (req: Request, res: Response) => {
+    try {
+      const dirPath = req.body?.path;
+      if (!dirPath || typeof dirPath !== 'string') {
+        res.status(400).json({ error: 'Missing path' });
+        return;
+      }
+      execFileSync('open', [dirPath]);
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[open-directory]', (err as Error).message);
+      res.status(500).json({ error: 'Failed to open directory' });
     }
   });
 

@@ -3,15 +3,18 @@
 import { Command } from 'commander';
 import { startServer } from './server.js';
 import open from 'open';
-import { checkAuthStatus, deviceAuthFlow, getAuthToken, deleteAuthToken } from './auth.js';
 import { getAnthropicApiKey } from './settings.js';
+import { listSessions, parseSession, type SessionMeta } from './parsers/index.js';
+import { bridgeToAnalyzer } from './bridge.js';
+import { archiveSessionFiles } from './archive.js';
+import { analyzeSession } from './analyzer.js';
 
 const program = new Command();
 
 program
   .name('heyiam')
   .description('Turn AI coding sessions into portfolio case studies')
-  .version('0.1.2');
+  .version('0.1.7');
 
 program
   .command('open')
@@ -21,7 +24,6 @@ program
   .action(async (opts) => {
     const port = parseInt(opts.port, 10);
 
-    // Check for API key before starting
     const apiKey = getAnthropicApiKey();
     if (!apiKey) {
       console.log('\n⚠  No Anthropic API key found.');
@@ -36,11 +38,11 @@ program
       console.log(`Open ${url}/settings to add your Anthropic API key`);
     }
     console.log('Press Ctrl+C to stop\n');
+
     if (opts.open) {
-      open(url).catch(() => {}); // fire-and-forget, don't crash if browser fails
+      open(url).catch(() => {});
     }
 
-    // Keep the process alive until Ctrl+C
     const shutdown = () => {
       console.log('\nShutting down...');
       server.close(() => process.exit(0));
@@ -48,116 +50,8 @@ program
     };
     process.on('SIGINT', shutdown);
     process.on('SIGTERM', shutdown);
-
-    // Keep event loop alive explicitly
-    const keepAlive = setInterval(() => {}, 60_000);
-    keepAlive.unref = undefined as unknown as typeof keepAlive.unref; // prevent unref
-  });
-
-program
-  .command('open-time')
-  .description('Start the server and open the time breakdown page')
-  .option('-p, --port <number>', 'Port to run on', '17845')
-  .action(async (opts) => {
-    const port = parseInt(opts.port, 10);
-    await startServer(port);
-    const url = `http://localhost:${port}/time`;
-    console.log(`\nheyiam running at http://localhost:${port}`);
-    console.log(`Opening ${url}\n`);
-    console.log('Press Ctrl+C to stop\n');
-    open(url).catch(() => {});
-
-    const shutdown = () => {
-      console.log('\nShutting down...');
-      process.exit(0);
-    };
-    process.on('SIGINT', shutdown);
-    process.on('SIGTERM', shutdown);
     setInterval(() => {}, 60_000);
   });
-
-import { API_URL } from './config.js';
-const API_BASE = API_URL;
-
-program
-  .command('login')
-  .description('Authenticate with heyi.am')
-  .option('--api-url <url>', 'API base URL', API_BASE)
-  .action(async (opts) => {
-    const status = await checkAuthStatus(opts.apiUrl);
-    if (status.authenticated) {
-      console.log(`Already logged in as ${status.username}`);
-      return;
-    }
-
-    console.log('Starting device authorization...');
-    try {
-      const auth = await deviceAuthFlow(opts.apiUrl, undefined, {
-        openBrowser: (url) => open(url).then(() => {}),
-        onUserCode: (code, uri) => {
-          console.log(`\nOpen ${uri} and enter code: ${code}\n`);
-        },
-      });
-      console.log(`Logged in as ${auth.username}`);
-    } catch (err) {
-      console.error(`Login failed: ${(err as Error).message}`);
-      process.exitCode = 1;
-    }
-  });
-
-program
-  .command('logout')
-  .description('Remove saved authentication credentials')
-  .action(() => {
-    deleteAuthToken();
-    console.log('Logged out. Run `heyiam login` to re-authenticate.');
-  });
-
-program
-  .command('publish')
-  .description('Publish a session to heyi.am')
-  .option('--api-url <url>', 'API base URL', API_BASE)
-  .action(async (opts) => {
-    const auth = getAuthToken();
-    if (!auth) {
-      console.error('Not logged in. Run `heyiam login` first.');
-      process.exitCode = 1;
-      return;
-    }
-
-    // TODO: session data will come from the parser pipeline once Task 8.3+ are complete
-    const sessionData = { placeholder: true };
-    const body = { session: sessionData };
-
-    try {
-      const res = await fetch(`${opts.apiUrl}/api/shares`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${auth.token}`,
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const err = await res.text();
-        console.error(`Publish failed (${res.status}): ${err}`);
-        process.exitCode = 1;
-        return;
-      }
-
-      const result = (await res.json()) as { url?: string };
-      console.log(`Published! ${result.url ?? ''}`);
-    } catch (err) {
-      console.error(`Publish failed: ${(err as Error).message}`);
-      process.exitCode = 1;
-    }
-  });
-
-import { listSessions, parseSession, type SessionMeta } from './parsers/index.js';
-import { bridgeToAnalyzer } from './bridge.js';
-import { archiveSessionFiles } from './archive.js';
-import { analyzeSession } from './analyzer.js';
 
 program
   .command('time')
@@ -166,7 +60,6 @@ program
     const allSessions = await listSessions();
     await archiveSessionFiles(allSessions);
 
-    // Group by project directory
     const byDir = new Map<string, SessionMeta[]>();
     for (const s of allSessions) {
       const existing = byDir.get(s.projectDir) ?? [];
@@ -174,7 +67,6 @@ program
       byDir.set(s.projectDir, existing);
     }
 
-    // Derive human-readable name: "-Users-ben-Dev-heyi-am" → "heyi-am"
     const displayName = (dir: string) => {
       const devIdx = dir.indexOf('-Dev-');
       if (devIdx !== -1) return dir.slice(devIdx + 5);
@@ -188,8 +80,6 @@ program
     for (const [dirName, sessions] of byDir) {
       let yourMinutes = 0;
       let agentMinutes = 0;
-
-      // Only count parent sessions (not subagents)
       const parents = sessions.filter(s => !s.isSubagent);
 
       for (const meta of parents) {
@@ -199,12 +89,11 @@ program
           const session = analyzeSession(analysis);
           const dur = session.durationMinutes ?? 0;
           yourMinutes += dur;
-          agentMinutes += dur; // primary agent worked the whole session
+          agentMinutes += dur;
         } catch {
           // Skip sessions that fail to parse
         }
 
-        // Add child/subagent time
         for (const child of meta.children ?? []) {
           try {
             const parsed = await parseSession(child.path);
@@ -222,7 +111,6 @@ program
       }
     }
 
-    // Sort by agent time descending
     projects.sort((a, b) => b.agentMinutes - a.agentMinutes);
 
     const fmtTime = (mins: number) => {
@@ -233,7 +121,6 @@ program
       return `${Math.round(mins)}m`;
     };
 
-    // Print table
     const totalYou = projects.reduce((s, p) => s + p.yourMinutes, 0);
     const totalAgent = projects.reduce((s, p) => s + p.agentMinutes, 0);
 
@@ -256,7 +143,7 @@ program
 
 export { program };
 
-// Only run if this is the entry point (not imported for testing).
+// Only run if this is the entry point (not imported for testing)
 import { realpathSync } from 'node:fs';
 
 const resolvedArgv = process.argv[1] ? realpathSync(process.argv[1]) : '';
@@ -264,9 +151,8 @@ const isDirectRun = resolvedArgv.endsWith('/dist/index.js') ||
   resolvedArgv.endsWith('/src/index.ts');
 
 if (isDirectRun) {
-  // If no command given (just `heyiam`), default to `open`
   const args = process.argv.slice(2);
-  const knownCommands = ['open', 'open-time', 'login', 'logout', 'publish', 'time'];
+  const knownCommands = ['open', 'time'];
   if (args.length === 0 || !knownCommands.includes(args[0])) {
     process.argv.splice(2, 0, 'open');
   }

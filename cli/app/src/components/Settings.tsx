@@ -1,239 +1,203 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AppShell } from './AppShell';
-import { useAuth } from '../AuthContext';
-import { fetchEnhanceStatus, type EnhanceStatus } from '../api';
-
-const API_BASE = '/api';
-
-async function fetchApiKeyStatus(): Promise<{ hasKey: boolean; maskedKey: string | null }> {
-  const res = await fetch(`${API_BASE}/settings/api-key`);
-  if (!res.ok) return { hasKey: false, maskedKey: null };
-  return res.json();
-}
-
-async function saveApiKey(apiKey: string): Promise<{ ok: boolean; mode: string }> {
-  const res = await fetch(`${API_BASE}/settings/api-key`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ apiKey }),
-  });
-  if (!res.ok) throw new Error('Failed to save API key');
-  return res.json();
-}
+import { useState, useEffect } from 'react'
+import { AppShell, Card, SectionHeader } from './shared'
+import {
+  fetchApiKeyStatus,
+  saveApiKey,
+  fetchAuthStatus,
+  type ApiKeyStatus,
+  type AuthStatus,
+} from '../api'
 
 export function Settings() {
-  const navigate = useNavigate();
-  const [apiKey, setApiKey] = useState('');
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [enhanceStatus, setEnhanceStatus] = useState<EnhanceStatus | null>(null);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [hasExistingKey, setHasExistingKey] = useState(false);
-  const [maskedKey, setMaskedKey] = useState<string | null>(null);
-  const auth = useAuth();
+  const [apiKey, setApiKey] = useState<ApiKeyStatus>({ hasKey: false })
+  const [auth, setAuth] = useState<AuthStatus>({ authenticated: false })
+  const [keyInput, setKeyInput] = useState('')
+  const [showKey, setShowKey] = useState(false)
+  const [saving, setSaving] = useState(false)
 
-  const isConnected = auth.authenticated;
-  const username = auth.username ?? '';
+  const [privacyDefaults, setPrivacyDefaults] = useState({
+    localOnly: true,
+    requireReview: true,
+    excludeOpenClaw: false,
+  })
 
   useEffect(() => {
-    fetchEnhanceStatus().then(setEnhanceStatus);
-    fetchApiKeyStatus().then(({ hasKey, maskedKey: mk }) => {
-      setHasExistingKey(hasKey);
-      setMaskedKey(mk);
-    });
-  }, []);
+    fetchApiKeyStatus().then(setApiKey)
+    fetchAuthStatus().then(setAuth)
+  }, [])
 
-  const handleSaveApiKey = async () => {
-    setSaveStatus('saving');
+  async function handleSaveKey() {
+    if (!keyInput.trim()) return
+    setSaving(true)
     try {
-      const result = await saveApiKey(apiKey);
-      setSaveStatus('saved');
-      setHasExistingKey(!!apiKey.trim());
-      setMaskedKey(apiKey.trim() ? `${apiKey.trim().slice(0, 7)}...${apiKey.trim().slice(-4)}` : null);
-      setApiKey('');
-      // Refresh enhance status to reflect new mode
-      setEnhanceStatus({ mode: result.mode as EnhanceStatus['mode'], remaining: null });
-      setTimeout(() => setSaveStatus('idle'), 2000);
-    } catch {
-      setSaveStatus('error');
-      setTimeout(() => setSaveStatus('idle'), 2000);
+      await saveApiKey(keyInput.trim())
+      setApiKey({ hasKey: true, keyPrefix: keyInput.trim().slice(0, 16) })
+      setKeyInput('')
+    } finally {
+      setSaving(false)
     }
-  };
+  }
 
-  const handleClearApiKey = async () => {
-    setSaveStatus('saving');
+  async function handleRemoveKey() {
+    setSaving(true)
     try {
-      const result = await saveApiKey('');
-      setSaveStatus('saved');
-      setHasExistingKey(false);
-      setMaskedKey(null);
-      setApiKey('');
-      setEnhanceStatus({ mode: result.mode as EnhanceStatus['mode'], remaining: null });
-      setTimeout(() => setSaveStatus('idle'), 2000);
-    } catch {
-      setSaveStatus('error');
-      setTimeout(() => setSaveStatus('idle'), 2000);
+      await saveApiKey('')
+      setApiKey({ hasKey: false })
+      setKeyInput('')
+      setShowKey(false)
+    } finally {
+      setSaving(false)
     }
-  };
+  }
 
-  const modeLabel = enhanceStatus?.mode === 'local'
-    ? 'Local API key'
-    : enhanceStatus?.mode === 'proxy'
-      ? 'heyi.am proxy'
-      : 'Not configured';
-
-  const modeDotClass = enhanceStatus?.mode === 'local'
-    ? 'badge--uploaded'
-    : enhanceStatus?.mode === 'proxy'
-      ? 'badge--uploaded'
-      : 'badge--draft';
+  function togglePrivacy(key: keyof typeof privacyDefaults) {
+    setPrivacyDefaults((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
 
   return (
-    <AppShell title="Settings" onBack={() => navigate('/')}>
-      <div className="settings-page">
-        {/* AI Enhancement */}
-        <section className="settings-section">
-          <span className="label">AI Enhancement</span>
-          <div className="card">
-            <div className="settings-row">
-              <span className="settings-row__label">Mode</span>
-              <span className={`badge ${modeDotClass}`}>
-                {modeLabel}
-              </span>
-            </div>
+    <AppShell
+      back={{ label: 'Projects', to: '/projects' }}
+      chips={[{ label: 'Settings' }]}
+    >
+      <div className="max-w-3xl mx-auto p-6">
+        <h2 className="font-display text-2xl font-bold text-on-surface">Settings</h2>
 
-            {enhanceStatus?.mode === 'proxy' && enhanceStatus.remaining != null && (
-              <div className="settings-row" style={{ marginTop: 'var(--spacing-4)' }}>
-                <span className="settings-row__label">Usage</span>
-                <span className="settings-row__value">
-                  {enhanceStatus.remaining} remaining this month
-                </span>
-              </div>
+        <div className="grid grid-cols-2 gap-4 mt-6">
+          <Card>
+            <SectionHeader title="API configuration" meta="local only" />
+            <label className="font-mono text-[11px] uppercase tracking-wider text-on-surface-variant block mb-1.5">
+              Anthropic API Key
+            </label>
+            {apiKey.hasKey && !keyInput ? (
+              <input
+                type={showKey ? 'text' : 'password'}
+                value={apiKey.keyPrefix ? `${apiKey.keyPrefix}...` : '••••••••••••'}
+                readOnly
+                className="w-full bg-surface-low border border-ghost rounded-md px-3 py-1.5 text-sm font-mono text-on-surface mb-2"
+              />
+            ) : (
+              <input
+                type="password"
+                value={keyInput}
+                onChange={(e) => setKeyInput(e.target.value)}
+                placeholder="sk-ant-api03-..."
+                className="w-full bg-surface-low border border-ghost rounded-md px-3 py-1.5 text-sm font-mono text-on-surface mb-2"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveKey()
+                }}
+              />
             )}
-
-            {enhanceStatus?.mode === 'none' && (
-              <p className="settings-help" style={{ marginTop: 'var(--spacing-4)' }}>
-                Log in or set ANTHROPIC_API_KEY to enable AI enhancement.
-              </p>
-            )}
-
-            {hasExistingKey && maskedKey && (
-              <div className="settings-row" style={{ marginTop: 'var(--spacing-4)' }}>
-                <span className="settings-row__label">API Key</span>
-                <span className="settings-row__value">{maskedKey}</span>
-              </div>
-            )}
-
-            <details style={{ marginTop: 'var(--spacing-4)' }}>
-              <summary className="text-label" style={{ cursor: 'pointer' }}>
-                {hasExistingKey ? 'Change API key' : 'Use your own API key'}
-              </summary>
-              <div className="settings-input-group" style={{ marginTop: 'var(--spacing-3)' }}>
-                <div className="settings-input-wrapper">
-                  <input
-                    id="api-key-input"
-                    className="input"
-                    type={showApiKey ? 'text' : 'password'}
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="sk-ant-..."
-                    autoComplete="off"
-                  />
+            <p className="text-on-surface-variant text-xs mb-3">
+              Used for project refinement. Keys stay on your machine.
+            </p>
+            <div className="flex items-center gap-2">
+              {apiKey.hasKey && !keyInput ? (
+                <>
                   <button
-                    className="settings-input-toggle"
-                    type="button"
-                    onClick={() => setShowApiKey((prev) => !prev)}
-                    aria-label={showApiKey ? 'Hide API key' : 'Show API key'}
+                    className="text-xs font-medium px-2.5 py-1 rounded-md border border-outline text-on-surface hover:bg-surface-low transition-colors"
+                    onClick={() => setShowKey(!showKey)}
                   >
-                    {showApiKey ? (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                        <path d="M1 1l22 22" />
-                        <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
-                      </svg>
-                    ) : (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    )}
+                    {showKey ? 'Hide' : 'Show'}
                   </button>
-                </div>
-                <div style={{ display: 'flex', gap: 'var(--spacing-2)', marginTop: 'var(--spacing-2)' }}>
                   <button
-                    className="btn btn-primary"
-                    type="button"
-                    onClick={handleSaveApiKey}
-                    disabled={!apiKey.trim() || saveStatus === 'saving'}
+                    className="text-xs font-medium px-2.5 py-1 rounded-md text-on-surface-variant hover:text-on-surface transition-colors"
+                    onClick={handleRemoveKey}
+                    disabled={saving}
                   >
-                    {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : 'Save'}
+                    Remove
                   </button>
-                  {hasExistingKey && (
-                    <button
-                      className="btn btn-secondary"
-                      type="button"
-                      onClick={handleClearApiKey}
-                      disabled={saveStatus === 'saving'}
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-                {saveStatus === 'error' && (
-                  <p className="settings-help" style={{ color: 'var(--color-error, #e53e3e)' }}>
-                    Failed to save. Try again.
-                  </p>
-                )}
-                <p className="settings-help">
-                  Saved to ~/.config/heyiam/settings.json. Uses your own Anthropic account.
-                </p>
-              </div>
-            </details>
-          </div>
-        </section>
-
-        <hr className="divider" />
-
-        {/* Authentication */}
-        <section className="settings-section">
-          <span className="label">Authentication</span>
-          <div className="card">
-            <div className="settings-row">
-              <span className="settings-row__label">Status</span>
-              {isConnected ? (
-                <span className="badge badge--uploaded">
-                  Connected {username}
-                </span>
-              ) : (
-                <span className="badge badge--draft">Not connected</span>
-              )}
-            </div>
-
-            <div className="settings-row" style={{ marginTop: 'var(--spacing-4)' }}>
-              <span className="settings-row__label">Username</span>
-              <span className="settings-row__value">
-                {isConnected ? username : '\u2014'}
-              </span>
-            </div>
-
-            <div style={{ marginTop: 'var(--spacing-4)' }}>
-              {isConnected ? (
-                <button className="btn btn-secondary" type="button">
-                  Disconnect
+                </>
+              ) : keyInput ? (
+                <button
+                  className="text-xs font-medium px-2.5 py-1 rounded-md bg-primary text-on-primary hover:bg-primary-hover transition-colors"
+                  onClick={handleSaveKey}
+                  disabled={saving}
+                >
+                  {saving ? 'Saving...' : 'Save key'}
                 </button>
+              ) : null}
+            </div>
+          </Card>
+
+          <Card>
+            <SectionHeader title="Privacy defaults" meta="recommended" />
+            <div className="space-y-3">
+              <ToggleRow
+                label="Mark new projects local only by default"
+                checked={privacyDefaults.localOnly}
+                onChange={() => togglePrivacy('localOnly')}
+              />
+              <ToggleRow
+                label="Require review before publish"
+                checked={privacyDefaults.requireReview}
+                onChange={() => togglePrivacy('requireReview')}
+              />
+              <ToggleRow
+                label="Exclude personal OpenClaw sessions by default"
+                checked={privacyDefaults.excludeOpenClaw}
+                onChange={() => togglePrivacy('excludeOpenClaw')}
+              />
+            </div>
+          </Card>
+        </div>
+
+        <div className="mt-4">
+          <Card>
+            <SectionHeader title="Authentication" meta="optional" />
+            <div className="flex items-center gap-2">
+              <span
+                className={`w-2 h-2 rounded-full shrink-0 ${
+                  auth.authenticated ? 'bg-green' : 'bg-outline'
+                }`}
+              />
+              {auth.authenticated ? (
+                <>
+                  <span className="text-[13px] text-on-surface">
+                    Connected as <strong>@{auth.username}</strong>
+                  </span>
+                  <span className="text-xs text-on-surface-variant">
+                    Authenticated via device auth. Required for publishing.
+                  </span>
+                </>
               ) : (
-                <div className="terminal" style={{ fontSize: '0.75rem' }}>
-                  <span className="terminal__prompt">$ </span>heyiam login
-                </div>
+                <span className="text-[13px] text-on-surface-variant">
+                  Not connected. Authentication is required for publishing.
+                </span>
               )}
             </div>
-          </div>
-        </section>
-
+          </Card>
+        </div>
       </div>
     </AppShell>
-  );
+  )
 }
 
-export default Settings;
+function ToggleRow({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string
+  checked: boolean
+  onChange: () => void
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-on-surface">{label}</span>
+      <button
+        role="switch"
+        aria-checked={checked}
+        onClick={onChange}
+        className={`relative w-[40px] h-[22px] rounded-full transition-colors ${
+          checked ? 'bg-green' : 'bg-surface-high'
+        }`}
+      >
+        <span
+          className={`absolute top-[3px] w-4 h-4 rounded-full bg-surface-lowest shadow-sm transition-transform ${
+            checked ? 'left-[21px]' : 'left-[3px]'
+          }`}
+        />
+      </button>
+    </div>
+  )
+}

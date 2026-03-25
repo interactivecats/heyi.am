@@ -1,0 +1,62 @@
+{
+  "name": "heyiam",
+  "version": "0.1.7",
+  "description": "Turn AI coding sessions into portfolio case studies",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/interactivecats/heyi.am"
+  },
+  "keywords": [
+    "ai",
+    "portfolio",
+    "claude",
+    "coding-sessions",
+    "developer-tools"
+  ],
+  "bin": {
+    "heyiam": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "app/dist"
+  ],
+  "scripts": {
+    "build": "tsc && cd app && npx vite build",
+    "prepublishOnly": "npm run build && find dist -name '*.test.*' -delete",
+    "dev": "npx concurrently \"npm:dev:api\" \"npm:dev:app\"",
+    "dev:api": "tsx watch src/index.ts open --no-open",
+    "dev:app": "cd app && npm run dev",
+    "test": "vitest run && cd app && npx vitest run",
+    "test:backend": "vitest run",
+    "test:frontend": "cd app && npx vitest run"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.79.0",
+    "@secretlint/node": "^11.4.0",
+    "@secretlint/secretlint-rule-preset-recommend": "^11.4.0",
+    "better-sqlite3": "^12.8.0",
+    "commander": "^13.1.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "html2canvas": "^1.4.1",
+    "open": "^10.1.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/supertest": "^7.2.0",
+    "concurrently": "^9.2.1",
+    "supertest": "^7.2.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.0"
+  }
+}

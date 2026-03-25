@@ -1,137 +1,61 @@
-/* ==========================================================================
-   heyi.am CLI — Global Reset & Root Variables
-   Source of truth: mockups/full/DESIGN.md
-   ========================================================================== */
+@import "tailwindcss";
 
-:root {
-  /* ── Surface / Tonal Layers ── (aligned with Phoenix) */
-  --surface:                 #f8f9fb;  /* Level 0 — Canvas */
-  --surface-container-lowest: #ffffff; /* Level 2 — Cards */
-  --surface-container-low:   #f3f4f6;  /* Level 1 — Sections */
-  --surface-container:       #edeef0;
-  --surface-container-high:  #e7e8ea;
-  --surface-container-highest: #e1e2e4;
-  --surface-dim:             #d9dadc;
-  --surface-tint:            #316190;
+/* ═══════════════════════════════════════════
+   THE CALIBRATED ARCHIVE — Design Tokens
+   Tight radii, tonal layering, no glass.
+   ═══════════════════════════════════════════ */
+@theme {
+  --color-surface: #f8f9fb;
+  --color-surface-dim: #eef0f3;
+  --color-surface-lowest: #ffffff;
+  --color-surface-low: #f3f4f6;
+  --color-surface-mid: #eaeff1;
+  --color-surface-high: #e7e8ea;
+  --color-surface-dark: #191c1e;
 
-  /* ── Functional Accents ── (aligned with Phoenix) */
-  --primary:         #084471;  /* Seal Blue */
-  --on-primary:      #ffffff;
-  --primary-container: #2b5c8a;
-  --on-primary-container: #b0d4ff;
-  --primary-fixed:   #d0e4ff;
-  --primary-fixed-dim: #9dcaff;
+  --color-primary: #084471;
+  --color-primary-hover: #0a5a96;
+  --color-on-primary: #ffffff;
 
-  --secondary:       #006a61;  /* Success Teal */
-  --on-secondary:    #ffffff;
-  --secondary-container: #93f4e6;
+  --color-green: #006a61;
+  --color-green-bg: #e6f5f3;
+  --color-amber: #663500;
+  --color-amber-bg: #ffdcc3;
+  --color-violet: #6d28d9;
+  --color-violet-bg: #ede9fe;
+  --color-error: #ba1a1a;
 
-  --tertiary:        #663500;  /* Caution Amber */
-  --on-tertiary:     #ffffff;
-  --tertiary-fixed:  #ffdcc3;
-  --tertiary-fixed-dim: #ffb77d;
-  --on-tertiary-fixed: #2f1500;
-  --on-tertiary-fixed-variant: #6e3900;
+  --color-on-surface: #191c1e;
+  --color-on-surface-variant: #6b7280;
+  --color-outline: #c2c7d0;
+  --color-ghost: rgba(194, 199, 208, 0.15);
 
-  /* ── Ink ── (aligned with Phoenix) */
-  --on-surface:         #191c1e;
-  --on-surface-variant:  #42474e;
-  --outline:            #72787e;
-  --outline-variant:    #c2c7d0;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
 
-  /* ── Error ── (aligned with Phoenix) */
-  --error:            #ba1a1a;
-  --error-container:  #ffdad6;
-  --on-error:         #ffffff;
-
-  /* ── Inverse (dark terminal) ── (aligned with Phoenix) */
-  --inverse-surface:     #2e3132;
-  --inverse-on-surface:  #f0f1f3;
-  --inverse-primary:     #9dcaff;
-
-  /* ── Typography ── */
-  --font-display:  'Space Grotesk', sans-serif;
-  --font-body:     'Inter', sans-serif;
-  --font-mono:     'IBM Plex Mono', monospace;
-
-  /* ── Radius ── */
-  --radius-xs: 0.125rem;  /* 2px */
-  --radius-sm: 0.25rem;   /* 4px */
-  --radius-md: 0.375rem;  /* 6px — max allowed */
-
-  /* ── Spacing ── (aligned with Phoenix --spacing-* namespace) */
-  --spacing-1: 0.25rem;
-  --spacing-2: 0.5rem;
-  --spacing-3: 0.75rem;
-  --spacing-4: 1rem;
-  --spacing-5: 1.25rem;
-  --spacing-6: 1.5rem;
-  --spacing-8: 2rem;
-  --spacing-10: 2.5rem;
-  --spacing-12: 3rem;
-  --spacing-16: 4rem;
-  --spacing-20: 5rem;
-  --spacing-24: 5.5rem;
-
-  /* ── Shadows ── (aligned with Phoenix) */
-  --shadow-ambient: 0 12px 40px rgba(25, 28, 30, 0.06);
-  --shadow-sm: 0 1px 3px rgba(25, 28, 30, 0.04);
-
-  /* ── Ghost border ── */
-  --ghost-border: 1px solid rgba(194, 199, 208, 0.15);
-
-  font-family: var(--font-body);
-  font-size: 16px;
-  line-height: 1.5;
-  color: var(--on-surface);
-  background: var(--surface);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
+/* ═══════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════ */
+html { font-size: 16px; }
 body {
-  margin: 0;
-  min-height: 100vh;
-  overflow: hidden;
+  font-family: var(--font-body);
+  color: var(--color-on-surface);
+  background: var(--color-surface-mid);
+  -webkit-font-smoothing: antialiased;
 }
 
-#root {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
 }
 
-/* Selection */
-::selection {
-  background: var(--primary-container);
-  color: var(--on-primary-fixed);
-}
-
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(194, 199, 208, 0.3);
-  border-radius: 10px;
-}
-
-/* Focus visible */
-:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
+/* ═══════════════════════════════════════════
+   GOOGLE FONTS
+   ═══════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
