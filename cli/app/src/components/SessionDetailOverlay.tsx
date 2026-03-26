@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { fetchSession } from '../api'
 import type { Session } from '../types'
 import { Chip } from './shared/Chip'
-import { SessionActivityTimeline } from './SessionActivityTimeline'
+import { WorkTimeline } from './WorkTimeline'
 
 interface SessionDetailOverlayProps {
   session: Session
@@ -103,11 +103,11 @@ export function SessionDetailOverlay({ session: initialSession, projectDirName, 
             </div>
           )}
 
-          {/* Session Activity Timeline (50+ turns) */}
+          {/* Session timeline (reuses WorkTimeline for orchestrated sessions with 50+ turns) */}
           {session.turns >= 50 && (
             <div className="mb-5">
               <SectionLabel>Session Activity · {session.turns} turns over {formatDuration(session.durationMinutes)}</SectionLabel>
-              <SessionActivityTimeline turns={session.turnTimeline ?? []} totalTurns={session.turns} durationMinutes={session.durationMinutes} />
+              <WorkTimeline sessions={[session]} maxHeight={200} />
             </div>
           )}
 
