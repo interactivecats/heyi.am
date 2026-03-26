@@ -15,6 +15,10 @@ export function createProjectsRouter(ctx: RouteContext): Router {
       const projectsWithStats = await Promise.all(
         projects.map((p) => ctx.getProjectWithStats(p)),
       );
+      // Sort by most recent session first
+      projectsWithStats.sort((a, b) =>
+        (b.lastSessionDate as string ?? '').localeCompare(a.lastSessionDate as string ?? ''),
+      );
       res.json({ projects: projectsWithStats });
     } catch (err) {
       res.status(500).json({ error: { code: 'SCAN_FAILED', message: (err as Error).message } });

@@ -20,6 +20,7 @@ import {
   getSessionCount,
   getAllSessionMetas,
   getDashboardStats,
+  getAllProjectStats,
 } from '../db.js';
 import { ensureSessionIndexed } from '../sync.js';
 
@@ -281,7 +282,61 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
   }
 
   // ── getProjectWithStats ──────────────────────────────────
+
+  // Cache of DB project stats, invalidated per request cycle
+  let _dbProjectStatsCache: Map<string, ReturnType<typeof getAllProjectStats>[0]> | null = null;
+
+  function getDbProjectStatsMap(): Map<string, ReturnType<typeof getAllProjectStats>[0]> {
+    if (!_dbProjectStatsCache) {
+      const stats = getAllProjectStats(db);
+      _dbProjectStatsCache = new Map(stats.map((s) => [s.projectDir, s]));
+      // Clear cache after this tick to avoid stale data across requests
+      setTimeout(() => { _dbProjectStatsCache = null; }, 0);
+    }
+    return _dbProjectStatsCache;
+  }
+
   async function getProjectWithStats(proj: ProjectInfo) {
+    // Fast path: read aggregates from SQLite (single query, no per-session I/O)
+    const statsMap = getDbProjectStatsMap();
+    const dbStats = statsMap.get(proj.dirName);
+
+    const published = getUploadedState(proj.dirName);
+    const enhanceCache = loadProjectEnhanceResult(proj.dirName);
+
+    if (dbStats) {
+      // Compute agent duration from DB: sum of all session durations including subagents
+      const agentRow = db.prepare(
+        'SELECT COALESCE(SUM(duration_minutes), 0) as total FROM sessions WHERE project_dir = ?',
+      ).get(proj.dirName) as { total: number };
+
+      return {
+        name: proj.name,
+        dirName: proj.dirName,
+        sessionCount: dbStats.sessionCount,
+        description: '',
+        totalLoc: dbStats.totalLoc,
+        totalDuration: dbStats.totalDuration,
+        totalFiles: (db.prepare(
+          'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ?)',
+        ).get(proj.dirName) as { c: number }).c,
+        skills: dbStats.skills,
+        dateRange: (() => {
+          const row = db.prepare(
+            'SELECT MIN(start_time) as earliest, MAX(start_time) as latest FROM sessions WHERE project_dir = ? AND is_subagent = 0',
+          ).get(proj.dirName) as { earliest: string | null; latest: string | null };
+          return row?.earliest && row?.latest ? `${row.earliest}|${row.latest}` : '';
+        })(),
+        lastSessionDate: dbStats.latestDate,
+        isUploaded: !!published,
+        uploadedSessionCount: published?.uploadedSessions?.length ?? 0,
+        uploadedSessions: published?.uploadedSessions ?? [],
+        enhancedAt: enhanceCache?.enhancedAt ?? null,
+        totalAgentDuration: agentRow.total,
+      };
+    }
+
+    // Fallback: per-session stats (only if DB has no data for this project)
     const allStats = await Promise.all(
       proj.sessions.map((m) => getSessionStats(m, proj.name)),
     );
@@ -290,7 +345,7 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
     const totalFiles = allStats.reduce((s, st) => s + st.files, 0);
     const totalDuration = allStats.reduce((s, st) => s + st.duration, 0);
 
-    let totalAgentDuration = allStats.reduce((s, st) => s + st.duration, 0);
+    let totalAgentDuration = totalDuration;
     for (const meta of proj.sessions) {
       for (const child of meta.children ?? []) {
         const childStats = await getSessionStats(child, proj.name);
@@ -306,9 +361,6 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
     const dates = allStats.map((st) => st.date).filter(Boolean).sort();
     const firstDate = dates[0] ?? '';
     const lastDate = dates[dates.length - 1] ?? '';
-
-    const published = getUploadedState(proj.dirName);
-    const enhanceCache = loadProjectEnhanceResult(proj.dirName);
 
     return {
       name: proj.name,
