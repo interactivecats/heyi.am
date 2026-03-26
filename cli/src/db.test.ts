@@ -126,7 +126,7 @@ describe('db', () => {
   describe('openDatabase', () => {
     it('creates schema_version table with version 1', () => {
       const row = db.prepare('SELECT version FROM schema_version').get() as { version: number };
-      expect(row.version).toBe(1);
+      expect(row.version).toBe(2);
     });
 
     it('creates sessions table', () => {
@@ -153,7 +153,7 @@ describe('db', () => {
     it('is idempotent — opening twice does not error', () => {
       const db2 = openDatabase(join(tmpDir, 'test.db'));
       const row = db2.prepare('SELECT version FROM schema_version').get() as { version: number };
-      expect(row.version).toBe(1);
+      expect(row.version).toBe(2);
       db2.close();
     });
   });
@@ -250,11 +250,12 @@ describe('db', () => {
       ];
       indexSessionFiles(db, 'test-session-1', files);
 
-      const rows = db.prepare('SELECT * FROM session_files WHERE session_id = ?')
+      const rows = db.prepare('SELECT * FROM session_files WHERE session_id = ? ORDER BY file_path')
         .all('test-session-1') as Array<{ file_path: string; additions: number; deletions: number }>;
       expect(rows).toHaveLength(2);
-      expect(rows[0].file_path).toBe('src/index.ts');
-      expect(rows[0].additions).toBe(80);
+      expect(rows[0].file_path).toBe('src/db.ts');
+      expect(rows[1].file_path).toBe('src/index.ts');
+      expect(rows[1].additions).toBe(80);
     });
 
     it('replaces existing entries on re-index', () => {

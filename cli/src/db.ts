@@ -14,7 +14,7 @@ import type { SessionMeta } from './parsers/index.js';
 const CONFIG_DIR = join(homedir(), '.config', 'heyiam');
 export const DB_PATH = join(CONFIG_DIR, 'sessions.db');
 
-const CURRENT_SCHEMA_VERSION = 1;
+const CURRENT_SCHEMA_VERSION = 2;
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -114,67 +114,89 @@ function runMigrations(db: Database.Database): void {
 }
 
 function migrateToV1(db: Database.Database): void {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS sessions (
-      id TEXT PRIMARY KEY,
-      project_dir TEXT NOT NULL,
-      source TEXT NOT NULL,
-      title TEXT,
-      start_time TEXT,
-      end_time TEXT,
-      duration_minutes REAL,
-      wall_clock_minutes REAL,
-      turns INTEGER,
-      loc_added INTEGER,
-      loc_removed INTEGER,
-      loc_net INTEGER,
-      files_changed INTEGER,
-      tool_calls INTEGER,
-      skills TEXT,
-      files_touched TEXT,
-      models_used TEXT,
-      cwd TEXT,
-      parent_session_id TEXT,
-      agent_role TEXT,
-      is_subagent INTEGER DEFAULT 0,
-      file_path TEXT,
-      file_mtime REAL,
-      file_size INTEGER,
-      indexed_at TEXT,
-      FOREIGN KEY (parent_session_id) REFERENCES sessions(id)
-    );
+  // V1 is superseded by V2 — go straight to V2
+  migrateToV2(db);
+}
 
-    CREATE INDEX IF NOT EXISTS idx_sessions_project ON sessions(project_dir);
-    CREATE INDEX IF NOT EXISTS idx_sessions_source ON sessions(source);
-    CREATE INDEX IF NOT EXISTS idx_sessions_start ON sessions(start_time);
-    CREATE INDEX IF NOT EXISTS idx_sessions_parent ON sessions(parent_session_id);
+function migrateToV2(db: Database.Database): void {
+  // Drop old tables if upgrading from v1
+  db.exec('DROP TABLE IF EXISTS session_files');
+  db.exec('DROP TABLE IF EXISTS sessions_fts');
+  db.exec('DROP TABLE IF EXISTS sessions');
 
-    CREATE VIRTUAL TABLE IF NOT EXISTS sessions_fts USING fts5(
-      session_id UNINDEXED,
-      role,
-      content,
-      tokenize='porter unicode61'
-    );
+  const tx = db.transaction(() => {
+    // F1: session_files gets composite PK
+    // F2: ON DELETE CASCADE on all foreign keys
+    // F5: NOT NULL DEFAULT on numeric columns
+    // F7: role UNINDEXED in FTS5
+    // F21: file_mtime as INTEGER not REAL
+    db.exec(`
+      CREATE TABLE sessions (
+        id TEXT PRIMARY KEY,
+        project_dir TEXT NOT NULL,
+        source TEXT NOT NULL,
+        title TEXT,
+        start_time TEXT,
+        end_time TEXT,
+        duration_minutes REAL NOT NULL DEFAULT 0,
+        wall_clock_minutes REAL NOT NULL DEFAULT 0,
+        turns INTEGER NOT NULL DEFAULT 0,
+        loc_added INTEGER NOT NULL DEFAULT 0,
+        loc_removed INTEGER NOT NULL DEFAULT 0,
+        loc_net INTEGER NOT NULL DEFAULT 0,
+        files_changed INTEGER NOT NULL DEFAULT 0,
+        tool_calls INTEGER NOT NULL DEFAULT 0,
+        skills TEXT,
+        files_touched TEXT,
+        models_used TEXT,
+        cwd TEXT,
+        parent_session_id TEXT,
+        agent_role TEXT,
+        is_subagent INTEGER NOT NULL DEFAULT 0,
+        file_path TEXT,
+        file_mtime INTEGER,
+        file_size INTEGER,
+        indexed_at TEXT,
+        FOREIGN KEY (parent_session_id) REFERENCES sessions(id) ON DELETE CASCADE
+      )
+    `);
 
-    CREATE TABLE IF NOT EXISTS session_files (
-      session_id TEXT NOT NULL,
-      file_path TEXT NOT NULL,
-      additions INTEGER DEFAULT 0,
-      deletions INTEGER DEFAULT 0,
-      FOREIGN KEY (session_id) REFERENCES sessions(id)
-    );
+    db.exec('CREATE INDEX idx_sessions_project ON sessions(project_dir)');
+    db.exec('CREATE INDEX idx_sessions_source ON sessions(source)');
+    db.exec('CREATE INDEX idx_sessions_start ON sessions(start_time)');
+    db.exec('CREATE INDEX idx_sessions_parent ON sessions(parent_session_id)');
 
-    CREATE INDEX IF NOT EXISTS idx_session_files_path ON session_files(file_path);
-    CREATE INDEX IF NOT EXISTS idx_session_files_session ON session_files(session_id);
-  `);
+    db.exec(`
+      CREATE VIRTUAL TABLE sessions_fts USING fts5(
+        session_id UNINDEXED,
+        role UNINDEXED,
+        content,
+        tokenize='porter unicode61'
+      )
+    `);
 
-  // Upsert schema version
-  const existing = db.prepare('SELECT version FROM schema_version LIMIT 1').get();
-  if (existing) {
-    db.prepare('UPDATE schema_version SET version = ?').run(CURRENT_SCHEMA_VERSION);
-  } else {
-    db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(CURRENT_SCHEMA_VERSION);
-  }
+    db.exec(`
+      CREATE TABLE session_files (
+        session_id TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        additions INTEGER NOT NULL DEFAULT 0,
+        deletions INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (session_id, file_path),
+        FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.exec('CREATE INDEX idx_session_files_path ON session_files(file_path)');
+
+    // Upsert schema version
+    const existing = db.prepare('SELECT version FROM schema_version LIMIT 1').get();
+    if (existing) {
+      db.prepare('UPDATE schema_version SET version = ?').run(CURRENT_SCHEMA_VERSION);
+    } else {
+      db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(CURRENT_SCHEMA_VERSION);
+    }
+  });
+  tx();
 }
 
 // ── Staleness Check ──────────────────────────────────────────
@@ -190,9 +212,13 @@ export function isSessionStale(
 
   if (!row) return true; // Not in DB — needs indexing
 
+  // Skip stat for non-filesystem paths (e.g. cursor:// URLs) — F23 fix
+  if (filePath.includes('://')) return true;
+
   try {
     const stat = statSync(filePath);
-    const mtime = stat.mtimeMs;
+    // F21: Use Math.floor to avoid floating-point comparison issues
+    const mtime = Math.floor(stat.mtimeMs);
     const size = stat.size;
     return mtime !== row.file_mtime || size !== row.file_size;
   } catch {
@@ -277,7 +303,7 @@ export function upsertSession(db: Database.Database, input: UpsertSessionInput):
     meta.agentRole ?? null,
     meta.isSubagent ? 1 : 0,
     meta.path,
-    fileMtime,
+    Math.floor(fileMtime),
     fileSize,
     new Date().toISOString(),
   );
@@ -316,7 +342,7 @@ export function indexSessionFiles(
   db.prepare('DELETE FROM session_files WHERE session_id = ?').run(sessionId);
 
   const insert = db.prepare(
-    'INSERT INTO session_files (session_id, file_path, additions, deletions) VALUES (?, ?, ?, ?)',
+    'INSERT OR REPLACE INTO session_files (session_id, file_path, additions, deletions) VALUES (?, ?, ?, ?)',
   );
 
   for (const file of files) {
@@ -364,11 +390,12 @@ export function getSessionStats(db: Database.Database, sessionId: string): Sessi
 // ── Read: Get All Project Stats ──────────────────────────────
 
 export function getAllProjectStats(db: Database.Database): ProjectStats[] {
+  // F9: Single query — no N+1. Fetch aggregates and skills in one pass.
   const rows = db.prepare(`
     SELECT
       project_dir,
       COUNT(*) as session_count,
-      COALESCE(SUM(COALESCE(loc_added, 0) + COALESCE(loc_removed, 0)), 0) as total_loc,
+      COALESCE(SUM(loc_added + loc_removed), 0) as total_loc,
       COALESCE(SUM(duration_minutes), 0) as total_duration,
       COALESCE(SUM(turns), 0) as total_turns,
       MAX(start_time) as latest_date,
@@ -387,19 +414,23 @@ export function getAllProjectStats(db: Database.Database): ProjectStats[] {
     sources: string | null;
   }>;
 
-  return rows.map((row) => {
-    // Collect all skills across sessions in this project
-    const skillRows = db.prepare(
-      'SELECT skills FROM sessions WHERE project_dir = ? AND skills IS NOT NULL',
-    ).all(row.project_dir) as Array<{ skills: string }>;
+  // Collect all skills in a single query, grouped by project
+  const skillRows = db.prepare(
+    'SELECT project_dir, skills FROM sessions WHERE skills IS NOT NULL AND is_subagent = 0',
+  ).all() as Array<{ project_dir: string; skills: string }>;
 
-    const allSkills = new Set<string>();
-    for (const sr of skillRows) {
-      const parsed: string[] = JSON.parse(sr.skills);
-      for (const s of parsed) allSkills.add(s);
+  const skillsByProject = new Map<string, Set<string>>();
+  for (const sr of skillRows) {
+    const parsed: string[] = JSON.parse(sr.skills);
+    if (!skillsByProject.has(sr.project_dir)) {
+      skillsByProject.set(sr.project_dir, new Set());
     }
+    const set = skillsByProject.get(sr.project_dir)!;
+    for (const s of parsed) set.add(s);
+  }
 
-    // Derive project name from project_dir
+  return rows.map((row) => {
+    const projectSkills = skillsByProject.get(row.project_dir);
     const projectName = row.project_dir.replace(/^-/, '').split('-').pop() ?? row.project_dir;
 
     return {
@@ -409,7 +440,7 @@ export function getAllProjectStats(db: Database.Database): ProjectStats[] {
       totalLoc: row.total_loc,
       totalDuration: row.total_duration,
       totalTurns: row.total_turns,
-      skills: [...allSkills].sort(),
+      skills: projectSkills ? [...projectSkills].sort() : [],
       sources: row.sources ? row.sources.split(',') : [],
       latestDate: row.latest_date ?? '',
     };
@@ -454,6 +485,11 @@ export function rebuildIndex(
   });
   tx();
   onProgress?.(0, 0);
+}
+
+/** F17: Merge FTS5 segments for better query performance. Call after bulk indexing. */
+export function optimizeFtsIndex(db: Database.Database): void {
+  db.exec("INSERT INTO sessions_fts(sessions_fts) VALUES('optimize')");
 }
 
 // ── Cleanup: remove sessions whose files no longer exist ─────

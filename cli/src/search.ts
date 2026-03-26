@@ -85,14 +85,24 @@ function searchWithFts(
 
   if (ftsResults.length === 0) return [];
 
-  // Fetch session rows for all matched IDs and apply metadata filters
-  const results: SearchResult[] = [];
   const fileSessionIds = filters?.file ? getFileFilteredSessionIds(db, filters.file) : null;
 
+  // F10: Batch fetch all session rows in one query instead of N+1
+  const ftsIds = ftsResults.map((r) => r.sessionId);
+  const placeholders = ftsIds.map(() => '?').join(',');
+  const allRows = db.prepare(
+    `SELECT * FROM sessions WHERE id IN (${placeholders})`,
+  ).all(...ftsIds) as SessionRow[];
+
+  const rowMap = new Map<string, SessionRow>();
+  for (const row of allRows) rowMap.set(row.id, row);
+
+  // Apply metadata filters and build results in FTS rank order
+  const results: SearchResult[] = [];
   for (const fts of ftsResults) {
     if (fileSessionIds && !fileSessionIds.has(fts.sessionId)) continue;
 
-    const row = db.prepare('SELECT * FROM sessions WHERE id = ?').get(fts.sessionId) as SessionRow | undefined;
+    const row = rowMap.get(fts.sessionId);
     if (!row) continue;
 
     if (!matchesFilters(row, filters)) continue;
@@ -101,7 +111,6 @@ function searchWithFts(
     if (results.length >= MAX_RESULTS) break;
   }
 
-  // FTS results are already sorted by rank (lower = more relevant)
   return results;
 }
 
@@ -140,9 +149,9 @@ function searchWithFilters(
   }
 
   if (filters?.skill) {
-    // JSON array search — skills column stores e.g. '["TypeScript","Node.js"]'
-    conditions.push('s.skills LIKE ?');
-    params.push(`%"${filters.skill}"%`);
+    // F25: Use json_each for proper JSON array searching instead of LIKE
+    conditions.push('EXISTS (SELECT 1 FROM json_each(s.skills) WHERE value = ?)');
+    params.push(filters.skill);
   }
 
   let sql: string;

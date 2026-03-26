@@ -14,6 +14,7 @@ import { analyzeSession } from './analyzer.js';
 import {
   isSessionStale, indexSession, getSessionCount,
   cleanupOrphanedSessions, rebuildIndex, deleteSession,
+  optimizeFtsIndex,
   type UpsertSessionInput,
 } from './db.js';
 import { getArchiveDir } from './settings.js';
@@ -190,7 +191,10 @@ export async function fullReindex(
   onProgress?: SyncProgressCallback,
 ): Promise<SyncResult> {
   rebuildIndex(db);
-  return syncSessionIndex(db, basePath, onProgress);
+  const result = await syncSessionIndex(db, basePath, onProgress);
+  // F17: Optimize FTS5 segments after bulk rebuild
+  optimizeFtsIndex(db);
+  return result;
 }
 
 // ── File Watcher ─────────────────────────────────────────────
