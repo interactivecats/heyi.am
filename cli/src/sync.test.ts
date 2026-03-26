@@ -169,6 +169,41 @@ describe('startCursorPolling', () => {
   });
 });
 
+describe('syncSessionIndex preserves DB sessions when source files are deleted', () => {
+  it('does not remove sessions from DB when their source files are gone', async () => {
+    // Create a fresh DB and index a session
+    const preserveDir = join(tmpDir, 'preserve-test');
+    const projectDir = join(preserveDir, '-Users-test-Dev-preserveapp');
+    await mkdir(projectDir, { recursive: true });
+
+    const sessionPath = join(projectDir, 'preserve-001.jsonl');
+    await writeFile(sessionPath, toJsonl(TEST_SESSION));
+
+    const freshDb = openDatabase(join(tmpDir, 'test-preserve.db'));
+
+    // First sync — indexes the session
+    const result1 = await syncSessionIndex(freshDb, preserveDir);
+    expect(result1.indexed).toBe(1);
+
+    // Verify session is in DB
+    const count1 = (freshDb.prepare('SELECT COUNT(*) as c FROM sessions').get() as { c: number }).c;
+    expect(count1).toBe(1);
+
+    // Delete the source file
+    await rm(sessionPath);
+
+    // Second sync — session file is gone, but DB should keep it
+    const result2 = await syncSessionIndex(freshDb, preserveDir);
+    expect(result2.orphansRemoved).toBe(0);
+
+    // Session should still be in the DB
+    const count2 = (freshDb.prepare('SELECT COUNT(*) as c FROM sessions').get() as { c: number }).c;
+    expect(count2).toBe(1);
+
+    freshDb.close();
+  });
+});
+
 describe('file watcher reindexes on change', () => {
   it('picks up a new session file written to a watched directory', async () => {
     // This test creates a temp dir structure, starts a watcher pointed at it,

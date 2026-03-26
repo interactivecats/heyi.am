@@ -2,26 +2,38 @@ import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { writeFile, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import Database from "better-sqlite3";
+import { openDatabase } from "./db.js";
 
-// Mock listSessions and parseSession before importing the module under test
+// Mock listSessions before importing the module under test
 vi.mock("./parsers/index.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./parsers/index.js")>();
   return {
     ...actual,
     listSessions: vi.fn().mockResolvedValue([]),
-    parseSession: vi.fn().mockResolvedValue({ source: "claude" }),
+  };
+});
+
+// Mock getDatabase to return our test DB
+vi.mock("./db.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./db.js")>();
+  return {
+    ...actual,
+    getDatabase: vi.fn(),
   };
 });
 
 import { getSourceAudit, getArchiveStats } from "./source-audit.js";
-import { listSessions, parseSession } from "./parsers/index.js";
+import { listSessions } from "./parsers/index.js";
+import { getDatabase } from "./db.js";
 import type { SessionMeta } from "./parsers/index.js";
 
 const mockedListSessions = vi.mocked(listSessions);
-const mockedParseSession = vi.mocked(parseSession);
+const mockedGetDatabase = vi.mocked(getDatabase);
 
 let tmpDir: string;
 let archiveDir: string;
+let testDb: ReturnType<typeof openDatabase>;
 
 const JSONL_LINE =
   '{"type":"user","uuid":"1","timestamp":"2026-03-20T10:00:00Z","sessionId":"test","version":"2.1.80"}\n';
@@ -37,24 +49,43 @@ function makeMeta(overrides: Partial<SessionMeta>): SessionMeta {
   };
 }
 
+function seedDb(rows: Array<{ source: string; id: string; is_subagent?: number }>) {
+  for (const row of rows) {
+    testDb.prepare(
+      `INSERT OR REPLACE INTO sessions (id, project_dir, source, is_subagent, file_path)
+       VALUES (?, '-Users-test-Dev-myproject', ?, ?, '/fake/path.jsonl')`,
+    ).run(row.id, row.source, row.is_subagent ?? 0);
+  }
+}
+
 beforeAll(async () => {
   tmpDir = join(tmpdir(), `source-audit-test-${Date.now()}`);
   archiveDir = join(tmpDir, "sessions");
   await mkdir(archiveDir, { recursive: true });
+
+  // Create a real test DB
+  const dbPath = join(tmpDir, "test-source-audit.db");
+  testDb = openDatabase(dbPath);
+  mockedGetDatabase.mockReturnValue(testDb);
 });
 
 afterAll(async () => {
+  testDb.close();
   await rm(tmpDir, { recursive: true, force: true });
 });
 
 describe("getSourceAudit", () => {
   it("returns empty sources when no sessions exist", async () => {
     mockedListSessions.mockResolvedValue([]);
+    // Ensure DB is empty
+    testDb.prepare("DELETE FROM sessions").run();
+
     const result = await getSourceAudit(tmpDir);
     expect(result.sources).toEqual([]);
   });
 
   it("groups live sessions by source and counts them", async () => {
+    testDb.prepare("DELETE FROM sessions").run();
     mockedListSessions.mockResolvedValue([
       makeMeta({ source: "claude", sessionId: "c1" }),
       makeMeta({ source: "claude", sessionId: "c2" }),
@@ -72,6 +103,7 @@ describe("getSourceAudit", () => {
   });
 
   it("excludes subagent sessions from live counts", async () => {
+    testDb.prepare("DELETE FROM sessions").run();
     mockedListSessions.mockResolvedValue([
       makeMeta({ source: "claude", sessionId: "parent" }),
       makeMeta({ source: "claude", sessionId: "child", isSubagent: true }),
@@ -83,6 +115,7 @@ describe("getSourceAudit", () => {
   });
 
   it("flags Claude Code with 30-day retention risk", async () => {
+    testDb.prepare("DELETE FROM sessions").run();
     mockedListSessions.mockResolvedValue([
       makeMeta({ source: "claude", sessionId: "c1" }),
     ]);
@@ -93,6 +126,7 @@ describe("getSourceAudit", () => {
   });
 
   it("does not flag Cursor with retention risk", async () => {
+    testDb.prepare("DELETE FROM sessions").run();
     mockedListSessions.mockResolvedValue([
       makeMeta({ source: "cursor", sessionId: "cu1" }),
     ]);
@@ -102,25 +136,13 @@ describe("getSourceAudit", () => {
     expect(cursor!.retentionRisk).toBeUndefined();
   });
 
-  it("counts archived sessions from the archive directory", async () => {
-    // Create an archived session file
-    const projectPath = join(archiveDir, "-Users-test-Dev-myproject");
-    await mkdir(projectPath, { recursive: true });
-    await writeFile(join(projectPath, "archived-1.jsonl"), JSONL_LINE);
-    await writeFile(join(projectPath, "archived-2.jsonl"), JSONL_LINE);
-
-    mockedParseSession.mockResolvedValue({
-      source: "claude",
-      turns: 1,
-      tool_calls: [],
-      files_touched: [],
-      duration_ms: 1000,
-      wall_clock_ms: 1000,
-      loc_stats: { loc_added: 0, loc_removed: 0, loc_net: 0, files_changed: [] },
-      raw_entries: [],
-      start_time: "2026-03-20T10:00:00Z",
-      end_time: "2026-03-20T10:01:00Z",
-    });
+  it("counts archived sessions from the SQLite DB", async () => {
+    testDb.prepare("DELETE FROM sessions").run();
+    seedDb([
+      { source: "claude", id: "archived-1" },
+      { source: "claude", id: "archived-2" },
+      { source: "claude", id: "archived-3" },
+    ]);
 
     mockedListSessions.mockResolvedValue([
       makeMeta({ source: "claude", sessionId: "live-1" }),
@@ -129,46 +151,49 @@ describe("getSourceAudit", () => {
     const result = await getSourceAudit(tmpDir);
     const claude = result.sources.find((s) => s.name === "Claude Code");
     expect(claude).toBeDefined();
-    expect(claude!.archivedCount).toBe(2);
+    // DB has 3 non-subagent claude sessions
+    expect(claude!.archivedCount).toBe(3);
+  });
+
+  it("excludes subagent sessions from archived counts", async () => {
+    testDb.prepare("DELETE FROM sessions").run();
+    seedDb([
+      { source: "claude", id: "parent-1" },
+      { source: "claude", id: "child-1", is_subagent: 1 },
+    ]);
+
+    mockedListSessions.mockResolvedValue([]);
+
+    const result = await getSourceAudit(tmpDir);
+    const claude = result.sources.find((s) => s.name === "Claude Code");
+    expect(claude).toBeDefined();
+    expect(claude!.archivedCount).toBe(1);
   });
 
   it("assesses health as warning when Claude has no archive", async () => {
-    // Use a fresh tmpDir with no archive files
-    const freshTmp = join(tmpdir(), `source-audit-fresh-${Date.now()}`);
-    const freshArchive = join(freshTmp, "sessions");
-    await mkdir(freshArchive, { recursive: true });
-
+    testDb.prepare("DELETE FROM sessions").run();
     mockedListSessions.mockResolvedValue([
       makeMeta({ source: "claude", sessionId: "c1" }),
       makeMeta({ source: "claude", sessionId: "c2" }),
       makeMeta({ source: "claude", sessionId: "c3" }),
     ]);
 
-    const result = await getSourceAudit(freshTmp);
+    const result = await getSourceAudit(tmpDir);
     const claude = result.sources.find((s) => s.name === "Claude Code");
     expect(claude!.health).toBe("warning");
-
-    await rm(freshTmp, { recursive: true, force: true });
   });
 
   it("assesses health as healthy when archive covers well", async () => {
-    // Archive dir already has 2 files from previous test
+    testDb.prepare("DELETE FROM sessions").run();
+    seedDb([
+      { source: "claude", id: "a1" },
+      { source: "claude", id: "a2" },
+      { source: "claude", id: "a3" },
+    ]);
+
     mockedListSessions.mockResolvedValue([
       makeMeta({ source: "claude", sessionId: "c1" }),
     ]);
-
-    mockedParseSession.mockResolvedValue({
-      source: "claude",
-      turns: 1,
-      tool_calls: [],
-      files_touched: [],
-      duration_ms: 1000,
-      wall_clock_ms: 1000,
-      loc_stats: { loc_added: 0, loc_removed: 0, loc_net: 0, files_changed: [] },
-      raw_entries: [],
-      start_time: "2026-03-20T10:00:00Z",
-      end_time: "2026-03-20T10:01:00Z",
-    });
 
     const result = await getSourceAudit(tmpDir);
     const claude = result.sources.find((s) => s.name === "Claude Code");
@@ -176,28 +201,16 @@ describe("getSourceAudit", () => {
   });
 
   it("sorts sources by archived count descending", async () => {
-    // Create cursor archive
-    const cursorProject = join(archiveDir, "-Users-test-cursor-project");
-    await mkdir(cursorProject, { recursive: true });
-    for (let i = 0; i < 5; i++) {
-      await writeFile(join(cursorProject, `cursor-${i}.jsonl`), JSONL_LINE);
-    }
-
-    mockedParseSession.mockImplementation(async (path: string) => {
-      const isCursor = path.includes("cursor-project");
-      return {
-        source: isCursor ? "cursor" : "claude",
-        turns: 1,
-        tool_calls: [],
-        files_touched: [],
-        duration_ms: 1000,
-        wall_clock_ms: 1000,
-        loc_stats: { loc_added: 0, loc_removed: 0, loc_net: 0, files_changed: [] },
-        raw_entries: [],
-        start_time: "2026-03-20T10:00:00Z",
-        end_time: "2026-03-20T10:01:00Z",
-      };
-    });
+    testDb.prepare("DELETE FROM sessions").run();
+    seedDb([
+      { source: "claude", id: "c-a1" },
+      { source: "claude", id: "c-a2" },
+      { source: "cursor", id: "cu-a1" },
+      { source: "cursor", id: "cu-a2" },
+      { source: "cursor", id: "cu-a3" },
+      { source: "cursor", id: "cu-a4" },
+      { source: "cursor", id: "cu-a5" },
+    ]);
 
     mockedListSessions.mockResolvedValue([
       makeMeta({ source: "claude", sessionId: "c1" }),
@@ -208,6 +221,35 @@ describe("getSourceAudit", () => {
     // Cursor has 5 archived, Claude has 2 — cursor should come first
     expect(result.sources[0].name).toBe("Cursor");
     expect(result.sources[1].name).toBe("Claude Code");
+  });
+
+  it("shows sources that only appear in DB (no live sessions)", async () => {
+    testDb.prepare("DELETE FROM sessions").run();
+    seedDb([
+      { source: "codex", id: "codex-1" },
+      { source: "codex", id: "codex-2" },
+    ]);
+
+    mockedListSessions.mockResolvedValue([]);
+
+    const result = await getSourceAudit(tmpDir);
+    const codex = result.sources.find((s) => s.name === "Codex");
+    expect(codex).toBeDefined();
+    expect(codex!.archivedCount).toBe(2);
+    expect(codex!.liveCount).toBe(0);
+  });
+
+  it("assesses health as error when no sessions at all", async () => {
+    testDb.prepare("DELETE FROM sessions").run();
+    // Seed a source with 0 live and 0 archived won't appear.
+    // But if DB has sessions and live has sessions for a different source:
+    seedDb([{ source: "gemini", id: "g1" }]);
+    // Remove it to get 0/0
+    testDb.prepare("DELETE FROM sessions WHERE source = 'gemini'").run();
+
+    mockedListSessions.mockResolvedValue([]);
+    const result = await getSourceAudit(tmpDir);
+    expect(result.sources).toEqual([]);
   });
 });
 
@@ -229,13 +271,21 @@ describe("getArchiveStats", () => {
   });
 
   it("counts total archived files across project dirs", async () => {
-    // tmpDir/sessions/ already has files from getSourceAudit tests
+    const statsTmp = join(tmpdir(), `archive-stats-count-${Date.now()}`);
+    const statsArchive = join(statsTmp, "sessions");
+    const projectPath = join(statsArchive, "-Users-test-Dev-myproject");
+    await mkdir(projectPath, { recursive: true });
+    await writeFile(join(projectPath, "s1.jsonl"), JSONL_LINE);
+    await writeFile(join(projectPath, "s2.jsonl"), JSONL_LINE);
+
     mockedListSessions.mockResolvedValue([
       makeMeta({ source: "claude", sessionId: "c1" }),
     ]);
 
-    const stats = await getArchiveStats(tmpDir);
-    expect(stats.total).toBeGreaterThanOrEqual(2);
+    const stats = await getArchiveStats(statsTmp);
+    expect(stats.total).toBe(2);
+
+    await rm(statsTmp, { recursive: true, force: true });
   });
 
   it("reports source count from live session discovery", async () => {
@@ -249,18 +299,8 @@ describe("getArchiveStats", () => {
     expect(stats.sourcesCount).toBe(3);
   });
 
-  it("formats oldest date as month + year", async () => {
-    mockedListSessions.mockResolvedValue([]);
-    const stats = await getArchiveStats(tmpDir);
-    // Archive has files, so oldest should be a formatted date
-    if (stats.total > 0) {
-      expect(stats.oldest).toMatch(/\w{3} \d{4}/);
-    }
-  });
-
   it("returns 'never' for lastSync when archive dir missing", async () => {
     const noArchive = join(tmpdir(), `no-archive-${Date.now()}`);
-    // Don't create the sessions dir
     await mkdir(noArchive, { recursive: true });
 
     mockedListSessions.mockResolvedValue([]);

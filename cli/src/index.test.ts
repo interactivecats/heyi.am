@@ -8,21 +8,21 @@ describe('CLI commands', () => {
     expect(openCmd!.description()).toBe('Start the local server and open the browser');
   });
 
-  it('registers the login command', () => {
-    const loginCmd = program.commands.find((c) => c.name() === 'login');
-    expect(loginCmd).toBeDefined();
-    expect(loginCmd!.description()).toBe('Authenticate with heyi.am');
+  it('registers the time command', () => {
+    const cmd = program.commands.find((c) => c.name() === 'time');
+    expect(cmd).toBeDefined();
+    expect(cmd!.description()).toBe('Show your time vs agent time per project');
   });
 
-  it('registers the publish command', () => {
-    const publishCmd = program.commands.find((c) => c.name() === 'publish');
-    expect(publishCmd).toBeDefined();
-    expect(publishCmd!.description()).toBe('Publish a session to heyi.am');
+  it('registers the search command', () => {
+    const cmd = program.commands.find((c) => c.name() === 'search');
+    expect(cmd).toBeDefined();
+    expect(cmd!.description()).toBe('Search across all AI sessions');
   });
 
   it('has correct program name and version', () => {
     expect(program.name()).toBe('heyiam');
-    expect(program.version()).toBe('0.1.2');
+    expect(program.version()).toBe('0.1.7');
   });
 
   it('open command accepts --port option', () => {
@@ -36,5 +36,37 @@ describe('CLI commands', () => {
     const openCmd = program.commands.find((c) => c.name() === 'open');
     const noOpenOpt = openCmd!.options.find((o) => o.long === '--no-open');
     expect(noOpenOpt).toBeDefined();
+  });
+
+  it('registers the archive command', () => {
+    const cmd = program.commands.find((c) => c.name() === 'archive');
+    expect(cmd).toBeDefined();
+    expect(cmd!.description()).toBe('Discover and archive sessions from all sources');
+  });
+
+  it('registers the sync command', () => {
+    const cmd = program.commands.find((c) => c.name() === 'sync');
+    expect(cmd).toBeDefined();
+    expect(cmd!.description()).toBe('Index sessions into SQLite search database');
+  });
+
+  it('registers the status command', () => {
+    const cmd = program.commands.find((c) => c.name() === 'status');
+    expect(cmd).toBeDefined();
+    expect(cmd!.description()).toBe('Show archive health, session counts, and daemon status');
+  });
+
+  it('registers the daemon command with subcommands', () => {
+    const cmd = program.commands.find((c) => c.name() === 'daemon');
+    expect(cmd).toBeDefined();
+    expect(cmd!.description()).toBe('Manage the background archiving daemon');
+
+    // Verify daemon subcommands
+    const subcommands = cmd!.commands.map((c) => c.name());
+    expect(subcommands).toContain('start');
+    expect(subcommands).toContain('stop');
+    expect(subcommands).toContain('status');
+    expect(subcommands).toContain('install');
+    expect(subcommands).toContain('uninstall');
   });
 });
