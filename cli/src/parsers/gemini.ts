@@ -11,14 +11,32 @@ import type {
   ContentBlock,
 } from "./types.js";
 
-// --- Gemini log format ---
+// --- Gemini log formats ---
 
+// Legacy format (v0.1.x): logs.json — array of entries, user messages only
 interface GeminiLogEntry {
   sessionId: string;
   messageId: number;
-  type: string; // "user" (model responses are not logged)
+  type: string; // "user" (model responses are not logged in legacy)
   message: string;
   timestamp: string;
+}
+
+// New format (v0.30+): chats/session-*.json — single JSON object with all messages
+interface GeminiNewSession {
+  sessionId: string;
+  projectHash: string;
+  startTime: string;
+  lastUpdated: string;
+  kind?: string;
+  messages: GeminiNewMessage[];
+}
+
+interface GeminiNewMessage {
+  id: string;
+  timestamp: string;
+  type: string; // "user" | "gemini"
+  content: Array<{ text?: string; functionCall?: { name: string; args: Record<string, unknown> }; functionResponse?: { name: string; response: unknown } }>;
 }
 
 export interface GeminiSessionFile {
@@ -26,6 +44,7 @@ export interface GeminiSessionFile {
   sessionId: string;
   projectHash: string;
   projectDir?: string;
+  format?: 'legacy' | 'new';
 }
 
 const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
@@ -64,6 +83,62 @@ function parseGeminiLog(raw: string): GeminiLogEntry[] {
   } catch {
     return [];
   }
+}
+
+// --- Parse new format (v0.30+) ---
+
+function isNewFormat(parsed: unknown): parsed is GeminiNewSession {
+  return (
+    typeof parsed === "object" &&
+    parsed !== null &&
+    !Array.isArray(parsed) &&
+    typeof (parsed as GeminiNewSession).sessionId === "string" &&
+    Array.isArray((parsed as GeminiNewSession).messages)
+  );
+}
+
+function parseNewSession(session: GeminiNewSession): GeminiLogEntry[] {
+  const entries: GeminiLogEntry[] = [];
+  for (let i = 0; i < session.messages.length; i++) {
+    const msg = session.messages[i];
+    // Extract text content
+    const textParts = (msg.content || [])
+      .filter((c) => c.text)
+      .map((c) => c.text!);
+    const text = textParts.join("\n");
+
+    // Map type: "gemini" → "model", keep "user" as "user"
+    const type = msg.type === "gemini" ? "model" : msg.type;
+
+    if (text || msg.content?.some((c) => c.functionCall || c.functionResponse)) {
+      entries.push({
+        sessionId: session.sessionId,
+        messageId: i,
+        type,
+        message: text || "[tool interaction]",
+        timestamp: msg.timestamp,
+      });
+    }
+  }
+  return entries;
+}
+
+// --- Extract tool calls from new format ---
+
+function extractToolCallsFromNewSession(session: GeminiNewSession): ToolCall[] {
+  const calls: ToolCall[] = [];
+  for (const msg of session.messages) {
+    for (const part of msg.content || []) {
+      if (part.functionCall) {
+        calls.push({
+          id: msg.id,
+          name: part.functionCall.name,
+          input: part.functionCall.args || {},
+        });
+      }
+    }
+  }
+  return calls;
 }
 
 function groupBySession(entries: GeminiLogEntry[]): Map<string, GeminiLogEntry[]> {
@@ -172,6 +247,11 @@ async function detect(path: string): Promise<boolean> {
   try {
     const raw = await readFile(path, "utf-8");
     const parsed = JSON.parse(raw);
+
+    // New format: { sessionId, messages[] }
+    if (isNewFormat(parsed)) return true;
+
+    // Legacy format: [{ sessionId, messageId, timestamp }]
     if (!Array.isArray(parsed) || parsed.length === 0) return false;
     const first = parsed[0];
     return typeof first.sessionId === "string" && typeof first.messageId === "number" && typeof first.timestamp === "string";
@@ -182,14 +262,24 @@ async function detect(path: string): Promise<boolean> {
 
 async function parse(path: string): Promise<SessionAnalysis> {
   const raw = await readFile(path, "utf-8");
+  const parsed = JSON.parse(raw);
+
+  // New format (v0.30+): single session JSON object
+  if (isNewFormat(parsed)) {
+    const entries = parseNewSession(parsed);
+    const toolCalls = extractToolCallsFromNewSession(parsed);
+    const analysis = analyzeSession(entries);
+    analysis.tool_calls = toolCalls;
+    return analysis;
+  }
+
+  // Legacy format: JSON array of entries
   const allEntries = parseGeminiLog(raw);
 
   if (allEntries.length === 0) {
     return analyzeSession([]);
   }
 
-  // If the path contains a session ID query param, filter to that session
-  // Otherwise, analyze all entries as one combined session
   const groups = groupBySession(allEntries);
 
   // For a single session request (gemini://{hash}?session={id}), filter
@@ -231,29 +321,86 @@ export async function discoverGeminiSessions(): Promise<GeminiSessionFile[]> {
 
   for (const entry of dirs) {
     if (!entry.isDirectory()) continue;
-    const logsPath = join(base, entry.name, "logs.json");
+    const dirPath = join(base, entry.name);
 
-    let raw: string;
+    // --- New format (v0.30+): chats/session-*.json ---
+    const chatsDir = join(dirPath, "chats");
     try {
-      raw = await readFile(logsPath, "utf-8");
+      const chatFiles = await readdir(chatsDir, { withFileTypes: true });
+      for (const chatFile of chatFiles) {
+        if (!chatFile.name.startsWith("session-") || !chatFile.name.endsWith(".json")) continue;
+        const chatPath = join(chatsDir, chatFile.name);
+
+        try {
+          const raw = await readFile(chatPath, "utf-8");
+          const parsed = JSON.parse(raw);
+          if (isNewFormat(parsed)) {
+            // New format uses project name as directory, not just hash
+            // entry.name could be "heyi-am" (project name) or a SHA-256 hash
+            const isHash = /^[0-9a-f]{64}$/.test(entry.name);
+            results.push({
+              path: chatPath,
+              sessionId: parsed.sessionId,
+              projectHash: parsed.projectHash || entry.name,
+              // For named dirs, use the dir name as project identifier
+              projectDir: isHash ? undefined : entry.name,
+              format: 'new',
+            });
+          }
+        } catch {
+          // Skip unparseable files
+        }
+      }
     } catch {
-      continue;
+      // No chats/ directory — try legacy format
     }
 
-    const entries = parseGeminiLog(raw);
-    const groups = groupBySession(entries);
+    // --- Legacy format: logs.json ---
+    const logsPath = join(dirPath, "logs.json");
+    try {
+      const raw = await readFile(logsPath, "utf-8");
+      const parsed = JSON.parse(raw);
 
-    for (const [sessionId] of groups) {
-      results.push({
-        path: logsPath,
-        sessionId,
-        projectHash: entry.name,
-        projectDir: undefined, // resolved below if possible
-      });
+      // Skip if this is actually a new-format file misnamed as logs.json
+      if (isNewFormat(parsed)) {
+        results.push({
+          path: logsPath,
+          sessionId: (parsed as GeminiNewSession).sessionId,
+          projectHash: entry.name,
+          projectDir: /^[0-9a-f]{64}$/.test(entry.name) ? undefined : entry.name,
+          format: 'new',
+        });
+        continue;
+      }
+
+      // Legacy array format
+      const entries = parseGeminiLog(raw);
+      const groups = groupBySession(entries);
+
+      for (const [sessionId] of groups) {
+        results.push({
+          path: logsPath,
+          sessionId,
+          projectHash: entry.name,
+          projectDir: undefined, // resolved via hash matching later
+          format: 'legacy',
+        });
+      }
+    } catch {
+      // No logs.json either — skip this directory
     }
   }
 
-  return results;
+  // Deduplicate: prefer new format over legacy for same sessionId
+  const seen = new Map<string, GeminiSessionFile>();
+  for (const r of results) {
+    const existing = seen.get(r.sessionId);
+    if (!existing || (r.format === 'new' && existing.format === 'legacy')) {
+      seen.set(r.sessionId, r);
+    }
+  }
+
+  return [...seen.values()];
 }
 
 /**
