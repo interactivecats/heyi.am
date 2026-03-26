@@ -654,6 +654,11 @@ export async function parseCursorConversation(
 // Cursor conversations aren't files, so detect/parse work with synthetic paths:
 // "cursor://{conversationId}?db={globalDbPath}"
 
+/** Check if a path is a Cursor virtual URL (not a filesystem path). */
+export function isCursorPath(path: string): boolean {
+  return path.startsWith("cursor://");
+}
+
 async function detect(path: string): Promise<boolean> {
   return path.startsWith("cursor://");
 }

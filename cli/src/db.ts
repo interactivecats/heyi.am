@@ -323,11 +323,18 @@ export function indexSessionContent(
     'INSERT INTO sessions_fts (session_id, role, content) VALUES (?, ?, ?)',
   );
 
+  // F8: Truncate content per turn to prevent FTS index bloat.
+  // Tool outputs (file reads, command output) can be 50KB+ but are low-value for search.
+  const MAX_CONTENT_CHARS = 10_000;
+
   for (const turn of turns) {
     const role = turn.type === 'prompt' ? 'user' : turn.type === 'tool' ? 'tool' : 'assistant';
     const content = turn.content;
     if (content && content.length > 0) {
-      insert.run(sessionId, role, content);
+      const truncated = content.length > MAX_CONTENT_CHARS
+        ? content.slice(0, MAX_CONTENT_CHARS)
+        : content;
+      insert.run(sessionId, role, truncated);
     }
   }
 }
@@ -495,21 +502,32 @@ export function optimizeFtsIndex(db: Database.Database): void {
 // ── Cleanup: remove sessions whose files no longer exist ─────
 
 export function cleanupOrphanedSessions(db: Database.Database): number {
-  const rows = db.prepare('SELECT id, file_path FROM sessions WHERE file_path IS NOT NULL').all() as Array<{
-    id: string;
-    file_path: string;
-  }>;
+  const rows = db.prepare(
+    "SELECT id, file_path FROM sessions WHERE file_path IS NOT NULL AND file_path NOT LIKE 'cursor://%'",
+  ).all() as Array<{ id: string; file_path: string }>;
 
-  let removed = 0;
+  // F12: Collect orphan IDs first, then batch delete in one transaction
+  const orphanIds: string[] = [];
   for (const row of rows) {
     try {
       statSync(row.file_path);
     } catch {
-      deleteSession(db, row.id);
-      removed++;
+      orphanIds.push(row.id);
     }
   }
-  return removed;
+
+  if (orphanIds.length > 0) {
+    const tx = db.transaction(() => {
+      for (const id of orphanIds) {
+        db.prepare('DELETE FROM sessions_fts WHERE session_id = ?').run(id);
+        db.prepare('DELETE FROM session_files WHERE session_id = ?').run(id);
+        db.prepare('DELETE FROM sessions WHERE id = ?').run(id);
+      }
+    });
+    tx();
+  }
+
+  return orphanIds.length;
 }
 
 // ── FTS5 Search ──────────────────────────────────────────────
