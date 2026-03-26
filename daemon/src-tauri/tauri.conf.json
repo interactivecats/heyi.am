@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicedoc/tauri/next/crates/tauri-schema-generator/schemas/config.schema.json",
+  "productName": "heyiam-tray",
+  "version": "0.1.0",
+  "identifier": "com.heyiam.daemon",
+  "build": {
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "trayIcon": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true,
+      "tooltip": "heyi.am — archiving your sessions"
+    },
+    "windows": []
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app"],
+    "icon": [
+      "icons/icon.png"
+    ]
+  },
+  "plugins": {
+    "shell": {
+      "open": true,
+      "scope": [
+        {
+          "name": "heyiam",
+          "cmd": "heyiam",
+          "args": true
+        },
+        {
+          "name": "npx-heyiam",
+          "cmd": "npx",
+          "args": ["heyiam"]
+        }
+      ]
+    }
+  }
+}
