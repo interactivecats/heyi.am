@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { listSessions, type SessionMeta } from "./parsers/index.js";
 import { SOURCE_DISPLAY_NAMES, type SessionSource } from "./parsers/types.js";
 import { getArchiveDir } from "./settings.js";
-import { parseSession } from "./parsers/index.js";
+import { getDatabase } from "./db.js";
 
 // ── Types (match frontend types.ts) ──────────────────────────
 
@@ -187,36 +187,26 @@ export async function getArchiveStats(configDir?: string): Promise<ArchiveStats>
  * in their filenames, we detect source by sampling the first file in
  * each project directory.
  */
-async function countArchivedBySource(configDir?: string): Promise<Map<string, number>> {
-  const archiveDir = getArchiveDir(configDir);
+/**
+ * Count archived sessions per source from the SQLite DB.
+ * The DB is the real archive — it knows every indexed session by source.
+ * This is more accurate than counting files, since one file can contain
+ * multiple sessions (Gemini) and some sources don't have files (Cursor).
+ */
+async function countArchivedBySource(_configDir?: string): Promise<Map<string, number>> {
   const counts = new Map<string, number>();
 
   try {
-    const projectDirs = await readdir(archiveDir, { withFileTypes: true });
+    const db = getDatabase();
+    const rows = db.prepare(
+      'SELECT source, COUNT(*) as c FROM sessions WHERE is_subagent = 0 GROUP BY source',
+    ).all() as Array<{ source: string; c: number }>;
 
-    for (const projectEntry of projectDirs) {
-      if (!projectEntry.isDirectory()) continue;
-      const projectPath = join(archiveDir, projectEntry.name);
-
-      const files = await readdir(projectPath, { withFileTypes: true }).catch(() => []);
-      const jsonlFiles = files.filter(f => f.name.endsWith(".jsonl") && !f.isDirectory());
-
-      if (jsonlFiles.length === 0) continue;
-
-      // Detect source from first file in this project dir
-      let source = "claude"; // default — most archive files are Claude format
-      try {
-        const samplePath = join(projectPath, jsonlFiles[0].name);
-        const analysis = await parseSession(samplePath);
-        source = analysis.source;
-      } catch {
-        // Parse failed — keep default
-      }
-
-      counts.set(source, (counts.get(source) ?? 0) + jsonlFiles.length);
+    for (const row of rows) {
+      counts.set(row.source, row.c);
     }
   } catch {
-    // Archive directory doesn't exist
+    // DB not available — fall back to 0
   }
 
   return counts;
