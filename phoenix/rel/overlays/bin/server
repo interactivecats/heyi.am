@@ -1,7 +1,0 @@
-#!/bin/sh
-set -eu
-
-# Run migrations before starting the server
-/app/bin/heyi_am eval "HeyiAm.Release.migrate()"
-
-PHX_SERVER=true exec /app/bin/heyi_am start

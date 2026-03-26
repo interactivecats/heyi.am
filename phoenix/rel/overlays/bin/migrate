@@ -1,4 +1,0 @@
-#!/bin/sh
-set -eu
-
-/app/bin/heyi_am eval "HeyiAm.Release.migrate()"
