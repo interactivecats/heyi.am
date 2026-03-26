@@ -7,15 +7,21 @@ export function Boundaries() {
   const { dirName } = useParams<{ dirName: string }>()
   const [boundaries, setBoundaries] = useState<BoundaryConfig | null>(null)
   const [sessions, setSessions] = useState<Session[]>([])
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (!dirName) return
-    fetchBoundaries(dirName).then(setBoundaries).catch(() => {})
-    fetchSessions(dirName).then(setSessions).catch(() => {})
+    Promise.all([
+      fetchBoundaries(dirName).catch(() => null),
+      fetchSessions(dirName).catch(() => [] as Session[]),
+    ]).then(([b, s]) => {
+      if (b) setBoundaries(b)
+      setSessions(s)
+    }).finally(() => setLoading(false))
   }, [dirName])
 
-  const included = sessions.filter((s) => boundaries?.selectedSessionIds.includes(s.id))
+  const included = sessions.filter((s) => boundaries?.selectedSessionIds?.includes(s.id))
   const excluded = boundaries?.skippedSessions ?? []
 
   async function handleSave() {
@@ -28,6 +34,19 @@ export function Boundaries() {
     } finally {
       setSaving(false)
     }
+  }
+
+  if (loading) {
+    return (
+      <AppShell
+        back={{ label: dirName ?? 'Project', to: `/project/${encodeURIComponent(dirName ?? '')}` }}
+        chips={[{ label: 'Project boundaries' }]}
+      >
+        <div className="p-6">
+          <span className="text-sm text-on-surface-variant">Loading boundaries...</span>
+        </div>
+      </AppShell>
+    )
   }
 
   return (

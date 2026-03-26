@@ -9,11 +9,12 @@ import {
 } from '../api'
 
 export function Settings() {
-  const [apiKey, setApiKey] = useState<ApiKeyStatus>({ hasKey: false })
-  const [auth, setAuth] = useState<AuthStatus>({ authenticated: false })
+  const [apiKey, setApiKey] = useState<ApiKeyStatus | null>(null)
+  const [auth, setAuth] = useState<AuthStatus | null>(null)
   const [keyInput, setKeyInput] = useState('')
   const [showKey, setShowKey] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   const [privacyDefaults, setPrivacyDefaults] = useState({
     localOnly: true,
@@ -22,8 +23,13 @@ export function Settings() {
   })
 
   useEffect(() => {
-    fetchApiKeyStatus().then(setApiKey)
-    fetchAuthStatus().then(setAuth)
+    Promise.all([
+      fetchApiKeyStatus().catch(() => ({ hasKey: false }) as ApiKeyStatus),
+      fetchAuthStatus().catch(() => ({ authenticated: false }) as AuthStatus),
+    ]).then(([key, authStatus]) => {
+      setApiKey(key)
+      setAuth(authStatus)
+    }).finally(() => setLoading(false))
   }, [])
 
   async function handleSaveKey() {
@@ -52,6 +58,16 @@ export function Settings() {
 
   function togglePrivacy(key: keyof typeof privacyDefaults) {
     setPrivacyDefaults((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  if (loading || !apiKey || !auth) {
+    return (
+      <AppShell back={{ label: 'Projects', to: '/projects' }} chips={[{ label: 'Settings' }]}>
+        <div className="max-w-3xl mx-auto p-6">
+          <span className="text-sm text-on-surface-variant">Loading settings...</span>
+        </div>
+      </AppShell>
+    )
   }
 
   return (

@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { AppShell, Card, Note, SectionHeader } from './shared'
-import { uploadProject, exportHtml, type UploadEvent } from '../api'
+import { uploadProject, exportHtml, fetchProjectDetail, type UploadEvent } from '../api'
+import type { ProjectDetail } from '../types'
 
 type PublishState =
   | { step: 'review' }
@@ -12,25 +13,33 @@ type PublishState =
 export function PublishReview() {
   const { dirName = '' } = useParams()
   const [state, setState] = useState<PublishState>({ step: 'review' })
+  const [detail, setDetail] = useState<ProjectDetail | null>(null)
   const [htmlExporting, setHtmlExporting] = useState(false)
+
+  useEffect(() => {
+    if (!dirName) return
+    fetchProjectDetail(dirName).then(setDetail).catch(() => {})
+  }, [dirName])
 
   const handlePublish = useCallback(() => {
     setState({ step: 'publishing', messages: [] })
 
+    const cache = detail?.enhanceCache
+    const project = detail?.project
     const payload = {
-      title: dirName,
+      title: project?.name ?? dirName,
       slug: dirName,
-      narrative: '',
-      repoUrl: '',
-      projectUrl: '',
-      timeline: [],
-      skills: [],
-      totalSessions: 0,
-      totalLoc: 0,
-      totalDurationMinutes: 0,
-      totalFilesChanged: 0,
+      narrative: cache?.result?.narrative ?? '',
+      repoUrl: cache?.repoUrl ?? '',
+      projectUrl: cache?.projectUrl ?? '',
+      timeline: cache?.result?.timeline ?? [],
+      skills: cache?.result?.skills ?? [],
+      totalSessions: project?.sessionCount ?? 0,
+      totalLoc: project?.totalLoc ?? 0,
+      totalDurationMinutes: project?.totalDuration ?? 0,
+      totalFilesChanged: project?.totalFiles ?? 0,
       skippedSessions: [],
-      selectedSessionIds: [],
+      selectedSessionIds: cache?.selectedSessionIds ?? [],
     }
 
     uploadProject(dirName, payload, (event: UploadEvent) => {
@@ -62,7 +71,7 @@ export function PublishReview() {
           break
       }
     })
-  }, [dirName])
+  }, [dirName, detail])
 
   async function handleExportGitHubPages() {
     setHtmlExporting(true)

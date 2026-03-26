@@ -191,11 +191,7 @@ export function ProjectDetail() {
                   <Note key={phase.phase} title={phase.title}>{phase.description}</Note>
                 ))
               ) : (
-                <>
-                  <Note title="Move rendering to the CLI">Treat output generation as a trust-boundary problem.</Note>
-                  <Note title="Split public and private domains">Prevent the hosted layer from becoming the center.</Note>
-                  <Note title="Archive before analysis">Protect work history from source-tool retention loss.</Note>
-                </>
+                <Note>Enhance this project to extract key decisions.</Note>
               )}
             </div>
           </Card>

@@ -69,14 +69,11 @@ export function SaveExport() {
             files={[
               { name: `${dirName}/` },
               { name: 'README.md', desc: 'project narrative', indent: 1 },
-              { name: 'sessions/', indent: 1 },
-              { name: 'rendering-architecture.md', desc: 'session breakdown', indent: 2 },
-              { name: 'auth-rebuild.md', desc: 'session breakdown', indent: 2 },
-              { name: 'security-hardening.md', desc: 'session breakdown', indent: 2 },
+              { name: 'sessions/', desc: 'per-session breakdowns', indent: 1 },
               { name: 'project.json', desc: 'structured data', indent: 1 },
               { name: 'index.html', desc: 'standalone preview', indent: 1 },
             ]}
-            footer="8 files · 24 KB · self-contained, viewable offline"
+            footer="self-contained, viewable offline"
           />
         </div>
 

@@ -156,13 +156,14 @@ export function ArchiveView() {
           <Card className="bg-white">
             <SectionHeader title="Archive posture" meta="ops" />
             <div className="flex flex-col gap-3">
-              <Note>
-                Claude retention risk is already mitigated for previously captured sessions.
-              </Note>
-              <Note>
-                Two sources are missing a recent manual sync and should be refreshed before a
-                long trip or machine change.
-              </Note>
+              {rows.some((r) => r.status === 'partial') && (
+                <Note>
+                  {rows.filter((r) => r.status === 'partial').length} source{rows.filter((r) => r.status === 'partial').length !== 1 ? 's' : ''} with partial coverage — consider a manual sync.
+                </Note>
+              )}
+              {rows.every((r) => r.status === 'healthy') && rows.length > 0 && (
+                <Note>All sources healthy. Archive coverage is complete.</Note>
+              )}
               <Note>
                 <span className="font-mono text-xs">
                   Archive path: ~/.config/heyiam/sessions/
