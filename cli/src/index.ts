@@ -160,6 +160,9 @@ program
   .option('--min-duration <minutes>', 'Minimum session duration in minutes', parseInt)
   .action(async (query: string | undefined, opts) => {
     const db = openDatabase();
+    // Archive on every CLI command — don't lose sessions between opens
+    const allSessions = await listSessions();
+    await archiveSessionFiles(allSessions);
     await quickSync(db, undefined, (p) => {
       if (p.phase === 'indexing' && p.current === 1 && (p.total ?? 0) > 0) {
         console.log(`  Syncing index (${p.total} sessions)...`);
@@ -220,6 +223,9 @@ program
   .option('--clipboard', 'Copy to clipboard instead of stdout')
   .action(async (sessionId: string, opts) => {
     const db = openDatabase();
+    // Archive on every CLI command
+    const ctxSessions = await listSessions();
+    await archiveSessionFiles(ctxSessions);
     await quickSync(db);
 
     const row = getSessionRow(db, sessionId);
@@ -296,6 +302,273 @@ program
     db.close();
   });
 
+// ── Archive command (standalone) ─────────────────────────────
+
+program
+  .command('archive')
+  .description('Discover and archive sessions from all sources')
+  .action(async () => {
+    console.log('\n  Discovering sessions...');
+    const allSessions = await listSessions();
+    const result = await archiveSessionFiles(allSessions);
+
+    const total = result.archived + result.alreadyArchived;
+    console.log(`  Archived ${result.archived} new sessions (${total} total)`);
+    if (result.cursorExported > 0) {
+      console.log(`  Exported ${result.cursorExported} Cursor sessions as JSONL`);
+    }
+    if (result.failed > 0) {
+      console.log(`  ${result.failed} failed`);
+    }
+    console.log('');
+  });
+
+// ── Sync command (standalone) ───────────────────────────────
+
+program
+  .command('sync')
+  .description('Index sessions into SQLite search database')
+  .action(async () => {
+    const db = openDatabase();
+    console.log('\n  Syncing index...');
+
+    // Also archive while we're at it
+    const allSessions = await listSessions();
+    await archiveSessionFiles(allSessions);
+
+    const result = await quickSync(db, undefined, (p) => {
+      if (p.phase === 'indexing' && p.current && p.total) {
+        if (p.current % 50 === 0 || p.current === p.total) {
+          process.stdout.write(`\r  Indexing: ${p.current}/${p.total}`);
+        }
+      }
+    });
+
+    const { countPreservedSessions } = await import('./db.js');
+    const preserved = countPreservedSessions(db);
+
+    console.log('');
+    console.log(`  Indexed ${result.indexed} sessions (${result.indexed + result.skipped} total, ${preserved} preserved)`);
+    console.log('');
+    db.close();
+  });
+
+// ── Status command ──────────────────────────────────────────
+
+program
+  .command('status')
+  .description('Show archive health, session counts, and daemon status')
+  .action(async () => {
+    const db = openDatabase();
+    await quickSync(db);
+
+    const { getSessionCount, countPreservedSessions } = await import('./db.js');
+    const { getAllProjectStats } = await import('./db.js');
+
+    const totalSessions = getSessionCount(db);
+    const preserved = countPreservedSessions(db);
+    const projects = getAllProjectStats(db);
+
+    // Source breakdown
+    const bySource = new Map<string, number>();
+    const rows = db.prepare('SELECT source, COUNT(*) as c FROM sessions GROUP BY source').all() as Array<{ source: string; c: number }>;
+    for (const row of rows) bySource.set(row.source, row.c);
+
+    // Daemon status
+    const { existsSync, readFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const { homedir } = await import('node:os');
+    const pidFile = join(homedir(), '.config', 'heyiam', 'daemon', 'daemon.pid');
+    let daemonRunning = false;
+    if (existsSync(pidFile)) {
+      const pid = parseInt(readFileSync(pidFile, 'utf-8').trim(), 10);
+      try { process.kill(pid, 0); daemonRunning = true; } catch { /* not running */ }
+    }
+
+    // Status file
+    const statusFile = join(homedir(), '.config', 'heyiam', 'daemon', 'status.json');
+    let lastSync = 'never';
+    if (existsSync(statusFile)) {
+      try {
+        const status = JSON.parse(readFileSync(statusFile, 'utf-8'));
+        if (status.lastSync) {
+          const ago = Math.round((Date.now() - new Date(status.lastSync).getTime()) / 60000);
+          lastSync = ago < 1 ? 'just now' : `${ago}m ago`;
+        }
+      } catch { /* ignore */ }
+    }
+
+    console.log('');
+    console.log('  heyi.am status');
+    console.log('  ' + '─'.repeat(50));
+    console.log(`  Sessions:    ${totalSessions} indexed`);
+    console.log(`  Preserved:   ${preserved} (source file deleted, DB has content)`);
+    console.log(`  Projects:    ${projects.length}`);
+    console.log('');
+    console.log('  Sources:');
+    for (const [source, count] of bySource) {
+      const name = SOURCE_DISPLAY_NAMES[source as SessionSource] ?? source;
+      console.log(`    ${name.padEnd(15)} ${count} sessions`);
+    }
+    console.log('');
+    console.log(`  Daemon:      ${daemonRunning ? '● running' : '○ stopped'}`);
+    console.log(`  Last sync:   ${lastSync}`);
+    console.log('');
+
+    db.close();
+  });
+
+// ── Daemon management ───────────────────────────────────────
+
+const daemon = program
+  .command('daemon')
+  .description('Manage the background archiving daemon');
+
+daemon
+  .command('start')
+  .description('Start the background tray daemon')
+  .action(async () => {
+    const { existsSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const { homedir } = await import('node:os');
+    const { spawn } = await import('node:child_process');
+    const { writeFileSync, mkdirSync } = await import('node:fs');
+
+    const daemonDir = join(homedir(), '.config', 'heyiam', 'daemon');
+    const binaryPath = join(daemonDir, 'heyiam-tray');
+    const pidFile = join(daemonDir, 'daemon.pid');
+
+    if (!existsSync(binaryPath)) {
+      console.log('\n  Daemon not installed. Run: heyiam daemon install\n');
+      return;
+    }
+
+    // Check if already running
+    if (existsSync(pidFile)) {
+      const pid = parseInt(await import('node:fs').then(fs => fs.readFileSync(pidFile, 'utf-8').trim()), 10);
+      try { process.kill(pid, 0); console.log('\n  Daemon is already running.\n'); return; } catch { /* stale pid */ }
+    }
+
+    const child = spawn(binaryPath, [], {
+      detached: true,
+      stdio: 'ignore',
+    });
+    child.unref();
+
+    mkdirSync(daemonDir, { recursive: true });
+    writeFileSync(pidFile, String(child.pid));
+    console.log(`\n  Daemon started (PID ${child.pid})\n`);
+  });
+
+daemon
+  .command('stop')
+  .description('Stop the background tray daemon')
+  .action(async () => {
+    const { existsSync, readFileSync, unlinkSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const { homedir } = await import('node:os');
+
+    const pidFile = join(homedir(), '.config', 'heyiam', 'daemon', 'daemon.pid');
+
+    if (!existsSync(pidFile)) {
+      console.log('\n  Daemon is not running.\n');
+      return;
+    }
+
+    const pid = parseInt(readFileSync(pidFile, 'utf-8').trim(), 10);
+    try {
+      process.kill(pid, 'SIGTERM');
+      unlinkSync(pidFile);
+      console.log('\n  Daemon stopped.\n');
+    } catch {
+      unlinkSync(pidFile);
+      console.log('\n  Daemon was not running (stale PID file removed).\n');
+    }
+  });
+
+daemon
+  .command('status')
+  .description('Show daemon status')
+  .action(async () => {
+    const { existsSync, readFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const { homedir } = await import('node:os');
+
+    const daemonDir = join(homedir(), '.config', 'heyiam', 'daemon');
+    const pidFile = join(daemonDir, 'daemon.pid');
+    const statusFile = join(daemonDir, 'status.json');
+    const binaryPath = join(daemonDir, 'heyiam-tray');
+
+    const installed = existsSync(binaryPath);
+    let running = false;
+    let pid: number | null = null;
+
+    if (existsSync(pidFile)) {
+      pid = parseInt(readFileSync(pidFile, 'utf-8').trim(), 10);
+      try { process.kill(pid, 0); running = true; } catch { /* not running */ }
+    }
+
+    console.log('');
+    console.log(`  Installed:  ${installed ? 'yes' : 'no'}`);
+    console.log(`  Running:    ${running ? `yes (PID ${pid})` : 'no'}`);
+
+    if (existsSync(statusFile)) {
+      try {
+        const status = JSON.parse(readFileSync(statusFile, 'utf-8'));
+        if (status.lastSync) {
+          const ago = Math.round((Date.now() - new Date(status.lastSync).getTime()) / 60000);
+          console.log(`  Last sync:  ${ago < 1 ? 'just now' : `${ago}m ago`}`);
+        }
+        if (status.sessionCount) console.log(`  Sessions:   ${status.sessionCount}`);
+        if (status.warnings?.length > 0) {
+          console.log(`  Warnings:   ${status.warnings.join(', ')}`);
+        }
+      } catch { /* ignore */ }
+    }
+    console.log('');
+  });
+
+daemon
+  .command('install')
+  .description('Download and install the background tray daemon')
+  .action(async () => {
+    console.log('\n  Daemon install is not yet available.');
+    console.log('  The Tauri tray app needs to be built first.');
+    console.log('  For now, use: heyiam archive && heyiam sync\n');
+    // TODO: Download platform binary from GitHub releases
+  });
+
+daemon
+  .command('uninstall')
+  .description('Remove the background tray daemon')
+  .action(async () => {
+    const { existsSync, unlinkSync, rmSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const { homedir } = await import('node:os');
+
+    // Stop first
+    const pidFile = join(homedir(), '.config', 'heyiam', 'daemon', 'daemon.pid');
+    if (existsSync(pidFile)) {
+      const pid = parseInt((await import('node:fs')).readFileSync(pidFile, 'utf-8').trim(), 10);
+      try { process.kill(pid, 'SIGTERM'); } catch { /* already dead */ }
+      unlinkSync(pidFile);
+    }
+
+    // Remove binary
+    const binaryPath = join(homedir(), '.config', 'heyiam', 'daemon', 'heyiam-tray');
+    if (existsSync(binaryPath)) unlinkSync(binaryPath);
+
+    // Remove macOS launchd plist
+    const plistPath = join(homedir(), 'Library', 'LaunchAgents', 'com.heyiam.daemon.plist');
+    if (existsSync(plistPath)) unlinkSync(plistPath);
+
+    // Remove Linux autostart
+    const desktopPath = join(homedir(), '.config', 'autostart', 'heyiam-daemon.desktop');
+    if (existsSync(desktopPath)) unlinkSync(desktopPath);
+
+    console.log('\n  Daemon uninstalled.\n');
+  });
+
 // ── Helpers ──────────────────────────────────────────────────
 
 function formatDateShort(iso: string): string {
@@ -321,7 +594,7 @@ const isDirectRun = resolvedArgv.endsWith('/dist/index.js') ||
 
 if (isDirectRun) {
   const args = process.argv.slice(2);
-  const knownCommands = ['open', 'time', 'search', 'context', 'reindex'];
+  const knownCommands = ['open', 'time', 'search', 'context', 'reindex', 'archive', 'sync', 'status', 'daemon'];
   if (args.length === 0 || !knownCommands.includes(args[0])) {
     process.argv.splice(2, 0, 'open');
   }
