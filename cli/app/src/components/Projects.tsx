@@ -13,6 +13,23 @@ function formatLoc(loc: number): string {
   return loc >= 1000 ? `${(loc / 1000).toFixed(1)}k` : String(loc)
 }
 
+function formatDateRange(raw: string): string {
+  if (!raw) return ''
+  const [start, end] = raw.split('|')
+  const fmt = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+    } catch {
+      return ''
+    }
+  }
+  const s = fmt(start)
+  const e = fmt(end)
+  if (!s) return ''
+  if (s === e) return s
+  return `${s} — ${e}`
+}
+
 function projectBadges(p: Project) {
   const badges: { variant: 'refined' | 'local' | 'exported'; label: string }[] = []
   if (p.enhancedAt) badges.push({ variant: 'refined', label: 'Refined' })
@@ -106,11 +123,23 @@ export function Projects() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 font-mono text-[0.6875rem] text-outline uppercase tracking-wider mt-2">
-                    <span>{p.dateRange}</span>
-                    {p.skills.length > 0 && <span>{p.skills.join(' + ')}</span>}
-                    <span>{p.sessionCount} sessions</span>
-                  </div>
+                  {(p.dateRange || p.skills.length > 0) && (
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      {p.dateRange && (
+                        <span className="font-mono text-[0.6875rem] text-outline">{formatDateRange(p.dateRange)}</span>
+                      )}
+                      {p.skills.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {p.skills.slice(0, 8).map((sk) => (
+                            <Chip key={sk} variant="violet">{sk}</Chip>
+                          ))}
+                          {p.skills.length > 8 && (
+                            <span className="font-mono text-[10px] text-outline">+{p.skills.length - 8}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-4 gap-3 mt-3">
                     <StatCard label="Sessions" value={p.sessionCount} valueSize="text-lg" />

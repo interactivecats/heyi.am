@@ -107,6 +107,11 @@ export function createSearchRouter(ctx: RouteContext): Router {
         score: sessionIds ? [...sessionIds].indexOf(row.id) : 0,
       }));
 
+      // Sort by FTS relevance when full-text search is active
+      if (sessionIds && sessionIds.size > 0) {
+        results.sort((a, b) => a.score - b.score);
+      }
+
       // Post-filter by file if requested
       let filtered = results;
       if (file) {

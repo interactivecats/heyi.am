@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { fetchSession } from '../api'
 import type { Session } from '../types'
 import { Chip } from './shared/Chip'
@@ -28,6 +29,7 @@ function formatDate(iso: string): string {
 export function SessionDetailOverlay({ session: initialSession, projectDirName, onClose }: SessionDetailOverlayProps) {
   const [session, setSession] = useState<Session>(initialSession)
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
     fetchSession(projectDirName, initialSession.id)
@@ -54,14 +56,26 @@ export function SessionDetailOverlay({ session: initialSession, projectDirName, 
     >
       <div className="w-[600px] max-w-full h-full bg-surface overflow-y-auto shadow-[-8px_0_32px_rgba(25,28,30,0.1)]">
         <div className="p-8">
-          {/* Close button */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="font-mono text-[0.8125rem] text-on-surface-variant bg-surface-low border border-surface-high rounded-md px-3 py-1 cursor-pointer hover:text-on-surface mb-6"
-          >
-            ESC · Close
-          </button>
+          {/* Close + View full session */}
+          <div className="flex items-center gap-3 mb-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="font-mono text-[0.8125rem] text-on-surface-variant bg-surface-low border border-surface-high rounded-md px-3 py-1 cursor-pointer hover:text-on-surface"
+            >
+              ESC · Close
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onClose()
+                navigate(`/session/${encodeURIComponent(session.id)}`)
+              }}
+              className="font-mono text-[0.8125rem] text-primary bg-primary/5 border border-primary/20 rounded-md px-3 py-1 cursor-pointer hover:bg-primary/10 transition-colors"
+            >
+              View full session →
+            </button>
+          </div>
 
           {/* Title + meta */}
           <h2 className="font-display text-2xl font-bold text-on-surface mb-2">
@@ -75,15 +89,15 @@ export function SessionDetailOverlay({ session: initialSession, projectDirName, 
 
           {/* Stats grid */}
           <div className="grid grid-cols-4 gap-3 mb-5">
-            <StatBox label="Duration" value={formatDuration(session.durationMinutes)} primary>
-              {hasChildren && <SplitLine you={formatDuration(session.durationMinutes - (session.children!.reduce((s, c) => s + c.durationMinutes, 0)))} agent={formatDuration(session.children!.reduce((s, c) => s + c.durationMinutes, 0))} />}
+            <StatBox label="Active Time" value={formatDuration(session.durationMinutes)} primary>
+              {hasChildren && <SplitLine you={formatDuration(Math.max(0, session.durationMinutes - session.children!.reduce((s, c) => s + c.durationMinutes, 0)))} agent={formatDuration(session.children!.reduce((s, c) => s + c.durationMinutes, 0))} />}
             </StatBox>
             <StatBox label="Turns" value={session.turns}>
               {hasChildren && <SplitLine you="You" agent={`${session.childCount ?? session.children!.length} agents`} />}
             </StatBox>
-            <StatBox label="Files" value={session.filesChanged?.length ?? '—'} />
+            <StatBox label="Files" value={session.filesChanged?.length === 1 && session.filesChanged[0]?.path === '(aggregate)' ? '—' : (session.filesChanged?.length ?? '—')} />
             <StatBox label="LOC" value={formatLoc(session.linesOfCode)}>
-              {hasChildren && <SplitLine you={formatLoc(session.linesOfCode - session.children!.reduce((s, c) => s + c.linesOfCode, 0))} agent={formatLoc(session.children!.reduce((s, c) => s + c.linesOfCode, 0))} />}
+              {hasChildren && <SplitLine you={formatLoc(Math.max(0, session.linesOfCode - session.children!.reduce((s, c) => s + c.linesOfCode, 0)))} agent={formatLoc(session.children!.reduce((s, c) => s + c.linesOfCode, 0))} />}
             </StatBox>
           </div>
 

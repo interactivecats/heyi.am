@@ -272,7 +272,7 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
         <div style={{ display: 'flex', gap: 16, fontSize: 11, fontWeight: 600 }}>
           <span style={{ color: GREEN }}>+{formatLoc(totalAdded)}</span>
           {hasDeleteData && <span style={{ color: RED }}>-{formatLoc(totalDeleted)}</span>}
-          <span style={{ color: '#191c1e' }}>{formatLoc(totalLoc)} net</span>
+          <span style={{ color: '#191c1e' }}>{formatLoc(totalLoc)} total</span>
         </div>
       </div>
 
@@ -409,7 +409,7 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
         )}
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#191c1e' }}>{formatLoc(totalLoc)}</div>
-          <div style={{ color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Net LOC</div>
+          <div style={{ color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Total LOC</div>
         </div>
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#191c1e' }}>{totalFiles}</div>

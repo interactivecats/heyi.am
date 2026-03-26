@@ -165,6 +165,63 @@ describe("analyzeSession", () => {
     expect(result.duration_ms).toBe(0);
     expect(result.start_time).toBeNull();
   });
+
+  it("computes LOC from write_to_file tool calls", () => {
+    const toolCalls = [
+      { id: "tc1", name: "write_to_file", input: { path: "/app/main.ts", content: "line1\nline2\nline3\n" } },
+    ];
+    const result = analyzeSession([], toolCalls);
+    expect(result.loc_stats.loc_added).toBe(4); // 3 lines + trailing empty
+    expect(result.loc_stats.files_changed).toContain("/app/main.ts");
+  });
+
+  it("computes LOC from create_file tool calls", () => {
+    const toolCalls = [
+      { id: "tc1", name: "create_file", input: { file_path: "/app/new.ts", file_text: "export const x = 1;" } },
+    ];
+    const result = analyzeSession([], toolCalls);
+    expect(result.loc_stats.loc_added).toBe(1);
+    expect(result.loc_stats.files_changed).toContain("/app/new.ts");
+  });
+
+  it("computes LOC from edit_file tool calls", () => {
+    const toolCalls = [
+      { id: "tc1", name: "edit_file", input: { path: "/app/config.ts", old_string: "a\nb", new_string: "c\nd\ne" } },
+    ];
+    const result = analyzeSession([], toolCalls);
+    expect(result.loc_stats.loc_added).toBe(3);
+    expect(result.loc_stats.loc_removed).toBe(2);
+    expect(result.loc_stats.loc_net).toBe(1);
+  });
+
+  it("ignores read_file for LOC", () => {
+    const toolCalls = [
+      { id: "tc1", name: "read_file", input: { path: "/app/main.ts" } },
+    ];
+    const result = analyzeSession([], toolCalls);
+    expect(result.loc_stats.loc_added).toBe(0);
+    expect(result.loc_stats.loc_removed).toBe(0);
+  });
+
+  it("deduplicates multiple writes to same file", () => {
+    const toolCalls = [
+      { id: "tc1", name: "write_to_file", input: { path: "/app/main.ts", content: "line1\nline2\n" } },
+      { id: "tc2", name: "write_to_file", input: { path: "/app/main.ts", content: "final\n" } },
+    ];
+    const result = analyzeSession([], toolCalls);
+    // Only last write counts: "final\n" = 2 lines
+    expect(result.loc_stats.loc_added).toBe(2);
+  });
+
+  it("extracts file paths from tool call args into files_touched", () => {
+    const toolCalls = [
+      { id: "tc1", name: "write_to_file", input: { path: "/app/main.ts", content: "x" } },
+      { id: "tc2", name: "read_file", input: { file_path: "/app/config.ts" } },
+    ];
+    const result = analyzeSession([], toolCalls);
+    expect(result.files_touched).toContain("/app/main.ts");
+    expect(result.files_touched).toContain("/app/config.ts");
+  });
 });
 
 // --- geminiParser.detect ---
@@ -218,6 +275,39 @@ describe("geminiParser.parse", () => {
     const result = await geminiParser.parse(path);
     expect(result.turns).toBe(0);
     expect(result.start_time).toBeNull();
+  });
+
+  it("computes LOC from new-format sessions with tool calls", async () => {
+    const newFormatSession = {
+      sessionId: "new-001",
+      projectHash: "abc123",
+      startTime: "2025-06-26T08:00:00.000Z",
+      lastUpdated: "2025-06-26T08:05:00.000Z",
+      messages: [
+        {
+          id: "msg-1",
+          timestamp: "2025-06-26T08:00:00.000Z",
+          type: "user",
+          content: [{ text: "Create a file" }],
+        },
+        {
+          id: "msg-2",
+          timestamp: "2025-06-26T08:01:00.000Z",
+          type: "gemini",
+          content: [
+            { functionCall: { name: "write_to_file", args: { path: "/app/new.ts", content: "export const x = 1;\nexport const y = 2;\n" } } },
+          ],
+        },
+      ],
+    };
+    const path = join(tmpDir, "new-format-loc.json");
+    await writeFile(path, JSON.stringify(newFormatSession));
+    const result = await geminiParser.parse(path);
+    expect(result.loc_stats.loc_added).toBe(3); // 2 lines + trailing empty
+    expect(result.loc_stats.files_changed).toContain("/app/new.ts");
+    expect(result.files_touched).toContain("/app/new.ts");
+    expect(result.tool_calls).toHaveLength(1);
+    expect(result.tool_calls[0].name).toBe("write_to_file");
   });
 });
 

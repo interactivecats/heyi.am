@@ -62,7 +62,9 @@ function agentColor(role?: string): string {
 
 function sessionStart(s: Session): number { return new Date(s.date).getTime() }
 function sessionEnd(s: Session): number {
-  return s.endTime ? new Date(s.endTime).getTime() : sessionStart(s) + s.durationMinutes * 60_000
+  if (s.endTime) return new Date(s.endTime).getTime()
+  const minutes = s.wallClockMinutes ?? s.durationMinutes
+  return sessionStart(s) + minutes * 60_000
 }
 
 function formatGap(ms: number): string {
@@ -84,7 +86,7 @@ function formatTimestamp(dateStr: string): string {
 }
 
 function formatDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes}m`
+  if (minutes < 60) return `${Math.round(minutes)}m`
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
   return m > 0 ? `${h}h ${m}m` : `${h}h`
@@ -244,7 +246,7 @@ function buildTooltip(s: Session): TooltipData {
   return {
     title: s.title,
     timestamp: formatTimestamp(s.date),
-    duration: formatDuration(s.durationMinutes),
+    duration: formatDuration(s.wallClockMinutes ?? s.durationMinutes),
     linesOfCode: s.linesOfCode,
     agentCount: kids.length,
     session: s,
@@ -490,7 +492,7 @@ function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CON
         const sub = formatDuration(s.durationMinutes)
 
         const sXStart = timeToX(sessionStart(s), rangeStartMs, rangeEndMs, segXStart, segXEnd)
-        const barW = Math.min(Math.max(s.durationMinutes * PX_PER_MIN, 20), segW)
+        const barW = Math.min(Math.max(s.durationMinutes * PX_PER_MIN, 20), segXEnd - sXStart)
         const sXEnd = sXStart + barW
 
         if (kids.length > 0) {

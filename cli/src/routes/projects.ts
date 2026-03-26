@@ -157,13 +157,24 @@ export function createProjectsRouter(ctx: RouteContext): Router {
         const enhanced = loadEnhancedData(r.id);
         const children = childMap.get(r.id);
         const skills: string[] = enhanced?.skills ?? (r.skills ? JSON.parse(r.skills) : []);
+        const locAdded = r.loc_added ?? 0;
+        const locRemoved = r.loc_removed ?? 0;
+        // Synthesize filesChanged from DB aggregates so the growth chart
+        // can show additions vs deletions (red/green) instead of treating
+        // linesOfCode as pure additions.
+        const filesChanged = (locAdded > 0 || locRemoved > 0)
+          ? [{ path: '(aggregate)', additions: locAdded, deletions: locRemoved }]
+          : [];
         return {
           id: r.id,
           title: enhanced?.title ?? r.title ?? 'Untitled session',
           date: r.start_time ?? '',
+          endTime: r.end_time ?? undefined,
           durationMinutes: r.duration_minutes ?? 0,
+          wallClockMinutes: r.wall_clock_minutes ?? undefined,
           turns: r.turns ?? 0,
-          linesOfCode: (r.loc_added ?? 0) + (r.loc_removed ?? 0),
+          linesOfCode: locAdded + locRemoved,
+          filesChanged,
           status: (enhanced?.uploaded ? 'uploaded' : enhanced ? 'enhanced' : 'draft') as 'uploaded' | 'enhanced' | 'draft',
           projectName: proj.name,
           rawLog: [] as string[],
@@ -185,7 +196,7 @@ export function createProjectsRouter(ctx: RouteContext): Router {
       const totalLoc = sessionStats.reduce((sum, s) => sum + (s.linesOfCode || 0), 0);
       const totalDuration = sessionStats.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
       const totalFiles = (ctx.db.prepare(
-        'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ?)',
+        'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ? AND is_subagent = 0)',
       ).get(proj.dirName) as { c: number }).c;
       const allSkills = [...new Set(sessionStats.flatMap((s) => s.skills || []))];
 
@@ -197,19 +208,19 @@ export function createProjectsRouter(ctx: RouteContext): Router {
           name: proj.name,
           dirName: proj.dirName,
           sessionCount: proj.sessionCount,
-          description: (enhanceCache as Record<string, unknown>)?.narrative as string || '',
+          description: enhanceCache?.result?.narrative ?? '',
           totalLoc,
           totalDuration,
           totalFiles,
           skills: allSkills,
-          dateRange: dates.length ? { start: dates[0], end: dates[dates.length - 1] } : null,
+          dateRange: dates.length ? `${dates[0]}|${dates[dates.length - 1]}` : '',
           lastSessionDate: dates[dates.length - 1] || null,
           isUploaded: !!uploaded,
           uploadedSessionCount: uploaded?.uploadedSessions?.length || 0,
-          enhancedAt: enhanceCache ? new Date().toISOString() : null,
+          enhancedAt: enhanceCache?.enhancedAt ?? null,
         },
         sessions: sessionStats.filter((s) => s.date),
-        enhanceCache: enhanceCache ? { result: enhanceCache } : null,
+        enhanceCache: enhanceCache ?? null,
       });
     } catch (err) {
       res.status(500).json({ error: (err as Error).message });
@@ -363,7 +374,7 @@ export function createProjectsRouter(ctx: RouteContext): Router {
 
   // ── Boundaries ────────────────────────────────────────────────
   router.get('/api/projects/:project/boundaries', (_req: Request, res: Response) => {
-    res.json({ included: [], excluded: [], rules: [] });
+    res.json({ selectedSessionIds: [], skippedSessions: [] });
   });
 
   router.put('/api/projects/:project/boundaries', (_req: Request, res: Response) => {

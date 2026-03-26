@@ -290,7 +290,7 @@ describe("codexParser.parse — edge cases", () => {
     const path = join(tmpDir, "empty-codex.jsonl");
     await writeFile(path, "");
     const result = await codexParser.parse(path);
-    expect(result.turns).toBe(1);
+    expect(result.turns).toBe(0);
     expect(result.tool_calls).toHaveLength(0);
     expect(result.raw_entries).toHaveLength(0);
   });

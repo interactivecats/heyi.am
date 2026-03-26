@@ -347,12 +347,8 @@ function extractFilesFromBubbles(bubbles: CursorBubble[]): string[] {
       }
     }
 
-    // From context file selections
-    if (bubble.context?.fileSelections) {
-      for (const fs of bubble.context.fileSelections) {
-        if (fs.uri?.path) files.add(fs.uri.path);
-      }
-    }
+    // Bug 12 fix: Do NOT include context.fileSelections — those are read-only
+    // context files, not files the tool actually modified or interacted with.
   }
 
   return [...files].sort();
@@ -387,6 +383,7 @@ function computeDurationFromBubbles(bubbles: CursorBubble[]): {
   let endStr: string | null = null;
 
   for (const bubble of bubbles) {
+    // Bug 16 fix: skip bubbles with no createdAt instead of using current time
     if (!bubble.createdAt) continue;
     if (!startStr) startStr = bubble.createdAt;
     endStr = bubble.createdAt;
@@ -463,22 +460,10 @@ function computeLocFromBubbles(bubbles: CursorBubble[]): LocStats {
     }
   }
 
-  // Also count codeBlocks (AI-suggested file writes)
-  for (const bubble of bubbles) {
-    if (!bubble.codeBlocks) continue;
-    for (const cb of bubble.codeBlocks) {
-      const rawPath = cb.uri?.path ?? cb.uri?._fsPath;
-      if (rawPath && cb.content) {
-        const cbPath = normalizePath(rawPath);
-        filesChanged.add(cbPath);
-        // Only count if not already tracked via tool calls
-        if (!writeLineCounts.has(cbPath)) {
-          totalAdded += cb.content.split("\n").length;
-          writeLineCounts.set(cbPath, cb.content.split("\n").length);
-        }
-      }
-    }
-  }
+  // Bug 11 fix: Do NOT count codeBlocks (AI-suggested file writes) for LOC.
+  // Code blocks in assistant messages may be suggestions the user never applied.
+  // Only tool call LOC is reliable. If tool call LOC is zero, the workspace-level
+  // hints (totalLinesAdded/totalLinesRemoved) will be used as a fallback downstream.
 
   return {
     loc_added: totalAdded,
@@ -496,7 +481,8 @@ function bubblesToRawEntries(bubbles: CursorBubble[], conversationId: string): R
   const entries: RawEntry[] = [];
 
   for (const bubble of bubbles) {
-    const timestamp = bubble.createdAt ?? new Date().toISOString();
+    // Bug 16 fix: use null for missing timestamps instead of current time
+    const timestamp = bubble.createdAt ?? null;
     const contentBlocks: ContentBlock[] = [];
 
     if (bubble.text) {
@@ -527,7 +513,7 @@ function bubblesToRawEntries(bubbles: CursorBubble[], conversationId: string): R
     entries.push({
       type: role,
       uuid: bubble.bubbleId,
-      timestamp,
+      timestamp: timestamp as any,
       sessionId: conversationId,
       message: {
         role,

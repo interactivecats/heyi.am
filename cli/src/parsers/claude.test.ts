@@ -182,6 +182,69 @@ const OVERWRITE_SESSION: RawEntry[] = [
   ),
 ];
 
+// Session with Write(10) -> Edit(+5/-3) -> Write(8) pattern
+// The final Write overwrites everything, so Edit additions/deletions should be reset
+const WRITE_EDIT_WRITE_SESSION: RawEntry[] = [
+  userEntry("Create and iterate on a file", "2026-03-20T13:00:00.000Z"),
+  assistantEntry(
+    [
+      {
+        type: "tool_use",
+        id: "toolu_030",
+        name: "Write",
+        input: {
+          file_path: "/app/service.ts",
+          // 10 lines
+          content: "line1\nline2\nline3\nline4\nline5\nline6\nline7\nline8\nline9\nline10",
+        },
+      },
+    ],
+    "2026-03-20T13:00:02.000Z",
+  ),
+  userEntry(
+    [{ type: "tool_result", tool_use_id: "toolu_030", content: [] }],
+    "2026-03-20T13:00:03.000Z",
+  ),
+  assistantEntry(
+    [
+      {
+        type: "tool_use",
+        id: "toolu_031",
+        name: "Edit",
+        input: {
+          file_path: "/app/service.ts",
+          old_string: "line3\nline4\nline5",  // 3 lines removed
+          new_string: "newA\nnewB\nnewC\nnewD\nnewE",  // 5 lines added
+        },
+      },
+    ],
+    "2026-03-20T13:00:05.000Z",
+  ),
+  userEntry(
+    [{ type: "tool_result", tool_use_id: "toolu_031", content: [] }],
+    "2026-03-20T13:00:06.000Z",
+  ),
+  assistantEntry(
+    [
+      {
+        type: "tool_use",
+        id: "toolu_032",
+        name: "Write",
+        input: {
+          file_path: "/app/service.ts",
+          // 8 lines — final overwrite
+          content: "final1\nfinal2\nfinal3\nfinal4\nfinal5\nfinal6\nfinal7\nfinal8",
+        },
+      },
+    ],
+    "2026-03-20T13:00:08.000Z",
+  ),
+  userEntry(
+    [{ type: "tool_result", tool_use_id: "toolu_032", content: [] }],
+    "2026-03-20T13:00:09.000Z",
+  ),
+];
+
 function toJsonl(entries: RawEntry[]): string {
   return entries.map((e) => JSON.stringify(e)).join("\n") + "\n";
 }
@@ -304,6 +367,22 @@ describe("computeLocStats", () => {
   it("computes net correctly", () => {
     const stats = computeLocStats(LOC_SESSION);
     expect(stats.loc_net).toBe(stats.loc_added - stats.loc_removed);
+  });
+
+  it("resets Edit accumulations when a subsequent Write overwrites the file", () => {
+    const stats = computeLocStats(WRITE_EDIT_WRITE_SESSION);
+    // Write(10 lines) -> Edit(+5/-3) -> Write(8 lines)
+    // Without fix: added = 10 + 5 - 10 + 8 = 13, removed = 3
+    // With fix: the final Write resets Edit accumulations:
+    //   After Write(10): added=10, removed=0
+    //   After Edit(+5/-3): added=15, removed=3, editAdded=5, editRemoved=3
+    //   After Write(8): subtract editAdded(5) and editRemoved(3),
+    //     then dedup write (subtract prev 10, add 8)
+    //   Result: added = 15 - 5 - 10 + 8 = 8, removed = 3 - 3 = 0
+    expect(stats.loc_added).toBe(8);
+    expect(stats.loc_removed).toBe(0);
+    expect(stats.loc_net).toBe(8);
+    expect(stats.files_changed).toEqual(["/app/service.ts"]);
   });
 });
 

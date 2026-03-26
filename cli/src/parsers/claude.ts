@@ -153,6 +153,11 @@ export function computeLocStats(entries: RawEntry[]): LocStats {
   // Track last-write line counts per file for dedup
   const writeLineCounts = new Map<string, number>();
 
+  // Track accumulated Edit additions/deletions per file so a subsequent
+  // Write can reset them (the Write overwrites the entire file).
+  const editAdded = new Map<string, number>();
+  const editRemoved = new Map<string, number>();
+
   for (const call of toolCalls) {
     if (call.name === "Write") {
       const filePath = call.input.file_path;
@@ -170,6 +175,17 @@ export function computeLocStats(entries: RawEntry[]): LocStats {
         totalAdded += lines;
       }
 
+      // If this file had accumulated Edit additions/deletions, subtract
+      // them because the Write overwrites the entire file content.
+      const prevEditAdded = editAdded.get(filePath) ?? 0;
+      const prevEditRemoved = editRemoved.get(filePath) ?? 0;
+      if (prevEditAdded > 0 || prevEditRemoved > 0) {
+        totalAdded -= prevEditAdded;
+        totalRemoved -= prevEditRemoved;
+        editAdded.delete(filePath);
+        editRemoved.delete(filePath);
+      }
+
       writeLineCounts.set(filePath, lines);
       filesChanged.add(filePath);
     } else if (call.name === "Edit") {
@@ -183,6 +199,11 @@ export function computeLocStats(entries: RawEntry[]): LocStats {
 
       totalAdded += newLines;
       totalRemoved += oldLines;
+
+      // Accumulate Edit stats per file for potential Write reset
+      editAdded.set(filePath, (editAdded.get(filePath) ?? 0) + newLines);
+      editRemoved.set(filePath, (editRemoved.get(filePath) ?? 0) + oldLines);
+
       filesChanged.add(filePath);
     }
   }

@@ -292,7 +292,7 @@ export function upsertSession(db: Database.Database, input: UpsertSessionInput):
     analysis.start_time ?? null,
     analysis.end_time ?? null,
     session.durationMinutes,
-    session.wallClockMinutes ?? null,
+    session.wallClockMinutes ?? 0,
     session.turns,
     analysis.loc_stats.loc_added,
     analysis.loc_stats.loc_removed,

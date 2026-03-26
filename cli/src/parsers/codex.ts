@@ -137,7 +137,7 @@ function countTurns(lines: CodexLine[]): number {
       if (p.type === "task_started") turns++;
     }
   }
-  return Math.max(turns, 1);
+  return turns;
 }
 
 const IDLE_THRESHOLD_MS = 5 * 60 * 1000;

@@ -200,7 +200,7 @@ export function Search() {
                 {results.map((r) => (
                   <button
                     key={r.sessionId}
-                    onClick={() => navigate(`/session/${encodeURIComponent(r.sessionId)}`)}
+                    onClick={() => navigate(`/session/${encodeURIComponent(r.sessionId)}${query ? `?q=${encodeURIComponent(query)}` : ''}`)}
                     className="text-left w-full cursor-pointer"
                   >
                     <Card hover>

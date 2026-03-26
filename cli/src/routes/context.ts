@@ -22,7 +22,9 @@ import {
   getDashboardStats,
   getAllProjectStats,
 } from '../db.js';
-import { ensureSessionIndexed } from '../sync.js';
+import { ensureSessionIndexed, displayNameFromDir } from '../sync.js';
+
+export { displayNameFromDir };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -47,19 +49,6 @@ export interface SessionStats {
 }
 
 // ── Pure helpers ─────────────────────────────────────────────
-
-/**
- * Derive a human-readable project name from the encoded directory name.
- * "-Users-ben-Dev-heyi-am" -> "heyi-am"
- */
-export function displayNameFromDir(dirName: string): string {
-  const devIdx = dirName.indexOf('-Dev-');
-  if (devIdx !== -1) {
-    return dirName.slice(devIdx + 5);
-  }
-  const segments = dirName.split('-').filter(Boolean);
-  return segments.length > 0 ? segments[segments.length - 1] : dirName;
-}
 
 export function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -158,7 +147,7 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
     return [...byDir.entries()].map(([dirName, sessions]) => ({
       name: displayNameFromDir(dirName),
       dirName,
-      sessionCount: sessions.length,
+      sessionCount: sessions.filter(s => !s.isSubagent).length,
       sessions,
     }));
   }
@@ -318,7 +307,7 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
         totalLoc: dbStats.totalLoc,
         totalDuration: dbStats.totalDuration,
         totalFiles: (db.prepare(
-          'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ?)',
+          'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ? AND is_subagent = 0)',
         ).get(proj.dirName) as { c: number }).c,
         skills: dbStats.skills,
         dateRange: (() => {
@@ -337,8 +326,9 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
     }
 
     // Fallback: per-session stats (only if DB has no data for this project)
+    const parentMetas = proj.sessions.filter(s => !s.isSubagent);
     const allStats = await Promise.all(
-      proj.sessions.map((m) => getSessionStats(m, proj.name)),
+      parentMetas.map((m) => getSessionStats(m, proj.name)),
     );
 
     const totalLoc = allStats.reduce((s, st) => s + st.loc, 0);
@@ -346,7 +336,7 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
     const totalDuration = allStats.reduce((s, st) => s + st.duration, 0);
 
     let totalAgentDuration = totalDuration;
-    for (const meta of proj.sessions) {
+    for (const meta of parentMetas) {
       for (const child of meta.children ?? []) {
         const childStats = await getSessionStats(child, proj.name);
         totalAgentDuration += childStats.duration;

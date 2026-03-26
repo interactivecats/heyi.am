@@ -220,20 +220,93 @@ function extractFilesTouched(entries: GeminiLogEntry[]): string[] {
   return [...files].sort();
 }
 
+// --- Compute LOC from tool calls ---
+
+/** Map Gemini tool names to the standard names used by bridge.ts / other parsers */
+const GEMINI_WRITE_TOOLS = new Set(["write_to_file", "create_file"]);
+const GEMINI_EDIT_TOOLS = new Set(["edit_file", "apply_diff"]);
+
+function computeLocFromToolCalls(toolCalls: ToolCall[]): LocStats {
+  let totalAdded = 0;
+  let totalRemoved = 0;
+  const filesChanged = new Set<string>();
+  const writeLineCounts = new Map<string, number>();
+
+  for (const call of toolCalls) {
+    const input = call.input;
+    const rawName = call.name;
+
+    if (GEMINI_WRITE_TOOLS.has(rawName)) {
+      const content = (input.content ?? input.file_text ?? input.code ?? "") as string;
+      const filePath = (input.path ?? input.file_path ?? input.filename ?? input.target_file ?? "") as string;
+      if (!content || !filePath) continue;
+
+      const lines = content.split("\n").length;
+      const prevLines = writeLineCounts.get(filePath) ?? 0;
+
+      if (writeLineCounts.has(filePath)) {
+        totalAdded -= prevLines;
+      }
+      totalAdded += lines;
+      writeLineCounts.set(filePath, lines);
+      filesChanged.add(filePath);
+    } else if (GEMINI_EDIT_TOOLS.has(rawName)) {
+      const filePath = (input.path ?? input.file_path ?? input.filename ?? input.target_file ?? "") as string;
+      if (!filePath) continue;
+
+      const oldStr = (input.old_string ?? input.old_text ?? input.original ?? "") as string;
+      const newStr = (input.new_string ?? input.new_text ?? input.replacement ?? "") as string;
+
+      totalAdded += newStr ? newStr.split("\n").length : 0;
+      totalRemoved += oldStr ? oldStr.split("\n").length : 0;
+      filesChanged.add(filePath);
+    }
+    // read_file: ignored for LOC
+  }
+
+  return {
+    loc_added: totalAdded,
+    loc_removed: totalRemoved,
+    loc_net: totalAdded - totalRemoved,
+    files_changed: [...filesChanged].sort(),
+  };
+}
+
+// --- Extract file paths from tool call args ---
+
+function extractFilesFromToolCalls(toolCalls: ToolCall[]): string[] {
+  const files = new Set<string>();
+  for (const call of toolCalls) {
+    const input = call.input;
+    // Look for common file path keys in functionCall.args
+    for (const key of ["path", "file_path", "filename", "target_file"]) {
+      const val = input[key];
+      if (typeof val === "string" && val.length > 0) {
+        files.add(val);
+        break; // only add once per tool call
+      }
+    }
+  }
+  return [...files].sort();
+}
+
 // --- Analyze a single session ---
 
-function analyzeSession(entries: GeminiLogEntry[]): SessionAnalysis {
+function analyzeSession(entries: GeminiLogEntry[], toolCalls?: ToolCall[]): SessionAnalysis {
   const { duration_ms, wall_clock_ms, start_time, end_time } = computeDuration(entries);
-  const filesTouched = extractFilesTouched(entries);
+  const textFiles = extractFilesTouched(entries);
+  const toolFiles = toolCalls ? extractFilesFromToolCalls(toolCalls) : [];
+  const allFiles = [...new Set([...textFiles, ...toolFiles])].sort();
+  const loc_stats = toolCalls ? computeLocFromToolCalls(toolCalls) : { loc_added: 0, loc_removed: 0, loc_net: 0, files_changed: [] };
 
   return {
     source: "gemini",
     turns: countTurns(entries),
-    tool_calls: [],
-    files_touched: filesTouched,
+    tool_calls: toolCalls ?? [],
+    files_touched: allFiles,
     duration_ms,
     wall_clock_ms,
-    loc_stats: { loc_added: 0, loc_removed: 0, loc_net: 0, files_changed: [] },
+    loc_stats,
     raw_entries: toRawEntries(entries),
     start_time,
     end_time,
@@ -268,9 +341,7 @@ async function parse(path: string): Promise<SessionAnalysis> {
   if (isNewFormat(parsed)) {
     const entries = parseNewSession(parsed);
     const toolCalls = extractToolCallsFromNewSession(parsed);
-    const analysis = analyzeSession(entries);
-    analysis.tool_calls = toolCalls;
-    return analysis;
+    return analyzeSession(entries, toolCalls);
   }
 
   // Legacy format: JSON array of entries

@@ -86,7 +86,7 @@ export interface Session {
   wallClockMinutes?: number;
   turns: number;
   linesOfCode: number;
-  status: 'draft' | 'enhanced' | 'published' | 'archived';
+  status: 'draft' | 'enhanced' | 'uploaded' | 'archived';
   projectName: string;
   rawLog: string[];
   skills: string[];
