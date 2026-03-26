@@ -10,6 +10,7 @@ export type {
   ApiKeyStatus,
   AuthStatus,
   TriageEvent,
+  TriageResult,
   EnhanceEvent,
   ProjectEnhanceResult,
   ProjectEnhanceCacheResponse,
@@ -26,6 +27,9 @@ export type {
   QaPair,
   SourceInfo,
   ProjectBoundaries,
+  SearchResult,
+  SearchResponse,
+  ContextExportResponse,
 } from './types'
 
 import type {
@@ -46,6 +50,8 @@ import type {
   RefineAnswer,
   RefineResult,
   ExportResult,
+  SearchResponse,
+  ContextExportResponse,
 } from './types'
 
 const API_BASE = '/api'
@@ -260,4 +266,100 @@ export async function fetchAuthStatus(): Promise<AuthStatus> {
 
 export async function openDirectory(path: string): Promise<void> {
   await post('/open-directory', { path })
+}
+
+// ── Search & Session lookup ──────────────────────────────────
+
+export async function searchSessions(
+  query: string,
+  filters?: { source?: string; project?: string; skill?: string },
+): Promise<SearchResponse> {
+  const params = new URLSearchParams()
+  if (query) params.set('q', query)
+  if (filters?.source) params.set('source', filters.source)
+  if (filters?.project) params.set('project', filters.project)
+  if (filters?.skill) params.set('skill', filters.skill)
+  return get<SearchResponse>(`/search?${params.toString()}`)
+}
+
+export async function fetchSessionById(sessionId: string): Promise<Session> {
+  const data = await get<{ session: Session }>(`/sessions/${enc(sessionId)}`)
+  return data.session
+}
+
+export async function fetchSessionContext(
+  sessionId: string,
+  format: 'compact' | 'summary' | 'full' = 'summary',
+): Promise<ContextExportResponse> {
+  return get<ContextExportResponse>(`/sessions/${enc(sessionId)}/context?format=${format}`)
+}
+
+// ── Enhance cache ────────────────────────────────────────────
+
+export async function fetchProjectEnhanceCache(
+  dirName: string,
+): Promise<ProjectEnhanceCacheResponse | null> {
+  try {
+    return await get<ProjectEnhanceCacheResponse>(`/projects/${enc(dirName)}/enhance-cache`)
+  } catch {
+    return null
+  }
+}
+
+export async function saveProjectEnhanceLocally(
+  dirName: string,
+  selectedSessionIds: string[],
+  result: ProjectEnhanceResult,
+  extras?: { repoUrl?: string; projectUrl?: string; screenshotBase64?: string },
+): Promise<boolean> {
+  try {
+    await post(`/projects/${enc(dirName)}/enhance-save`, {
+      selectedSessionIds,
+      result,
+      ...extras,
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+// ── Git remote auto-detection ────────────────────────────────
+
+export async function fetchGitRemote(
+  dirName: string,
+): Promise<{ url: string | null }> {
+  try {
+    return await get<{ url: string | null }>(`/projects/${enc(dirName)}/git-remote`)
+  } catch {
+    return { url: null }
+  }
+}
+
+// ── Screenshot capture ───────────────────────────────────────
+
+export async function captureScreenshotFromUrl(
+  dirName: string,
+  slug: string,
+  url: string,
+): Promise<{ ok: boolean; key?: string; preview?: string; error?: string }> {
+  return post(`/projects/${enc(dirName)}/screenshot-capture`, { url, slug })
+}
+
+// ── Device auth ──────────────────────────────────────────────
+
+export interface DeviceCodeInfo {
+  device_code: string
+  user_code: string
+  verification_uri: string
+  expires_in: number
+  interval: number
+}
+
+export async function startDeviceAuth(): Promise<DeviceCodeInfo> {
+  return post<DeviceCodeInfo>('/auth/login')
+}
+
+export async function pollDeviceAuth(deviceCode: string): Promise<AuthStatus> {
+  return post<AuthStatus>('/auth/poll', { device_code: deviceCode })
 }

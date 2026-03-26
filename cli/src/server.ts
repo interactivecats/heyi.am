@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 import type { Server } from 'node:http';
 import { listSessions, parseSession, type SessionMeta } from './parsers/index.js';
 import { bridgeToAnalyzer, bridgeChildSessions, aggregateChildStats, toAgentChild, type AgentChild } from './bridge.js';
-import { analyzeSession, type Session } from './analyzer.js';
+import { analyzeSession, type Session, type ParsedTurn } from './analyzer.js';
 import { checkAuthStatus, getAuthToken, saveAuthToken } from './auth.js';
 import { API_URL } from './config.js';
 import { getProvider, getEnhanceMode } from './llm/index.js';
@@ -21,6 +21,13 @@ import { buildSessionRenderData, buildSessionCard, buildProjectRenderData } from
 import type { SessionCard } from './render/types.js';
 import { getSourceAudit, getArchiveStats } from './source-audit.js';
 import { exportMarkdown, exportHtml } from './export.js';
+import {
+  getDatabase, openDatabase,
+  getSessionStats as dbGetSessionStats,
+  getSessionRow, searchFts,
+} from './db.js';
+import { exportSessionContext, type ExportTier } from './context-export.js';
+import { ensureSessionIndexed, syncSessionIndex, startFileWatcher, startCursorPolling } from './sync.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -114,80 +121,44 @@ interface SessionStats {
   endTime?: string;
 }
 
-// ── Persistent stats cache ────────────────────────────────────
-// Survives server restarts by writing to disk.
+import { readFileSync, existsSync, statSync } from 'node:fs';
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
-
-const STATS_CACHE_PATH = join(homedir(), '.config', 'heyiam', 'stats-cache.json');
-
-// Bump this when parser logic changes to auto-invalidate stale cache entries.
-const STATS_CACHE_VERSION = 7;
-
-interface StatsCacheFile {
-  version: number;
-  entries: Record<string, SessionStats>;
-}
-
-function loadStatsCache(): Map<string, SessionStats> {
-  try {
-    if (!existsSync(STATS_CACHE_PATH)) return new Map();
-    const raw = JSON.parse(readFileSync(STATS_CACHE_PATH, 'utf-8'));
-
-    // Versioned format
-    if (raw && typeof raw === 'object' && 'version' in raw) {
-      const file = raw as StatsCacheFile;
-      if (file.version !== STATS_CACHE_VERSION) return new Map(); // stale — rebuild
-      return new Map(Object.entries(file.entries));
-    }
-
-    // Legacy unversioned format — discard
-    return new Map();
-  } catch {
-    return new Map();
-  }
-}
-
-function saveStatsCache(cache: Map<string, SessionStats>): void {
-  try {
-    const dir = join(homedir(), '.config', 'heyiam');
-    mkdirSync(dir, { recursive: true });
-    const file: StatsCacheFile = {
-      version: STATS_CACHE_VERSION,
-      entries: Object.fromEntries(cache),
-    };
-    writeFileSync(STATS_CACHE_PATH, JSON.stringify(file), { mode: 0o600 });
-  } catch {
-    // Non-critical — cache miss just means a slower first load
-  }
-}
-
-export function createApp(sessionsBasePath?: string) {
+export function createApp(sessionsBasePath?: string, dbPath?: string) {
   const app = express();
 
-  // Stats cache — loaded from disk on startup, written back periodically
-  const statsCache = loadStatsCache();
-  let statsCacheDirty = false;
-
-  // Flush dirty cache to disk every 10 seconds
-  const flushInterval = setInterval(() => {
-    if (statsCacheDirty) {
-      saveStatsCache(statsCache);
-      statsCacheDirty = false;
-    }
-  }, 10_000);
-  // Don't let this interval keep the process alive
-  flushInterval.unref?.();
+  // Open SQLite database (replaces old stats-cache.json)
+  const db = dbPath ? openDatabase(dbPath) : getDatabase();
 
   async function getSessionStats(meta: SessionMeta, projectName: string): Promise<SessionStats> {
-    const cached = statsCache.get(meta.sessionId);
-    if (cached) return cached;
+    // Ensure session is indexed (re-index if stale) — delegates to shared sync module
+    try {
+      await ensureSessionIndexed(db, meta, projectName);
+    } catch { /* index failed — fall through to fallback */ }
 
+    const dbStats = dbGetSessionStats(db, meta.sessionId);
+    if (dbStats) {
+      // Compute endTime from the DB row for interval merging
+      let endTime = dbStats.endTime;
+      if (!endTime && dbStats.date) {
+        const mins = dbStats.duration ?? 0;
+        if (mins > 0) {
+          endTime = new Date(new Date(dbStats.date).getTime() + mins * 60_000).toISOString();
+        }
+      }
+      return {
+        loc: dbStats.loc,
+        duration: dbStats.duration,
+        files: dbStats.files,
+        turns: dbStats.turns,
+        skills: dbStats.skills,
+        date: dbStats.date,
+        endTime,
+      };
+    }
+
+    // Fallback: parse on demand (shouldn't happen after ensureIndexed)
     try {
       const session = await loadSession(meta.path, projectName, meta.sessionId);
-      // Compute end time: prefer endTime, fall back to date + wallClock or duration
       let endTime = session.endTime;
       if (!endTime && session.date) {
         const mins = session.wallClockMinutes ?? session.durationMinutes ?? 0;
@@ -195,8 +166,7 @@ export function createApp(sessionsBasePath?: string) {
           endTime = new Date(new Date(session.date).getTime() + mins * 60_000).toISOString();
         }
       }
-
-      const stats: SessionStats = {
+      return {
         loc: session.linesOfCode ?? 0,
         duration: session.durationMinutes ?? 0,
         files: session.filesChanged?.length ?? 0,
@@ -205,9 +175,6 @@ export function createApp(sessionsBasePath?: string) {
         date: session.date ?? '',
         endTime,
       };
-      statsCache.set(meta.sessionId, stats);
-      statsCacheDirty = true;
-      return stats;
     } catch {
       return { loc: 0, duration: 0, files: 0, turns: 0, skills: [], date: '' };
     }
@@ -2114,6 +2081,181 @@ export function createApp(sessionsBasePath?: string) {
     }
   });
 
+  // ── Search ───────────────────────────────────────────────────
+
+  app.get('/api/search', async (req: Request, res: Response) => {
+    try {
+      const q = (req.query.q as string) ?? '';
+      const source = req.query.source as string | undefined;
+      const project = req.query.project as string | undefined;
+      const after = req.query.after as string | undefined;
+      const before = req.query.before as string | undefined;
+      const skill = req.query.skill as string | undefined;
+      const file = req.query.file as string | undefined;
+      const minDuration = req.query.minDuration ? Number(req.query.minDuration) : undefined;
+
+      if (!q && !source && !project && !after && !before && !skill && !file) {
+        res.json({ results: [], total: 0 });
+        return;
+      }
+
+      // FTS search (if query provided)
+      let sessionIds: Set<string> | null = null;
+      const snippetMap = new Map<string, string>();
+
+      if (q) {
+        try {
+          const ftsResults = searchFts(db, q, 50);
+          sessionIds = new Set(ftsResults.map((r) => r.sessionId));
+          for (const r of ftsResults) {
+            if (!snippetMap.has(r.sessionId)) {
+              snippetMap.set(r.sessionId, r.snippet);
+            }
+          }
+        } catch {
+          // FTS query syntax error — return empty results
+          res.json({ results: [], total: 0 });
+          return;
+        }
+      }
+
+      // Build results from DB rows with metadata filters
+      let query = 'SELECT * FROM sessions WHERE is_subagent = 0';
+      const params: unknown[] = [];
+
+      if (sessionIds) {
+        if (sessionIds.size === 0) {
+          res.json({ results: [], total: 0 });
+          return;
+        }
+        query += ` AND id IN (${[...sessionIds].map(() => '?').join(',')})`;
+        params.push(...sessionIds);
+      }
+      if (source) {
+        query += ' AND source = ?';
+        params.push(source);
+      }
+      if (project) {
+        query += ' AND (project_dir = ? OR project_dir LIKE ?)';
+        params.push(project, `%${project}%`);
+      }
+      if (after) {
+        query += ' AND start_time >= ?';
+        params.push(after);
+      }
+      if (before) {
+        query += ' AND start_time <= ?';
+        params.push(before);
+      }
+      if (minDuration) {
+        query += ' AND duration_minutes >= ?';
+        params.push(minDuration);
+      }
+      if (skill) {
+        query += ' AND skills LIKE ?';
+        params.push(`%${skill}%`);
+      }
+
+      query += ' ORDER BY start_time DESC LIMIT 50';
+
+      const rows = db.prepare(query).all(...params) as Array<{
+        id: string;
+        project_dir: string;
+        source: string;
+        title: string | null;
+        start_time: string | null;
+        duration_minutes: number | null;
+        turns: number | null;
+        loc_added: number | null;
+        loc_removed: number | null;
+        skills: string | null;
+      }>;
+
+      const results = rows.map((row) => ({
+        sessionId: row.id,
+        title: row.title ?? 'Untitled session',
+        projectDir: row.project_dir,
+        projectName: displayNameFromDir(row.project_dir),
+        source: row.source,
+        date: row.start_time ?? '',
+        durationMinutes: row.duration_minutes ?? 0,
+        turns: row.turns ?? 0,
+        linesOfCode: (row.loc_added ?? 0) + (row.loc_removed ?? 0),
+        skills: row.skills ? JSON.parse(row.skills) : [],
+        snippet: snippetMap.get(row.id) ?? '',
+        score: sessionIds ? [...sessionIds].indexOf(row.id) : 0,
+      }));
+
+      // Post-filter by file if requested (check session_files table)
+      let filtered = results;
+      if (file) {
+        const fileSessionIds = new Set(
+          (db.prepare('SELECT DISTINCT session_id FROM session_files WHERE file_path LIKE ?')
+            .all(`%${file}%`) as Array<{ session_id: string }>)
+            .map((r) => r.session_id),
+        );
+        filtered = results.filter((r) => fileSessionIds.has(r.sessionId));
+      }
+
+      res.json({ results: filtered, total: filtered.length });
+    } catch (err) {
+      res.status(500).json({ error: { code: 'SEARCH_FAILED', message: (err as Error).message } });
+    }
+  });
+
+  // ── Session by ID (cross-project lookup) ────────────────────
+
+  app.get('/api/sessions/:id', async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      // Look up in DB to find projectDir
+      const row = getSessionRow(db, id);
+      if (!row || !row.file_path) {
+        res.status(404).json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } });
+        return;
+      }
+
+      const projectName = displayNameFromDir(row.project_dir);
+      const session = await loadSession(row.file_path, projectName, id);
+      res.json({ session });
+    } catch (err) {
+      res.status(500).json({ error: { code: 'LOAD_FAILED', message: (err as Error).message } });
+    }
+  });
+
+  // ── Session context export ──────────────────────────────────
+
+  app.get('/api/sessions/:id/context', async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const format = (req.query.format as ExportTier) ?? 'summary';
+
+      // Look up in DB to find file path
+      const row = getSessionRow(db, id);
+      if (!row || !row.file_path) {
+        res.status(404).json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } });
+        return;
+      }
+
+      const projectName = displayNameFromDir(row.project_dir);
+      const parsed = await parseSession(row.file_path);
+      const analyzerInput = bridgeToAnalyzer(parsed, { sessionId: id, projectName });
+      const session = analyzeSession(analyzerInput);
+      const turns: ParsedTurn[] = analyzerInput.turns;
+
+      const result = exportSessionContext(session, turns, { tier: format });
+
+      res.json({
+        content: result.content,
+        tokens: result.tokens,
+        format: result.tier,
+      });
+    } catch (err) {
+      res.status(500).json({ error: { code: 'CONTEXT_EXPORT_FAILED', message: (err as Error).message } });
+    }
+  });
+
   // Serve React app static files
   const staticDir = path.resolve(__dirname, '..', 'app', 'dist');
   app.use(express.static(staticDir));
@@ -2128,8 +2270,27 @@ export function createApp(sessionsBasePath?: string) {
 
 export function startServer(port: number = 17845): Promise<Server> {
   const app = createApp();
+  const db = getDatabase();
+
+  // Run initial sync in the background (non-blocking)
+  syncSessionIndex(db).then((result) => {
+    if (result.indexed > 0) {
+      console.log(`Indexed ${result.indexed} sessions (${result.skipped} up-to-date, ${result.orphansRemoved} removed)`);
+    }
+  }).catch(() => {});
+
   return new Promise((resolve) => {
     const server = app.listen(port, () => {
+      // Start live sync after server is listening
+      const stopFileWatcher = startFileWatcher(db);
+      const stopCursorPolling = startCursorPolling(db);
+
+      // Clean up watchers when server closes
+      server.on('close', () => {
+        stopFileWatcher();
+        stopCursorPolling();
+      });
+
       resolve(server);
     });
   });

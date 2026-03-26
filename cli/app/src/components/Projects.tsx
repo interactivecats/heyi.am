@@ -24,6 +24,7 @@ function projectBadges(p: Project) {
 export function Projects() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState('')
 
   useEffect(() => {
     fetchProjects()
@@ -32,11 +33,25 @@ export function Projects() {
       .finally(() => setLoading(false))
   }, [])
 
+  const filtered = filter
+    ? projects.filter((p) => {
+        const q = filter.toLowerCase()
+        return (
+          p.name.toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q) ||
+          p.skills.some((s) => s.toLowerCase().includes(q))
+        )
+      })
+    : projects
+
   return (
     <AppShell
       chips={[{ label: 'Projects' }]}
       actions={
         <>
+          <Link to="/search" className="text-xs text-on-surface-variant hover:text-on-surface transition-colors">
+            Search
+          </Link>
           <Link to="/archive" className="text-xs text-on-surface-variant hover:text-on-surface transition-colors">
             Archive
           </Link>
@@ -51,17 +66,32 @@ export function Projects() {
           <Chip variant="green">Local-only is a complete state</Chip>
         </SectionHeader>
 
+        {/* Project filter */}
+        {projects.length > 3 && (
+          <div className="mt-3">
+            <input
+              type="text"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              placeholder="Filter projects..."
+              className="w-full max-w-sm bg-surface-low border border-ghost rounded-md font-mono text-xs text-on-surface placeholder:text-outline px-3 py-1.5 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+            />
+          </div>
+        )}
+
         <div className="h-4" />
 
         {loading ? (
           <div className="text-sm text-on-surface-variant">Loading projects...</div>
-        ) : projects.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <Card>
-            <p className="text-sm text-on-surface-variant">No projects found. Run a source scan to get started.</p>
+            <p className="text-sm text-on-surface-variant">
+              {filter ? 'No projects match your filter.' : 'No projects found. Run a source scan to get started.'}
+            </p>
           </Card>
         ) : (
           <div className="flex flex-col gap-3">
-            {projects.map((p) => (
+            {filtered.map((p) => (
               <Link key={p.dirName} to={`/project/${encodeURIComponent(p.dirName)}`} className="no-underline">
                 <Card hover>
                   <div className="flex items-center justify-between mb-1">

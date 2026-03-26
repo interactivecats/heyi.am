@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, type ReactNode } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Chip, type ChipVariant } from './Chip'
+import { SearchInput } from './SearchInput'
 
 interface AppShellProps {
   back?: { label: string; to: string }
@@ -10,6 +11,11 @@ interface AppShellProps {
 }
 
 export function AppShell({ back, chips, actions, children }: AppShellProps) {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const isSearchPage = location.pathname === '/search'
+  const [topbarQuery, setTopbarQuery] = useState('')
+
   return (
     <div className="min-h-screen flex flex-col bg-surface-mid">
       <header className="sticky top-0 z-50 bg-surface-lowest border-b border-ghost">
@@ -47,9 +53,22 @@ export function AppShell({ back, chips, actions, children }: AppShellProps) {
             )}
           </div>
 
-          {actions && (
-            <div className="flex items-center gap-2">{actions}</div>
-          )}
+          <div className="flex items-center gap-2">
+            {!isSearchPage && (
+              <div className="w-48">
+                <SearchInput
+                  value={topbarQuery}
+                  onChange={setTopbarQuery}
+                  onSubmit={() => {
+                    navigate(`/search?q=${encodeURIComponent(topbarQuery)}`)
+                    setTopbarQuery('')
+                  }}
+                  compact
+                />
+              </div>
+            )}
+            {actions}
+          </div>
         </div>
       </header>
 

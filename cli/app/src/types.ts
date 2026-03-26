@@ -183,6 +183,13 @@ export interface ProjectDetail {
 
 // ── Triage ───────────────────────────────────────────────────
 
+export interface TriageResult {
+  selected: Array<{ sessionId: string; reason: string }>
+  skipped: Array<{ sessionId: string; reason: string }>
+  autoSelected?: boolean
+  triageMethod?: string
+}
+
 export type TriageEvent =
   | { type: 'loading_stats'; sessionId: string; index: number; total: number }
   | { type: 'scanning'; total: number }
@@ -269,4 +276,34 @@ export interface AuthStatus {
 export interface BoundaryConfig {
   selectedSessionIds: string[]
   skippedSessions: Array<{ sessionId: string; reason: string }>
+}
+
+// ── Search ──────────────────────────────────────────────────
+
+export interface SearchResult {
+  sessionId: string
+  title: string
+  projectDir: string
+  projectName: string
+  source: string
+  date: string
+  durationMinutes: number
+  turns: number
+  linesOfCode: number
+  skills: string[]
+  snippet: string
+  score: number
+}
+
+export interface SearchResponse {
+  results: SearchResult[]
+  total: number
+}
+
+// ── Context export ──────────────────────────────────────────
+
+export interface ContextExportResponse {
+  content: string
+  tokens: number
+  format: string
 }

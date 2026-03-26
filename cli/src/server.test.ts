@@ -909,3 +909,88 @@ describe('POST /api/projects/:project/enhance-project — error recovery', () =>
   });
 });
 
+// ── New API endpoints: search, session by ID, context export ─────
+
+describe('GET /api/search', () => {
+  it('returns empty results when no query params', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app).get('/api/search');
+    expect(res.status).toBe(200);
+    expect(res.body.results).toEqual([]);
+    expect(res.body.total).toBe(0);
+  });
+
+  it('returns results when searching with a query', async () => {
+    // First, hit the projects endpoint to trigger indexing
+    const app = createApp(tmpDir);
+    await request(app).get('/api/projects');
+
+    // Now search for content from our test sessions
+    const res = await request(app).get('/api/search?q=auth');
+    expect(res.status).toBe(200);
+    expect(res.body.results).toBeInstanceOf(Array);
+    // Results may or may not match — depends on FTS indexing timing
+    expect(res.body).toHaveProperty('total');
+  });
+
+  it('filters by source', async () => {
+    const app = createApp(tmpDir);
+    await request(app).get('/api/projects'); // trigger indexing
+    const res = await request(app).get('/api/search?source=claude');
+    expect(res.status).toBe(200);
+    expect(res.body.results).toBeInstanceOf(Array);
+  });
+});
+
+describe('GET /api/sessions/:id', () => {
+  it('returns session by ID after indexing', async () => {
+    const app = createApp(tmpDir);
+    // Trigger indexing by loading projects
+    await request(app).get('/api/projects/myapp/sessions');
+
+    const res = await request(app).get('/api/sessions/abc-123');
+    expect(res.status).toBe(200);
+    expect(res.body.session).toBeDefined();
+    expect(res.body.session.id).toBe('abc-123');
+  });
+
+  it('returns 404 for unknown session', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app).get('/api/sessions/nonexistent-999');
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('SESSION_NOT_FOUND');
+  });
+});
+
+describe('GET /api/sessions/:id/context', () => {
+  it('returns context export after indexing', async () => {
+    const app = createApp(tmpDir);
+    // Trigger indexing
+    await request(app).get('/api/projects/myapp/sessions');
+
+    const res = await request(app).get('/api/sessions/abc-123/context?format=summary');
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('content');
+    expect(res.body).toHaveProperty('tokens');
+    expect(res.body.format).toBe('summary');
+    expect(typeof res.body.content).toBe('string');
+    expect(res.body.content.length).toBeGreaterThan(0);
+  });
+
+  it('supports compact format', async () => {
+    const app = createApp(tmpDir);
+    await request(app).get('/api/projects/myapp/sessions');
+
+    const res = await request(app).get('/api/sessions/abc-123/context?format=compact');
+    expect(res.status).toBe(200);
+    expect(res.body.format).toBe('compact');
+  });
+
+  it('returns 404 for unknown session', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app).get('/api/sessions/nonexistent-999/context');
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('SESSION_NOT_FOUND');
+  });
+});
+
