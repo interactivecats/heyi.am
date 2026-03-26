@@ -5,6 +5,7 @@ import { Card, Note, SectionHeader, StatCard } from './shared'
 import { Chip } from './shared/Chip'
 import { WorkTimeline } from './WorkTimeline'
 import { GrowthChart } from './GrowthChart'
+import { SessionDetailOverlay } from './SessionDetailOverlay'
 
 function formatDuration(minutes: number): string {
   const hours = minutes / 60
@@ -29,10 +30,13 @@ function timeSince(dateStr: string): string {
   return `${Math.floor(hours / 24)}d ago`
 }
 
+const DURATION_COLORS = ['bg-primary', 'bg-green', 'bg-violet'] as const
+
 export function ProjectDetail() {
   const { dirName } = useParams<{ dirName: string }>()
   const [detail, setDetail] = useState<ProjectDetailType | null>(null)
   const [loading, setLoading] = useState(true)
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null)
 
   useEffect(() => {
     if (!dirName) return
@@ -63,6 +67,9 @@ export function ProjectDetail() {
   const narrative = cache?.result?.narrative ?? project.description
   const phases = cache?.result?.arc ?? []
   const tools = [...new Set(sessions.map((s) => s.source ?? 'unknown'))]
+  const screenshotSrc = cache?.screenshotBase64
+    ? `data:image/png;base64,${cache.screenshotBase64}`
+    : undefined
 
   // Build key moments from enhance cache timeline (featured sessions)
   const keyMoments: Array<{ sessionId: string; label: string }> = []
@@ -90,19 +97,6 @@ export function ProjectDetail() {
     <div className="grid grid-cols-[240px_1fr] min-h-[calc(100vh-48px)]">
       {/* Sidebar */}
       <aside className="border-r border-ghost bg-surface-low p-4">
-        <div className="mb-5">
-          <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-2">Project</div>
-          <div className="flex flex-col gap-0.5">
-            <SideLink label="Overview" badge="1" active />
-            <Link to={`/project/${encodeURIComponent(dirName!)}/boundaries`} className="no-underline">
-              <SideLink label="Boundaries" badge="2" />
-            </Link>
-            <Link to={`/project/${encodeURIComponent(dirName!)}/output`} className="no-underline">
-              <SideLink label="Outputs" badge="3" />
-            </Link>
-          </div>
-        </div>
-
         <div className="mb-4">
           <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-1.5">Source mix</div>
           <div className="flex flex-wrap gap-1 mt-1.5">
@@ -142,6 +136,17 @@ export function ProjectDetail() {
           </div>
         </div>
         <div className="h-4" />
+
+        {/* Screenshot */}
+        {screenshotSrc && (
+          <div className="max-h-[340px] overflow-hidden rounded-md border border-ghost mb-4">
+            <img
+              src={screenshotSrc}
+              alt={`${project.name} screenshot`}
+              className="w-full max-h-[340px] object-cover object-top"
+            />
+          </div>
+        )}
 
         {/* Narrative */}
         <Card className="mb-4">
@@ -221,40 +226,42 @@ export function ProjectDetail() {
           </Card>
         )}
 
-        {/* Featured sessions */}
+        {/* Featured sessions — card grid */}
         <Card>
-          <SectionHeader title="Featured sessions" meta="editable selection" />
-          {sessions.slice(0, 5).map((s) => (
-            <div key={s.id} className="flex justify-between items-center py-2.5 border-b border-ghost last:border-b-0">
-              <div>
-                <h4 className="font-display text-[0.8125rem] font-semibold text-on-surface">{s.title}</h4>
+          <SectionHeader title="Featured sessions" meta={`${sessions.length} total`} />
+          <div className="grid grid-cols-2 gap-3">
+            {sessions.slice(0, 6).map((s, i) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setSelectedSession(s)}
+                className="text-left bg-surface-lowest border border-ghost rounded-sm p-4 cursor-pointer transition-shadow hover:shadow-md"
+              >
+                <div className={`h-1 rounded-full mb-3 ${DURATION_COLORS[i % DURATION_COLORS.length]}`} />
+                <h4 className="font-display text-[0.8125rem] font-semibold text-on-surface mb-1 line-clamp-2">
+                  {s.title}
+                </h4>
                 <span className="text-on-surface-variant text-xs">
                   {formatDuration(s.durationMinutes)} · {s.turns} turns · {formatLoc(s.linesOfCode)} LOC
                 </span>
-              </div>
-              {s.skills?.[0] && <Chip variant="violet">{s.skills[0]}</Chip>}
-            </div>
-          ))}
+                {s.skills?.[0] && (
+                  <div className="mt-2">
+                    <Chip variant="violet">{s.skills[0]}</Chip>
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
         </Card>
       </main>
-    </div>
-  )
-}
 
-function SideLink({ label, badge, active }: { label: string; badge?: string; active?: boolean }) {
-  return (
-    <div
-      className={`flex justify-between items-center px-2.5 py-2 rounded-sm text-[0.8125rem] transition-colors cursor-pointer ${
-        active
-          ? 'bg-primary/[0.06] text-primary font-semibold'
-          : 'text-on-surface-variant hover:bg-primary/[0.04] hover:text-primary'
-      }`}
-    >
-      {label}
-      {badge && (
-        <span className="font-mono text-[9px] bg-primary/[0.06] text-primary px-1.5 py-0.5 rounded-sm">
-          {badge}
-        </span>
+      {/* Session overlay */}
+      {selectedSession && dirName && (
+        <SessionDetailOverlay
+          session={selectedSession}
+          projectDirName={dirName}
+          onClose={() => setSelectedSession(null)}
+        />
       )}
     </div>
   )
