@@ -1,33 +1,23 @@
-import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppShell } from './shared';
 import {
   fetchProjects,
   fetchSessions,
-  fetchSession,
-  fetchProjectEnhanceCache,
   saveProjectEnhanceLocally,
   triageProject,
   enhanceProject,
   refineNarrative,
-  uploadProject,
-  startDeviceAuth,
-  pollDeviceAuth,
-  captureScreenshotFromUrl,
-  fetchGitRemote,
-  fetchAuthStatus,
   type TriageResult,
   type TriageEvent,
   type ProjectEnhanceResult,
   type EnhanceEvent,
   type RefineAnswer,
-  type UploadEvent,
-  type UploadPayload,
   type Project,
   type Session,
 } from '../api';
 
-type Step = 'overview' | 'triage' | 'enhance' | 'questions' | 'timeline' | 'review' | 'done';
+type Step = 'overview' | 'triage' | 'enhance' | 'questions' | 'timeline';
 
 function formatDuration(minutes: number): string {
   if (minutes < 60) return `${Math.round(minutes)}m`;
@@ -59,7 +49,7 @@ function formatDateRange(dateRange: string): string {
 
 // ── Phase bar ──────────────────────────────────────────────────
 
-const STEPS: Step[] = ['overview', 'triage', 'enhance', 'questions', 'timeline', 'review', 'done'];
+const STEPS: Step[] = ['overview', 'triage', 'enhance', 'questions', 'timeline'];
 
 function PhaseBar({ current }: { current: Step }) {
   const idx = STEPS.indexOf(current);
@@ -966,12 +956,12 @@ function TimelineView({
   project,
   timeline,
   onBack,
-  onReview,
+  onViewProject,
 }: {
   project: Project;
   timeline: TimelinePeriod[];
   onBack: () => void;
-  onReview: () => void;
+  onViewProject: () => void;
 }) {
   const totalSessions = timeline.reduce((sum, p) => sum + p.sessions.length, 0);
 
@@ -1040,7 +1030,7 @@ function TimelineView({
 
       <div className="upload-flow__actions">
         <button className="btn btn--secondary btn--large" onClick={onBack}>Back</button>
-        <button className="btn btn--primary btn--large" onClick={onReview}>Review &amp; upload &rarr;</button>
+        <button className="btn btn--primary btn--large" onClick={onViewProject}>View updated project &rarr;</button>
       </div>
     </div>
   );
@@ -1125,740 +1115,6 @@ const PLACEHOLDER_TIMELINE: TimelinePeriod[] = [
   },
 ];
 
-// ── Screen 47: Review before uploading ──────────────────────────
-
-interface ReviewStepProps {
-  project: Project;
-  narrative: string;
-  selectedCount: number;
-  skippedCount: number;
-  skills: string[];
-  timeline: TimelinePeriod[];
-  sessions: Session[];
-  selectedIds: Set<string>;
-  allSessions: Session[];
-  repoUrl: string;
-  onRepoUrlChange: (url: string) => void;
-  projectUrl: string;
-  onProjectUrlChange: (url: string) => void;
-  screenshotPreview: string | null;
-  onScreenshotPreviewChange: (preview: string | null) => void;
-  onUpload: (result: { url: string; uploadedSessions: number }) => void;
-  onSaveLocal: () => void | Promise<void>;
-  onBack: () => void;
-}
-
-/** @internal Exported for testing */
-export function ReviewStep({
-  project,
-  narrative,
-  selectedCount,
-  skippedCount,
-  skills,
-  timeline,
-  sessions,
-  selectedIds,
-  allSessions,
-  repoUrl,
-  onRepoUrlChange,
-  projectUrl,
-  onProjectUrlChange,
-  screenshotPreview,
-  onScreenshotPreviewChange,
-  onUpload,
-  onSaveLocal,
-  onBack,
-}: ReviewStepProps) {
-  // Preview opens in a new tab via /preview/project/:dirName
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [uploadErrorType, setUploadErrorType] = useState<'project' | 'sessions' | null>(null);
-  const [sessionUploadStatuses, setSessionUploadStatuses] = useState<Map<string, { status: 'uploading' | 'uploaded' | 'failed'; error?: string }>>(new Map());
-  const [partialUploadUrl, setPartialUploadUrl] = useState<string | null>(null);
-  const [needsAuth, setNeedsAuth] = useState(false);
-  const [deviceCode, setDeviceCode] = useState<{ userCode: string; verificationUri: string; deviceCode: string } | null>(null);
-  const [authPolling, setAuthPolling] = useState(false);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const uploadControllerRef = useRef<AbortController | null>(null);
-  const screenshotInputRef = useRef<HTMLInputElement>(null);
-  const setScreenshotPreview = onScreenshotPreviewChange;
-  const [screenshotCapturing, setScreenshotCapturing] = useState(false);
-  const refreshAuth = useCallback(async () => {
-    // Auth refresh is a no-op in the simplified flow
-  }, []);
-
-  const uploadedLabel = `${project.sessionCount} (${selectedCount} uploaded)`;
-
-  const slug = project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-
-  const handleScreenshotFile = useCallback((file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      setScreenshotPreview(reader.result as string);
-      // Upload deferred to upload flow — project may not exist yet
-    };
-    reader.readAsDataURL(file);
-  }, []);
-
-  const handleAutoCapture = useCallback(async () => {
-    if (!projectUrl) return;
-    setScreenshotCapturing(true);
-    try {
-      const result = await captureScreenshotFromUrl(project.dirName, slug, projectUrl);
-      if (result.ok && result.preview) {
-        setScreenshotPreview(result.preview);
-      } else {
-        setScreenshotPreview(null);
-        alert(result.error || 'Screenshot capture failed. Is Chrome installed?');
-      }
-    } catch {
-      alert('Screenshot capture failed');
-    } finally {
-      setScreenshotCapturing(false);
-    }
-  }, [project.dirName, slug, projectUrl]);
-
-  const buildPayload = useCallback((): UploadPayload => {
-    const skippedSessions = allSessions
-      .filter((s) => !selectedIds.has(s.id))
-      .map((s) => ({
-        title: s.title,
-        duration: s.durationMinutes ?? 0,
-        loc: s.linesOfCode ?? 0,
-        reason: 'Not selected',
-      }));
-
-    return {
-      title: project.name,
-      slug,
-      narrative,
-      repoUrl,
-      projectUrl,
-      timeline,
-      skills,
-      totalSessions: project.sessionCount,
-      totalLoc: project.totalLoc,
-      totalDurationMinutes: project.totalDuration,
-      totalAgentDurationMinutes: project.totalAgentDuration || undefined,
-      totalFilesChanged: project.totalFiles,
-      skippedSessions,
-      selectedSessionIds: [...selectedIds],
-      screenshotBase64: screenshotPreview || undefined,
-    };
-  }, [project, slug, narrative, repoUrl, projectUrl, timeline, skills, allSessions, selectedIds, screenshotPreview]);
-
-  const startAuthFlow = useCallback(async () => {
-    setNeedsAuth(true);
-    try {
-      const codeInfo = await startDeviceAuth();
-      setDeviceCode({
-        userCode: codeInfo.user_code,
-        verificationUri: codeInfo.verification_uri,
-        deviceCode: codeInfo.device_code,
-      });
-      setAuthPolling(true);
-      const interval = (codeInfo.interval || 5) * 1000;
-      pollRef.current = setInterval(async () => {
-        try {
-          const status = await pollDeviceAuth(codeInfo.device_code);
-          if (status.authenticated) {
-            if (pollRef.current) clearInterval(pollRef.current);
-            pollRef.current = null;
-            setAuthPolling(false);
-            setNeedsAuth(false);
-            await refreshAuth();
-            doUpload();
-          }
-        } catch {
-          // Keep polling on transient errors
-        }
-      }, interval);
-    } catch (authErr) {
-      setUploadError(`Login failed: ${(authErr as Error).message}`);
-    }
-  }, [refreshAuth]);
-
-  const doUpload = useCallback((retrySessionIds?: string[]) => {
-    setUploading(true);
-    setUploadError(null);
-    setUploadErrorType(null);
-    setNeedsAuth(false);
-
-    const payload = buildPayload();
-    if (retrySessionIds) {
-      payload.selectedSessionIds = retrySessionIds;
-    }
-
-    uploadControllerRef.current?.abort();
-    const controller = uploadProject(project.dirName, payload, (event: UploadEvent) => {
-      switch (event.type) {
-        case 'project':
-          if (event.status === 'failed') {
-            setUploading(false);
-            if (event.error?.includes('Authentication required') || event.error?.includes('AUTH_REQUIRED')) {
-              startAuthFlow();
-            } else {
-              setUploadErrorType('project');
-              setUploadError(event.error ?? 'Project creation failed');
-            }
-          }
-          break;
-
-        case 'session':
-          setSessionUploadStatuses((prev) => {
-            const next = new Map(prev);
-            next.set(event.sessionId, { status: event.status === 'uploading' ? 'uploading' as const : event.status, error: event.error });
-            return next;
-          });
-          break;
-
-        case 'done': {
-          setUploading(false);
-          if (event.failed > 0) {
-            setUploadErrorType('sessions');
-            setPartialUploadUrl(event.projectUrl);
-            setUploadError(`${event.failed} session${event.failed !== 1 ? 's' : ''} failed to upload`);
-          } else {
-            refreshAuth();
-            onUpload({ url: event.projectUrl, uploadedSessions: event.uploaded });
-          }
-          break;
-        }
-
-        case 'error':
-          setUploading(false);
-          if (event.error === 'AUTH_REQUIRED') {
-            startAuthFlow();
-          } else {
-            setUploadErrorType('project');
-            setUploadError(event.error);
-          }
-          break;
-      }
-    });
-
-    uploadControllerRef.current = controller;
-  }, [buildPayload, project.dirName, onUpload, refreshAuth, startAuthFlow]);
-
-  // Cleanup polling and upload stream on unmount
-  useEffect(() => {
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-      uploadControllerRef.current?.abort();
-    };
-  }, []);
-
-  return (
-    <div className="upload-flow">
-      <PhaseBar current="review" />
-
-      <div className="upload-flow__scan-status">
-        &#10003; {selectedCount} sessions enhanced &middot; Project narrative generated &middot; Timeline built
-      </div>
-
-      <h2 className="upload-flow__title">Review your project</h2>
-
-      {/* ── Project card preview ── */}
-      <div className="review-card">
-        <div className="upload-flow__label">PROJECT</div>
-        <h3 className="review-card__name">{project.name}</h3>
-        {narrative && <p className="review-card__narrative">{narrative}</p>}
-
-        <div className="upload-flow__stat-grid">
-          <StatCard label="Sessions" value={uploadedLabel} />
-          <StatCard
-            label={project.totalAgentDuration ? 'You / Agents' : 'Total Time'}
-            value={project.totalAgentDuration
-              ? `${formatDuration(project.totalDuration)} / ${formatDuration(project.totalAgentDuration)}`
-              : formatDuration(project.totalDuration)}
-          />
-          <StatCard label="LOC" value={formatLoc(project.totalLoc)} />
-          <StatCard label="Files" value={String(project.totalFiles)} />
-        </div>
-
-        <div className="review-card__skills">
-          {skills.map((skill) => (
-            <span key={skill} className="chip">{skill}</span>
-          ))}
-        </div>
-      </div>
-
-      <a
-        className="review-preview-link"
-        href={`/preview/project/${encodeURIComponent(project.dirName)}?${new URLSearchParams({
-          ...(repoUrl ? { repoUrl } : {}),
-          ...(projectUrl ? { projectUrl } : {}),
-        }).toString()}`}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Preview full project page &rarr;
-      </a>
-
-      {/* ── What gets uploaded ── */}
-      <div className="review-checklist">
-        <div className="upload-flow__section-label" style={{ marginBottom: 'var(--spacing-3)' }}>What gets uploaded</div>
-        <div className="review-checklist__item">
-          <span className="review-checklist__icon review-checklist__icon--checked" aria-hidden="true">&#10003;</span>
-          <span>Project narrative and timeline</span>
-        </div>
-        <div className="review-checklist__item">
-          <span className="review-checklist__icon review-checklist__icon--checked" aria-hidden="true">&#10003;</span>
-          <span>{selectedCount} enhanced session case studies</span>
-        </div>
-        <div className="review-checklist__item">
-          <span className="review-checklist__icon review-checklist__icon--checked" aria-hidden="true">&#10003;</span>
-          <span>Aggregate stats from all sessions</span>
-        </div>
-        <div className="review-checklist__item">
-          <span className="review-checklist__icon review-checklist__icon--checked" aria-hidden="true">&#10003;</span>
-          <span>Growth chart, heatmap, and top files</span>
-        </div>
-        {skippedCount > 0 && (
-          <div className="review-checklist__item review-checklist__item--skipped">
-            <span className="review-checklist__icon review-checklist__icon--skipped" aria-hidden="true">&#9675;</span>
-            <span>{skippedCount} skipped sessions (metadata only)</span>
-          </div>
-        )}
-      </div>
-
-      {/* ── Project details ── */}
-      <div className="review-details">
-        <div className="review-details__header">
-          <div className="upload-flow__section-label" style={{ marginBottom: 0 }}>Project details</div>
-          <span className="review-details__optional">all optional</span>
-        </div>
-
-        <div className="review-field">
-          <label className="review-field__label" htmlFor="review-repo-url">
-            Repository URL
-            {repoUrl && <span className="review-field__badge">&#10003; auto-detected</span>}
-          </label>
-          <input
-            id="review-repo-url"
-            type="url"
-            className="review-field__input"
-            value={repoUrl}
-            onChange={(e) => onRepoUrlChange(e.target.value)}
-            placeholder="https://github.com/..."
-          />
-        </div>
-
-        <div className="review-field">
-          <label className="review-field__label" htmlFor="review-project-url">Project URL</label>
-          <input
-            id="review-project-url"
-            type="url"
-            className="review-field__input"
-            value={projectUrl}
-            onChange={(e) => onProjectUrlChange(e.target.value)}
-            placeholder="Live site, docs, demo..."
-          />
-        </div>
-
-        <div className="review-field">
-          <span className="review-field__label">Screenshot</span>
-          {screenshotPreview ? (
-            <div className="review-screenshot-preview">
-              <img src={screenshotPreview} alt="Screenshot preview" className="review-screenshot-preview__img" />
-              <button type="button" className="review-screenshot-preview__remove" onClick={() => setScreenshotPreview(null)} aria-label="Remove screenshot">&times;</button>
-            </div>
-          ) : (
-            <div className="review-screenshot-actions">
-              <div
-                className="review-dropzone"
-                role="button"
-                tabIndex={0}
-                onClick={() => screenshotInputRef.current?.click()}
-                onKeyDown={(e) => { if (e.key === 'Enter') screenshotInputRef.current?.click(); }}
-                onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('review-dropzone--active'); }}
-                onDragLeave={(e) => e.currentTarget.classList.remove('review-dropzone--active')}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.currentTarget.classList.remove('review-dropzone--active');
-                  const file = e.dataTransfer.files[0];
-                  if (file && file.type.startsWith('image/')) handleScreenshotFile(file);
-                }}
-              >
-                <span className="review-dropzone__icon" aria-hidden="true">&#128247;</span>
-                <span className="review-dropzone__text">Drop an image or click to upload</span>
-              </div>
-              <input
-                ref={screenshotInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                style={{ display: 'none' }}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleScreenshotFile(file);
-                }}
-              />
-              {projectUrl && (
-                <button
-                  type="button"
-                  className="btn btn--sm btn--secondary"
-                  disabled={screenshotCapturing}
-                  onClick={handleAutoCapture}
-                >
-                  {screenshotCapturing ? 'Capturing...' : 'Auto-capture from URL'}
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── Inline auth card ── */}
-      {needsAuth && (
-        <div className="review-auth">
-          <div className="review-auth__card">
-            <h3 className="review-auth__title">Sign in to upload</h3>
-            {deviceCode ? (
-              <>
-                <p className="review-auth__instructions">
-                  Open{' '}
-                  <a href={deviceCode.verificationUri} target="_blank" rel="noopener noreferrer">
-                    {deviceCode.verificationUri}
-                  </a>{' '}
-                  and enter:
-                </p>
-                <div className="review-auth__code">{deviceCode.userCode}</div>
-                {authPolling && (
-                  <p className="review-auth__polling">Waiting for authorization...</p>
-                )}
-              </>
-            ) : (
-              <p className="review-auth__polling">Starting login...</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Live upload progress */}
-      {uploading && sessionUploadStatuses.size > 0 && (
-        <div className="upload-progress">
-          <div className="upload-flow__section-label" style={{ marginBottom: 'var(--spacing-2)' }}>Uploading sessions...</div>
-          <div className="upload-progress__sessions">
-            {Array.from(sessionUploadStatuses.entries()).map(([sid, st]) => {
-              const s = sessions.find((sess) => sess.id === sid);
-              return (
-                <div key={sid} className="upload-progress__row">
-                  {st.status === 'uploaded' ? (
-                    <span className="upload-error__icon--uploaded">{'\u2713'}</span>
-                  ) : st.status === 'uploading' ? (
-                    <span className="enhance-feed-item__spinner" />
-                  ) : (
-                    <span className="upload-error__icon--failed">{'\u2717'}</span>
-                  )}
-                  <span>{s?.title ?? sid}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {uploadError && (
-        <div className="upload-error">
-          <div className="upload-error__message">{uploadError}</div>
-
-          {uploadErrorType === 'sessions' && sessionUploadStatuses.size > 0 && (
-            <div className="upload-error__sessions">
-              {Array.from(sessionUploadStatuses.entries()).map(([sid, st]) => {
-                const s = sessions.find((sess) => sess.id === sid);
-                return (
-                  <div key={sid} className={`upload-error__session-row upload-error__session-row--${st.status}`}>
-                    <span className={`upload-error__icon upload-error__icon--${st.status}`}>
-                      {st.status === 'uploaded' ? '\u2713' : '\u2717'}
-                    </span>
-                    <span className="upload-error__session-title">{s?.title ?? sid}</span>
-                    {st.error && <span className="upload-error__session-error">{st.error}</span>}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="upload-error__actions">
-            {uploadErrorType === 'sessions' && (
-              <>
-                <button
-                  className="btn btn--secondary"
-                  onClick={() => {
-                    const failedIds = Array.from(sessionUploadStatuses.entries())
-                      .filter(([, st]) => st.status === 'failed')
-                      .map(([sid]) => sid);
-                    doUpload(failedIds);
-                  }}
-                >
-                  Retry failed sessions
-                </button>
-                {partialUploadUrl && (
-                  <button
-                    className="btn btn--primary"
-                    onClick={() => onUpload({
-                      url: partialUploadUrl,
-                      uploadedSessions: Array.from(sessionUploadStatuses.values()).filter((s) => s.status === 'uploaded').length,
-                    })}
-                  >
-                    Continue with uploaded sessions
-                  </button>
-                )}
-              </>
-            )}
-            {uploadErrorType === 'project' && (
-              <button className="btn btn--secondary" onClick={() => doUpload()}>
-                Retry
-              </button>
-            )}
-            <button
-              className="btn btn--secondary"
-              onClick={() => {
-                setUploadError(null);
-                setUploadErrorType(null);
-              }}
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Actions ── */}
-      <div className="upload-flow__actions">
-        <button type="button" className="btn btn--secondary btn--large" onClick={onBack} disabled={uploading}>
-          Back to timeline
-        </button>
-        <button type="button" className="btn btn--secondary btn--large" onClick={onSaveLocal} disabled={uploading}>
-          Save locally
-        </button>
-        <button
-          type="button"
-          className="btn btn--primary btn--large"
-          onClick={() => doUpload()}
-          disabled={uploading || needsAuth}
-        >
-          {uploading ? 'Uploading...' : 'Upload project \u2192'}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ── Screen 12: Success Step ───────────────────────────────────────
-
-interface SuccessStepProps {
-  project: Project;
-  narrative: string;
-  selectedCount: number;
-  uploadedUrl?: string;
-  uploadedSessions?: number;
-}
-
-function SuccessStep({ project, narrative, selectedCount, uploadedUrl, uploadedSessions }: SuccessStepProps) {
-  const navigate = useNavigate();
-  const [copied, setCopied] = useState(false);
-  const isUploaded = !!uploadedUrl;
-  const displayUrl = uploadedUrl
-    ? (uploadedUrl.startsWith('/') ? `heyi.am${uploadedUrl}` : uploadedUrl)
-    : '';
-
-  const handleCopy = useCallback(() => {
-    if (!displayUrl) return;
-    navigator.clipboard.writeText(`https://${displayUrl}`).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch(() => {
-      // clipboard API not available in this context
-    });
-  }, [displayUrl]);
-
-  const handleViewProject = useCallback(() => {
-    if (displayUrl) {
-      window.open(`https://${displayUrl}`, '_blank', 'noopener');
-    }
-  }, [displayUrl]);
-
-  const handleViewPortfolio = useCallback(() => {
-    if (!displayUrl) return;
-    const parts = displayUrl.split('/');
-    const portfolioUrl = parts.length >= 2 ? `https://${parts[0]}/${parts[1]}` : `https://${displayUrl}`;
-    window.open(portfolioUrl, '_blank', 'noopener');
-  }, [displayUrl]);
-
-  const saveDate = new Date().toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-
-  const snippetText = narrative.length > 120 ? `${narrative.slice(0, 117)}...` : narrative;
-
-  return (
-    <div className="upload-flow">
-      <PhaseBar current="done" />
-
-      <div className="success-card">
-        <div className="success-card__icon">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <circle cx="16" cy="16" r="16" fill="var(--success-bg, #dcfce7)" />
-            <path d="M10 16.5L14 20.5L22 12.5" stroke="var(--success-fg, #16a34a)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-
-        <h2 className="success-card__title">
-          {isUploaded ? 'Project Uploaded' : 'Project Saved'}
-        </h2>
-        <p className="success-card__subtitle">
-          {isUploaded
-            ? `Your project is live on your portfolio with ${selectedCount} session case ${selectedCount === 1 ? 'study' : 'studies'}.`
-            : `Enhancement saved locally with ${selectedCount} session case ${selectedCount === 1 ? 'study' : 'studies'}. You can preview or upload anytime.`}
-        </p>
-
-        <div className="success-card__preview">
-          <div className="success-card__preview-name">{project.name}</div>
-          <div className="success-card__preview-narrative">{snippetText}</div>
-          <div className="success-card__preview-stats">
-            <div className="success-card__preview-stat">
-              <span className="success-card__preview-stat-value">{project.sessionCount}</span>
-              <span className="success-card__preview-stat-label">Sessions</span>
-            </div>
-            <div className="success-card__preview-stat">
-              <span className="success-card__preview-stat-value">
-                {project.totalAgentDuration
-                  ? `${formatDuration(project.totalDuration)} / ${formatDuration(project.totalAgentDuration)}`
-                  : formatDuration(project.totalDuration)}
-              </span>
-              <span className="success-card__preview-stat-label">{project.totalAgentDuration ? 'You / Agents' : 'Time'}</span>
-            </div>
-            <div className="success-card__preview-stat">
-              <span className="success-card__preview-stat-value">{formatLoc(project.totalLoc)}</span>
-              <span className="success-card__preview-stat-label">LOC</span>
-            </div>
-            <div className="success-card__preview-stat">
-              <span className="success-card__preview-stat-value">{selectedCount}</span>
-              <span className="success-card__preview-stat-label">{isUploaded ? 'Uploaded' : 'Enhanced'}</span>
-            </div>
-          </div>
-        </div>
-
-        {isUploaded && displayUrl && (
-          <div className="success-card__url-bar">
-            <span className="success-card__url-text">{displayUrl}</span>
-            <button className="success-card__url-copy" onClick={handleCopy}>
-              {copied ? 'Copied' : 'Copy'}
-            </button>
-          </div>
-        )}
-
-        <div className="success-card__meta">
-          <span className="success-card__badge">{isUploaded ? 'Uploaded' : 'Saved locally'}</span>
-          {isUploaded && uploadedSessions && (
-            <span className="success-card__meta-text">{uploadedSessions} sessions uploaded</span>
-          )}
-          <span className="success-card__meta-text">{saveDate}</span>
-        </div>
-
-        <div className="success-card__actions">
-          {isUploaded ? (
-            <>
-              <button type="button" className="btn btn--primary btn--large" onClick={handleViewProject}>
-                View Project Page
-              </button>
-              <button type="button" className="btn btn--secondary btn--large" onClick={handleViewPortfolio}>
-                View Portfolio
-              </button>
-            </>
-          ) : (
-            <button type="button" className="btn btn--primary btn--large" onClick={() => navigate('/')}>
-              Back to Projects
-            </button>
-          )}
-        </div>
-
-        {isUploaded && displayUrl && (
-          <DistributionHelpers projectName={project.name} displayUrl={displayUrl} />
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Distribution helpers (share snippets) ────────────────────────
-
-interface DistributionHelpersProps {
-  projectName: string;
-  displayUrl: string;
-}
-
-function DistributionHelpers({ projectName, displayUrl }: DistributionHelpersProps) {
-  const fullUrl = `https://${displayUrl}`;
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  const copySnippet = useCallback((id: string, text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
-    }).catch(() => {});
-  }, []);
-
-  const readmeSnippet = `[![Built with AI](https://img.shields.io/badge/built%20with%20AI-heyi.am-084471)](${fullUrl})`;
-
-  const xText = `See how I built ${projectName} with AI — decisions, trade-offs, and proof of work:\n${fullUrl}`;
-
-  const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(fullUrl)}`;
-
-  return (
-    <div className="distribution-helpers">
-      <div className="distribution-helpers__header">Share your proof</div>
-
-      <div className="distribution-helpers__item">
-        <div className="distribution-helpers__label">GitHub README</div>
-        <div className="distribution-helpers__snippet">
-          <code>{readmeSnippet}</code>
-          <button
-            className="distribution-helpers__copy"
-            onClick={() => copySnippet('readme', readmeSnippet)}
-          >
-            {copiedId === 'readme' ? 'Copied' : 'Copy'}
-          </button>
-        </div>
-      </div>
-
-      <div className="distribution-helpers__item">
-        <div className="distribution-helpers__label">Share on X</div>
-        <div className="distribution-helpers__snippet">
-          <code>{xText}</code>
-          <button
-            className="distribution-helpers__copy"
-            onClick={() => {
-              window.open(
-                `https://twitter.com/intent/tweet?text=${encodeURIComponent(xText)}`,
-                '_blank',
-                'noopener,width=550,height=420'
-              );
-            }}
-          >
-            Post
-          </button>
-        </div>
-      </div>
-
-      <div className="distribution-helpers__item">
-        <div className="distribution-helpers__label">LinkedIn</div>
-        <div className="distribution-helpers__snippet">
-          <code>{fullUrl}</code>
-          <button
-            className="distribution-helpers__copy"
-            onClick={() => window.open(linkedInUrl, '_blank', 'noopener,width=550,height=420')}
-          >
-            Share
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ── Main flow component ──────────────────────────────────────────
 
@@ -1891,10 +1147,6 @@ export function ProjectUploadFlow() {
   const triageControllerRef = useRef<AbortController | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [enhanceResult, setEnhanceResult] = useState<ProjectEnhanceResult | null>(null);
-  const [repoUrl, setRepoUrl] = useState('');
-  const [projectUrl, setProjectUrl] = useState('');
-  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
-  const [uploadResult, setUploadResult] = useState<{ url: string; uploadedSessions: number } | null>(null);
 
 
   // Derived from enhance result (or refined)
@@ -1923,30 +1175,13 @@ export function ProjectUploadFlow() {
     }
   }, [step, loadSessionsIfNeeded]);
 
-  // Auto-load cached preview when ?preview=1 is in URL
+  // Auto-load cached preview when ?preview=1 is in URL — redirect to project detail
   useEffect(() => {
     const mode = searchParams.get('view') || searchParams.get('preview');
     if (!dirName || mode !== '1') return;
-    fetchProjectEnhanceCache(dirName).then((cache) => {
-      if (cache) {
-        setEnhanceResult(cache.result);
-        setSelectedIds(new Set(cache.selectedSessionIds));
-        if (cache.repoUrl) setRepoUrl(cache.repoUrl);
-        if (cache.projectUrl) setProjectUrl(cache.projectUrl);
-        if (cache.screenshotBase64) setScreenshotPreview(cache.screenshotBase64);
-        setStep('review');
-      }
-      setSearchParams({}, { replace: true });
-    });
+    setSearchParams({}, { replace: true });
+    navigate(`/project/${dirName}`);
   }, [dirName]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Auto-detect git remote URL when entering review step
-  useEffect(() => {
-    if (step !== 'review' || !dirName || repoUrl) return;
-    fetchGitRemote(dirName).then(({ url }) => {
-      if (url) setRepoUrl(url.startsWith('http') ? url : `https://${url}`);
-    }).catch(() => { /* non-fatal */ });
-  }, [step, dirName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTriage = useCallback(() => {
     if (!dirName) return;
@@ -2131,63 +1366,17 @@ export function ProjectUploadFlow() {
               }))
             : PLACEHOLDER_TIMELINE}
           onBack={() => enhanceResult?.questions.length ? setStep('questions') : setStep('enhance')}
-          onReview={() => setStep('review')}
-        />
-      ) : step === 'review' ? (
-        <ReviewStep
-          project={project}
-          narrative={narrative}
-          selectedCount={selectedIds.size}
-          skippedCount={sessions.length - selectedIds.size}
-          skills={enhanceSkills.length > 0 ? enhanceSkills : project.skills}
-          timeline={enhanceTimeline.length > 0
-            ? enhanceTimeline.map((t) => ({
-                ...t,
-                sessions: t.sessions.map((s) => ({
-                  sessionId: s.sessionId,
-                  title: s.title,
-                  description: s.description,
-                  featured: s.featured,
-                  tag: s.tag,
-                  skills: s.skills,
-                  duration: sessions.find((ss) => ss.id === s.sessionId)?.durationMinutes ?? 0,
-                  date: sessions.find((ss) => ss.id === s.sessionId)?.date,
-                })),
-              }))
-            : PLACEHOLDER_TIMELINE}
-          sessions={sessions.filter((s) => selectedIds.has(s.id))}
-          selectedIds={selectedIds}
-          allSessions={sessions}
-          repoUrl={repoUrl}
-          onRepoUrlChange={setRepoUrl}
-          projectUrl={projectUrl}
-          onProjectUrlChange={setProjectUrl}
-          screenshotPreview={screenshotPreview}
-          onScreenshotPreviewChange={setScreenshotPreview}
-          onUpload={(result) => {
-            setUploadResult(result);
-            setStep('done');
+          onViewProject={() => {
+            // Save enhancement locally then navigate to project detail
+            if (dirName && enhanceResult) {
+              saveProjectEnhanceLocally(
+                dirName,
+                Array.from(selectedIds),
+                enhanceResult,
+              ).catch(() => { /* non-fatal */ });
+            }
+            navigate(`/project/${dirName}`);
           }}
-          onSaveLocal={async () => {
-            if (!dirName || !enhanceResult) return;
-            await saveProjectEnhanceLocally(
-              dirName,
-              [...selectedIds],
-              enhanceResult,
-              { repoUrl: repoUrl || undefined, projectUrl: projectUrl || undefined, screenshotBase64: screenshotPreview || undefined },
-            );
-            setUploadResult(null);
-            setStep('done');
-          }}
-          onBack={() => setStep('timeline')}
-        />
-      ) : step === 'done' ? (
-        <SuccessStep
-          project={project}
-          narrative={narrative}
-          selectedCount={selectedIds.size}
-          uploadedUrl={uploadResult?.url}
-          uploadedSessions={uploadResult?.uploadedSessions}
         />
       ) : null}
 

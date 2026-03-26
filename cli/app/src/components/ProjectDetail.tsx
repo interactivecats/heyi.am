@@ -1,6 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { fetchProjectDetail, type ProjectDetail as ProjectDetailType, type Session } from '../api'
+import {
+  fetchProjectDetail,
+  fetchGitRemote,
+  saveProjectEnhanceLocally,
+  captureScreenshotFromUrl,
+  type ProjectDetail as ProjectDetailType,
+  type Session,
+} from '../api'
 import { Card, Note, SectionHeader, StatCard } from './shared'
 import { Chip } from './shared/Chip'
 import { WorkTimeline } from './WorkTimeline'
@@ -32,19 +39,111 @@ function timeSince(dateStr: string): string {
 
 const DURATION_COLORS = ['bg-primary', 'bg-green', 'bg-violet'] as const
 
+function ProjectHero({
+  narrative,
+  screenshotSrc,
+  projectName,
+  stats,
+}: {
+  narrative: string
+  screenshotSrc?: string
+  projectName: string
+  stats: Array<{ label: string; value: string | number }>
+}) {
+  return (
+    <div className="flex flex-col gap-4 mb-4">
+      {screenshotSrc && (
+        <div className="rounded-md border border-ghost overflow-hidden shadow-sm">
+          {/* Browser chrome */}
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-surface-low border-b border-ghost">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
+          </div>
+          {/* Screenshot viewport — scrollable like a real browser */}
+          <div className="max-h-96 overflow-y-auto">
+            <img
+              src={screenshotSrc}
+              alt={`${projectName} screenshot`}
+              className="w-full h-auto"
+            />
+          </div>
+        </div>
+      )}
+
+      {narrative && (
+        <Card>
+          <SectionHeader title="Narrative summary" meta="editable" />
+          <p
+            className="leading-relaxed text-on-surface border-l-[3px] border-primary pl-3"
+            style={{ fontSize: 'clamp(0.8125rem, 1.2vw, 1rem)' }}
+          >
+            {narrative}
+          </p>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-4 gap-3">
+        {stats.map((s) => (
+          <StatCard key={s.label} label={s.label} value={s.value} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function ProjectDetail() {
   const { dirName } = useParams<{ dirName: string }>()
   const [detail, setDetail] = useState<ProjectDetailType | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedSession, setSelectedSession] = useState<Session | null>(null)
 
+  // Project metadata fields
+  const [repoUrl, setRepoUrl] = useState('')
+  const [projectUrl, setProjectUrl] = useState('')
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null)
+  const [screenshotCapturing, setScreenshotCapturing] = useState(false)
+  const [metadataDirty, setMetadataDirty] = useState(false)
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const screenshotInputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     if (!dirName) return
     fetchProjectDetail(dirName)
-      .then(setDetail)
+      .then((d) => {
+        setDetail(d)
+        // Populate metadata from enhance cache
+        if (d.enhanceCache?.repoUrl) setRepoUrl(d.enhanceCache.repoUrl)
+        if (d.enhanceCache?.projectUrl) setProjectUrl(d.enhanceCache.projectUrl)
+        if (d.enhanceCache?.screenshotBase64) setScreenshotPreview(d.enhanceCache.screenshotBase64)
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
+
+    // Auto-detect git remote
+    fetchGitRemote(dirName).then(({ url }) => {
+      if (url) setRepoUrl((prev) => prev || (url.startsWith('http') ? url : `https://${url}`))
+    }).catch(() => {})
   }, [dirName])
+
+  // Auto-save metadata on change (debounced)
+  const saveMetadata = useCallback(() => {
+    if (!dirName || !detail) return
+    const cache = detail.enhanceCache
+    saveProjectEnhanceLocally(
+      dirName,
+      cache?.selectedSessionIds ?? [],
+      cache?.result ?? { narrative: '', arc: [], skills: [], timeline: [], questions: [] },
+      { repoUrl: repoUrl || undefined, projectUrl: projectUrl || undefined, screenshotBase64: screenshotPreview ?? undefined },
+    ).then(() => setMetadataDirty(false)).catch(() => {})
+  }, [dirName, detail, repoUrl, projectUrl, screenshotPreview])
+
+  useEffect(() => {
+    if (!metadataDirty) return
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    saveTimeoutRef.current = setTimeout(saveMetadata, 800)
+    return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current) }
+  }, [metadataDirty, saveMetadata])
 
   if (loading) {
     return (
@@ -73,25 +172,51 @@ export function ProjectDetail() {
 
   // Build key moments from enhance cache timeline (featured sessions)
   const keyMoments: Array<{ sessionId: string; label: string }> = []
+  const featuredSessionIds = new Set<string>()
   if (cache?.result?.timeline) {
     for (const period of cache.result.timeline) {
       for (const s of period.sessions) {
-        if (s.featured && s.tag) {
-          keyMoments.push({ sessionId: s.sessionId, label: s.tag })
-        }
-      }
-    }
-  }
-  // Also pull from arc phases as fallback annotations
-  if (keyMoments.length === 0 && phases.length > 0 && cache?.result?.timeline) {
-    for (const period of cache.result.timeline) {
-      for (const s of period.sessions) {
         if (s.featured) {
-          keyMoments.push({ sessionId: s.sessionId, label: s.title.slice(0, 18) })
+          featuredSessionIds.add(s.sessionId)
+          if (s.tag) {
+            keyMoments.push({ sessionId: s.sessionId, label: s.tag })
+          } else {
+            keyMoments.push({ sessionId: s.sessionId, label: s.title.slice(0, 18) })
+          }
         }
       }
     }
   }
+
+  // Pick best sessions for the featured grid:
+  // 1. Sessions marked featured in enhance cache timeline
+  // 2. Enhanced sessions (have real titles/data)
+  // 3. Most recent sessions as fallback
+  const featuredSessions = (() => {
+    // First: sessions flagged as featured in the enhance cache
+    const featured = sessions.filter(s => featuredSessionIds.has(s.id))
+    if (featured.length >= 6) return featured.slice(0, 6)
+
+    // Then: enhanced sessions (status !== 'draft')
+    const enhanced = sessions.filter(s => s.status === 'enhanced' || s.status === 'uploaded')
+    const rest = sessions.filter(s => s.status === 'draft' && !featuredSessionIds.has(s.id))
+
+    // Combine: featured first, then enhanced by LOC desc, then recent
+    const combined = [
+      ...featured,
+      ...enhanced.filter(s => !featuredSessionIds.has(s.id))
+        .sort((a, b) => b.linesOfCode - a.linesOfCode),
+      ...rest,
+    ]
+
+    // Deduplicate
+    const seen = new Set<string>()
+    return combined.filter(s => {
+      if (seen.has(s.id)) return false
+      seen.add(s.id)
+      return true
+    }).slice(0, 6)
+  })()
 
   return (
     <div className="grid grid-cols-[240px_1fr] min-h-[calc(100vh-48px)]">
@@ -115,6 +240,102 @@ export function ProjectDetail() {
         </div>
 
         <Note>The local project page is the main object. Public pages are just one projection of it.</Note>
+
+        {/* Project metadata */}
+        <div className="mt-6 pt-4 border-t border-ghost">
+          <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-3">Project links</div>
+
+          <label className="block mb-3">
+            <span className="text-[0.75rem] font-medium text-on-surface-variant block mb-1">Repo URL</span>
+            <input
+              type="url"
+              value={repoUrl}
+              onChange={(e) => { setRepoUrl(e.target.value); setMetadataDirty(true) }}
+              placeholder="https://github.com/..."
+              className="w-full text-xs font-mono px-2 py-1.5 rounded-sm border border-ghost bg-surface-lowest text-on-surface placeholder:text-outline"
+            />
+          </label>
+
+          <label className="block mb-3">
+            <span className="text-[0.75rem] font-medium text-on-surface-variant block mb-1">Project URL</span>
+            <input
+              type="url"
+              value={projectUrl}
+              onChange={(e) => { setProjectUrl(e.target.value); setMetadataDirty(true) }}
+              placeholder="https://example.com"
+              className="w-full text-xs font-mono px-2 py-1.5 rounded-sm border border-ghost bg-surface-lowest text-on-surface placeholder:text-outline"
+            />
+          </label>
+
+          <div className="mb-2">
+            <span className="text-[0.75rem] font-medium text-on-surface-variant block mb-1">Screenshot</span>
+            {screenshotPreview ? (
+              <div className="relative rounded-sm overflow-hidden border border-ghost">
+                <img
+                  src={screenshotPreview.startsWith('data:') ? screenshotPreview : `data:image/png;base64,${screenshotPreview}`}
+                  alt="Project screenshot"
+                  className="w-full h-auto max-h-32 object-cover object-top"
+                />
+                <button
+                  type="button"
+                  onClick={() => { setScreenshotPreview(null); setMetadataDirty(true) }}
+                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center hover:bg-black/80"
+                >
+                  &times;
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => screenshotInputRef.current?.click()}
+                  className="text-xs font-mono text-primary hover:underline text-left"
+                >
+                  Upload image...
+                </button>
+                {projectUrl && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!dirName) return
+                      setScreenshotCapturing(true)
+                      const slug = project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+                      try {
+                        const result = await captureScreenshotFromUrl(dirName, slug, projectUrl)
+                        if (result.ok && result.preview) {
+                          setScreenshotPreview(result.preview)
+                          setMetadataDirty(true)
+                        }
+                      } catch { /* non-fatal */ }
+                      finally { setScreenshotCapturing(false) }
+                    }}
+                    disabled={screenshotCapturing}
+                    className="text-xs font-mono text-primary hover:underline text-left"
+                  >
+                    {screenshotCapturing ? 'Capturing...' : 'Auto-capture from URL'}
+                  </button>
+                )}
+              </div>
+            )}
+            <input
+              ref={screenshotInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                const reader = new FileReader()
+                reader.onload = () => { setScreenshotPreview(reader.result as string); setMetadataDirty(true) }
+                reader.readAsDataURL(file)
+              }}
+            />
+          </div>
+
+          {metadataDirty && (
+            <div className="text-[9px] font-mono text-outline mt-2">Saving...</div>
+          )}
+        </div>
       </aside>
 
       {/* Main content */}
@@ -135,34 +356,51 @@ export function ProjectDetail() {
             <Chip variant="primary">{project.sessionCount} sessions</Chip>
           </div>
         </div>
-        <div className="h-4" />
-
-        {/* Screenshot */}
-        {screenshotSrc && (
-          <div className="max-h-[340px] overflow-hidden rounded-md border border-ghost mb-4">
-            <img
-              src={screenshotSrc}
-              alt={`${project.name} screenshot`}
-              className="w-full max-h-[340px] object-cover object-top"
-            />
+        {/* Project links */}
+        {(repoUrl || projectUrl) && (
+          <div className="flex items-center gap-4 mt-1 mb-1">
+            {repoUrl && (
+              <a
+                href={repoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-xs text-primary hover:underline flex items-center gap-1"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                {repoUrl.replace(/^https?:\/\/(www\.)?/, '').replace(/\.git$/, '')}
+              </a>
+            )}
+            {projectUrl && (
+              <a
+                href={projectUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-xs text-primary hover:underline flex items-center gap-1"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6.5 10.5l3-3m-1.5-2a2.5 2.5 0 013.54 3.54l-1.5 1.5m-4.08-1.08a2.5 2.5 0 01-3.54-3.54l1.5-1.5"/></svg>
+                {projectUrl.replace(/^https?:\/\/(www\.)?/, '')}
+              </a>
+            )}
           </div>
         )}
+        <div className="h-4" />
 
-        {/* Narrative */}
-        <Card className="mb-4">
-          <SectionHeader title="Narrative summary" meta="editable" />
-          <p className="text-[0.8125rem] leading-relaxed text-on-surface border-l-[3px] border-primary pl-3">
-            {narrative}
-          </p>
-        </Card>
-
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-3 mb-4">
-          <StatCard label="Sessions" value={project.sessionCount} />
-          <StatCard label="Time" value={formatDuration(project.totalDuration)} />
-          <StatCard label="LOC" value={formatLoc(project.totalLoc)} />
-          <StatCard label="Files" value={project.totalFiles} />
-        </div>
+        {/* Narrative + Stats beside Screenshot */}
+        <ProjectHero
+          narrative={narrative}
+          screenshotSrc={
+            screenshotPreview
+              ? (screenshotPreview.startsWith('data:') ? screenshotPreview : `data:image/png;base64,${screenshotPreview}`)
+              : screenshotSrc
+          }
+          projectName={project.name}
+          stats={[
+            { label: 'Sessions', value: project.sessionCount },
+            { label: 'Time', value: formatDuration(project.totalDuration) },
+            { label: 'LOC', value: formatLoc(project.totalLoc) },
+            { label: 'Files', value: project.totalFiles },
+          ]}
+        />
 
         {/* Work Timeline — full agent visualization */}
         <Card className="mb-4">
@@ -226,7 +464,7 @@ export function ProjectDetail() {
         <Card>
           <SectionHeader title="Featured sessions" meta={`${sessions.length} total`} />
           <div className="grid grid-cols-2 gap-3">
-            {sessions.slice(0, 6).map((s, i) => (
+            {featuredSessions.map((s, i) => (
               <button
                 key={s.id}
                 type="button"

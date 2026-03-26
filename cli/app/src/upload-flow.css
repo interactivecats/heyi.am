@@ -105,7 +105,7 @@
   background: var(--surface-container-lowest);
   padding: var(--spacing-5);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--ghost-border);
+  border: var(--ghost-border);
 }
 
 .stat-card__label {
@@ -127,7 +127,7 @@
 
 .session-table {
   background: var(--surface-container-lowest);
-  border: 1px solid var(--ghost-border);
+  border: var(--ghost-border);
   border-radius: var(--radius-sm);
   margin-bottom: var(--spacing-8);
   max-height: 320px;
@@ -157,7 +157,7 @@
   grid-template-columns: 1fr 70px 60px 60px 60px;
   padding: var(--spacing-3) var(--spacing-4);
   font-size: 0.8125rem;
-  border-bottom: 1px solid var(--ghost-border);
+  border-bottom: var(--ghost-border);
 }
 
 .session-table__name {
@@ -865,7 +865,7 @@
 
 .review-card {
   background: var(--surface-container-lowest);
-  border: 1px solid var(--ghost-border);
+  border: var(--ghost-border);
   border-radius: var(--radius-sm);
   padding: var(--spacing-6);
   margin-bottom: var(--spacing-6);
@@ -933,7 +933,7 @@
 
 .review-details {
   background: var(--surface-container-lowest);
-  border: 1px solid var(--ghost-border);
+  border: var(--ghost-border);
   border-radius: var(--radius-sm);
   padding: var(--spacing-6);
   margin-bottom: var(--spacing-6);
@@ -990,7 +990,7 @@
   padding: var(--spacing-3) var(--spacing-4);
   font-family: var(--font-body);
   font-size: 0.875rem;
-  border: 1px solid var(--ghost-border);
+  border: var(--ghost-border);
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--on-surface);
@@ -1023,7 +1023,7 @@
   justify-content: center;
   gap: var(--spacing-2);
   padding: var(--spacing-8) var(--spacing-6);
-  border: 2px dashed var(--ghost-border);
+  border: 2px dashed rgba(194, 199, 208, 0.15);
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -1063,7 +1063,7 @@
   position: relative;
   border-radius: var(--radius-sm);
   overflow: hidden;
-  border: 1px solid var(--ghost-border);
+  border: var(--ghost-border);
 }
 
 .review-screenshot-preview__img {
@@ -1103,7 +1103,7 @@
 }
 
 .review-auth__card {
-  border: 1px solid var(--ghost-border);
+  border: var(--ghost-border);
   border-radius: var(--radius-sm);
   padding: var(--spacing-5) var(--spacing-6);
   background: var(--surface);

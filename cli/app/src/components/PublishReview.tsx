@@ -40,6 +40,7 @@ export function PublishReview() {
       totalFilesChanged: project?.totalFiles ?? 0,
       skippedSessions: [],
       selectedSessionIds: cache?.selectedSessionIds ?? [],
+      screenshotBase64: cache?.screenshotBase64 ?? undefined,
     }
 
     uploadProject(dirName, payload, (event: UploadEvent) => {

@@ -48,9 +48,80 @@
    BASE STYLES
    ═══════════════════════════════════════════ */
 :root {
-  --inverse-surface: #111111;
-  --inverse-on-surface: #e0e0e0;
-  --inverse-primary: #9dcaff;
+  /* ── Surface / Tonal Layers ── (unprefixed aliases for upload-flow.css) */
+  --surface:                 #f8f9fb;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low:   #f3f4f6;
+  --surface-container:       #edeef0;
+  --surface-container-high:  #e7e8ea;
+  --surface-container-highest: #e1e2e4;
+  --surface-dim:             #d9dadc;
+  --surface-tint:            #316190;
+
+  /* ── Functional Accents ── */
+  --primary:         #084471;
+  --on-primary:      #ffffff;
+  --primary-container: #2b5c8a;
+  --on-primary-container: #b0d4ff;
+  --primary-fixed:   #d0e4ff;
+  --primary-fixed-dim: #9dcaff;
+
+  --secondary:       #006a61;
+  --on-secondary:    #ffffff;
+  --secondary-container: #93f4e6;
+
+  --tertiary:        #663500;
+  --on-tertiary:     #ffffff;
+  --tertiary-fixed:  #ffdcc3;
+  --tertiary-fixed-dim: #ffb77d;
+  --on-tertiary-fixed: #2f1500;
+  --on-tertiary-fixed-variant: #6e3900;
+
+  /* ── Ink ── */
+  --on-surface:         #191c1e;
+  --on-surface-variant:  #42474e;
+  --outline:            #72787e;
+  --outline-variant:    #c2c7d0;
+
+  /* ── Error ── */
+  --error:            #ba1a1a;
+  --error-container:  #ffdad6;
+  --on-error:         #ffffff;
+
+  /* ── Inverse (dark terminal) ── */
+  --inverse-surface:     #2e3132;
+  --inverse-on-surface:  #f0f1f3;
+  --inverse-primary:     #9dcaff;
+
+  /* ── Spacing ── */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  --spacing-20: 5rem;
+  --spacing-24: 5.5rem;
+
+  /* ── Shadows ── */
+  --shadow-ambient: 0 12px 40px rgba(25, 28, 30, 0.06);
+  --shadow-sm: 0 1px 3px rgba(25, 28, 30, 0.04);
+
+  /* ── Ghost border ── */
+  --ghost-border: 1px solid rgba(194, 199, 208, 0.15);
+
+  /* ── Radius (additional) ── */
+  --radius-xs: 0.125rem;  /* 2px */
+
+  /* ── Semantic aliases ── */
+  --bg: var(--surface-container-low);
+  --font-heading: var(--font-display);
+  --success-fg: #16a34a;
+  --success-bg: #dcfce7;
 }
 
 html { font-size: 16px; }
