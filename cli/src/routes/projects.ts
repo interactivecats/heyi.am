@@ -4,6 +4,7 @@ import { toAgentChild, bridgeChildSessions, aggregateChildStats, type AgentChild
 import { getAuthToken } from '../auth.js';
 import { API_URL } from '../config.js';
 import { loadEnhancedData, loadProjectEnhanceResult, getUploadedState } from '../settings.js';
+import { getSessionsByProject } from '../db.js';
 import type { RouteContext } from './context.js';
 
 export function createProjectsRouter(ctx: RouteContext): Router {
@@ -134,65 +135,58 @@ export function createProjectsRouter(ctx: RouteContext): Router {
 
       const enhanceCache = loadProjectEnhanceResult(proj.dirName);
 
-      const sessionStats = await Promise.all(
-        proj.sessions.map(async (meta) => {
-          const seenIds = new Set<string>();
-          const children: AgentChild[] = [];
-          for (const c of meta.children ?? []) {
-            if (seenIds.has(c.sessionId)) continue;
-            seenIds.add(c.sessionId);
-            const childStats = await ctx.getSessionStats(c, proj.name);
-            children.push({
-              sessionId: c.sessionId,
-              role: c.agentRole ?? 'agent',
-              durationMinutes: childStats.duration,
-              linesOfCode: childStats.loc,
-              date: childStats.date,
-            });
-          }
-          const childCount = children.length;
+      // Build session list from DB (fast) + enhanced data files (small reads)
+      const dbSessions = getSessionsByProject(ctx.db, proj.dirName);
+      const parentSessions = dbSessions.filter((r) => !r.is_subagent);
+      const childMap = new Map<string, AgentChild[]>();
+      for (const r of dbSessions) {
+        if (r.is_subagent && r.parent_session_id) {
+          const children = childMap.get(r.parent_session_id) ?? [];
+          children.push({
+            sessionId: r.id,
+            role: r.agent_role ?? 'agent',
+            durationMinutes: r.duration_minutes ?? 0,
+            linesOfCode: (r.loc_added ?? 0) + (r.loc_removed ?? 0),
+            date: r.start_time ?? '',
+          });
+          childMap.set(r.parent_session_id, children);
+        }
+      }
 
-          try {
-            const session = await ctx.loadSession(meta.path, proj.name, meta.sessionId);
-            return { ...session, childCount, children: childCount > 0 ? children : undefined };
-          } catch {
-            const stats = await ctx.getSessionStats(meta, proj.name);
-            const enhanced = loadEnhancedData(meta.sessionId);
-            let fallbackDate = stats.date || '';
-            if (!fallbackDate) {
-              try { fallbackDate = statSync(meta.path).mtime.toISOString(); } catch { /* ignore */ }
-            }
-            return {
-              id: meta.sessionId,
-              title: enhanced?.title || 'Untitled session',
-              date: fallbackDate,
-              durationMinutes: stats.duration,
-              turns: stats.turns,
-              linesOfCode: stats.loc,
-              status: (enhanced?.uploaded ? 'uploaded' : enhanced ? 'enhanced' : 'draft') as 'uploaded' | 'enhanced' | 'draft',
-              projectName: proj.name,
-              rawLog: [] as string[],
-              skills: enhanced?.skills || stats.skills,
-              source: meta.source,
-              childCount,
-              children: childCount > 0 ? children : undefined,
-            };
-          }
-        }),
-      );
+      const sessionStats = parentSessions.map((r) => {
+        const enhanced = loadEnhancedData(r.id);
+        const children = childMap.get(r.id);
+        const skills: string[] = enhanced?.skills ?? (r.skills ? JSON.parse(r.skills) : []);
+        return {
+          id: r.id,
+          title: enhanced?.title ?? r.title ?? 'Untitled session',
+          date: r.start_time ?? '',
+          durationMinutes: r.duration_minutes ?? 0,
+          turns: r.turns ?? 0,
+          linesOfCode: (r.loc_added ?? 0) + (r.loc_removed ?? 0),
+          status: (enhanced?.uploaded ? 'uploaded' : enhanced ? 'enhanced' : 'draft') as 'uploaded' | 'enhanced' | 'draft',
+          projectName: proj.name,
+          rawLog: [] as string[],
+          skills,
+          source: r.source,
+          developerTake: enhanced?.developerTake,
+          context: enhanced?.context,
+          executionPath: enhanced?.executionSteps?.map((s) => ({
+            stepNumber: s.stepNumber,
+            title: s.title,
+            description: s.body,
+          })),
+          qaPairs: enhanced?.qaPairs,
+          childCount: children?.length ?? 0,
+          children,
+        };
+      });
 
       const totalLoc = sessionStats.reduce((sum, s) => sum + (s.linesOfCode || 0), 0);
       const totalDuration = sessionStats.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
-      const uniqueFiles = new Set<string>();
-      for (const s of sessionStats) {
-        const fc = (s as Record<string, unknown>).filesChanged;
-        if (Array.isArray(fc)) {
-          for (const f of fc) {
-            if (f && typeof f === 'object' && 'path' in f) uniqueFiles.add((f as { path: string }).path);
-          }
-        }
-      }
-      const totalFiles = uniqueFiles.size;
+      const totalFiles = (ctx.db.prepare(
+        'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ?)',
+      ).get(proj.dirName) as { c: number }).c;
       const allSkills = [...new Set(sessionStats.flatMap((s) => s.skills || []))];
 
       const uploaded = getUploadedState(proj.dirName);
