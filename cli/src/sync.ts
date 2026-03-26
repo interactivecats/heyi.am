@@ -39,6 +39,87 @@ export interface SyncResult {
 
 export type SyncProgressCallback = (progress: SyncProgress) => void;
 
+// ── Observable Sync State (for server dashboard) ─────────────
+
+export interface SyncState {
+  status: 'idle' | 'syncing' | 'done';
+  phase: SyncProgress['phase'];
+  current: number;
+  total: number;
+  result: SyncResult | null;
+  startedAt: number | null;
+  finishedAt: number | null;
+}
+
+type SyncListener = (state: SyncState) => void;
+
+let _syncState: SyncState = {
+  status: 'idle',
+  phase: 'done',
+  current: 0,
+  total: 0,
+  result: null,
+  startedAt: null,
+  finishedAt: null,
+};
+
+const _syncListeners = new Set<SyncListener>();
+
+export function getSyncState(): SyncState {
+  return { ..._syncState };
+}
+
+export function onSyncProgress(listener: SyncListener): () => void {
+  _syncListeners.add(listener);
+  return () => { _syncListeners.delete(listener); };
+}
+
+function notifyListeners(): void {
+  const snapshot = { ..._syncState };
+  for (const fn of _syncListeners) fn(snapshot);
+}
+
+/**
+ * Wrapper around syncSessionIndex that tracks state for the dashboard.
+ * Use this in server.ts instead of calling syncSessionIndex directly.
+ */
+export async function syncWithTracking(
+  db: Database.Database,
+  basePath?: string,
+): Promise<SyncResult> {
+  _syncState = {
+    status: 'syncing',
+    phase: 'discovering',
+    current: 0,
+    total: 0,
+    result: null,
+    startedAt: Date.now(),
+    finishedAt: null,
+  };
+  notifyListeners();
+
+  const result = await syncSessionIndex(db, basePath, (progress) => {
+    _syncState = {
+      ..._syncState,
+      phase: progress.phase,
+      current: progress.current ?? _syncState.current,
+      total: progress.total ?? _syncState.total,
+    };
+    notifyListeners();
+  });
+
+  _syncState = {
+    ..._syncState,
+    status: 'done',
+    phase: 'done',
+    result,
+    finishedAt: Date.now(),
+  };
+  notifyListeners();
+
+  return result;
+}
+
 // ── Helpers ──────────────────────────────────────────────────
 
 /** Derive a human-readable project name from the encoded directory name. */

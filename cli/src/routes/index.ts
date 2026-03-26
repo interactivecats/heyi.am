@@ -9,3 +9,4 @@ export { createAuthRouter } from './auth.js';
 export { createSettingsRouter } from './settings.js';
 export { createExportRouter } from './export.js';
 export { createPreviewRouter } from './preview.js';
+export { createDashboardRouter } from './dashboard.js';

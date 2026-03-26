@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Server } from 'node:http';
 import { getDatabase } from './db.js';
-import { syncSessionIndex, startFileWatcher, startCursorPolling } from './sync.js';
+import { syncWithTracking, startFileWatcher, startCursorPolling } from './sync.js';
 import {
   createRouteContext,
   createProjectsRouter,
@@ -17,6 +17,7 @@ import {
   createSettingsRouter,
   createExportRouter,
   createPreviewRouter,
+  createDashboardRouter,
 } from './routes/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -40,6 +41,7 @@ export function createApp(sessionsBasePath?: string, dbPath?: string) {
   app.use(createSettingsRouter(ctx));
   app.use(createExportRouter(ctx));
   app.use(createPreviewRouter(ctx));
+  app.use(createDashboardRouter(ctx));
 
   // ── Static files ───────────────────────────────────────────
   const staticDir = path.resolve(__dirname, '..', 'app', 'dist');
@@ -58,7 +60,8 @@ export function startServer(port: number = 17845): Promise<Server> {
   const db = getDatabase();
 
   // Run initial sync in the background (non-blocking)
-  syncSessionIndex(db).then((result) => {
+  // Uses syncWithTracking so the dashboard can observe progress via /api/sync/progress
+  syncWithTracking(db).then((result) => {
     if (result.indexed > 0) {
       console.log(`Indexed ${result.indexed} sessions (${result.skipped} up-to-date, ${result.orphansRemoved} removed)`);
     }

@@ -639,3 +639,47 @@ export function getSessionCount(db: Database.Database): number {
   const row = db.prepare('SELECT COUNT(*) as count FROM sessions').get() as { count: number };
   return row.count;
 }
+
+// ── Dashboard Stats (single-query aggregate) ─────────────────
+
+export interface DashboardStats {
+  sessionCount: number;
+  projectCount: number;
+  sourceCount: number;
+  projects: Array<{
+    projectDir: string;
+    projectName: string;
+    sessionCount: number;
+    totalLoc: number;
+    totalDuration: number;
+    skills: string[];
+    latestDate: string;
+  }>;
+}
+
+export function getDashboardStats(db: Database.Database): DashboardStats {
+  const agg = db.prepare(`
+    SELECT
+      COUNT(*) as session_count,
+      COUNT(DISTINCT project_dir) as project_count,
+      COUNT(DISTINCT source) as source_count
+    FROM sessions WHERE is_subagent = 0
+  `).get() as { session_count: number; project_count: number; source_count: number };
+
+  const projects = getAllProjectStats(db);
+
+  return {
+    sessionCount: agg.session_count,
+    projectCount: agg.project_count,
+    sourceCount: agg.source_count,
+    projects: projects.map((p) => ({
+      projectDir: p.projectDir,
+      projectName: p.projectName,
+      sessionCount: p.sessionCount,
+      totalLoc: p.totalLoc,
+      totalDuration: p.totalDuration,
+      skills: p.skills,
+      latestDate: p.latestDate,
+    })),
+  };
+}

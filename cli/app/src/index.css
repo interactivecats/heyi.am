@@ -14,6 +14,9 @@
   --color-surface-mid: #eaeff1;
   --color-surface-high: #e7e8ea;
   --color-surface-dark: #191c1e;
+  --color-inverse-surface: #111111;
+  --color-inverse-on-surface: #e0e0e0;
+  --color-inverse-primary: #9dcaff;
 
   --color-primary: #084471;
   --color-primary-hover: #0a5a96;
@@ -44,6 +47,12 @@
 /* ═══════════════════════════════════════════
    BASE STYLES
    ═══════════════════════════════════════════ */
+:root {
+  --inverse-surface: #111111;
+  --inverse-on-surface: #e0e0e0;
+  --inverse-primary: #9dcaff;
+}
+
 html { font-size: 16px; }
 body {
   font-family: var(--font-body);
