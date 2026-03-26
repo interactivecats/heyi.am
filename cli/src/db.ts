@@ -14,7 +14,7 @@ import type { SessionMeta } from './parsers/index.js';
 const CONFIG_DIR = join(homedir(), '.config', 'heyiam');
 export const DB_PATH = join(CONFIG_DIR, 'sessions.db');
 
-const CURRENT_SCHEMA_VERSION = 2;
+const CURRENT_SCHEMA_VERSION = 3;
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -44,6 +44,7 @@ export interface SessionRow {
   file_mtime: number | null;
   file_size: number | null;
   indexed_at: string | null;
+  context_summary: string | null;
 }
 
 /** Stats shape compatible with the old SessionStats from server.ts */
@@ -157,6 +158,7 @@ function migrateToV2(db: Database.Database): void {
         file_mtime INTEGER,
         file_size INTEGER,
         indexed_at TEXT,
+        context_summary TEXT,
         FOREIGN KEY (parent_session_id) REFERENCES sessions(id) ON DELETE CASCADE
       )
     `);
@@ -234,6 +236,7 @@ export interface UpsertSessionInput {
   session: Session;
   fileMtime: number;
   fileSize: number;
+  contextSummary?: string;
 }
 
 export function upsertSession(db: Database.Database, input: UpsertSessionInput): void {
@@ -245,13 +248,13 @@ export function upsertSession(db: Database.Database, input: UpsertSessionInput):
       duration_minutes, wall_clock_minutes, turns, loc_added, loc_removed, loc_net,
       files_changed, tool_calls, skills, files_touched, models_used,
       cwd, parent_session_id, agent_role, is_subagent,
-      file_path, file_mtime, file_size, indexed_at
+      file_path, file_mtime, file_size, indexed_at, context_summary
     ) VALUES (
       ?, ?, ?, ?, ?, ?,
       ?, ?, ?, ?, ?, ?,
       ?, ?, ?, ?, ?,
       ?, ?, ?, ?,
-      ?, ?, ?, ?
+      ?, ?, ?, ?, ?
     )
     ON CONFLICT(id) DO UPDATE SET
       project_dir = excluded.project_dir,
@@ -277,7 +280,8 @@ export function upsertSession(db: Database.Database, input: UpsertSessionInput):
       file_path = excluded.file_path,
       file_mtime = excluded.file_mtime,
       file_size = excluded.file_size,
-      indexed_at = excluded.indexed_at
+      indexed_at = excluded.indexed_at,
+      context_summary = excluded.context_summary
   `);
 
   stmt.run(
@@ -306,6 +310,7 @@ export function upsertSession(db: Database.Database, input: UpsertSessionInput):
     Math.floor(fileMtime),
     fileSize,
     new Date().toISOString(),
+    input.contextSummary ?? null,
   );
 }
 
@@ -460,6 +465,15 @@ export function getSessionRow(db: Database.Database, sessionId: string): Session
   return (db.prepare('SELECT * FROM sessions WHERE id = ?').get(sessionId) as SessionRow) ?? null;
 }
 
+// ── Read: Get Context Summary ─────────────────────────────────
+
+export function getContextSummary(db: Database.Database, sessionId: string): string | null {
+  const row = db.prepare('SELECT context_summary FROM sessions WHERE id = ?').get(sessionId) as
+    | { context_summary: string | null }
+    | undefined;
+  return row?.context_summary ?? null;
+}
+
 // ── Read: List sessions by project ───────────────────────────
 
 export function getSessionsByProject(db: Database.Database, projectDir: string): SessionRow[] {
@@ -543,11 +557,24 @@ export interface FtsSearchResult {
   rank: number;
 }
 
+/**
+ * Escape a user query for FTS5. Wraps each term in double quotes
+ * to prevent FTS5 syntax injection (*, OR, NOT, NEAR, etc.).
+ */
+function escapeFtsQuery(raw: string): string {
+  // Split on whitespace, quote each non-empty term
+  const terms = raw.trim().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return '""';
+  return terms.map((t) => `"${t.replace(/"/g, '""')}"`).join(' ');
+}
+
 export function searchFts(
   db: Database.Database,
   query: string,
   limit: number = 50,
 ): FtsSearchResult[] {
+  const safeQuery = escapeFtsQuery(query);
+
   // Fetch a larger window of raw FTS matches, then deduplicate in JS.
   // We fetch limit*10 rows to ensure we get enough distinct sessions,
   // since a single session can have dozens of matching turns.
@@ -560,7 +587,7 @@ export function searchFts(
     WHERE sessions_fts MATCH ?
     ORDER BY rank
     LIMIT ?
-  `).all(query, limit * 10) as Array<{
+  `).all(safeQuery, limit * 10) as Array<{
     session_id: string;
     snippet: string;
     rank: number;
@@ -593,11 +620,13 @@ export function searchByFile(
   db: Database.Database,
   filePath: string,
 ): Array<{ sessionId: string; additions: number; deletions: number }> {
+  // Escape LIKE wildcards in user input
+  const escaped = filePath.replace(/[%_]/g, (c) => `\\${c}`);
   return db.prepare(`
     SELECT session_id as sessionId, additions, deletions
     FROM session_files
-    WHERE file_path LIKE ?
-  `).all(`%${filePath}%`) as Array<{
+    WHERE file_path LIKE ? ESCAPE '\\'
+  `).all(`%${escaped}%`) as Array<{
     sessionId: string;
     additions: number;
     deletions: number;

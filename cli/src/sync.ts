@@ -17,6 +17,7 @@ import {
   optimizeFtsIndex,
   type UpsertSessionInput,
 } from './db.js';
+import { renderCompact } from './context-export.js';
 import { getArchiveDir } from './settings.js';
 
 // ── Types ────────────────────────────────────────────────────
@@ -77,12 +78,16 @@ export async function ensureSessionIndexed(
 
   const { mtime, size } = getFileStats(meta.path);
 
+  // Pre-compute compact context summary for offline access after source deletion
+  const contextSummary = renderCompact(session);
+
   const upsertInput: UpsertSessionInput = {
     meta,
     analysis: parsed,
     session,
     fileMtime: mtime,
     fileSize: size,
+    contextSummary,
   };
 
   indexSession(db, upsertInput, input.turns);

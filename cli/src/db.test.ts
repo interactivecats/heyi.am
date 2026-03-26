@@ -21,6 +21,7 @@ import {
   getSessionCount,
   cleanupOrphanedSessions,
   countPreservedSessions,
+  getContextSummary,
   type UpsertSessionInput,
 } from './db.js';
 import type { SessionAnalysis } from './parsers/types.js';
@@ -125,9 +126,9 @@ describe('db', () => {
   });
 
   describe('openDatabase', () => {
-    it('creates schema_version table with version 1', () => {
+    it('creates schema_version table with current version', () => {
       const row = db.prepare('SELECT version FROM schema_version').get() as { version: number };
-      expect(row.version).toBe(2);
+      expect(row.version).toBe(3);
     });
 
     it('creates sessions table', () => {
@@ -154,7 +155,7 @@ describe('db', () => {
     it('is idempotent — opening twice does not error', () => {
       const db2 = openDatabase(join(tmpDir, 'test.db'));
       const row = db2.prepare('SELECT version FROM schema_version').get() as { version: number };
-      expect(row.version).toBe(2);
+      expect(row.version).toBe(3);
       db2.close();
     });
   });
@@ -548,4 +549,49 @@ describe('db', () => {
       expect(getSessionCount(db)).toBe(2);
     });
   });
+
+  describe('context_summary column', () => {
+    it('stores context_summary when provided', () => {
+      const summary = '# Session: Fix auth middleware\nProject: myapp | Source: Claude Code';
+      upsertSession(db, makeUpsertInput({ contextSummary: summary }));
+
+      const row = getSessionRow(db, 'test-session-1');
+      expect(row!.context_summary).toBe(summary);
+    });
+
+    it('stores null when context_summary not provided', () => {
+      upsertSession(db, makeUpsertInput());
+
+      const row = getSessionRow(db, 'test-session-1');
+      expect(row!.context_summary).toBeNull();
+    });
+
+    it('updates context_summary on re-index', () => {
+      upsertSession(db, makeUpsertInput({ contextSummary: 'old summary' }));
+      upsertSession(db, makeUpsertInput({ contextSummary: 'new summary' }));
+
+      const row = getSessionRow(db, 'test-session-1');
+      expect(row!.context_summary).toBe('new summary');
+    });
+  });
+
+  describe('getContextSummary', () => {
+    it('returns stored summary for a session', () => {
+      const summary = '# Session: Fix auth\nProject: myapp';
+      upsertSession(db, makeUpsertInput({ contextSummary: summary }));
+
+      expect(getContextSummary(db, 'test-session-1')).toBe(summary);
+    });
+
+    it('returns null when no summary stored', () => {
+      upsertSession(db, makeUpsertInput());
+
+      expect(getContextSummary(db, 'test-session-1')).toBeNull();
+    });
+
+    it('returns null for nonexistent session', () => {
+      expect(getContextSummary(db, 'nonexistent')).toBeNull();
+    });
+  });
+
 });

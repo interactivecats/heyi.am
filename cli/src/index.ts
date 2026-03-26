@@ -8,7 +8,7 @@ import { listSessions, parseSession, type SessionMeta } from './parsers/index.js
 import { bridgeToAnalyzer } from './bridge.js';
 import { archiveSessionFiles } from './archive.js';
 import { analyzeSession } from './analyzer.js';
-import { openDatabase, getSessionRow } from './db.js';
+import { openDatabase, getSessionRow, getContextSummary } from './db.js';
 import { searchSessions, decodeProjectName } from './search.js';
 import { exportSessionContext, type ExportTier } from './context-export.js';
 import { SOURCE_DISPLAY_NAMES, type SessionSource } from './parsers/types.js';
@@ -235,19 +235,40 @@ program
       process.exit(1);
     }
 
-    if (!row.file_path) {
-      console.error(`\n  Session has no source file path.\n`);
-      db.close();
-      process.exit(1);
+    const tier: ExportTier = opts.compact ? 'compact' : opts.full ? 'full' : 'summary';
+
+    let result!: { content: string; tokens: number; tier: ExportTier };
+
+    // Try to load the source file; fall back to stored context summary if unavailable
+    let sourceAvailable = false;
+    if (row.file_path) {
+      try {
+        const parsed = await parseSession(row.file_path);
+        const projectName = decodeProjectName(row.project_dir).split('/').pop() ?? row.project_dir;
+        const analysis = bridgeToAnalyzer(parsed, { sessionId: row.id, projectName });
+        const session = analyzeSession(analysis);
+        result = exportSessionContext(session, analysis.turns, { tier });
+        sourceAvailable = true;
+      } catch {
+        // Source file is gone or unreadable — fall through to stored summary
+      }
     }
 
-    const parsed = await parseSession(row.file_path);
-    const projectName = decodeProjectName(row.project_dir).split('/').pop() ?? row.project_dir;
-    const analysis = bridgeToAnalyzer(parsed, { sessionId: row.id, projectName });
-    const session = analyzeSession(analysis);
-
-    const tier: ExportTier = opts.compact ? 'compact' : opts.full ? 'full' : 'summary';
-    const result = exportSessionContext(session, analysis.turns, { tier });
+    if (!sourceAvailable) {
+      const stored = getContextSummary(db, sessionId);
+      if (stored) {
+        // Stored summary is always compact tier — inform user if they requested a richer tier
+        const { estimateTokens } = await import('./context-export.js');
+        if (tier !== 'compact') {
+          console.error(`\n  Source file unavailable — using stored compact summary (${tier} tier requires source data).\n`);
+        }
+        result = { content: stored, tokens: estimateTokens(stored), tier: 'compact' };
+      } else {
+        console.error(`\n  Session source file is unavailable and no stored summary exists.\n  Re-index while the source file exists to store a summary.\n`);
+        db.close();
+        process.exit(1);
+      }
+    }
 
     if (opts.clipboard) {
       try {

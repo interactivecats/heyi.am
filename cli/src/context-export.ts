@@ -197,7 +197,7 @@ function truncate(text: string, maxLen: number): string {
 
 // ── Tier renderers ─────────────────────────────────────────────
 
-function renderCompact(session: Session): string {
+export function renderCompact(session: Session): string {
   const parts: string[] = [
     renderMetadata(session),
     renderContext(session),
