@@ -161,8 +161,8 @@ program
   .action(async (query: string | undefined, opts) => {
     const db = openDatabase();
     // Archive on every CLI command — don't lose sessions between opens
-    const allSessions = await listSessions();
-    await archiveSessionFiles(allSessions);
+    const searchSessions2 = await listSessions();
+    await archiveSessionFiles(searchSessions2);
     await quickSync(db, undefined, (p) => {
       if (p.phase === 'indexing' && p.current === 1 && (p.total ?? 0) > 0) {
         console.log(`  Syncing index (${p.total} sessions)...`);
@@ -310,10 +310,21 @@ program
   .action(async () => {
     console.log('\n  Discovering sessions...');
     const allSessions = await listSessions();
+
+    // Count by source
+    const bySource = new Map<string, number>();
+    for (const s of allSessions) {
+      bySource.set(s.source, (bySource.get(s.source) || 0) + 1);
+    }
+
     const result = await archiveSessionFiles(allSessions);
 
     const total = result.archived + result.alreadyArchived;
-    console.log(`  Archived ${result.archived} new sessions (${total} total)`);
+    console.log(`  Archived ${result.archived} new (${total} total across ${bySource.size} sources)`);
+    for (const [source, count] of bySource) {
+      const name = SOURCE_DISPLAY_NAMES[source as SessionSource] ?? source;
+      console.log(`    ${name.padEnd(15)} ${count} sessions`);
+    }
     if (result.cursorExported > 0) {
       console.log(`  Exported ${result.cursorExported} Cursor sessions as JSONL`);
     }

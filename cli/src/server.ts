@@ -2207,7 +2207,7 @@ export function createApp(sessionsBasePath?: string, dbPath?: string) {
 
   app.get('/api/sessions/:id', async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = String(req.params.id);
 
       // Look up in DB to find projectDir
       const row = getSessionRow(db, id);
@@ -2216,9 +2216,9 @@ export function createApp(sessionsBasePath?: string, dbPath?: string) {
         return;
       }
 
-      const projectName = displayNameFromDir(row.project_dir);
-      const session = await loadSession(row.file_path, projectName, id);
-      res.json({ session });
+      const projectName2 = displayNameFromDir(row.project_dir);
+      const session2 = await loadSession(row.file_path, projectName2, id);
+      res.json({ session: session2 });
     } catch (err) {
       res.status(500).json({ error: { code: 'LOAD_FAILED', message: (err as Error).message } });
     }
@@ -2228,8 +2228,8 @@ export function createApp(sessionsBasePath?: string, dbPath?: string) {
 
   app.get('/api/sessions/:id/context', async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const format = (req.query.format as ExportTier) ?? 'summary';
+      const id = String(req.params.id);
+      const format = (String(req.query.format ?? 'summary')) as ExportTier;
 
       // Look up in DB to find file path
       const row = getSessionRow(db, id);
@@ -2238,9 +2238,9 @@ export function createApp(sessionsBasePath?: string, dbPath?: string) {
         return;
       }
 
-      const projectName = displayNameFromDir(row.project_dir);
+      const ctxProjectName = displayNameFromDir(row.project_dir);
       const parsed = await parseSession(row.file_path);
-      const analyzerInput = bridgeToAnalyzer(parsed, { sessionId: id, projectName });
+      const analyzerInput = bridgeToAnalyzer(parsed, { sessionId: id, projectName: ctxProjectName });
       const session = analyzeSession(analyzerInput);
       const turns: ParsedTurn[] = analyzerInput.turns;
 

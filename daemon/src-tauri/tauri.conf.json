@@ -8,11 +8,6 @@
   },
   "app": {
     "withGlobalTauri": false,
-    "trayIcon": {
-      "iconPath": "icons/icon.png",
-      "iconAsTemplate": true,
-      "tooltip": "heyi.am — archiving your sessions"
-    },
     "windows": []
   },
   "bundle": {
@@ -24,19 +19,7 @@
   },
   "plugins": {
     "shell": {
-      "open": true,
-      "scope": [
-        {
-          "name": "heyiam",
-          "cmd": "heyiam",
-          "args": true
-        },
-        {
-          "name": "npx-heyiam",
-          "cmd": "npx",
-          "args": ["heyiam"]
-        }
-      ]
+      "open": true
     }
   }
 }

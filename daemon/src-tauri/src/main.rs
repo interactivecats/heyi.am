@@ -11,9 +11,9 @@ mod cli;
 mod status;
 mod watcher;
 
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tauri::{
+    image::Image,
     menu::{MenuBuilder, MenuItemBuilder},
     tray::TrayIconBuilder,
 };
@@ -21,18 +21,15 @@ use tauri::{
 const SYNC_INTERVAL_SECS: u64 = 15 * 60; // 15 minutes
 
 fn main() {
-    let status = Arc::new(Mutex::new(status::DaemonStatus::default()));
-
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .setup(move |app| {
             let handle = app.handle().clone();
-            let status_ref = status.clone();
 
             // Build tray menu
-            let sync_now = MenuItemBuilder::with_id("sync_now", "Sync now").build(app)?;
-            let open_app = MenuItemBuilder::with_id("open_app", "Open heyi.am").build(app)?;
-            let show_status = MenuItemBuilder::with_id("status", "Status").build(app)?;
+            let sync_now = MenuItemBuilder::with_id("sync_now", "Sync Now").build(app)?;
+            let open_app = MenuItemBuilder::with_id("open_app", "Open Gallery").build(app)?;
+            let show_status = MenuItemBuilder::with_id("status", "Show Status").build(app)?;
             let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
 
             let menu = MenuBuilder::new(app)
@@ -44,15 +41,29 @@ fn main() {
                 .item(&quit)
                 .build()?;
 
+            let icon = Image::from_path("icons/icon.png")
+                .or_else(|_| {
+                    // Fallback: try from the binary's directory
+                    let exe_dir = std::env::current_exe()
+                        .ok()
+                        .and_then(|p| p.parent().map(|d| d.to_path_buf()))
+                        .unwrap_or_default();
+                    Image::from_path(exe_dir.join("icons/icon.png"))
+                })
+                .unwrap_or_else(|_| Image::from_bytes(include_bytes!("../icons/icon.png")).expect("embedded icon"));
+
             let _tray = TrayIconBuilder::new()
+                .icon(icon)
                 .menu(&menu)
-                .tooltip("heyi.am — archiving your sessions")
+                .show_menu_on_left_click(true)
+                .icon_as_template(true)
+                .tooltip("heyi.am")
                 .on_menu_event(move |app, event| {
                     match event.id().as_ref() {
                         "sync_now" => {
                             let handle = app.clone();
                             tauri::async_runtime::spawn(async move {
-                                run_sync(&handle).await;
+                                run_sync_inner(&handle, true).await;
                             });
                         }
                         "open_app" => {
@@ -62,10 +73,7 @@ fn main() {
                             });
                         }
                         "status" => {
-                            // Print status to log for now
-                            if let Ok(s) = status_ref.lock() {
-                                eprintln!("heyi.am daemon status: {:?}", s);
-                            }
+                            status::show_status_notification();
                         }
                         "quit" => {
                             std::process::exit(0);
@@ -106,16 +114,20 @@ fn main() {
 }
 
 async fn run_sync(handle: &tauri::AppHandle) {
+    run_sync_inner(handle, false).await;
+}
+
+async fn run_sync_inner(handle: &tauri::AppHandle, show_dialog: bool) {
     eprintln!("[heyiam-tray] Starting sync...");
 
     // Run archive first, then sync
     let archive_result = cli::run_heyiam(handle, &["archive"]).await;
-    if let Some(output) = archive_result {
+    if let Some(output) = &archive_result {
         eprintln!("[heyiam-tray] Archive: {}", output.trim());
     }
 
     let sync_result = cli::run_heyiam(handle, &["sync"]).await;
-    if let Some(output) = sync_result {
+    if let Some(output) = &sync_result {
         eprintln!("[heyiam-tray] Sync: {}", output.trim());
     }
 
@@ -123,4 +135,27 @@ async fn run_sync(handle: &tauri::AppHandle) {
     status::update_status_file();
 
     eprintln!("[heyiam-tray] Sync complete");
+
+    // Show dialog if user clicked "Sync Now"
+    if show_dialog {
+        let archive_msg = archive_result
+            .as_deref()
+            .unwrap_or("Archive failed")
+            .trim()
+            .to_string();
+        let sync_msg = sync_result
+            .as_deref()
+            .unwrap_or("Sync failed")
+            .trim()
+            .to_string();
+        let msg = format!("{}\\n{}", archive_msg, sync_msg);
+        let script = format!(
+            r#"display dialog "{}" with title "heyi.am Sync" buttons {{"OK"}} default button "OK" with icon note"#,
+            msg.replace('"', "\\\"")
+        );
+        std::process::Command::new("osascript")
+            .args(["-e", &script])
+            .spawn()
+            .ok();
+    }
 }
