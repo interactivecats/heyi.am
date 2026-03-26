@@ -110,8 +110,8 @@ describe('syncSessionIndex', () => {
 
     expect(phases).toContain('discovering');
     expect(phases).toContain('indexing');
-    expect(phases).toContain('cleanup');
     expect(phases).toContain('done');
+    // No 'cleanup' phase — DB never auto-deletes sessions
 
     freshDb.close();
   });

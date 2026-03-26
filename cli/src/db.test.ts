@@ -20,6 +20,7 @@ import {
   searchByFile,
   getSessionCount,
   cleanupOrphanedSessions,
+  countPreservedSessions,
   type UpsertSessionInput,
 } from './db.js';
 import type { SessionAnalysis } from './parsers/types.js';
@@ -511,28 +512,25 @@ describe('db', () => {
   });
 
   describe('cleanupOrphanedSessions', () => {
-    it('removes sessions whose files no longer exist', () => {
+    it('never deletes sessions — DB is the archive', () => {
       upsertSession(db, makeUpsertInput({
         meta: makeMeta({ path: '/tmp/gone-forever.jsonl' }),
       }));
       expect(getSessionCount(db)).toBe(1);
 
-      const removed = cleanupOrphanedSessions(db);
-      expect(removed).toBe(1);
-      expect(getSessionCount(db)).toBe(0);
-    });
-
-    it('keeps sessions whose files still exist', () => {
-      const filePath = join(tmpDir, 'still-here.jsonl');
-      writeFileSync(filePath, '{}');
-
-      upsertSession(db, makeUpsertInput({
-        meta: makeMeta({ path: filePath }),
-      }));
-
+      // Source file is gone, but cleanup should NOT delete — the DB preserves it
       const removed = cleanupOrphanedSessions(db);
       expect(removed).toBe(0);
       expect(getSessionCount(db)).toBe(1);
+    });
+
+    it('countPreservedSessions reports sessions whose source is gone', () => {
+      upsertSession(db, makeUpsertInput({
+        meta: makeMeta({ path: '/tmp/gone-forever.jsonl' }),
+      }));
+
+      const preserved = countPreservedSessions(db);
+      expect(preserved).toBe(1);
     });
   });
 

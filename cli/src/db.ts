@@ -499,35 +499,40 @@ export function optimizeFtsIndex(db: Database.Database): void {
   db.exec("INSERT INTO sessions_fts(sessions_fts) VALUES('optimize')");
 }
 
-// ── Cleanup: remove sessions whose files no longer exist ─────
+// ── Cleanup ──────────────────────────────────────────────────
+//
+// IMPORTANT: We do NOT delete sessions from the DB when the source file
+// is gone. The DB IS the archive — if Claude Code deleted the original
+// after 30 days, the DB row is the preserved copy. That's the whole
+// point of the product.
+//
+// The only valid cleanup is removing sessions that the USER explicitly
+// chose to delete, which would go through deleteSession() directly.
 
-export function cleanupOrphanedSessions(db: Database.Database): number {
+/** Count sessions whose source file no longer exists (preserved in DB). */
+export function countPreservedSessions(db: Database.Database): number {
   const rows = db.prepare(
-    "SELECT id, file_path FROM sessions WHERE file_path IS NOT NULL AND file_path NOT LIKE 'cursor://%'",
-  ).all() as Array<{ id: string; file_path: string }>;
+    "SELECT file_path FROM sessions WHERE file_path IS NOT NULL AND file_path NOT LIKE 'cursor://%'",
+  ).all() as Array<{ file_path: string }>;
 
-  // F12: Collect orphan IDs first, then batch delete in one transaction
-  const orphanIds: string[] = [];
+  let preserved = 0;
   for (const row of rows) {
     try {
       statSync(row.file_path);
     } catch {
-      orphanIds.push(row.id);
+      preserved++;
     }
   }
+  return preserved;
+}
 
-  if (orphanIds.length > 0) {
-    const tx = db.transaction(() => {
-      for (const id of orphanIds) {
-        db.prepare('DELETE FROM sessions_fts WHERE session_id = ?').run(id);
-        db.prepare('DELETE FROM session_files WHERE session_id = ?').run(id);
-        db.prepare('DELETE FROM sessions WHERE id = ?').run(id);
-      }
-    });
-    tx();
-  }
-
-  return orphanIds.length;
+/**
+ * @deprecated Do not auto-delete sessions from the DB.
+ * Kept for backward compatibility but now returns 0 and does nothing.
+ * The DB preserves sessions whose source files are gone — that's the feature.
+ */
+export function cleanupOrphanedSessions(_db: Database.Database): number {
+  return 0;
 }
 
 // ── FTS5 Search ──────────────────────────────────────────────

@@ -13,7 +13,7 @@ import { bridgeToAnalyzer } from './bridge.js';
 import { analyzeSession } from './analyzer.js';
 import {
   isSessionStale, indexSession, getSessionCount,
-  cleanupOrphanedSessions, rebuildIndex, deleteSession,
+  rebuildIndex,
   optimizeFtsIndex,
   type UpsertSessionInput,
 } from './db.js';
@@ -146,9 +146,8 @@ export async function syncSessionIndex(
     });
   }
 
-  // Phase 3: Remove orphaned sessions (files deleted from disk)
-  onProgress?.({ phase: 'cleanup' });
-  result.orphansRemoved = cleanupOrphanedSessions(db);
+  // Sessions whose source files are gone stay in the DB — that's the archive.
+  // We never auto-delete. Only explicit user action removes sessions.
 
   onProgress?.({ phase: 'done' });
   return result;
