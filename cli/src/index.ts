@@ -563,18 +563,51 @@ daemon
 daemon
   .command('install')
   .description('Download and install the background tray daemon')
-  .action(async () => {
-    console.log('\n  Daemon install is not yet available.');
-    console.log('  The Tauri tray app needs to be built first.');
-    console.log('  For now, use: heyiam archive && heyiam sync\n');
-    // TODO: Download platform binary from GitHub releases
+  .option('--force', 'Reinstall even if already installed')
+  .action(async (opts) => {
+    const { installDaemon, getDaemonBinaryPath } = await import('./daemon-install.js');
+    const { existsSync } = await import('node:fs');
+
+    const binaryPath = getDaemonBinaryPath();
+    if (existsSync(binaryPath) && !opts.force) {
+      console.log('\n  Daemon is already installed.');
+      console.log('  To reinstall, run: heyiam daemon install --force\n');
+      return;
+    }
+
+    try {
+      const result = await installDaemon((msg) => console.log(msg));
+      console.log(`\n  Daemon installed (${result.version})`);
+      console.log(`  Binary: ${result.binaryPath}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`\n  Failed to install daemon: ${message}\n`);
+      process.exit(1);
+    }
+
+    // Auto-start registration prompt
+    const { askYesNo, registerAutostart } = await import('./autostart.js');
+    const wantAutostart = await askYesNo('  Start daemon automatically on login? (y/n) ');
+
+    if (wantAutostart) {
+      const result = registerAutostart();
+      if (result.registered) {
+        console.log(`\n  Auto-start registered via ${result.method}.`);
+        console.log('  The daemon will start automatically on your next login.\n');
+      } else {
+        console.log('\n  Auto-start is not supported on this platform yet.');
+        console.log('  You can start the daemon manually with: heyiam daemon start\n');
+      }
+    } else {
+      console.log('\n  Skipped auto-start. You can start manually with: heyiam daemon start\n');
+    }
   });
 
 daemon
   .command('uninstall')
   .description('Remove the background tray daemon')
   .action(async () => {
-    const { existsSync, unlinkSync, rmSync } = await import('node:fs');
+    const { existsSync, unlinkSync } = await import('node:fs');
     const { join } = await import('node:path');
     const { homedir } = await import('node:os');
 
@@ -590,13 +623,12 @@ daemon
     const binaryPath = join(homedir(), '.config', 'heyiam', 'daemon', 'heyiam-tray');
     if (existsSync(binaryPath)) unlinkSync(binaryPath);
 
-    // Remove macOS launchd plist
-    const plistPath = join(homedir(), 'Library', 'LaunchAgents', 'com.heyiam.daemon.plist');
-    if (existsSync(plistPath)) unlinkSync(plistPath);
-
-    // Remove Linux autostart
-    const desktopPath = join(homedir(), '.config', 'autostart', 'heyiam-daemon.desktop');
-    if (existsSync(desktopPath)) unlinkSync(desktopPath);
+    // Remove auto-start registration (macOS launchd, Linux XDG)
+    const { unregisterAutostart } = await import('./autostart.js');
+    const autostart = unregisterAutostart();
+    if (autostart.removed) {
+      console.log('  Auto-start registration removed.');
+    }
 
     console.log('\n  Daemon uninstalled.\n');
   });

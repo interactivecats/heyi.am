@@ -36,7 +36,9 @@ defmodule HeyiAm.HtmlSanitizer.Scrubber do
                     a img br hr wbr)
 
   # Safe attributes
-  @common_attrs ~w(class id style title role
+  # NOTE: "style" is intentionally excluded — inline styles enable CSS data
+  # exfiltration via background-image: url() and similar properties.
+  @common_attrs ~w(class id title role
                     aria-label aria-hidden aria-expanded aria-controls
                     aria-describedby aria-labelledby
                     hidden lang dir tabindex)

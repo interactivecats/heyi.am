@@ -73,8 +73,8 @@ export function createSearchRouter(ctx: RouteContext): Router {
         params.push(minDuration);
       }
       if (skill) {
-        query += ' AND skills LIKE ?';
-        params.push(`%${skill}%`);
+        query += ' AND EXISTS (SELECT 1 FROM json_each(sessions.skills) WHERE json_each.value = ?)';
+        params.push(skill);
       }
 
       query += ' ORDER BY start_time DESC LIMIT 50';

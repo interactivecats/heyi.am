@@ -1,0 +1,137 @@
+name: Build Daemon
+
+on:
+  push:
+    tags:
+      - 'daemon-v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. daemon-v0.1.0)'
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            asset_name: heyiam-tray-darwin-arm64
+          - platform: macos-13
+            target: x86_64-apple-darwin
+            asset_name: heyiam-tray-darwin-x64
+          - platform: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            asset_name: heyiam-tray-linux-x64
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            asset_name: heyiam-tray-windows-x64.exe
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: daemon/src-tauri -> target
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libgtk-3-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # The Tauri frontend is a static index.html -- no build step needed.
+      # Just verify the dist directory exists.
+      - name: Verify frontend dist
+        run: test -f daemon/dist/index.html
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli@^2 --locked
+
+      - name: Build Tauri app
+        working-directory: daemon/src-tauri
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ''
+          TARGET: ${{ matrix.target }}
+        run: cargo tauri build --target "$TARGET"
+
+      - name: Locate and rename binary (unix)
+        if: runner.os != 'Windows'
+        env:
+          TARGET: ${{ matrix.target }}
+          ASSET_NAME: ${{ matrix.asset_name }}
+        run: |
+          BINARY=$(find "daemon/src-tauri/target/${TARGET}/release/bundle" -type f -name 'heyiam-tray' -o -name '*.AppImage' | head -1)
+          if [ -z "$BINARY" ]; then
+            # Fallback: use the raw binary from the release directory
+            BINARY="daemon/src-tauri/target/${TARGET}/release/heyiam-tray"
+          fi
+          cp "$BINARY" "$ASSET_NAME"
+
+      - name: Locate and rename binary (windows)
+        if: runner.os == 'Windows'
+        env:
+          TARGET: ${{ matrix.target }}
+          ASSET_NAME: ${{ matrix.asset_name }}
+        shell: pwsh
+        run: |
+          $binary = Get-ChildItem -Path "daemon/src-tauri/target/$env:TARGET/release" -Filter "heyiam-tray.exe" -Recurse | Select-Object -First 1
+          Copy-Item $binary.FullName $env:ASSET_NAME
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: ${{ matrix.asset_name }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/daemon-v')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Daemon ${{ github.ref_name }}
+          body: |
+            Tray daemon binaries for heyi.am background archiving.
+
+            ## Install
+
+            ```
+            heyiam daemon install
+            ```
+
+            Or download the binary for your platform below.
+          files: artifacts/**/*
+          draft: false
+          prerelease: false
