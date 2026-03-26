@@ -3,8 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import { fetchProjectDetail, type ProjectDetail as ProjectDetailType, type Session } from '../api'
 import { Card, Note, SectionHeader, StatCard } from './shared'
 import { Chip } from './shared/Chip'
-import { WorkTimelineSvg } from './WorkTimelineSvg'
-import { GrowthChartSvg } from './GrowthChartSvg'
+import { WorkTimeline } from './WorkTimeline'
+import { GrowthChart } from './GrowthChart'
 
 function formatDuration(minutes: number): string {
   const hours = minutes / 60
@@ -13,6 +13,12 @@ function formatDuration(minutes: number): string {
 
 function formatLoc(loc: number): string {
   return loc >= 1000 ? `${(loc / 1000).toFixed(1)}k` : String(loc)
+}
+
+function formatDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  } catch { return iso }
 }
 
 function timeSince(dateStr: string): string {
@@ -58,6 +64,28 @@ export function ProjectDetail() {
   const phases = cache?.result?.arc ?? []
   const tools = [...new Set(sessions.map((s) => s.source ?? 'unknown'))]
 
+  // Build key moments from enhance cache timeline (featured sessions)
+  const keyMoments: Array<{ sessionId: string; label: string }> = []
+  if (cache?.result?.timeline) {
+    for (const period of cache.result.timeline) {
+      for (const s of period.sessions) {
+        if (s.featured && s.tag) {
+          keyMoments.push({ sessionId: s.sessionId, label: s.tag })
+        }
+      }
+    }
+  }
+  // Also pull from arc phases as fallback annotations
+  if (keyMoments.length === 0 && phases.length > 0 && cache?.result?.timeline) {
+    for (const period of cache.result.timeline) {
+      for (const s of period.sessions) {
+        if (s.featured) {
+          keyMoments.push({ sessionId: s.sessionId, label: s.title.slice(0, 18) })
+        }
+      }
+    }
+  }
+
   return (
     <div className="grid grid-cols-[240px_1fr] min-h-[calc(100vh-48px)]">
       {/* Sidebar */}
@@ -101,7 +129,11 @@ export function ProjectDetail() {
           <div>
             <h2 className="font-display text-xl font-bold text-on-surface">{project.name}</h2>
             <span className="text-on-surface-variant text-[0.8125rem]">
-              {project.dateRange}
+              {project.dateRange
+                ? typeof project.dateRange === 'string'
+                  ? project.dateRange
+                  : `${formatDate(project.dateRange.start)} – ${formatDate(project.dateRange.end)}`
+                : ''}
               {project.enhancedAt && ` · last refined ${timeSince(project.enhancedAt)}`}
             </span>
           </div>
@@ -127,10 +159,21 @@ export function ProjectDetail() {
           <StatCard label="Files" value={project.totalFiles} />
         </div>
 
-        {/* Work Timeline */}
+        {/* Work Timeline — full agent visualization */}
         <Card className="mb-4">
           <SectionHeader title="Work timeline" meta="sessions over time" />
-          <WorkTimelineSvg sessions={sessions} />
+          <WorkTimeline sessions={sessions} maxHeight={300} />
+        </Card>
+
+        {/* Growth Chart — with v3-style annotations */}
+        <Card className="mb-4">
+          <SectionHeader title="Project growth" meta="cumulative LOC" />
+          <GrowthChart
+            sessions={sessions}
+            totalLoc={project.totalLoc}
+            totalFiles={project.totalFiles}
+            keyMoments={keyMoments}
+          />
         </Card>
 
         {/* Key decisions + Source breakdown */}
@@ -138,9 +181,17 @@ export function ProjectDetail() {
           <Card>
             <SectionHeader title="Key decisions" meta="signal" />
             <div className="flex flex-col gap-3">
-              <Note title="Move rendering to the CLI">Treat output generation as a trust-boundary problem.</Note>
-              <Note title="Split public and private domains">Prevent the hosted layer from becoming the center.</Note>
-              <Note title="Archive before analysis">Protect work history from source-tool retention loss.</Note>
+              {phases.length > 0 ? (
+                phases.slice(0, 3).map((phase) => (
+                  <Note key={phase.phase} title={phase.title}>{phase.description}</Note>
+                ))
+              ) : (
+                <>
+                  <Note title="Move rendering to the CLI">Treat output generation as a trust-boundary problem.</Note>
+                  <Note title="Split public and private domains">Prevent the hosted layer from becoming the center.</Note>
+                  <Note title="Archive before analysis">Protect work history from source-tool retention loss.</Note>
+                </>
+              )}
             </div>
           </Card>
           <Card>
@@ -169,16 +220,6 @@ export function ProjectDetail() {
             </div>
           </Card>
         )}
-
-        {/* Growth chart */}
-        <Card className="mb-4">
-          <SectionHeader title="Project growth" meta="cumulative LOC" />
-          <div className="flex justify-between mb-2">
-            <span className="font-mono text-[0.6875rem] uppercase tracking-wider text-on-surface-variant">Cumulative LOC</span>
-            <span className="font-mono text-[0.6875rem] font-semibold">{formatLoc(project.totalLoc)} total</span>
-          </div>
-          <GrowthChartSvg sessions={sessions} />
-        </Card>
 
         {/* Featured sessions */}
         <Card>

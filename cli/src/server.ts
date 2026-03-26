@@ -431,6 +431,110 @@ export function createApp(sessionsBasePath?: string) {
     }
   });
 
+  // Aggregated project detail for the hub screen
+  app.get('/api/projects/:project/detail', async (req: Request, res: Response) => {
+    try {
+      const { project } = req.params;
+      const projects = await getProjects(sessionsBasePath);
+      const proj = projects.find((p) => p.name === project || p.dirName === project);
+      if (!proj) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+
+      // Get enhance cache if available
+      const enhanceCache = loadProjectEnhanceResult(proj.dirName);
+
+      // Get full session data (with children, turnTimeline, endTime for visualizations)
+      const sessionStats = await Promise.all(
+        proj.sessions.map(async (meta) => {
+          const seenIds = new Set<string>();
+          const children: AgentChild[] = [];
+          for (const c of meta.children ?? []) {
+            if (seenIds.has(c.sessionId)) continue;
+            seenIds.add(c.sessionId);
+            const childStats = await getSessionStats(c, proj.name);
+            children.push({
+              sessionId: c.sessionId,
+              role: c.agentRole ?? 'agent',
+              durationMinutes: childStats.duration,
+              linesOfCode: childStats.loc,
+              date: childStats.date,
+            });
+          }
+          const childCount = children.length;
+
+          try {
+            const session = await loadSession(meta.path, proj.name, meta.sessionId);
+            return { ...session, childCount, children: childCount > 0 ? children : undefined };
+          } catch {
+            const stats = await getSessionStats(meta, proj.name);
+            const enhanced = loadEnhancedData(meta.sessionId);
+            let fallbackDate = stats.date || '';
+            if (!fallbackDate) {
+              try { fallbackDate = statSync(meta.path).mtime.toISOString(); } catch { /* ignore */ }
+            }
+            return {
+              id: meta.sessionId,
+              title: enhanced?.title || 'Untitled session',
+              date: fallbackDate,
+              durationMinutes: stats.duration,
+              turns: stats.turns,
+              linesOfCode: stats.loc,
+              status: (enhanced?.uploaded ? 'uploaded' : enhanced ? 'enhanced' : 'draft') as 'uploaded' | 'enhanced' | 'draft',
+              projectName: proj.name,
+              rawLog: [] as string[],
+              skills: enhanced?.skills || stats.skills,
+              source: meta.source,
+              childCount,
+              children: childCount > 0 ? children : undefined,
+            };
+          }
+        }),
+      );
+
+      // Compute aggregates
+      const totalLoc = sessionStats.reduce((sum, s) => sum + (s.linesOfCode || 0), 0);
+      const totalDuration = sessionStats.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
+      const uniqueFiles = new Set<string>();
+      for (const s of sessionStats) {
+        const fc = (s as Record<string, unknown>).filesChanged;
+        if (Array.isArray(fc)) {
+          for (const f of fc) {
+            if (f && typeof f === 'object' && 'path' in f) uniqueFiles.add((f as { path: string }).path);
+          }
+        }
+      }
+      const totalFiles = uniqueFiles.size;
+      const allSkills = [...new Set(sessionStats.flatMap((s) => s.skills || []))];
+
+      const uploaded = getUploadedState(proj.dirName);
+      const dates = sessionStats.map(s => s.date).filter(Boolean).sort();
+
+      res.json({
+        project: {
+          name: proj.name,
+          dirName: proj.dirName,
+          sessionCount: proj.sessionCount,
+          description: enhanceCache?.narrative || '',
+          totalLoc,
+          totalDuration,
+          totalFiles,
+          skills: allSkills,
+          dateRange: dates.length ? { start: dates[0], end: dates[dates.length - 1] } : null,
+          lastSessionDate: dates[dates.length - 1] || null,
+          isUploaded: !!uploaded,
+          uploadedSessionCount: uploaded?.uploadedSessions?.length || 0,
+          enhancedAt: enhanceCache ? new Date().toISOString() : null,
+        },
+        sessions: sessionStats.filter((s) => s.date),
+        enhanceCache: enhanceCache ? { result: enhanceCache } : null,
+      });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
   app.get('/api/projects/:project/sessions', async (req: Request, res: Response) => {
     try {
       const { project } = req.params;
