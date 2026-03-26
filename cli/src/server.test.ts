@@ -708,7 +708,7 @@ describe('GET /api/projects includes uploaded state', () => {
     const myapp = res.body.projects.find((p: { name: string }) => p.name === 'myapp');
 
     expect(myapp.isUploaded).toBe(true);
-    expect(myapp.publishedSessionCount).toBe(1);
+    expect(myapp.uploadedSessionCount).toBe(1);
     expect(myapp.uploadedSessions).toEqual(['abc-123']);
   });
 });
@@ -770,8 +770,8 @@ describe('POST /api/projects/:project/triage (SSE)', () => {
     const resultEvent = events.find((e) => e.type === 'result');
 
     expect(resultEvent).toBeDefined();
-    expect(resultEvent!.alreadyPublished).toBeInstanceOf(Array);
-    expect(resultEvent!.alreadyPublished).toContain('abc-123');
+    expect(resultEvent!.alreadyUploaded).toBeInstanceOf(Array);
+    expect(resultEvent!.alreadyUploaded).toContain('abc-123');
   });
 
   it('returns 404 for unknown project', async () => {

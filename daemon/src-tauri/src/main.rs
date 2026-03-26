@@ -148,10 +148,16 @@ async fn run_sync_inner(handle: &tauri::AppHandle, show_dialog: bool) {
             .unwrap_or("Sync failed")
             .trim()
             .to_string();
-        let msg = format!("{}\\n{}", archive_msg, sync_msg);
+        // Sanitize: strip all non-printable and AppleScript-special characters
+        let sanitize = |s: &str| -> String {
+            s.chars()
+                .filter(|c| c.is_ascii_alphanumeric() || " .,;:!?()-_/=+".contains(*c))
+                .collect()
+        };
+        let msg = format!("{}\\n{}", sanitize(&archive_msg), sanitize(&sync_msg));
         let script = format!(
             r#"display dialog "{}" with title "heyi.am Sync" buttons {{"OK"}} default button "OK" with icon note"#,
-            msg.replace('"', "\\\"")
+            msg
         );
         std::process::Command::new("osascript")
             .args(["-e", &script])

@@ -38,15 +38,50 @@ export function findChrome(): string | null {
 }
 
 /**
+ * Validate that a URL is safe for screenshot capture.
+ * Only allows http/https schemes and rejects private/internal IPs.
+ */
+function isUrlSafe(raw: string): boolean {
+  let parsed: URL;
+  try { parsed = new URL(raw); } catch { return false; }
+
+  // Only allow http(s)
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+
+  // Reject localhost and private IPs
+  const host = parsed.hostname.toLowerCase();
+  if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+    // Allow our own preview server
+    const port = parsed.port || (parsed.protocol === 'https:' ? '443' : '80');
+    if (port !== '17845') return false;
+  }
+  // Reject private IP ranges
+  if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.|0\.)/.test(host)) return false;
+  if (host.endsWith('.local') || host.endsWith('.internal')) return false;
+
+  return true;
+}
+
+/**
+ * Sanitize a slug for use as a filename — alphanumeric, hyphens, underscores only.
+ */
+function sanitizeSlug(slug: string): string {
+  return slug.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 200);
+}
+
+/**
  * Capture a screenshot of a URL using headless Chrome.
  * Returns the local file path on success, or null if Chrome is unavailable or capture fails.
  */
 export async function captureScreenshot(url: string, slug: string): Promise<string | null> {
+  if (!isUrlSafe(url)) return null;
+
   const chrome = findChrome();
   if (!chrome) return null;
 
   mkdirSync(SCREENSHOTS_DIR, { recursive: true });
-  const outPath = join(SCREENSHOTS_DIR, `${slug}.png`);
+  const safeSlug = sanitizeSlug(slug);
+  const outPath = join(SCREENSHOTS_DIR, `${safeSlug}.png`);
 
   try {
     await new Promise<void>((resolve, reject) => {
