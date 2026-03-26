@@ -307,3 +307,40 @@ export interface ContextExportResponse {
   tokens: number
   format: string
 }
+
+// ── Dashboard ────────────────────────────────────────────────
+
+export interface DashboardProject {
+  projectDir: string
+  projectName: string
+  sessionCount: number
+  totalLoc: number
+  totalDuration: number
+  skills: string[]
+  latestDate: string
+  enhancedAt: string | null
+}
+
+export interface DashboardResponse {
+  stats: {
+    sessionCount: number
+    projectCount: number
+    sourceCount: number
+    enhancedCount: number
+  }
+  projects: DashboardProject[]
+  sync: {
+    status: 'idle' | 'syncing' | 'done'
+    phase: 'discovering' | 'indexing' | 'cleanup' | 'done'
+    current: number
+    total: number
+  }
+  isEmpty: boolean
+}
+
+export interface SyncProgressEvent {
+  status: 'idle' | 'syncing' | 'done'
+  phase: 'discovering' | 'indexing' | 'cleanup' | 'done'
+  current: number
+  total: number
+}

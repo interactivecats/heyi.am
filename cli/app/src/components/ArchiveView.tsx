@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AppShell, Card, Chip, StatCard, SectionHeader, Note } from './shared'
-import { fetchArchiveStats, type ArchiveStats } from '../api'
+import { fetchArchiveStats, fetchSourceAudit, type ArchiveStats, type SourceAuditResult } from '../api'
 
 interface ArchiveRow {
   source: string
@@ -10,13 +10,13 @@ interface ArchiveRow {
   statusVariant: 'green' | 'default' | 'violet'
 }
 
-const MOCK_ROWS: ArchiveRow[] = [
-  { source: 'Claude Code', archived: 89, status: 'healthy', statusVariant: 'green' },
-  { source: 'Cursor', archived: 41, status: 'healthy', statusVariant: 'green' },
-  { source: 'Codex', archived: 18, status: 'partial', statusVariant: 'default' },
-  { source: 'Gemini CLI', archived: 14, status: 'partial', statusVariant: 'default' },
-  { source: 'OpenClaw', archived: 26, status: 'filtered', statusVariant: 'violet' },
-]
+function healthToStatus(health: 'healthy' | 'warning' | 'error'): { status: string; statusVariant: 'green' | 'default' | 'violet' } {
+  switch (health) {
+    case 'healthy': return { status: 'healthy', statusVariant: 'green' }
+    case 'warning': return { status: 'partial', statusVariant: 'default' }
+    case 'error': return { status: 'filtered', statusVariant: 'violet' }
+  }
+}
 
 export function ArchiveView() {
   const [stats, setStats] = useState<{
@@ -24,30 +24,59 @@ export function ArchiveView() {
     oldest: string
     sources: number
     lastSync: string
-  }>({
-    archived: 188,
-    oldest: 'Aug 2025',
-    sources: 5,
-    lastSync: '2h ago',
-  })
-  const [rows] = useState<ArchiveRow[]>(MOCK_ROWS)
+  } | null>(null)
+  const [rows, setRows] = useState<ArchiveRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
-    fetchArchiveStats()
-      .then((data: ArchiveStats) => {
-        if (data.total > 0) {
-          setStats({
-            archived: data.total,
-            oldest: data.oldest,
-            sources: data.sourcesCount,
-            lastSync: data.lastSync,
-          })
-        }
+    Promise.all([fetchArchiveStats(), fetchSourceAudit()])
+      .then(([archiveData, sourceData]: [ArchiveStats, SourceAuditResult]) => {
+        setStats({
+          archived: archiveData.total,
+          oldest: archiveData.oldest,
+          sources: archiveData.sourcesCount,
+          lastSync: archiveData.lastSync,
+        })
+        setRows(
+          sourceData.sources.map((s) => ({
+            source: s.name,
+            archived: s.archivedCount,
+            ...healthToStatus(s.health),
+          })),
+        )
       })
       .catch(() => {
-        // API not ready — keep mock data
+        setError(true)
       })
+      .finally(() => setLoading(false))
   }, [])
+
+  if (loading) {
+    return (
+      <AppShell
+        back={{ label: 'Sources', to: '/sources' }}
+        chips={[{ label: 'Archive' }]}
+      >
+        <div className="p-6">
+          <span className="text-sm text-on-surface-variant">Loading archive...</span>
+        </div>
+      </AppShell>
+    )
+  }
+
+  if (error || !stats) {
+    return (
+      <AppShell
+        back={{ label: 'Sources', to: '/sources' }}
+        chips={[{ label: 'Archive' }]}
+      >
+        <div className="p-6">
+          <span className="text-sm text-on-surface-variant">Failed to load archive data.</span>
+        </div>
+      </AppShell>
+    )
+  }
 
   return (
     <AppShell
@@ -93,7 +122,7 @@ export function ArchiveView() {
         {/* Two-column grid */}
         <div className="grid grid-cols-2 gap-4">
           {/* Left: Table */}
-          <Card>
+          <Card className="bg-white">
             <SectionHeader title="By source" meta="coverage" />
             <table className="w-full border-collapse text-[0.8125rem]">
               <thead>
@@ -124,7 +153,7 @@ export function ArchiveView() {
           </Card>
 
           {/* Right: Posture + CTAs */}
-          <Card>
+          <Card className="bg-white">
             <SectionHeader title="Archive posture" meta="ops" />
             <div className="flex flex-col gap-3">
               <Note>

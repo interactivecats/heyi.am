@@ -17,6 +17,9 @@ import { archiveSessionFiles } from '../archive.js';
 import {
   getDatabase, openDatabase,
   getSessionStats as dbGetSessionStats,
+  getSessionCount,
+  getAllSessionMetas,
+  getDashboardStats,
 } from '../db.js';
 import { ensureSessionIndexed } from '../sync.js';
 
@@ -84,6 +87,12 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
 
   // ── getProjects ──────────────────────────────────────────
   async function getProjects(basePath?: string): Promise<ProjectInfo[]> {
+    // Fast path: read from SQLite when the DB is populated
+    if (!basePath && getSessionCount(db) > 0) {
+      return getProjectsFromDb();
+    }
+
+    // Slow path: filesystem scan (first run or custom basePath)
     const allSessions = await listSessions(basePath);
 
     if (!basePath) {
@@ -98,6 +107,51 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
       const existing = byDir.get(s.projectDir) ?? [];
       existing.push(s);
       byDir.set(s.projectDir, existing);
+    }
+
+    return [...byDir.entries()].map(([dirName, sessions]) => ({
+      name: displayNameFromDir(dirName),
+      dirName,
+      sessionCount: sessions.length,
+      sessions,
+    }));
+  }
+
+  function getProjectsFromDb(): ProjectInfo[] {
+    const metas = getAllSessionMetas(db);
+
+    // Group by project, reconstruct children
+    const byDir = new Map<string, SessionMeta[]>();
+    const childrenMap = new Map<string, SessionMeta[]>();
+
+    for (const m of metas) {
+      const meta: SessionMeta = {
+        path: m.path,
+        source: m.source,
+        sessionId: m.sessionId,
+        projectDir: m.projectDir,
+        isSubagent: m.isSubagent,
+        parentSessionId: m.parentSessionId,
+        agentRole: m.agentRole,
+      };
+
+      if (m.isSubagent && m.parentSessionId) {
+        const children = childrenMap.get(m.parentSessionId) ?? [];
+        children.push(meta);
+        childrenMap.set(m.parentSessionId, children);
+      }
+
+      const existing = byDir.get(m.projectDir) ?? [];
+      existing.push(meta);
+      byDir.set(m.projectDir, existing);
+    }
+
+    // Attach children to parents
+    for (const sessions of byDir.values()) {
+      for (const s of sessions) {
+        const children = childrenMap.get(s.sessionId);
+        if (children) s.children = children;
+      }
     }
 
     return [...byDir.entries()].map(([dirName, sessions]) => ({

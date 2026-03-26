@@ -633,6 +633,44 @@ export function searchByFile(
   }>;
 }
 
+// ── Get All Sessions as SessionMeta (for getProjects) ────────
+
+export interface SessionMetaFromDb {
+  path: string;
+  source: string;
+  sessionId: string;
+  projectDir: string;
+  isSubagent: boolean;
+  parentSessionId?: string;
+  agentRole?: string;
+}
+
+export function getAllSessionMetas(db: Database.Database): SessionMetaFromDb[] {
+  const rows = db.prepare(`
+    SELECT id, file_path, source, project_dir, is_subagent, parent_session_id, agent_role
+    FROM sessions
+    ORDER BY project_dir, start_time
+  `).all() as Array<{
+    id: string;
+    file_path: string | null;
+    source: string;
+    project_dir: string;
+    is_subagent: number;
+    parent_session_id: string | null;
+    agent_role: string | null;
+  }>;
+
+  return rows.map((r) => ({
+    path: r.file_path ?? '',
+    source: r.source,
+    sessionId: r.id,
+    projectDir: r.project_dir,
+    isSubagent: r.is_subagent === 1,
+    parentSessionId: r.parent_session_id ?? undefined,
+    agentRole: r.agent_role ?? undefined,
+  }));
+}
+
 // ── Session Count ────────────────────────────────────────────
 
 export function getSessionCount(db: Database.Database): number {

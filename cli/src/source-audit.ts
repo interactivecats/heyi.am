@@ -3,10 +3,10 @@
 
 import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
-import { listSessions, type SessionMeta } from "./parsers/index.js";
+import type { SessionMeta } from "./parsers/index.js";
 import { SOURCE_DISPLAY_NAMES, type SessionSource } from "./parsers/types.js";
 import { getArchiveDir } from "./settings.js";
-import { getDatabase } from "./db.js";
+import { getDatabase, getSessionCount } from "./db.js";
 
 // ── Types (match frontend types.ts) ──────────────────────────
 
@@ -56,19 +56,22 @@ const RETENTION_WARNING_BUFFER_DAYS = 5;
  * (from parser discovery) with archived sessions on disk.
  */
 export async function getSourceAudit(configDir?: string): Promise<SourceAuditResult> {
-  const [liveSessions, archivedBySource] = await Promise.all([
-    listSessions().catch(() => [] as SessionMeta[]),
-    countArchivedBySource(configDir),
-  ]);
+  // Read both live and archived counts from SQLite (fast)
+  const archivedBySource = await countArchivedBySource(configDir);
 
-  // Group live sessions by source
-  const liveBySource = new Map<string, SessionMeta[]>();
-  for (const session of liveSessions) {
-    if (session.isSubagent) continue;
-    const list = liveBySource.get(session.source) ?? [];
-    list.push(session);
-    liveBySource.set(session.source, list);
-  }
+  // Live counts from DB — sessions grouped by source
+  const liveBySource = new Map<string, number>();
+  try {
+    const db = getDatabase();
+    if (getSessionCount(db) > 0) {
+      const rows = db.prepare(
+        'SELECT source, COUNT(*) as c FROM sessions WHERE is_subagent = 0 GROUP BY source',
+      ).all() as Array<{ source: string; c: number }>;
+      for (const row of rows) {
+        liveBySource.set(row.source, row.c);
+      }
+    }
+  } catch { /* DB not ready */ }
 
   // Collect all source keys that appear in either live or archive
   const allSourceKeys = new Set<string>([
@@ -78,19 +81,25 @@ export async function getSourceAudit(configDir?: string): Promise<SourceAuditRes
 
   const sources: SourceInfo[] = [];
   for (const source of allSourceKeys) {
-    const liveSess = liveBySource.get(source) ?? [];
     const archivedCount = archivedBySource.get(source) ?? 0;
-    const liveCount = liveSess.length;
+    const liveCount = liveBySource.get(source) ?? 0;
     const displayName = SOURCE_DISPLAY_NAMES[source as SessionSource] ?? source;
     const path = SOURCE_PATHS[source] ?? "unknown";
 
-    // Compute date range from live sessions
-    const dateRange = computeDateRange(liveSess);
+    // Date range from DB
+    let dateRange = `${liveCount} sessions`;
+    try {
+      const db = getDatabase();
+      const row = db.prepare(
+        'SELECT MIN(start_time) as earliest, MAX(start_time) as latest FROM sessions WHERE source = ? AND is_subagent = 0',
+      ).get(source) as { earliest: string | null; latest: string | null } | undefined;
+      if (row?.earliest && row?.latest) {
+        const fmt = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        dateRange = `${fmt(row.earliest)} – ${fmt(row.latest)}`;
+      }
+    } catch { /* ok */ }
 
-    // Retention risk
     const retentionRisk = getRetentionRisk(source);
-
-    // Health assessment
     const health = assessHealth(liveCount, archivedCount, source);
 
     sources.push({
@@ -104,7 +113,6 @@ export async function getSourceAudit(configDir?: string): Promise<SourceAuditRes
     });
   }
 
-  // Sort by archived count descending (most active sources first)
   sources.sort((a, b) => b.archivedCount - a.archivedCount || b.liveCount - a.liveCount);
 
   return { sources };
@@ -153,14 +161,17 @@ export async function getArchiveStats(configDir?: string): Promise<ArchiveStats>
     // Archive directory doesn't exist yet
   }
 
-  // Count distinct sources from live session discovery
+  // Count distinct sources from SQLite (fast)
   try {
-    const liveSessions = await listSessions();
-    for (const s of liveSessions) {
-      if (!s.isSubagent) sourcesFound.add(s.source);
+    const db = getDatabase();
+    const rows = db.prepare(
+      'SELECT DISTINCT source FROM sessions WHERE is_subagent = 0',
+    ).all() as Array<{ source: string }>;
+    for (const row of rows) {
+      sourcesFound.add(row.source);
     }
   } catch {
-    // Discovery failed
+    // DB not ready
   }
 
   const oldest = oldestMs === Infinity

@@ -22,6 +22,7 @@ import {
   cleanupOrphanedSessions,
   countPreservedSessions,
   getContextSummary,
+  getDashboardStats,
   type UpsertSessionInput,
 } from './db.js';
 import type { SessionAnalysis } from './parsers/types.js';
@@ -572,6 +573,63 @@ describe('db', () => {
 
       const row = getSessionRow(db, 'test-session-1');
       expect(row!.context_summary).toBe('new summary');
+    });
+  });
+
+  describe('getDashboardStats', () => {
+    it('returns zeros for empty database', () => {
+      const stats = getDashboardStats(db);
+      expect(stats.sessionCount).toBe(0);
+      expect(stats.projectCount).toBe(0);
+      expect(stats.sourceCount).toBe(0);
+      expect(stats.projects).toEqual([]);
+    });
+
+    it('returns correct counts with sessions', () => {
+      upsertSession(db, makeUpsertInput());
+      upsertSession(db, makeUpsertInput({
+        meta: makeMeta({ sessionId: 'test-session-2', projectDir: '-Users-test-Dev-otherapp' }),
+        analysis: makeAnalysis({ source: 'cursor', start_time: '2026-03-21T10:00:00Z' }),
+        session: makeSession({ id: 'test-session-2', projectName: 'otherapp', skills: ['Go'] }),
+      }));
+
+      const stats = getDashboardStats(db);
+      expect(stats.sessionCount).toBe(2);
+      expect(stats.projectCount).toBe(2);
+      expect(stats.sourceCount).toBe(2); // claude + cursor
+      expect(stats.projects).toHaveLength(2);
+    });
+
+    it('excludes subagent sessions from counts', () => {
+      upsertSession(db, makeUpsertInput());
+      upsertSession(db, makeUpsertInput({
+        meta: makeMeta({ sessionId: 'child-1', isSubagent: true }),
+        session: makeSession({ id: 'child-1' }),
+      }));
+
+      const stats = getDashboardStats(db);
+      expect(stats.sessionCount).toBe(1);
+      expect(stats.projects).toHaveLength(1);
+      expect(stats.projects[0].sessionCount).toBe(1);
+    });
+
+    it('aggregates project-level stats correctly', () => {
+      upsertSession(db, makeUpsertInput());
+      upsertSession(db, makeUpsertInput({
+        meta: makeMeta({ sessionId: 'test-session-2' }),
+        analysis: makeAnalysis({
+          start_time: '2026-03-21T10:00:00Z',
+          loc_stats: { loc_added: 50, loc_removed: 10, loc_net: 40, files_changed: [] },
+        }),
+        session: makeSession({ id: 'test-session-2', turns: 5, skills: ['Docker'] }),
+      }));
+
+      const stats = getDashboardStats(db);
+      expect(stats.projects).toHaveLength(1);
+      expect(stats.projects[0].sessionCount).toBe(2);
+      expect(stats.projects[0].totalLoc).toBe(180); // (100+20) + (50+10)
+      expect(stats.projects[0].skills).toContain('TypeScript');
+      expect(stats.projects[0].skills).toContain('Docker');
     });
   });
 

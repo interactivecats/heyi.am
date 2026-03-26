@@ -3,7 +3,7 @@ import { writeFile, mkdir, rm, appendFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { openDatabase } from './db.js';
-import { syncSessionIndex, quickSync, fullReindex, displayNameFromDir, ensureSessionIndexed, startFileWatcher, startCursorPolling } from './sync.js';
+import { syncSessionIndex, quickSync, fullReindex, displayNameFromDir, ensureSessionIndexed, startFileWatcher, startCursorPolling, getSyncState, onSyncProgress, syncWithTracking } from './sync.js';
 import type { RawEntry } from './parsers/types.js';
 import type Database from 'better-sqlite3';
 
@@ -71,6 +71,122 @@ afterAll(async () => {
 });
 
 // ── Tests ────────────────────────────────────────────────────
+
+describe('getSyncState', () => {
+  it('returns idle state initially', () => {
+    const state = getSyncState();
+    expect(state.status).toBe('idle');
+    expect(state.phase).toBe('done');
+    expect(state.current).toBe(0);
+    expect(state.total).toBe(0);
+    expect(state.result).toBeNull();
+    expect(state.startedAt).toBeNull();
+    expect(state.finishedAt).toBeNull();
+  });
+
+  it('returns a copy, not the internal reference', () => {
+    const a = getSyncState();
+    const b = getSyncState();
+    expect(a).toEqual(b);
+    expect(a).not.toBe(b);
+  });
+});
+
+describe('onSyncProgress', () => {
+  it('listener receives state updates during syncWithTracking', async () => {
+    const freshDb = openDatabase(join(tmpDir, 'test-sync-tracking.db'));
+    const states: Array<{ status: string; phase: string }> = [];
+
+    const unsub = onSyncProgress((state) => {
+      states.push({ status: state.status, phase: state.phase });
+    });
+
+    await syncWithTracking(freshDb, tmpDir);
+
+    unsub();
+    freshDb.close();
+
+    // Should have received at least: syncing/discovering, syncing/indexing, done/done
+    expect(states.length).toBeGreaterThanOrEqual(3);
+    expect(states[0]).toEqual({ status: 'syncing', phase: 'discovering' });
+    expect(states.some((s) => s.phase === 'indexing')).toBe(true);
+    expect(states[states.length - 1]).toEqual({ status: 'done', phase: 'done' });
+  });
+
+  it('unsubscribe stops further notifications', async () => {
+    const freshDb = openDatabase(join(tmpDir, 'test-unsub.db'));
+    const calls: number[] = [];
+    let callCount = 0;
+
+    const unsub = onSyncProgress(() => {
+      callCount++;
+      calls.push(callCount);
+    });
+
+    // Unsubscribe immediately before any sync
+    unsub();
+
+    await syncWithTracking(freshDb, tmpDir);
+    freshDb.close();
+
+    expect(calls).toHaveLength(0);
+  });
+});
+
+describe('syncWithTracking', () => {
+  it('updates sync state through discovering → indexing → done', async () => {
+    const freshDb = openDatabase(join(tmpDir, 'test-tracking-phases.db'));
+    const phases: string[] = [];
+
+    const unsub = onSyncProgress((state) => {
+      if (!phases.includes(state.phase)) phases.push(state.phase);
+    });
+
+    const result = await syncWithTracking(freshDb, tmpDir);
+
+    unsub();
+
+    expect(phases).toContain('discovering');
+    expect(phases).toContain('indexing');
+    expect(phases).toContain('done');
+
+    // Result should match what syncSessionIndex returns
+    expect(result.discovered).toBe(2);
+    expect(result.indexed).toBe(2);
+    expect(result.errors).toBe(0);
+
+    // Final state should be done with the result attached
+    const finalState = getSyncState();
+    expect(finalState.status).toBe('done');
+    expect(finalState.result).toEqual(result);
+    expect(finalState.startedAt).toBeTypeOf('number');
+    expect(finalState.finishedAt).toBeTypeOf('number');
+    expect(finalState.finishedAt!).toBeGreaterThanOrEqual(finalState.startedAt!);
+
+    freshDb.close();
+  });
+
+  it('tracks current/total progress during indexing', async () => {
+    const freshDb = openDatabase(join(tmpDir, 'test-tracking-progress.db'));
+    let maxCurrent = 0;
+    let maxTotal = 0;
+
+    const unsub = onSyncProgress((state) => {
+      if (state.phase === 'indexing') {
+        maxCurrent = Math.max(maxCurrent, state.current);
+        maxTotal = Math.max(maxTotal, state.total);
+      }
+    });
+
+    await syncWithTracking(freshDb, tmpDir);
+
+    unsub();
+    freshDb.close();
+
+    expect(maxTotal).toBe(2); // 2 session files in tmpDir
+    expect(maxCurrent).toBe(2); // should reach total
+  });
+});
 
 describe('displayNameFromDir', () => {
   it('extracts name after -Dev-', () => {

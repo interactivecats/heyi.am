@@ -30,6 +30,9 @@ export type {
   SearchResult,
   SearchResponse,
   ContextExportResponse,
+  DashboardResponse,
+  DashboardProject,
+  SyncProgressEvent,
 } from './types'
 
 import type {
@@ -52,6 +55,8 @@ import type {
   ExportResult,
   SearchResponse,
   ContextExportResponse,
+  DashboardResponse,
+  SyncProgressEvent,
 } from './types'
 
 const API_BASE = '/api'
@@ -362,4 +367,25 @@ export async function startDeviceAuth(): Promise<DeviceCodeInfo> {
 
 export async function pollDeviceAuth(deviceCode: string): Promise<AuthStatus> {
   return post<AuthStatus>('/auth/poll', { device_code: deviceCode })
+}
+
+// ── Dashboard (SQLite-backed) ─────────────────────────────────
+
+export async function fetchDashboard(): Promise<DashboardResponse> {
+  return get<DashboardResponse>('/dashboard')
+}
+
+export function subscribeSyncProgress(
+  onEvent: (event: SyncProgressEvent) => void,
+): () => void {
+  const source = new EventSource(`${API_BASE}/sync/progress`)
+  source.onmessage = (e) => {
+    try {
+      onEvent(JSON.parse(e.data))
+    } catch { /* skip malformed */ }
+  }
+  source.onerror = () => {
+    source.close()
+  }
+  return () => source.close()
 }

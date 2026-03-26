@@ -1,10 +1,9 @@
 import { Router, type Request, type Response } from 'express';
-import { listSessions } from '../parsers/index.js';
 import { archiveSessionFiles } from '../archive.js';
 import { getSourceAudit, getArchiveStats } from '../source-audit.js';
 import type { RouteContext } from './context.js';
 
-export function createArchiveRouter(_ctx: RouteContext): Router {
+export function createArchiveRouter(ctx: RouteContext): Router {
   const router = Router();
 
   router.get('/api/source-audit', async (_req: Request, res: Response) => {
@@ -44,7 +43,9 @@ export function createArchiveRouter(_ctx: RouteContext): Router {
 
   router.post('/api/archive/sync', async (_req: Request, res: Response) => {
     try {
-      const allSessions = await listSessions();
+      // Get session list from SQLite (fast), then archive their files
+      const projects = await ctx.getProjects();
+      const allSessions = projects.flatMap((p) => p.sessions);
       const result = await archiveSessionFiles(allSessions);
       res.json({ archived: result.archived, alreadyArchived: result.alreadyArchived });
     } catch (err) {

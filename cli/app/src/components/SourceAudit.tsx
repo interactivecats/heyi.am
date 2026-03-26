@@ -12,93 +12,70 @@ interface SourceCardData {
   kpis: { label: string; value: string }[]
 }
 
-const MOCK_SOURCES: SourceCardData[] = [
-  {
-    tool: 'Claude Code',
-    path: '~/.claude/projects \u00b7 Jan 12\u2013Mar 24',
-    live: 14,
-    archived: 89,
-    chips: [
-      { label: '14 live', variant: 'primary' },
-      { label: '89 archived', variant: 'green' },
-      { label: '30-day retention risk', variant: 'amber' },
-    ],
-    kpis: [
-      { label: 'Path', value: 'local session store' },
-      { label: 'Archive', value: 'healthy' },
-      { label: 'Notes', value: 'older sessions already preserved' },
-    ],
-  },
-  {
-    tool: 'Cursor',
-    path: '~/Library/... \u00b7 Feb 1\u2013Mar 18',
-    live: 9,
-    archived: 41,
-    chips: [
-      { label: '9 live', variant: 'primary' },
-      { label: '41 archived', variant: 'green' },
-    ],
-    kpis: [
-      { label: 'Coverage', value: 'stable' },
-      { label: 'Last archive', value: '2h ago' },
-      { label: 'Warnings', value: 'none' },
-    ],
-  },
-  {
-    tool: 'OpenClaw',
-    path: 'workspace-linked sessions only',
-    live: 11,
-    archived: 26,
-    chips: [
-      { label: '11 live', variant: 'primary' },
-      { label: '26 archived', variant: 'green' },
-      { label: '4 personal/admin excluded', variant: 'violet' },
-    ],
-    kpis: [
-      { label: 'Filter', value: 'workspace-linked only' },
-      { label: 'Excluded', value: 'reminders, personal threads' },
-      { label: 'Reason', value: 'keep project scope clean' },
-    ],
-  },
-]
-
 export function SourceAudit() {
-  const [sources, setSources] = useState<SourceCardData[]>(MOCK_SOURCES)
-  const [loading, setLoading] = useState(false)
+  const [sources, setSources] = useState<SourceCardData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
-    setLoading(true)
     fetchSourceAudit()
       .then((data: SourceAuditResult) => {
-        if (data.sources.length > 0) {
-          setSources(
-            data.sources.map((s) => ({
-              tool: s.name,
-              path: s.path + (s.dateRange ? ` \u00b7 ${s.dateRange}` : ''),
-              live: s.liveCount,
-              archived: s.archivedCount,
-              chips: [
-                { label: `${s.liveCount} live` as string, variant: 'primary' as const },
-                { label: `${s.archivedCount} archived` as string, variant: 'green' as const },
-                ...(s.retentionRisk
-                  ? [{ label: s.retentionRisk, variant: 'amber' as const }]
-                  : []),
-              ],
-              kpis: [
-                { label: 'Health', value: s.health },
-              ],
-            })),
-          )
-        }
+        setSources(
+          data.sources.map((s) => ({
+            tool: s.name,
+            path: s.path + (s.dateRange ? ` · ${s.dateRange}` : ''),
+            live: s.liveCount,
+            archived: s.archivedCount,
+            chips: [
+              { label: `${s.liveCount} live` as string, variant: 'primary' as const },
+              { label: `${s.archivedCount} archived` as string, variant: 'green' as const },
+              ...(s.retentionRisk
+                ? [{ label: s.retentionRisk, variant: 'amber' as const }]
+                : []),
+            ],
+            kpis: [
+              { label: 'Health', value: s.health },
+            ],
+          })),
+        )
       })
       .catch(() => {
-        // API not ready yet — keep mock data
+        setError(true)
       })
       .finally(() => setLoading(false))
   }, [])
 
+  if (loading) {
+    return (
+      <AppShell
+        back={{ label: 'Back', to: '/' }}
+        chips={[{ label: 'Source audit' }]}
+      >
+        <div className="p-6">
+          <span className="text-sm text-on-surface-variant">Scanning sources...</span>
+        </div>
+      </AppShell>
+    )
+  }
+
+  if (error) {
+    return (
+      <AppShell
+        back={{ label: 'Back', to: '/' }}
+        chips={[{ label: 'Source audit' }]}
+      >
+        <div className="p-6">
+          <span className="text-sm text-on-surface-variant">Scan failed. Could not load source data.</span>
+        </div>
+      </AppShell>
+    )
+  }
+
   const totalLive = sources.reduce((s, src) => s + src.live, 0)
   const totalArchived = sources.reduce((s, src) => s + src.archived, 0)
+  const hasRetentionRisk = sources.some((src) =>
+    src.chips.some((c) => c.variant === 'amber'),
+  )
 
   return (
     <AppShell
@@ -123,18 +100,19 @@ export function SourceAudit() {
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <Chip variant="green">{totalArchived} archived</Chip>
-            <Chip variant="amber">Claude retention risk detected</Chip>
+            {hasRetentionRisk && (
+              <Chip variant="amber">Claude retention risk detected</Chip>
+            )}
           </div>
         </div>
 
         <div className="h-4" />
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <StatCard label="Sources scanned" value={sources.length} />
           <StatCard label="Live sessions" value={totalLive} />
           <StatCard label="Archived" value={totalArchived} />
-          <StatCard label="Projects detected" value={7} />
         </div>
 
         <div className="h-5" />
@@ -189,10 +167,6 @@ export function SourceAudit() {
             Add custom path
           </button>
         </div>
-
-        {loading && (
-          <p className="text-sm text-on-surface-variant mt-4">Loading source data...</p>
-        )}
       </div>
     </AppShell>
   )

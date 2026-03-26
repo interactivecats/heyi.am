@@ -1,14 +1,30 @@
 import { Router, type Request, type Response } from 'express';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { listSessions, parseSession } from '../parsers/index.js';
+import { parseSession } from '../parsers/index.js';
 import { bridgeToAnalyzer } from '../bridge.js';
 import { analyzeSession, type Session } from '../analyzer.js';
 import { loadProjectEnhanceResult } from '../settings.js';
 import { exportMarkdown, exportHtml } from '../export.js';
 import type { RouteContext } from './context.js';
 
-export function createExportRouter(_ctx: RouteContext): Router {
+async function loadProjectSessions(ctx: RouteContext, dirName: string): Promise<Session[]> {
+  const projects = await ctx.getProjects();
+  const proj = projects.find((p) => p.dirName === dirName);
+  if (!proj) return [];
+
+  const sessions: Session[] = [];
+  for (const meta of proj.sessions) {
+    try {
+      const parsed = await parseSession(meta.path);
+      const bridged = bridgeToAnalyzer(parsed, { sessionId: meta.sessionId, projectName: proj.name });
+      sessions.push(analyzeSession(bridged));
+    } catch { /* skip unparseable sessions */ }
+  }
+  return sessions;
+}
+
+export function createExportRouter(ctx: RouteContext): Router {
   const router = Router();
 
   router.post('/api/projects/:project/save-local', async (req: Request, res: Response) => {
@@ -19,16 +35,7 @@ export function createExportRouter(_ctx: RouteContext): Router {
         res.status(404).json({ error: 'No enhance result found' });
         return;
       }
-      const allSessions = await listSessions();
-      const projectSessions = allSessions.filter((s) => s.projectDir === dirName);
-      const sessions: Session[] = [];
-      for (const meta of projectSessions) {
-        try {
-          const parsed = await parseSession(meta.path);
-          const bridged = bridgeToAnalyzer(parsed, { sessionId: meta.sessionId, projectName: dirName });
-          sessions.push(analyzeSession(bridged));
-        } catch { /* skip unparseable sessions */ }
-      }
+      const sessions = await loadProjectSessions(ctx, dirName);
       const outputPath = path.resolve(process.env.HOME || '~', '.config', 'heyiam', 'exports', dirName, 'markdown');
       const result = await exportMarkdown(dirName, cache, sessions, outputPath);
       res.json(result);
@@ -47,16 +54,7 @@ export function createExportRouter(_ctx: RouteContext): Router {
         res.status(404).json({ error: 'No enhance result found' });
         return;
       }
-      const allSessions = await listSessions();
-      const projectSessions = allSessions.filter((s) => s.projectDir === dirName);
-      const sessions: Session[] = [];
-      for (const meta of projectSessions) {
-        try {
-          const parsed = await parseSession(meta.path);
-          const bridged = bridgeToAnalyzer(parsed, { sessionId: meta.sessionId, projectName: dirName });
-          sessions.push(analyzeSession(bridged));
-        } catch { /* skip unparseable sessions */ }
-      }
+      const sessions = await loadProjectSessions(ctx, dirName);
       const outDir: string = outputPath || path.resolve(process.env.HOME || '~', '.config', 'heyiam', 'exports', dirName, 'markdown');
       const result = await exportMarkdown(dirName, cache, sessions, outDir);
       res.json(result);
@@ -75,16 +73,7 @@ export function createExportRouter(_ctx: RouteContext): Router {
         res.status(404).json({ error: 'No enhance result found' });
         return;
       }
-      const allSessions = await listSessions();
-      const projectSessions = allSessions.filter((s) => s.projectDir === dirName);
-      const sessions: Session[] = [];
-      for (const meta of projectSessions) {
-        try {
-          const parsed = await parseSession(meta.path);
-          const bridged = bridgeToAnalyzer(parsed, { sessionId: meta.sessionId, projectName: dirName });
-          sessions.push(analyzeSession(bridged));
-        } catch { /* skip unparseable sessions */ }
-      }
+      const sessions = await loadProjectSessions(ctx, dirName);
       const outDir: string = outputPath || path.resolve(process.env.HOME || '~', '.config', 'heyiam', 'exports', dirName, 'html');
       const result = await exportHtml(dirName, cache, sessions, outDir);
       res.json(result);

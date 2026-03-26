@@ -1,50 +1,65 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { AppShell, Chip } from './shared'
-import { fetchProjects, fetchArchiveStats } from '../api'
-import type { Project, ArchiveStats } from '../types'
+import { fetchDashboard, subscribeSyncProgress } from '../api'
+import type { DashboardResponse, DashboardProject, SyncProgressEvent } from '../types'
 
-type LoadPhase = 'idle' | 'archive' | 'projects' | 'done'
+type ViewState = 'loading' | 'syncing' | 'empty' | 'dashboard'
 
 export function FirstRun() {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [archive, setArchive] = useState<ArchiveStats | null>(null)
-  const [phase, setPhase] = useState<LoadPhase>('idle')
+  const [view, setView] = useState<ViewState>('loading')
+  const [dashboard, setDashboard] = useState<DashboardResponse | null>(null)
+  const [syncProgress, setSyncProgress] = useState<SyncProgressEvent | null>(null)
 
   useEffect(() => {
     let cancelled = false
+    let cleanupRef: (() => void) | null = null
 
-    async function load() {
-      setPhase('archive')
-      try {
-        const a = await fetchArchiveStats()
+    fetchDashboard()
+      .then((data) => {
         if (cancelled) return
-        setArchive(a)
-      } catch { /* ok */ }
+        setDashboard(data)
 
-      if (cancelled) return
-      setPhase('projects')
-      try {
-        const p = await fetchProjects()
-        if (cancelled) return
-        setProjects(p)
-      } catch { /* ok */ }
+        if (data.isEmpty && data.sync.status === 'syncing') {
+          // First run — sync is in progress, subscribe to SSE
+          setView('syncing')
+          setSyncProgress(data.sync)
 
-      if (!cancelled) setPhase('done')
+          const unsub = subscribeSyncProgress((evt) => {
+            if (cancelled) return
+            setSyncProgress(evt)
+
+            if (evt.status === 'done') {
+              // Re-fetch dashboard now that sync is complete
+              fetchDashboard().then((fresh) => {
+                if (cancelled) return
+                setDashboard(fresh)
+                setView(fresh.isEmpty ? 'empty' : 'dashboard')
+              })
+            }
+          })
+
+          cleanupRef = unsub
+        } else if (data.isEmpty) {
+          setView('empty')
+        } else {
+          setView('dashboard')
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setView('empty')
+      })
+
+    return () => {
+      cancelled = true
+      cleanupRef?.()
     }
-
-    load()
-    return () => { cancelled = true }
   }, [])
 
-  const loading = phase !== 'done'
-
-  // ── Dashboard ──────────────────────────────────────────────
-  const hasData = !loading && (projects.length > 0 || (archive?.total ?? 0) > 0)
-  const recentProjects = [...projects]
-    .sort((a, b) => (b.lastSessionDate ?? '').localeCompare(a.lastSessionDate ?? ''))
-    .slice(0, 4)
-  const enhancedCount = projects.filter((p) => p.enhancedAt).length
+  const stats = dashboard?.stats
+  const projects = dashboard?.projects ?? []
+  const recentProjects = projects.slice(0, 4)
+  const enhancedCount = stats?.enhancedCount ?? 0
 
   return (
     <AppShell
@@ -59,21 +74,31 @@ export function FirstRun() {
       }
     >
       <div className="p-6">
-        {/* Tagline — centered when loading */}
-        <h1 className={`font-display text-[1.75rem] leading-[1.1] font-bold text-on-surface${loading ? ' text-center' : ''}`}>
+        {/* Tagline — centered when loading/syncing */}
+        <h1 className={`font-display text-[1.75rem] leading-[1.1] font-bold text-on-surface${view === 'loading' || view === 'syncing' ? ' text-center' : ''}`}>
           Turn your AI sessions into a dev portfolio.
         </h1>
 
-        {/* Loading terminal — inline like triage terminal */}
-        {loading && (
-          <LoadingTerminal phase={phase} archiveStats={archive} projectCount={projects.length} />
+        {/* ── Loading: initial fetch ─────────────────────────── */}
+        {view === 'loading' && (
+          <SyncTerminal
+            lines={[
+              { text: '$ heyiam status', variant: 'prompt' },
+              { text: '  ◌ Connecting...', variant: 'active' },
+            ]}
+          />
         )}
 
-        {/* Everything below hidden while loading */}
-        {!loading && (
+        {/* ── Syncing: first-run with live progress ──────────── */}
+        {view === 'syncing' && syncProgress && (
+          <SyncTerminal lines={buildSyncLines(syncProgress)} />
+        )}
+
+        {/* ── Everything below: only after loading ───────────── */}
+        {(view === 'dashboard' || view === 'empty') && (
           <>
-            {/* Empty state — no data yet */}
-            {!hasData && (
+            {/* Empty state */}
+            {view === 'empty' && (
               <>
                 <div className="h-3" />
                 <p className="text-[0.9375rem] text-on-surface-variant leading-[1.65] max-w-[640px]">
@@ -92,14 +117,14 @@ export function FirstRun() {
             )}
 
             {/* Stats bar */}
-            {hasData && (
+            {view === 'dashboard' && stats && (
               <>
                 <div className="h-6" />
                 <div className="grid grid-cols-4 gap-4">
-                  <StatBox label="Sessions archived" value={archive?.total ?? 0} to="/archive" color="var(--primary)" />
-                  <StatBox label="Projects" value={projects.length} to="/projects" />
+                  <StatBox label="Sessions indexed" value={stats.sessionCount} to="/archive" color="var(--primary)" />
+                  <StatBox label="Projects" value={stats.projectCount} to="/projects" />
                   <StatBox label="Enhanced" value={enhancedCount} to="/projects" color={enhancedCount > 0 ? '#34d399' : undefined} />
-                  <StatBox label="Sources" value={archive?.sourcesCount ?? 0} to="/sources" />
+                  <StatBox label="Sources" value={stats.sourceCount} to="/sources" />
                 </div>
               </>
             )}
@@ -112,9 +137,9 @@ export function FirstRun() {
                 to="/sources"
                 className="inline-flex items-center gap-1.5 font-semibold text-[0.8125rem] px-4 py-2 rounded-sm bg-primary text-on-primary hover:bg-primary-hover transition-colors"
               >
-                {hasData ? 'Sync new sessions' : 'Scan local sources'}
+                {view === 'dashboard' ? 'Sync new sessions' : 'Scan local sources'}
               </Link>
-              {hasData ? (
+              {view === 'dashboard' ? (
                 <>
                   <Link
                     to="/projects"
@@ -134,6 +159,13 @@ export function FirstRun() {
                   Choose sources manually
                 </button>
               )}
+
+              {/* Subtle sync indicator for returning users */}
+              {view === 'dashboard' && dashboard?.sync.status === 'syncing' && (
+                <span className="text-xs text-on-surface-variant">
+                  syncing {dashboard.sync.current}/{dashboard.sync.total}...
+                </span>
+              )}
             </div>
 
             <div className="h-10" />
@@ -149,24 +181,7 @@ export function FirstRun() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {recentProjects.map((p) => (
-                    <Link
-                      key={p.dirName}
-                      to={`/project/${encodeURIComponent(p.dirName)}`}
-                      className="group block bg-white border border-ghost rounded-sm p-3.5 hover:border-outline transition-colors"
-                    >
-                      <div className="font-semibold text-sm text-on-surface truncate">{p.name}</div>
-                      <div className="text-xs text-on-surface-variant mt-0.5">
-                        {p.sessionCount} session{p.sessionCount !== 1 ? 's' : ''}
-                        {p.enhancedAt && <span className="ml-2" style={{ color: '#34d399' }}>enhanced</span>}
-                      </div>
-                      {p.skills.length > 0 && (
-                        <div className="flex gap-1 mt-2 flex-wrap">
-                          {p.skills.slice(0, 3).map((s) => (
-                            <Chip key={s}>{s}</Chip>
-                          ))}
-                        </div>
-                      )}
-                    </Link>
+                    <ProjectCard key={p.projectDir} project={p} />
                   ))}
                 </div>
                 <div className="h-10" />
@@ -196,63 +211,95 @@ export function FirstRun() {
   )
 }
 
-/* ── Loading terminal ─────────────────────────────────────────── */
+/* ── Sync terminal ────────────────────────────────────────────── */
 
-function LoadingTerminal({
-  phase,
-  archiveStats,
-  projectCount,
-}: {
-  phase: LoadPhase
-  archiveStats: ArchiveStats | null
-  projectCount: number
-}) {
+interface TerminalLine {
+  text: string
+  variant: 'prompt' | 'active' | 'passed' | 'info' | 'default'
+}
+
+function buildSyncLines(progress: SyncProgressEvent): TerminalLine[] {
+  const lines: TerminalLine[] = [
+    { text: '$ heyiam init', variant: 'prompt' },
+  ]
+
+  if (progress.phase === 'discovering') {
+    lines.push({ text: '  ◌ Discovering sessions...', variant: 'active' })
+  }
+
+  if (progress.phase === 'indexing' || progress.phase === 'cleanup' || progress.phase === 'done') {
+    lines.push({ text: `  ✓ Found ${progress.total} sessions`, variant: 'passed' })
+  }
+
+  if (progress.phase === 'indexing') {
+    lines.push({
+      text: `  ◌ Indexing sessions... (${progress.current}/${progress.total})`,
+      variant: 'active',
+    })
+  }
+
+  if (progress.phase === 'cleanup') {
+    lines.push({ text: `  ✓ Indexed ${progress.total} sessions`, variant: 'passed' })
+    lines.push({ text: '  ◌ Cleaning up...', variant: 'active' })
+  }
+
+  if (progress.phase === 'done') {
+    lines.push({ text: `  ✓ Indexed ${progress.total} sessions`, variant: 'passed' })
+    lines.push({ text: '  ✓ Ready', variant: 'passed' })
+  }
+
+  return lines
+}
+
+function SyncTerminal({ lines }: { lines: TerminalLine[] }) {
   const feedRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     feedRef.current?.scrollTo({ top: feedRef.current.scrollHeight })
-  }, [phase])
+  }, [lines.length])
 
   return (
     <div className="triage-terminal" style={{ maxWidth: 640, margin: '2rem auto', padding: '1.5rem' }}>
       <div ref={feedRef} className="triage-terminal__feed">
-        <div className="triage-terminal__prompt">$ heyiam status</div>
-
-        {/* Archive line */}
-        {phase === 'archive' && (
-          <div className="triage-terminal__line triage-terminal__line--active">
-            &nbsp; ◌ Reading archive...
+        {lines.map((line, i) => (
+          <div
+            key={i}
+            className={`triage-terminal__line${
+              line.variant === 'prompt' ? ' triage-terminal__prompt' :
+              line.variant === 'passed' ? ' triage-terminal__line--passed' :
+              line.variant === 'active' ? ' triage-terminal__line--active' :
+              ''
+            }`}
+          >
+            {line.text}
           </div>
-        )}
-        {phase !== 'idle' && phase !== 'archive' && archiveStats && (
-          <div className="triage-terminal__line triage-terminal__line--passed">
-            &nbsp; ✓ Archive: {archiveStats.total} sessions from {archiveStats.sourcesCount} source{archiveStats.sourcesCount !== 1 ? 's' : ''}
-          </div>
-        )}
-        {phase !== 'idle' && phase !== 'archive' && !archiveStats && (
-          <div className="triage-terminal__line" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            &nbsp; — No archive yet
-          </div>
-        )}
-
-        {/* Projects line */}
-        {phase === 'projects' && (
-          <div className="triage-terminal__line triage-terminal__line--active">
-            &nbsp; ◌ Scanning projects...
-          </div>
-        )}
-        {phase === 'done' && projectCount > 0 && (
-          <div className="triage-terminal__line triage-terminal__line--passed">
-            &nbsp; ✓ Found {projectCount} project{projectCount !== 1 ? 's' : ''}
-          </div>
-        )}
-        {phase === 'done' && projectCount === 0 && (
-          <div className="triage-terminal__line" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            &nbsp; — No projects found
-          </div>
-        )}
+        ))}
       </div>
     </div>
+  )
+}
+
+/* ── Project card ─────────────────────────────────────────────── */
+
+function ProjectCard({ project: p }: { project: DashboardProject }) {
+  return (
+    <Link
+      to={`/project/${encodeURIComponent(p.projectDir)}`}
+      className="group block bg-white border border-ghost rounded-sm p-3.5 hover:border-outline transition-colors"
+    >
+      <div className="font-semibold text-sm text-on-surface truncate">{p.projectName}</div>
+      <div className="text-xs text-on-surface-variant mt-0.5">
+        {p.sessionCount} session{p.sessionCount !== 1 ? 's' : ''}
+        {p.enhancedAt && <span className="ml-2" style={{ color: '#34d399' }}>enhanced</span>}
+      </div>
+      {p.skills.length > 0 && (
+        <div className="flex gap-1 mt-2 flex-wrap">
+          {p.skills.slice(0, 3).map((s) => (
+            <Chip key={s}>{s}</Chip>
+          ))}
+        </div>
+      )}
+    </Link>
   )
 }
 
