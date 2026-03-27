@@ -26,7 +26,7 @@ defmodule HeyiAmAppWeb.UserLive.Registration do
 
         <div class="auth-divider">or</div>
 
-        <.form for={@form} id="registration_form" phx-submit="save" phx-change="validate">
+        <.form for={@form} id="registration_form" action={~p"/users/register?#{registration_params(assigns)}"} method="post" phx-change="validate">
           <div class="stack stack--md">
             <div class="auth-field">
               <label for="user_email" class="auth-label">Email</label>
@@ -55,6 +55,7 @@ defmodule HeyiAmAppWeb.UserLive.Registration do
                 autocomplete="new-password"
                 placeholder="At least 12 characters"
                 required
+                phx-debounce="blur"
               />
               <p :for={msg <- Enum.map(@form[:password].errors, &HeyiAmAppWeb.CoreComponents.translate_error/1)} class="auth-error">{msg}</p>
             </div>
@@ -80,34 +81,26 @@ defmodule HeyiAmAppWeb.UserLive.Registration do
     {:ok, redirect(socket, to: HeyiAmAppWeb.UserAuth.signed_in_path(socket))}
   end
 
-  def mount(_params, _session, %{assigns: %{current_scope: nil}} = socket) do
+  def mount(params, _session, %{assigns: %{current_scope: nil}} = socket) do
     changeset = Accounts.change_user_email(%User{}, %{}, validate_unique: false)
-    {:ok, socket |> assign(:terms_accepted, false) |> assign_form(changeset), temporary_assigns: [form: nil]}
+    {:ok,
+     socket
+     |> assign(:terms_accepted, false)
+     |> assign(:device_code, params["device_code"])
+     |> assign(:preferred_username, params["username"])
+     |> assign_form(changeset),
+     temporary_assigns: [form: nil]}
   end
 
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     changeset = Accounts.change_user_email(%User{}, %{}, validate_unique: false)
-    {:ok, socket |> assign(:terms_accepted, false) |> assign_form(changeset), temporary_assigns: [form: nil]}
-  end
-
-  @impl true
-  def handle_event("save", %{"user" => user_params}, socket) do
-    case Accounts.register_user(user_params) do
-      {:ok, user} ->
-        {:ok, _} =
-          Accounts.deliver_login_instructions(
-            user,
-            &url(~p"/users/log-in/#{&1}")
-          )
-
-        {:noreply,
-         socket
-         |> put_flash(:info, "Account created successfully!")
-         |> push_navigate(to: ~p"/users/log-in")}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign_form(socket, changeset)}
-    end
+    {:ok,
+     socket
+     |> assign(:terms_accepted, false)
+     |> assign(:device_code, params["device_code"])
+     |> assign(:preferred_username, params["username"])
+     |> assign_form(changeset),
+     temporary_assigns: [form: nil]}
   end
 
   def handle_event("validate", %{"user" => user_params}, socket) do
@@ -119,5 +112,12 @@ defmodule HeyiAmAppWeb.UserLive.Registration do
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
     form = to_form(changeset, as: "user")
     assign(socket, form: form)
+  end
+
+  defp registration_params(assigns) do
+    params = %{}
+    params = if assigns[:device_code], do: Map.put(params, "device_code", assigns.device_code), else: params
+    params = if assigns[:preferred_username], do: Map.put(params, "username", assigns.preferred_username), else: params
+    params
   end
 end

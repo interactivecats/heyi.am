@@ -180,5 +180,6 @@ defmodule HeyiAmAppWeb.Router do
     pipe_through [:browser, :rate_limit_auth]
 
     post "/users/log-in", UserSessionController, :create
+    post "/users/register", UserSessionController, :register_and_login
   end
 end

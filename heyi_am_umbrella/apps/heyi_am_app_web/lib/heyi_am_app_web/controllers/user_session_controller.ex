@@ -113,6 +113,40 @@ defmodule HeyiAmAppWeb.UserSessionController do
     end
   end
 
+  # Register + auto-login in one step (used by CLI onboarding)
+  def register_and_login(conn, %{"user" => user_params} = params) do
+    device_code = params["device_code"]
+
+    case Accounts.register_user(user_params) do
+      {:ok, user} ->
+        # Set return path to device auth if device_code is present
+        conn =
+          if device_code && device_code != "" do
+            put_session(conn, :user_return_to, "/device?code=#{device_code}")
+          else
+            conn
+          end
+
+        conn
+        |> put_flash(:info, "Account created!")
+        |> UserAuth.log_in_user(user, user_params)
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        errors =
+          changeset
+          |> Ecto.Changeset.traverse_errors(fn {msg, opts} ->
+            Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
+              opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+            end)
+          end)
+          |> Enum.map_join(", ", fn {field, msgs} -> "#{field}: #{Enum.join(msgs, ", ")}" end)
+
+        conn
+        |> put_flash(:error, "Registration failed: #{errors}")
+        |> redirect(to: ~p"/users/register?#{URI.encode_query(Map.take(params, ["device_code", "username"]))}")
+    end
+  end
+
   def delete(conn, _params) do
     conn
     |> put_flash(:info, "Logged out successfully.")
