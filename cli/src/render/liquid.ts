@@ -120,9 +120,33 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
       }
     }
   }
-  const featured = data.sessions.filter((s) => featuredSessionIds.has(s.token));
-  const enhanced = data.sessions.filter((s) => !featuredSessionIds.has(s.token));
-  const combined = [...featured, ...enhanced.sort((a, b) => b.locChanged - a.locChanged)];
+  // Use fullSessions (has status field) for selection, map back to SessionCard for display
+  const fullList = extras?.fullSessions ?? [];
+  const fullById = new Map(fullList.map((s) => [s.id as string, s]));
+  const cardById = new Map(data.sessions.map((s) => [s.token, s]));
+
+  // Same logic as ProjectDetail.tsx:
+  // 1. Featured flag from timeline
+  const featuredCards = data.sessions.filter((s) => featuredSessionIds.has(s.token));
+  if (featuredCards.length >= 6) {
+    // enough
+  }
+  // 2. Enhanced sessions (status !== 'draft'), sorted by LOC desc
+  const enhancedCards = data.sessions
+    .filter((s) => {
+      if (featuredSessionIds.has(s.token)) return false;
+      const full = fullById.get(s.token);
+      return full && (full.status === 'enhanced' || full.status === 'uploaded');
+    })
+    .sort((a, b) => b.locChanged - a.locChanged);
+  // 3. Draft sessions as fallback
+  const draftCards = data.sessions
+    .filter((s) => {
+      if (featuredSessionIds.has(s.token)) return false;
+      const full = fullById.get(s.token);
+      return !full || full.status === 'draft';
+    });
+  const combined = [...featuredCards, ...enhancedCards, ...draftCards];
   const seen = new Set<string>();
   const featuredSessions = combined.filter((s) => {
     if (seen.has(s.token)) return false;

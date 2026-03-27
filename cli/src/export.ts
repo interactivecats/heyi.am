@@ -51,7 +51,7 @@ function resolveScreenshotDataUri(dirName: string, cache: ProjectEnhanceCache): 
   return undefined;
 }
 
-/** Pick top 6 featured sessions — same logic as ProjectDetail.tsx and liquid.ts */
+/** Pick top 6 featured sessions — exact same logic as ProjectDetail.tsx */
 function pickFeaturedSessions(sessions: Session[], cache: ProjectEnhanceCache): Session[] {
   const featuredIds = new Set<string>();
   for (const t of cache.result.timeline || []) {
@@ -59,9 +59,15 @@ function pickFeaturedSessions(sessions: Session[], cache: ProjectEnhanceCache): 
       if (s.featured) featuredIds.add(s.sessionId);
     }
   }
+  // 1. Sessions flagged as featured in the enhance cache
   const featured = sessions.filter((s) => featuredIds.has(s.id));
-  const rest = sessions.filter((s) => !featuredIds.has(s.id));
-  const combined = [...featured, ...rest.sort((a, b) => b.linesOfCode - a.linesOfCode)];
+  // 2. Enhanced sessions (status !== 'draft'), sorted by LOC desc
+  const enhanced = sessions
+    .filter((s) => (s.status === 'enhanced' || s.status === 'uploaded') && !featuredIds.has(s.id))
+    .sort((a, b) => b.linesOfCode - a.linesOfCode);
+  // 3. Draft sessions as fallback
+  const rest = sessions.filter((s) => s.status === 'draft' && !featuredIds.has(s.id));
+  const combined = [...featured, ...enhanced, ...rest];
   const seen = new Set<string>();
   return combined.filter((s) => {
     if (seen.has(s.id)) return false;
