@@ -66,6 +66,12 @@ function buildFallbackCache(sessions: Session[]): ProjectEnhanceCache {
   };
 }
 
+function getDistinctFileCount(ctx: RouteContext, dirName: string): number {
+  return (ctx.db.prepare(
+    'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ? AND is_subagent = 0)',
+  ).get(dirName) as { c: number }).c;
+}
+
 export function createExportRouter(ctx: RouteContext): Router {
   const router = Router();
 
@@ -105,7 +111,8 @@ export function createExportRouter(ctx: RouteContext): Router {
       const sessions = await loadProjectSessions(ctx, dirName);
       const cache = loadProjectEnhanceResult(dirName) ?? buildFallbackCache(sessions);
       const outDir = safeExportPath(outputPath, dirName, 'html');
-      const result = await exportHtml(dirName, cache, sessions, outDir);
+      const totalFilesChanged = getDistinctFileCount(ctx, dirName);
+      const result = await exportHtml(dirName, cache, sessions, outDir, 'local', { totalFilesChanged });
       res.json(result);
     } catch (err) {
       console.error('[export-html]', (err as Error).message);
@@ -119,7 +126,8 @@ export function createExportRouter(ctx: RouteContext): Router {
       const dirName = String(req.params.project);
       const sessions = await loadProjectSessions(ctx, dirName);
       const cache = loadProjectEnhanceResult(dirName) ?? buildFallbackCache(sessions);
-      const htmlFiles = generateHtmlFiles(dirName, cache, sessions);
+      const totalFilesChanged = getDistinctFileCount(ctx, dirName);
+      const htmlFiles = generateHtmlFiles(dirName, cache, sessions, 'local', { totalFilesChanged });
       const zipBuffer = createZipBuffer(htmlFiles);
       const filename = `${dirName.replace(/[^a-zA-Z0-9_-]/g, '_')}.zip`;
       res.setHeader('Content-Type', 'application/zip');

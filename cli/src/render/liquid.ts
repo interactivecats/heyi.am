@@ -111,9 +111,29 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
 
   const durationLabel = data.project.totalAgentDurationMinutes ? 'You / Agents' : 'Time';
 
+  // Pick featured sessions — same logic as ProjectDetail.tsx
+  const featuredSessionIds = new Set<string>();
+  for (const t of data.project.timeline || []) {
+    for (const s of t.sessions || []) {
+      if ((s as Record<string, unknown>).featured) {
+        featuredSessionIds.add((s as Record<string, unknown>).sessionId as string);
+      }
+    }
+  }
+  const featured = data.sessions.filter((s) => featuredSessionIds.has(s.token));
+  const enhanced = data.sessions.filter((s) => !featuredSessionIds.has(s.token));
+  const combined = [...featured, ...enhanced.sort((a, b) => b.locChanged - a.locChanged)];
+  const seen = new Set<string>();
+  const featuredSessions = combined.filter((s) => {
+    if (seen.has(s.token)) return false;
+    seen.add(s.token);
+    return true;
+  }).slice(0, 6);
+
   return engine.renderFileSync('project', {
     ...data,
     arc: extras?.arc ?? [],
+    featuredSessions,
     sourceCounts: Object.entries(sourceCounts).map(([tool, count]) => ({ tool, count })),
     sessionsJson,
     growthJson,

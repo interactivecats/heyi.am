@@ -171,17 +171,17 @@
   </div>
   {% endif %}
 
-  {%- comment -%} Session cards {%- endcomment -%}
-  {% if sessions.size > 0 %}
+  {%- comment -%} Featured session cards {%- endcomment -%}
+  {% if featuredSessions.size > 0 %}
   <div class="card">
     <div class="section-header">
-      <h3 class="section-header__title">Sessions</h3>
+      <h3 class="section-header__title">Featured sessions</h3>
       <span class="section-header__meta">{{ sessions.size }} total</span>
     </div>
     <div class="session-grid">
-      {% for session in sessions %}
+      {% for session in featuredSessions %}
       {% if sessionBaseUrl %}
-      <a href="{{ sessionBaseUrl }}/{{ session.slug | default: session.token }}" class="session-card-link">
+      <a href="{{ sessionBaseUrl }}/{{ session.slug | default: session.token }}.html" class="session-card-link">
       {% endif %}
         <div class="session-card">
           <div class="session-card__bar session-card__bar--{{ forloop.index0 | durationColor }}"></div>

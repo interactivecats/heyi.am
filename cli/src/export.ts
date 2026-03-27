@@ -51,6 +51,25 @@ function resolveScreenshotDataUri(dirName: string, cache: ProjectEnhanceCache): 
   return undefined;
 }
 
+/** Pick top 6 featured sessions — same logic as ProjectDetail.tsx and liquid.ts */
+function pickFeaturedSessions(sessions: Session[], cache: ProjectEnhanceCache): Session[] {
+  const featuredIds = new Set<string>();
+  for (const t of cache.result.timeline || []) {
+    for (const s of t.sessions || []) {
+      if (s.featured) featuredIds.add(s.sessionId);
+    }
+  }
+  const featured = sessions.filter((s) => featuredIds.has(s.id));
+  const rest = sessions.filter((s) => !featuredIds.has(s.id));
+  const combined = [...featured, ...rest.sort((a, b) => b.linesOfCode - a.linesOfCode)];
+  const seen = new Set<string>();
+  return combined.filter((s) => {
+    if (seen.has(s.id)) return false;
+    seen.add(s.id);
+    return true;
+  }).slice(0, 6);
+}
+
 function slugify(title: string): string {
   return title
     .toLowerCase()
@@ -211,41 +230,54 @@ function buildSessionMarkdown(session: Session, enhanced: EnhancedData | null): 
 
 // ── HTML Export ────────────────────────────────────────────────
 
+export interface ExportOpts {
+  totalFilesChanged?: number;
+}
+
 export async function exportHtml(
   dirName: string,
   cache: ProjectEnhanceCache,
   sessions: Session[],
   outputPath: string,
   username: string = 'local',
+  opts?: ExportOpts,
 ): Promise<ExportResult> {
   const files: string[] = [];
   let totalBytes = 0;
 
   mkdirSync(outputPath, { recursive: true });
 
-  const { result, selectedSessionIds } = cache;
+  const { result } = cache;
   const slug = slugify(dirName);
   const title = dirName.replace(/^-/, '').replace(/-/g, ' ');
 
-  // Build session cards for project page
-  const selectedSessions = sessions.filter((s) => selectedSessionIds.includes(s.id));
-  const sessionCards = selectedSessions.map((session) => {
-    const enhanced = loadEnhancedData(session.id);
+  // Use ALL sessions (same as dashboard), build cards for each
+  const sessionCards = sessions.map((session) => {
     return buildSessionCard({
       sessionId: session.id,
       session,
-      enhanced,
+      enhanced: null,
       username,
       projectSlug: slug,
-      sessionSlug: slugify(enhanced?.title ?? session.title),
+      sessionSlug: slugify(session.title),
       sourceTool: session.source ?? 'unknown',
     });
   });
 
+  // Compute stats the same way the dashboard does
+  const totalLoc = sessions.reduce((sum, s) => sum + s.linesOfCode, 0);
+  const totalDurationMinutes = sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
+  const totalFilesChanged = opts?.totalFilesChanged ?? sessions.reduce((sum, s) => sum + s.filesChanged.length, 0);
+  // Agent duration: sum child durations across all orchestrated sessions
+  const totalAgentMinutes = sessions
+    .filter((s) => s.isOrchestrated && s.children)
+    .reduce((sum, s) => sum + s.children!.reduce((cs, c) => cs + c.durationMinutes, 0), 0);
+  const totalAgentDurationMinutes = totalAgentMinutes > 0 ? totalDurationMinutes + totalAgentMinutes : undefined;
+
   // Resolve screenshot for embedding
   const screenshotUrl = resolveScreenshotDataUri(dirName, cache);
 
-  // Render project index.html
+  // Render project index.html — pass same data shape as dashboard
   const projectRenderData = buildProjectRenderData({
     username,
     slug,
@@ -261,9 +293,10 @@ export async function exportHtml(
     })),
     skills: result.skills,
     totalSessions: sessions.length,
-    totalLoc: sessions.reduce((sum, s) => sum + s.linesOfCode, 0),
-    totalDurationMinutes: sessions.reduce((sum, s) => sum + s.durationMinutes, 0),
-    totalFilesChanged: sessions.reduce((sum, s) => sum + s.filesChanged.length, 0),
+    totalLoc,
+    totalDurationMinutes,
+    totalAgentDurationMinutes,
+    totalFilesChanged,
     sessionCards,
     sessionBaseUrl: './sessions',
   });
@@ -275,17 +308,17 @@ export async function exportHtml(
   const projectHtml = buildStandalonePage(title, projectBody);
   totalBytes += writeAndTrack(join(outputPath, 'index.html'), projectHtml, files);
 
-  // Render session pages
+  // Render session pages — only featured sessions (linked from project page)
+  const featuredSessions = pickFeaturedSessions(sessions, cache);
   const sessionsDir = join(outputPath, 'sessions');
   mkdirSync(sessionsDir, { recursive: true });
 
-  for (const session of selectedSessions) {
-    const enhanced = loadEnhancedData(session.id);
-    const sessionSlug = slugify(enhanced?.title ?? session.title);
+  for (const session of featuredSessions) {
+    const sessionSlug = slugify(session.title);
     const renderData = buildSessionRenderData({
       sessionId: session.id,
       session,
-      enhanced,
+      enhanced: null,
       username,
       projectSlug: slug,
       sessionSlug,
@@ -294,7 +327,7 @@ export async function exportHtml(
 
     const sessionBody = renderSessionHtml(renderData);
     const sessionHtml = buildStandalonePage(
-      enhanced?.title ?? session.title,
+      session.title,
       sessionBody,
     );
     totalBytes += writeAndTrack(join(sessionsDir, `${sessionSlug}.html`), sessionHtml, files);
@@ -329,25 +362,33 @@ export function generateHtmlFiles(
   cache: ProjectEnhanceCache,
   sessions: Session[],
   username: string = 'local',
+  opts?: ExportOpts,
 ): HtmlFile[] {
   const files: HtmlFile[] = [];
-  const { result, selectedSessionIds } = cache;
+  const { result } = cache;
   const slug = slugify(dirName);
   const title = dirName.replace(/^-/, '').replace(/-/g, ' ');
 
-  const selectedSessions = sessions.filter((s) => selectedSessionIds.includes(s.id));
-  const sessionCards = selectedSessions.map((session) => {
-    const enhanced = loadEnhancedData(session.id);
+  // Use ALL sessions — same as dashboard
+  const sessionCards = sessions.map((session) => {
     return buildSessionCard({
       sessionId: session.id,
       session,
-      enhanced,
+      enhanced: null,
       username,
       projectSlug: slug,
-      sessionSlug: slugify(enhanced?.title ?? session.title),
+      sessionSlug: slugify(session.title),
       sourceTool: session.source ?? 'unknown',
     });
   });
+
+  const totalLoc = sessions.reduce((sum, s) => sum + s.linesOfCode, 0);
+  const totalDurationMinutes = sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
+  const totalFilesChanged = opts?.totalFilesChanged ?? sessions.reduce((sum, s) => sum + s.filesChanged.length, 0);
+  const totalAgentMinutes = sessions
+    .filter((s) => s.isOrchestrated && s.children)
+    .reduce((sum, s) => sum + s.children!.reduce((cs, c) => cs + c.durationMinutes, 0), 0);
+  const totalAgentDurationMinutes = totalAgentMinutes > 0 ? totalDurationMinutes + totalAgentMinutes : undefined;
 
   const screenshotUrl = resolveScreenshotDataUri(dirName, cache);
 
@@ -364,9 +405,10 @@ export function generateHtmlFiles(
     })),
     skills: result.skills,
     totalSessions: sessions.length,
-    totalLoc: sessions.reduce((sum, s) => sum + s.linesOfCode, 0),
-    totalDurationMinutes: sessions.reduce((sum, s) => sum + s.durationMinutes, 0),
-    totalFilesChanged: sessions.reduce((sum, s) => sum + s.filesChanged.length, 0),
+    totalLoc,
+    totalDurationMinutes,
+    totalAgentDurationMinutes,
+    totalFilesChanged,
     sessionCards,
     sessionBaseUrl: './sessions',
   });
@@ -377,19 +419,19 @@ export function generateHtmlFiles(
   });
   files.push({ path: 'index.html', content: buildStandalonePage(title, projectBody) });
 
-  for (const session of selectedSessions) {
-    const enhanced = loadEnhancedData(session.id);
-    const sessionSlug = slugify(enhanced?.title ?? session.title);
+  const featuredSessions = pickFeaturedSessions(sessions, cache);
+  for (const session of featuredSessions) {
+    const sessionSlug = slugify(session.title);
     const renderData = buildSessionRenderData({
       sessionId: session.id,
-      session, enhanced, username,
+      session, enhanced: null, username,
       projectSlug: slug, sessionSlug,
       sourceTool: session.source ?? 'unknown',
     });
     const sessionBody = renderSessionHtml(renderData);
     files.push({
       path: `sessions/${sessionSlug}.html`,
-      content: buildStandalonePage(enhanced?.title ?? session.title, sessionBody),
+      content: buildStandalonePage(session.title, sessionBody),
     });
   }
 
@@ -407,6 +449,11 @@ export function createZipBuffer(entries: HtmlFile[]): Buffer {
   const fileData: Buffer[] = [];
   let offset = 0;
 
+  // MS-DOS time/date for current timestamp
+  const now = new Date();
+  const dosTime = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xffff;
+  const dosDate = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xffff;
+
   for (const entry of entries) {
     const nameBytes = Buffer.from(entry.path, 'utf-8');
     const raw = Buffer.from(entry.content, 'utf-8');
@@ -419,8 +466,8 @@ export function createZipBuffer(entries: HtmlFile[]): Buffer {
     local.writeUInt16LE(20, 4);             // version needed
     local.writeUInt16LE(0, 6);              // flags
     local.writeUInt16LE(8, 8);              // compression: deflate
-    local.writeUInt16LE(0, 10);             // mod time
-    local.writeUInt16LE(0, 12);             // mod date
+    local.writeUInt16LE(dosTime, 10);       // mod time
+    local.writeUInt16LE(dosDate, 12);       // mod date
     local.writeUInt32LE(crc, 14);           // crc32
     local.writeUInt32LE(compressed.length, 18); // compressed size
     local.writeUInt32LE(raw.length, 22);    // uncompressed size
@@ -437,8 +484,8 @@ export function createZipBuffer(entries: HtmlFile[]): Buffer {
     central.writeUInt16LE(20, 6);            // version needed
     central.writeUInt16LE(0, 8);             // flags
     central.writeUInt16LE(8, 10);            // compression: deflate
-    central.writeUInt16LE(0, 12);            // mod time
-    central.writeUInt16LE(0, 14);            // mod date
+    central.writeUInt16LE(dosTime, 12);       // mod time
+    central.writeUInt16LE(dosDate, 14);       // mod date
     central.writeUInt32LE(crc, 16);          // crc32
     central.writeUInt32LE(compressed.length, 20);
     central.writeUInt32LE(raw.length, 24);
