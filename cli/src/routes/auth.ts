@@ -35,12 +35,12 @@ export function createAuthRouter(_ctx: RouteContext): Router {
   router.get('/api/auth/check-username', async (req: Request, res: Response) => {
     try {
       const username = req.query.username as string;
-      if (!username || username.length < 2) {
-        res.json({ available: false, reason: 'Username must be at least 2 characters' });
+      if (!username || username.length < 3) {
+        res.json({ available: false, reason: 'Username must be at least 3 characters' });
         return;
       }
-      if (!/^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$/i.test(username)) {
-        res.json({ available: false, reason: 'Letters, numbers, hyphens, and underscores only' });
+      if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]{1,2}$/.test(username)) {
+        res.json({ available: false, reason: 'Lowercase letters, numbers, and hyphens only' });
         return;
       }
 

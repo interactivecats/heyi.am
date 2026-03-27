@@ -28,6 +28,40 @@ defmodule HeyiAmAppWeb.UserLive.Registration do
 
         <.form for={@form} id="registration_form" action={~p"/users/register?#{registration_params(assigns)}"} method="post" phx-change="validate">
           <div class="stack stack--md">
+            <div :if={@show_username} class="auth-field">
+              <label for="user_username" class="auth-label">
+                Username
+                <span
+                  :if={@username_availability == :available}
+                  style="color: var(--success, #22c55e); font-weight: 600; font-size: 0.75rem; margin-inline-start: var(--spacing-2);"
+                >
+                  available
+                </span>
+                <span
+                  :if={@username_availability == :taken}
+                  style="color: var(--error, #ef4444); font-weight: 600; font-size: 0.75rem; margin-inline-start: var(--spacing-2);"
+                >
+                  taken
+                </span>
+              </label>
+              <div style="display: flex; align-items: center; gap: 0;">
+                <span style="padding: 0.5rem 0.5rem 0.5rem 0.75rem; background: var(--surface-container, #f5f5f5); border: 1px solid var(--outline-variant, #ccc); border-right: none; border-radius: 0.375rem 0 0 0.375rem; font-size: 0.875rem; color: var(--on-surface-variant);">heyi.am/</span>
+                <input
+                  type="text"
+                  name={@form[:username].name}
+                  id="user_username"
+                  value={@form[:username].value}
+                  class={["auth-input", @form[:username].errors != [] && "auth-input--error"]}
+                  style="border-radius: 0 0.375rem 0.375rem 0;"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="your-name"
+                  phx-debounce="300"
+                />
+              </div>
+              <p :for={msg <- Enum.map(@form[:username].errors, &HeyiAmAppWeb.CoreComponents.translate_error/1)} class="auth-error">{msg}</p>
+            </div>
+
             <div class="auth-field">
               <label for="user_email" class="auth-label">Email</label>
               <input
@@ -51,6 +85,7 @@ defmodule HeyiAmAppWeb.UserLive.Registration do
                 type="password"
                 name={@form[:password].name}
                 id="user_password"
+                value={@form[:password].value}
                 class={["auth-input", @form[:password].errors != [] && "auth-input--error"]}
                 autocomplete="new-password"
                 placeholder="At least 12 characters"
@@ -82,31 +117,62 @@ defmodule HeyiAmAppWeb.UserLive.Registration do
   end
 
   def mount(params, _session, %{assigns: %{current_scope: nil}} = socket) do
-    changeset = Accounts.change_user_email(%User{}, %{}, validate_unique: false)
-    {:ok,
-     socket
-     |> assign(:terms_accepted, false)
-     |> assign(:device_code, params["device_code"])
-     |> assign(:preferred_username, params["username"])
-     |> assign_form(changeset),
-     temporary_assigns: [form: nil]}
+    do_mount(params, socket)
   end
 
   def mount(params, _session, socket) do
-    changeset = Accounts.change_user_email(%User{}, %{}, validate_unique: false)
+    do_mount(params, socket)
+  end
+
+  defp do_mount(params, socket) do
+    preferred_username = params["username"]
+    initial_attrs = if preferred_username, do: %{"username" => preferred_username}, else: %{}
+    changeset = Ecto.Changeset.cast(%User{}, initial_attrs, [:email, :password, :username])
+
+    # Check availability of pre-filled username
+    username_availability =
+      if preferred_username && String.length(preferred_username) >= 3 do
+        check = Accounts.change_user_username(%User{}, %{username: preferred_username})
+        if check.valid?, do: :available, else: :taken
+      end
+
     {:ok,
      socket
      |> assign(:terms_accepted, false)
      |> assign(:device_code, params["device_code"])
-     |> assign(:preferred_username, params["username"])
+     |> assign(:preferred_username, preferred_username)
+     |> assign(:show_username, preferred_username != nil)
+     |> assign(:username_availability, username_availability)
      |> assign_form(changeset),
      temporary_assigns: [form: nil]}
   end
 
+  @impl true
   def handle_event("validate", %{"user" => user_params}, socket) do
     terms_accepted = Map.get(user_params, "terms") == "true"
-    changeset = Accounts.change_user_email(%User{}, user_params, validate_unique: false)
-    {:noreply, socket |> assign(:terms_accepted, terms_accepted) |> assign_form(Map.put(changeset, :action, :validate))}
+    username = Map.get(user_params, "username", "")
+
+    changeset =
+      %User{}
+      |> Ecto.Changeset.cast(user_params, [:email, :password, :username])
+      |> Ecto.Changeset.validate_required([:email])
+      |> Ecto.Changeset.validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
+      |> Ecto.Changeset.validate_length(:email, max: 160)
+      |> Ecto.Changeset.validate_length(:password, min: 12, max: 72)
+      |> Map.put(:action, :validate)
+
+    # Check username availability using the same logic as ClaimUsernameLive
+    username_availability =
+      if socket.assigns.show_username && String.length(username) >= 3 do
+        username_changeset = Accounts.change_user_username(%User{}, %{username: username})
+        if username_changeset.valid?, do: :available, else: :taken
+      end
+
+    {:noreply,
+     socket
+     |> assign(:terms_accepted, terms_accepted)
+     |> assign(:username_availability, username_availability)
+     |> assign_form(changeset)}
   end
 
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do

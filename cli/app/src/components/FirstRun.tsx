@@ -464,14 +464,14 @@ export function FirstRun() {
                         type="text"
                         value={usernameInput}
                         onChange={(e) => {
-                          const v = e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '')
+                          const v = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')
                           setUsernameInput(v)
                           setUsernameStatus('idle')
                           setUsernameError('')
 
                           // Debounced availability check (500ms)
                           if (usernameCheckTimer.current) clearTimeout(usernameCheckTimer.current)
-                          if (v.length >= 2 && v !== lastCheckedUsername.current) {
+                          if (v.length >= 3 && v !== lastCheckedUsername.current) {
                             usernameCheckTimer.current = setTimeout(async () => {
                               lastCheckedUsername.current = v
                               setUsernameStatus('checking')
@@ -487,7 +487,7 @@ export function FirstRun() {
                           }
                         }}
                         onKeyDown={async (e) => {
-                          if (e.key === 'Enter' && usernameInput.length >= 2) {
+                          if (e.key === 'Enter' && usernameInput.length >= 3) {
                             e.preventDefault()
                             // Guard against double-submit
                             if (usernameStatus === 'submitting' || usernameStatus === 'checking' || authPolling) return
@@ -556,7 +556,7 @@ export function FirstRun() {
                       )}
                     </div>
 
-                    {usernameInput.length >= 2 && usernameStatus === 'idle' && (
+                    {usernameInput.length >= 3 && usernameStatus === 'idle' && (
                       <div className="triage-terminal__line opacity-40 text-[10px] mt-1">
                         {'    '}Press Enter to check &amp; claim
                       </div>

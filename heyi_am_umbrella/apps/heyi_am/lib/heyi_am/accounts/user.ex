@@ -117,11 +117,28 @@ defmodule HeyiAm.Accounts.User do
   A changeset for registration with email + password, auto-confirmed.
   """
   def registration_changeset(user, attrs) do
-    user
-    |> cast(attrs, [:email, :password])
-    |> validate_email(validate_unique: true)
-    |> validate_password(hash_password: true)
-    |> confirm_changeset()
+    changeset =
+      user
+      |> cast(attrs, [:email, :password, :username])
+      |> validate_email(validate_unique: true)
+      |> validate_password(hash_password: true)
+      |> confirm_changeset()
+
+    # Validate username only when provided (optional at registration)
+    if get_change(changeset, :username) do
+      changeset
+      |> validate_length(:username, min: 3, max: 39)
+      |> validate_format(:username, ~r/^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]{1,2}$/,
+        message: "must be lowercase alphanumeric and hyphens, cannot start or end with a hyphen"
+      )
+      |> validate_format(:username, ~r/^[a-z0-9-]+$/,
+        message: "must contain only lowercase letters, numbers, and hyphens"
+      )
+      |> unsafe_validate_unique(:username, HeyiAm.Repo)
+      |> unique_constraint(:username)
+    else
+      changeset
+    end
   end
 
   @doc """

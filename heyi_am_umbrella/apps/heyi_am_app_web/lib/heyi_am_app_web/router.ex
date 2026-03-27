@@ -70,6 +70,7 @@ defmodule HeyiAmAppWeb.Router do
     pipe_through [:api, :rate_limit_auth]
 
     get "/auth/status", DeviceApiController, :auth_status
+    get "/username/check", UsernameApiController, :check
   end
 
   scope "/api", HeyiAmAppWeb do

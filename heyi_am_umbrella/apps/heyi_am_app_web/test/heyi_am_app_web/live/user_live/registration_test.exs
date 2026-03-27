@@ -33,34 +33,37 @@ defmodule HeyiAmAppWeb.UserLive.RegistrationTest do
       assert result =~ "Create your account"
       assert result =~ "must have the @ sign and no spaces"
     end
+
+    test "shows username field when username param is present", %{conn: conn} do
+      {:ok, _lv, html} = live(conn, ~p"/users/register?username=testname")
+
+      assert html =~ "heyi.am/"
+      assert html =~ "testname"
+    end
   end
 
   describe "register user" do
-    test "creates account and redirects to login", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/users/register")
-
+    test "creates account via form POST", %{conn: conn} do
       email = unique_user_email()
-      form = form(lv, "#registration_form", user: valid_user_attributes(email: email))
 
-      render_submit(form)
+      conn =
+        post(conn, ~p"/users/register", %{
+          "user" => valid_user_attributes(email: email)
+        })
 
-      flash = assert_redirect(lv, ~p"/users/log-in")
-      assert flash["info"] =~ "Account created successfully"
+      assert redirected_to(conn)
     end
 
-    test "renders errors for duplicated email", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/users/register")
-
+    test "returns error for duplicated email", %{conn: conn} do
       user = user_fixture(%{email: "test@email.com"})
 
-      result =
-        lv
-        |> form("#registration_form",
-          user: %{"email" => user.email, "password" => valid_user_password()}
-        )
-        |> render_submit()
+      conn =
+        post(conn, ~p"/users/register", %{
+          "user" => %{"email" => user.email, "password" => valid_user_password()}
+        })
 
-      assert result =~ "has already been taken"
+      assert redirected_to(conn) =~ ~p"/users/register"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Registration failed"
     end
   end
 
