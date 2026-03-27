@@ -432,6 +432,28 @@ export function FirstRun() {
                     <TermLine variant="active">  Waiting for signup to complete...</TermLine>
                     <TermLine variant="info">  A browser window should have opened.</TermLine>
                     <TermLine variant="info">  Sign up there, then come back here.</TermLine>
+                    <TermLine variant="default">&nbsp;</TermLine>
+                    <div className="flex items-center gap-2 ml-4">
+                      <button
+                        onClick={() => {
+                          setAuthPolling(false)
+                          setUsernameStatus('idle')
+                          setDeviceCode('')
+                        }}
+                        className="text-[10px] font-mono px-2.5 py-1 rounded text-white/40 hover:text-white/70 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => {
+                          setAuthPolling(false)
+                          skipToDashboard()
+                        }}
+                        className="text-[10px] font-mono px-2.5 py-1 rounded text-white/40 hover:text-white/70 transition-colors"
+                      >
+                        Skip this
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <>
