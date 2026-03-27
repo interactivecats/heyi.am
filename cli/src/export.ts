@@ -268,7 +268,10 @@ export async function exportHtml(
     sessionBaseUrl: './sessions',
   });
 
-  const projectBody = renderProjectHtml(projectRenderData, { arc: result.arc });
+  const projectBody = renderProjectHtml(projectRenderData, {
+    arc: result.arc,
+    fullSessions: sessions as unknown as Array<Record<string, unknown>>,
+  });
   const projectHtml = buildStandalonePage(title, projectBody);
   totalBytes += writeAndTrack(join(outputPath, 'index.html'), projectHtml, files);
 
@@ -368,7 +371,10 @@ export function generateHtmlFiles(
     sessionBaseUrl: './sessions',
   });
 
-  const projectBody = renderProjectHtml(projectRenderData, { arc: result.arc });
+  const projectBody = renderProjectHtml(projectRenderData, {
+    arc: result.arc,
+    fullSessions: sessions as unknown as Array<Record<string, unknown>>,
+  });
   files.push({ path: 'index.html', content: buildStandalonePage(title, projectBody) });
 
   for (const session of selectedSessions) {

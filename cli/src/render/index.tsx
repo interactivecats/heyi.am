@@ -90,7 +90,10 @@ function validateSession(data: SessionRenderData): void {
  */
 export function renderProjectHtml(
   data: ProjectRenderData,
-  extras?: { arc?: Array<{ phase: number; title: string; description: string }> },
+  extras?: {
+    arc?: Array<{ phase: number; title: string; description: string }>;
+    fullSessions?: Array<Record<string, unknown>>;
+  },
 ): string {
   validateProject(data);
 

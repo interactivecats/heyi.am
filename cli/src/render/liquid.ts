@@ -77,6 +77,8 @@ engine.registerFilter('durationColor', (index: number) => {
 
 interface RenderProjectExtras {
   arc?: Array<{ phase: number; title: string; description: string }>;
+  /** Full session data for charts — uses Session type from analyzer, not SessionCard */
+  fullSessions?: Array<Record<string, unknown>>;
 }
 
 export function renderProject(data: ProjectRenderData, extras?: RenderProjectExtras): string {
@@ -89,21 +91,18 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
     sourceCounts[src] = (sourceCounts[src] || 0) + 1;
   }
 
-  const sessionsJson = JSON.stringify(allSessions.map((s) => ({
+  // Use full session data when available (charts need complete Session objects)
+  const chartSessions = extras?.fullSessions ?? allSessions.map((s) => ({
     id: s.token, title: s.title, date: s.recordedAt,
     durationMinutes: s.durationMinutes, turns: s.turns,
     linesOfCode: s.locChanged, status: 'enhanced',
     projectName: data.project.title, rawLog: [],
     skills: s.skills, source: s.sourceTool,
     filesChanged: s.filesChanged,
-  })));
+  }));
 
-  const growthJson = JSON.stringify(allSessions.map((s) => ({
-    id: s.token, title: s.title, date: s.recordedAt,
-    durationMinutes: s.durationMinutes, turns: s.turns,
-    linesOfCode: s.locChanged, status: 'enhanced',
-    projectName: data.project.title, rawLog: [],
-  })));
+  const sessionsJson = JSON.stringify(chartSessions);
+  const growthJson = JSON.stringify(chartSessions);
 
   const durationLabel = data.project.totalAgentDurationMinutes ? 'You / Agents' : 'Time';
 
