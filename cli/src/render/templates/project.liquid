@@ -183,7 +183,7 @@
       {% if sessionBaseUrl %}
       <a href="{{ sessionBaseUrl }}/{{ session.slug | default: session.token }}.html" class="session-card-link">
       {% endif %}
-        <div class="session-card">
+        <div class="session-card" data-session-id="{{ session.token }}">
           <div class="session-card__bar session-card__bar--{{ forloop.index0 | durationColor }}"></div>
           <h4 class="session-card__title">{{ session.title }}</h4>
           <span class="session-card__meta">

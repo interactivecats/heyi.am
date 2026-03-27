@@ -21719,7 +21719,7 @@
   });
 
   // src/mount.tsx
-  var import_react2 = __toESM(require_react(), 1);
+  var import_react3 = __toESM(require_react(), 1);
   var import_client = __toESM(require_client(), 1);
 
   // src/WorkTimeline.tsx
@@ -22926,7 +22926,133 @@
     ] });
   }
 
+  // src/SessionOverlay.tsx
+  var import_react2 = __toESM(require_react(), 1);
+  var import_jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
+  function formatDuration2(minutes) {
+    const hours = minutes / 60;
+    return hours >= 1 ? `${hours.toFixed(1)}h` : `${Math.round(minutes)}m`;
+  }
+  function formatLoc2(loc) {
+    return loc >= 1e3 ? `${(loc / 1e3).toFixed(1)}k` : String(loc);
+  }
+  function formatDate(iso) {
+    try {
+      return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    } catch {
+      return iso;
+    }
+  }
+  function SessionOverlay({ session, sessionPageUrl, onClose }) {
+    const handleKeyDown = (0, import_react2.useCallback)((e) => {
+      if (e.key === "Escape") onClose();
+    }, [onClose]);
+    (0, import_react2.useEffect)(() => {
+      document.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.removeEventListener("keydown", handleKeyDown);
+        document.body.style.overflow = "";
+      };
+    }, [handleKeyDown]);
+    const hasChildren = session.children && session.children.length > 0;
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+      "div",
+      {
+        style: { position: "fixed", inset: 0, zIndex: 50, display: "flex", justifyContent: "flex-end", background: "rgba(0,0,0,0.4)" },
+        onClick: (e) => {
+          if (e.target === e.currentTarget) onClose();
+        },
+        children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { width: 600, maxWidth: "100%", height: "100%", background: "var(--surface, #f8f9fb)", overflowY: "auto", boxShadow: "-8px 0 32px rgba(25,28,30,0.1)" }, children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { padding: "2rem" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+              "button",
+              {
+                type: "button",
+                onClick: onClose,
+                style: { fontFamily: "var(--font-mono, monospace)", fontSize: "0.8125rem", color: "var(--on-surface-variant, #6b7280)", background: "var(--surface-low, #f3f4f6)", border: "1px solid var(--surface-high, #e7e8ea)", borderRadius: "0.375rem", padding: "0.25rem 0.75rem", cursor: "pointer" },
+                children: "ESC \xB7 Close"
+              }
+            ),
+            sessionPageUrl && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+              "a",
+              {
+                href: sessionPageUrl,
+                style: { fontFamily: "var(--font-mono, monospace)", fontSize: "0.8125rem", color: "var(--primary, #084471)", background: "rgba(8,68,113,0.05)", border: "1px solid rgba(8,68,113,0.2)", borderRadius: "0.375rem", padding: "0.25rem 0.75rem", textDecoration: "none" },
+                children: "View full session \u2192"
+              }
+            )
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h2", { style: { fontFamily: "var(--font-display, sans-serif)", fontSize: "1.5rem", fontWeight: 700, color: "var(--on-surface, #191c1e)", marginBottom: "0.5rem" }, children: session.title }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { fontFamily: "var(--font-mono, monospace)", fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--on-surface-variant, #6b7280)", marginBottom: "1rem" }, children: [
+            formatDate(session.date),
+            session.source && ` \xB7 ${session.source}`,
+            session.context && ` \xB7 ${session.context}`
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.75rem", marginBottom: "1.25rem" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(StatBox, { label: "Active Time", value: formatDuration2(session.durationMinutes), primary: true, children: hasChildren && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(SplitLine, { you: formatDuration2(Math.max(0, session.durationMinutes - session.children.reduce((s, c) => s + c.durationMinutes, 0))), agent: formatDuration2(session.children.reduce((s, c) => s + c.durationMinutes, 0)) }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(StatBox, { label: "Turns", value: session.turns, children: hasChildren && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(SplitLine, { you: "You", agent: `${session.children.length} agents` }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(StatBox, { label: "Files", value: session.filesChanged?.length === 1 && session.filesChanged[0]?.path === "(aggregate)" ? "\u2014" : session.filesChanged?.length ?? "\u2014" }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(StatBox, { label: "LOC", value: formatLoc2(session.linesOfCode), children: hasChildren && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(SplitLine, { you: formatLoc2(Math.max(0, session.linesOfCode - session.children.reduce((s, c) => s + c.linesOfCode, 0))), agent: formatLoc2(session.children.reduce((s, c) => s + c.linesOfCode, 0)) }) })
+          ] }),
+          session.developerTake && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: { fontSize: "0.9375rem", lineHeight: 1.6, color: "var(--on-surface, #191c1e)", borderLeft: "3px solid var(--primary, #084471)", paddingLeft: "0.75rem", marginBottom: "1.25rem" }, children: session.developerTake }),
+          session.skills && session.skills.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "0.375rem", marginBottom: "1.25rem" }, children: session.skills.map((skill) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { fontFamily: "var(--font-mono, monospace)", fontSize: "11px", padding: "0.125rem 0.5rem", borderRadius: "0.25rem", background: "var(--violet-bg, #ede9fe)", color: "var(--violet, #6d28d9)" }, children: skill }, skill)) }),
+          session.turns >= 50 && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { marginBottom: "1.25rem" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(SectionLabel, { children: [
+              "Session Activity \xB7 ",
+              session.turns,
+              " turns over ",
+              formatDuration2(session.durationMinutes)
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(WorkTimeline, { sessions: [session], maxHeight: 200 })
+          ] }),
+          session.executionPath && session.executionPath.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { marginBottom: "1.25rem" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(SectionLabel, { children: "Execution Path" }),
+            session.executionPath.map((step) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", gap: "0.75rem", alignItems: "flex-start", padding: "0.625rem 0", borderBottom: "1px solid var(--ghost, rgba(194,199,208,0.15))" }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { width: 24, height: 24, borderRadius: "50%", background: "var(--primary, #084471)", color: "white", fontFamily: "var(--font-mono, monospace)", fontSize: "0.625rem", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }, children: step.stepNumber }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontWeight: 600, fontSize: "0.875rem", color: "var(--on-surface, #191c1e)", marginBottom: "0.125rem" }, children: step.title }),
+                /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontSize: "0.8125rem", color: "var(--on-surface-variant, #6b7280)", lineHeight: 1.5 }, children: step.description })
+              ] })
+            ] }, step.stepNumber))
+          ] }),
+          session.toolBreakdown && session.toolBreakdown.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { marginBottom: "1.25rem" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(SectionLabel, { children: "Tool Usage" }),
+            session.toolBreakdown.map((t) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.375rem 0", borderBottom: "1px solid var(--ghost, rgba(194,199,208,0.15))", fontFamily: "var(--font-mono, monospace)", fontSize: "0.75rem" }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { color: "var(--on-surface, #191c1e)" }, children: t.tool }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { color: "var(--on-surface-variant, #6b7280)" }, children: t.count })
+            ] }, t.tool))
+          ] }),
+          session.qaPairs && session.qaPairs.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { marginBottom: "1.25rem" }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(SectionLabel, { children: "Questions & Answers" }),
+            session.qaPairs.map((qa, i) => /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { padding: "0.75rem 0", borderBottom: "1px solid var(--ghost, rgba(194,199,208,0.15))" }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontWeight: 600, fontSize: "0.9375rem", color: "var(--on-surface, #191c1e)", marginBottom: "0.5rem" }, children: qa.question }),
+              /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontSize: "0.875rem", color: "var(--on-surface-variant, #6b7280)", lineHeight: 1.5 }, children: qa.answer })
+            ] }, i))
+          ] })
+        ] }) })
+      }
+    );
+  }
+  function SectionLabel({ children }) {
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontFamily: "var(--font-mono, monospace)", fontSize: "0.625rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--on-surface-variant, #6b7280)", marginBottom: "0.625rem" }, children });
+  }
+  function StatBox({ label, value, primary, children }) {
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { textAlign: "center", padding: "0.75rem", border: "1px solid var(--ghost, rgba(194,199,208,0.15))", borderRadius: "0.25rem", background: "var(--surface-lowest, #ffffff)" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontFamily: "var(--font-mono, monospace)", fontSize: "1.25rem", fontWeight: 700, color: primary ? "var(--primary, #084471)" : "var(--on-surface, #191c1e)" }, children: value }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { fontFamily: "var(--font-mono, monospace)", fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--on-surface-variant, #6b7280)", marginTop: "0.25rem" }, children: label }),
+      children
+    ] });
+  }
+  function SplitLine({ you, agent }) {
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "flex", justifyContent: "center", gap: "0.5rem", marginTop: "0.25rem", fontFamily: "var(--font-mono, monospace)", fontSize: "9px", color: "var(--on-surface-variant, #6b7280)" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { color: "var(--primary, #084471)", fontWeight: 600 }, children: you }),
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { color: "var(--green, #006a61)", fontWeight: 600 }, children: agent })
+    ] });
+  }
+
   // src/mount.tsx
+  var import_jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
   function parseSessions(el) {
     const raw = el.dataset.sessions;
     if (!raw) return [];
@@ -22937,23 +23063,74 @@
       return [];
     }
   }
+  var allSessions = /* @__PURE__ */ new Map();
+  var showOverlay = null;
+  function OverlayRoot({ sessions }) {
+    const [active, setActive] = (0, import_react3.useState)(null);
+    showOverlay = (session) => setActive(session);
+    if (!active) return null;
+    const slug = active.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "untitled";
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+      SessionOverlay,
+      {
+        session: active,
+        sessionPageUrl: `./sessions/${slug}.html`,
+        onClose: () => setActive(null)
+      }
+    );
+  }
   function mountVisualizations() {
     document.querySelectorAll("[data-work-timeline]").forEach((el) => {
       const sessions = parseSessions(el);
       if (sessions.length === 0) return;
+      for (const s of sessions) allSessions.set(s.id, s);
       (0, import_client.createRoot)(el).render(
-        import_react2.default.createElement(WorkTimeline, { sessions, maxHeight: 300 })
+        import_react3.default.createElement(WorkTimeline, {
+          sessions,
+          maxHeight: 300,
+          onSessionClick: (session) => {
+            if (showOverlay) showOverlay(session);
+          }
+        })
       );
     });
     document.querySelectorAll("[data-growth-chart]").forEach((el) => {
       const sessions = parseSessions(el);
       if (sessions.length === 0) return;
+      for (const s of sessions) allSessions.set(s.id, s);
       const totalLoc = parseInt(el.dataset.totalLoc || "0", 10);
       const totalFiles = parseInt(el.dataset.totalFiles || "0", 10);
       (0, import_client.createRoot)(el).render(
-        import_react2.default.createElement(GrowthChart, { sessions, totalLoc, totalFiles })
+        import_react3.default.createElement(GrowthChart, {
+          sessions,
+          totalLoc,
+          totalFiles,
+          onSessionClick: (session) => {
+            if (showOverlay) showOverlay(session);
+          }
+        })
       );
     });
+    document.querySelectorAll("[data-session-id]").forEach((el) => {
+      el.style.cursor = "pointer";
+      el.addEventListener("click", (e) => {
+        const sessionId = el.dataset.sessionId;
+        if (!sessionId) return;
+        const session = allSessions.get(sessionId);
+        if (session && showOverlay) {
+          e.preventDefault();
+          showOverlay(session);
+        }
+      });
+    });
+    if (allSessions.size > 0) {
+      const overlayEl = document.createElement("div");
+      overlayEl.id = "heyiam-overlay-root";
+      document.body.appendChild(overlayEl);
+      (0, import_client.createRoot)(overlayEl).render(
+        import_react3.default.createElement(OverlayRoot, { sessions: allSessions })
+      );
+    }
   }
   if (typeof document !== "undefined") {
     if (document.readyState === "loading") {
