@@ -393,9 +393,6 @@ See [docs/COOLIFY_DEPLOY.md](./docs/COOLIFY_DEPLOY.md) for Coolify deployment in
 
 | Document | Contents |
 |----------|----------|
-| [PRODUCT.md](./docs/PRODUCT.md) | Full product spec, object model, anti-fluff system |
-| [RENDERING_ARCHITECTURE.md](./docs/RENDERING_ARCHITECTURE.md) | CLI-first rendering pipeline, CSS strategy, migration path |
-| [UMBRELLA_MIGRATION.md](./docs/UMBRELLA_MIGRATION.md) | 4-app architecture rationale, route mapping, security invariants |
-| [CONTENT_LIFECYCLE.md](./docs/CONTENT_LIFECYCLE.md) | Visibility states, transcript control, delete flow |
+| [PRODUCT.md](./docs/PRODUCT.md) | Product spec, object model, content lifecycle, anti-fluff system |
 | [HOWDOYOUVIBE.md](./docs/HOWDOYOUVIBE.md) | howdoyouvibe implementation spec, stat computation, archetypes |
 | [COOLIFY_DEPLOY.md](./docs/COOLIFY_DEPLOY.md) | Production deployment with Coolify |

@@ -255,6 +255,41 @@ Provider resolution: local API key wins, then proxy (if authenticated), then fal
 
 ---
 
+## Content Lifecycle
+
+CLI uploads. Phoenix controls visibility. Users decide what's public from the web app, not the terminal.
+
+### Visibility States
+
+Projects and sessions share the same three-state model:
+
+| State | Access | On portfolio? |
+|-------|--------|---------------|
+| **uploaded** (draft) | Owner only (app_web) | No |
+| **unlisted** | Anyone with link | No |
+| **published** | Public | Yes |
+
+- **CLI** can only create `uploaded` (draft) records
+- **Phoenix app** (heyiam.com) controls: publish, unlist, delete
+- Moving between `published` and `unlisted` is instant (visibility toggle)
+- Delete removes all data: DB records, S3 files, triggers portfolio re-render
+
+### Transcript Control
+
+Per-session boolean: `transcript_visible` (default: `true`). When `false`, `/s/:token/transcript` returns 404. Controlled from Phoenix app. CLI uploads always include the transcript — visibility is separate from storage.
+
+### Delete
+
+Deleting a project or session:
+1. Removes DB records (project, linked shares, or individual share)
+2. Removes S3 files (raw JSONL, log JSON, session.json, screenshot)
+3. Marks portfolio HTML as stale (or triggers re-render if CLI is connected)
+4. Returns 404 for all public URLs
+
+Delete is permanent — no undo. GDPR: delete account cascade-deletes all projects, shares, and vibes.
+
+---
+
 ## What Makes This Work
 
 Not portfolios. Not sharing. Not AI summaries.
