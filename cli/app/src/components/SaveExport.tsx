@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { AppShell, Card, FileManifest } from './shared'
-import { saveProjectLocally, exportMarkdown, exportHtml } from '../api'
+import { saveProjectLocally, exportMarkdown, exportHtml, downloadHtmlZip } from '../api'
 import type { ExportResult } from '../types'
 
 type ExportState = 'idle' | 'loading' | 'done' | 'error'
@@ -52,7 +52,7 @@ export function SaveExport() {
 
   return (
     <AppShell
-      back={{ label: 'Draft', to: `/project/${dirName}/refine/draft` }}
+      back={{ label: 'Project', to: `/project/${encodeURIComponent(dirName)}` }}
       chips={[{ label: 'Save & export' }]}
     >
       <div className="max-w-3xl mx-auto p-6">

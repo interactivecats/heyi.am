@@ -739,7 +739,7 @@ function EnhanceStep({
               <button className="btn btn--secondary btn--large" onClick={handleRetryFailed}>Retry</button>
               {hasSuccesses && (
                 <button className="btn btn--primary btn--large" onClick={handleUploadWithoutNarrative}>
-                  Upload without narrative
+                  Continue without narrative
                 </button>
               )}
             </div>

@@ -6,7 +6,7 @@
  * producing JS-free static HTML safe for script-src 'self' CSP.
  */
 
-import { mkdirSync, writeFileSync, readFileSync, statSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync, statSync, readdirSync, existsSync } from 'node:fs';
 import { deflateRawSync } from 'node:zlib';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,6 +21,7 @@ import {
   DEFAULT_ACCENT,
 } from './render/build-render-data.js';
 import type { Session } from './analyzer.js';
+import { SCREENSHOTS_DIR } from './screenshot.js';
 
 export interface ExportResult {
   files: string[];
@@ -29,6 +30,26 @@ export interface ExportResult {
 }
 
 // ── Helpers ────────────────────────────────────────────────────
+
+/** Resolve a project screenshot as a data URI for embedding in standalone HTML. */
+function resolveScreenshotDataUri(dirName: string, cache: ProjectEnhanceCache): string | undefined {
+  // Try screenshotBase64 from the enhance cache first
+  if (cache.screenshotBase64) {
+    const b64 = cache.screenshotBase64;
+    if (b64.startsWith('data:')) return b64;
+    return `data:image/png;base64,${b64}`;
+  }
+
+  // Try local screenshot file
+  const slug = dirName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const screenshotPath = join(SCREENSHOTS_DIR, `${slug}.png`);
+  if (existsSync(screenshotPath)) {
+    const buf = readFileSync(screenshotPath);
+    return `data:image/png;base64,${buf.toString('base64')}`;
+  }
+
+  return undefined;
+}
 
 function slugify(title: string): string {
   return title
@@ -221,6 +242,9 @@ export async function exportHtml(
     });
   });
 
+  // Resolve screenshot for embedding
+  const screenshotUrl = resolveScreenshotDataUri(dirName, cache);
+
   // Render project index.html
   const projectRenderData = buildProjectRenderData({
     username,
@@ -229,6 +253,7 @@ export async function exportHtml(
     narrative: result.narrative,
     repoUrl: cache.repoUrl,
     projectUrl: cache.projectUrl,
+    screenshotUrl,
     timeline: result.timeline.map((t) => ({
       period: t.period,
       label: t.label,
@@ -276,14 +301,24 @@ export async function exportHtml(
 }
 
 function getInlineCss(): string {
-  // Resolve CSS path relative to this file's location in the source tree
   const thisDir = dirname(fileURLToPath(import.meta.url));
-  const indexCssPath = resolve(thisDir, '..', 'app', 'src', 'index.css');
+  const parts: string[] = [];
+
+  // 1. Public-web CSS — the render components use BEM classes (project-preview__*, timeline__*, etc.)
+  //    defined in the Phoenix umbrella app's public_web CSS.
+  const publicCssPath = resolve(thisDir, '..', '..', 'heyi_am_umbrella', 'apps', 'heyi_am_public_web', 'assets', 'css', 'app.css');
   try {
-    return readFileSync(indexCssPath, 'utf-8');
-  } catch {
-    return '';
-  }
+    parts.push(readFileSync(publicCssPath, 'utf-8'));
+  } catch { /* not available */ }
+
+  // 2. Vite-built CLI dashboard CSS (Tailwind utilities for any shared classes)
+  const assetsDir = resolve(thisDir, '..', 'app', 'dist', 'assets');
+  try {
+    const cssFile = readdirSync(assetsDir).find((f) => f.endsWith('.css'));
+    if (cssFile) parts.push(readFileSync(join(assetsDir, cssFile), 'utf-8'));
+  } catch { /* not available */ }
+
+  return parts.join('\n');
 }
 
 // ── In-memory HTML generation (for zip download) ─────────────
@@ -322,11 +357,14 @@ export function generateHtmlFiles(
     });
   });
 
+  const screenshotUrl = resolveScreenshotDataUri(dirName, cache);
+
   const projectRenderData = buildProjectRenderData({
     username, slug, title,
     narrative: result.narrative,
     repoUrl: cache.repoUrl,
     projectUrl: cache.projectUrl,
+    screenshotUrl,
     timeline: result.timeline.map((t) => ({
       period: t.period,
       label: t.label,
