@@ -7,6 +7,7 @@
  */
 
 import { mkdirSync, writeFileSync, readFileSync, statSync } from 'node:fs';
+import { deflateRawSync } from 'node:zlib';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ProjectEnhanceCache, EnhancedData } from './settings.js';
@@ -286,6 +287,171 @@ function getInlineCss(): string {
   } catch {
     return '';
   }
+}
+
+// ── In-memory HTML generation (for zip download) ─────────────
+
+export interface HtmlFile {
+  path: string;
+  content: string;
+}
+
+/**
+ * Generate HTML files in memory (no disk writes).
+ * Returns an array of {path, content} for zipping.
+ */
+export function generateHtmlFiles(
+  dirName: string,
+  cache: ProjectEnhanceCache,
+  sessions: Session[],
+  username: string = 'local',
+): HtmlFile[] {
+  const files: HtmlFile[] = [];
+  const { result, selectedSessionIds } = cache;
+  const slug = slugify(dirName);
+  const title = dirName.replace(/^-/, '').replace(/-/g, ' ');
+
+  const selectedSessions = sessions.filter((s) => selectedSessionIds.includes(s.id));
+  const sessionCards = selectedSessions.map((session) => {
+    const enhanced = loadEnhancedData(session.id);
+    return buildSessionCard({
+      sessionId: session.id,
+      session,
+      enhanced,
+      username,
+      projectSlug: slug,
+      sessionSlug: slugify(enhanced?.title ?? session.title),
+      sourceTool: session.source ?? 'unknown',
+    });
+  });
+
+  const projectRenderData = buildProjectRenderData({
+    username, slug, title,
+    narrative: result.narrative,
+    repoUrl: cache.repoUrl,
+    projectUrl: cache.projectUrl,
+    timeline: result.timeline.map((t) => ({
+      period: t.period,
+      label: t.label,
+      sessions: t.sessions as unknown as Array<Record<string, unknown>>,
+    })),
+    skills: result.skills,
+    totalSessions: sessions.length,
+    totalLoc: sessions.reduce((sum, s) => sum + s.linesOfCode, 0),
+    totalDurationMinutes: sessions.reduce((sum, s) => sum + s.durationMinutes, 0),
+    totalFilesChanged: sessions.reduce((sum, s) => sum + s.filesChanged.length, 0),
+    sessionCards,
+    sessionBaseUrl: './sessions',
+  });
+
+  const projectBody = renderProjectHtml(projectRenderData);
+  files.push({ path: 'index.html', content: buildStandalonePage(title, projectBody) });
+
+  for (const session of selectedSessions) {
+    const enhanced = loadEnhancedData(session.id);
+    const sessionSlug = slugify(enhanced?.title ?? session.title);
+    const renderData = buildSessionRenderData({
+      sessionId: session.id,
+      session, enhanced, username,
+      projectSlug: slug, sessionSlug,
+      sourceTool: session.source ?? 'unknown',
+    });
+    const sessionBody = renderSessionHtml(renderData);
+    files.push({
+      path: `sessions/${sessionSlug}.html`,
+      content: buildStandalonePage(enhanced?.title ?? session.title, sessionBody),
+    });
+  }
+
+  return files;
+}
+
+// ── Minimal ZIP builder (zero dependencies) ──────────────────
+
+/**
+ * Create a ZIP file buffer from an array of {path, content} entries.
+ * Uses DEFLATE compression via Node's built-in zlib.
+ */
+export function createZipBuffer(entries: HtmlFile[]): Buffer {
+  const centralDir: Buffer[] = [];
+  const fileData: Buffer[] = [];
+  let offset = 0;
+
+  for (const entry of entries) {
+    const nameBytes = Buffer.from(entry.path, 'utf-8');
+    const raw = Buffer.from(entry.content, 'utf-8');
+    const compressed = deflateRawSync(raw);
+    const crc = crc32(raw);
+
+    // Local file header
+    const local = Buffer.alloc(30 + nameBytes.length);
+    local.writeUInt32LE(0x04034b50, 0);    // signature
+    local.writeUInt16LE(20, 4);             // version needed
+    local.writeUInt16LE(0, 6);              // flags
+    local.writeUInt16LE(8, 8);              // compression: deflate
+    local.writeUInt16LE(0, 10);             // mod time
+    local.writeUInt16LE(0, 12);             // mod date
+    local.writeUInt32LE(crc, 14);           // crc32
+    local.writeUInt32LE(compressed.length, 18); // compressed size
+    local.writeUInt32LE(raw.length, 22);    // uncompressed size
+    local.writeUInt16LE(nameBytes.length, 26); // name length
+    local.writeUInt16LE(0, 28);             // extra field length
+    nameBytes.copy(local, 30);
+
+    fileData.push(local, compressed);
+
+    // Central directory entry
+    const central = Buffer.alloc(46 + nameBytes.length);
+    central.writeUInt32LE(0x02014b50, 0);   // signature
+    central.writeUInt16LE(20, 4);            // version made by
+    central.writeUInt16LE(20, 6);            // version needed
+    central.writeUInt16LE(0, 8);             // flags
+    central.writeUInt16LE(8, 10);            // compression: deflate
+    central.writeUInt16LE(0, 12);            // mod time
+    central.writeUInt16LE(0, 14);            // mod date
+    central.writeUInt32LE(crc, 16);          // crc32
+    central.writeUInt32LE(compressed.length, 20);
+    central.writeUInt32LE(raw.length, 24);
+    central.writeUInt16LE(nameBytes.length, 28);
+    central.writeUInt16LE(0, 30);            // extra field length
+    central.writeUInt16LE(0, 32);            // comment length
+    central.writeUInt16LE(0, 34);            // disk number start
+    central.writeUInt16LE(0, 36);            // internal attributes
+    central.writeUInt32LE(0, 38);            // external attributes
+    central.writeUInt32LE(offset, 42);       // local header offset
+    nameBytes.copy(central, 46);
+    centralDir.push(central);
+
+    offset += local.length + compressed.length;
+  }
+
+  const centralDirBuf = Buffer.concat(centralDir);
+  const centralDirOffset = offset;
+
+  // End of central directory
+  const eocd = Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50, 0);
+  eocd.writeUInt16LE(0, 4);                // disk number
+  eocd.writeUInt16LE(0, 6);                // disk with central dir
+  eocd.writeUInt16LE(entries.length, 8);    // entries on this disk
+  eocd.writeUInt16LE(entries.length, 10);   // total entries
+  eocd.writeUInt32LE(centralDirBuf.length, 12);
+  eocd.writeUInt32LE(centralDirOffset, 16);
+  eocd.writeUInt16LE(0, 20);               // comment length
+
+  return Buffer.concat([...fileData, centralDirBuf, eocd]);
+}
+
+/** CRC-32 (ISO 3309) */
+function crc32(buf: Buffer): number {
+  let crc = 0xffffffff;
+  for (let i = 0; i < buf.length; i++) {
+    crc ^= buf[i];
+    for (let j = 0; j < 8; j++) {
+      crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
+    }
+  }
+  return (crc ^ 0xffffffff) >>> 0;
 }
 
 function buildStandalonePage(title: string, bodyHtml: string): string {

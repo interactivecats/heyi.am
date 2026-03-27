@@ -7,7 +7,6 @@ import { Projects } from './components/Projects'
 import { ProjectDetail } from './components/ProjectDetail'
 import { Boundaries } from './components/Boundaries'
 import { ProjectUploadFlow } from './components/ProjectUploadFlow'
-import { SaveExport } from './components/SaveExport'
 import { PublishReview } from './components/PublishReview'
 import { Settings } from './components/Settings'
 import { Search } from './components/Search'
@@ -27,17 +26,17 @@ function ProjectDetailWrapper() {
           >
             Enhance project
           </Link>
-          <Link
-            to={`/project/${encodeURIComponent(dirName ?? '')}/output`}
+          <a
+            href={`/api/projects/${encodeURIComponent(dirName ?? '')}/download-html`}
             className="inline-flex items-center gap-1.5 font-semibold text-[0.8125rem] px-3.5 py-1.5 rounded-sm border border-ghost text-primary hover:border-outline transition-colors"
           >
             Export
-          </Link>
+          </a>
           <Link
             to={`/project/${encodeURIComponent(dirName ?? '')}/publish`}
             className="text-xs text-on-surface-variant hover:text-on-surface transition-colors"
           >
-            Publish public version
+            Send to heyiam.com
           </Link>
         </>
       }
@@ -66,8 +65,7 @@ export default function App() {
         <Route path="/search" element={<Search />} />
         <Route path="/session/:sessionId" element={<SessionView />} />
 
-        {/* Workstream C: Save/Export + Publish + Settings */}
-        <Route path="/project/:dirName/output" element={<SaveExport />} />
+        {/* Workstream C: Publish + Settings */}
         <Route path="/project/:dirName/publish" element={<PublishReview />} />
         <Route path="/settings" element={<Settings />} />
       </Routes>

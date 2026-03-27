@@ -33,6 +33,12 @@ export type {
   DashboardResponse,
   DashboardProject,
   SyncProgressEvent,
+  TranscriptResponse,
+  TranscriptMessage,
+  TranscriptBlock,
+  TranscriptTextBlock,
+  TranscriptThinkingBlock,
+  TranscriptToolCallBlock,
 } from './types'
 
 import type {
@@ -57,6 +63,7 @@ import type {
   ContextExportResponse,
   DashboardResponse,
   SyncProgressEvent,
+  TranscriptResponse,
 } from './types'
 
 const API_BASE = '/api'
@@ -233,6 +240,10 @@ export async function exportHtml(dirName: string): Promise<ExportResult> {
   return post<ExportResult>(`/projects/${enc(dirName)}/export/html`)
 }
 
+export function downloadHtmlZip(dirName: string): void {
+  window.open(`/api/projects/${enc(dirName)}/download-html`, '_blank')
+}
+
 export function uploadProject(
   dirName: string,
   payload: UploadPayload,
@@ -297,6 +308,10 @@ export async function fetchSessionContext(
   format: 'compact' | 'summary' | 'full' = 'summary',
 ): Promise<ContextExportResponse> {
   return get<ContextExportResponse>(`/sessions/${enc(sessionId)}/context?format=${format}`)
+}
+
+export async function fetchTranscript(sessionId: string): Promise<TranscriptResponse> {
+  return get<TranscriptResponse>(`/sessions/${enc(sessionId)}/transcript`)
 }
 
 // ── Enhance cache ────────────────────────────────────────────

@@ -1,28 +1,26 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { AppShell, Card, Note, SectionHeader } from './shared'
-import { uploadProject, exportHtml, fetchProjectDetail, type UploadEvent } from '../api'
+import { uploadProject, fetchProjectDetail, type UploadEvent } from '../api'
 import type { ProjectDetail } from '../types'
 
-type PublishState =
+type UploadState =
   | { step: 'review' }
-  | { step: 'publishing'; messages: string[] }
+  | { step: 'uploading'; messages: string[] }
   | { step: 'done'; projectUrl: string; uploaded: number; failed: number }
   | { step: 'error'; message: string }
 
 export function PublishReview() {
   const { dirName = '' } = useParams()
-  const [state, setState] = useState<PublishState>({ step: 'review' })
+  const [state, setState] = useState<UploadState>({ step: 'review' })
   const [detail, setDetail] = useState<ProjectDetail | null>(null)
-  const [htmlExporting, setHtmlExporting] = useState(false)
-
   useEffect(() => {
     if (!dirName) return
     fetchProjectDetail(dirName).then(setDetail).catch(() => {})
   }, [dirName])
 
-  const handlePublish = useCallback(() => {
-    setState({ step: 'publishing', messages: [] })
+  const handleUpload = useCallback(() => {
+    setState({ step: 'uploading', messages: [] })
 
     const cache = detail?.enhanceCache
     const project = detail?.project
@@ -47,14 +45,14 @@ export function PublishReview() {
       switch (event.type) {
         case 'project':
           setState((prev) =>
-            prev.step === 'publishing'
+            prev.step === 'uploading'
               ? { ...prev, messages: [...prev.messages, `Project ${event.status}`] }
               : prev,
           )
           break
         case 'session':
           setState((prev) =>
-            prev.step === 'publishing'
+            prev.step === 'uploading'
               ? { ...prev, messages: [...prev.messages, `Session ${event.sessionId}: ${event.status}`] }
               : prev,
           )
@@ -74,37 +72,26 @@ export function PublishReview() {
     })
   }, [dirName, detail])
 
-  async function handleExportGitHubPages() {
-    setHtmlExporting(true)
-    try {
-      await exportHtml(dirName)
-    } catch {
-      // handled by export screen
-    } finally {
-      setHtmlExporting(false)
-    }
-  }
-
-  const publishButton = (
+  const uploadButton = (
     <button
       className="text-sm font-medium px-4 py-1.5 rounded-md bg-green text-on-primary hover:opacity-90 transition-opacity"
-      onClick={handlePublish}
-      disabled={state.step === 'publishing'}
+      onClick={handleUpload}
+      disabled={state.step === 'uploading'}
     >
-      Publish public version
+      Send to heyiam.com
     </button>
   )
 
   return (
     <AppShell
-      back={{ label: 'Output', to: `/project/${dirName}/output` }}
-      chips={[{ label: 'Publish public version' }]}
-      actions={state.step === 'review' ? publishButton : undefined}
+      back={{ label: 'Project', to: `/project/${dirName}` }}
+      chips={[{ label: 'Send to heyiam.com' }]}
+      actions={state.step === 'review' ? uploadButton : undefined}
     >
       <div className="p-6">
-        {state.step === 'publishing' && (
+        {state.step === 'uploading' && (
           <Card className="max-w-2xl mx-auto">
-            <SectionHeader title="Publishing..." meta="in progress" />
+            <SectionHeader title="Uploading..." meta="in progress" />
             <div className="space-y-1.5 mt-3">
               {state.messages.map((msg, i) => (
                 <div key={i} className="flex items-center gap-2 text-sm text-on-surface-variant">
@@ -124,7 +111,7 @@ export function PublishReview() {
 
         {state.step === 'done' && (
           <Card className="max-w-2xl mx-auto">
-            <SectionHeader title="Published" meta="live" />
+            <SectionHeader title="Uploaded" meta="on heyi.am" />
             <div className="mt-2 space-y-2">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-green shrink-0" />
@@ -132,6 +119,9 @@ export function PublishReview() {
                   {state.uploaded} session{state.uploaded !== 1 ? 's' : ''} uploaded
                 </span>
               </div>
+              <p className="text-xs text-on-surface-variant">
+                Your project is now on heyiam.com. Sign in there to publish it publicly.
+              </p>
               <a
                 href={state.projectUrl}
                 target="_blank"
@@ -146,11 +136,11 @@ export function PublishReview() {
 
         {state.step === 'error' && (
           <Card className="max-w-2xl mx-auto">
-            <SectionHeader title="Publish failed" />
+            <SectionHeader title="Upload failed" />
             <p className="text-error text-sm mt-2">{state.message}</p>
             <button
               className="mt-3 text-sm font-medium px-4 py-1.5 rounded-md bg-green text-on-primary hover:opacity-90 transition-opacity"
-              onClick={handlePublish}
+              onClick={handleUpload}
             >
               Retry
             </button>
@@ -160,11 +150,11 @@ export function PublishReview() {
         {state.step === 'review' && (
           <div className="grid grid-cols-2 gap-6">
             <Card>
-              <SectionHeader title="What will be public" meta="review" />
+              <SectionHeader title="What gets uploaded" meta="review" />
               <div className="space-y-2">
                 <Note>Project title and narrative summary</Note>
-                <Note>Selected sessions and public-facing stats</Note>
-                <Note>Curated decisions, phases, and exported visual template</Note>
+                <Note>Selected sessions and stats</Note>
+                <Note>Curated decisions, phases, and rendered templates</Note>
               </div>
             </Card>
             <Card>
@@ -172,21 +162,14 @@ export function PublishReview() {
               <div className="space-y-2">
                 <Note>Excluded sessions and private notes</Note>
                 <Note>Source audit details and archive metadata</Note>
-                <Note>Sensitive flagged terms and personal OpenClaw material</Note>
+                <Note>Sensitive flagged terms and personal data</Note>
               </div>
               <div className="flex items-center gap-3 mt-4">
                 <button
                   className="text-sm font-medium px-4 py-1.5 rounded-md bg-green text-on-primary hover:opacity-90 transition-opacity"
-                  onClick={handlePublish}
+                  onClick={handleUpload}
                 >
-                  Publish public version
-                </button>
-                <button
-                  className="text-sm font-medium px-4 py-1.5 rounded-md border border-outline text-on-surface hover:bg-surface-low transition-colors"
-                  onClick={handleExportGitHubPages}
-                  disabled={htmlExporting}
-                >
-                  {htmlExporting ? 'Exporting...' : 'Export for GitHub Pages'}
+                  Send to heyiam.com
                 </button>
               </div>
             </Card>

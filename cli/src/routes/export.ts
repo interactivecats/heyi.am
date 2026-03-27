@@ -5,7 +5,7 @@ import { parseSession } from '../parsers/index.js';
 import { bridgeToAnalyzer } from '../bridge.js';
 import { analyzeSession, type Session } from '../analyzer.js';
 import { loadProjectEnhanceResult } from '../settings.js';
-import { exportMarkdown, exportHtml } from '../export.js';
+import { exportMarkdown, exportHtml, generateHtmlFiles, createZipBuffer } from '../export.js';
 import type { RouteContext } from './context.js';
 
 async function loadProjectSessions(ctx: RouteContext, dirName: string): Promise<Session[]> {
@@ -80,6 +80,29 @@ export function createExportRouter(ctx: RouteContext): Router {
     } catch (err) {
       console.error('[export-html]', (err as Error).message);
       res.status(500).json({ error: 'HTML export failed' });
+    }
+  });
+
+  // Download HTML as zip (no disk writes)
+  router.get('/api/projects/:project/download-html', async (req: Request, res: Response) => {
+    try {
+      const dirName = String(req.params.project);
+      const cache = loadProjectEnhanceResult(dirName);
+      if (!cache) {
+        res.status(404).json({ error: 'No enhance result found' });
+        return;
+      }
+      const sessions = await loadProjectSessions(ctx, dirName);
+      const htmlFiles = generateHtmlFiles(dirName, cache, sessions);
+      const zipBuffer = createZipBuffer(htmlFiles);
+      const filename = `${dirName.replace(/[^a-zA-Z0-9_-]/g, '_')}.zip`;
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', zipBuffer.length);
+      res.send(zipBuffer);
+    } catch (err) {
+      console.error('[download-html]', (err as Error).message);
+      res.status(500).json({ error: 'HTML download failed' });
     }
   });
 
