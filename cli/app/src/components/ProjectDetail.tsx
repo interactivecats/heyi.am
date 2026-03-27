@@ -467,7 +467,14 @@ export function ProjectDetail() {
 
         {/* Featured sessions — card grid */}
         <Card>
-          <SectionHeader title="Featured sessions" meta={`${sessions.length} total`} />
+          <SectionHeader title="Featured sessions">
+            <Link
+              to={`/project/${encodeURIComponent(dirName ?? '')}/sessions`}
+              className="font-mono text-[11px] text-primary hover:underline"
+            >
+              All {sessions.length} sessions →
+            </Link>
+          </SectionHeader>
           <div className="grid grid-cols-2 gap-3">
             {featuredSessions.map((s, i) => (
               <button

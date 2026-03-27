@@ -207,6 +207,13 @@ export function buildTranscript(entries: RawEntry[], cwd?: string): TranscriptMe
 
       if (typeof content === 'string') {
         userText = cleanAssistantText(content);
+        // If cleaning stripped everything (e.g. teammate-message wrapper), extract inner text
+        if (!userText && content.includes('<teammate-message')) {
+          const inner = content
+            .replace(/<teammate-message[^>]*>/g, '')
+            .replace(/<\/teammate-message>/g, '');
+          userText = cleanAssistantText(inner).trim();
+        }
       } else if (Array.isArray(content)) {
         // Extract text blocks from user message (skip tool_result blocks)
         const textParts = content

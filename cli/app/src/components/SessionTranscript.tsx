@@ -176,27 +176,64 @@ function ThinkingBlock({ text }: { text: string }) {
 
 // ── Text block with markdown-lite rendering ─────────────────
 
+/** Max characters before a text block collapses with "Show more" */
+const TEXT_COLLAPSE_THRESHOLD = 300
+
 function TextContent({ text, highlights }: { text: string; highlights?: string }) {
-  if (!highlights) {
-    return <RenderedText text={text} />
+  const [expanded, setExpanded] = useState(text.length <= TEXT_COLLAPSE_THRESHOLD)
+  const isLong = text.length > TEXT_COLLAPSE_THRESHOLD
+
+  // Find a good truncation point (end of sentence or word near threshold)
+  const truncateAt = (() => {
+    if (!isLong) return text.length
+    // Try to cut at a sentence boundary
+    const slice = text.slice(0, TEXT_COLLAPSE_THRESHOLD + 50)
+    const sentenceEnd = slice.lastIndexOf('. ', TEXT_COLLAPSE_THRESHOLD)
+    if (sentenceEnd > TEXT_COLLAPSE_THRESHOLD * 0.6) return sentenceEnd + 1
+    // Fall back to word boundary
+    const wordEnd = slice.lastIndexOf(' ', TEXT_COLLAPSE_THRESHOLD)
+    return wordEnd > TEXT_COLLAPSE_THRESHOLD * 0.6 ? wordEnd : TEXT_COLLAPSE_THRESHOLD
+  })()
+
+  const displayText = expanded ? text : text.slice(0, truncateAt)
+
+  if (highlights) {
+    const regex = new RegExp(`(${escapeRegex(highlights)})`, 'gi')
+    const parts = displayText.split(regex)
+
+    return (
+      <div className="text-[0.8125rem] leading-relaxed whitespace-pre-wrap break-words">
+        {parts.map((part, i) =>
+          regex.test(part) ? (
+            <mark key={i} className="bg-amber/30 text-on-surface rounded-sm px-0.5">
+              {part}
+            </mark>
+          ) : (
+            <span key={i}>{part}</span>
+          ),
+        )}
+        {isLong && <CollapsToggle expanded={expanded} onToggle={() => setExpanded(!expanded)} />}
+      </div>
+    )
   }
 
-  // Highlight search matches
-  const regex = new RegExp(`(${escapeRegex(highlights)})`, 'gi')
-  const parts = text.split(regex)
-
   return (
-    <div className="text-[0.8125rem] leading-relaxed whitespace-pre-wrap break-words">
-      {parts.map((part, i) =>
-        regex.test(part) ? (
-          <mark key={i} className="bg-amber/30 text-on-surface rounded-sm px-0.5">
-            {part}
-          </mark>
-        ) : (
-          <span key={i}>{part}</span>
-        ),
-      )}
+    <div>
+      <RenderedText text={displayText} />
+      {isLong && <CollapsToggle expanded={expanded} onToggle={() => setExpanded(!expanded)} />}
     </div>
+  )
+}
+
+function CollapsToggle({ expanded, onToggle }: { expanded: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="inline-block mt-1 font-mono text-[11px] text-primary hover:underline cursor-pointer"
+    >
+      {expanded ? '▴ Show less' : '▾ Show more'}
+    </button>
   )
 }
 
@@ -254,39 +291,83 @@ function MessageBubble({
   message,
   searchQuery,
   messageIndex,
+  showRoleBadge = true,
 }: {
   message: TranscriptMessage
   searchQuery?: string
   messageIndex: number
+  showRoleBadge?: boolean
 }) {
   const isUser = message.role === 'user'
-  const time = formatTime(message.timestamp)
+
+  // Count tool calls to show a compact summary when there are many
+  const toolCalls = message.blocks.filter(b => b.type === 'tool_call')
+  const textBlocks = message.blocks.filter(b => b.type === 'text')
+  const thinkingBlocks = message.blocks.filter(b => b.type === 'thinking')
+  const [toolsExpanded, setToolsExpanded] = useState(toolCalls.length <= 3)
 
   return (
     <div
-      className={`relative group ${isUser ? 'pl-0' : 'pl-0'}`}
+      className="relative"
       data-message-index={messageIndex}
     >
-      {/* Role label + timestamp */}
-      <div className="flex items-center gap-2 mb-1">
-        <span className={`font-mono text-[10px] uppercase tracking-wider font-semibold ${
-          isUser ? 'text-primary' : 'text-green'
-        }`}>
-          {isUser ? 'you' : 'assistant'}
-        </span>
-        <span className="font-mono text-[10px] text-outline">{time}</span>
-        {message.model && (
-          <span className="font-mono text-[9px] text-outline">
-            {message.model.replace('claude-', '').replace(/-\d{8}$/, '')}
+      {/* Role badge — only on first message in a same-role sequence */}
+      {showRoleBadge && (
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className={`inline-flex items-center font-mono text-[11px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm ${
+            isUser
+              ? 'bg-primary/10 text-primary'
+              : 'bg-green/10 text-green'
+          }`}>
+            {isUser ? 'you' : 'assistant'}
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Content */}
-      <div className={`${isUser ? 'bg-primary/5 border-l-2 border-primary pl-3 py-2 rounded-r-md' : ''}`}>
-        {message.blocks.map((block, i) => (
-          <BlockRenderer key={i} block={block} searchQuery={searchQuery} />
+      <div className={`${isUser
+        ? 'bg-primary/5 border-l-[3px] border-primary pl-3 py-2 rounded-r-md'
+        : 'pl-0.5'
+      }`}>
+        {/* Thinking blocks first */}
+        {thinkingBlocks.map((block, i) => (
+          <BlockRenderer key={`t-${i}`} block={block} searchQuery={searchQuery} />
         ))}
+
+        {/* Text blocks */}
+        {textBlocks.map((block, i) => (
+          <BlockRenderer key={`x-${i}`} block={block} searchQuery={searchQuery} />
+        ))}
+
+        {/* Tool calls — collapsed summary when there are many */}
+        {toolCalls.length > 3 && !toolsExpanded ? (
+          <button
+            type="button"
+            onClick={() => setToolsExpanded(true)}
+            className="mt-1.5 flex items-center gap-2 font-mono text-[11px] text-on-surface-variant hover:text-on-surface cursor-pointer transition-colors"
+          >
+            <span className="text-[10px] text-outline">▸</span>
+            <span>{toolCalls.length} tool calls</span>
+            <span className="text-outline">
+              ({[...new Set(toolCalls.map(t => t.type === 'tool_call' ? (t as TranscriptToolCallBlock).toolName : ''))].join(', ')})
+            </span>
+          </button>
+        ) : (
+          toolCalls.map((block, i) => (
+            <BlockRenderer key={`tc-${i}`} block={block} searchQuery={searchQuery} />
+          ))
+        )}
+
+        {/* Collapse tool calls button */}
+        {toolCalls.length > 3 && toolsExpanded && (
+          <button
+            type="button"
+            onClick={() => setToolsExpanded(false)}
+            className="mt-1 font-mono text-[10px] text-outline hover:text-on-surface-variant cursor-pointer"
+          >
+            ▾ Collapse {toolCalls.length} tool calls
+          </button>
+        )}
       </div>
     </div>
   )
@@ -408,16 +489,19 @@ function escapeRegex(str: string): string {
 interface SessionTranscriptProps {
   messages: TranscriptMessage[]
   initialSearchQuery?: string
+  /** When true, renders without search bar or floating button (used inside phase sections) */
+  compact?: boolean
 }
 
-export function SessionTranscript({ messages, initialSearchQuery }: SessionTranscriptProps) {
+export function SessionTranscript({ messages, initialSearchQuery, compact }: SessionTranscriptProps) {
   const [searchOpen, setSearchOpen] = useState(!!initialSearchQuery)
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery ?? '')
   const [currentMatch, setCurrentMatch] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Keyboard shortcut to open search
+  // Keyboard shortcut to open search (only in full mode)
   useEffect(() => {
+    if (compact) return
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
         e.preventDefault()
@@ -426,7 +510,7 @@ export function SessionTranscript({ messages, initialSearchQuery }: SessionTrans
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [compact])
 
   // Count matches
   const matchCount = useMemo(() => {
@@ -460,7 +544,7 @@ export function SessionTranscript({ messages, initialSearchQuery }: SessionTrans
 
   if (messages.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className={`text-center ${compact ? 'py-4' : 'py-12'}`}>
         <p className="text-sm text-on-surface-variant">No conversation data available.</p>
       </div>
     )
@@ -469,7 +553,7 @@ export function SessionTranscript({ messages, initialSearchQuery }: SessionTrans
   return (
     <div ref={containerRef} className="relative">
       {/* Search bar */}
-      {searchOpen && (
+      {!compact && searchOpen && (
         <div className="sticky top-12 z-40 mb-4">
           <TranscriptSearch
             query={searchQuery}
@@ -488,18 +572,28 @@ export function SessionTranscript({ messages, initialSearchQuery }: SessionTrans
 
       {/* Messages */}
       <div className="flex flex-col gap-4">
-        {messages.map((msg, i) => (
-          <MessageBubble
-            key={msg.id}
-            message={msg}
-            messageIndex={i}
-            searchQuery={searchQuery || undefined}
-          />
-        ))}
+        {messages.map((msg, i) => {
+          const prevRole = i > 0 ? messages[i - 1].role : null
+          const isFirstInGroup = prevRole !== msg.role
+          const showTurnDivider = prevRole !== null && prevRole !== msg.role && msg.role === 'user'
+          return (
+            <div key={msg.id}>
+              {showTurnDivider && (
+                <div className="border-t border-ghost/60 mb-4 mt-1" />
+              )}
+              <MessageBubble
+                message={msg}
+                messageIndex={i}
+                searchQuery={searchQuery || undefined}
+                showRoleBadge={isFirstInGroup}
+              />
+            </div>
+          )
+        })}
       </div>
 
       {/* Floating search trigger */}
-      {!searchOpen && (
+      {!compact && !searchOpen && (
         <button
           type="button"
           onClick={() => setSearchOpen(true)}

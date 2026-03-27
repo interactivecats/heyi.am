@@ -12,6 +12,7 @@ import { PublishReview } from './components/PublishReview'
 import { Settings } from './components/Settings'
 import { Search } from './components/Search'
 import { SessionView } from './components/SessionView'
+import { ProjectSessions } from './components/ProjectSessions'
 
 function ExportDropdown({ dirName }: { dirName: string }) {
   const [open, setOpen] = useState(false)
@@ -102,6 +103,7 @@ export default function App() {
         {/* Workstream B: Project Detail + Enhance */}
         <Route path="/projects" element={<Projects />} />
         <Route path="/project/:dirName" element={<ProjectDetailWrapper />} />
+        <Route path="/project/:dirName/sessions" element={<ProjectSessions />} />
         <Route path="/project/:dirName/boundaries" element={<Boundaries />} />
         <Route path="/project/:dirName/enhance" element={<ProjectUploadFlow />} />
 
