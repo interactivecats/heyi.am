@@ -9,19 +9,28 @@ import { SOURCE_DISPLAY_NAMES, type SessionSource } from "./parsers/types.js";
 const COL_WIDTH = 28;
 
 // ─── ANSI colors (no dependencies) ──────────────────────────────────────────
+// Respect NO_COLOR (https://no-color.org) — strip all escapes when set.
+// Use only colors safe on both light and dark terminals:
+//   - cyan, magenta, green are universally readable
+//   - yellow (33) replaced with bright cyan (96) — yellow is invisible on light bg
+//   - white (37) replaced with bold default — white is invisible on light bg
+//   - gray (90) replaced with dim default — bright-black vanishes on light themes
+const noColor = "NO_COLOR" in process.env;
+const esc = (code: string) => (noColor ? "" : code);
+
 const c = {
-  reset: "\x1b[0m",
-  bold: "\x1b[1m",
-  dim: "\x1b[2m",
-  cyan: "\x1b[36m",
-  magenta: "\x1b[35m",
-  yellow: "\x1b[33m",
-  green: "\x1b[32m",
-  red: "\x1b[31m",
-  blue: "\x1b[34m",
-  white: "\x1b[37m",
-  gray: "\x1b[90m",
-  bgBlack: "\x1b[40m",
+  reset: esc("\x1b[0m"),
+  bold: esc("\x1b[1m"),
+  dim: esc("\x1b[2m"),
+  cyan: esc("\x1b[36m"),
+  magenta: esc("\x1b[35m"),
+  yellow: esc("\x1b[96m"),  // bright cyan — safe on light+dark
+  green: esc("\x1b[32m"),
+  red: esc("\x1b[31m"),
+  blue: esc("\x1b[34m"),
+  white: esc("\x1b[1m"),    // bold default fg — safe on light+dark
+  gray: esc("\x1b[2m"),     // dim default fg — safe on light+dark
+  bgBlack: "",              // removed — forces black bg which hurts light themes
 };
 
 const LINE = `${c.cyan}${"═".repeat(80)}${c.reset}`;
