@@ -152,30 +152,28 @@ XSS in user-generated portfolio HTML cannot steal auth cookies (different regist
 
 ## 4. Health Check
 
-The Dockerfile includes a `HEALTHCHECK` that curls the public_web landing page:
+The Dockerfile includes a `HEALTHCHECK` that curls the app_web landing page:
 
 ```dockerfile
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD curl -sf http://localhost:4000/ || exit 1
+  CMD curl -sf http://localhost:4001/ || exit 1
 ```
 
 Coolify uses this automatically to determine when the container is ready for traffic.
 
 ## 5. Database Migrations
 
-Migrations run via the release migration overlay.
+Migrations run automatically on container startup. The Dockerfile CMD runs `bin/migrate` before starting the server:
+
+```dockerfile
+CMD ["/bin/sh", "-c", "/app/bin/migrate && /app/bin/server"]
+```
 
 The migration infrastructure:
 - `rel/overlays/bin/migrate` — shell script that calls `HeyiAm.Release.migrate`
 - `apps/heyi_am/lib/heyi_am/release.ex` — Elixir module that runs `Ecto.Migrator`
 
-In Coolify, set **Pre-deploy Command** to:
-
-```
-/app/bin/migrate
-```
-
-This runs migrations before the new container starts receiving traffic.
+No Coolify pre-deploy command is needed — migrations are handled by the container entrypoint.
 
 ## 6. Docker Build Optimization
 
@@ -200,9 +198,8 @@ Push to your configured branch. Coolify will:
 
 1. Pull the repo
 2. Build the Docker image from `/heyi_am_umbrella/Dockerfile`
-3. Run the pre-deploy migration command (`/app/bin/migrate`)
-4. Start the container (`/app/bin/server` sets `PHX_SERVER=true` and starts the BEAM)
-5. Route traffic once the health check passes
+3. Start the container (runs migrations, then `bin/server` sets `PHX_SERVER=true` and starts the BEAM)
+4. Route traffic once the health check passes
 
 ## 8. Production Tuning
 
