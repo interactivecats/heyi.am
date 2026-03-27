@@ -212,22 +212,10 @@ function assignAgentLanes(children: Child[], parentStartMs: number): { laneMap: 
     })
     .sort((a, b) => a.startMs - b.startMs)
 
-  const laneEnds: number[] = []
+  // One lane per agent — no bin-packing — so the visual count matches the real count
   const laneMap = new Map<string, number>()
-
-  for (const c of withTime) {
-    let assigned = -1
-    for (let i = 0; i < laneEnds.length; i++) {
-      if (laneEnds[i] <= c.startMs) { assigned = i; break }
-    }
-    if (assigned === -1) {
-      assigned = laneEnds.length
-      laneEnds.push(0)
-    }
-    laneEnds[assigned] = c.endMs
-    laneMap.set(c.id, assigned)
-  }
-  return { laneMap, laneCount: laneEnds.length }
+  withTime.forEach((c, i) => laneMap.set(c.id, i))
+  return { laneMap, laneCount: withTime.length }
 }
 
 // ── Tooltip data ─────────────────────────────────────────────────
