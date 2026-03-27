@@ -12,7 +12,7 @@ import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ProjectEnhanceCache, EnhancedData } from './settings.js';
 import { loadEnhancedData } from './settings.js';
-import { renderProjectHtml, renderSessionHtml } from './render/index.js';
+import { renderProjectExportHtml, renderSessionHtml } from './render/index.js';
 import { escapeHtml } from './format-utils.js';
 import {
   buildProjectRenderData,
@@ -268,7 +268,7 @@ export async function exportHtml(
     sessionBaseUrl: './sessions',
   });
 
-  const projectBody = renderProjectHtml(projectRenderData);
+  const projectBody = renderProjectExportHtml(projectRenderData);
   const projectHtml = buildStandalonePage(title, projectBody);
   totalBytes += writeAndTrack(join(outputPath, 'index.html'), projectHtml, files);
 
@@ -379,7 +379,7 @@ export function generateHtmlFiles(
     sessionBaseUrl: './sessions',
   });
 
-  const projectBody = renderProjectHtml(projectRenderData);
+  const projectBody = renderProjectExportHtml(projectRenderData);
   files.push({ path: 'index.html', content: buildStandalonePage(title, projectBody) });
 
   for (const session of selectedSessions) {
@@ -489,11 +489,24 @@ function crc32(buf: Buffer): number {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
+function getInlineMountJs(): string {
+  const thisDir = dirname(fileURLToPath(import.meta.url));
+  const mountPath = resolve(thisDir, '..', 'packages', 'ui', 'dist', 'mount.js');
+  try {
+    return readFileSync(mountPath, 'utf-8');
+  } catch {
+    return '';
+  }
+}
+
 function buildStandalonePage(title: string, bodyHtml: string): string {
   const css = getInlineCss();
   const cssTag = css
-    ? `<style>${css}\nbody { overflow: auto !important; min-height: auto !important; }</style>`
+    ? `<style>${css}\nbody { overflow: auto !important; min-height: auto !important; background: var(--color-surface, #f8f9fb); }</style>`
     : '';
+
+  const mountJs = getInlineMountJs();
+  const scriptTag = mountJs ? `<script>${mountJs}</script>` : '';
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -508,6 +521,7 @@ function buildStandalonePage(title: string, bodyHtml: string): string {
 </head>
 <body>
   ${bodyHtml}
+  ${scriptTag}
 </body>
 </html>`;
 }

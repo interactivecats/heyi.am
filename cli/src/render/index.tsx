@@ -13,6 +13,7 @@ import ReactDOMServer from 'react-dom/server';
 import type { PortfolioRenderData, ProjectRenderData, SessionRenderData } from './types.js';
 import { PortfolioPage } from './components/PortfolioPage.js';
 import { ProjectPage } from './components/ProjectPage.js';
+import { ProjectExportPage } from './components/ProjectExportPage.js';
 import { SessionPage } from './components/SessionPage.js';
 
 export type { PortfolioRenderData, ProjectRenderData, SessionRenderData } from './types.js';
@@ -163,6 +164,28 @@ export function renderSessionHtml(data: SessionRenderData): string {
     throw new RenderError(
       'RENDER_FAILED',
       `Failed to render session page for ${data.session.token}`,
+      err,
+    );
+  }
+}
+
+/**
+ * Render a project page for standalone HTML export.
+ *
+ * Uses the dashboard-style layout (browser chrome, cards, stat grid)
+ * instead of the Phoenix publish layout.
+ */
+export function renderProjectExportHtml(data: ProjectRenderData): string {
+  validateProject(data);
+
+  try {
+    return ReactDOMServer.renderToStaticMarkup(
+      React.createElement(ProjectExportPage, { data })
+    );
+  } catch (err: unknown) {
+    throw new RenderError(
+      'RENDER_FAILED',
+      `Failed to render project export page for ${data.project.slug}`,
       err,
     );
   }
