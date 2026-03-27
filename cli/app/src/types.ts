@@ -331,7 +331,7 @@ export interface DashboardResponse {
   projects: DashboardProject[]
   sync: {
     status: 'idle' | 'syncing' | 'done'
-    phase: 'discovering' | 'indexing' | 'cleanup' | 'done'
+    phase: 'discovering' | 'indexing' | 'done'
     current: number
     total: number
   }
@@ -340,7 +340,53 @@ export interface DashboardResponse {
 
 export interface SyncProgressEvent {
   status: 'idle' | 'syncing' | 'done'
-  phase: 'discovering' | 'indexing' | 'cleanup' | 'done'
+  phase: 'discovering' | 'indexing' | 'done'
   current: number
   total: number
+}
+
+// ── Transcript ─────────────────────────────────────────────
+
+export interface TranscriptTextBlock {
+  type: 'text'
+  text: string
+}
+
+export interface TranscriptThinkingBlock {
+  type: 'thinking'
+  text: string
+}
+
+export interface TranscriptToolCallBlock {
+  type: 'tool_call'
+  toolCallId: string
+  toolName: string
+  input: string
+  inputData?: Record<string, unknown>
+  output?: string
+  outputTruncated?: boolean
+  isError?: boolean
+}
+
+export type TranscriptBlock =
+  | TranscriptTextBlock
+  | TranscriptThinkingBlock
+  | TranscriptToolCallBlock
+
+export interface TranscriptMessage {
+  id: string
+  timestamp: string
+  role: 'user' | 'assistant'
+  blocks: TranscriptBlock[]
+  model?: string
+}
+
+export interface TranscriptResponse {
+  messages: TranscriptMessage[]
+  meta: {
+    totalMessages: number
+    totalTokens: { input: number; output: number }
+    models: string[]
+    duration: { activeMinutes: number; wallClockMinutes: number }
+  }
 }

@@ -227,7 +227,7 @@ function buildSyncLines(progress: SyncProgressEvent): TerminalLine[] {
     lines.push({ text: '  ◌ Discovering sessions...', variant: 'active' })
   }
 
-  if (progress.phase === 'indexing' || progress.phase === 'cleanup' || progress.phase === 'done') {
+  if (progress.phase === 'indexing' || progress.phase === 'done') {
     lines.push({ text: `  ✓ Found ${progress.total} sessions`, variant: 'passed' })
   }
 
@@ -236,11 +236,6 @@ function buildSyncLines(progress: SyncProgressEvent): TerminalLine[] {
       text: `  ◌ Indexing sessions... (${progress.current}/${progress.total})`,
       variant: 'active',
     })
-  }
-
-  if (progress.phase === 'cleanup') {
-    lines.push({ text: `  ✓ Indexed ${progress.total} sessions`, variant: 'passed' })
-    lines.push({ text: '  ◌ Cleaning up...', variant: 'active' })
   }
 
   if (progress.phase === 'done') {

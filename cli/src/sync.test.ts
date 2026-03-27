@@ -227,7 +227,7 @@ describe('syncSessionIndex', () => {
     expect(phases).toContain('discovering');
     expect(phases).toContain('indexing');
     expect(phases).toContain('done');
-    // No 'cleanup' phase — DB never auto-deletes sessions
+    expect(phases).not.toContain('cleanup');
 
     freshDb.close();
   });
@@ -310,9 +310,7 @@ describe('syncSessionIndex preserves DB sessions when source files are deleted',
 
     // Second sync — session file is gone, but DB should keep it
     const result2 = await syncSessionIndex(freshDb, preserveDir);
-    expect(result2.orphansRemoved).toBe(0);
-
-    // Session should still be in the DB
+    // Session should still be in the DB (archive behavior)
     const count2 = (freshDb.prepare('SELECT COUNT(*) as c FROM sessions').get() as { c: number }).c;
     expect(count2).toBe(1);
 

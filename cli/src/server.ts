@@ -63,7 +63,7 @@ export function startServer(port: number = 17845): Promise<Server> {
   // Uses syncWithTracking so the dashboard can observe progress via /api/sync/progress
   syncWithTracking(db).then((result) => {
     if (result.indexed > 0) {
-      console.log(`Indexed ${result.indexed} sessions (${result.skipped} up-to-date, ${result.orphansRemoved} removed)`);
+      console.log(`Indexed ${result.indexed} sessions (${result.skipped} up-to-date)`);
     }
   }).catch(() => {});
 

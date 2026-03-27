@@ -23,7 +23,7 @@ import { getArchiveDir } from './settings.js';
 // ── Types ────────────────────────────────────────────────────
 
 export interface SyncProgress {
-  phase: 'discovering' | 'indexing' | 'cleanup' | 'done';
+  phase: 'discovering' | 'indexing' | 'done';
   current?: number;
   total?: number;
   sessionId?: string;
@@ -33,7 +33,6 @@ export interface SyncResult {
   discovered: number;
   indexed: number;
   skipped: number;
-  orphansRemoved: number;
   errors: number;
 }
 
@@ -197,7 +196,6 @@ export async function syncSessionIndex(
     discovered: 0,
     indexed: 0,
     skipped: 0,
-    orphansRemoved: 0,
     errors: 0,
   };
 
@@ -292,12 +290,33 @@ const DEBOUNCE_MS = 5_000;
 /**
  * Try to index a single changed JSONL file.
  * Derives sessionId and projectDir from the file path structure.
+ *
+ * Claude Code file layout:
+ *   .claude/projects/{projectDir}/{sessionId}.jsonl          — parent session
+ *   .claude/projects/{projectDir}/{sessionId}/subagents/...  — subagent sessions
  */
 async function handleFileChange(db: Database.Database, filePath: string): Promise<void> {
   if (!filePath.endsWith('.jsonl')) return;
 
   const sessionId = basename(filePath, '.jsonl');
-  const projectDir = basename(dirname(filePath));
+  const parentDirName = basename(dirname(filePath));
+
+  // Detect subagent: path contains /subagents/ directory
+  const isSubagent = parentDirName === 'subagents';
+
+  let projectDir: string;
+  let parentSessionId: string | undefined;
+
+  if (isSubagent) {
+    // .../projects/{projectDir}/{parentSessionId}/subagents/{agentId}.jsonl
+    const sessionDataDir = dirname(dirname(filePath)); // up past subagents/
+    parentSessionId = basename(sessionDataDir);
+    projectDir = basename(dirname(sessionDataDir));
+  } else {
+    // .../projects/{projectDir}/{sessionId}.jsonl
+    projectDir = parentDirName;
+  }
+
   const projectName = displayNameFromDir(projectDir);
 
   const meta: SessionMeta = {
@@ -305,7 +324,8 @@ async function handleFileChange(db: Database.Database, filePath: string): Promis
     source: 'claude',
     sessionId,
     projectDir,
-    isSubagent: false,
+    isSubagent,
+    ...(parentSessionId ? { parentSessionId } : {}),
   };
 
   try {
