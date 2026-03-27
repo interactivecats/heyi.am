@@ -3,10 +3,10 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { type Session } from '../analyzer.js';
-import { loadProjectEnhanceResult, loadEnhancedData } from '../settings.js';
+import { loadProjectEnhanceResult } from '../settings.js';
 import type { ProjectEnhanceCache } from '../settings.js';
 import { exportMarkdown, exportHtml, generateHtmlFiles, createZipBuffer } from '../export.js';
-import { type RouteContext, buildSessionList } from './context.js';
+import { type RouteContext, buildProjectDetail } from './context.js';
 
 const EXPORTS_BASE = path.resolve(process.env.HOME || '~', '.config', 'heyiam', 'exports');
 
@@ -19,12 +19,12 @@ function safeExportPath(outputPath: string | undefined, dirName: string, format:
   return resolved;
 }
 
-/** Load sessions from DB with parent/child relationships via shared builder. */
-async function loadProjectSessions(ctx: RouteContext, dirName: string): Promise<Session[]> {
+/** Load the full project detail — same data the dashboard receives. */
+async function loadProjectData(ctx: RouteContext, dirName: string) {
   const projects = await ctx.getProjects();
   const proj = projects.find((p) => p.dirName === dirName);
-  if (!proj) return [];
-  return buildSessionList(ctx.db, dirName, proj.name);
+  if (!proj) return null;
+  return buildProjectDetail(ctx.db, proj);
 }
 
 /** Build a minimal ProjectEnhanceCache from raw session data for non-enhanced exports. */
@@ -66,22 +66,17 @@ function buildFallbackCache(sessions: Session[]): ProjectEnhanceCache {
   };
 }
 
-function getDistinctFileCount(ctx: RouteContext, dirName: string): number {
-  return (ctx.db.prepare(
-    'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ? AND is_subagent = 0)',
-  ).get(dirName) as { c: number }).c;
-}
-
 export function createExportRouter(ctx: RouteContext): Router {
   const router = Router();
 
   router.post('/api/projects/:project/save-local', async (req: Request, res: Response) => {
     try {
       const dirName = String(req.params.project);
-      const sessions = await loadProjectSessions(ctx, dirName);
-      const cache = loadProjectEnhanceResult(dirName) ?? buildFallbackCache(sessions);
+      const data = await loadProjectData(ctx, dirName);
+      if (!data) { res.status(404).json({ error: 'Project not found' }); return; }
+      const cache = (data.enhanceCache as ProjectEnhanceCache) ?? buildFallbackCache(data.sessions);
       const outputPath = path.join(EXPORTS_BASE, dirName, 'markdown');
-      const result = await exportMarkdown(dirName, cache, sessions, outputPath);
+      const result = await exportMarkdown(dirName, cache, data.sessions, outputPath);
       res.json(result);
     } catch (err) {
       console.error('[save-local]', (err as Error).message);
@@ -93,10 +88,11 @@ export function createExportRouter(ctx: RouteContext): Router {
     try {
       const dirName = String(req.params.project);
       const outputPath = req.body?.outputPath as string | undefined;
-      const sessions = await loadProjectSessions(ctx, dirName);
-      const cache = loadProjectEnhanceResult(dirName) ?? buildFallbackCache(sessions);
+      const data = await loadProjectData(ctx, dirName);
+      if (!data) { res.status(404).json({ error: 'Project not found' }); return; }
+      const cache = (data.enhanceCache as ProjectEnhanceCache) ?? buildFallbackCache(data.sessions);
       const outDir = safeExportPath(outputPath, dirName, 'markdown');
-      const result = await exportMarkdown(dirName, cache, sessions, outDir);
+      const result = await exportMarkdown(dirName, cache, data.sessions, outDir);
       res.json(result);
     } catch (err) {
       console.error('[export-markdown]', (err as Error).message);
@@ -108,11 +104,12 @@ export function createExportRouter(ctx: RouteContext): Router {
     try {
       const dirName = String(req.params.project);
       const outputPath = req.body?.outputPath as string | undefined;
-      const sessions = await loadProjectSessions(ctx, dirName);
-      const cache = loadProjectEnhanceResult(dirName) ?? buildFallbackCache(sessions);
+      const data = await loadProjectData(ctx, dirName);
+      if (!data) { res.status(404).json({ error: 'Project not found' }); return; }
+      const cache = (data.enhanceCache as ProjectEnhanceCache) ?? buildFallbackCache(data.sessions);
+      const totalFilesChanged = (data.project as Record<string, unknown>).totalFiles as number;
       const outDir = safeExportPath(outputPath, dirName, 'html');
-      const totalFilesChanged = getDistinctFileCount(ctx, dirName);
-      const result = await exportHtml(dirName, cache, sessions, outDir, 'local', { totalFilesChanged });
+      const result = await exportHtml(dirName, cache, data.sessions, outDir, 'local', { totalFilesChanged });
       res.json(result);
     } catch (err) {
       console.error('[export-html]', (err as Error).message);
@@ -124,10 +121,11 @@ export function createExportRouter(ctx: RouteContext): Router {
   router.get('/api/projects/:project/download-html', async (req: Request, res: Response) => {
     try {
       const dirName = String(req.params.project);
-      const sessions = await loadProjectSessions(ctx, dirName);
-      const cache = loadProjectEnhanceResult(dirName) ?? buildFallbackCache(sessions);
-      const totalFilesChanged = getDistinctFileCount(ctx, dirName);
-      const htmlFiles = generateHtmlFiles(dirName, cache, sessions, 'local', { totalFilesChanged });
+      const data = await loadProjectData(ctx, dirName);
+      if (!data) { res.status(404).json({ error: 'Project not found' }); return; }
+      const cache = (data.enhanceCache as ProjectEnhanceCache) ?? buildFallbackCache(data.sessions);
+      const totalFilesChanged = (data.project as Record<string, unknown>).totalFiles as number;
+      const htmlFiles = generateHtmlFiles(dirName, cache, data.sessions, 'local', { totalFilesChanged });
       const zipBuffer = createZipBuffer(htmlFiles);
       const filename = `${dirName.replace(/[^a-zA-Z0-9_-]/g, '_')}.zip`;
       res.setHeader('Content-Type', 'application/zip');
@@ -144,12 +142,13 @@ export function createExportRouter(ctx: RouteContext): Router {
   router.get('/api/projects/:project/download-markdown', async (req: Request, res: Response) => {
     try {
       const dirName = String(req.params.project);
-      const sessions = await loadProjectSessions(ctx, dirName);
-      const cache = loadProjectEnhanceResult(dirName) ?? buildFallbackCache(sessions);
+      const data = await loadProjectData(ctx, dirName);
+      if (!data) { res.status(404).json({ error: 'Project not found' }); return; }
+      const cache = (data.enhanceCache as ProjectEnhanceCache) ?? buildFallbackCache(data.sessions);
 
       // Re-use exportMarkdown to a temp dir, then zip the result
       const tmpDir = path.join(EXPORTS_BASE, '.tmp', `${dirName}-${Date.now()}`);
-      const result = await exportMarkdown(dirName, cache, sessions, tmpDir);
+      const result = await exportMarkdown(dirName, cache, data.sessions, tmpDir);
 
       // Read files into memory and zip
       const entries = result.files.map((filePath) => ({
@@ -176,30 +175,11 @@ export function createExportRouter(ctx: RouteContext): Router {
   router.get('/api/projects/:project/download-json', async (req: Request, res: Response) => {
     try {
       const dirName = String(req.params.project);
-      const sessions = await loadProjectSessions(ctx, dirName);
-      const cache = loadProjectEnhanceResult(dirName);
+      const data = await loadProjectData(ctx, dirName);
+      if (!data) { res.status(404).json({ error: 'Project not found' }); return; }
       const payload = {
-        project: dirName,
+        ...data,
         exportedAt: new Date().toISOString(),
-        enhanced: !!cache,
-        ...(cache ? { narrative: cache.result.narrative, arc: cache.result.arc, skills: cache.result.skills, timeline: cache.result.timeline } : {}),
-        sessions: sessions.map((s) => {
-          const enhanced = loadEnhancedData(s.id);
-          return {
-            id: s.id,
-            title: enhanced?.title ?? s.title,
-            date: s.date,
-            durationMinutes: s.durationMinutes,
-            turns: s.turns,
-            linesOfCode: s.linesOfCode,
-            toolCalls: s.toolCalls,
-            skills: enhanced?.skills ?? s.skills,
-            filesChanged: s.filesChanged,
-            source: s.source,
-            ...(enhanced?.developerTake ? { developerTake: enhanced.developerTake } : {}),
-            ...(enhanced?.context ? { context: enhanced.context } : {}),
-          };
-        }),
       };
       const json = JSON.stringify(payload, null, 2);
       const filename = `${dirName.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`;

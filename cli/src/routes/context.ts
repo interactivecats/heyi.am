@@ -187,6 +187,53 @@ export function buildSessionList(
   });
 }
 
+/**
+ * Build the full project detail response — identical data for both the
+ * dashboard API endpoint and the HTML export. Single source of truth.
+ */
+export function buildProjectDetail(
+  db: Database.Database,
+  proj: ProjectInfo,
+): { project: Record<string, unknown>; sessions: Session[]; enhanceCache: unknown } {
+  const enhanceCache = loadProjectEnhanceResult(proj.dirName);
+  const sessionStats = buildSessionList(db, proj.dirName, proj.name);
+
+  const totalLoc = sessionStats.reduce((sum, s) => sum + (s.linesOfCode || 0), 0);
+  const totalDuration = sessionStats.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
+  const totalFiles = (db.prepare(
+    'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ? AND is_subagent = 0)',
+  ).get(proj.dirName) as { c: number }).c;
+  const agentDurationRow = db.prepare(
+    'SELECT COALESCE(SUM(duration_minutes), 0) as total FROM sessions WHERE project_dir = ? AND is_subagent = 1',
+  ).get(proj.dirName) as { total: number };
+  const totalAgentDuration = totalDuration + agentDurationRow.total;
+  const allSkills = [...new Set(sessionStats.flatMap((s) => s.skills || []))];
+
+  const uploaded = getUploadedState(proj.dirName);
+  const dates = sessionStats.map((s) => s.date).filter(Boolean).sort();
+
+  return {
+    project: {
+      name: proj.name,
+      dirName: proj.dirName,
+      sessionCount: proj.sessionCount,
+      description: enhanceCache?.result?.narrative ?? '',
+      totalLoc,
+      totalDuration,
+      totalFiles,
+      totalAgentDuration: totalAgentDuration > totalDuration ? totalAgentDuration : undefined,
+      skills: allSkills,
+      dateRange: dates.length ? `${dates[0]}|${dates[dates.length - 1]}` : '',
+      lastSessionDate: dates[dates.length - 1] || null,
+      isUploaded: !!uploaded,
+      uploadedSessionCount: uploaded?.uploadedSessions?.length || 0,
+      enhancedAt: enhanceCache?.enhancedAt ?? null,
+    },
+    sessions: sessionStats.filter((s) => s.date),
+    enhanceCache: enhanceCache ?? null,
+  };
+}
+
 export function createRouteContext(sessionsBasePath?: string, dbPath?: string): RouteContext {
   const db = dbPath ? openDatabase(dbPath) : getDatabase();
 

@@ -4,7 +4,7 @@ import { toAgentChild, bridgeChildSessions, aggregateChildStats, type AgentChild
 import { getAuthToken } from '../auth.js';
 import { API_URL } from '../config.js';
 import { loadProjectEnhanceResult, getUploadedState } from '../settings.js';
-import { RouteContext, buildSessionList } from './context.js';
+import { RouteContext, buildSessionList, buildProjectDetail } from './context.js';
 
 export function createProjectsRouter(ctx: RouteContext): Router {
   const router = Router();
@@ -132,46 +132,7 @@ export function createProjectsRouter(ctx: RouteContext): Router {
         return;
       }
 
-      const enhanceCache = loadProjectEnhanceResult(proj.dirName);
-
-      // Build session list from DB (fast) + enhanced data files (small reads)
-      const sessionStats = buildSessionList(ctx.db, proj.dirName, proj.name);
-
-      const totalLoc = sessionStats.reduce((sum, s) => sum + (s.linesOfCode || 0), 0);
-      const totalDuration = sessionStats.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
-      const totalFiles = (ctx.db.prepare(
-        'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ? AND is_subagent = 0)',
-      ).get(proj.dirName) as { c: number }).c;
-      // Total agent duration: sum of ALL session durations (parents + subagents)
-      const agentDurationRow = ctx.db.prepare(
-        'SELECT COALESCE(SUM(duration_minutes), 0) as total FROM sessions WHERE project_dir = ? AND is_subagent = 1',
-      ).get(proj.dirName) as { total: number };
-      const totalAgentDuration = totalDuration + agentDurationRow.total;
-      const allSkills = [...new Set(sessionStats.flatMap((s) => s.skills || []))];
-
-      const uploaded = getUploadedState(proj.dirName);
-      const dates = sessionStats.map(s => s.date).filter(Boolean).sort();
-
-      res.json({
-        project: {
-          name: proj.name,
-          dirName: proj.dirName,
-          sessionCount: proj.sessionCount,
-          description: enhanceCache?.result?.narrative ?? '',
-          totalLoc,
-          totalDuration,
-          totalFiles,
-          totalAgentDuration: totalAgentDuration > totalDuration ? totalAgentDuration : undefined,
-          skills: allSkills,
-          dateRange: dates.length ? `${dates[0]}|${dates[dates.length - 1]}` : '',
-          lastSessionDate: dates[dates.length - 1] || null,
-          isUploaded: !!uploaded,
-          uploadedSessionCount: uploaded?.uploadedSessions?.length || 0,
-          enhancedAt: enhanceCache?.enhancedAt ?? null,
-        },
-        sessions: sessionStats.filter((s) => s.date),
-        enhanceCache: enhanceCache ?? null,
-      });
+      res.json(buildProjectDetail(ctx.db, proj));
     } catch (err) {
       res.status(500).json({ error: (err as Error).message });
     }
