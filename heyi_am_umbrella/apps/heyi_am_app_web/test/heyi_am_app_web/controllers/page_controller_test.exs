@@ -1,8 +1,8 @@
 defmodule HeyiAmAppWeb.PageControllerTest do
   use HeyiAmAppWeb.ConnCase
 
-  test "GET /home renders the landing page", %{conn: conn} do
-    conn = get(conn, ~p"/home")
+  test "GET / renders the landing page for unauthenticated users", %{conn: conn} do
+    conn = get(conn, ~p"/")
     assert html_response(conn, 200) =~ "Proof-of-work for AI-native developers"
   end
 
@@ -14,10 +14,5 @@ defmodule HeyiAmAppWeb.PageControllerTest do
   test "GET /privacy renders the privacy page", %{conn: conn} do
     conn = get(conn, ~p"/privacy")
     assert html_response(conn, 200) =~ "Privacy Policy"
-  end
-
-  test "GET / redirects unauthenticated users to /home", %{conn: conn} do
-    conn = get(conn, ~p"/")
-    assert redirected_to(conn) == "/home"
   end
 end

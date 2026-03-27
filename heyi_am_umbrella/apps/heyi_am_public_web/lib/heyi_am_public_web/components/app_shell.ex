@@ -54,7 +54,7 @@ defmodule HeyiAmPublicWeb.AppShell do
             AI coding creates invisible work.
           </p>
           <a
-            href={HeyiAmPublicWeb.Helpers.app_url("/home")}
+            href={HeyiAmPublicWeb.Helpers.app_url("/")}
             style="color: var(--primary, #084471); font-weight: 600; text-decoration: none; font-size: 0.875rem;"
           >
             Turn yours into proof &rarr;

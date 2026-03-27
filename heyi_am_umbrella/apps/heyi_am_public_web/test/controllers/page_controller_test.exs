@@ -3,7 +3,7 @@ defmodule HeyiAmPublicWeb.PageControllerTest do
 
   test "GET / redirects to app domain", %{conn: conn} do
     conn = get(conn, ~p"/")
-    assert redirected_to(conn) =~ "/home"
+    assert redirected_to(conn) =~ "/"
   end
 
   test "GET /terms redirects to app domain", %{conn: conn} do

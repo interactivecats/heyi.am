@@ -2,7 +2,7 @@ defmodule HeyiAmPublicWeb.PageController do
   use HeyiAmPublicWeb, :controller
 
   def home(conn, _params) do
-    redirect(conn, external: HeyiAmPublicWeb.Helpers.app_url("/home"))
+    redirect(conn, external: HeyiAmPublicWeb.Helpers.app_url("/"))
   end
 
   def terms(conn, _params) do

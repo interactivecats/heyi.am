@@ -4,13 +4,6 @@ defmodule HeyiAmAppWeb.UserSessionController do
   alias HeyiAm.Accounts
   alias HeyiAmAppWeb.UserAuth
 
-  def redirect_root(conn, _params) do
-    if conn.assigns.current_scope && conn.assigns.current_scope.user do
-      redirect(conn, to: ~p"/users/settings")
-    else
-      redirect(conn, to: ~p"/home")
-    end
-  end
 
   def create(conn, %{"_action" => "confirmed"} = params) do
     create(conn, params, "User confirmed successfully.")

@@ -72,6 +72,6 @@ USER nobody
 EXPOSE 4000 4001 4002
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD curl -sf http://localhost:4000/ || exit 1
+  CMD curl -sf http://localhost:4001/ || exit 1
 
-CMD ["/app/bin/server"]
+CMD ["/bin/sh", "-c", "/app/bin/migrate && /app/bin/server"]
