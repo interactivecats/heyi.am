@@ -13,6 +13,8 @@ export interface Settings {
   anthropicApiKey?: string;
   /** Auto-archive Claude sessions to prevent loss from 30-day cleanup. Default: true. */
   archiveSessions?: boolean;
+  /** ISO timestamp when onboarding was completed or skipped. */
+  onboardingCompletedAt?: string;
 }
 
 const SESSIONS_DIR = 'sessions';
@@ -39,6 +41,22 @@ export function saveAnthropicApiKey(apiKey: string, configDir?: string): void {
 export function clearAnthropicApiKey(configDir?: string): void {
   const settings = getSettings(configDir);
   delete settings.anthropicApiKey;
+  writeConfig(SETTINGS_FILE, settings, configDir);
+}
+
+export function isOnboardingComplete(configDir?: string): boolean {
+  return !!getSettings(configDir).onboardingCompletedAt;
+}
+
+export function completeOnboarding(configDir?: string): void {
+  const settings = getSettings(configDir);
+  settings.onboardingCompletedAt = new Date().toISOString();
+  writeConfig(SETTINGS_FILE, settings, configDir);
+}
+
+export function resetOnboarding(configDir?: string): void {
+  const settings = getSettings(configDir);
+  delete settings.onboardingCompletedAt;
   writeConfig(SETTINGS_FILE, settings, configDir);
 }
 

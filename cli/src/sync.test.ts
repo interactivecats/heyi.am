@@ -186,6 +186,24 @@ describe('syncWithTracking', () => {
     expect(maxTotal).toBe(2); // 2 session files in tmpDir
     expect(maxCurrent).toBe(2); // should reach total
   });
+
+  it('includes currentProject in state updates', async () => {
+    const freshDb = openDatabase(join(tmpDir, 'test-tracking-project.db'));
+    const projectNames = new Set<string>();
+
+    const unsub = onSyncProgress((state) => {
+      if (state.currentProject) {
+        projectNames.add(state.currentProject);
+      }
+    });
+
+    await syncWithTracking(freshDb, tmpDir);
+
+    unsub();
+    freshDb.close();
+
+    expect(projectNames.size).toBeGreaterThan(0);
+  });
 });
 
 describe('displayNameFromDir', () => {
@@ -228,6 +246,26 @@ describe('syncSessionIndex', () => {
     expect(phases).toContain('indexing');
     expect(phases).toContain('done');
     expect(phases).not.toContain('cleanup');
+
+    freshDb.close();
+  });
+
+  it('includes currentProject in indexing progress events', async () => {
+    const freshDb = openDatabase(join(tmpDir, 'test-project-names.db'));
+    const projectNames: string[] = [];
+
+    await syncSessionIndex(freshDb, tmpDir, (p) => {
+      if (p.phase === 'indexing' && p.currentProject) {
+        projectNames.push(p.currentProject);
+      }
+    });
+
+    expect(projectNames.length).toBeGreaterThan(0);
+    // All project names should be derived from the dir name
+    for (const name of projectNames) {
+      expect(name).toBeTruthy();
+      expect(typeof name).toBe('string');
+    }
 
     freshDb.close();
   });

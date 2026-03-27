@@ -5,7 +5,7 @@ import { homedir } from 'node:os';
 import { getDashboardStats } from '../db.js';
 import { getSyncState, onSyncProgress } from '../sync.js';
 import { displayNameFromDir } from '../sync.js';
-import { loadProjectEnhanceResult } from '../settings.js';
+import { loadProjectEnhanceResult, isOnboardingComplete, completeOnboarding, resetOnboarding } from '../settings.js';
 import type { RouteContext } from './context.js';
 
 export function createDashboardRouter(ctx: RouteContext): Router {
@@ -50,8 +50,10 @@ export function createDashboardRouter(ctx: RouteContext): Router {
           phase: sync.phase,
           current: sync.current,
           total: sync.total,
+          currentProject: sync.currentProject,
         },
         isEmpty,
+        onboardingComplete: isOnboardingComplete(),
       });
     } catch (err) {
       console.error('[dashboard]', (err as Error).message);
@@ -85,6 +87,26 @@ export function createDashboardRouter(ctx: RouteContext): Router {
     });
 
     req.on('close', unsubscribe);
+  });
+
+  // ── POST /api/onboarding/complete — mark onboarding done ───
+  router.post('/api/onboarding/complete', (_req: Request, res: Response) => {
+    try {
+      completeOnboarding();
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
+  // ── POST /api/onboarding/reset — reset onboarding (dev helper) ───
+  router.post('/api/onboarding/reset', (_req: Request, res: Response) => {
+    try {
+      resetOnboarding();
+      res.json({ ok: true, message: 'Onboarding reset. Refresh the page.' });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
   });
 
   return router;

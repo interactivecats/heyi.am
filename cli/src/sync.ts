@@ -27,6 +27,7 @@ export interface SyncProgress {
   current?: number;
   total?: number;
   sessionId?: string;
+  currentProject?: string;
 }
 
 export interface SyncResult {
@@ -45,6 +46,7 @@ export interface SyncState {
   phase: SyncProgress['phase'];
   current: number;
   total: number;
+  currentProject?: string;
   result: SyncResult | null;
   startedAt: number | null;
   finishedAt: number | null;
@@ -103,6 +105,7 @@ export async function syncWithTracking(
       phase: progress.phase,
       current: progress.current ?? _syncState.current,
       total: progress.total ?? _syncState.total,
+      currentProject: progress.currentProject ?? _syncState.currentProject,
     };
     notifyListeners();
   });
@@ -237,6 +240,7 @@ export async function syncSessionIndex(
       current: i + 1,
       total: allSessions.length,
       sessionId: meta.sessionId,
+      currentProject: projectName,
     });
   }
 

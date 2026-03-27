@@ -390,6 +390,10 @@ export async function fetchDashboard(): Promise<DashboardResponse> {
   return get<DashboardResponse>('/dashboard')
 }
 
+export async function completeOnboarding(): Promise<void> {
+  await post('/onboarding/complete')
+}
+
 export function subscribeSyncProgress(
   onEvent: (event: SyncProgressEvent) => void,
 ): () => void {

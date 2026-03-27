@@ -334,8 +334,10 @@ export interface DashboardResponse {
     phase: 'discovering' | 'indexing' | 'done'
     current: number
     total: number
+    currentProject?: string
   }
   isEmpty: boolean
+  onboardingComplete: boolean
 }
 
 export interface SyncProgressEvent {
@@ -343,6 +345,7 @@ export interface SyncProgressEvent {
   phase: 'discovering' | 'indexing' | 'done'
   current: number
   total: number
+  currentProject?: string
 }
 
 // ── Transcript ─────────────────────────────────────────────
