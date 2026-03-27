@@ -35,7 +35,7 @@ export function bridgeToAnalyzer(
   const cwd = parsed.cwd;
   const turns = entriesToTurns(parsed.raw_entries, cwd);
   const filesChanged = computePerFileChanges(parsed.tool_calls, parsed.loc_stats, cwd);
-  const title = parsed.custom_title || extractTitle(parsed.raw_entries);
+  const title = parsed.custom_title || extractTitle(parsed.raw_entries) || parsed.slug || "Untitled session";
   const rawLog = extractRawLog(parsed.raw_entries, cwd);
 
   const wallClockMinutes = parsed.wall_clock_ms > 0
@@ -228,19 +228,33 @@ function computePerFileChanges(toolCalls: ToolCall[], locStats?: LocStats, cwd?:
 }
 
 function extractTitle(entries: RawEntry[]): string {
+  let teammateTitle: string | null = null;
+
   // Use the first user prompt as the title
   for (const entry of entries) {
     if (entry.type === "user") {
       const content = entry.message?.content;
       if (typeof content === "string") {
         const cleaned = cleanAssistantText(content);
+
         if (cleaned.length > 0) {
           return cleaned.length > 120 ? cleaned.slice(0, 117) + "..." : cleaned;
+        }
+
+        // If cleaning stripped everything (e.g. teammate messages), save inner
+        // text as fallback — but keep looking for a real user prompt first
+        if (!teammateTitle && content.includes("<teammate-message")) {
+          const inner = content.replace(/<teammate-message[^>]*>/g, "").replace(/<\/teammate-message>/g, "");
+          const trimmed = cleanAssistantText(inner).trim();
+          if (trimmed.length > 0) {
+            teammateTitle = trimmed.length > 120 ? trimmed.slice(0, 117) + "..." : trimmed;
+          }
         }
       }
     }
   }
-  return "Untitled session";
+
+  return teammateTitle ?? "";
 }
 
 function extractRawLog(entries: RawEntry[], cwd?: string): string[] {
