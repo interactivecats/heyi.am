@@ -199,9 +199,19 @@ export async function syncSessionIndex(
     errors: 0,
   };
 
-  // Phase 1: Discover sessions
+  // Phase 1: Discover sessions (parents only from listSessions)
   onProgress?.({ phase: 'discovering' });
-  const allSessions = await listSessions(basePath);
+  const parentSessions = await listSessions(basePath);
+
+  // Flatten: include children (subagents) so they get indexed into the DB too.
+  // Without this, the detail endpoint can't build childMap from DB rows.
+  const allSessions: SessionMeta[] = [];
+  for (const parent of parentSessions) {
+    allSessions.push(parent);
+    if (parent.children?.length) {
+      allSessions.push(...parent.children);
+    }
+  }
   result.discovered = allSessions.length;
 
   // Phase 2: Index stale/missing sessions

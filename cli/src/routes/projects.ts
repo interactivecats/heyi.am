@@ -198,6 +198,11 @@ export function createProjectsRouter(ctx: RouteContext): Router {
       const totalFiles = (ctx.db.prepare(
         'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ? AND is_subagent = 0)',
       ).get(proj.dirName) as { c: number }).c;
+      // Total agent duration: sum of ALL session durations (parents + subagents)
+      const agentDurationRow = ctx.db.prepare(
+        'SELECT COALESCE(SUM(duration_minutes), 0) as total FROM sessions WHERE project_dir = ? AND is_subagent = 1',
+      ).get(proj.dirName) as { total: number };
+      const totalAgentDuration = totalDuration + agentDurationRow.total;
       const allSkills = [...new Set(sessionStats.flatMap((s) => s.skills || []))];
 
       const uploaded = getUploadedState(proj.dirName);
@@ -212,6 +217,7 @@ export function createProjectsRouter(ctx: RouteContext): Router {
           totalLoc,
           totalDuration,
           totalFiles,
+          totalAgentDuration: totalAgentDuration > totalDuration ? totalAgentDuration : undefined,
           skills: allSkills,
           dateRange: dates.length ? `${dates[0]}|${dates[dates.length - 1]}` : '',
           lastSessionDate: dates[dates.length - 1] || null,

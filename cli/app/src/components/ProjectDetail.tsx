@@ -396,7 +396,12 @@ export function ProjectDetail() {
           projectName={project.name}
           stats={[
             { label: 'Sessions', value: project.sessionCount },
-            { label: 'Time', value: formatDuration(project.totalDuration) },
+            {
+              label: project.totalAgentDuration ? 'You / Agents' : 'Time',
+              value: project.totalAgentDuration
+                ? `${formatDuration(project.totalDuration)} / ${formatDuration(project.totalAgentDuration)}`
+                : formatDuration(project.totalDuration),
+            },
             { label: 'LOC', value: formatLoc(project.totalLoc) },
             { label: 'Files', value: project.totalFiles },
           ]}
