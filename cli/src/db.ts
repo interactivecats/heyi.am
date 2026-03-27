@@ -14,7 +14,7 @@ import type { SessionMeta } from './parsers/index.js';
 const CONFIG_DIR = join(homedir(), '.config', 'heyiam');
 export const DB_PATH = join(CONFIG_DIR, 'sessions.db');
 
-const CURRENT_SCHEMA_VERSION = 3;
+const CURRENT_SCHEMA_VERSION = 2;
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -109,14 +109,9 @@ function runMigrations(db: Database.Database): void {
     | undefined;
   const currentVersion = row?.version ?? 0;
 
-  if (currentVersion < 1) {
-    migrateToV1(db);
+  if (currentVersion < 2) {
+    migrateToV2(db);
   }
-}
-
-function migrateToV1(db: Database.Database): void {
-  // V1 is superseded by V2 — go straight to V2
-  migrateToV2(db);
 }
 
 function migrateToV2(db: Database.Database): void {
@@ -538,15 +533,6 @@ export function countPreservedSessions(db: Database.Database): number {
     }
   }
   return preserved;
-}
-
-/**
- * @deprecated Do not auto-delete sessions from the DB.
- * Kept for backward compatibility but now returns 0 and does nothing.
- * The DB preserves sessions whose source files are gone — that's the feature.
- */
-export function cleanupOrphanedSessions(_db: Database.Database): number {
-  return 0;
 }
 
 // ── FTS5 Search ──────────────────────────────────────────────

@@ -1,15 +1,11 @@
 import React from 'react';
 import type { ProjectRenderData, SessionCard, ProjectTimeline } from '../types.js';
+import { formatLoc } from '../../format-utils.js';
 
 function formatDuration(minutes: number): string {
   if (minutes < 60) return `${Math.round(minutes)}m`;
   const hours = minutes / 60;
   return hours >= 10 ? `${Math.round(hours)}h` : `${hours.toFixed(1)}h`;
-}
-
-function formatLoc(loc: number): string {
-  if (loc < 1000) return String(loc);
-  return `${(loc / 1000).toFixed(1)}k`;
 }
 
 function formatDate(dateStr: string): string {

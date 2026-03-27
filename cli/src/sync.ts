@@ -253,29 +253,6 @@ export async function syncSessionIndex(
 
 // ── Quick Sync (for CLI) ─────────────────────────────────────
 
-/**
- * Lightweight sync: if the DB already has sessions, only re-index stale ones.
- * If the DB is empty (first run), do a full sync with progress reporting.
- *
- * Designed for CLI commands that need a populated DB but shouldn't
- * block for a full scan every time.
- */
-export async function quickSync(
-  db: Database.Database,
-  basePath?: string,
-  onProgress?: SyncProgressCallback,
-): Promise<SyncResult> {
-  const count = getSessionCount(db);
-
-  if (count === 0) {
-    // First run — full index with progress
-    return syncSessionIndex(db, basePath, onProgress);
-  }
-
-  // Incremental: discover and index only stale sessions
-  return syncSessionIndex(db, basePath, onProgress);
-}
-
 // ── Full Rebuild ─────────────────────────────────────────────
 
 /**

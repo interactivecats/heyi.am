@@ -9,7 +9,7 @@ import { renderProjectHtml, renderSessionHtml } from '../render/index.js';
 import { buildSessionRenderData, buildSessionCard, buildProjectRenderData } from '../render/build-render-data.js';
 import type { SessionCard } from '../render/types.js';
 import type { ProjectEnhanceResult } from '../llm/project-enhance.js';
-import type { RouteContext } from './context.js';
+import { buildAgentSummary, type RouteContext } from './context.js';
 
 export function createPublishRouter(ctx: RouteContext): Router {
   const router = Router();
@@ -245,25 +245,11 @@ export function createPublishRouter(ctx: RouteContext): Router {
             const sessionSlug = (enhanced?.title ?? session.title ?? sessionId)
               .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
 
-            const agentSummary = await (async () => {
-              const childMetas = meta.children ?? [];
-              if (childMetas.length === 0) return null;
-
-              const seenRoles = new Set<string>();
-              const agents: Array<{ role: string; duration_minutes: number; loc_changed: number }> = [];
-              for (const c of childMetas) {
-                const role = c.agentRole ?? c.sessionId;
-                if (seenRoles.has(role)) continue;
-                seenRoles.add(role);
-                const childStats = await ctx.getSessionStats(c, proj.name);
-                agents.push({
-                  role: c.agentRole ?? 'agent',
-                  duration_minutes: childStats.duration,
-                  loc_changed: childStats.loc,
-                });
-              }
-              return agents.length > 0 ? { is_orchestrated: true, agents } : null;
-            })();
+            const agentSummary = await buildAgentSummary(
+              meta.children ?? [],
+              (c) => ctx.getSessionStats(c, proj.name),
+              { deduplicate: true },
+            );
 
             const devTake = (enhanced?.developerTake ?? session.developerTake ?? '').slice(0, 2000);
             const sessionNarrative = (enhanced as { narrative?: string })?.narrative ?? '';
@@ -528,10 +514,10 @@ export function createPublishRouter(ctx: RouteContext): Router {
         });
       }
 
-      const projectUrl2 = `/${auth.username}/${projectData.slug}`;
+      const publishedUrl = `/${auth.username}/${projectData.slug}`;
       send({
         type: 'done',
-        projectUrl: projectUrl2,
+        projectUrl: publishedUrl,
         projectId: projectData.project_id,
         slug: projectData.slug,
         uploaded: uploadedCount,

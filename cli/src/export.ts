@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import type { ProjectEnhanceCache, EnhancedData } from './settings.js';
 import { loadEnhancedData } from './settings.js';
 import { renderProjectHtml, renderSessionHtml } from './render/index.js';
+import { escapeHtml } from './format-utils.js';
 import {
   buildProjectRenderData,
   buildSessionRenderData,
@@ -28,10 +29,6 @@ export interface ExportResult {
 }
 
 // ── Helpers ────────────────────────────────────────────────────
-
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
 
 function slugify(title: string): string {
   return title

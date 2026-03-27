@@ -121,7 +121,8 @@ export async function deviceAuthFlow(
       continue;
     }
     if (errorBody.error === 'slow_down') {
-      // Back off — handled by next iteration naturally since interval is constant
+      // RFC 8628 §3.5: increase poll interval by 5 seconds on slow_down
+      await sleep(5000);
       continue;
     }
     if (errorBody.error === 'expired_token') {

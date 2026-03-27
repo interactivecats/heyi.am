@@ -11,11 +11,12 @@ import { createInterface } from 'node:readline';
 import { writeFileSync, mkdirSync, existsSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir, platform } from 'node:os';
+import { getDaemonDir, getDaemonBinaryPath } from './daemon-install.js';
 
 // ── Path constants ──────────────────────────────────────────
 
-const DAEMON_DIR = join(homedir(), '.config', 'heyiam', 'daemon');
-const DAEMON_BINARY = join(DAEMON_DIR, 'heyiam-tray');
+const DAEMON_DIR = getDaemonDir();
+const DAEMON_BINARY = getDaemonBinaryPath();
 const DAEMON_LOG = join(DAEMON_DIR, 'daemon.log');
 
 const LAUNCHD_PLIST_DIR = join(homedir(), 'Library', 'LaunchAgents');
@@ -122,8 +123,3 @@ export function unregisterAutostart(): { removed: boolean; files: string[] } {
   return { removed: removed.length > 0, files: removed };
 }
 
-// ── Query ───────────────────────────────────────────────────
-
-export function isAutostartRegistered(): boolean {
-  return existsSync(LAUNCHD_PLIST_PATH) || existsSync(LINUX_DESKTOP_PATH);
-}

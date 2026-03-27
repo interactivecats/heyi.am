@@ -353,8 +353,6 @@ export interface AgentChild {
   date?: string;
 }
 
-/** @deprecated Use AgentChild instead */
-export type ChildSessionSummary = AgentChild;
 
 /** Convert a fully-parsed Session into the canonical AgentChild shape. */
 export function toAgentChild(session: Session): AgentChild {

@@ -50,8 +50,48 @@ export interface SessionStats {
 
 // ── Pure helpers ─────────────────────────────────────────────
 
-export function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+import { escapeHtml } from '../format-utils.js';
+export { escapeHtml };
+
+export interface AgentSummary {
+  is_orchestrated: true;
+  agents: Array<{ role: string; duration_minutes: number; loc_changed: number }>;
+}
+
+/**
+ * Build an agent summary from child session metas. Returns null when
+ * there are no children (or none produce valid stats).
+ *
+ * @param childMetas  - Array of child SessionMeta objects
+ * @param resolveStats - Async function that returns { duration, loc } for a child meta
+ * @param options.deduplicate - When true, only the first occurrence of each role is kept
+ */
+export async function buildAgentSummary(
+  childMetas: SessionMeta[],
+  resolveStats: (child: SessionMeta) => Promise<{ duration: number; loc: number }>,
+  options?: { deduplicate?: boolean },
+): Promise<AgentSummary | null> {
+  if (childMetas.length === 0) return null;
+
+  const deduplicate = options?.deduplicate ?? false;
+  const seenRoles = new Set<string>();
+  const agents: AgentSummary['agents'] = [];
+
+  for (const c of childMetas) {
+    if (deduplicate) {
+      const key = c.agentRole ?? c.sessionId;
+      if (seenRoles.has(key)) continue;
+      seenRoles.add(key);
+    }
+    const childStats = await resolveStats(c);
+    agents.push({
+      role: c.agentRole ?? 'agent',
+      duration_minutes: childStats.duration,
+      loc_changed: childStats.loc,
+    });
+  }
+
+  return agents.length > 0 ? { is_orchestrated: true, agents } : null;
 }
 
 // ── Route context factory ────────────────────────────────────

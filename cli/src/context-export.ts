@@ -4,6 +4,7 @@
 import type { Session, ExecutionStep, FileChange, ParsedTurn } from "./analyzer.js";
 import { cleanAssistantText } from "./bridge.js";
 import { SOURCE_DISPLAY_NAMES, type SessionSource } from "./parsers/types.js";
+import { formatLoc } from './format-utils.js';
 
 export type ExportTier = "compact" | "summary" | "full";
 
@@ -34,12 +35,6 @@ function formatDate(iso: string): string {
 function sourceName(source?: string): string {
   if (!source) return "Unknown";
   return SOURCE_DISPLAY_NAMES[source as SessionSource] ?? source;
-}
-
-/** Format LOC as human-readable (e.g. "2.4k"). */
-function formatLoc(loc: number): string {
-  if (loc >= 1000) return `${(loc / 1000).toFixed(1)}k`;
-  return String(loc);
 }
 
 // ── Metadata header (shared across all tiers) ──────────────────

@@ -6,6 +6,8 @@
  * in `app/src/types.ts` — the render pipeline owns its own contract.
  */
 
+import type { AgentSummary } from '../routes/context.js';
+
 export interface UserInfo {
   username: string;
   accent: string;
@@ -69,7 +71,7 @@ export interface SessionCard {
   skills: string[];
   recordedAt: string;
   sourceTool: string;
-  agentSummary?: Record<string, unknown>;
+  agentSummary?: AgentSummary;
 }
 
 export interface ProjectRenderData {
@@ -124,7 +126,7 @@ export interface SessionDetail {
   recordedAt: string;
   sourceTool: string;
   template: string;
-  agentSummary?: Record<string, unknown>;
+  agentSummary?: AgentSummary;
 }
 
 export interface SessionRenderData {

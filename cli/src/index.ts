@@ -12,7 +12,8 @@ import { openDatabase, getSessionRow, getContextSummary } from './db.js';
 import { searchSessions, decodeProjectName } from './search.js';
 import { exportSessionContext, type ExportTier } from './context-export.js';
 import { SOURCE_DISPLAY_NAMES, type SessionSource } from './parsers/types.js';
-import { quickSync, fullReindex } from './sync.js';
+import { syncSessionIndex, fullReindex } from './sync.js';
+import { formatLoc } from './format-utils.js';
 
 const program = new Command();
 
@@ -163,7 +164,7 @@ program
     // Archive on every CLI command — don't lose sessions between opens
     const searchSessions2 = await listSessions();
     await archiveSessionFiles(searchSessions2);
-    await quickSync(db, undefined, (p) => {
+    await syncSessionIndex(db, undefined, (p) => {
       if (p.phase === 'indexing' && p.current === 1 && (p.total ?? 0) > 0) {
         console.log(`  Syncing index (${p.total} sessions)...`);
       }
@@ -226,7 +227,7 @@ program
     // Archive on every CLI command
     const ctxSessions = await listSessions();
     await archiveSessionFiles(ctxSessions);
-    await quickSync(db);
+    await syncSessionIndex(db);
 
     const row = getSessionRow(db, sessionId);
     if (!row) {
@@ -368,7 +369,7 @@ program
     const allSessions = await listSessions();
     await archiveSessionFiles(allSessions);
 
-    const result = await quickSync(db, undefined, (p) => {
+    const result = await syncSessionIndex(db, undefined, (p) => {
       if (p.phase === 'indexing' && p.current && p.total) {
         if (p.current % 50 === 0 || p.current === p.total) {
           process.stdout.write(`\r  Indexing: ${p.current}/${p.total}`);
@@ -392,7 +393,7 @@ program
   .description('Show archive health, session counts, and daemon status')
   .action(async () => {
     const db = openDatabase();
-    await quickSync(db);
+    await syncSessionIndex(db);
 
     const { getSessionCount, countPreservedSessions } = await import('./db.js');
     const { getAllProjectStats } = await import('./db.js');
@@ -640,11 +641,6 @@ function formatDateShort(iso: string): string {
   if (isNaN(d.getTime())) return iso;
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   return `${months[d.getMonth()]} ${d.getDate()}`;
-}
-
-function formatLoc(loc: number): string {
-  if (loc >= 1000) return `${(loc / 1000).toFixed(1)}k`;
-  return String(loc);
 }
 
 export { program };

@@ -269,7 +269,7 @@ export async function fetchApiKeyStatus(): Promise<ApiKeyStatus> {
 }
 
 export async function saveApiKey(key: string): Promise<void> {
-  await post('/settings/api-key', { key })
+  await post('/settings/api-key', { apiKey: key })
 }
 
 export async function fetchAuthStatus(): Promise<AuthStatus> {

@@ -166,7 +166,7 @@ describe('buildSessionRenderData', () => {
   });
 
   it('includes agentSummary when provided', () => {
-    const summary = { is_orchestrated: true, agents: [] };
+    const summary = { is_orchestrated: true as const, agents: [] };
     const data = buildSessionRenderData({ ...baseOpts, agentSummary: summary });
     expect(data.session.agentSummary).toEqual(summary);
   });

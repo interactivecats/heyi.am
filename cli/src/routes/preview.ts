@@ -8,7 +8,7 @@ import { SCREENSHOTS_DIR } from '../screenshot.js';
 import { renderProjectHtml, renderSessionHtml } from '../render/index.js';
 import { buildSessionRenderData, buildSessionCard, buildProjectRenderData } from '../render/build-render-data.js';
 import type { SessionCard } from '../render/types.js';
-import type { RouteContext } from './context.js';
+import { buildAgentSummary, type RouteContext } from './context.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -52,24 +52,11 @@ export function createPreviewRouter(ctx: RouteContext): Router {
             const session = await ctx.loadSession(meta.path, rawProj.name, sid);
             const enhanced = loadEnhancedData(sid);
 
-            let agentSummary: Record<string, unknown> | null = null;
-            const childMetas = meta.children ?? [];
-            if (childMetas.length > 0) {
-              const seenRoles = new Set<string>();
-              const agents: Array<{ role: string; duration_minutes: number; loc_changed: number }> = [];
-              for (const c of childMetas) {
-                const role = c.agentRole ?? c.sessionId;
-                if (seenRoles.has(role)) continue;
-                seenRoles.add(role);
-                const childStats = await ctx.getSessionStats(c, rawProj.name);
-                agents.push({
-                  role: c.agentRole ?? 'agent',
-                  duration_minutes: childStats.duration,
-                  loc_changed: childStats.loc,
-                });
-              }
-              if (agents.length > 0) agentSummary = { is_orchestrated: true, agents };
-            }
+            const agentSummary = await buildAgentSummary(
+              meta.children ?? [],
+              (c) => ctx.getSessionStats(c, rawProj.name),
+              { deduplicate: true },
+            );
 
             sessionCards.push(buildSessionCard({
               sessionId: sid,
@@ -101,16 +88,10 @@ export function createPreviewRouter(ctx: RouteContext): Router {
             description: enhanced?.context || '',
           });
 
-          let allAgentSummary: Record<string, unknown> | null = null;
-          const allChildMetas = meta.children ?? [];
-          if (allChildMetas.length > 0) {
-            const agents: Array<{ role: string; duration_minutes: number; loc_changed: number }> = [];
-            for (const c of allChildMetas) {
-              const childStats = await ctx.getSessionStats(c, rawProj.name);
-              agents.push({ role: c.agentRole ?? 'agent', duration_minutes: childStats.duration, loc_changed: childStats.loc });
-            }
-            if (agents.length > 0) allAgentSummary = { is_orchestrated: true, agents };
-          }
+          const allAgentSummary = await buildAgentSummary(
+            meta.children ?? [],
+            (c) => ctx.getSessionStats(c, rawProj.name),
+          );
 
           allSessionCards.push(buildSessionCard({
             sessionId: meta.sessionId,
@@ -195,16 +176,10 @@ export function createPreviewRouter(ctx: RouteContext): Router {
       const session = await ctx.loadSession(meta.path, rawProj.name, sessionId);
       const enhanced = loadEnhancedData(sessionId);
 
-      let agentSummary: Record<string, unknown> | null = null;
-      const childMetas = meta.children ?? [];
-      if (childMetas.length > 0) {
-        const agents: Array<{ role: string; duration_minutes: number; loc_changed: number }> = [];
-        for (const c of childMetas) {
-          const childStats = await ctx.getSessionStats(c, rawProj.name);
-          agents.push({ role: c.agentRole ?? 'agent', duration_minutes: childStats.duration, loc_changed: childStats.loc });
-        }
-        if (agents.length > 0) agentSummary = { is_orchestrated: true, agents };
-      }
+      const agentSummary = await buildAgentSummary(
+        meta.children ?? [],
+        (c) => ctx.getSessionStats(c, rawProj.name),
+      );
 
       const renderData = buildSessionRenderData({
         sessionId,

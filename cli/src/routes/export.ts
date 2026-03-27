@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import path from 'node:path';
+import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { parseSession } from '../parsers/index.js';
 import { bridgeToAnalyzer } from '../bridge.js';
@@ -7,6 +8,17 @@ import { analyzeSession, type Session } from '../analyzer.js';
 import { loadProjectEnhanceResult } from '../settings.js';
 import { exportMarkdown, exportHtml, generateHtmlFiles, createZipBuffer } from '../export.js';
 import type { RouteContext } from './context.js';
+
+const EXPORTS_BASE = path.resolve(process.env.HOME || '~', '.config', 'heyiam', 'exports');
+
+/** Validate that an output path is within the safe exports directory. */
+function safeExportPath(outputPath: string | undefined, dirName: string, format: string): string {
+  const defaultPath = path.join(EXPORTS_BASE, dirName, format);
+  if (!outputPath) return defaultPath;
+  const resolved = path.resolve(outputPath);
+  if (!resolved.startsWith(EXPORTS_BASE)) return defaultPath;
+  return resolved;
+}
 
 async function loadProjectSessions(ctx: RouteContext, dirName: string): Promise<Session[]> {
   const projects = await ctx.getProjects();
@@ -36,7 +48,7 @@ export function createExportRouter(ctx: RouteContext): Router {
         return;
       }
       const sessions = await loadProjectSessions(ctx, dirName);
-      const outputPath = path.resolve(process.env.HOME || '~', '.config', 'heyiam', 'exports', dirName, 'markdown');
+      const outputPath = path.join(EXPORTS_BASE, dirName, 'markdown');
       const result = await exportMarkdown(dirName, cache, sessions, outputPath);
       res.json(result);
     } catch (err) {
@@ -55,7 +67,7 @@ export function createExportRouter(ctx: RouteContext): Router {
         return;
       }
       const sessions = await loadProjectSessions(ctx, dirName);
-      const outDir: string = outputPath || path.resolve(process.env.HOME || '~', '.config', 'heyiam', 'exports', dirName, 'markdown');
+      const outDir = safeExportPath(outputPath, dirName, 'markdown');
       const result = await exportMarkdown(dirName, cache, sessions, outDir);
       res.json(result);
     } catch (err) {
@@ -74,7 +86,7 @@ export function createExportRouter(ctx: RouteContext): Router {
         return;
       }
       const sessions = await loadProjectSessions(ctx, dirName);
-      const outDir: string = outputPath || path.resolve(process.env.HOME || '~', '.config', 'heyiam', 'exports', dirName, 'html');
+      const outDir = safeExportPath(outputPath, dirName, 'html');
       const result = await exportHtml(dirName, cache, sessions, outDir);
       res.json(result);
     } catch (err) {
@@ -106,7 +118,7 @@ export function createExportRouter(ctx: RouteContext): Router {
     }
   });
 
-  // Open directory (macOS)
+  // Open directory (macOS) — restricted to the exports directory
   router.post('/api/open-directory', (req: Request, res: Response) => {
     try {
       const dirPath = req.body?.path;
@@ -114,7 +126,16 @@ export function createExportRouter(ctx: RouteContext): Router {
         res.status(400).json({ error: 'Missing path' });
         return;
       }
-      execFileSync('open', [dirPath]);
+      const resolved = path.resolve(dirPath);
+      if (!resolved.startsWith(EXPORTS_BASE)) {
+        res.status(403).json({ error: 'Path outside allowed directory' });
+        return;
+      }
+      if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) {
+        res.status(400).json({ error: 'Path is not an existing directory' });
+        return;
+      }
+      execFileSync('open', [resolved]);
       res.json({ ok: true });
     } catch (err) {
       console.error('[open-directory]', (err as Error).message);

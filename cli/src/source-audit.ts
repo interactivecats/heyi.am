@@ -47,8 +47,6 @@ const RETENTION_DAYS: Partial<Record<string, number>> = {
   claude: 30,
 };
 
-const RETENTION_WARNING_BUFFER_DAYS = 5;
-
 // ── Main functions ──────────────────────────────────────────
 
 /**
@@ -221,14 +219,6 @@ async function countArchivedBySource(_configDir?: string): Promise<Map<string, n
   }
 
   return counts;
-}
-
-function computeDateRange(sessions: SessionMeta[]): string {
-  if (sessions.length === 0) return "no sessions";
-
-  // Session paths contain date info, but we can't derive dates without parsing.
-  // Return a count-based range as a pragmatic fallback.
-  return `${sessions.length} sessions`;
 }
 
 function getRetentionRisk(source: string): string | undefined {

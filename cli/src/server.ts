@@ -27,7 +27,28 @@ export function createApp(sessionsBasePath?: string, dbPath?: string) {
   const ctx = createRouteContext(sessionsBasePath, dbPath);
 
   // ── Shared middleware ──────────────────────────────────────
+
+  // DNS rebinding guard: reject requests where the Host header isn't localhost.
+  // Browsers always set Host to the target hostname, so a DNS-rebind from
+  // evil.com:17845 → 127.0.0.1 will arrive with Host: evil.com:17845.
+  const ALLOWED_HOSTNAMES = new Set(['localhost', '127.0.0.1']);
+  app.use((req, res, next) => {
+    const host = req.headers.host;
+    if (!host) { res.status(403).json({ error: 'Forbidden' }); return; }
+    const hostname = host.includes(':') ? host.slice(0, host.lastIndexOf(':')) : host;
+    if (!ALLOWED_HOSTNAMES.has(hostname)) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+    next();
+  });
+
   app.use(cors({ origin: ['http://localhost:17845', 'http://127.0.0.1:17845'] }));
+  app.use((_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    next();
+  });
   app.use(express.json({ limit: '50mb' }));
 
   // ── Mount domain routers ───────────────────────────────────

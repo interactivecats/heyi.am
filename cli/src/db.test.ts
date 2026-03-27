@@ -19,7 +19,6 @@ import {
   searchFts,
   searchByFile,
   getSessionCount,
-  cleanupOrphanedSessions,
   countPreservedSessions,
   getContextSummary,
   getDashboardStats,
@@ -129,7 +128,7 @@ describe('db', () => {
   describe('openDatabase', () => {
     it('creates schema_version table with current version', () => {
       const row = db.prepare('SELECT version FROM schema_version').get() as { version: number };
-      expect(row.version).toBe(3);
+      expect(row.version).toBe(2);
     });
 
     it('creates sessions table', () => {
@@ -156,7 +155,7 @@ describe('db', () => {
     it('is idempotent — opening twice does not error', () => {
       const db2 = openDatabase(join(tmpDir, 'test.db'));
       const row = db2.prepare('SELECT version FROM schema_version').get() as { version: number };
-      expect(row.version).toBe(3);
+      expect(row.version).toBe(2);
       db2.close();
     });
   });
@@ -513,19 +512,7 @@ describe('db', () => {
     });
   });
 
-  describe('cleanupOrphanedSessions', () => {
-    it('never deletes sessions — DB is the archive', () => {
-      upsertSession(db, makeUpsertInput({
-        meta: makeMeta({ path: '/tmp/gone-forever.jsonl' }),
-      }));
-      expect(getSessionCount(db)).toBe(1);
-
-      // Source file is gone, but cleanup should NOT delete — the DB preserves it
-      const removed = cleanupOrphanedSessions(db);
-      expect(removed).toBe(0);
-      expect(getSessionCount(db)).toBe(1);
-    });
-
+  describe('countPreservedSessions', () => {
     it('countPreservedSessions reports sessions whose source is gone', () => {
       upsertSession(db, makeUpsertInput({
         meta: makeMeta({ path: '/tmp/gone-forever.jsonl' }),

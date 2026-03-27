@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { searchFts } from '../db.js';
+import { escapeLikeWildcards } from '../format-utils.js';
 import { displayNameFromDir, type RouteContext } from './context.js';
 
 export function createSearchRouter(ctx: RouteContext): Router {
@@ -57,8 +58,8 @@ export function createSearchRouter(ctx: RouteContext): Router {
         params.push(source);
       }
       if (project) {
-        query += ' AND (project_dir = ? OR project_dir LIKE ?)';
-        params.push(project, `%${project}%`);
+        query += ` AND (project_dir = ? OR project_dir LIKE ? ESCAPE '\\')`;
+        params.push(project, `%${escapeLikeWildcards(project)}%`);
       }
       if (after) {
         query += ' AND start_time >= ?';
@@ -116,8 +117,8 @@ export function createSearchRouter(ctx: RouteContext): Router {
       let filtered = results;
       if (file) {
         const fileSessionIds = new Set(
-          (ctx.db.prepare('SELECT DISTINCT session_id FROM session_files WHERE file_path LIKE ?')
-            .all(`%${file}%`) as Array<{ session_id: string }>)
+          (ctx.db.prepare(`SELECT DISTINCT session_id FROM session_files WHERE file_path LIKE ? ESCAPE '\\'`)
+            .all(`%${escapeLikeWildcards(file)}%`) as Array<{ session_id: string }>)
             .map((r) => r.session_id),
         );
         filtered = results.filter((r) => fileSessionIds.has(r.sessionId));

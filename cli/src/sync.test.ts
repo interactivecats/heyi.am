@@ -3,7 +3,7 @@ import { writeFile, mkdir, rm, appendFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { openDatabase } from './db.js';
-import { syncSessionIndex, quickSync, fullReindex, displayNameFromDir, ensureSessionIndexed, startFileWatcher, startCursorPolling, getSyncState, onSyncProgress, syncWithTracking } from './sync.js';
+import { syncSessionIndex, fullReindex, displayNameFromDir, ensureSessionIndexed, startFileWatcher, startCursorPolling, getSyncState, onSyncProgress, syncWithTracking } from './sync.js';
 import type { RawEntry } from './parsers/types.js';
 import type Database from 'better-sqlite3';
 
@@ -268,13 +268,6 @@ describe('syncSessionIndex', () => {
     }
 
     freshDb.close();
-  });
-});
-
-describe('quickSync', () => {
-  it('returns sync result', async () => {
-    const result = await quickSync(db, tmpDir);
-    expect(result.discovered).toBeGreaterThan(0);
   });
 });
 

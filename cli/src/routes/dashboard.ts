@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { getDashboardStats } from '../db.js';
 import { getSyncState, onSyncProgress } from '../sync.js';
-import { displayNameFromDir } from '../sync.js';
+import { displayNameFromDir } from './context.js';
 import { loadProjectEnhanceResult, isOnboardingComplete, completeOnboarding, resetOnboarding } from '../settings.js';
 import type { RouteContext } from './context.js';
 

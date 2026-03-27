@@ -7,6 +7,7 @@
 import type { SessionRenderData, ProjectRenderData, SessionCard, ProjectDetail } from './types.js';
 import type { Session } from '../analyzer.js';
 import type { EnhancedData } from '../settings.js';
+import type { AgentSummary } from '../routes/context.js';
 
 // Default accent color (Seal Blue) when user accent is unknown at publish time.
 export const DEFAULT_ACCENT = '#084471';
@@ -19,7 +20,7 @@ interface BuildSessionRenderOpts {
   projectSlug: string;
   sessionSlug: string;
   sourceTool: string;
-  agentSummary?: Record<string, unknown> | null;
+  agentSummary?: AgentSummary | null;
 }
 
 /**

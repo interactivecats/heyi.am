@@ -25,7 +25,7 @@ export function createSettingsRouter(_ctx: RouteContext): Router {
     const key = getAnthropicApiKey();
     res.json({
       hasKey: !!key,
-      maskedKey: key ? `${key.slice(0, 7)}...${key.slice(-4)}` : null,
+      maskedKey: key ? `${key.slice(0, 4)}...` : null,
     });
   });
 

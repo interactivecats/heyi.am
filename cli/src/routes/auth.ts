@@ -9,10 +9,8 @@ export function createAuthRouter(_ctx: RouteContext): Router {
   router.get('/api/auth/status', async (_req: Request, res: Response) => {
     try {
       const status = await checkAuthStatus(API_URL);
-      console.log(`[auth/status] ${status.authenticated ? `authenticated as ${status.username}` : 'not authenticated'}`);
       res.json(status);
-    } catch (err) {
-      console.log(`[auth/status] check failed: ${err}`);
+    } catch {
       res.json({ authenticated: false });
     }
   });
@@ -20,15 +18,12 @@ export function createAuthRouter(_ctx: RouteContext): Router {
   // Start device auth flow -- proxy to Phoenix
   router.post('/api/auth/login', async (_req: Request, res: Response) => {
     try {
-      console.log(`[auth/login] Starting device auth via ${API_URL}/api/device/code`);
       const response = await fetch(`${API_URL}/api/device/code`, { method: 'POST' });
       if (!response.ok) {
-        console.log(`[auth/login] FAILED ${response.status}`);
         res.status(response.status).json({ error: 'Failed to start device auth' });
         return;
       }
       const data = await response.json() as Record<string, unknown>;
-      console.log(`[auth/login] Got code: ${data.user_code}, uri: ${data.verification_uri}`);
       res.json(data);
     } catch (err) {
       console.error('[auth/login] EXCEPTION:', err);
@@ -67,7 +62,6 @@ export function createAuthRouter(_ctx: RouteContext): Router {
   router.post('/api/auth/signup', async (req: Request, res: Response) => {
     try {
       const username = req.body?.username as string | undefined;
-      console.log(`[auth/signup] Starting device auth${username ? ` with username: ${username}` : ''} via ${API_URL}/api/device/code`);
 
       const response = await fetch(`${API_URL}/api/device/code`, {
         method: 'POST',
@@ -76,7 +70,6 @@ export function createAuthRouter(_ctx: RouteContext): Router {
       });
 
       if (!response.ok) {
-        console.log(`[auth/signup] FAILED ${response.status}`);
         res.status(response.status).json({ error: 'Failed to start device auth' });
         return;
       }
@@ -90,7 +83,6 @@ export function createAuthRouter(_ctx: RouteContext): Router {
       if (username) params.set('username', username);
       const signupUri = `${baseUrl}/users/register?${params.toString()}`;
 
-      console.log(`[auth/signup] Got code: ${data.user_code}, signup: ${signupUri}`);
       res.json({ ...data, verification_uri: signupUri });
     } catch (err) {
       console.error('[auth/signup] EXCEPTION:', err);
