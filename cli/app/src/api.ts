@@ -384,6 +384,14 @@ export async function pollDeviceAuth(deviceCode: string): Promise<AuthStatus> {
   return post<AuthStatus>('/auth/poll', { device_code: deviceCode })
 }
 
+export async function checkUsername(username: string): Promise<{ available: boolean; reason?: string }> {
+  return get<{ available: boolean; reason?: string }>(`/auth/check-username?username=${encodeURIComponent(username)}`)
+}
+
+export async function startSignup(username: string): Promise<DeviceCodeInfo> {
+  return post<DeviceCodeInfo>('/auth/signup', { username })
+}
+
 // ── Dashboard (SQLite-backed) ─────────────────────────────────
 
 export async function fetchDashboard(): Promise<DashboardResponse> {

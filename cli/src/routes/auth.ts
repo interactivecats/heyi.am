@@ -36,6 +36,67 @@ export function createAuthRouter(_ctx: RouteContext): Router {
     }
   });
 
+  // Check username availability — proxy to Phoenix
+  router.get('/api/auth/check-username', async (req: Request, res: Response) => {
+    try {
+      const username = req.query.username as string;
+      if (!username || username.length < 2) {
+        res.json({ available: false, reason: 'Username must be at least 2 characters' });
+        return;
+      }
+      if (!/^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$/i.test(username)) {
+        res.json({ available: false, reason: 'Letters, numbers, hyphens, and underscores only' });
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/api/username/check?username=${encodeURIComponent(username)}`);
+      if (response.ok) {
+        const data = await response.json() as { available: boolean; reason?: string };
+        res.json(data);
+      } else {
+        // If Phoenix doesn't have this endpoint yet, assume available
+        res.json({ available: true });
+      }
+    } catch {
+      // Phoenix not reachable — assume available for now, signup will validate
+      res.json({ available: true });
+    }
+  });
+
+  // Start device auth with a preferred username
+  router.post('/api/auth/signup', async (req: Request, res: Response) => {
+    try {
+      const username = req.body?.username as string | undefined;
+      console.log(`[auth/signup] Starting device auth${username ? ` with username: ${username}` : ''} via ${API_URL}/api/device/code`);
+
+      const response = await fetch(`${API_URL}/api/device/code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(username ? { preferred_username: username } : {}),
+      });
+
+      if (!response.ok) {
+        console.log(`[auth/signup] FAILED ${response.status}`);
+        res.status(response.status).json({ error: 'Failed to start device auth' });
+        return;
+      }
+
+      const data = await response.json() as Record<string, unknown>;
+      // Append username to verification URI so the signup page can pre-fill it
+      let verificationUri = data.verification_uri as string;
+      if (username && verificationUri) {
+        const sep = verificationUri.includes('?') ? '&' : '?';
+        verificationUri = `${verificationUri}${sep}username=${encodeURIComponent(username)}`;
+      }
+
+      console.log(`[auth/signup] Got code: ${data.user_code}, uri: ${verificationUri}`);
+      res.json({ ...data, verification_uri: verificationUri });
+    } catch (err) {
+      console.error('[auth/signup] EXCEPTION:', err);
+      res.status(500).json({ error: 'Signup request failed' });
+    }
+  });
+
   // Poll for device authorization completion
   router.post('/api/auth/poll', async (req: Request, res: Response) => {
     try {

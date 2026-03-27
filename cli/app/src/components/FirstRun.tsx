@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback, type KeyboardEvent, type ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { AppShell, Chip, Card, SectionHeader, StatCard, Note } from './shared'
 import { WorkTimeline } from './WorkTimeline'
 import { GrowthChart } from './GrowthChart'
-import { fetchDashboard, subscribeSyncProgress, completeOnboarding as apiCompleteOnboarding, saveApiKey } from '../api'
+import { fetchDashboard, subscribeSyncProgress, completeOnboarding as apiCompleteOnboarding, saveApiKey, checkUsername, startSignup, pollDeviceAuth } from '../api'
 import type { DashboardResponse, DashboardProject, SyncProgressEvent, Session } from '../types'
 
 // ── State machine ───────────────────────────────────────────
@@ -15,12 +15,11 @@ type OnboardingStep =
   | 'preview_project'       // shows draft project
   | 'preview_enhanced'      // shows enhanced version of same project
   | 'prompt_enhance'        // API key prompt (enhanced preview stays)
-  | 'prompt_export'
-  | 'prompt_publish'
+  | 'claim_username'        // claim heyi.am/username
   | 'dashboard'
 
 // Steps that show the right-side preview panel
-const PREVIEW_STEPS: OnboardingStep[] = ['preview_project', 'preview_enhanced', 'prompt_enhance', 'prompt_export', 'prompt_publish']
+const PREVIEW_STEPS: OnboardingStep[] = ['preview_project', 'preview_enhanced', 'prompt_enhance']
 
 function formatDuration(minutes: number): string {
   const hours = minutes / 60
@@ -32,7 +31,6 @@ function formatLoc(loc: number): string {
 }
 
 export function FirstRun() {
-  const navigate = useNavigate()
   const [step, setStep] = useState<OnboardingStep>('loading')
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null)
   const [syncProgress, setSyncProgress] = useState<SyncProgressEvent | null>(null)
@@ -42,6 +40,16 @@ export function FirstRun() {
   const [apiKeyInput, setApiKeyInput] = useState('')
   const [apiKeySaved, setApiKeySaved] = useState(false)
   const [selectedMockSession, setSelectedMockSession] = useState<Session | null>(null)
+
+  // Claim username state
+  const [usernameInput, setUsernameInput] = useState('')
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'claimed'>('idle')
+  const [usernameError, setUsernameError] = useState('')
+  const [claimedUsername, setClaimedUsername] = useState('')
+  const [authPolling, setAuthPolling] = useState(false)
+  const [deviceCode, setDeviceCode] = useState('')
+  const usernameCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastCheckedUsername = useRef('')
 
   const skipToDashboard = useCallback(() => {
     apiCompleteOnboarding().catch(() => {})
@@ -145,17 +153,18 @@ export function FirstRun() {
       ]}
       actions={
         <div className="flex items-center gap-3">
-          {isOnboarding && (
+          {isOnboarding ? (
             <button
               onClick={skipToDashboard}
               className="text-xs text-on-surface-variant hover:text-on-surface transition-colors"
             >
               Skip tour
             </button>
+          ) : (
+            <Link to="/settings" className="text-xs text-on-surface-variant hover:text-on-surface transition-colors">
+              Settings
+            </Link>
           )}
-          <Link to="/settings" className="text-xs text-on-surface-variant hover:text-on-surface transition-colors">
-            Settings
-          </Link>
         </div>
       }
     >
@@ -347,8 +356,8 @@ export function FirstRun() {
                     <TermLine variant="default">&nbsp;</TermLine>
                     <TermPrompt
                       question="Continue?"
-                      onYes={() => setStep('prompt_export')}
-                      onNo={() => setStep('prompt_export')}
+                      onYes={() => setStep('claim_username')}
+                      onNo={() => setStep('claim_username')}
                     />
                   </>
                 ) : (
@@ -356,7 +365,7 @@ export function FirstRun() {
                     <TermPrompt
                       question="Add your API key now?"
                       onYes={() => {/* focus the input below */}}
-                      onNo={() => setStep('prompt_export')}
+                      onNo={() => setStep('claim_username')}
                       noLabel="I'll do this later"
                     />
                     <TermLine variant="default">&nbsp;</TermLine>
@@ -384,45 +393,183 @@ export function FirstRun() {
               </OnboardingTerminal>
             )}
 
-            {step === 'prompt_export' && (
-              <OnboardingTerminal compact>
-                <TermLine variant="prompt">$ heyiam export</TermLine>
-                <TermLine variant="default">&nbsp;</TermLine>
-                <TermLine variant="section">  Export as HTML</TermLine>
-                <TermLine variant="default">&nbsp;</TermLine>
-                <TermLine variant="info">  Download any project as a</TermLine>
-                <TermLine variant="info">  standalone HTML page — enhanced</TermLine>
-                <TermLine variant="info">  or not. No account needed.</TermLine>
-                <TermLine variant="default">&nbsp;</TermLine>
-                <TermPrompt
-                  question="Continue?"
-                  onYes={() => setStep('prompt_publish')}
-                  onNo={() => skipToDashboard()}
-                />
-              </OnboardingTerminal>
-            )}
-
-            {step === 'prompt_publish' && (
-              <OnboardingTerminal compact>
+            {/* ── Claim Username ─────────────────────────────── */}
+            {step === 'claim_username' && (
+              <OnboardingTerminal compact={false}>
                 <TermLine variant="prompt">$ heyiam publish</TermLine>
                 <TermLine variant="default">&nbsp;</TermLine>
-                <TermLine variant="section">  Publish to heyi.am</TermLine>
+                <TermLine variant="section">  Claim your portfolio page</TermLine>
                 <TermLine variant="default">&nbsp;</TermLine>
-                <TermLine variant="info">  Publish any project to your</TermLine>
-                <TermLine variant="info">  public portfolio — enhanced or</TermLine>
-                <TermLine variant="info">  not. Free. You control visibility.</TermLine>
+                <TermLine variant="info">  heyi.am hosts your public dev</TermLine>
+                <TermLine variant="info">  portfolio — project case studies</TermLine>
+                <TermLine variant="info">  built from your real AI sessions.</TermLine>
                 <TermLine variant="default">&nbsp;</TermLine>
-                <TermPrompt
-                  question="Ready to explore?"
-                  onYes={skipToDashboard}
-                  onNo={skipToDashboard}
-                  yesLabel="Let's go"
-                />
+                <TermLine variant="info">  Your page: heyi.am/<span className="text-[#9dcaff] font-semibold">{usernameInput || 'your-name'}</span></TermLine>
+                <TermLine variant="default">&nbsp;</TermLine>
+                <div className="triage-terminal__line opacity-40 text-[10px]">
+                  {'  '}Optional — the CLI works fully without an account.
+                </div>
+                <TermLine variant="default">&nbsp;</TermLine>
+
+                {usernameStatus === 'claimed' ? (
+                  <>
+                    <TermLine variant="passed">  Welcome, {claimedUsername}!</TermLine>
+                    <TermLine variant="passed">  heyi.am/{claimedUsername} is yours.</TermLine>
+                    <TermLine variant="default">&nbsp;</TermLine>
+                    <TermPrompt
+                      question="Ready to explore?"
+                      onYes={skipToDashboard}
+                      onNo={skipToDashboard}
+                      yesLabel="Let's go"
+                    />
+                  </>
+                ) : authPolling ? (
+                  <>
+                    <TermLine variant="active">  Waiting for signup to complete...</TermLine>
+                    <TermLine variant="info">  A browser window should have opened.</TermLine>
+                    <TermLine variant="info">  Sign up there, then come back here.</TermLine>
+                  </>
+                ) : (
+                  <>
+                    <div className="triage-terminal__line opacity-80">  Choose a username:</div>
+                    <div className="flex items-center gap-2 mt-1 ml-4">
+                      <span className="text-white/40 text-[11px] font-mono">heyi.am/</span>
+                      <input
+                        type="text"
+                        value={usernameInput}
+                        onChange={(e) => {
+                          const v = e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '')
+                          setUsernameInput(v)
+                          setUsernameStatus('idle')
+                          setUsernameError('')
+
+                          // Debounced availability check (500ms)
+                          if (usernameCheckTimer.current) clearTimeout(usernameCheckTimer.current)
+                          if (v.length >= 2 && v !== lastCheckedUsername.current) {
+                            usernameCheckTimer.current = setTimeout(async () => {
+                              lastCheckedUsername.current = v
+                              setUsernameStatus('checking')
+                              try {
+                                const result = await checkUsername(v)
+                                // Only update if username hasn't changed
+                                setUsernameStatus(result.available ? 'available' : 'taken')
+                                if (!result.available) setUsernameError(result.reason || 'Taken')
+                              } catch {
+                                setUsernameStatus('idle')
+                              }
+                            }, 500)
+                          }
+                        }}
+                        onKeyDown={async (e) => {
+                          if (e.key === 'Enter' && usernameInput.length >= 2) {
+                            e.preventDefault()
+                            if (usernameCheckTimer.current) clearTimeout(usernameCheckTimer.current)
+
+                            // Check + claim in one go
+                            setUsernameStatus('checking')
+                            try {
+                              const result = await checkUsername(usernameInput)
+                              if (result.available) {
+                                setUsernameStatus('available')
+                                const deviceInfo = await startSignup(usernameInput)
+                                setDeviceCode(deviceInfo.device_code)
+                                setAuthPolling(true)
+                                window.open(deviceInfo.verification_uri, '_blank')
+                                // Poll for completion
+                                const startTime = Date.now()
+                                const poll = async () => {
+                                  try {
+                                    const status = await pollDeviceAuth(deviceInfo.device_code)
+                                    if (status.authenticated) {
+                                      setAuthPolling(false)
+                                      setUsernameStatus('claimed')
+                                      setClaimedUsername(status.username || usernameInput)
+                                      return
+                                    }
+                                  } catch { /* authorization_pending — keep polling */ }
+                                  if (Date.now() - startTime < 300000) {
+                                    setTimeout(poll, 5000)
+                                  } else {
+                                    setAuthPolling(false)
+                                    setUsernameStatus('idle')
+                                    setUsernameError('Timed out. Try again.')
+                                  }
+                                }
+                                setTimeout(poll, 5000)
+                              } else {
+                                setUsernameStatus('taken')
+                                setUsernameError(result.reason || 'Username is taken')
+                              }
+                            } catch {
+                              setUsernameStatus('taken')
+                              setUsernameError('Could not check availability')
+                            }
+                          }
+                        }}
+                        placeholder="your-name"
+                        className="bg-white/10 border border-white/20 rounded px-2 py-1 text-[11px] font-mono text-[#34d399] w-36 outline-none focus:border-[#9dcaff] placeholder:text-white/20"
+                        autoFocus
+                      />
+                      {usernameStatus === 'checking' && (
+                        <span className="text-[10px] text-[#fbbf24] font-mono">checking...</span>
+                      )}
+                      {usernameStatus === 'available' && (
+                        <span className="text-[10px] text-[#34d399] font-mono">available!</span>
+                      )}
+                      {usernameStatus === 'taken' && (
+                        <span className="text-[10px] text-[#f87171] font-mono">{usernameError}</span>
+                      )}
+                    </div>
+
+                    {usernameInput.length >= 2 && usernameStatus === 'idle' && (
+                      <div className="triage-terminal__line opacity-40 text-[10px] mt-1">
+                        {'    '}Press Enter to check &amp; claim
+                      </div>
+                    )}
+
+                    <TermLine variant="default">&nbsp;</TermLine>
+                    <div className="flex items-center gap-3 mt-1 ml-4">
+                      <button
+                        onClick={async () => {
+                          // Login flow — start device auth without username
+                          try {
+                            const deviceInfo = await startSignup('')
+                            setDeviceCode(deviceInfo.device_code)
+                            setAuthPolling(true)
+                            window.open(deviceInfo.verification_uri, '_blank')
+                            const poll = async () => {
+                              try {
+                                const status = await pollDeviceAuth(deviceInfo.device_code)
+                                if (status.authenticated) {
+                                  setAuthPolling(false)
+                                  setUsernameStatus('claimed')
+                                  setClaimedUsername(status.username || '')
+                                  return
+                                }
+                              } catch { /* keep polling */ }
+                              setTimeout(poll, 5000)
+                            }
+                            setTimeout(poll, 5000)
+                          } catch { /* ignore */ }
+                        }}
+                        className="text-[10px] font-mono px-2.5 py-1 rounded bg-white/10 text-white/70 hover:text-white/90 hover:bg-white/15 transition-colors"
+                      >
+                        Already have an account? Log in
+                      </button>
+                      <button
+                        onClick={() => skipToDashboard()}
+                        className="text-[10px] font-mono px-2.5 py-1 rounded text-white/40 hover:text-white/70 transition-colors"
+                      >
+                        I'll do this later
+                      </button>
+                    </div>
+                  </>
+                )}
               </OnboardingTerminal>
             )}
           </div>
 
-          {/* Preview panel — mock enhanced project stays visible for project + enhance steps */}
+          {/* Preview panel — mock enhanced project visible for project + enhance steps */}
           {showPreview && (
             <div
               className="flex-1 min-w-0 pr-4 pt-6 pb-8 animate-[slideIn_0.6s_cubic-bezier(0.16,1,0.3,1)_forwards]"
@@ -436,8 +583,6 @@ export function FirstRun() {
                   onSelectSession={setSelectedMockSession}
                 />
               )}
-              {step === 'prompt_export' && <ExportPreview />}
-              {step === 'prompt_publish' && <PublishPreview />}
             </div>
           )}
         </div>
@@ -963,146 +1108,6 @@ function BrowserFrame({ url, children }: { url: string; children: ReactNode }) {
 }
 
 // ── Feature previews ────────────────────────────────────────
-
-function downloadBlob(content: string, filename: string, type: string) {
-  const blob = new Blob([content], { type })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
-function generateMockHtml(): string {
-  const sessions = MOCK_SESSION_DATA
-  return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="utf-8"><title>heyi-am — Project Case Study</title>
-<style>body{font-family:system-ui,sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;color:#1a1a2e}
-h1{font-size:2rem;margin-bottom:0.5rem}h2{font-size:1.25rem;margin-top:2rem;border-bottom:1px solid #e2e8f0;padding-bottom:0.5rem}
-.stat{display:inline-block;margin-right:2rem;margin-bottom:1rem}.stat-value{font-size:1.5rem;font-weight:bold;color:#084471}
-.stat-label{font-size:0.75rem;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em}
-.session{padding:0.75rem 0;border-bottom:1px solid #f1f5f9}.session-title{font-weight:600}.session-meta{font-size:0.8rem;color:#6b7280}
-.narrative{border-left:3px solid #084471;padding-left:1rem;margin:1rem 0;line-height:1.6}
-.skill{display:inline-block;padding:2px 8px;margin:2px;border-radius:4px;background:#7c3aed15;color:#7c3aed;font-size:0.75rem}</style></head>
-<body>
-<h1>heyi-am</h1>
-<p style="color:#6b7280">Feb 15 – Mar 25, 2026</p>
-<div class="narrative">Built a local-first developer portfolio tool that indexes AI coding sessions across Claude Code, Cursor, Codex, and Gemini CLI.</div>
-<div>${[{ l: 'Sessions', v: '16' }, { l: 'Time', v: '52h' }, { l: 'LOC', v: '${sessions.reduce((s, x) => s + x.linesOfCode, 0).toLocaleString()}' }, { l: 'Files', v: '847' }].map(s => `<div class="stat"><div class="stat-value">${s.v}</div><div class="stat-label">${s.l}</div></div>`).join('')}</div>
-<h2>Skills</h2>
-<div>${['TypeScript', 'React', 'SQLite', 'Node.js', 'CSS', 'Vite'].map(s => `<span class="skill">${s}</span>`).join('')}</div>
-<h2>Sessions</h2>
-${sessions.slice(0, 8).map(s => `<div class="session"><div class="session-title">${s.title}</div><div class="session-meta">${Math.round(s.durationMinutes)}m · ${s.turns} turns · ${s.linesOfCode} LOC</div></div>`).join('\n')}
-<footer style="margin-top:3rem;padding-top:1rem;border-top:1px solid #e2e8f0;font-size:0.75rem;color:#9ca3af">Generated by heyi.am</footer>
-</body></html>`
-}
-
-function generateMockMarkdown(): string {
-  const sessions = MOCK_SESSION_DATA
-  return `# heyi-am
-
-> Built a local-first developer portfolio tool that indexes AI coding sessions across Claude Code, Cursor, Codex, and Gemini CLI.
-
-## Stats
-- **16** sessions
-- **52h** active time
-- **${sessions.reduce((s, x) => s + x.linesOfCode, 0).toLocaleString()}** lines of code
-- **847** files changed
-
-## Skills
-TypeScript, React, SQLite, Node.js, CSS, Vite, Vitest, Shell
-
-## Sessions
-
-${sessions.slice(0, 8).map(s => `### ${s.title}\n- Duration: ${Math.round(s.durationMinutes)}m\n- Turns: ${s.turns}\n- LOC: ${s.linesOfCode}\n`).join('\n')}
-
----
-*Generated by [heyi.am](https://heyi.am)*
-`
-}
-
-function ExportPreview() {
-  const exports = [
-    { format: 'HTML', desc: 'Standalone page. Open in any browser.', icon: '</>', bg: '#084471', onClick: () => downloadBlob(generateMockHtml(), 'heyi-am.html', 'text/html') },
-    { format: 'Markdown', desc: 'GitHub, Notion, or your blog.', icon: 'md', bg: '#059669', onClick: () => downloadBlob(generateMockMarkdown(), 'heyi-am.md', 'text/markdown') },
-    { format: 'JSON', desc: 'Raw data for custom tooling.', icon: '{}', bg: '#7c3aed', onClick: () => downloadBlob(JSON.stringify({ project: 'heyi-am', sessions: MOCK_SESSION_DATA.slice(0, 8).map(s => ({ title: s.title, duration: s.durationMinutes, turns: s.turns, loc: s.linesOfCode, skills: s.skills, source: s.source, date: s.date })) }, null, 2), 'heyi-am.json', 'application/json') },
-  ]
-
-  return (
-    <BrowserFrame url="localhost:17845/project/heyi-am/export">
-      <div className="p-5">
-        <div className="text-xs font-semibold text-[#1a1a2e] mb-3">Export Options</div>
-        <div className="space-y-2.5">
-          {exports.map((opt) => (
-            <button
-              key={opt.format}
-              type="button"
-              onClick={opt.onClick}
-              className="w-full bg-white border border-[#e2e8f0] rounded-md p-3.5 flex items-center gap-3 hover:border-[#cbd5e1] hover:shadow-sm transition-all cursor-pointer text-left"
-            >
-              <div
-                className="w-10 h-10 rounded-md flex items-center justify-center text-white text-xs font-mono font-bold shrink-0"
-                style={{ backgroundColor: opt.bg }}
-              >
-                {opt.icon}
-              </div>
-              <div className="flex-1">
-                <div className="text-[12px] font-semibold text-[#1a1a2e]">Download {opt.format}</div>
-                <div className="text-[10px] text-[#6b7280]">{opt.desc}</div>
-              </div>
-              <svg className="w-4 h-4 text-[#9ca3af] shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 5v14m0 0l-4-4m4 4l4-4M5 19h14"/></svg>
-            </button>
-          ))}
-        </div>
-      </div>
-    </BrowserFrame>
-  )
-}
-
-function PublishPreview() {
-  return (
-    <BrowserFrame url="heyi.am/your-username">
-      <div className="p-5">
-        {/* Profile header */}
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#084471] to-[#0891b2] flex items-center justify-center text-white font-bold text-lg">
-            B
-          </div>
-          <div>
-            <div className="text-sm font-bold text-[#1a1a2e]">heyi.am contributors</div>
-            <div className="text-[10px] text-[#6b7280]">Full-stack developer · Austin, TX</div>
-          </div>
-        </div>
-
-        {/* Project cards */}
-        <div className="space-y-3">
-          {[
-            { name: 'heyi-am', desc: 'Local-first dev portfolio tool', skills: ['TypeScript', 'React', 'SQLite'], loc: '151k' },
-            { name: 'agent-sync', desc: 'Multi-agent session orchestrator', skills: ['Elixir', 'Node.js'], loc: '4.8k' },
-            { name: 'mermaid-avatars', desc: 'Procedural avatar generator', skills: ['Python', 'SVG'], loc: '3.2k' },
-          ].map((p) => (
-            <div key={p.name} className="bg-white border border-[#e2e8f0] rounded-md p-4 hover:shadow-md transition-shadow cursor-pointer">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-[13px] font-semibold text-[#1a1a2e]">{p.name}</div>
-                  <div className="text-[10px] text-[#6b7280] mt-0.5">{p.desc}</div>
-                </div>
-                <span className="text-[10px] text-[#9ca3af] font-mono shrink-0">{p.loc} LOC</span>
-              </div>
-              <div className="flex gap-1.5 mt-2">
-                {p.skills.map((s) => (
-                  <span key={s} className="text-[8px] px-1.5 py-0.5 rounded bg-[#f1f5f9] text-[#6b7280]">{s}</span>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </BrowserFrame>
-  )
-}
 
 // ── Terminal components ─────────────────────────────────────
 
