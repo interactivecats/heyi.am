@@ -82,15 +82,16 @@ export function createAuthRouter(_ctx: RouteContext): Router {
       }
 
       const data = await response.json() as Record<string, unknown>;
-      // Append username to verification URI so the signup page can pre-fill it
-      let verificationUri = data.verification_uri as string;
-      if (username && verificationUri) {
-        const sep = verificationUri.includes('?') ? '&' : '?';
-        verificationUri = `${verificationUri}${sep}username=${encodeURIComponent(username)}`;
-      }
+      // Build signup URL: registration page with device code + username pre-filled
+      // After registration, Phoenix should redirect to /device?code=xxx to authorize
+      const baseUrl = new URL(data.verification_uri as string).origin;
+      const params = new URLSearchParams();
+      if (data.user_code) params.set('device_code', data.user_code as string);
+      if (username) params.set('username', username);
+      const signupUri = `${baseUrl}/users/register?${params.toString()}`;
 
-      console.log(`[auth/signup] Got code: ${data.user_code}, uri: ${verificationUri}`);
-      res.json({ ...data, verification_uri: verificationUri });
+      console.log(`[auth/signup] Got code: ${data.user_code}, signup: ${signupUri}`);
+      res.json({ ...data, verification_uri: signupUri });
     } catch (err) {
       console.error('[auth/signup] EXCEPTION:', err);
       res.status(500).json({ error: 'Signup request failed' });
