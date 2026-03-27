@@ -5,6 +5,7 @@ import { analyzeSession, type ParsedTurn } from '../analyzer.js';
 import { getSessionRow } from '../db.js';
 import { ensureSessionIndexed } from '../sync.js';
 import { exportSessionContext, type ExportTier } from '../context-export.js';
+import { buildTranscriptResponse } from '../transcript.js';
 import { displayNameFromDir, type RouteContext } from './context.js';
 
 /**
@@ -74,6 +75,34 @@ export function createSessionsRouter(ctx: RouteContext): Router {
       });
     } catch (err) {
       res.status(500).json({ error: { code: 'CONTEXT_EXPORT_FAILED', message: (err as Error).message } });
+    }
+  });
+
+  // Session transcript — full conversation for the viewer
+  router.get('/api/sessions/:id/transcript', async (req: Request, res: Response) => {
+    try {
+      const id = String(req.params.id);
+      const resolved = await resolveSession(ctx, id);
+      if (!resolved) {
+        res.status(404).json({ error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } });
+        return;
+      }
+
+      const parsed = await parseSession(resolved.filePath);
+      const transcript = buildTranscriptResponse(parsed.raw_entries, {
+        cwd: parsed.cwd,
+        activeMinutes: parsed.duration_ms > 0 ? Math.max(1, Math.round(parsed.duration_ms / 60_000)) : 0,
+        wallClockMinutes: parsed.wall_clock_ms > 0 ? Math.max(1, Math.round(parsed.wall_clock_ms / 60_000)) : 0,
+        tokenUsage: parsed.token_usage ? {
+          input_tokens: parsed.token_usage.input_tokens,
+          output_tokens: parsed.token_usage.output_tokens,
+        } : undefined,
+        modelsUsed: parsed.models_used,
+      });
+
+      res.json(transcript);
+    } catch (err) {
+      res.status(500).json({ error: { code: 'TRANSCRIPT_FAILED', message: (err as Error).message } });
     }
   });
 
