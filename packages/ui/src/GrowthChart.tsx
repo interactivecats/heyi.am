@@ -1,435 +1,425 @@
-import { Fragment } from 'react';
-import type { Session } from './types';
+import type { Session } from './types'
 
 // ── Growth Chart ─────────────────────────────────────────────────
+// Time-sorted cumulative additions + deletions.
+// One point per session, sorted by date. No session-level bucketing —
+// parallel sessions just land at their start time.
 
 interface GrowthChartProps {
-  sessions: Session[];
-  totalLoc: number;
-  totalFiles: number;
-  onSessionClick?: (session: Session) => void;
+  sessions: Session[]
+  totalLoc: number
+  totalFiles: number
+  keyMoments?: Array<{ sessionId: string; label: string }>
+  onSessionClick?: (session: Session) => void
 }
 
-/** A point on the cumulative LOC time series */
-export interface GrowthPoint {
-  /** Visual x position in ms (after gap compression) */
-  visualTime: number;
-  /** Cumulative LOC at this point */
-  cumulativeLoc: number;
-  /** Which session this point belongs to (index in sorted array) */
-  sessionIndex: number;
-}
-
-/** Session boundary marker for vertical dashed lines */
-export interface SessionBoundary {
-  visualTime: number;
-  title: string;
-  sessionIndex: number;
-}
+const FONT = "'IBM Plex Mono', monospace"
+const PRIMARY = '#084471'
+const GREEN = '#16a34a'
+const RED = '#dc2626'
+const TEXT_MUTED = '#9ca3af'
+const TEXT_SECONDARY = '#6b7280'
+const GRID_COLOR = '#e4e4e7'
 
 function formatLoc(loc: number): string {
-  if (loc < 1000) return String(loc);
-  return `${(loc / 1000).toFixed(1)}k`;
+  if (loc < 1000) return String(loc)
+  return `${(loc / 1000).toFixed(1)}k`
 }
 
-/** @internal Exported for testing */
-export function formatLocAxis(n: number): string {
-  if (n === 0) return '0';
-  if (n >= 1000) return `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k`;
-  return String(n);
+function formatLocAxis(n: number): string {
+  if (n === 0) return '0'
+  if (n >= 1000) return `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k`
+  return String(n)
 }
 
-/** @internal Exported for testing */
-export function formatLocDelta(n: number): string {
-  const rounded = Math.round(n);
-  if (rounded >= 1000) return `+${(rounded / 1000).toFixed(rounded >= 10000 ? 0 : 1)}k`;
-  return `+${rounded}`;
-}
-
-/** @internal Exported for testing */
-export function computeAxisTicks(maxVal: number): number[] {
-  if (maxVal <= 0) return [0];
-  const rawStep = maxVal / 4;
-  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
-  const nice = [1, 2, 2.5, 5, 10];
-  let step = magnitude;
+function computeAxisTicks(maxVal: number): number[] {
+  if (maxVal <= 0) return [0]
+  const rawStep = maxVal / 4
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)))
+  const nice = [1, 2, 2.5, 5, 10]
+  let step = magnitude
   for (const n of nice) {
-    if (n * magnitude >= rawStep) {
-      step = n * magnitude;
-      break;
-    }
+    if (n * magnitude >= rawStep) { step = n * magnitude; break }
   }
-  const ticks: number[] = [];
-  for (let v = 0; v <= maxVal + step * 0.1; v += step) {
-    ticks.push(Math.round(v));
-  }
-  if (ticks[ticks.length - 1] < maxVal) {
-    ticks.push(ticks[ticks.length - 1] + Math.round(step));
-  }
-  return ticks;
+  const ticks: number[] = []
+  for (let v = 0; v <= maxVal + step * 0.1; v += step) ticks.push(Math.round(v))
+  if (ticks[ticks.length - 1] < maxVal) ticks.push(ticks[ticks.length - 1] + Math.round(step))
+  return ticks
 }
 
-const FIVE_MINUTES_MS = 5 * 60 * 1000;
-const GAP_COMPRESS_THRESHOLD_MS = 60 * 60 * 1000;
-const COMPRESSED_GAP_MS = 10 * 60 * 1000;
+// ── Build time series ────────────────────────────────────────────
 
-function bucketTurns(
-  turns: Array<{ timestamp: string }>,
-  sessionStart: number,
-  sessionEnd: number,
-  locPerTurn: number,
-): Array<{ time: number; locDelta: number }> {
-  const turnTimes = turns
-    .map((t) => new Date(t.timestamp).getTime())
-    .filter((t) => !isNaN(t) && t >= sessionStart && t <= sessionEnd + FIVE_MINUTES_MS)
-    .sort((a, b) => a - b);
-
-  if (turnTimes.length === 0) {
-    return [{ time: sessionEnd, locDelta: locPerTurn * turns.length }];
-  }
-
-  const buckets = new Map<number, number>();
-  for (const t of turnTimes) {
-    const bucketStart = sessionStart + Math.floor((t - sessionStart) / FIVE_MINUTES_MS) * FIVE_MINUTES_MS;
-    buckets.set(bucketStart, (buckets.get(bucketStart) ?? 0) + 1);
-  }
-
-  return Array.from(buckets.entries())
-    .sort(([a], [b]) => a - b)
-    .map(([time, count]) => ({
-      time: time + FIVE_MINUTES_MS / 2,
-      locDelta: count * locPerTurn,
-    }));
+interface DataPoint {
+  dateMs: number
+  cumulativeAdded: number
+  cumulativeDeleted: number
+  sessionIndex: number
+  sessionId: string
+  title: string
+  added: number
+  deleted: number
 }
 
-/** @internal Exported for testing */
-export function buildGrowthTimeSeries(
-  sessions: Session[],
-): { points: GrowthPoint[]; boundaries: SessionBoundary[]; totalVisualTime: number } {
+function buildTimeSeries(sessions: Session[]): DataPoint[] {
   const sorted = [...sessions]
-    .filter((s) => s.date)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    .filter(s => s.date)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
-  if (sorted.length === 0) return { points: [], boundaries: [], totalVisualTime: 0 };
+  if (sorted.length === 0) return []
 
-  interface RawPoint {
-    realTime: number;
-    cumulativeLoc: number;
-    sessionIndex: number;
-  }
+  let cumAdded = 0
+  let cumDeleted = 0
 
-  const rawPoints: RawPoint[] = [];
-  const rawBoundaries: { realTime: number; title: string; sessionIndex: number }[] = [];
-  let cumulativeLoc = 0;
+  return sorted.map((s, i) => {
+    let added = 0
+    let deleted = 0
 
-  for (let si = 0; si < sorted.length; si++) {
-    const session = sorted[si];
-    const sessionStart = new Date(session.date).getTime();
-    const sessionEnd = session.endTime
-      ? new Date(session.endTime).getTime()
-      : sessionStart + session.durationMinutes * 60 * 1000;
-    const sessionLoc = Math.max(0, session.linesOfCode);
-
-    rawBoundaries.push({ realTime: sessionStart, title: session.title, sessionIndex: si });
-    rawPoints.push({ realTime: sessionStart, cumulativeLoc, sessionIndex: si });
-
-    if (sessionLoc === 0) {
-      rawPoints.push({ realTime: sessionEnd, cumulativeLoc, sessionIndex: si });
-      continue;
-    }
-
-    const timeline = session.turnTimeline;
-    if (!timeline || timeline.length === 0) {
-      cumulativeLoc += sessionLoc;
-      rawPoints.push({ realTime: sessionEnd, cumulativeLoc, sessionIndex: si });
-      continue;
-    }
-
-    const editTurns = timeline.filter(
-      (t) =>
-        t.type === 'tool' &&
-        t.tools &&
-        t.tools.some((tool) => /edit|write/i.test(tool)),
-    );
-
-    const activeTurns = editTurns.length > 0
-      ? editTurns
-      : timeline.filter((t) => t.type === 'tool' && t.timestamp);
-
-    if (activeTurns.length === 0) {
-      cumulativeLoc += sessionLoc;
-      rawPoints.push({ realTime: sessionEnd, cumulativeLoc, sessionIndex: si });
-      continue;
-    }
-
-    const locPerTurn = sessionLoc / activeTurns.length;
-    const buckets = bucketTurns(activeTurns, sessionStart, sessionEnd, locPerTurn);
-    for (const bucket of buckets) {
-      cumulativeLoc += bucket.locDelta;
-      rawPoints.push({ realTime: bucket.time, cumulativeLoc, sessionIndex: si });
-    }
-  }
-
-  if (rawPoints.length === 0) return { points: [], boundaries: [], totalVisualTime: 0 };
-
-  let visualTime = 0;
-  let prevRealTime = rawPoints[0].realTime;
-  const realToVisual = new Map<number, number>();
-
-  for (const rp of rawPoints) {
-    const gap = rp.realTime - prevRealTime;
-    if (gap > GAP_COMPRESS_THRESHOLD_MS) {
-      visualTime += COMPRESSED_GAP_MS;
-    } else {
-      visualTime += Math.max(0, gap);
-    }
-    realToVisual.set(rp.realTime, visualTime);
-    prevRealTime = rp.realTime;
-  }
-
-  const points: GrowthPoint[] = rawPoints.map((rp) => ({
-    visualTime: realToVisual.get(rp.realTime) ?? 0,
-    cumulativeLoc: rp.cumulativeLoc,
-    sessionIndex: rp.sessionIndex,
-  }));
-
-  const boundaries: SessionBoundary[] = rawBoundaries.map((b) => {
-    let bestVisual = 0;
-    let bestDist = Infinity;
-    for (const [real, vis] of realToVisual.entries()) {
-      const dist = Math.abs(real - b.realTime);
-      if (dist < bestDist) {
-        bestDist = dist;
-        bestVisual = vis;
+    if (s.filesChanged && s.filesChanged.length > 0) {
+      for (const f of s.filesChanged) {
+        added += f.additions
+        deleted += f.deletions
       }
+    } else {
+      // Fallback: treat linesOfCode as net additions
+      added = Math.max(0, s.linesOfCode)
     }
-    return { visualTime: bestVisual, title: b.title, sessionIndex: b.sessionIndex };
-  });
 
-  return { points, boundaries, totalVisualTime: visualTime };
+    cumAdded += added
+    cumDeleted += deleted
+
+    return {
+      dateMs: new Date(s.date).getTime(),
+      cumulativeAdded: cumAdded,
+      cumulativeDeleted: cumDeleted,
+      sessionIndex: i,
+      sessionId: s.id,
+      title: s.title,
+      added,
+      deleted,
+    }
+  })
 }
 
-function clamp(v: number, min: number, max: number): number {
-  return v < min ? min : v > max ? max : v;
+// ── Gap compression ──────────────────────────────────────────────
+// Compress gaps > 1h to a fixed visual width so the chart isn't dominated by idle time
+
+const GAP_THRESHOLD_MS = 60 * 60 * 1000
+const COMPRESSED_GAP_MS = 10 * 60 * 1000
+
+function compressTime(points: DataPoint[]): { visualTimes: number[]; totalVisualTime: number } {
+  if (points.length === 0) return { visualTimes: [], totalVisualTime: 0 }
+
+  const visualTimes: number[] = [0]
+  let vt = 0
+
+  for (let i = 1; i < points.length; i++) {
+    const gap = points[i].dateMs - points[i - 1].dateMs
+    vt += gap > GAP_THRESHOLD_MS ? COMPRESSED_GAP_MS : Math.max(gap, 0)
+    visualTimes.push(vt)
+  }
+
+  return { visualTimes, totalVisualTime: vt }
 }
 
-/**
- * Build a smooth cubic bezier SVG path through the given points.
- * @internal Exported for testing
- */
-export function buildSmoothPath(
-  coords: Array<{ x: number; y: number }>,
-): string {
-  if (coords.length === 0) return '';
-  if (coords.length === 1) return `M${coords[0].x.toFixed(1)},${coords[0].y.toFixed(1)}`;
-  if (coords.length === 2) {
-    return `M${coords[0].x.toFixed(1)},${coords[0].y.toFixed(1)} L${coords[1].x.toFixed(1)},${coords[1].y.toFixed(1)}`;
+// ── Month dividers ───────────────────────────────────────────────
+
+function computeMonthDividers(
+  points: DataPoint[],
+  visualTimes: number[],
+  toX: (vt: number) => number,
+): Array<{ x: number; label: string }> {
+  if (points.length < 2) return []
+
+  const firstMs = points[0].dateMs
+  const lastMs = points[points.length - 1].dateMs
+  if (lastMs - firstMs < 14 * 86400000) return []
+
+  const dividers: Array<{ x: number; label: string }> = []
+  const firstDate = new Date(firstMs)
+  const lastDate = new Date(lastMs)
+
+  const d = new Date(firstDate.getFullYear(), firstDate.getMonth() + 1, 1)
+  while (d <= lastDate) {
+    const targetMs = d.getTime()
+    // Find closest point
+    let closestIdx = 0
+    let closestDist = Infinity
+    for (let i = 0; i < points.length; i++) {
+      const dist = Math.abs(points[i].dateMs - targetMs)
+      if (dist < closestDist) { closestDist = dist; closestIdx = i }
+    }
+    dividers.push({
+      x: toX(visualTimes[closestIdx]),
+      label: d.toLocaleString('en-US', { month: 'short' }).toUpperCase(),
+    })
+    d.setMonth(d.getMonth() + 1)
   }
-
-  const tension = 0.3;
-  let path = `M${coords[0].x.toFixed(1)},${coords[0].y.toFixed(1)}`;
-
-  for (let i = 0; i < coords.length - 1; i++) {
-    const p0 = coords[Math.max(0, i - 1)];
-    const p1 = coords[i];
-    const p2 = coords[i + 1];
-    const p3 = coords[Math.min(coords.length - 1, i + 2)];
-
-    const cp1x = clamp(p1.x + (p2.x - p0.x) * tension, p1.x, p2.x);
-    const cp1y = clamp(p1.y + (p2.y - p0.y) * tension, Math.min(p1.y, p2.y), Math.max(p1.y, p2.y));
-    const cp2x = clamp(p2.x - (p3.x - p1.x) * tension, p1.x, p2.x);
-    const cp2y = clamp(p2.y - (p3.y - p1.y) * tension, Math.min(p1.y, p2.y), Math.max(p1.y, p2.y));
-
-    path += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
-  }
-
-  return path;
+  return dividers
 }
 
 function truncTitle(t: string, max: number = 14): string {
-  return t.length > max ? t.slice(0, max - 1) + '\u2026' : t;
+  return t.length > max ? t.slice(0, max - 1) + '\u2026' : t
 }
 
-/** @internal Exported for testing */
-export function GrowthChart({ sessions, totalLoc, totalFiles, onSessionClick }: GrowthChartProps) {
-  if (sessions.length === 0) {
-    return (
-      <div className="growth-chart">
-        <div className="growth-chart__svg-container">
-          <p style={{ color: 'var(--on-surface-variant)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
-            No session data available for growth chart.
-          </p>
-        </div>
-        <div className="growth-chart__summary">
-          <div className="growth-chart__total-value">0</div>
-          <div className="growth-chart__total-label">LINES OF CODE</div>
-        </div>
-      </div>
-    );
-  }
+// ── Component ────────────────────────────────────────────────────
 
-  const dated = sessions.filter((s) => s.date);
-  if (dated.length === 0) {
-    return (
-      <div className="growth-chart">
-        <div className="growth-chart__svg-container">
-          <p style={{ color: 'var(--on-surface-variant)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
-            No dated sessions available for growth chart.
-          </p>
-        </div>
-        <div className="growth-chart__summary">
-          <div className="growth-chart__total-value">{formatLoc(totalLoc)}</div>
-          <div className="growth-chart__total-label">LINES OF CODE</div>
-        </div>
-      </div>
-    );
-  }
-
-  const sortedSessions = [...dated].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const { points, boundaries, totalVisualTime } = buildGrowthTimeSeries(dated);
+export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSessionClick }: GrowthChartProps) {
+  const points = buildTimeSeries(sessions)
 
   if (points.length === 0) {
     return (
-      <div className="growth-chart">
-        <div className="growth-chart__svg-container">
-          <p style={{ color: 'var(--on-surface-variant)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
-            No dated sessions available for growth chart.
-          </p>
-        </div>
-        <div className="growth-chart__summary">
-          <div className="growth-chart__total-value">{formatLoc(totalLoc)}</div>
-          <div className="growth-chart__total-label">LINES OF CODE</div>
-        </div>
+      <div style={{ fontFamily: FONT, fontSize: '0.75rem', color: TEXT_SECONDARY, padding: 16 }}>
+        No session data available for growth chart.
       </div>
-    );
+    )
   }
 
-  const maxLoc = Math.max(...points.map((p) => p.cumulativeLoc), 1);
-  const ticks = computeAxisTicks(maxLoc);
-  const axisMax = ticks[ticks.length - 1] || 1;
+  const { visualTimes, totalVisualTime } = compressTime(points)
 
-  const baseWidth = 600;
-  const widthPerMinute = 0.8;
-  const svgWidth = Math.max(baseWidth, Math.round(totalVisualTime / 60000 * widthPerMinute) + 120);
-  const svgHeight = 260;
-  const padLeft = 48;
-  const padRight = 16;
-  const padTop = 32;
-  const padBottom = 48;
-  const chartW = svgWidth - padLeft - padRight;
-  const chartH = svgHeight - padTop - padBottom;
-
-  const maxVisualTime = totalVisualTime || 1;
-  const toX = (vt: number) => padLeft + (vt / maxVisualTime) * chartW;
-  const toY = (val: number) => padTop + chartH - (val / axisMax) * chartH;
-
-  const coords = points.map((p) => ({ x: toX(p.visualTime), y: toY(p.cumulativeLoc) }));
-  const linePath = buildSmoothPath(coords);
-
-  const lastCoord = coords[coords.length - 1];
-  const firstCoord = coords[0];
-  const areaPath =
-    linePath +
-    ` L${lastCoord.x.toFixed(1)},${(padTop + chartH).toFixed(1)}` +
-    ` L${firstCoord.x.toFixed(1)},${(padTop + chartH).toFixed(1)} Z`;
-
-  const uniqueBoundaries = boundaries.filter(
-    (b, i) => i === 0 || Math.abs(b.visualTime - boundaries[i - 1].visualTime) > 0.001,
-  );
-
-  // Thin x-axis labels: only show labels with enough pixel clearance
-  const MIN_LABEL_GAP_PX = 80;
-  const labelledIndices = new Set<number>();
-  if (uniqueBoundaries.length > 0) {
-    labelledIndices.add(0);
-    labelledIndices.add(uniqueBoundaries.length - 1);
-    let lastX = toX(uniqueBoundaries[0].visualTime);
-    for (let i = 1; i < uniqueBoundaries.length - 1; i++) {
-      const x = toX(uniqueBoundaries[i].visualTime);
-      if (x - lastX >= MIN_LABEL_GAP_PX) {
-        labelledIndices.add(i);
-        lastX = x;
-      }
-    }
-    // Ensure last label doesn't overlap the previous labelled one
-    if (uniqueBoundaries.length > 1) {
-      const lastBx = toX(uniqueBoundaries[uniqueBoundaries.length - 1].visualTime);
-      const prevLabelled = [...labelledIndices].filter(i => i < uniqueBoundaries.length - 1).sort((a, b) => b - a)[0];
-      if (prevLabelled !== undefined && lastBx - toX(uniqueBoundaries[prevLabelled].visualTime) < MIN_LABEL_GAP_PX) {
-        labelledIndices.delete(prevLabelled);
-      }
-    }
+  // Build key moment index
+  const momentMap = new Map<string, string>()
+  if (keyMoments) {
+    for (const m of keyMoments) momentMap.set(m.sessionId, m.label)
   }
 
-  const sessionCount = dated.length;
-  const isScrollable = svgWidth > baseWidth;
+  const totalAdded = points[points.length - 1].cumulativeAdded
+  const totalDeleted = points[points.length - 1].cumulativeDeleted
+  const hasDeleteData = totalDeleted > 0
+  const maxVal = Math.max(totalAdded, 1)
+  const ticks = computeAxisTicks(maxVal)
+  const axisMax = ticks[ticks.length - 1] || 1
+
+  // Deletion ticks (separate scale below baseline)
+  const deleteTicks = hasDeleteData ? computeAxisTicks(totalDeleted) : []
+  const deleteAxisMax = hasDeleteData ? (deleteTicks[deleteTicks.length - 1] || 1) : 0
+
+  const baseWidth = 700
+  const svgWidth = Math.max(baseWidth, Math.round(totalVisualTime / 60000 * 0.8) + 120)
+  const padLeft = 48
+  const padRight = 16
+  const padTop = 24
+  const addChartH = 140
+  const delChartH = hasDeleteData ? 50 : 0
+  const gapH = hasDeleteData ? 2 : 0
+  const padBottom = 36
+  const svgHeight = padTop + addChartH + gapH + delChartH + padBottom
+
+  const baseline = padTop + addChartH // zero line for additions
+
+  const maxVT = totalVisualTime || 1
+  const toX = (vt: number) => padLeft + (vt / maxVT) * (svgWidth - padLeft - padRight)
+  const toYAdd = (val: number) => baseline - (val / axisMax) * addChartH
+  const toYDel = (val: number) => baseline + gapH + (val / deleteAxisMax) * delChartH
+
+  // Build paths — straight line segments (monotonic, no bezier loops)
+  const addCoords = points.map((p, i) => ({ x: toX(visualTimes[i]), y: toYAdd(p.cumulativeAdded) }))
+  const delCoords = hasDeleteData
+    ? points.map((p, i) => ({ x: toX(visualTimes[i]), y: toYDel(p.cumulativeDeleted) }))
+    : []
+
+  // Step-style path: horizontal then vertical (shows when code was added, not interpolated)
+  function stepPath(coords: Array<{ x: number; y: number }>): string {
+    if (coords.length === 0) return ''
+    let path = `M${coords[0].x.toFixed(1)},${coords[0].y.toFixed(1)}`
+    for (let i = 1; i < coords.length; i++) {
+      // Horizontal to new x, then vertical to new y
+      path += ` L${coords[i].x.toFixed(1)},${coords[i - 1].y.toFixed(1)}`
+      path += ` L${coords[i].x.toFixed(1)},${coords[i].y.toFixed(1)}`
+    }
+    return path
+  }
+
+  const addPath = stepPath(addCoords)
+  const addAreaPath = addPath +
+    ` L${addCoords[addCoords.length - 1].x.toFixed(1)},${baseline}` +
+    ` L${addCoords[0].x.toFixed(1)},${baseline} Z`
+
+  const delPath = hasDeleteData ? stepPath(delCoords) : ''
+  const delAreaPath = hasDeleteData
+    ? delPath +
+      ` L${delCoords[delCoords.length - 1].x.toFixed(1)},${baseline + gapH}` +
+      ` L${delCoords[0].x.toFixed(1)},${baseline + gapH} Z`
+    : ''
+
+  // Session label spacing
+  const MIN_LABEL_GAP = 90
+  const labelledIndices = new Set<number>()
+  let lastLabelX = -Infinity
+  for (let i = 0; i < points.length; i++) {
+    const x = toX(visualTimes[i])
+    if (x - lastLabelX >= MIN_LABEL_GAP) {
+      labelledIndices.add(i)
+      lastLabelX = x
+    }
+  }
+  // Always include last
+  if (points.length > 1) labelledIndices.add(points.length - 1)
+
+  const monthDividers = computeMonthDividers(points, visualTimes, toX)
+  const isScrollable = svgWidth > baseWidth
+  const sortedSessions = [...sessions].filter(s => s.date).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
   return (
-    <div className="growth-chart">
-      <div
-        className="growth-chart__svg-container"
-        style={isScrollable ? { overflowX: 'auto' } : undefined}
-      >
+    <div>
+      {/* Header */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+        padding: '8px 12px', borderBottom: `1px solid ${GRID_COLOR}`, fontFamily: FONT,
+      }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          Code Changes Over Time
+        </span>
+        <div style={{ display: 'flex', gap: 16, fontSize: 11, fontWeight: 600 }}>
+          <span style={{ color: GREEN }}>+{formatLoc(totalAdded)}</span>
+          {hasDeleteData && <span style={{ color: RED }}>-{formatLoc(totalDeleted)}</span>}
+          <span style={{ color: '#191c1e' }}>{formatLoc(totalLoc)} total</span>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div style={isScrollable ? { overflowX: 'auto' } : { padding: '4px 0' }}>
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
           width={isScrollable ? svgWidth : '100%'}
           height={isScrollable ? svgHeight : undefined}
           preserveAspectRatio="xMidYMid meet"
-          role="img"
-          aria-label={`Growth chart showing cumulative lines of code across ${sessionCount} sessions`}
+          style={{ display: 'block' }}
         >
-          {ticks.map((tick) => (
-            <g key={`y-${tick}`}>
-              <line x1={padLeft} y1={toY(tick)} x2={svgWidth - padRight} y2={toY(tick)} stroke="var(--outline-variant)" strokeWidth="0.5" strokeDasharray="4,4" />
-              <text x={padLeft - 8} y={toY(tick) + 3} textAnchor="end" fontFamily="var(--font-mono)" fontSize="9" fill="var(--on-surface-variant)">{formatLocAxis(tick)}</text>
+          <defs>
+            <linearGradient id="addGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={GREEN} stopOpacity={0.12} />
+              <stop offset="100%" stopColor={GREEN} stopOpacity={0.02} />
+            </linearGradient>
+            <linearGradient id="delGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={RED} stopOpacity={0.02} />
+              <stop offset="100%" stopColor={RED} stopOpacity={0.1} />
+            </linearGradient>
+          </defs>
+
+          {/* Y-axis grid — additions */}
+          {ticks.map(tick => (
+            <g key={`ya-${tick}`}>
+              <line x1={padLeft} y1={toYAdd(tick)} x2={svgWidth - padRight} y2={toYAdd(tick)}
+                stroke={GRID_COLOR} strokeWidth="0.5" strokeDasharray="4,4" />
+              <text x={padLeft - 8} y={toYAdd(tick) + 3} textAnchor="end"
+                fontFamily={FONT} fontSize="8" fill={TEXT_MUTED}>
+                {tick === 0 ? '' : `+${formatLocAxis(tick)}`}
+              </text>
             </g>
           ))}
 
-          {uniqueBoundaries.map((b, i) => {
-            const showLabel = labelledIndices.has(i);
-            const clickable = onSessionClick && sortedSessions[b.sessionIndex];
-            return (
-              <g key={`boundary-${i}`} style={clickable && showLabel ? { cursor: 'pointer' } : undefined} onClick={clickable && showLabel ? () => onSessionClick(sortedSessions[b.sessionIndex]) : undefined}>
-                {showLabel && <line x1={toX(b.visualTime)} y1={padTop} x2={toX(b.visualTime)} y2={padTop + chartH} stroke="var(--outline-variant)" strokeWidth="0.5" strokeDasharray="3,3" />}
-                {showLabel && <text x={toX(b.visualTime)} y={padTop + chartH + 16} textAnchor="middle" fontFamily="var(--font-mono)" fontSize="8" fill={clickable ? 'var(--primary)' : 'var(--on-surface-variant)'} textDecoration={clickable ? 'underline' : undefined}>{truncTitle(b.title)}</text>}
-              </g>
-            );
-          })}
+          {/* Baseline */}
+          <line x1={padLeft} y1={baseline} x2={svgWidth - padRight} y2={baseline}
+            stroke={GRID_COLOR} strokeWidth="1" />
+          <text x={padLeft - 8} y={baseline + 3} textAnchor="end"
+            fontFamily={FONT} fontSize="8" fill={TEXT_SECONDARY} fontWeight="600">
+            0
+          </text>
 
-          <path d={areaPath} fill="rgba(8,68,113,0.06)" />
-          <path d={linePath} fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+          {/* Y-axis grid — deletions */}
+          {hasDeleteData && deleteTicks.filter(t => t > 0).map(tick => (
+            <g key={`yd-${tick}`}>
+              <line x1={padLeft} y1={toYDel(tick)} x2={svgWidth - padRight} y2={toYDel(tick)}
+                stroke={GRID_COLOR} strokeWidth="0.5" strokeDasharray="4,4" />
+              <text x={padLeft - 8} y={toYDel(tick) + 3} textAnchor="end"
+                fontFamily={FONT} fontSize="8" fill={TEXT_MUTED}>
+                {`-${formatLocAxis(tick)}`}
+              </text>
+            </g>
+          ))}
 
-          {uniqueBoundaries.map((b, i) => {
-            if (!labelledIndices.has(i)) return null;
-            const sessionPts = points.filter((p) => p.sessionIndex === b.sessionIndex);
-            if (sessionPts.length === 0) return null;
-            const lastPt = sessionPts[sessionPts.length - 1];
-            const firstPt = sessionPts[0];
-            const delta = lastPt.cumulativeLoc - firstPt.cumulativeLoc +
-              (firstPt === points[0] ? firstPt.cumulativeLoc : 0);
+          {/* Month dividers (vertical lines only, dates shown per-point) */}
+          {monthDividers.map((div, i) => (
+            <line key={`m-${i}`} x1={div.x} y1={padTop} x2={div.x} y2={baseline + gapH + delChartH}
+              stroke={GRID_COLOR} strokeWidth="0.5" strokeDasharray="2,4" />
+          ))}
+
+          {/* Additions area + line */}
+          <path d={addAreaPath} fill="url(#addGrad)" />
+          <path d={addPath} fill="none" stroke={GREEN} strokeWidth="1.5" />
+
+          {/* Deletions area + line */}
+          {hasDeleteData && (
+            <>
+              <path d={delAreaPath} fill="url(#delGrad)" />
+              <path d={delPath} fill="none" stroke={RED} strokeWidth="1.5" />
+            </>
+          )}
+
+          {/* Session dots + labels */}
+          {points.map((p, i) => {
+            const x = toX(visualTimes[i])
+            const isKey = momentMap.has(p.sessionId)
+            const showLabel = labelledIndices.has(i)
+
             return (
-              <g key={`dot-${i}`}>
-                <circle cx={toX(lastPt.visualTime)} cy={toY(lastPt.cumulativeLoc)} r="3" fill="var(--secondary)" />
-                {delta > 0 && (
-                  <text x={toX(lastPt.visualTime)} y={toY(lastPt.cumulativeLoc) - 8} textAnchor="middle" fontFamily="var(--font-mono)" fontSize="8" fill="var(--secondary)">{formatLocDelta(delta)}</text>
+              <g key={`pt-${i}`}
+                style={onSessionClick ? { cursor: 'pointer' } : undefined}
+                onClick={onSessionClick ? () => onSessionClick(sortedSessions[i]) : undefined}
+              >
+                {/* Addition dot */}
+                {isKey ? (
+                  <circle cx={x} cy={toYAdd(p.cumulativeAdded)} r="5"
+                    fill={GREEN} stroke="#fff" strokeWidth="2" />
+                ) : showLabel ? (
+                  <circle cx={x} cy={toYAdd(p.cumulativeAdded)} r="3" fill={GREEN} />
+                ) : null}
+
+                {/* Deletion dot */}
+                {hasDeleteData && p.cumulativeDeleted > 0 && showLabel && (
+                  <circle cx={x} cy={toYDel(p.cumulativeDeleted)} r="2.5" fill={RED} />
+                )}
+
+                {/* Key moment annotation */}
+                {isKey && (
+                  <text x={x} y={toYAdd(p.cumulativeAdded) - 12}
+                    textAnchor="middle" fontFamily={FONT} fontSize="8" fill={TEXT_SECONDARY}>
+                    {momentMap.get(p.sessionId)}
+                  </text>
+                )}
+
+                {/* Date on x-axis */}
+                {showLabel && (
+                  <text x={x} y={svgHeight - 8} textAnchor="middle"
+                    fontFamily={FONT} fontSize="8" fill={TEXT_MUTED}>
+                    {new Date(p.dateMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </text>
                 )}
               </g>
-            );
+            )
           })}
         </svg>
       </div>
-      <div className="growth-chart__summary">
-        <div className="growth-chart__total-value">{formatLoc(totalLoc)}</div>
-        <div className="growth-chart__total-label">LINES OF CODE</div>
-        <div className="growth-chart__stat">
-          <div className="growth-chart__stat-value">{totalFiles}</div>
-          <div className="growth-chart__stat-label">FILES TOUCHED</div>
+
+      {/* Summary bar */}
+      <div style={{
+        display: 'flex', gap: 24, padding: '8px 12px',
+        borderTop: `1px solid ${GRID_COLOR}`,
+        fontFamily: FONT, fontSize: 10,
+      }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: GREEN }}>+{formatLoc(totalAdded)}</div>
+          <div style={{ color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Added</div>
         </div>
-        <div className="growth-chart__stat">
-          <div className="growth-chart__stat-value">{sessionCount}</div>
-          <div className="growth-chart__stat-label">SESSIONS</div>
+        {hasDeleteData && (
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: RED }}>-{formatLoc(totalDeleted)}</div>
+            <div style={{ color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Deleted</div>
+          </div>
+        )}
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#191c1e' }}>{formatLoc(totalLoc)}</div>
+          <div style={{ color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Total LOC</div>
+        </div>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#191c1e' }}>{totalFiles}</div>
+          <div style={{ color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Files</div>
+        </div>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#191c1e' }}>{points.length}</div>
+          <div style={{ color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Sessions</div>
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -21799,7 +21799,9 @@
     return new Date(s.date).getTime();
   }
   function sessionEnd(s) {
-    return s.endTime ? new Date(s.endTime).getTime() : sessionStart(s) + s.durationMinutes * 6e4;
+    if (s.endTime) return new Date(s.endTime).getTime();
+    const minutes = s.wallClockMinutes ?? s.durationMinutes;
+    return sessionStart(s) + minutes * 6e4;
   }
   function formatGap(ms) {
     const h = ms / 36e5;
@@ -21818,7 +21820,7 @@
     return `${mon} ${day}, ${h12}:${min} ${ampm}`;
   }
   function formatDuration(minutes) {
-    if (minutes < 60) return `${minutes}m`;
+    if (minutes < 60) return `${Math.round(minutes)}m`;
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
     return m > 0 ? `${h}h ${m}m` : `${h}h`;
@@ -21874,7 +21876,7 @@
         assigned = laneEnds.length;
         laneEnds.push(0);
       }
-      const kids = s.childSessions?.length ?? s.children?.length ?? 0;
+      const kids = s.children?.length ?? 0;
       const bufferMs = (kids > 5 ? 30 : 15) * 6e4;
       laneEnds[assigned] = sessionEnd(s) + bufferMs;
       assignment.set(s.id, assigned);
@@ -21923,37 +21925,23 @@
       const endMs = startMs + c.durationMinutes * 6e4;
       return { ...c, startMs, endMs };
     }).sort((a, b) => a.startMs - b.startMs);
-    const laneEnds = [];
     const laneMap = /* @__PURE__ */ new Map();
-    for (const c of withTime) {
-      let assigned = -1;
-      for (let i = 0; i < laneEnds.length; i++) {
-        if (laneEnds[i] <= c.startMs) {
-          assigned = i;
-          break;
-        }
-      }
-      if (assigned === -1) {
-        assigned = laneEnds.length;
-        laneEnds.push(0);
-      }
-      laneEnds[assigned] = c.endMs;
-      laneMap.set(c.id, assigned);
-    }
-    return { laneMap, laneCount: laneEnds.length };
+    withTime.forEach((c, i) => laneMap.set(c.id, i));
+    return { laneMap, laneCount: withTime.length };
   }
   function buildTooltip(s) {
     const kids = getChildren(s);
     return {
       title: s.title,
       timestamp: formatTimestamp(s.date),
-      duration: formatDuration(s.durationMinutes),
+      duration: formatDuration(s.wallClockMinutes ?? s.durationMinutes),
       linesOfCode: s.linesOfCode,
       agentCount: kids.length,
       session: s
     };
   }
   var MAX_LEGEND_ROLES = 6;
+  var LEGENDARY_THRESHOLD = 30;
   function aggregateAgents(kids) {
     const byRole = /* @__PURE__ */ new Map();
     for (const k of kids) {
@@ -21987,15 +21975,14 @@
     });
   }
   var MAX_AGENTS = 30;
-  var LEGENDARY_THRESHOLD = 30;
   var SEG_GAP = 56;
   var CURVE_CP = 50;
-  var MAX_TITLE = 32;
   var TRACK_GAP = 140;
   var PX_PER_MIN = 4;
   var MIN_CONCURRENT_W = 300;
   var MAX_CONCURRENT_W = 1200;
   var MIN_LABEL_GAP = 140;
+  var MAX_TITLE = 32;
   function laneGap(agentCount) {
     if (agentCount <= 5) return 44;
     if (agentCount <= 10) return 32;
@@ -22016,7 +22003,7 @@
     ].join(" ");
   }
   var DEFAULT_MAX_CONCURRENT = 8;
-  function layout(segments, maxConcurrent = DEFAULT_MAX_CONCURRENT) {
+  function layoutSegments(segments, maxConcurrent = DEFAULT_MAX_CONCURRENT) {
     const nodes = [];
     const tracks = [];
     const sessionRanges = [];
@@ -22123,7 +22110,7 @@
           const ts = formatTimestamp(s.date);
           const sub = formatDuration(s.durationMinutes);
           const sXStart = timeToX(sessionStart(s), rangeStartMs, rangeEndMs, segXStart, segXEnd);
-          const barW = Math.min(Math.max(s.durationMinutes * PX_PER_MIN, 20), segW);
+          const barW = Math.min(Math.max(s.durationMinutes * PX_PER_MIN, 20), segXEnd - sXStart);
           const sXEnd = sXStart + barW;
           if (kids.length > 0) {
             const agentVisible = kids.slice(0, MAX_AGENTS);
@@ -22213,13 +22200,11 @@
     return best;
   }
   function Legend({ entry }) {
-    if (!entry || entry.agents.length === 0) {
-      return null;
-    }
+    if (!entry || entry.agents.length === 0) return null;
     const visible = entry.agents.slice(0, MAX_LEGEND_ROLES);
     const hiddenRoles = entry.agents.length - visible.length;
     const isLegendary = entry.totalAgents >= LEGENDARY_THRESHOLD;
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { "data-testid": "wt-legend", style: {
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
       fontFamily: FONT,
       fontSize: 10,
       display: "flex",
@@ -22228,13 +22213,7 @@
       padding: "6px 0",
       minHeight: 28
     }, children: [
-      isLegendary ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: {
-        fontSize: 10,
-        fontWeight: 700,
-        letterSpacing: "0.06em",
-        color: "#d97706",
-        flexShrink: 0
-      }, children: [
+      isLegendary ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", color: "#d97706", flexShrink: 0 }, children: [
         "LEGENDARY AGENTIC USE \u2014 ",
         entry.totalAgents,
         " agents:"
@@ -22307,7 +22286,7 @@
     const [playing, setPlaying] = (0, import_react.useState)(false);
     const playRef = (0, import_react.useRef)(null);
     const concurrentLimit = expanded ? 999 : DEFAULT_MAX_CONCURRENT;
-    const L = (0, import_react.useMemo)(() => layout(segments, concurrentLimit), [segments, concurrentLimit]);
+    const L = (0, import_react.useMemo)(() => layoutSegments(segments, concurrentLimit), [segments, concurrentLimit]);
     const legendEntries = (0, import_react.useMemo)(() => buildLegendEntries(segments, L.sessionRanges), [segments, L.sessionRanges]);
     const scrollRef = (0, import_react.useRef)(null);
     const [hovered, setHovered] = (0, import_react.useState)(null);
@@ -22363,7 +22342,7 @@
     }, []);
     const clearHover = (0, import_react.useCallback)(() => setHovered(null), []);
     if (!sessions.length) {
-      return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "work-timeline", "data-testid": "work-timeline-empty", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { fontFamily: FONT, fontSize: "0.8125rem", color: TEXT_SECONDARY }, children: "No sessions to display." }) });
+      return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { "data-testid": "work-timeline-empty", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { fontFamily: FONT, fontSize: "0.8125rem", color: TEXT_SECONDARY }, children: "No sessions to display." }) });
     }
     const hasAgents = legendEntries.some((e) => e.agents.length > 0);
     const btnStyle = (active) => ({
@@ -22422,7 +22401,6 @@
                 return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
                   "div",
                   {
-                    className: "wt-label",
                     style: {
                       position: "absolute",
                       left: node.pos.x,
@@ -22514,11 +22492,11 @@
           cursor: "pointer",
           fontFamily: FONT
         }, children: "Close" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "work-timeline", "data-testid": "work-timeline", style: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }, children: timelineContent })
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { "data-testid": "work-timeline", style: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }, children: timelineContent })
       ] });
     }
     const needsClip = maxHeight && L.totalH > maxHeight;
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "work-timeline", "data-testid": "work-timeline", style: { position: "relative" }, children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { "data-testid": "work-timeline", style: { position: "relative" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: needsClip ? { maxHeight, overflow: "hidden" } : void 0, children: timelineContent }),
       needsClip && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
         position: "absolute",
@@ -22552,6 +22530,12 @@
 
   // src/GrowthChart.tsx
   var import_jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
+  var FONT2 = "'IBM Plex Mono', monospace";
+  var GREEN = "#16a34a";
+  var RED = "#dc2626";
+  var TEXT_MUTED2 = "#9ca3af";
+  var TEXT_SECONDARY2 = "#6b7280";
+  var GRID_COLOR = "#e4e4e7";
   function formatLoc(loc) {
     if (loc < 1e3) return String(loc);
     return `${(loc / 1e3).toFixed(1)}k`;
@@ -22560,11 +22544,6 @@
     if (n === 0) return "0";
     if (n >= 1e3) return `${(n / 1e3).toFixed(n % 1e3 === 0 ? 0 : 1)}k`;
     return String(n);
-  }
-  function formatLocDelta(n) {
-    const rounded = Math.round(n);
-    if (rounded >= 1e3) return `+${(rounded / 1e3).toFixed(rounded >= 1e4 ? 0 : 1)}k`;
-    return `+${rounded}`;
   }
   function computeAxisTicks(maxVal) {
     if (maxVal <= 0) return [0];
@@ -22579,266 +22558,369 @@
       }
     }
     const ticks = [];
-    for (let v = 0; v <= maxVal + step * 0.1; v += step) {
-      ticks.push(Math.round(v));
-    }
-    if (ticks[ticks.length - 1] < maxVal) {
-      ticks.push(ticks[ticks.length - 1] + Math.round(step));
-    }
+    for (let v = 0; v <= maxVal + step * 0.1; v += step) ticks.push(Math.round(v));
+    if (ticks[ticks.length - 1] < maxVal) ticks.push(ticks[ticks.length - 1] + Math.round(step));
     return ticks;
   }
-  var FIVE_MINUTES_MS = 5 * 60 * 1e3;
-  var GAP_COMPRESS_THRESHOLD_MS = 60 * 60 * 1e3;
-  var COMPRESSED_GAP_MS = 10 * 60 * 1e3;
-  function bucketTurns(turns, sessionStart2, sessionEnd2, locPerTurn) {
-    const turnTimes = turns.map((t) => new Date(t.timestamp).getTime()).filter((t) => !isNaN(t) && t >= sessionStart2 && t <= sessionEnd2 + FIVE_MINUTES_MS).sort((a, b) => a - b);
-    if (turnTimes.length === 0) {
-      return [{ time: sessionEnd2, locDelta: locPerTurn * turns.length }];
-    }
-    const buckets = /* @__PURE__ */ new Map();
-    for (const t of turnTimes) {
-      const bucketStart = sessionStart2 + Math.floor((t - sessionStart2) / FIVE_MINUTES_MS) * FIVE_MINUTES_MS;
-      buckets.set(bucketStart, (buckets.get(bucketStart) ?? 0) + 1);
-    }
-    return Array.from(buckets.entries()).sort(([a], [b]) => a - b).map(([time, count]) => ({
-      time: time + FIVE_MINUTES_MS / 2,
-      locDelta: count * locPerTurn
-    }));
-  }
-  function buildGrowthTimeSeries(sessions) {
+  function buildTimeSeries(sessions) {
     const sorted = [...sessions].filter((s) => s.date).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    if (sorted.length === 0) return { points: [], boundaries: [], totalVisualTime: 0 };
-    const rawPoints = [];
-    const rawBoundaries = [];
-    let cumulativeLoc = 0;
-    for (let si = 0; si < sorted.length; si++) {
-      const session = sorted[si];
-      const sessionStart2 = new Date(session.date).getTime();
-      const sessionEnd2 = session.endTime ? new Date(session.endTime).getTime() : sessionStart2 + session.durationMinutes * 60 * 1e3;
-      const sessionLoc = Math.max(0, session.linesOfCode);
-      rawBoundaries.push({ realTime: sessionStart2, title: session.title, sessionIndex: si });
-      rawPoints.push({ realTime: sessionStart2, cumulativeLoc, sessionIndex: si });
-      if (sessionLoc === 0) {
-        rawPoints.push({ realTime: sessionEnd2, cumulativeLoc, sessionIndex: si });
-        continue;
-      }
-      const timeline = session.turnTimeline;
-      if (!timeline || timeline.length === 0) {
-        cumulativeLoc += sessionLoc;
-        rawPoints.push({ realTime: sessionEnd2, cumulativeLoc, sessionIndex: si });
-        continue;
-      }
-      const editTurns = timeline.filter(
-        (t) => t.type === "tool" && t.tools && t.tools.some((tool) => /edit|write/i.test(tool))
-      );
-      const activeTurns = editTurns.length > 0 ? editTurns : timeline.filter((t) => t.type === "tool" && t.timestamp);
-      if (activeTurns.length === 0) {
-        cumulativeLoc += sessionLoc;
-        rawPoints.push({ realTime: sessionEnd2, cumulativeLoc, sessionIndex: si });
-        continue;
-      }
-      const locPerTurn = sessionLoc / activeTurns.length;
-      const buckets = bucketTurns(activeTurns, sessionStart2, sessionEnd2, locPerTurn);
-      for (const bucket of buckets) {
-        cumulativeLoc += bucket.locDelta;
-        rawPoints.push({ realTime: bucket.time, cumulativeLoc, sessionIndex: si });
-      }
-    }
-    if (rawPoints.length === 0) return { points: [], boundaries: [], totalVisualTime: 0 };
-    let visualTime = 0;
-    let prevRealTime = rawPoints[0].realTime;
-    const realToVisual = /* @__PURE__ */ new Map();
-    for (const rp of rawPoints) {
-      const gap = rp.realTime - prevRealTime;
-      if (gap > GAP_COMPRESS_THRESHOLD_MS) {
-        visualTime += COMPRESSED_GAP_MS;
+    if (sorted.length === 0) return [];
+    let cumAdded = 0;
+    let cumDeleted = 0;
+    return sorted.map((s, i) => {
+      let added = 0;
+      let deleted = 0;
+      if (s.filesChanged && s.filesChanged.length > 0) {
+        for (const f of s.filesChanged) {
+          added += f.additions;
+          deleted += f.deletions;
+        }
       } else {
-        visualTime += Math.max(0, gap);
+        added = Math.max(0, s.linesOfCode);
       }
-      realToVisual.set(rp.realTime, visualTime);
-      prevRealTime = rp.realTime;
+      cumAdded += added;
+      cumDeleted += deleted;
+      return {
+        dateMs: new Date(s.date).getTime(),
+        cumulativeAdded: cumAdded,
+        cumulativeDeleted: cumDeleted,
+        sessionIndex: i,
+        sessionId: s.id,
+        title: s.title,
+        added,
+        deleted
+      };
+    });
+  }
+  var GAP_THRESHOLD_MS = 60 * 60 * 1e3;
+  var COMPRESSED_GAP_MS = 10 * 60 * 1e3;
+  function compressTime(points) {
+    if (points.length === 0) return { visualTimes: [], totalVisualTime: 0 };
+    const visualTimes = [0];
+    let vt = 0;
+    for (let i = 1; i < points.length; i++) {
+      const gap = points[i].dateMs - points[i - 1].dateMs;
+      vt += gap > GAP_THRESHOLD_MS ? COMPRESSED_GAP_MS : Math.max(gap, 0);
+      visualTimes.push(vt);
     }
-    const points = rawPoints.map((rp) => ({
-      visualTime: realToVisual.get(rp.realTime) ?? 0,
-      cumulativeLoc: rp.cumulativeLoc,
-      sessionIndex: rp.sessionIndex
-    }));
-    const boundaries = rawBoundaries.map((b) => {
-      let bestVisual = 0;
-      let bestDist = Infinity;
-      for (const [real, vis] of realToVisual.entries()) {
-        const dist = Math.abs(real - b.realTime);
-        if (dist < bestDist) {
-          bestDist = dist;
-          bestVisual = vis;
+    return { visualTimes, totalVisualTime: vt };
+  }
+  function computeMonthDividers(points, visualTimes, toX) {
+    if (points.length < 2) return [];
+    const firstMs = points[0].dateMs;
+    const lastMs = points[points.length - 1].dateMs;
+    if (lastMs - firstMs < 14 * 864e5) return [];
+    const dividers = [];
+    const firstDate = new Date(firstMs);
+    const lastDate = new Date(lastMs);
+    const d = new Date(firstDate.getFullYear(), firstDate.getMonth() + 1, 1);
+    while (d <= lastDate) {
+      const targetMs = d.getTime();
+      let closestIdx = 0;
+      let closestDist = Infinity;
+      for (let i = 0; i < points.length; i++) {
+        const dist = Math.abs(points[i].dateMs - targetMs);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closestIdx = i;
         }
       }
-      return { visualTime: bestVisual, title: b.title, sessionIndex: b.sessionIndex };
-    });
-    return { points, boundaries, totalVisualTime: visualTime };
-  }
-  function clamp(v, min, max) {
-    return v < min ? min : v > max ? max : v;
-  }
-  function buildSmoothPath(coords) {
-    if (coords.length === 0) return "";
-    if (coords.length === 1) return `M${coords[0].x.toFixed(1)},${coords[0].y.toFixed(1)}`;
-    if (coords.length === 2) {
-      return `M${coords[0].x.toFixed(1)},${coords[0].y.toFixed(1)} L${coords[1].x.toFixed(1)},${coords[1].y.toFixed(1)}`;
+      dividers.push({
+        x: toX(visualTimes[closestIdx]),
+        label: d.toLocaleString("en-US", { month: "short" }).toUpperCase()
+      });
+      d.setMonth(d.getMonth() + 1);
     }
-    const tension = 0.3;
-    let path = `M${coords[0].x.toFixed(1)},${coords[0].y.toFixed(1)}`;
-    for (let i = 0; i < coords.length - 1; i++) {
-      const p0 = coords[Math.max(0, i - 1)];
-      const p1 = coords[i];
-      const p2 = coords[i + 1];
-      const p3 = coords[Math.min(coords.length - 1, i + 2)];
-      const cp1x = clamp(p1.x + (p2.x - p0.x) * tension, p1.x, p2.x);
-      const cp1y = clamp(p1.y + (p2.y - p0.y) * tension, Math.min(p1.y, p2.y), Math.max(p1.y, p2.y));
-      const cp2x = clamp(p2.x - (p3.x - p1.x) * tension, p1.x, p2.x);
-      const cp2y = clamp(p2.y - (p3.y - p1.y) * tension, Math.min(p1.y, p2.y), Math.max(p1.y, p2.y));
-      path += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
-    }
-    return path;
+    return dividers;
   }
-  function truncTitle(t, max = 14) {
-    return t.length > max ? t.slice(0, max - 1) + "\u2026" : t;
-  }
-  function GrowthChart({ sessions, totalLoc, totalFiles, onSessionClick }) {
-    if (sessions.length === 0) {
-      return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "growth-chart", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "growth-chart__svg-container", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { style: { color: "var(--on-surface-variant)", fontFamily: "var(--font-mono)", fontSize: "0.75rem" }, children: "No session data available for growth chart." }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "growth-chart__summary", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "growth-chart__total-value", children: "0" }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "growth-chart__total-label", children: "LINES OF CODE" })
-        ] })
-      ] });
-    }
-    const dated = sessions.filter((s) => s.date);
-    if (dated.length === 0) {
-      return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "growth-chart", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "growth-chart__svg-container", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { style: { color: "var(--on-surface-variant)", fontFamily: "var(--font-mono)", fontSize: "0.75rem" }, children: "No dated sessions available for growth chart." }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "growth-chart__summary", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "growth-chart__total-value", children: formatLoc(totalLoc) }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "growth-chart__total-label", children: "LINES OF CODE" })
-        ] })
-      ] });
-    }
-    const sortedSessions = [...dated].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    const { points, boundaries, totalVisualTime } = buildGrowthTimeSeries(dated);
+  function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSessionClick }) {
+    const points = buildTimeSeries(sessions);
     if (points.length === 0) {
-      return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "growth-chart", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "growth-chart__svg-container", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { style: { color: "var(--on-surface-variant)", fontFamily: "var(--font-mono)", fontSize: "0.75rem" }, children: "No dated sessions available for growth chart." }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "growth-chart__summary", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "growth-chart__total-value", children: formatLoc(totalLoc) }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "growth-chart__total-label", children: "LINES OF CODE" })
-        ] })
-      ] });
+      return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontFamily: FONT2, fontSize: "0.75rem", color: TEXT_SECONDARY2, padding: 16 }, children: "No session data available for growth chart." });
     }
-    const maxLoc = Math.max(...points.map((p) => p.cumulativeLoc), 1);
-    const ticks = computeAxisTicks(maxLoc);
+    const { visualTimes, totalVisualTime } = compressTime(points);
+    const momentMap = /* @__PURE__ */ new Map();
+    if (keyMoments) {
+      for (const m of keyMoments) momentMap.set(m.sessionId, m.label);
+    }
+    const totalAdded = points[points.length - 1].cumulativeAdded;
+    const totalDeleted = points[points.length - 1].cumulativeDeleted;
+    const hasDeleteData = totalDeleted > 0;
+    const maxVal = Math.max(totalAdded, 1);
+    const ticks = computeAxisTicks(maxVal);
     const axisMax = ticks[ticks.length - 1] || 1;
-    const baseWidth = 600;
-    const widthPerMinute = 0.8;
-    const svgWidth = Math.max(baseWidth, Math.round(totalVisualTime / 6e4 * widthPerMinute) + 120);
-    const svgHeight = 260;
+    const deleteTicks = hasDeleteData ? computeAxisTicks(totalDeleted) : [];
+    const deleteAxisMax = hasDeleteData ? deleteTicks[deleteTicks.length - 1] || 1 : 0;
+    const baseWidth = 700;
+    const svgWidth = Math.max(baseWidth, Math.round(totalVisualTime / 6e4 * 0.8) + 120);
     const padLeft = 48;
     const padRight = 16;
-    const padTop = 32;
-    const padBottom = 48;
-    const chartW = svgWidth - padLeft - padRight;
-    const chartH = svgHeight - padTop - padBottom;
-    const maxVisualTime = totalVisualTime || 1;
-    const toX = (vt) => padLeft + vt / maxVisualTime * chartW;
-    const toY = (val) => padTop + chartH - val / axisMax * chartH;
-    const coords = points.map((p) => ({ x: toX(p.visualTime), y: toY(p.cumulativeLoc) }));
-    const linePath = buildSmoothPath(coords);
-    const lastCoord = coords[coords.length - 1];
-    const firstCoord = coords[0];
-    const areaPath = linePath + ` L${lastCoord.x.toFixed(1)},${(padTop + chartH).toFixed(1)} L${firstCoord.x.toFixed(1)},${(padTop + chartH).toFixed(1)} Z`;
-    const uniqueBoundaries = boundaries.filter(
-      (b, i) => i === 0 || Math.abs(b.visualTime - boundaries[i - 1].visualTime) > 1e-3
-    );
-    const MIN_LABEL_GAP_PX = 80;
-    const labelledIndices = /* @__PURE__ */ new Set();
-    if (uniqueBoundaries.length > 0) {
-      labelledIndices.add(0);
-      labelledIndices.add(uniqueBoundaries.length - 1);
-      let lastX = toX(uniqueBoundaries[0].visualTime);
-      for (let i = 1; i < uniqueBoundaries.length - 1; i++) {
-        const x = toX(uniqueBoundaries[i].visualTime);
-        if (x - lastX >= MIN_LABEL_GAP_PX) {
-          labelledIndices.add(i);
-          lastX = x;
-        }
+    const padTop = 24;
+    const addChartH = 140;
+    const delChartH = hasDeleteData ? 50 : 0;
+    const gapH = hasDeleteData ? 2 : 0;
+    const padBottom = 36;
+    const svgHeight = padTop + addChartH + gapH + delChartH + padBottom;
+    const baseline = padTop + addChartH;
+    const maxVT = totalVisualTime || 1;
+    const toX = (vt) => padLeft + vt / maxVT * (svgWidth - padLeft - padRight);
+    const toYAdd = (val) => baseline - val / axisMax * addChartH;
+    const toYDel = (val) => baseline + gapH + val / deleteAxisMax * delChartH;
+    const addCoords = points.map((p, i) => ({ x: toX(visualTimes[i]), y: toYAdd(p.cumulativeAdded) }));
+    const delCoords = hasDeleteData ? points.map((p, i) => ({ x: toX(visualTimes[i]), y: toYDel(p.cumulativeDeleted) })) : [];
+    function stepPath(coords) {
+      if (coords.length === 0) return "";
+      let path = `M${coords[0].x.toFixed(1)},${coords[0].y.toFixed(1)}`;
+      for (let i = 1; i < coords.length; i++) {
+        path += ` L${coords[i].x.toFixed(1)},${coords[i - 1].y.toFixed(1)}`;
+        path += ` L${coords[i].x.toFixed(1)},${coords[i].y.toFixed(1)}`;
       }
-      if (uniqueBoundaries.length > 1) {
-        const lastBx = toX(uniqueBoundaries[uniqueBoundaries.length - 1].visualTime);
-        const prevLabelled = [...labelledIndices].filter((i) => i < uniqueBoundaries.length - 1).sort((a, b) => b - a)[0];
-        if (prevLabelled !== void 0 && lastBx - toX(uniqueBoundaries[prevLabelled].visualTime) < MIN_LABEL_GAP_PX) {
-          labelledIndices.delete(prevLabelled);
-        }
+      return path;
+    }
+    const addPath = stepPath(addCoords);
+    const addAreaPath = addPath + ` L${addCoords[addCoords.length - 1].x.toFixed(1)},${baseline} L${addCoords[0].x.toFixed(1)},${baseline} Z`;
+    const delPath = hasDeleteData ? stepPath(delCoords) : "";
+    const delAreaPath = hasDeleteData ? delPath + ` L${delCoords[delCoords.length - 1].x.toFixed(1)},${baseline + gapH} L${delCoords[0].x.toFixed(1)},${baseline + gapH} Z` : "";
+    const MIN_LABEL_GAP2 = 90;
+    const labelledIndices = /* @__PURE__ */ new Set();
+    let lastLabelX = -Infinity;
+    for (let i = 0; i < points.length; i++) {
+      const x = toX(visualTimes[i]);
+      if (x - lastLabelX >= MIN_LABEL_GAP2) {
+        labelledIndices.add(i);
+        lastLabelX = x;
       }
     }
-    const sessionCount = dated.length;
+    if (points.length > 1) labelledIndices.add(points.length - 1);
+    const monthDividers = computeMonthDividers(points, visualTimes, toX);
     const isScrollable = svgWidth > baseWidth;
-    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "growth-chart", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-        "div",
+    const sortedSessions = [...sessions].filter((s) => s.date).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "baseline",
+        padding: "8px 12px",
+        borderBottom: `1px solid ${GRID_COLOR}`,
+        fontFamily: FONT2
+      }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { fontSize: 10, fontWeight: 700, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }, children: "Code Changes Over Time" }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", gap: 16, fontSize: 11, fontWeight: 600 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { color: GREEN }, children: [
+            "+",
+            formatLoc(totalAdded)
+          ] }),
+          hasDeleteData && /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { color: RED }, children: [
+            "-",
+            formatLoc(totalDeleted)
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { color: "#191c1e" }, children: [
+            formatLoc(totalLoc),
+            " total"
+          ] })
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: isScrollable ? { overflowX: "auto" } : { padding: "4px 0" }, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+        "svg",
         {
-          className: "growth-chart__svg-container",
-          style: isScrollable ? { overflowX: "auto" } : void 0,
-          children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
-            "svg",
-            {
-              viewBox: `0 0 ${svgWidth} ${svgHeight}`,
-              width: isScrollable ? svgWidth : "100%",
-              height: isScrollable ? svgHeight : void 0,
-              preserveAspectRatio: "xMidYMid meet",
-              role: "img",
-              "aria-label": `Growth chart showing cumulative lines of code across ${sessionCount} sessions`,
-              children: [
-                ticks.map((tick) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("g", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("line", { x1: padLeft, y1: toY(tick), x2: svgWidth - padRight, y2: toY(tick), stroke: "var(--outline-variant)", strokeWidth: "0.5", strokeDasharray: "4,4" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("text", { x: padLeft - 8, y: toY(tick) + 3, textAnchor: "end", fontFamily: "var(--font-mono)", fontSize: "9", fill: "var(--on-surface-variant)", children: formatLocAxis(tick) })
-                ] }, `y-${tick}`)),
-                uniqueBoundaries.map((b, i) => {
-                  const showLabel = labelledIndices.has(i);
-                  const clickable = onSessionClick && sortedSessions[b.sessionIndex];
-                  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("g", { style: clickable && showLabel ? { cursor: "pointer" } : void 0, onClick: clickable && showLabel ? () => onSessionClick(sortedSessions[b.sessionIndex]) : void 0, children: [
-                    showLabel && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("line", { x1: toX(b.visualTime), y1: padTop, x2: toX(b.visualTime), y2: padTop + chartH, stroke: "var(--outline-variant)", strokeWidth: "0.5", strokeDasharray: "3,3" }),
-                    showLabel && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("text", { x: toX(b.visualTime), y: padTop + chartH + 16, textAnchor: "middle", fontFamily: "var(--font-mono)", fontSize: "8", fill: clickable ? "var(--primary)" : "var(--on-surface-variant)", textDecoration: clickable ? "underline" : void 0, children: truncTitle(b.title) })
-                  ] }, `boundary-${i}`);
-                }),
-                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: areaPath, fill: "rgba(8,68,113,0.06)" }),
-                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: linePath, fill: "none", stroke: "var(--primary)", strokeWidth: "2", strokeLinejoin: "round", strokeLinecap: "round" }),
-                uniqueBoundaries.map((b, i) => {
-                  if (!labelledIndices.has(i)) return null;
-                  const sessionPts = points.filter((p) => p.sessionIndex === b.sessionIndex);
-                  if (sessionPts.length === 0) return null;
-                  const lastPt = sessionPts[sessionPts.length - 1];
-                  const firstPt = sessionPts[0];
-                  const delta = lastPt.cumulativeLoc - firstPt.cumulativeLoc + (firstPt === points[0] ? firstPt.cumulativeLoc : 0);
-                  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("g", { children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("circle", { cx: toX(lastPt.visualTime), cy: toY(lastPt.cumulativeLoc), r: "3", fill: "var(--secondary)" }),
-                    delta > 0 && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("text", { x: toX(lastPt.visualTime), y: toY(lastPt.cumulativeLoc) - 8, textAnchor: "middle", fontFamily: "var(--font-mono)", fontSize: "8", fill: "var(--secondary)", children: formatLocDelta(delta) })
-                  ] }, `dot-${i}`);
-                })
-              ]
-            }
-          )
+          viewBox: `0 0 ${svgWidth} ${svgHeight}`,
+          width: isScrollable ? svgWidth : "100%",
+          height: isScrollable ? svgHeight : void 0,
+          preserveAspectRatio: "xMidYMid meet",
+          style: { display: "block" },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("defs", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("linearGradient", { id: "addGrad", x1: "0", y1: "0", x2: "0", y2: "1", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("stop", { offset: "0%", stopColor: GREEN, stopOpacity: 0.12 }),
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("stop", { offset: "100%", stopColor: GREEN, stopOpacity: 0.02 })
+              ] }),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("linearGradient", { id: "delGrad", x1: "0", y1: "0", x2: "0", y2: "1", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("stop", { offset: "0%", stopColor: RED, stopOpacity: 0.02 }),
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("stop", { offset: "100%", stopColor: RED, stopOpacity: 0.1 })
+              ] })
+            ] }),
+            ticks.map((tick) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("g", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                "line",
+                {
+                  x1: padLeft,
+                  y1: toYAdd(tick),
+                  x2: svgWidth - padRight,
+                  y2: toYAdd(tick),
+                  stroke: GRID_COLOR,
+                  strokeWidth: "0.5",
+                  strokeDasharray: "4,4"
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                "text",
+                {
+                  x: padLeft - 8,
+                  y: toYAdd(tick) + 3,
+                  textAnchor: "end",
+                  fontFamily: FONT2,
+                  fontSize: "8",
+                  fill: TEXT_MUTED2,
+                  children: tick === 0 ? "" : `+${formatLocAxis(tick)}`
+                }
+              )
+            ] }, `ya-${tick}`)),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+              "line",
+              {
+                x1: padLeft,
+                y1: baseline,
+                x2: svgWidth - padRight,
+                y2: baseline,
+                stroke: GRID_COLOR,
+                strokeWidth: "1"
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+              "text",
+              {
+                x: padLeft - 8,
+                y: baseline + 3,
+                textAnchor: "end",
+                fontFamily: FONT2,
+                fontSize: "8",
+                fill: TEXT_SECONDARY2,
+                fontWeight: "600",
+                children: "0"
+              }
+            ),
+            hasDeleteData && deleteTicks.filter((t) => t > 0).map((tick) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("g", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                "line",
+                {
+                  x1: padLeft,
+                  y1: toYDel(tick),
+                  x2: svgWidth - padRight,
+                  y2: toYDel(tick),
+                  stroke: GRID_COLOR,
+                  strokeWidth: "0.5",
+                  strokeDasharray: "4,4"
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                "text",
+                {
+                  x: padLeft - 8,
+                  y: toYDel(tick) + 3,
+                  textAnchor: "end",
+                  fontFamily: FONT2,
+                  fontSize: "8",
+                  fill: TEXT_MUTED2,
+                  children: `-${formatLocAxis(tick)}`
+                }
+              )
+            ] }, `yd-${tick}`)),
+            monthDividers.map((div, i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+              "line",
+              {
+                x1: div.x,
+                y1: padTop,
+                x2: div.x,
+                y2: baseline + gapH + delChartH,
+                stroke: GRID_COLOR,
+                strokeWidth: "0.5",
+                strokeDasharray: "2,4"
+              },
+              `m-${i}`
+            )),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: addAreaPath, fill: "url(#addGrad)" }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: addPath, fill: "none", stroke: GREEN, strokeWidth: "1.5" }),
+            hasDeleteData && /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: delAreaPath, fill: "url(#delGrad)" }),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: delPath, fill: "none", stroke: RED, strokeWidth: "1.5" })
+            ] }),
+            points.map((p, i) => {
+              const x = toX(visualTimes[i]);
+              const isKey = momentMap.has(p.sessionId);
+              const showLabel = labelledIndices.has(i);
+              return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+                "g",
+                {
+                  style: onSessionClick ? { cursor: "pointer" } : void 0,
+                  onClick: onSessionClick ? () => onSessionClick(sortedSessions[i]) : void 0,
+                  children: [
+                    isKey ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                      "circle",
+                      {
+                        cx: x,
+                        cy: toYAdd(p.cumulativeAdded),
+                        r: "5",
+                        fill: GREEN,
+                        stroke: "#fff",
+                        strokeWidth: "2"
+                      }
+                    ) : showLabel ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("circle", { cx: x, cy: toYAdd(p.cumulativeAdded), r: "3", fill: GREEN }) : null,
+                    hasDeleteData && p.cumulativeDeleted > 0 && showLabel && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("circle", { cx: x, cy: toYDel(p.cumulativeDeleted), r: "2.5", fill: RED }),
+                    isKey && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                      "text",
+                      {
+                        x,
+                        y: toYAdd(p.cumulativeAdded) - 12,
+                        textAnchor: "middle",
+                        fontFamily: FONT2,
+                        fontSize: "8",
+                        fill: TEXT_SECONDARY2,
+                        children: momentMap.get(p.sessionId)
+                      }
+                    ),
+                    showLabel && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                      "text",
+                      {
+                        x,
+                        y: svgHeight - 8,
+                        textAnchor: "middle",
+                        fontFamily: FONT2,
+                        fontSize: "8",
+                        fill: TEXT_MUTED2,
+                        children: new Date(p.dateMs).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                      }
+                    )
+                  ]
+                },
+                `pt-${i}`
+              );
+            })
+          ]
         }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "growth-chart__summary", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "growth-chart__total-value", children: formatLoc(totalLoc) }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "growth-chart__total-label", children: "LINES OF CODE" }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "growth-chart__stat", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "growth-chart__stat-value", children: totalFiles }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "growth-chart__stat-label", children: "FILES TOUCHED" })
+      ) }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: {
+        display: "flex",
+        gap: 24,
+        padding: "8px 12px",
+        borderTop: `1px solid ${GRID_COLOR}`,
+        fontFamily: FONT2,
+        fontSize: 10
+      }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { fontSize: 14, fontWeight: 700, color: GREEN }, children: [
+            "+",
+            formatLoc(totalAdded)
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }, children: "Added" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "growth-chart__stat", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "growth-chart__stat-value", children: sessionCount }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "growth-chart__stat-label", children: "SESSIONS" })
+        hasDeleteData && /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { fontSize: 14, fontWeight: 700, color: RED }, children: [
+            "-",
+            formatLoc(totalDeleted)
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }, children: "Deleted" })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontSize: 14, fontWeight: 700, color: "#191c1e" }, children: formatLoc(totalLoc) }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }, children: "Total LOC" })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontSize: 14, fontWeight: 700, color: "#191c1e" }, children: totalFiles }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }, children: "Files" })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontSize: 14, fontWeight: 700, color: "#191c1e" }, children: points.length }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }, children: "Sessions" })
         ] })
       ] })
     ] });
