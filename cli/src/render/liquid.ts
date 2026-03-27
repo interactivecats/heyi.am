@@ -75,7 +75,11 @@ engine.registerFilter('durationColor', (index: number) => {
 
 // ── Render functions ─────────────────────────────────────────
 
-export function renderProject(data: ProjectRenderData): string {
+interface RenderProjectExtras {
+  arc?: Array<{ phase: number; title: string; description: string }>;
+}
+
+export function renderProject(data: ProjectRenderData, extras?: RenderProjectExtras): string {
   // Pre-compute derived data for the template
   const allSessions = data.allSessions || data.sessions;
 
@@ -105,6 +109,7 @@ export function renderProject(data: ProjectRenderData): string {
 
   return engine.renderFileSync('project', {
     ...data,
+    arc: extras?.arc ?? [],
     sourceCounts: Object.entries(sourceCounts).map(([tool, count]) => ({ tool, count })),
     sessionsJson,
     growthJson,

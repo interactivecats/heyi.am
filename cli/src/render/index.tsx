@@ -88,11 +88,14 @@ function validateSession(data: SessionRenderData): void {
  * @throws {RenderError} with code VALIDATION_ERROR if required fields are missing
  * @throws {RenderError} with code RENDER_FAILED if Liquid rendering fails
  */
-export function renderProjectHtml(data: ProjectRenderData): string {
+export function renderProjectHtml(
+  data: ProjectRenderData,
+  extras?: { arc?: Array<{ phase: number; title: string; description: string }> },
+): string {
   validateProject(data);
 
   try {
-    return renderProject(data);
+    return renderProject(data, extras);
   } catch (err: unknown) {
     throw new RenderError(
       'RENDER_FAILED',
