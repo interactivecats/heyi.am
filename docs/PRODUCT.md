@@ -31,14 +31,55 @@ Code with any AI tool -> Sessions saved locally
 
 ### Two Apps, One Flow
 
-**CLI** (`heyiam`): Where content gets created. Project dashboard, AI triage, enhancement, project narrative generation, publishing. Runs locally at localhost:17845.
+**CLI** (`heyiam`): Where content gets created. Local project gallery, session archive, AI triage, enhancement, project narrative generation, publishing. Runs locally at localhost:17845.
 
-**Web** (`heyi.am`): Where the portfolio lives. Public pages, portfolio editor, user accounts. Phoenix app at localhost:4000.
+**Web** (`heyi.am`): Where the portfolio lives. Public pages, user accounts. Phoenix app at localhost:4000.
 
 ### Identity
 
-- `heyiam login`: Device auth flow (RFC 8628). Opens browser, user authenticates (magic link or GitHub), CLI gets Bearer token. One time, 30 seconds.
+- `heyiam login`: Device auth flow (RFC 8628). Opens browser, user authenticates (email/password or GitHub), CLI gets Bearer token. One time, 30 seconds.
 - Auth is required for publishing. No anonymous publish.
+
+---
+
+## The CLI as a Local Tool
+
+Before any publishing happens, the CLI is useful on its own — a local gallery for browsing and preserving your AI coding sessions.
+
+### Session Archive
+
+AI tools delete sessions. Claude Code purges after 30 days. Cursor stores in SQLite that gets overwritten. The CLI archives session files so they survive:
+
+- **File-based tools** (Claude Code, Codex, Gemini): hard links to `~/.config/heyiam/archive/` — zero extra disk space until the original is deleted
+- **Cursor**: exports conversation data as JSONL to the archive directory
+- Idempotent — runs on every CLI command, not just `heyiam archive`
+
+### SQLite Session Index
+
+All sessions from all tools are indexed into `~/.config/heyiam/sessions.db`:
+
+- Full-text search across session content
+- Per-project aggregation (sessions, time, LOC, files, skills)
+- Preserved sessions: source file gone, but metadata + context summary survive in the DB
+- Two-phase sync: discover → index (parse, extract metadata, update FTS)
+
+### CLI Commands
+
+| Command | What it does |
+|---------|-------------|
+| `heyiam open` | Start local server + React dashboard at localhost:17845 |
+| `heyiam time` | Show your time vs agent time per project (terminal table) |
+| `heyiam search [query]` | Full-text search across all sessions (filters: project, source, date, skill, file, duration) |
+| `heyiam context <id>` | Export a session as compressed context for AI consumption (compact/summary/full tiers) |
+| `heyiam archive` | Discover and archive sessions from all sources |
+| `heyiam sync` | Index sessions into SQLite |
+| `heyiam reindex` | Rebuild the search index from scratch |
+| `heyiam status` | Archive health, session counts, daemon status |
+| `heyiam daemon start/stop/install` | Background tray daemon for continuous archiving |
+
+### Background Daemon
+
+Optional Tauri tray app (`heyiam-tray`) that runs in the background, watches for new sessions, and archives them without the CLI being open. Installed via `heyiam daemon install`, auto-start registration for macOS launchd and Linux XDG.
 
 ---
 
@@ -63,7 +104,7 @@ Each published session within a project:
 
 1. **Title** — what was built (max 200 chars)
 2. **Context** — the problem that triggered this (max 500 chars)
-3. **Developer Take** — short, personal, required. The anti-slop anchor. (max 2000 chars)
+3. **Developer Take** — short, personal. The anti-slop anchor. (max 2000 chars)
 4. **Execution Path** — concrete steps with decisions, reasons, and insights
 5. **Skills** — technology tags
 6. **Q&A Pairs** — targeted questions the dev answered during enhancement
@@ -85,7 +126,7 @@ Three-layer approach to selecting which sessions to showcase:
 - Multi-directory scope (cross-cutting work)
 - Architectural keywords ("design", "trade-off", "because")
 
-**Layer 3: LLM ranking (Haiku, metadata + signals only)**
+**Layer 3: LLM ranking (metadata + signals only)**
 - Returns selected sessions with significance tags + skipped sessions with reasons
 - Fallback without LLM: weighted signal scoring, select top N
 
@@ -94,8 +135,8 @@ Three-layer approach to selecting which sessions to showcase:
 After AI generates the draft narrative, it asks 2-3 targeted questions based on patterns detected in sessions:
 
 - **Pattern-based:** "You overrode the AI 4 times. Was that a conscious strategy?"
-- **Architecture-based:** "You spent 52 minutes on Ed25519 sealing. What made that worth the investment?"
-- **Evolution-based:** "The auth and sealing sessions share zero files. Were these intentionally isolated?"
+- **Architecture-based:** "You spent 52 minutes on the auth system. What made that worth the investment?"
+- **Evolution-based:** "The auth and storage sessions share zero files. Were these intentionally isolated?"
 
 Two-pass narrative generation:
 1. AI generates draft narrative from session transcripts
@@ -105,8 +146,7 @@ Two-pass narrative generation:
 
 ### Anti-Fluff System
 
-- Banned words: "leverage", "utilize", "streamline", "enhance", "robust", "seamless"
-- Developer take is required and cannot be verbatim AI suggestion
+- Banned words in LLM prompts: "leverage", "utilize", "streamline", "enhance", "robust", "seamless"
 - Narrative refined with dev's own voice via questions
 
 ---
@@ -117,7 +157,7 @@ Three levels:
 
 ### Level 1: Portfolio (`heyi.am/:username`)
 - Hero: name, bio, location, avatar, skills
-- AI Collaboration Profile (4 dimension bars)
+- AI Collaboration Profile (4 dimension bars — requires 8+ published sessions)
 - Project cards — each with: title, narrative, stats grid, skills
 - Aggregate stats across all projects
 
@@ -144,17 +184,14 @@ Three levels:
 
 ### Session Templates
 
-Six CSS rendering modes via `.tpl-{name}` class:
+Six CSS rendering modes via `.tpl-{name}` class. Currently only **Editorial** is fully implemented:
+
 - **Editorial** — centered single-col, blue primary, stats as standalone numbers (default)
-- **Terminal** — dark bg, green monospace, terminal prompt style
-- **Minimal** — narrow column, extreme whitespace, no decorative elements
-- **Brutalist** — B&W only, thick borders, zero radius, ALL CAPS
-- **Campfire** — warm solarized palette, serif headings, earth tones
-- **Neon Night** — deep navy, cyan/magenta/green multi-accent
+- Terminal, Minimal, Brutalist, Campfire, Neon Night — defined in schema, not yet rendered
 
 ### AI Collaboration Profile
 
-Computed from session data. Shows how you work with AI:
+Computed from session data (minimum 8 sessions). Shows how you work with AI:
 - Task scoping (step count, duration)
 - Active redirection (turn/step ratio)
 - Verification (test/run tool usage)
@@ -192,7 +229,6 @@ Multi-step wizard:
 /:username/:project/:session-slug   -> session case study (within project context)
 /s/:token                           -> session case study (direct share link)
 /s/:token/transcript                -> full raw transcript
-/s/:token/verify                    -> Ed25519 signature verification
 ```
 
 Both `/:username/:project/:session-slug` and `/s/:token` resolve to the same session. The friendly URL shows breadcrumbs; the `/s/` URL is for sharing.
@@ -204,7 +240,7 @@ Both `/:username/:project/:session-slug` and `/s/:token` resolve to the same ses
 See `mockups/full/DESIGN.md` for the canonical spec ("The Calibrated Archive").
 
 - **Fonts**: Space Grotesk (display), Inter (body), IBM Plex Mono (labels/code)
-- **Primary accent**: Seal Blue (#084471) — cryptographic trust, structural headers
+- **Primary accent**: Seal Blue (#084471)
 - **Surfaces**: 5-tier tonal layering (#f8f9fb -> #ffffff), no 1px borders for sectioning
 - **Functional accents**: Success Teal (#006a61), Caution Amber (#663500)
 - **Radii**: tight (0.125-0.375rem) — engineering workbench, not consumer app
@@ -220,11 +256,11 @@ See `mockups/full/DESIGN.md` for the canonical spec ("The Calibrated Archive").
 | CLI | Node.js + Express + React (Vite) |
 | Web | Phoenix 1.8 + LiveView |
 | Database | PostgreSQL (Ecto) |
+| Local DB | SQLite (better-sqlite3) for session index |
 | Storage | S3-compatible (Cloudflare R2) via ExAws |
 | Auth | phx.gen.auth + GitHub OAuth + Device Auth (RFC 8628) |
-| AI | Claude API (Haiku for triage, Sonnet for enhancement/narrative) |
+| AI | Claude API (Haiku default, configurable per deployment) |
 | Fonts | Google Fonts (Space Grotesk + IBM Plex Mono) |
-| Signing | Ed25519 (machine identity) + SHA-256 (API tokens) |
 
 ---
 
@@ -244,14 +280,14 @@ Multi-agent sessions (parent spawns child agents) are first-class:
 
 Both local (BYOK) and proxy paths work:
 
-| LLM Call | Model | Local (BYOK) | Proxy (Phoenix) | Fallback (no LLM) |
-|----------|-------|-------------|-----------------|-------------------|
-| Triage | Haiku | Direct Anthropic API | `POST /api/enhance` type: "triage" | Hard floor + signal scoring |
-| Session enhancement | Sonnet | Direct Anthropic API | `POST /api/enhance` (existing) | Skip enhancement |
-| Project narrative | Sonnet | Direct Anthropic API | `POST /api/enhance` type: "project" | No narrative |
-| Narrative refinement | Sonnet | Direct Anthropic API | `POST /api/enhance` type: "refine" | Use draft as-is |
+| LLM Call | Local (BYOK) | Proxy (Phoenix) | Fallback (no LLM) |
+|----------|-------------|-----------------|-------------------|
+| Triage | Direct Anthropic API | `POST /api/enhance` type: "triage" | Hard floor + signal scoring |
+| Session enhancement | Direct Anthropic API | `POST /api/enhance` (existing) | Skip enhancement |
+| Project narrative | Direct Anthropic API | `POST /api/enhance` type: "project" | No narrative |
+| Narrative refinement | Direct Anthropic API | `POST /api/enhance` type: "refine" | Use draft as-is |
 
-Provider resolution: local API key wins, then proxy (if authenticated), then fallback.
+Provider resolution: local API key wins, then proxy (if authenticated), then fallback. Server-side model is configurable via `LLM_ANTHROPIC_MODEL` / `LLM_GEMINI_MODEL` env vars (defaults: Haiku / Gemini Flash).
 
 ---
 
@@ -265,13 +301,13 @@ Projects and sessions share the same three-state model:
 
 | State | Access | On portfolio? |
 |-------|--------|---------------|
-| **uploaded** (draft) | Owner only (app_web) | No |
+| **draft** | Owner only (app_web) | No |
+| **listed** | Public | Yes |
 | **unlisted** | Anyone with link | No |
-| **published** | Public | Yes |
 
-- **CLI** can only create `uploaded` (draft) records
-- **Phoenix app** (heyiam.com) controls: publish, unlist, delete
-- Moving between `published` and `unlisted` is instant (visibility toggle)
+- **CLI** can only create `draft` records
+- **Phoenix app** (heyiam.com) controls: list, unlist, delete
+- Moving between `listed` and `unlisted` is instant (visibility toggle)
 - Delete removes all data: DB records, S3 files, triggers portfolio re-render
 
 ### Transcript Control
