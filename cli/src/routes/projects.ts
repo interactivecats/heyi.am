@@ -3,9 +3,8 @@ import { statSync } from 'node:fs';
 import { toAgentChild, bridgeChildSessions, aggregateChildStats, type AgentChild } from '../bridge.js';
 import { getAuthToken } from '../auth.js';
 import { API_URL } from '../config.js';
-import { loadEnhancedData, loadProjectEnhanceResult, getUploadedState } from '../settings.js';
-import { getSessionsByProject } from '../db.js';
-import type { RouteContext } from './context.js';
+import { loadProjectEnhanceResult, getUploadedState } from '../settings.js';
+import { RouteContext, buildSessionList } from './context.js';
 
 export function createProjectsRouter(ctx: RouteContext): Router {
   const router = Router();
@@ -136,62 +135,7 @@ export function createProjectsRouter(ctx: RouteContext): Router {
       const enhanceCache = loadProjectEnhanceResult(proj.dirName);
 
       // Build session list from DB (fast) + enhanced data files (small reads)
-      const dbSessions = getSessionsByProject(ctx.db, proj.dirName);
-      const parentSessions = dbSessions.filter((r) => !r.is_subagent);
-      const childMap = new Map<string, AgentChild[]>();
-      for (const r of dbSessions) {
-        if (r.is_subagent && r.parent_session_id) {
-          const children = childMap.get(r.parent_session_id) ?? [];
-          children.push({
-            sessionId: r.id,
-            role: r.agent_role ?? 'agent',
-            durationMinutes: r.duration_minutes ?? 0,
-            linesOfCode: (r.loc_added ?? 0) + (r.loc_removed ?? 0),
-            date: r.start_time ?? '',
-          });
-          childMap.set(r.parent_session_id, children);
-        }
-      }
-
-      const sessionStats = parentSessions.map((r) => {
-        const enhanced = loadEnhancedData(r.id);
-        const children = childMap.get(r.id);
-        const skills: string[] = enhanced?.skills ?? (r.skills ? JSON.parse(r.skills) : []);
-        const locAdded = r.loc_added ?? 0;
-        const locRemoved = r.loc_removed ?? 0;
-        // Synthesize filesChanged from DB aggregates so the growth chart
-        // can show additions vs deletions (red/green) instead of treating
-        // linesOfCode as pure additions.
-        const filesChanged = (locAdded > 0 || locRemoved > 0)
-          ? [{ path: '(aggregate)', additions: locAdded, deletions: locRemoved }]
-          : [];
-        return {
-          id: r.id,
-          title: enhanced?.title ?? r.title ?? 'Untitled session',
-          date: r.start_time ?? '',
-          endTime: r.end_time ?? undefined,
-          durationMinutes: r.duration_minutes ?? 0,
-          wallClockMinutes: r.wall_clock_minutes ?? undefined,
-          turns: r.turns ?? 0,
-          linesOfCode: locAdded + locRemoved,
-          filesChanged,
-          status: (enhanced?.uploaded ? 'uploaded' : enhanced ? 'enhanced' : 'draft') as 'uploaded' | 'enhanced' | 'draft',
-          projectName: proj.name,
-          rawLog: [] as string[],
-          skills,
-          source: r.source,
-          developerTake: enhanced?.developerTake,
-          context: enhanced?.context,
-          executionPath: enhanced?.executionSteps?.map((s) => ({
-            stepNumber: s.stepNumber,
-            title: s.title,
-            description: s.body,
-          })),
-          qaPairs: enhanced?.qaPairs,
-          childCount: children?.length ?? 0,
-          children,
-        };
-      });
+      const sessionStats = buildSessionList(ctx.db, proj.dirName, proj.name);
 
       const totalLoc = sessionStats.reduce((sum, s) => sum + (s.linesOfCode || 0), 0);
       const totalDuration = sessionStats.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);

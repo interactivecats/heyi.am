@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import type Database from 'better-sqlite3';
 import { listSessions, parseSession, type SessionMeta } from '../parsers/index.js';
 import { bridgeToAnalyzer } from '../bridge.js';
-import { analyzeSession, type Session } from '../analyzer.js';
+import { analyzeSession, type Session, type AgentChild } from '../analyzer.js';
 import {
   loadEnhancedData, loadProjectEnhanceResult,
   getUploadedState,
@@ -21,6 +21,7 @@ import {
   getAllSessionMetas,
   getDashboardStats,
   getAllProjectStats,
+  getSessionsByProject,
 } from '../db.js';
 import { ensureSessionIndexed, displayNameFromDir } from '../sync.js';
 
@@ -110,6 +111,80 @@ export interface RouteContext {
   mergeSessionIntervals: (stats: SessionStats[]) => number;
   getProjectWithStats: (proj: ProjectInfo) => Promise<Record<string, unknown>>;
   buildPreviewPage: (title: string, bodyHtml: string, banner?: string) => string;
+}
+
+// ── Shared session builder ──────────────────────────────────
+
+/**
+ * Build the canonical session list for a project from DB rows + enhanced data.
+ * Used by both the dashboard detail endpoint and the export routes so the two
+ * never diverge.
+ */
+export function buildSessionList(
+  db: Database.Database,
+  dirName: string,
+  projectName: string,
+): Session[] {
+  const dbSessions = getSessionsByProject(db, dirName);
+  const parentRows = dbSessions.filter((r) => !r.is_subagent);
+
+  // Build child map
+  const childMap = new Map<string, AgentChild[]>();
+  for (const r of dbSessions) {
+    if (r.is_subagent && r.parent_session_id) {
+      const children = childMap.get(r.parent_session_id) ?? [];
+      children.push({
+        sessionId: r.id,
+        role: r.agent_role ?? 'agent',
+        durationMinutes: r.duration_minutes ?? 0,
+        linesOfCode: (r.loc_added ?? 0) + (r.loc_removed ?? 0),
+        date: r.start_time ?? '',
+      });
+      childMap.set(r.parent_session_id, children);
+    }
+  }
+
+  return parentRows.map((r) => {
+    const enhanced = loadEnhancedData(r.id);
+    const children = childMap.get(r.id);
+    const skills: string[] = enhanced?.skills ?? (r.skills ? JSON.parse(r.skills) : []);
+    const locAdded = r.loc_added ?? 0;
+    const locRemoved = r.loc_removed ?? 0;
+    const filesChanged = (locAdded > 0 || locRemoved > 0)
+      ? [{ path: '(aggregate)', additions: locAdded, deletions: locRemoved }]
+      : [];
+
+    return {
+      id: r.id,
+      title: enhanced?.title ?? r.title ?? 'Untitled session',
+      date: r.start_time ?? '',
+      endTime: r.end_time ?? undefined,
+      durationMinutes: r.duration_minutes ?? 0,
+      wallClockMinutes: r.wall_clock_minutes ?? undefined,
+      turns: r.turns ?? 0,
+      linesOfCode: locAdded + locRemoved,
+      filesChanged,
+      status: (enhanced?.uploaded ? 'uploaded' : enhanced ? 'enhanced' : 'draft') as Session['status'],
+      projectName,
+      rawLog: [] as string[],
+      skills,
+      source: r.source,
+      developerTake: enhanced?.developerTake,
+      context: enhanced?.context,
+      executionPath: enhanced?.executionSteps?.map((s) => ({
+        stepNumber: s.stepNumber,
+        title: s.title,
+        description: s.body,
+      })) ?? [],
+      qaPairs: enhanced?.qaPairs,
+      toolBreakdown: [],
+      turnTimeline: [],
+      toolCalls: 0,
+      children,
+      isOrchestrated: (children?.length ?? 0) > 0,
+      childCount: children?.length ?? 0,
+    } satisfies Session & { childCount: number };
+  });
 }
 
 export function createRouteContext(sessionsBasePath?: string, dbPath?: string): RouteContext {

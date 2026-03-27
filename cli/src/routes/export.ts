@@ -2,13 +2,11 @@ import { Router, type Request, type Response } from 'express';
 import path from 'node:path';
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { parseSession } from '../parsers/index.js';
-import { bridgeToAnalyzer } from '../bridge.js';
-import { analyzeSession, type Session } from '../analyzer.js';
+import { type Session } from '../analyzer.js';
 import { loadProjectEnhanceResult, loadEnhancedData } from '../settings.js';
 import type { ProjectEnhanceCache } from '../settings.js';
 import { exportMarkdown, exportHtml, generateHtmlFiles, createZipBuffer } from '../export.js';
-import type { RouteContext } from './context.js';
+import { type RouteContext, buildSessionList } from './context.js';
 
 const EXPORTS_BASE = path.resolve(process.env.HOME || '~', '.config', 'heyiam', 'exports');
 
@@ -21,20 +19,12 @@ function safeExportPath(outputPath: string | undefined, dirName: string, format:
   return resolved;
 }
 
+/** Load sessions from DB with parent/child relationships via shared builder. */
 async function loadProjectSessions(ctx: RouteContext, dirName: string): Promise<Session[]> {
   const projects = await ctx.getProjects();
   const proj = projects.find((p) => p.dirName === dirName);
   if (!proj) return [];
-
-  const sessions: Session[] = [];
-  for (const meta of proj.sessions) {
-    try {
-      const parsed = await parseSession(meta.path);
-      const bridged = bridgeToAnalyzer(parsed, { sessionId: meta.sessionId, projectName: proj.name });
-      sessions.push(analyzeSession(bridged));
-    } catch { /* skip unparseable sessions */ }
-  }
-  return sessions;
+  return buildSessionList(ctx.db, dirName, proj.name);
 }
 
 /** Build a minimal ProjectEnhanceCache from raw session data for non-enhanced exports. */
