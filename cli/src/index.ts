@@ -272,7 +272,7 @@ program
 
     if (opts.clipboard) {
       try {
-        const { default: clipboardy } = await import('clipboardy');
+        const { default: clipboardy } = await import('clipboardy' as string) as { default: { write: (text: string) => Promise<void> } };
         await clipboardy.write(result.content);
         console.log(`\n  Session context copied (${result.tokens.toLocaleString()} tokens, ${result.tier} format)\n`);
       } catch {

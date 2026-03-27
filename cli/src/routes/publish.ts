@@ -201,7 +201,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
               const { upload_url, key } = await ssUrlRes.json() as { upload_url: string; key: string };
               await fetch(upload_url, {
                 method: 'PUT',
-                body: imageBuffer,
+                body: new Uint8Array(imageBuffer),
                 headers: { 'Content-Type': `image/${ext}` },
               });
               await fetch(`${API_URL}/api/projects/${projectData.slug}/screenshot-key`, {

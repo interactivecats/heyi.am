@@ -114,7 +114,7 @@ function makeUpsertInput(overrides: Partial<UpsertSessionInput> = {}): UpsertSes
 
 describe('db', () => {
   let tmpDir: string;
-  let db: Database;
+  let db: ReturnType<typeof openDatabase>;
 
   beforeEach(() => {
     tmpDir = makeTmpDir();

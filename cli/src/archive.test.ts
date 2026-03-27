@@ -143,8 +143,8 @@ describe("archiveSessionFiles", () => {
 
   it("exports Cursor sessions as JSONL with correct content", async () => {
     const rawEntries = [
-      { type: "user", message: { role: "user", content: "hello" } },
-      { type: "assistant", message: { role: "assistant", content: [{ type: "text", text: "hi" }] } },
+      { type: "user", uuid: "u1", timestamp: "2026-03-20T10:00:00Z", sessionId: "s1", message: { role: "user", content: "hello" } },
+      { type: "assistant", uuid: "u2", timestamp: "2026-03-20T10:00:01Z", sessionId: "s1", message: { role: "assistant", content: [{ type: "text" as const, text: "hi" }] } },
     ];
 
     mockedParseSession.mockResolvedValue({
@@ -193,7 +193,7 @@ describe("archiveSessionFiles", () => {
 
   it("counts cursorExported separately from file-based archives", async () => {
     const rawEntries = [
-      { type: "user", message: { role: "user", content: "test" } },
+      { type: "user", uuid: "u1", timestamp: "2026-03-20T10:00:00Z", sessionId: "s1", message: { role: "user", content: "test" } },
     ];
 
     mockedParseSession.mockResolvedValue({
