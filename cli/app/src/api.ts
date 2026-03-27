@@ -18,7 +18,6 @@ export type {
   UploadEvent,
   RefineAnswer,
   RefineResult,
-  ExportResult,
   ExecutionStep,
   ToolUsage,
   FileChange,
@@ -58,7 +57,6 @@ import type {
   UploadEvent,
   RefineAnswer,
   RefineResult,
-  ExportResult,
   SearchResponse,
   ContextExportResponse,
   DashboardResponse,
@@ -228,22 +226,6 @@ export async function refineNarrative(
   })
 }
 
-export async function saveProjectLocally(dirName: string): Promise<ExportResult> {
-  return post<ExportResult>(`/projects/${enc(dirName)}/save-local`)
-}
-
-export async function exportMarkdown(dirName: string): Promise<ExportResult> {
-  return post<ExportResult>(`/projects/${enc(dirName)}/export/markdown`)
-}
-
-export async function exportHtml(dirName: string): Promise<ExportResult> {
-  return post<ExportResult>(`/projects/${enc(dirName)}/export/html`)
-}
-
-export function downloadHtmlZip(dirName: string): void {
-  window.open(`/api/projects/${enc(dirName)}/download-html`, '_blank')
-}
-
 export function uploadProject(
   dirName: string,
   payload: UploadPayload,
@@ -278,10 +260,6 @@ export async function fetchAuthStatus(): Promise<AuthStatus> {
   } catch {
     return { authenticated: false }
   }
-}
-
-export async function openDirectory(path: string): Promise<void> {
-  await post('/open-directory', { path })
 }
 
 // ── Search & Session lookup ──────────────────────────────────
@@ -374,10 +352,6 @@ export interface DeviceCodeInfo {
   verification_uri: string
   expires_in: number
   interval: number
-}
-
-export async function startDeviceAuth(): Promise<DeviceCodeInfo> {
-  return post<DeviceCodeInfo>('/auth/login')
 }
 
 export async function pollDeviceAuth(deviceCode: string): Promise<AuthStatus> {

@@ -19,7 +19,6 @@ import {
   getSessionStats as dbGetSessionStats,
   getSessionCount,
   getAllSessionMetas,
-  getDashboardStats,
   getAllProjectStats,
   getSessionsByProject,
 } from '../db.js';

@@ -80,7 +80,7 @@ export function getDatabase(dbPath: string = DB_PATH): Database.Database {
   return _db;
 }
 
-export function closeDatabase(): void {
+function closeDatabase(): void {
   if (_db) {
     _db.close();
     _db = null;

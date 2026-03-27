@@ -1,8 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { statSync } from 'node:fs';
 import { toAgentChild, bridgeChildSessions, aggregateChildStats, type AgentChild } from '../bridge.js';
-import { getAuthToken } from '../auth.js';
-import { API_URL } from '../config.js';
 import { loadProjectEnhanceResult, getUploadedState } from '../settings.js';
 import { RouteContext, buildSessionList, buildProjectDetail } from './context.js';
 
@@ -22,102 +20,6 @@ export function createProjectsRouter(ctx: RouteContext): Router {
       res.json({ projects: projectsWithStats });
     } catch (err) {
       res.status(500).json({ error: { code: 'SCAN_FAILED', message: (err as Error).message } });
-    }
-  });
-
-  // ── Time stats -- rich per-project agent breakdown ──────────
-  router.get('/api/time-stats', async (_req: Request, res: Response) => {
-    try {
-      const projects = await ctx.getProjects();
-
-      const projectStats = await Promise.all(projects.map(async (proj) => {
-        const parents = proj.sessions.filter(s => !s.isSubagent);
-        let yourMinutes = 0;
-        let agentMinutes = 0;
-        let orchestratedCount = 0;
-        let maxParallelAgents = 0;
-        let totalChildAgents = 0;
-        const roleSet = new Set<string>();
-
-        for (const meta of parents) {
-          const stats = await ctx.getSessionStats(meta, proj.name);
-          const dur = stats.duration;
-          yourMinutes += dur;
-          agentMinutes += dur;
-
-          const children = meta.children ?? [];
-          if (children.length > 0) {
-            orchestratedCount++;
-            maxParallelAgents = Math.max(maxParallelAgents, children.length);
-            totalChildAgents += children.length;
-          }
-
-          for (const child of children) {
-            const childStats = await ctx.getSessionStats(child, proj.name);
-            agentMinutes += childStats.duration;
-            if (child.agentRole) roleSet.add(child.agentRole);
-          }
-        }
-
-        if (yourMinutes === 0) return null;
-
-        return {
-          name: proj.name,
-          dirName: proj.dirName,
-          sessions: parents.length,
-          yourMinutes,
-          agentMinutes,
-          orchestratedSessions: orchestratedCount,
-          maxParallelAgents,
-          avgAgentsPerSession: parents.length > 0
-            ? +((totalChildAgents / parents.length) + 1).toFixed(1)
-            : 1,
-          uniqueRoles: [...roleSet],
-        };
-      }));
-
-      const results = projectStats.filter(Boolean);
-      results.sort((a, b) => b!.agentMinutes - a!.agentMinutes);
-
-      const totalYou = results.reduce((s, p) => s + p!.yourMinutes, 0);
-      const totalAgent = results.reduce((s, p) => s + p!.agentMinutes, 0);
-      const totalSessions = results.reduce((s, p) => s + p!.sessions, 0);
-
-      res.json({
-        projects: results,
-        totals: {
-          yourMinutes: totalYou,
-          agentMinutes: totalAgent,
-          sessions: totalSessions,
-        },
-      });
-    } catch (err) {
-      res.status(500).json({ error: { code: 'STATS_FAILED', message: (err as Error).message } });
-    }
-  });
-
-  // Proxy publish time stats to Phoenix
-  router.post('/api/upload-time-stats', async (req: Request, res: Response) => {
-    const auth = getAuthToken();
-    if (!auth) {
-      res.status(401).json({ error: 'Authentication required. Run heyiam login first.' });
-      return;
-    }
-
-    try {
-      const phoenixRes = await fetch(`${API_URL}/api/time-stats`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${auth.token}`,
-        },
-        body: JSON.stringify(req.body),
-      });
-
-      const result = await phoenixRes.json();
-      res.status(phoenixRes.status).json(result);
-    } catch (err) {
-      res.status(500).json({ error: (err as Error).message });
     }
   });
 

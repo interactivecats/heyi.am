@@ -52,7 +52,7 @@ export interface ProjectEnhanceResult {
   questions: ProjectQuestion[];
 }
 
-export interface RefinedNarrative {
+interface RefinedNarrative {
   narrative: string;
   timeline: ProjectEnhanceResult['timeline'];
 }
@@ -133,7 +133,7 @@ function extractJson<T>(text: string): T {
   return JSON.parse(match[0]) as T;
 }
 
-export type EnhanceProjectProgress =
+type EnhanceProjectProgress =
   | { type: 'narrative_chunk'; text: string };
 
 /**

@@ -342,37 +342,6 @@ export async function* summarizeSessionStream(
   }
 }
 
-// ── SSE helper for Express ───────────────────────────────────
-
-export function createSSEHandler(session: Session, options: SummarizeOptions = {}) {
-  return async (
-    _req: { on: (event: string, handler: () => void) => void },
-    res: {
-      writeHead: (status: number, headers: Record<string, string>) => void;
-      write: (data: string) => void;
-      end: () => void;
-    },
-  ) => {
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-    });
-
-    let closed = false;
-    _req.on('close', () => { closed = true; });
-
-    for await (const event of summarizeSessionStream(session, options)) {
-      if (closed) break;
-      res.write(`event: ${event.type}\ndata: ${JSON.stringify(event.data)}\n\n`);
-    }
-
-    if (!closed) {
-      res.end();
-    }
-  };
-}
-
 // ── JSON parsing with validation ─────────────────────────────
 
 export function parseEnhancementResult(raw: string): EnhancementResult {

@@ -28,25 +28,6 @@ vi.mock('./summarize.js', () => {
 
   return {
     summarizeSession: vi.fn().mockResolvedValue(mockResult),
-    createSSEHandler: vi.fn().mockReturnValue(
-      async (
-        _req: { on: (event: string, handler: () => void) => void },
-        res: {
-          writeHead: (status: number, headers: Record<string, string>) => void;
-          write: (data: string) => void;
-          end: () => void;
-        },
-      ) => {
-        res.writeHead(200, {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          Connection: 'keep-alive',
-        });
-        res.write(`event: title\ndata: ${JSON.stringify(mockResult.title)}\n\n`);
-        res.write(`event: done\ndata: ${JSON.stringify(mockResult)}\n\n`);
-        res.end();
-      },
-    ),
   };
 });
 
