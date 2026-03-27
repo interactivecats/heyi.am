@@ -91,18 +91,23 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
     sourceCounts[src] = (sourceCounts[src] || 0) + 1;
   }
 
-  // Use full session data when available (charts need complete Session objects)
-  const chartSessions = extras?.fullSessions ?? allSessions.map((s) => ({
+  // Use full session data when available (charts need complete Session objects).
+  // Strip rawLog and turnTimeline — huge, unused by charts, and could break HTML attributes.
+  const chartSessions = (extras?.fullSessions ?? allSessions.map((s) => ({
     id: s.token, title: s.title, date: s.recordedAt,
     durationMinutes: s.durationMinutes, turns: s.turns,
     linesOfCode: s.locChanged, status: 'enhanced',
     projectName: data.project.title, rawLog: [],
     skills: s.skills, source: s.sourceTool,
     filesChanged: s.filesChanged,
-  }));
+  }))).map((s: Record<string, unknown>) => {
+    const { rawLog, turnTimeline, ...rest } = s;
+    return { ...rest, rawLog: [] };
+  });
 
-  const sessionsJson = JSON.stringify(chartSessions);
-  const growthJson = JSON.stringify(chartSessions);
+  // Encode JSON safe for single-quoted HTML attributes
+  const sessionsJson = JSON.stringify(chartSessions).replace(/'/g, '&#39;');
+  const growthJson = sessionsJson; // same data for both charts
 
   const durationLabel = data.project.totalAgentDurationMinutes ? 'You / Agents' : 'Time';
 
