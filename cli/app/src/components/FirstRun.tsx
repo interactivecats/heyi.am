@@ -43,7 +43,7 @@ export function FirstRun() {
 
   // Claim username state
   const [usernameInput, setUsernameInput] = useState('')
-  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'claimed'>('idle')
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'claimed' | 'submitting' | 'error'>('idle')
   const [usernameError, setUsernameError] = useState('')
   const [claimedUsername, setClaimedUsername] = useState('')
   const [authPolling, setAuthPolling] = useState(false)
@@ -400,14 +400,18 @@ export function FirstRun() {
                 <TermLine variant="default">&nbsp;</TermLine>
                 <TermLine variant="section">  Claim your portfolio page</TermLine>
                 <TermLine variant="default">&nbsp;</TermLine>
-                <TermLine variant="info">  heyi.am hosts your public dev</TermLine>
-                <TermLine variant="info">  portfolio — project case studies</TermLine>
-                <TermLine variant="info">  built from your real AI sessions.</TermLine>
+                <TermLine variant="info">  Want to show off your AI dev work?</TermLine>
+                <TermLine variant="info">  Claim a name and create a public</TermLine>
+                <TermLine variant="info">  portfolio on heyi.am — show how</TermLine>
+                <TermLine variant="info">  you build, not just what you ship.</TermLine>
                 <TermLine variant="default">&nbsp;</TermLine>
-                <TermLine variant="info">  Your page: heyi.am/<span className="text-[#9dcaff] font-semibold">{usernameInput || 'your-name'}</span></TermLine>
+                <TermLine variant="info">  Your page: <span className="text-[#9dcaff] font-semibold">heyi.am/{usernameInput || 'your-name'}</span></TermLine>
                 <TermLine variant="default">&nbsp;</TermLine>
                 <div className="triage-terminal__line opacity-40 text-[10px]">
                   {'  '}Optional — the CLI works fully without an account.
+                </div>
+                <div className="triage-terminal__line opacity-40 text-[10px]">
+                  {'  '}You choose what to publish. Nothing is public by default.
                 </div>
                 <TermLine variant="default">&nbsp;</TermLine>
 
@@ -463,46 +467,49 @@ export function FirstRun() {
                         onKeyDown={async (e) => {
                           if (e.key === 'Enter' && usernameInput.length >= 2) {
                             e.preventDefault()
+                            // Guard against double-submit
+                            if (usernameStatus === 'submitting' || usernameStatus === 'checking' || authPolling) return
                             if (usernameCheckTimer.current) clearTimeout(usernameCheckTimer.current)
 
-                            // Check + claim in one go
-                            setUsernameStatus('checking')
+                            setUsernameStatus('submitting')
+                            setUsernameError('')
                             try {
                               const result = await checkUsername(usernameInput)
-                              if (result.available) {
-                                setUsernameStatus('available')
-                                const deviceInfo = await startSignup(usernameInput)
-                                setDeviceCode(deviceInfo.device_code)
-                                setAuthPolling(true)
-                                window.open(deviceInfo.verification_uri, '_blank')
-                                // Poll for completion
-                                const startTime = Date.now()
-                                const poll = async () => {
-                                  try {
-                                    const status = await pollDeviceAuth(deviceInfo.device_code)
-                                    if (status.authenticated) {
-                                      setAuthPolling(false)
-                                      setUsernameStatus('claimed')
-                                      setClaimedUsername(status.username || usernameInput)
-                                      return
-                                    }
-                                  } catch { /* authorization_pending — keep polling */ }
-                                  if (Date.now() - startTime < 300000) {
-                                    setTimeout(poll, 5000)
-                                  } else {
-                                    setAuthPolling(false)
-                                    setUsernameStatus('idle')
-                                    setUsernameError('Timed out. Try again.')
-                                  }
-                                }
-                                setTimeout(poll, 5000)
-                              } else {
+                              if (!result.available) {
                                 setUsernameStatus('taken')
                                 setUsernameError(result.reason || 'Username is taken')
+                                return
                               }
+
+                              const deviceInfo = await startSignup(usernameInput)
+                              setDeviceCode(deviceInfo.device_code)
+                              setAuthPolling(true)
+                              setUsernameStatus('available')
+                              window.open(deviceInfo.verification_uri, '_blank')
+
+                              const startTime = Date.now()
+                              const poll = async () => {
+                                try {
+                                  const status = await pollDeviceAuth(deviceInfo.device_code)
+                                  if (status.authenticated) {
+                                    setAuthPolling(false)
+                                    setUsernameStatus('claimed')
+                                    setClaimedUsername(status.username || usernameInput)
+                                    return
+                                  }
+                                } catch { /* authorization_pending */ }
+                                if (Date.now() - startTime < 300000) {
+                                  setTimeout(poll, 5000)
+                                } else {
+                                  setAuthPolling(false)
+                                  setUsernameStatus('error')
+                                  setUsernameError('Timed out. Try again.')
+                                }
+                              }
+                              setTimeout(poll, 5000)
                             } catch {
-                              setUsernameStatus('taken')
-                              setUsernameError('Could not check availability')
+                              setUsernameStatus('error')
+                              setUsernameError('Could not connect. Try again later.')
                             }
                           }
                         }}
@@ -516,7 +523,13 @@ export function FirstRun() {
                       {usernameStatus === 'available' && (
                         <span className="text-[10px] text-[#34d399] font-mono">available!</span>
                       )}
+                      {usernameStatus === 'submitting' && (
+                        <span className="text-[10px] text-[#fbbf24] font-mono">claiming...</span>
+                      )}
                       {usernameStatus === 'taken' && (
+                        <span className="text-[10px] text-[#f87171] font-mono">{usernameError}</span>
+                      )}
+                      {usernameStatus === 'error' && (
                         <span className="text-[10px] text-[#f87171] font-mono">{usernameError}</span>
                       )}
                     </div>
@@ -530,13 +543,18 @@ export function FirstRun() {
                     <TermLine variant="default">&nbsp;</TermLine>
                     <div className="flex items-center gap-3 mt-1 ml-4">
                       <button
+                        disabled={authPolling || usernameStatus === 'submitting'}
                         onClick={async () => {
-                          // Login flow — start device auth without username
+                          if (authPolling || usernameStatus === 'submitting') return
+                          setUsernameStatus('submitting')
+                          setUsernameError('')
                           try {
                             const deviceInfo = await startSignup('')
                             setDeviceCode(deviceInfo.device_code)
                             setAuthPolling(true)
+                            setUsernameStatus('idle')
                             window.open(deviceInfo.verification_uri, '_blank')
+                            const startTime = Date.now()
                             const poll = async () => {
                               try {
                                 const status = await pollDeviceAuth(deviceInfo.device_code)
@@ -547,12 +565,21 @@ export function FirstRun() {
                                   return
                                 }
                               } catch { /* keep polling */ }
-                              setTimeout(poll, 5000)
+                              if (Date.now() - startTime < 300000) {
+                                setTimeout(poll, 5000)
+                              } else {
+                                setAuthPolling(false)
+                                setUsernameStatus('error')
+                                setUsernameError('Timed out.')
+                              }
                             }
                             setTimeout(poll, 5000)
-                          } catch { /* ignore */ }
+                          } catch {
+                            setUsernameStatus('error')
+                            setUsernameError('Could not connect. Try again later.')
+                          }
                         }}
-                        className="text-[10px] font-mono px-2.5 py-1 rounded bg-white/10 text-white/70 hover:text-white/90 hover:bg-white/15 transition-colors"
+                        className="text-[10px] font-mono px-2.5 py-1 rounded bg-white/10 text-white/70 hover:text-white/90 hover:bg-white/15 transition-colors disabled:opacity-40"
                       >
                         Already have an account? Log in
                       </button>
