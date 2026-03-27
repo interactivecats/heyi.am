@@ -9,7 +9,7 @@
     "src"
   ],
   "scripts": {
-    "build": "esbuild src/mount.tsx --bundle --outfile=dist/mount.js --format=esm --target=es2022 --jsx=automatic --loader:.tsx=tsx",
+    "build": "esbuild src/mount.tsx --bundle --outfile=dist/mount.js --format=iife --target=es2022 --jsx=automatic --loader:.tsx=tsx",
     "test": "vitest run"
   },
   "peerDependencies": {

@@ -480,7 +480,7 @@ function crc32(buf: Buffer): number {
 
 function getInlineMountJs(): string {
   const thisDir = dirname(fileURLToPath(import.meta.url));
-  const mountPath = resolve(thisDir, '..', 'packages', 'ui', 'dist', 'mount.js');
+  const mountPath = resolve(thisDir, '..', '..', 'packages', 'ui', 'dist', 'mount.js');
   try {
     return readFileSync(mountPath, 'utf-8');
   } catch {
