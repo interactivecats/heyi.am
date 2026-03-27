@@ -264,7 +264,7 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
     return [...byDir.entries()].map(([dirName, sessions]) => ({
       name: displayNameFromDir(dirName),
       dirName,
-      sessionCount: sessions.length,
+      sessionCount: sessions.filter((s) => !s.isSubagent).length,
       sessions,
     }));
   }

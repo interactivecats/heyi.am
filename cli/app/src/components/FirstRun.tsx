@@ -208,7 +208,7 @@ export function FirstRun() {
                 )}
 
                 {(syncProgress.phase === 'indexing' || syncProgress.phase === 'done') && (
-                  <TermLine variant="passed">  Found {syncProgress.total} sessions</TermLine>
+                  <TermLine variant="passed">  Found {syncProgress.parentCount} sessions</TermLine>
                 )}
 
                 {syncProgress.phase === 'indexing' && (

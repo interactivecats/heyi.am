@@ -345,6 +345,7 @@ export interface SyncProgressEvent {
   phase: 'discovering' | 'indexing' | 'done'
   current: number
   total: number
+  parentCount: number
   currentProject?: string
 }
 

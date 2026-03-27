@@ -26,6 +26,7 @@ export interface SyncProgress {
   phase: 'discovering' | 'indexing' | 'done';
   current?: number;
   total?: number;
+  parentCount?: number;
   sessionId?: string;
   currentProject?: string;
 }
@@ -46,6 +47,7 @@ export interface SyncState {
   phase: SyncProgress['phase'];
   current: number;
   total: number;
+  parentCount: number;
   currentProject?: string;
   result: SyncResult | null;
   startedAt: number | null;
@@ -59,6 +61,7 @@ let _syncState: SyncState = {
   phase: 'done',
   current: 0,
   total: 0,
+  parentCount: 0,
   result: null,
   startedAt: null,
   finishedAt: null,
@@ -93,6 +96,7 @@ export async function syncWithTracking(
     phase: 'discovering',
     current: 0,
     total: 0,
+    parentCount: 0,
     result: null,
     startedAt: Date.now(),
     finishedAt: null,
@@ -105,6 +109,7 @@ export async function syncWithTracking(
       phase: progress.phase,
       current: progress.current ?? _syncState.current,
       total: progress.total ?? _syncState.total,
+      parentCount: progress.parentCount ?? _syncState.parentCount,
       currentProject: progress.currentProject ?? _syncState.currentProject,
     };
     notifyListeners();
@@ -218,7 +223,7 @@ export async function syncSessionIndex(
   result.discovered = allSessions.length;
 
   // Phase 2: Index stale/missing sessions
-  onProgress?.({ phase: 'indexing', current: 0, total: allSessions.length });
+  onProgress?.({ phase: 'indexing', current: 0, total: allSessions.length, parentCount: parentSessions.length });
 
   for (let i = 0; i < allSessions.length; i++) {
     const meta = allSessions[i];
