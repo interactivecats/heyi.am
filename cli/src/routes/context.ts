@@ -413,11 +413,9 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
 
   // ── buildPreviewPage ─────────────────────────────────────
   function buildPreviewPage(title: string, bodyHtml: string, banner?: string): string {
-    const appCssPath = path.resolve(__dirname, '..', '..', 'app', 'src', 'App.css');
-    const indexCssPath = path.resolve(__dirname, '..', '..', 'app', 'src', 'index.css');
+    const renderCssPath = path.resolve(__dirname, '..', 'render', 'templates', 'styles.css');
     let inlineCss = '';
-    try { inlineCss += readFileSync(indexCssPath, 'utf-8'); } catch { /* */ }
-    try { inlineCss += readFileSync(appCssPath, 'utf-8'); } catch { /* */ }
+    try { inlineCss = readFileSync(renderCssPath, 'utf-8'); } catch { /* */ }
     const cssTag = `<style>${inlineCss}\n/* Preview override */\nbody { overflow: auto !important; min-height: auto !important; }\n#root { min-height: auto !important; }</style>`;
     const bannerHtml = banner
       ? `<div style="background: var(--primary, #084471); color: white; text-align: center; padding: 0.5rem; font-family: 'Inter', sans-serif; font-size: 0.75rem; letter-spacing: 0.05em;">${escapeHtml(banner)}</div>`

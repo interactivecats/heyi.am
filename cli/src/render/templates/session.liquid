@@ -1,0 +1,158 @@
+<div class="heyiam-session" data-render-version="2" data-template="{{ session.template }}">
+
+  <div class="session-layout">
+
+    {%- comment -%} Sidebar {%- endcomment -%}
+    <aside class="session-sidebar">
+      {% if session.toolBreakdown.size > 0 %}
+      <div class="sidebar-section">
+        <h3 class="sidebar-section__heading">Tool Usage</h3>
+        <ul class="tool-list">
+          {% for t in session.toolBreakdown %}
+          <li class="tool-list__item">
+            <span class="tool-list__name">{{ t.tool }}</span>
+            <span class="tool-list__count">{{ t.count }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      {% if session.topFiles.size > 0 %}
+      <div class="sidebar-section">
+        <h3 class="sidebar-section__heading">Top Files</h3>
+        <ul class="file-list">
+          {% for f in session.topFiles %}
+          <li class="file-list__item">
+            <span class="file-list__path">{{ f.path }}</span>
+            <span class="file-list__adds">+{{ f.additions }}</span>
+            <span class="file-list__dels">-{{ f.deletions }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </aside>
+
+    {%- comment -%} Main content {%- endcomment -%}
+    <main class="session-main">
+
+      {%- comment -%} Breadcrumb {%- endcomment -%}
+      <nav class="breadcrumb">
+        <a href="/@{{ user.username }}">{{ user.username }}</a>
+        {% if projectSlug %}
+        <span class="breadcrumb__sep" aria-hidden="true">/</span>
+        <a href="/@{{ user.username }}/p/{{ projectSlug }}">{{ projectSlug }}</a>
+        {% endif %}
+        <span class="breadcrumb__sep" aria-hidden="true">/</span>
+        <span>{{ session.title }}</span>
+      </nav>
+
+      {%- comment -%} Header {%- endcomment -%}
+      <header class="session-header">
+        <h1 class="session-header__title">{{ session.title }}</h1>
+
+        <div class="session-header__meta">
+          <time class="session-header__date" datetime="{{ session.recordedAt }}">
+            {{ session.recordedAt | formatDate }}
+          </time>
+          <span class="session-header__source">{{ session.sourceTool }}</span>
+        </div>
+
+        {% if session.devTake != blank %}
+        <blockquote class="session-header__devtake">
+          <p>{{ session.devTake }}</p>
+        </blockquote>
+        {% endif %}
+
+        {% if session.context != blank %}
+        <p class="session-header__context">{{ session.context }}</p>
+        {% endif %}
+
+        <div class="stat-grid stat-grid--4">
+          <span class="stat">
+            <span class="stat__value">{{ session.durationMinutes | formatDuration }}</span>
+            <span class="stat__label">active</span>
+          </span>
+          <span class="stat">
+            <span class="stat__value">{{ session.turns }}</span>
+            <span class="stat__label">turns</span>
+          </span>
+          <span class="stat">
+            <span class="stat__value">{{ session.locChanged | localeNumber }}</span>
+            <span class="stat__label">loc</span>
+          </span>
+          <span class="stat">
+            <span class="stat__value">{{ session.filesChanged }}</span>
+            <span class="stat__label">files</span>
+          </span>
+        </div>
+      </header>
+
+      {%- comment -%} Skills {%- endcomment -%}
+      {% if session.skills.size > 0 %}
+      <section class="content-section">
+        <div class="chip-list">
+          {% for skill in session.skills %}
+          <span class="chip chip--violet">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Narrative {%- endcomment -%}
+      {% if session.narrative != blank %}
+      <section class="content-section">
+        <h2 class="content-section__heading">Narrative</h2>
+        <p>{{ session.narrative }}</p>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Highlights {%- endcomment -%}
+      {% if session.highlights.size > 0 %}
+      <section class="content-section">
+        <h2 class="content-section__heading">Highlights</h2>
+        <ul class="highlights-list">
+          {% for h in session.highlights %}
+          <li>{{ h }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Execution Path {%- endcomment -%}
+      {% if session.beats.size > 0 %}
+      <section class="content-section">
+        <h2 class="content-section__heading">Execution Path</h2>
+        <ol class="beats-list">
+          {% for beat in session.beats %}
+          <li class="beat">
+            <span class="beat__number">{{ beat.stepNumber }}</span>
+            <div class="beat__content">
+              <strong class="beat__title">{{ beat.title }}</strong>
+              <p class="beat__body">{{ beat.body }}</p>
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Q&A {%- endcomment -%}
+      {% if session.qaPairs.size > 0 %}
+      <section class="content-section">
+        <h2 class="content-section__heading">Q&amp;A</h2>
+        <div class="qa-list">
+          {% for qa in session.qaPairs %}
+          <div class="qa-pair">
+            <p class="qa-pair__question">{{ qa.question }}</p>
+            <p class="qa-pair__answer">{{ qa.answer }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+    </main>
+  </div>
+</div>

@@ -20,7 +20,6 @@ vi.mock('./settings.js', async (importOriginal) => {
 
 vi.mock('./render/index.js', () => ({
   renderProjectHtml: vi.fn(() => '<div class="project">rendered project</div>'),
-  renderProjectExportHtml: vi.fn(() => '<div class="project">rendered project export</div>'),
   renderSessionHtml: vi.fn(() => '<div class="session">rendered session</div>'),
 }));
 

@@ -2,21 +2,16 @@
  * Static HTML renderer for portfolio pages.
  *
  * Produces self-contained HTML fragments (no <html>, no <head>) using
- * ReactDOMServer.renderToStaticMarkup(). The output is stored in the DB
- * and served by Phoenix as pre-rendered content.
+ * Liquid templates. The output is stored in the DB and served by Phoenix
+ * as pre-rendered content, or written to standalone HTML files for export.
  *
  * These functions run on the Node.js server, never in the browser.
  */
 
-import React from 'react';
-import ReactDOMServer from 'react-dom/server';
-import type { PortfolioRenderData, ProjectRenderData, SessionRenderData } from './types.js';
-import { PortfolioPage } from './components/PortfolioPage.js';
-import { ProjectPage } from './components/ProjectPage.js';
-import { ProjectExportPage } from './components/ProjectExportPage.js';
-import { SessionPage } from './components/SessionPage.js';
+import type { ProjectRenderData, SessionRenderData } from './types.js';
+import { renderProject, renderSession } from './liquid.js';
 
-export type { PortfolioRenderData, ProjectRenderData, SessionRenderData } from './types.js';
+export type { ProjectRenderData, SessionRenderData } from './types.js';
 
 /** Errors from the render pipeline carry a machine-readable code. */
 export class RenderError extends Error {
@@ -41,22 +36,6 @@ interface ValidationFailure {
 function collectErrors(failures: ValidationFailure[]): never {
   const detail = failures.map((f) => `${f.field}: ${f.message}`).join('; ');
   throw new RenderError('VALIDATION_ERROR', `Render data validation failed: ${detail}`);
-}
-
-function validatePortfolio(data: PortfolioRenderData): void {
-  const errors: ValidationFailure[] = [];
-
-  if (!data.user) {
-    errors.push({ field: 'user', message: 'required' });
-  } else {
-    if (!data.user.username) errors.push({ field: 'user.username', message: 'required' });
-    if (!data.user.displayName) errors.push({ field: 'user.displayName', message: 'required' });
-  }
-  if (!Array.isArray(data.projects)) {
-    errors.push({ field: 'projects', message: 'must be an array' });
-  }
-
-  if (errors.length > 0) collectErrors(errors);
 }
 
 function validateProject(data: ProjectRenderData): void {
@@ -104,40 +83,16 @@ function validateSession(data: SessionRenderData): void {
 // ---------------------------------------------------------------------------
 
 /**
- * Render a portfolio page to a static HTML fragment.
- *
- * @throws {RenderError} with code VALIDATION_ERROR if required fields are missing
- * @throws {RenderError} with code RENDER_FAILED if ReactDOMServer throws
- */
-export function renderPortfolioHtml(data: PortfolioRenderData): string {
-  validatePortfolio(data);
-
-  try {
-    return ReactDOMServer.renderToStaticMarkup(
-      React.createElement(PortfolioPage, { data })
-    );
-  } catch (err: unknown) {
-    throw new RenderError(
-      'RENDER_FAILED',
-      `Failed to render portfolio page for ${data.user.username}`,
-      err,
-    );
-  }
-}
-
-/**
  * Render a project page to a static HTML fragment.
  *
  * @throws {RenderError} with code VALIDATION_ERROR if required fields are missing
- * @throws {RenderError} with code RENDER_FAILED if ReactDOMServer throws
+ * @throws {RenderError} with code RENDER_FAILED if Liquid rendering fails
  */
 export function renderProjectHtml(data: ProjectRenderData): string {
   validateProject(data);
 
   try {
-    return ReactDOMServer.renderToStaticMarkup(
-      React.createElement(ProjectPage, { data })
-    );
+    return renderProject(data);
   } catch (err: unknown) {
     throw new RenderError(
       'RENDER_FAILED',
@@ -151,41 +106,17 @@ export function renderProjectHtml(data: ProjectRenderData): string {
  * Render a session page to a static HTML fragment.
  *
  * @throws {RenderError} with code VALIDATION_ERROR if required fields are missing
- * @throws {RenderError} with code RENDER_FAILED if ReactDOMServer throws
+ * @throws {RenderError} with code RENDER_FAILED if Liquid rendering fails
  */
 export function renderSessionHtml(data: SessionRenderData): string {
   validateSession(data);
 
   try {
-    return ReactDOMServer.renderToStaticMarkup(
-      React.createElement(SessionPage, { data })
-    );
+    return renderSession(data);
   } catch (err: unknown) {
     throw new RenderError(
       'RENDER_FAILED',
       `Failed to render session page for ${data.session.token}`,
-      err,
-    );
-  }
-}
-
-/**
- * Render a project page for standalone HTML export.
- *
- * Uses the dashboard-style layout (browser chrome, cards, stat grid)
- * instead of the Phoenix publish layout.
- */
-export function renderProjectExportHtml(data: ProjectRenderData): string {
-  validateProject(data);
-
-  try {
-    return ReactDOMServer.renderToStaticMarkup(
-      React.createElement(ProjectExportPage, { data })
-    );
-  } catch (err: unknown) {
-    throw new RenderError(
-      'RENDER_FAILED',
-      `Failed to render project export page for ${data.project.slug}`,
       err,
     );
   }

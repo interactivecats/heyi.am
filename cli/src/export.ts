@@ -6,13 +6,13 @@
  * producing JS-free static HTML safe for script-src 'self' CSP.
  */
 
-import { mkdirSync, writeFileSync, readFileSync, statSync, readdirSync, existsSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync, statSync, existsSync } from 'node:fs';
 import { deflateRawSync } from 'node:zlib';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ProjectEnhanceCache, EnhancedData } from './settings.js';
 import { loadEnhancedData } from './settings.js';
-import { renderProjectExportHtml, renderSessionHtml } from './render/index.js';
+import { renderProjectHtml, renderSessionHtml } from './render/index.js';
 import { escapeHtml } from './format-utils.js';
 import {
   buildProjectRenderData,
@@ -268,7 +268,7 @@ export async function exportHtml(
     sessionBaseUrl: './sessions',
   });
 
-  const projectBody = renderProjectExportHtml(projectRenderData);
+  const projectBody = renderProjectHtml(projectRenderData);
   const projectHtml = buildStandalonePage(title, projectBody);
   totalBytes += writeAndTrack(join(outputPath, 'index.html'), projectHtml, files);
 
@@ -302,23 +302,12 @@ export async function exportHtml(
 
 function getInlineCss(): string {
   const thisDir = dirname(fileURLToPath(import.meta.url));
-  const parts: string[] = [];
-
-  // 1. Public-web CSS — the render components use BEM classes (project-preview__*, timeline__*, etc.)
-  //    defined in the Phoenix umbrella app's public_web CSS.
-  const publicCssPath = resolve(thisDir, '..', '..', 'heyi_am_umbrella', 'apps', 'heyi_am_public_web', 'assets', 'css', 'app.css');
+  const cssPath = resolve(thisDir, 'render', 'templates', 'styles.css');
   try {
-    parts.push(readFileSync(publicCssPath, 'utf-8'));
-  } catch { /* not available */ }
-
-  // 2. Vite-built CLI dashboard CSS (Tailwind utilities for any shared classes)
-  const assetsDir = resolve(thisDir, '..', 'app', 'dist', 'assets');
-  try {
-    const cssFile = readdirSync(assetsDir).find((f) => f.endsWith('.css'));
-    if (cssFile) parts.push(readFileSync(join(assetsDir, cssFile), 'utf-8'));
-  } catch { /* not available */ }
-
-  return parts.join('\n');
+    return readFileSync(cssPath, 'utf-8');
+  } catch {
+    return '';
+  }
 }
 
 // ── In-memory HTML generation (for zip download) ─────────────
@@ -379,7 +368,7 @@ export function generateHtmlFiles(
     sessionBaseUrl: './sessions',
   });
 
-  const projectBody = renderProjectExportHtml(projectRenderData);
+  const projectBody = renderProjectHtml(projectRenderData);
   files.push({ path: 'index.html', content: buildStandalonePage(title, projectBody) });
 
   for (const session of selectedSessions) {

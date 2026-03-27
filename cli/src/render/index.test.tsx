@@ -1,12 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
-  renderPortfolioHtml,
   renderProjectHtml,
   renderSessionHtml,
   RenderError,
 } from './index.js';
 import type {
-  PortfolioRenderData,
   ProjectRenderData,
   SessionRenderData,
 } from './types.js';
@@ -14,33 +12,6 @@ import type {
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
-
-function makePortfolioData(overrides?: Partial<PortfolioRenderData>): PortfolioRenderData {
-  return {
-    user: {
-      username: 'testuser',
-      displayName: 'Test User',
-      bio: 'Builds things',
-      location: 'NYC',
-      status: 'open to work',
-      accent: '#084471',
-    },
-    projects: [
-      {
-        slug: 'my-project',
-        title: 'My Project',
-        narrative: 'A cool project',
-        totalSessions: 5,
-        totalLoc: 1200,
-        totalDurationMinutes: 340,
-        totalFilesChanged: 42,
-        skills: ['TypeScript', 'React'],
-        publishedCount: 3,
-      },
-    ],
-    ...overrides,
-  };
-}
 
 function makeProjectData(overrides?: Partial<ProjectRenderData>): ProjectRenderData {
   return {
@@ -112,65 +83,6 @@ function makeSessionData(overrides?: Partial<SessionRenderData>): SessionRenderD
 }
 
 // ---------------------------------------------------------------------------
-// Portfolio rendering
-// ---------------------------------------------------------------------------
-
-describe('renderPortfolioHtml', () => {
-  it('returns an HTML string with user info', () => {
-    const html = renderPortfolioHtml(makePortfolioData());
-    expect(html).toContain('Test User');
-    expect(html).toContain('Builds things');
-    expect(html).toContain('NYC');
-  });
-
-  it('renders project cards', () => {
-    const html = renderPortfolioHtml(makePortfolioData());
-    expect(html).toContain('My Project');
-    expect(html).toContain('A cool project');
-    expect(html).toContain('TypeScript');
-    expect(html).toContain('React');
-  });
-
-  it('renders empty projects array without crashing', () => {
-    const html = renderPortfolioHtml(makePortfolioData({ projects: [] }));
-    expect(html).toContain('Test User');
-    expect(html).not.toContain('portfolio-projects-grid');
-  });
-
-  it('produces a fragment, not a full HTML document', () => {
-    const html = renderPortfolioHtml(makePortfolioData());
-    expect(html).not.toContain('<html');
-    expect(html).not.toContain('<head>');
-    expect(html).not.toContain('<body');
-  });
-
-  it('throws RenderError with VALIDATION_ERROR when user is missing username', () => {
-    const bad = makePortfolioData();
-    (bad.user as any).username = '';
-    expect(() => renderPortfolioHtml(bad)).toThrow(RenderError);
-    try {
-      renderPortfolioHtml(bad);
-    } catch (e) {
-      expect((e as RenderError).code).toBe('VALIDATION_ERROR');
-      expect((e as RenderError).message).toContain('user.username');
-    }
-  });
-
-  it('reports all validation errors at once', () => {
-    const bad = makePortfolioData();
-    (bad.user as any).username = '';
-    (bad.user as any).displayName = '';
-    try {
-      renderPortfolioHtml(bad);
-    } catch (e) {
-      const msg = (e as RenderError).message;
-      expect(msg).toContain('user.username');
-      expect(msg).toContain('user.displayName');
-    }
-  });
-});
-
-// ---------------------------------------------------------------------------
 // Project rendering
 // ---------------------------------------------------------------------------
 
@@ -184,13 +96,7 @@ describe('renderProjectHtml', () => {
   it('renders session cards', () => {
     const html = renderProjectHtml(makeProjectData());
     expect(html).toContain('First Session');
-    expect(html).toContain('project-preview__session-card');
-  });
-
-  it('includes breadcrumb with username', () => {
-    const html = renderProjectHtml(makeProjectData());
-    expect(html).toContain('testuser');
-    expect(html).toContain('project-preview__breadcrumb');
+    expect(html).toContain('session-card');
   });
 
   it('renders skill chips', () => {
@@ -210,7 +116,7 @@ describe('renderProjectHtml', () => {
 
   it('omits links section when no URLs provided', () => {
     const html = renderProjectHtml(makeProjectData());
-    expect(html).not.toContain('project-preview__link');
+    expect(html).not.toContain('project-link');
   });
 
   it('renders screenshot img when screenshotUrl is provided', () => {
@@ -219,12 +125,19 @@ describe('renderProjectHtml', () => {
     const html = renderProjectHtml(data);
     expect(html).toContain('<img');
     expect(html).toContain('/testuser/my-project/screenshot.png');
-    expect(html).toContain('project-preview__screenshot');
+    expect(html).toContain('browser-chrome');
   });
 
   it('omits screenshot when screenshotUrl is not provided', () => {
     const html = renderProjectHtml(makeProjectData());
-    expect(html).not.toContain('project-preview__screenshot');
+    expect(html).not.toContain('browser-chrome');
+  });
+
+  it('produces a fragment, not a full HTML document', () => {
+    const html = renderProjectHtml(makeProjectData());
+    expect(html).not.toContain('<html');
+    expect(html).not.toContain('<head>');
+    expect(html).not.toContain('<body');
   });
 
   it('throws VALIDATION_ERROR when project slug is missing', () => {
@@ -245,11 +158,11 @@ describe('renderSessionHtml', () => {
     expect(html).toContain('Built the static HTML renderer');
   });
 
-  it('renders beats as an ordered list', () => {
+  it('renders beats', () => {
     const html = renderSessionHtml(makeSessionData());
     expect(html).toContain('Setup');
     expect(html).toContain('Created render directory');
-    expect(html).toContain('session-beats');
+    expect(html).toContain('beats-list');
   });
 
   it('renders Q&A pairs', () => {
@@ -279,13 +192,12 @@ describe('renderSessionHtml', () => {
   it('renders breadcrumb with project slug', () => {
     const html = renderSessionHtml(makeSessionData());
     expect(html).toContain('my-project');
-    expect(html).toContain('session-breadcrumb');
+    expect(html).toContain('breadcrumb');
   });
 
   it('omits project from breadcrumb when projectSlug is undefined', () => {
     const data = makeSessionData({ projectSlug: undefined });
     const html = renderSessionHtml(data);
-    // Should have username and session title, but no project link
     expect(html).toContain('testuser');
     expect(html).not.toContain('my-project');
   });
@@ -299,12 +211,11 @@ describe('renderSessionHtml', () => {
     minimal.session.topFiles = undefined;
     minimal.session.narrative = undefined;
     const html = renderSessionHtml(minimal);
-    expect(html).not.toContain('session-beats');
-    expect(html).not.toContain('session-qa');
-    expect(html).not.toContain('session-highlights');
-    expect(html).not.toContain('session-tools');
-    expect(html).not.toContain('session-files');
-    expect(html).not.toContain('session-narrative');
+    expect(html).not.toContain('beats-list');
+    expect(html).not.toContain('qa-pair');
+    expect(html).not.toContain('highlights-list');
+    expect(html).not.toContain('tool-list');
+    expect(html).not.toContain('file-list');
   });
 
   it('throws VALIDATION_ERROR when session token is missing', () => {
