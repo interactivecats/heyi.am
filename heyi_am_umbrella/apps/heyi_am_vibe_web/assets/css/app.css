@@ -3823,6 +3823,25 @@ details.collapsible .collapsible-content {
  * Dark, bold, personality-forward. Separate visual identity from heyi.am.
  * ════════════════════════════════════════════════════════════════════════════ */
 
+/* ── Skip link (a11y) ── */
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 0.5rem;
+  z-index: 100;
+  padding: 0.5rem 1rem;
+  background: var(--vibe-accent, #7c6df0);
+  color: #fff;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8125rem;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  left: 1rem;
+}
+
 .vibe-page {
   --vibe-bg: #0f0f1a;
   --vibe-surface: #1a1a2e;
@@ -3830,12 +3849,13 @@ details.collapsible .collapsible-content {
   --vibe-accent: #7c6df0;
   --vibe-accent-dim: #5a4dc7;
   --vibe-text: #e8e8f0;
-  --vibe-text-dim: #8888a0;
-  --vibe-text-muted: #55556a;
+  --vibe-text-dim: #a0a0b8;
+  --vibe-text-muted: #77779a;
   --vibe-border: #2a2a4a;
   --vibe-green: #4ade80;
   --vibe-amber: #fbbf24;
   --vibe-red: #f87171;
+  --vibe-focus: #9d90f5;
 
   background: var(--vibe-bg);
   color: var(--vibe-text);
@@ -3849,6 +3869,19 @@ details.collapsible .collapsible-content {
 /* Override app layout background for vibe pages */
 body:has(.vibe-page) {
   background: #0f0f1a !important;
+}
+
+/* ── Focus styles (a11y) ── */
+.vibe-page :focus-visible {
+  outline: 2px solid var(--vibe-focus);
+  outline-offset: 2px;
+}
+
+.vibe-page a:focus-visible,
+.vibe-page button:focus-visible {
+  outline: 2px solid var(--vibe-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .vibe-label {
@@ -3909,6 +3942,7 @@ body:has(.vibe-page) {
   margin-top: 1.5rem;
 }
 
+.vibe-stat-col h2,
 .vibe-stat-col h3 {
   font-size: 0.6875rem;
   font-weight: 500;
@@ -3970,7 +4004,8 @@ body:has(.vibe-page) {
 
 .vibe-btn {
   display: inline-block;
-  padding: 0.625rem 1.5rem;
+  padding: 0.75rem 1.5rem;
+  min-height: 44px;
   background: var(--vibe-accent);
   color: #fff;
   font-family: 'IBM Plex Mono', monospace;
@@ -3979,6 +4014,7 @@ body:has(.vibe-page) {
   text-decoration: none;
   border-radius: 6px;
   transition: background 0.15s;
+  line-height: 1.4;
 }
 
 .vibe-btn:hover {
@@ -4045,9 +4081,11 @@ body:has(.vibe-page) {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.8125rem;
   font-weight: 500;
-  padding: 0.625rem 1.5rem;
+  padding: 0.75rem 1.5rem;
+  min-height: 44px;
   border-radius: 6px;
   transition: background 0.15s, box-shadow 0.15s;
+  line-height: 1.4;
 }
 
 .vibe-btn-danger:hover {
@@ -4166,6 +4204,56 @@ body:has(.vibe-page) {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Archetype Gallery ── */
+
+.vibe-archetypes {
+  margin-top: 2.5rem;
+}
+
+.vibe-archetypes h2 {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--vibe-accent);
+  margin-bottom: 1rem;
+}
+
+.vibe-archetype-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.vibe-archetype-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.875rem 1rem;
+  background: var(--vibe-surface);
+  border: 1px solid var(--vibe-border);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+
+.vibe-archetype-card:hover {
+  border-color: var(--vibe-accent);
+}
+
+.vibe-archetype-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.vibe-archetype-tagline {
+  font-size: 0.75rem;
+  color: var(--vibe-text-dim);
+  line-height: 1.4;
+}
+
 /* ── Recent Vibes Grid ── */
 
 .vibe-recent {
@@ -4230,6 +4318,28 @@ body:has(.vibe-page) {
   color: var(--vibe-text-muted);
 }
 
+/* ── Site Footer ── */
+
+.vibe-site-footer {
+  text-align: center;
+  padding: 2rem 1rem 1.5rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  color: #77779a;
+  border-top: 1px solid #2a2a4a;
+  max-width: 900px;
+  margin: 3rem auto 0;
+}
+
+.vibe-site-footer a {
+  color: #7c6df0;
+  text-decoration: none;
+}
+
+.vibe-site-footer a:hover {
+  text-decoration: underline;
+}
+
 /* ── Archetype Detail Page ── */
 
 .vibe-archetype-page {
@@ -4291,7 +4401,21 @@ body:has(.vibe-page) {
     grid-template-columns: 1fr;
   }
 
+  .vibe-archetype-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .vibe-cmd {
     font-size: 0.9375rem;
+  }
+
+  .vibe-delete-actions {
+    flex-direction: column;
+  }
+
+  .vibe-delete-actions .vibe-btn,
+  .vibe-delete-actions .vibe-btn-danger {
+    width: 100%;
+    text-align: center;
   }
 }

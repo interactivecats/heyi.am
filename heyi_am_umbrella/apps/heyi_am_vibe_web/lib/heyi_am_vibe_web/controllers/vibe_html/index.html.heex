@@ -1,41 +1,51 @@
 <div class="vibe-page vibe-index">
-  <div class="vibe-hero">
+  <header class="vibe-hero">
     <h1 class="vibe-title">HOW DO YOU VIBE?</h1>
     <p class="vibe-subtitle">Find out how you work with AI coding tools.</p>
-    <code class="vibe-cmd">npx howdoyouvibe</code>
-    <p class="vibe-counter">
-      <%= if @count > 0 do %>
+    <code class="vibe-cmd" aria-label="Run this command to get your vibe">npx howdoyouvibe</code>
+    <%= if @count >= 1000 do %>
+      <p class="vibe-counter">
         <strong><%= @count |> Integer.to_string() |> String.replace(~r/\B(?=(\d{3})+(?!\d))/, ",") %></strong> devs have vibed
-      <% else %>
-        Be the first to vibe.
-      <% end %>
-    </p>
-  </div>
+      </p>
+    <% end %>
+  </header>
 
-  <%= if @distribution != [] do %>
-    <div class="vibe-distribution">
-      <h2>Archetype breakdown</h2>
-      <div class="vibe-dist-list">
+  <%= if @count >= 1000 and @distribution != [] do %>
+    <section class="vibe-distribution" aria-labelledby="dist-heading">
+      <h2 id="dist-heading">Archetype breakdown</h2>
+      <nav class="vibe-dist-list" aria-label="Archetypes">
         <%= for {archetype_id, count} <- @distribution do %>
           <% meta = Map.get(@archetype_meta, archetype_id, %{name: archetype_id, tagline: ""}) %>
-          <a href={~p"/archetypes/#{archetype_id}"} class="vibe-dist-item">
+          <a href={~p"/archetypes/#{archetype_id}"} class="vibe-dist-item" aria-label={"#{meta.name} — #{count} devs"}>
             <span class="vibe-dist-name"><%= meta.name %></span>
-            <span class="vibe-dist-count"><%= count %></span>
+            <span class="vibe-dist-count" aria-hidden="true"><%= count %></span>
           </a>
         <% end %>
-      </div>
-    </div>
+      </nav>
+    </section>
   <% end %>
 
+  <section class="vibe-archetypes" aria-labelledby="archetypes-heading">
+    <h2 id="archetypes-heading">The archetypes</h2>
+    <div class="vibe-archetype-grid">
+      <%= for {id, meta} <- @archetype_meta do %>
+        <a href={~p"/archetypes/#{id}"} class="vibe-archetype-card">
+          <span class="vibe-archetype-name"><%= meta.name %></span>
+          <span class="vibe-archetype-tagline"><%= meta.tagline %></span>
+        </a>
+      <% end %>
+    </div>
+  </section>
+
   <%= if @recent != [] do %>
-    <div class="vibe-recent">
-      <h2>Recent vibes</h2>
+    <section class="vibe-recent" aria-labelledby="recent-heading">
+      <h2 id="recent-heading">Recent vibes</h2>
       <div class="vibe-grid">
         <%= for vibe <- @recent do %>
           <% meta = Map.get(@archetype_meta, vibe.archetype_id, %{name: "Vibe Coder", tagline: ""}) %>
           <% modifier = Map.get(@modifier_phrases, vibe.modifier_id, nil) %>
           <a href={~p"/#{vibe.short_id}"} class="vibe-card-link">
-            <div class="vibe-card-mini">
+            <article class="vibe-card-mini">
               <h3>
                 <%= meta.name %><%= if modifier, do: " #{modifier}" %>
               </h3>
@@ -43,10 +53,10 @@
               <span class="vibe-card-meta">
                 <%= vibe.session_count %> sessions &middot; <%= Enum.join(vibe.sources || [], ", ") %>
               </span>
-            </div>
+            </article>
           </a>
         <% end %>
       </div>
-    </div>
+    </section>
   <% end %>
 </div>

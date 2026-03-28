@@ -3,6 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={assigns[:og_description] || "Find out how you work with AI coding tools. Run npx howdoyouvibe to get your vibe."} />
+    <meta name="theme-color" content="#0f0f1a" />
     <title>
       <%= assigns[:page_title] || "HOW DO YOU VIBE?" %>
     </title>
@@ -11,13 +13,23 @@
       <meta property="og:description" content={@og_description} />
       <meta property="og:image" content={@og_image} />
       <meta property="og:url" content={@og_url} />
+      <meta property="og:type" content="website" />
       <meta name="twitter:card" content="summary_large_image" />
     <% end %>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
     <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
     </script>
   </head>
   <body>
-    {@inner_content}
+    <a href="#main-content" class="skip-link">Skip to content</a>
+    <main id="main-content">
+      {@inner_content}
+    </main>
+    <footer class="vibe-site-footer">
+      Brought to you by <a href="https://heyiam.com">heyiam.com</a>
+    </footer>
   </body>
 </html>
