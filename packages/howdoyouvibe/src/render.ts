@@ -32,7 +32,6 @@ export function link(url: string, text?: string): string {
 
 const LINE = "═".repeat(80);
 const THIN = "─".repeat(80);
-const PLAIN_LINE = "═".repeat(80);
 const INDENT = "  ";
 
 function pct(n: number): string {

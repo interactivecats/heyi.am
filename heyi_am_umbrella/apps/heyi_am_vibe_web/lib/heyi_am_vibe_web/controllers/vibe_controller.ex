@@ -175,7 +175,8 @@ defmodule HeyiAmVibeWeb.VibeController do
         |> render(:gone, page_title: "Vibe removed")
 
       vibe ->
-        if Plug.Crypto.secure_compare(vibe.delete_code, code) do
+        if byte_size(code) == byte_size(vibe.delete_code) and
+             Plug.Crypto.secure_compare(vibe.delete_code, code) do
           render(conn, :delete_confirm,
             vibe: vibe,
             code: code,

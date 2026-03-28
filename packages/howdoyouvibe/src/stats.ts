@@ -241,7 +241,6 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
       : 0;
 
     // Track previous entry type for correction detection
-    let prevEntryHadToolUse = false;
     let prevEntryWasAssistant = false;
     let currentToolChain = 0;
     let currentAutopilot = 0;
@@ -353,7 +352,6 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
         filesEditedInRun.clear();
         aiAdmittedMistakeInRun = false;
 
-        prevEntryHadToolUse = false;
         prevEntryWasAssistant = false;
       }
 
@@ -413,7 +411,6 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
           }
         }
 
-        prevEntryHadToolUse = toolBlocks.length > 0;
         prevEntryWasAssistant = true;
       }
     }

@@ -21,7 +21,8 @@ defmodule HeyiAm.Vibes do
       nil -> {:error, :not_found}
       %{anonymized_at: %DateTime{}} -> {:error, :already_anonymized}
       vibe ->
-        if Plug.Crypto.secure_compare(vibe.delete_code, code) do
+        if byte_size(code) == byte_size(vibe.delete_code) and
+             Plug.Crypto.secure_compare(vibe.delete_code, code) do
           vibe
           |> Ecto.Changeset.change(%{
             headline: nil,
@@ -98,10 +99,9 @@ defmodule HeyiAm.Vibes do
 
   defp generate_short_id do
     alphabet = String.graphemes(@nanoid_alphabet)
-    len = length(alphabet)
 
     1..@nanoid_length
-    |> Enum.map(fn _ -> Enum.at(alphabet, :rand.uniform(len) - 1) end)
+    |> Enum.map(fn _ -> Enum.random(alphabet) end)
     |> Enum.join()
   end
 end

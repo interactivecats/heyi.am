@@ -73,7 +73,7 @@ defmodule HeyiAm.Vibes.Vibe do
 
   defp validate_sources(changeset) do
     validate_change(changeset, :sources, fn :sources, value ->
-      valid = ~w(claude cursor codex gemini)
+      valid = ~w(claude cursor codex gemini antigravity)
       if is_list(value) and Enum.all?(value, &(&1 in valid)),
         do: [],
         else: [sources: "must be a list of known tool names"]
