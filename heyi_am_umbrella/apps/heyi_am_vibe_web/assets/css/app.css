@@ -4019,6 +4019,24 @@ body:has(.vibe-page) {
   text-decoration: underline;
 }
 
+.vibe-delete-actions {
+  margin-top: 2rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.vibe-btn-danger {
+  background: #c0392b;
+  border: none;
+  cursor: pointer;
+}
+
+.vibe-btn-danger:hover {
+  background: #96281b;
+}
+
 /* ── Homepage ────────────────────────────────────────────────────────────── */
 
 .vibe-hero {

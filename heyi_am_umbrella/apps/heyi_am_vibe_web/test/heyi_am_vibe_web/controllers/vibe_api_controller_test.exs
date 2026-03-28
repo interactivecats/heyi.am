@@ -20,7 +20,8 @@ defmodule HeyiAmVibeWeb.VibeApiControllerTest do
       assert response["short_id"]
       assert response["url"] =~ response["short_id"]
       assert response["card_url"] =~ "card.png"
-      assert response["delete_url"] =~ "code="
+      assert response["delete_url"] =~ "/delete?code="
+      assert response["delete_code"] =~ ~r/^[A-Z]+-[A-Z]+-\d{4}$/
     end
 
     test "returns validation errors for missing fields", %{conn: conn} do

@@ -66,7 +66,8 @@ defmodule HeyiAmVibeWeb.VibeApiController do
           url: "#{base_url}/#{vibe.short_id}",
           short_id: vibe.short_id,
           card_url: "#{base_url}/#{vibe.short_id}/card.png",
-          delete_url: "#{base_url}/#{vibe.short_id}?code=#{vibe.delete_code}"
+          delete_url: "#{base_url}/#{vibe.short_id}/delete?code=#{vibe.delete_code}",
+          delete_code: vibe.delete_code
         })
 
       {:error, changeset} ->

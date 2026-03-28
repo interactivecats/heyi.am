@@ -12,16 +12,14 @@ defmodule HeyiAmVibeWeb.Integration.VibeLifecycleTest do
     "total_turns" => 1500
   }
 
-  test "full vibe lifecycle: create via API, view in gallery, delete", %{conn: conn} do
+  test "full vibe lifecycle: create via API, view in gallery, anonymize", %{conn: conn} do
     # 1. Create via API
     conn = post(conn, ~p"/api/vibes", @valid_attrs)
     create_response = json_response(conn, 201)
     short_id = create_response["short_id"]
+    delete_code = create_response["delete_code"]
     assert short_id
-
-    # Extract delete code from URL
-    delete_url = create_response["delete_url"]
-    [_, code] = String.split(delete_url, "code=")
+    assert delete_code =~ ~r/^[A-Z]+-[A-Z]+-\d{4}$/
 
     # 2. View in gallery index
     conn = build_conn()
@@ -41,14 +39,27 @@ defmodule HeyiAmVibeWeb.Integration.VibeLifecycleTest do
     assert response(conn, 200)
     assert get_resp_header(conn, "content-type") |> hd() =~ "image/svg+xml"
 
-    # 5. Delete with code
+    # 5. View delete confirmation page
     conn = build_conn()
-    conn = delete(conn, "/#{short_id}?code=#{code}")
+    conn = get(conn, "/#{short_id}/delete?code=#{delete_code}")
+    assert html_response(conn, 200) =~ "Delete your vibe?"
+
+    # 6. Anonymize with code
+    conn = build_conn()
+    conn = delete(conn, "/#{short_id}?code=#{delete_code}")
     assert redirected_to(conn) == "/?deleted=true"
 
-    # 6. Verify it's gone
+    # 7. Verify it shows gone page (410, not 404)
     conn = build_conn()
     conn = get(conn, "/#{short_id}")
-    assert html_response(conn, 404)
+    response = html_response(conn, 410)
+    assert response =~ "removed"
+    assert response =~ "npx howdoyouvibe"
+
+    # 8. Verify it's excluded from gallery but still in count
+    conn = build_conn()
+    conn = get(conn, ~p"/")
+    response = html_response(conn, 200)
+    refute response =~ "The Architect who reads 5x more"
   end
 end

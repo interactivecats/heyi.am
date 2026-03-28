@@ -19,6 +19,7 @@ defmodule HeyiAm.Vibes.Vibe do
     field :sources, {:array, :string}, default: []
     field :session_count, :integer
     field :total_turns, :integer
+    field :anonymized_at, :utc_datetime
 
     timestamps(type: :utc_datetime)
   end

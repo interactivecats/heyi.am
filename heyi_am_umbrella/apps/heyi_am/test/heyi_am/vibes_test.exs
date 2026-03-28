@@ -85,6 +85,48 @@ defmodule HeyiAm.VibesTest do
     end
   end
 
+  describe "delete_vibe/2 (anonymize)" do
+    test "anonymizes vibe with correct code" do
+      vibe = vibe_fixture()
+      {:ok, anon} = Vibes.delete_vibe(vibe.short_id, vibe.delete_code)
+      assert anon.anonymized_at
+      assert anon.headline == nil
+      assert anon.stats == %{}
+      assert anon.delete_code == "USED"
+      # archetype preserved for aggregates
+      assert anon.archetype_id == vibe.archetype_id
+      assert anon.session_count == vibe.session_count
+    end
+
+    test "rejects wrong code" do
+      vibe = vibe_fixture()
+      assert {:error, :invalid_code} = Vibes.delete_vibe(vibe.short_id, "WRONG-CODE-1234")
+    end
+
+    test "returns not_found for missing vibe" do
+      assert {:error, :not_found} = Vibes.delete_vibe("zzzzzzz", "any")
+    end
+
+    test "returns already_anonymized for re-delete" do
+      vibe = vibe_fixture()
+      {:ok, _} = Vibes.delete_vibe(vibe.short_id, vibe.delete_code)
+      assert {:error, :already_anonymized} = Vibes.delete_vibe(vibe.short_id, "USED")
+    end
+  end
+
+  describe "list_recent_vibes/1 with anonymized vibes" do
+    test "excludes anonymized vibes" do
+      v1 = vibe_fixture()
+      v2 = vibe_fixture()
+      {:ok, _} = Vibes.delete_vibe(v1.short_id, v1.delete_code)
+
+      recent = Vibes.list_recent_vibes(limit: 10)
+      ids = Enum.map(recent, & &1.id)
+      assert v2.id in ids
+      refute v1.id in ids
+    end
+  end
+
   describe "count_vibes/0" do
     test "returns 0 when empty" do
       assert Vibes.count_vibes() == 0
@@ -93,6 +135,13 @@ defmodule HeyiAm.VibesTest do
     test "returns correct count" do
       vibe_fixture()
       vibe_fixture()
+      assert Vibes.count_vibes() == 2
+    end
+
+    test "includes anonymized vibes in count" do
+      v1 = vibe_fixture()
+      vibe_fixture()
+      {:ok, _} = Vibes.delete_vibe(v1.short_id, v1.delete_code)
       assert Vibes.count_vibes() == 2
     end
   end
@@ -106,6 +155,22 @@ defmodule HeyiAm.VibesTest do
       dist = Vibes.archetype_distribution()
       assert {"night-owl", 2} in dist
       assert {"diplomat", 1} in dist
+    end
+
+    test "includes anonymized vibes in distribution" do
+      v1 = vibe_fixture(%{"archetype_id" => "night-owl"})
+      vibe_fixture(%{"archetype_id" => "night-owl"})
+      {:ok, _} = Vibes.delete_vibe(v1.short_id, v1.delete_code)
+
+      dist = Vibes.archetype_distribution()
+      assert {"night-owl", 2} in dist
+    end
+  end
+
+  describe "generate_delete_code format" do
+    test "creates human-friendly WORD-WORD-DIGITS codes" do
+      {:ok, vibe} = Vibes.create_vibe(valid_vibe_attributes())
+      assert vibe.delete_code =~ ~r/^[A-Z]+-[A-Z]+-\d{4}$/
     end
   end
 end

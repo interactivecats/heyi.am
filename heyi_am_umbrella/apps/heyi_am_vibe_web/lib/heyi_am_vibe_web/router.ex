@@ -32,6 +32,7 @@ defmodule HeyiAmVibeWeb.Router do
     get "/", VibeController, :index
     get "/archetypes/:id", VibeController, :archetype
     get "/:short_id/card.png", VibeController, :card_image
+    get "/:short_id/delete", VibeController, :delete_confirm
     delete "/:short_id", VibeController, :delete
     get "/:short_id", VibeController, :show
   end

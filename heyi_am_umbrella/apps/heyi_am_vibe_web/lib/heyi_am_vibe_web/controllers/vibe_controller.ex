@@ -66,6 +66,11 @@ defmodule HeyiAmVibeWeb.VibeController do
         |> put_view(HeyiAmVibeWeb.ErrorHTML)
         |> render(:"404")
 
+      %{anonymized_at: %DateTime{}} ->
+        conn
+        |> put_status(:gone)
+        |> render(:gone, page_title: "Vibe removed")
+
       vibe ->
         archetype = Map.get(@archetype_meta, vibe.archetype_id, %{name: "The Vibe Coder", tagline: ""})
         modifier = Map.get(@modifier_phrases, vibe.modifier_id, nil)
@@ -154,6 +159,37 @@ defmodule HeyiAmVibeWeb.VibeController do
     end
   end
 
+  def delete_confirm(conn, %{"short_id" => short_id} = params) do
+    code = params["code"] || ""
+
+    case Vibes.get_vibe_by_short_id(short_id) do
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(HeyiAmVibeWeb.ErrorHTML)
+        |> render(:"404")
+
+      %{anonymized_at: %DateTime{}} ->
+        conn
+        |> put_status(:gone)
+        |> render(:gone, page_title: "Vibe removed")
+
+      vibe ->
+        if Plug.Crypto.secure_compare(vibe.delete_code, code) do
+          render(conn, :delete_confirm,
+            vibe: vibe,
+            code: code,
+            page_title: "Delete your vibe?"
+          )
+        else
+          conn
+          |> put_status(:forbidden)
+          |> put_view(HeyiAmVibeWeb.ErrorHTML)
+          |> render(:"404")
+        end
+    end
+  end
+
   def delete(conn, %{"short_id" => short_id} = params) do
     code = params["code"] || ""
 
@@ -161,6 +197,11 @@ defmodule HeyiAmVibeWeb.VibeController do
       {:ok, _vibe} ->
         conn
         |> redirect(to: ~p"/?deleted=true")
+
+      {:error, :already_anonymized} ->
+        conn
+        |> put_status(:gone)
+        |> render(:gone, page_title: "Vibe removed")
 
       {:error, :not_found} ->
         conn

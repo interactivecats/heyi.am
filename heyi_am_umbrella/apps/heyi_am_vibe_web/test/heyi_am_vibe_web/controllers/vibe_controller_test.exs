@@ -77,13 +77,48 @@ defmodule HeyiAmVibeWeb.VibeControllerTest do
     end
   end
 
+  describe "GET /:short_id (show) anonymized" do
+    setup [:create_vibe]
+
+    test "returns 410 for anonymized vibe", %{conn: conn, vibe: vibe} do
+      {:ok, _} = Vibes.delete_vibe(vibe.short_id, vibe.delete_code)
+      conn = get(conn, ~p"/#{vibe.short_id}")
+      response = html_response(conn, 410)
+      assert response =~ "removed"
+      assert response =~ "npx howdoyouvibe"
+    end
+  end
+
+  describe "GET /:short_id/delete (confirm)" do
+    setup [:create_vibe]
+
+    test "shows confirmation page with correct code", %{conn: conn, vibe: vibe} do
+      conn = get(conn, ~p"/#{vibe.short_id}/delete?code=#{vibe.delete_code}")
+      response = html_response(conn, 200)
+      assert response =~ "Delete your vibe?"
+      assert response =~ "Yes, delete my vibe"
+    end
+
+    test "rejects with wrong code", %{conn: conn, vibe: vibe} do
+      conn = get(conn, ~p"/#{vibe.short_id}/delete?code=WRONG-CODE-1234")
+      assert html_response(conn, 403)
+    end
+
+    test "returns 410 for already anonymized vibe", %{conn: conn, vibe: vibe} do
+      {:ok, _} = Vibes.delete_vibe(vibe.short_id, vibe.delete_code)
+      conn = get(conn, ~p"/#{vibe.short_id}/delete?code=USED")
+      assert html_response(conn, 410)
+    end
+  end
+
   describe "DELETE /:short_id" do
     setup [:create_vibe]
 
-    test "deletes vibe with correct code", %{conn: conn, vibe: vibe} do
+    test "anonymizes vibe with correct code and redirects", %{conn: conn, vibe: vibe} do
       conn = delete(conn, ~p"/#{vibe.short_id}?code=#{vibe.delete_code}")
       assert redirected_to(conn) == ~p"/?deleted=true"
-      assert is_nil(Vibes.get_vibe_by_short_id(vibe.short_id))
+      anon = Vibes.get_vibe_by_short_id(vibe.short_id)
+      assert anon.anonymized_at
     end
 
     test "rejects delete with wrong code", %{conn: conn, vibe: vibe} do
@@ -95,6 +130,12 @@ defmodule HeyiAmVibeWeb.VibeControllerTest do
     test "returns 404 for unknown vibe", %{conn: conn} do
       conn = delete(conn, ~p"/nonexist?code=abc")
       assert html_response(conn, 404)
+    end
+
+    test "returns 410 for already anonymized vibe", %{conn: conn, vibe: vibe} do
+      {:ok, _} = Vibes.delete_vibe(vibe.short_id, vibe.delete_code)
+      conn = delete(conn, ~p"/#{vibe.short_id}?code=USED")
+      assert html_response(conn, 410)
     end
   end
 end
