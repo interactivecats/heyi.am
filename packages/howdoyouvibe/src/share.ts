@@ -9,7 +9,7 @@ function formatRetryWait(seconds: number): string {
 
 const SHARE_URL = process.env.VIBE_API_URL
   ? `${process.env.VIBE_API_URL}/api/vibes`
-  : "https://heyi.am/api/vibes";
+  : "https://howdoyouvibe.com/api/vibes";
 
 interface ShareResponse {
   url: string;

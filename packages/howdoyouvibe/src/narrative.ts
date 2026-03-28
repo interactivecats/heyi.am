@@ -16,7 +16,7 @@ function formatRetryWait(seconds: number): string {
 
 const NARRATIVE_URL = process.env.VIBE_API_URL
   ? `${process.env.VIBE_API_URL}/api/vibes/narrative`
-  : "https://heyi.am/api/vibes/narrative";
+  : "https://howdoyouvibe.com/api/vibes/narrative";
 
 export interface NarrativeResult {
   headline: string;

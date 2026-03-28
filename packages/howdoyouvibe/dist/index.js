@@ -3,7 +3,7 @@ import { listSessions, parseSession } from "./parsers/index.js";
 import { computeVibeStats } from "./stats.js";
 import { matchArchetype } from "./archetypes.js";
 import { fetchNarrative, localResult } from "./narrative.js";
-import { renderCard, formatTextBlock, copyToClipboard, promptYesNo } from "./render.js";
+import { renderCard, formatTextBlock, copyToClipboard, promptYesNo, link } from "./render.js";
 import { shareVibe } from "./share.js";
 import { execFile } from "node:child_process";
 import { platform } from "node:os";
@@ -56,10 +56,10 @@ let cloudConsent = false;
 if (process.stdin.isTTY) {
     console.log("");
     console.log("  To generate your narrative, we send computed stats (numbers");
-    console.log("  only) to heyi.am. No session text, no file paths, no");
-    console.log("  project names. Stats are processed in memory and not");
+    console.log("  only) to howdoyouvibe.com. No session text, no file paths,");
+    console.log("  no project names. Stats are processed in memory and not");
     console.log("  stored unless you choose to share. Shared vibes are public.");
-    console.log("  Privacy: heyi.am/privacy");
+    console.log(`  Privacy: ${link("https://heyiam.com/privacy", "heyiam.com/privacy")}`);
     console.log("");
     cloudConsent = await promptYesNo("  Send stats to generate narrative?");
     if (!cloudConsent) {
@@ -93,12 +93,13 @@ if (process.stdin.isTTY) {
             console.log("\n  Couldn't share — your vibe lives on your machine.");
         }
     }
-    console.log("\n  See your full session-by-session breakdown:");
-    console.log("    npx heyiam");
     console.log("");
     console.log("  This is a personality quiz, not a performance review.");
     console.log("  Stats are approximate, based on incomplete data, and");
     console.log("  should not be used for hiring, evaluation, or any");
-    console.log("  employment decision. Have fun with it.\n");
+    console.log("  employment decision. Have fun with it.");
+    console.log("");
+    console.log(`  Archive, analyze and share your AI work with ${link("https://heyiam.com", "heyiam.com")}`);
+    console.log("");
 }
 //# sourceMappingURL=index.js.map

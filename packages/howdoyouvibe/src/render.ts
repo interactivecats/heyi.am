@@ -20,7 +20,15 @@ const c = {
   bold: esc("\x1b[1m"),
   dim: esc("\x1b[2m"),
   cyan: esc("\x1b[36m"),
+  underline: esc("\x1b[4m"),
 };
+
+/** OSC 8 clickable hyperlink — falls back to plain text if NO_COLOR */
+export function link(url: string, text?: string): string {
+  const label = text ?? url;
+  if (noColor) return label;
+  return `\x1b]8;;${url}\x1b\\${c.cyan}${c.underline}${label}${c.reset}\x1b]8;;\x1b\\`;
+}
 
 const LINE = "═".repeat(80);
 const THIN = "─".repeat(80);
@@ -143,6 +151,7 @@ export function renderCard(
   const dailyHours = stats.avg_daily_hours > 0 ? `  ·  ${c.cyan}${stats.avg_daily_hours}${c.reset}h/day avg` : "";
   lines.push(`${INDENT}${c.cyan}${fmt(stats.total_turns)}${c.reset} turns across ${c.cyan}${stats.session_count}${c.reset} sessions${dailyHours}`);
   lines.push(`${INDENT}Based on the last ~30 days of sessions. All analysis ran locally.`);
+  lines.push(`${INDENT}Powered by ${link("https://heyiam.com", "heyiam.com")}`);
   lines.push("");
 
   console.log(lines.join("\n"));

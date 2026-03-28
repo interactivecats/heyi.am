@@ -11,7 +11,7 @@ function formatRetryWait(seconds) {
 }
 const NARRATIVE_URL = process.env.VIBE_API_URL
     ? `${process.env.VIBE_API_URL}/api/vibes/narrative`
-    : "https://heyi.am/api/vibes/narrative";
+    : "https://howdoyouvibe.com/api/vibes/narrative";
 /**
  * Fetch a headline + 2-sentence narrative from the server (Gemini Flash).
  * Falls back to static archetype match and template if the server is unreachable.
