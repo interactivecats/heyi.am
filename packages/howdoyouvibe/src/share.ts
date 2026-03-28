@@ -1,6 +1,12 @@
 import type { VibeStats } from "./types.js";
 import type { ArchetypeMatch } from "./archetypes.js";
 
+function formatRetryWait(seconds: number): string {
+  if (seconds >= 3600) return `${Math.ceil(seconds / 3600)}h`;
+  if (seconds >= 60) return `${Math.ceil(seconds / 60)}m`;
+  return `${seconds}s`;
+}
+
 const SHARE_URL = process.env.VIBE_API_URL
   ? `${process.env.VIBE_API_URL}/api/vibes`
   : "https://heyi.am/api/vibes";
@@ -27,7 +33,9 @@ export async function shareVibe(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        stats,
+        stats: Object.fromEntries(
+          Object.entries(stats).filter(([, v]) => typeof v === "number"),
+        ),
         archetype_id: match.primary.id,
         modifier_id: match.modifier?.id ?? null,
         headline,
@@ -38,6 +46,13 @@ export async function shareVibe(
       }),
       signal: AbortSignal.timeout(10000),
     });
+
+    if (res.status === 429) {
+      const retryAfter = res.headers.get("retry-after");
+      const wait = retryAfter ? formatRetryWait(Number(retryAfter)) : "later";
+      console.log(`\n  Rate limited — try again in ${wait}.`);
+      return null;
+    }
 
     if (!res.ok) return null;
 

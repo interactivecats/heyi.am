@@ -107,7 +107,7 @@ defmodule HeyiAmVibeWeb.VibeApiController do
       headline =
         case headline_result do
           {:ok, h} -> h
-          _ -> fallback_headline(archetype_name, safe_modifier)
+          _ -> fallback_headline(archetype_name, safe_modifier, safe_stats)
         end
 
       narrative =
@@ -149,12 +149,32 @@ defmodule HeyiAmVibeWeb.VibeApiController do
     provider.complete(system, user)
   end
 
-  defp fallback_headline(archetype_name, modifier_phrase) do
-    if modifier_phrase do
-      "#{archetype_name} #{modifier_phrase}"
-    else
-      archetype_name
-    end
+  defp fallback_headline(archetype_name, modifier_phrase, stats) do
+    sessions = stats["session_count"]
+    turns = stats["total_turns"]
+
+    # Try to make the headline more specific with a stat
+    stat_flavor =
+      cond do
+        is_number(turns) and turns > 10_000 ->
+          "#{Integer.to_string(round(turns))}-Turn"
+
+        is_number(sessions) and sessions > 100 ->
+          "#{round(sessions)}-Session"
+
+        true ->
+          nil
+      end
+
+    base =
+      case {stat_flavor, modifier_phrase} do
+        {nil, nil} -> archetype_name
+        {nil, mod} -> "#{archetype_name} #{mod}"
+        {flavor, nil} -> String.replace(archetype_name, "The ", "The #{flavor} ")
+        {flavor, mod} -> "#{String.replace(archetype_name, "The ", "The #{flavor} ")} #{mod}"
+      end
+
+    if String.length(base) > 76, do: archetype_name, else: base
   end
 
   defp generate_narrative(stats, archetype_name, modifier_phrase) do
@@ -179,7 +199,35 @@ defmodule HeyiAmVibeWeb.VibeApiController do
   end
 
   defp fallback_narrative(archetype_name, stats) do
-    session_count = stats["session_count"] || stats[:session_count] || "several"
-    "#{archetype_name}. #{session_count} sessions analyzed — your patterns tell the story."
+    sessions = stats["session_count"] || "several"
+    turns = stats["total_turns"]
+    autopilot = stats["longest_autopilot"]
+    corrections = stats["corrections"]
+    expletives = stats["expletives"]
+    late = stats["late_night_rate"]
+
+    # Pick the most interesting stat for a second sentence
+    color =
+      cond do
+        is_number(autopilot) and autopilot > 200 ->
+          "Longest leash: #{round(autopilot)} turns without touching the wheel."
+
+        is_number(expletives) and expletives > 20 ->
+          "#{round(expletives)} expletives across #{sessions} sessions. Things got heated."
+
+        is_number(late) and late > 0.25 ->
+          "#{round(late * 100)}% of your coding happened after midnight."
+
+        is_number(corrections) and corrections > 20 ->
+          "You corrected the AI #{round(corrections)} times. You know what you want."
+
+        is_number(turns) ->
+          "#{Integer.to_string(round(turns))} turns across #{sessions} sessions — that's a conversation."
+
+        true ->
+          "#{sessions} sessions analyzed — your patterns tell the story."
+      end
+
+    "#{archetype_name}. #{color}"
   end
 end

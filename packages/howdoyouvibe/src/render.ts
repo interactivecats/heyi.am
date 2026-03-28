@@ -10,11 +10,8 @@ const COL_WIDTH = 28;
 
 // ─── ANSI colors (no dependencies) ──────────────────────────────────────────
 // Respect NO_COLOR (https://no-color.org) — strip all escapes when set.
-// Use only colors safe on both light and dark terminals:
-//   - cyan, magenta, green are universally readable
-//   - yellow (33) replaced with bright cyan (96) — yellow is invisible on light bg
-//   - white (37) replaced with bold default — white is invisible on light bg
-//   - gray (90) replaced with dim default — bright-black vanishes on light themes
+// Design: default terminal text for all labels/words, cyan accent on numbers only.
+// Cyan is safe on virtually every terminal background (dark, light, grey).
 const noColor = "NO_COLOR" in process.env;
 const esc = (code: string) => (noColor ? "" : code);
 
@@ -23,18 +20,10 @@ const c = {
   bold: esc("\x1b[1m"),
   dim: esc("\x1b[2m"),
   cyan: esc("\x1b[36m"),
-  magenta: esc("\x1b[35m"),
-  yellow: esc("\x1b[96m"),  // bright cyan — safe on light+dark
-  green: esc("\x1b[32m"),
-  red: esc("\x1b[31m"),
-  blue: esc("\x1b[34m"),
-  white: esc("\x1b[1m"),    // bold default fg — safe on light+dark
-  gray: esc("\x1b[2m"),     // dim default fg — safe on light+dark
-  bgBlack: "",              // removed — forces black bg which hurts light themes
 };
 
-const LINE = `${c.cyan}${"═".repeat(80)}${c.reset}`;
-const THIN = `${c.cyan}${"─".repeat(80)}${c.reset}`;
+const LINE = "═".repeat(80);
+const THIN = "─".repeat(80);
 const PLAIN_LINE = "═".repeat(80);
 const INDENT = "  ";
 
@@ -77,7 +66,7 @@ const LOGO_LINES = [
   "|_||_\\___/ \\_/\\_/ \\__,_\\___\\___/ \\_, \\___/\\_,_|\\_/|_||_.__/\\___|",
   "                                 |__/                            ",
 ];
-const LOGO_COLORS = [c.cyan, c.magenta, c.yellow, c.green, c.cyan];
+const LOGO_COLOR = c.cyan;
 
 export function renderCard(
   stats: VibeStats,
@@ -88,16 +77,16 @@ export function renderCard(
 
   lines.push("");
   for (let i = 0; i < LOGO_LINES.length; i++) {
-    lines.push(`${INDENT}${LOGO_COLORS[i]}${LOGO_LINES[i]}${c.reset}`);
+    lines.push(`${INDENT}${LOGO_COLOR}${LOGO_LINES[i]}${c.reset}`);
   }
   lines.push(`${INDENT}${LINE}`);
   lines.push("");
-  lines.push(`${INDENT}${c.bold}${c.white}${headline}${c.reset}`);
+  lines.push(`${INDENT}${c.bold}${headline}${c.reset}`);
 
   if (narrative) {
     lines.push("");
     for (const wrapped of wordWrap(narrative, 76)) {
-      lines.push(`${INDENT}${c.dim}${wrapped}${c.reset}`);
+      lines.push(`${INDENT}${wrapped}`);
     }
   }
 
@@ -116,24 +105,20 @@ export function renderCard(
 
   if (columns.length > 0) {
     lines.push("");
-    // Headers — each a different color
-    const headerColors = [c.magenta, c.cyan, c.yellow];
-    lines.push(INDENT + columns.map((col, i) =>
-      `${headerColors[i] || c.white}${col.header.padEnd(COL_WIDTH)}${c.reset}`
+    // Headers in bold default text
+    lines.push(INDENT + columns.map((col) =>
+      `${c.bold}${col.header.padEnd(COL_WIDTH)}${c.reset}`
     ).join("  "));
 
-    // Stat rows
+    // Stat rows — label in default text, value in cyan
     const maxRows = Math.max(...columns.map(col => col.entries.length));
     for (let r = 0; r < maxRows; r++) {
-      const row = columns.map((col, i) => {
+      const row = columns.map((col) => {
         const entry = col.entries[r];
         if (!entry) return "".padEnd(COL_WIDTH);
         const [label, value] = entry;
-        // Label in gray, value in column color
-        const color = headerColors[i] || c.white;
         const raw = `${label}: ${value}`;
-        const padded = raw.length > COL_WIDTH ? raw.slice(0, COL_WIDTH) : raw.padEnd(COL_WIDTH);
-        return `${c.gray}${label}: ${c.reset}${color}${value}${c.reset}${"".padEnd(Math.max(0, COL_WIDTH - raw.length))}`;
+        return `${label}: ${c.cyan}${value}${c.reset}${"".padEnd(Math.max(0, COL_WIDTH - raw.length))}`;
       });
       lines.push(INDENT + row.join("  "));
     }
@@ -142,24 +127,22 @@ export function renderCard(
   lines.push("");
   lines.push(`${INDENT}${LINE}`);
 
-  // Tool breakdown with percentages — colored per tool
+  // Tool breakdown — default text, cyan on percentages
   if (stats.source_breakdown && Object.keys(stats.source_breakdown).length > 0) {
-    const toolColors: Record<string, string> = { claude: c.magenta, cursor: c.cyan, codex: c.green, gemini: c.yellow };
     const total = Object.values(stats.source_breakdown).reduce((a, b) => a + b, 0);
     const parts = Object.entries(stats.source_breakdown)
       .sort(([, a], [, b]) => b - a)
       .map(([src, count]) => {
         const name = SOURCE_DISPLAY_NAMES[src as SessionSource] ?? src;
         const p = Math.round((count / total) * 100);
-        const tc = toolColors[src] || c.white;
-        return `${tc}${name} ${p}%${c.reset}`;
+        return `${name} ${c.cyan}${p}%${c.reset}`;
       });
-    lines.push(`${INDENT}${parts.join(`  ${c.gray}·${c.reset}  `)}`);
+    lines.push(`${INDENT}${parts.join("  ·  ")}`);
   }
 
-  const dailyHours = stats.avg_daily_hours > 0 ? `  ${c.gray}·${c.reset}  ${c.green}${stats.avg_daily_hours}h/day avg${c.reset}` : "";
-  lines.push(`${INDENT}${c.gray}${fmt(stats.total_turns)} turns across ${stats.session_count} sessions${c.reset}${dailyHours}`);
-  lines.push(`${INDENT}${c.dim}All analysis ran locally. No session data left your machine.${c.reset}`);
+  const dailyHours = stats.avg_daily_hours > 0 ? `  ·  ${c.cyan}${stats.avg_daily_hours}${c.reset}h/day avg` : "";
+  lines.push(`${INDENT}${c.cyan}${fmt(stats.total_turns)}${c.reset} turns across ${c.cyan}${stats.session_count}${c.reset} sessions${dailyHours}`);
+  lines.push(`${INDENT}Based on the last ~30 days of sessions. All analysis ran locally.`);
   lines.push("");
 
   console.log(lines.join("\n"));

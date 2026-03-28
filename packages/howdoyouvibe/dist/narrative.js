@@ -1,3 +1,14 @@
+function formatRetryWait(seconds) {
+    if (seconds >= 3600) {
+        const h = Math.ceil(seconds / 3600);
+        return `${h}h`;
+    }
+    if (seconds >= 60) {
+        const m = Math.ceil(seconds / 60);
+        return `${m}m`;
+    }
+    return `${seconds}s`;
+}
 const NARRATIVE_URL = process.env.VIBE_API_URL
     ? `${process.env.VIBE_API_URL}/api/vibes/narrative`
     : "https://heyi.am/api/vibes/narrative";
@@ -25,7 +36,11 @@ export async function fetchNarrative(stats, match) {
             };
         }
         if (res.status === 429) {
-            console.log("  (narrative limit reached for today — using local version)");
+            const retryAfter = res.headers.get("retry-after");
+            const wait = retryAfter ? formatRetryWait(Number(retryAfter)) : "later";
+            console.log("");
+            console.log("  ⚠ AI narrative rate limit reached. Try again in " + wait + ".");
+            console.log("  Using local narrative instead.\n");
         }
     }
     catch (err) {

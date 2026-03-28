@@ -86,6 +86,8 @@ config :heyi_am_vibe_web, HeyiAmVibeWeb.Endpoint,
     ]
   ]
 
+config :heyi_am_vibe_web, narrative_rate_limit: 500
+
 # ── Dev-only settings ────────────────────────────────────────
 
 config :heyi_am_app_web, dev_routes: true

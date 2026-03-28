@@ -21,9 +21,18 @@ defmodule HeyiAmVibeWeb.Plugs.RateLimit do
         conn
 
       {:deny, _limit} ->
+        retry_after = div(period, 1_000)
+
         conn
+        |> put_resp_header("retry-after", to_string(retry_after))
         |> put_resp_content_type("application/json")
-        |> send_resp(429, Jason.encode!(%{error: %{code: "RATE_LIMITED", message: "Too many requests. Try again later."}}))
+        |> send_resp(429, Jason.encode!(%{
+          error: %{
+            code: "RATE_LIMITED",
+            message: "Too many requests.",
+            retry_after: retry_after
+          }
+        }))
         |> halt()
     end
   end

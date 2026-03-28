@@ -20,7 +20,10 @@ defmodule HeyiAmVibeWeb.Router do
   end
 
   pipeline :rate_limit_narrative do
-    plug HeyiAmVibeWeb.Plugs.RateLimit, action: "vibe_narrative", limit: 4, period: 86_400_000
+    plug HeyiAmVibeWeb.Plugs.RateLimit,
+      action: "vibe_narrative",
+      limit: Application.compile_env(:heyi_am_vibe_web, :narrative_rate_limit, 4),
+      period: 86_400_000
   end
 
   scope "/", HeyiAmVibeWeb do
