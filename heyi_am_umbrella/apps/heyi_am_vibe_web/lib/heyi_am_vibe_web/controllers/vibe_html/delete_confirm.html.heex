@@ -1,19 +1,21 @@
 <div class="vibe-page vibe-show">
-  <div class="vibe-card">
-    <span class="vibe-label">HOW DO YOU VIBE?</span>
+  <div class="vibe-card vibe-card-delete">
+    <span class="vibe-label vibe-label-warn">confirm deletion</span>
     <h1 class="vibe-headline">Delete your vibe?</h1>
     <p class="vibe-narrative">
-      This will permanently remove your headline, narrative, and stats.
-      Your archetype will still count toward aggregate totals, but no one
-      will be able to see your vibe page.
+      This will permanently strip your headline, narrative, and stats.
+      Your archetype still counts toward aggregate totals, but your page
+      will show a "removed" notice. This cannot be undone.
     </p>
 
     <div class="vibe-delete-actions">
-      <form method="post" action={~p"/#{@vibe.short_id}?code=#{@code}&_method=delete"}>
+      <form method="post" action={~p"/#{@vibe.short_id}"}>
         <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+        <input type="hidden" name="_method" value="delete" />
+        <input type="hidden" name="code" value={@code} />
         <button type="submit" class="vibe-btn vibe-btn-danger">Yes, delete my vibe</button>
       </form>
-      <a href={~p"/#{@vibe.short_id}"} class="vibe-btn">No, keep it</a>
+      <a href={~p"/#{@vibe.short_id}"} class="vibe-btn vibe-btn-ghost">No, keep it</a>
     </div>
   </div>
 </div>

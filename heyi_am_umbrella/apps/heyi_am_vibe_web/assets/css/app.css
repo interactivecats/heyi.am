@@ -4019,6 +4019,16 @@ body:has(.vibe-page) {
   text-decoration: underline;
 }
 
+/* ── Delete confirmation ── */
+
+.vibe-card-delete::before {
+  background: linear-gradient(90deg, var(--vibe-red), var(--vibe-amber), transparent);
+}
+
+.vibe-label-warn {
+  color: var(--vibe-amber);
+}
+
 .vibe-delete-actions {
   margin-top: 2rem;
   display: flex;
@@ -4028,13 +4038,38 @@ body:has(.vibe-page) {
 }
 
 .vibe-btn-danger {
-  background: #c0392b;
+  background: var(--vibe-red);
   border: none;
   cursor: pointer;
+  color: #fff;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.625rem 1.5rem;
+  border-radius: 6px;
+  transition: background 0.15s, box-shadow 0.15s;
 }
 
 .vibe-btn-danger:hover {
-  background: #96281b;
+  background: #dc2626;
+  box-shadow: 0 0 12px rgba(248, 113, 113, 0.25);
+}
+
+.vibe-btn-ghost {
+  background: transparent;
+  border: 1px solid var(--vibe-border);
+  color: var(--vibe-text-dim);
+}
+
+.vibe-btn-ghost:hover {
+  background: var(--vibe-surface-raised);
+  color: var(--vibe-text);
+}
+
+/* ── Gone page ── */
+
+.vibe-card-gone::before {
+  background: linear-gradient(90deg, var(--vibe-text-muted), var(--vibe-border), transparent);
 }
 
 /* ── Homepage ────────────────────────────────────────────────────────────── */
