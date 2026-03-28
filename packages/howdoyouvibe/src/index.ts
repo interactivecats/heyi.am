@@ -106,7 +106,8 @@ if (process.stdin.isTTY) {
       console.log(`  Download card: ${result.card_url}`);
       console.log("");
       console.log(`  Delete code: ${result.delete_code}`);
-      console.log("  Save this code — it's the only way to remove your vibe.");
+      console.log(`  Delete link: ${result.delete_url}`);
+      console.log("  Save this — it's the only way to remove your vibe.");
       openUrl(result.url);
     } else {
       console.log("\n  Couldn't share — your vibe lives on your machine.");
