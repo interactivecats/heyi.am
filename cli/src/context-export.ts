@@ -1,5 +1,10 @@
 // Context Export — compresses a Session into AI-consumable Markdown
 // Three tiers: compact (~500 tokens), summary (~2000 tokens), full (~10000+ tokens)
+//
+// When enhanced data is present (LLM-generated title, context, developer take,
+// execution steps, Q&A), those fields are already merged into the Session object
+// by the route layer. This module renders whatever is on the Session — enhanced
+// or heuristic — into clean markdown.
 
 import type { Session, ExecutionStep, FileChange, ParsedTurn } from "./analyzer.js";
 import { cleanAssistantText } from "./bridge.js";
@@ -51,10 +56,16 @@ function renderMetadata(session: Session): string {
   stats.push(`${session.turns} turns`);
   if (session.filesChanged.length > 0) stats.push(`${session.filesChanged.length} files`);
   if (session.linesOfCode > 0) stats.push(`${formatLoc(session.linesOfCode)} LOC`);
+  if (session.toolCalls > 0) stats.push(`${session.toolCalls} tool calls`);
   lines.push(`Duration: ${stats.join(" | ")}`);
 
   if (session.skills.length > 0) {
     lines.push(`Skills: ${session.skills.join(", ")}`);
+  }
+
+  if (session.toolBreakdown.length > 0) {
+    const top = session.toolBreakdown.slice(0, 6);
+    lines.push(`Tools: ${top.map((t) => `${t.tool}(${t.count})`).join(", ")}`);
   }
 
   return lines.join("\n");
@@ -65,6 +76,109 @@ function renderMetadata(session: Session): string {
 function renderContext(session: Session): string {
   if (!session.context) return "";
   return `\n## Context\n${session.context}`;
+}
+
+// ── Developer take ────────────────────────────────────────────
+
+function renderDeveloperTake(session: Session): string {
+  if (!session.developerTake) return "";
+  return `\n## Developer Take\n${session.developerTake}`;
+}
+
+// ── Q&A pairs ─────────────────────────────────────────────────
+
+function renderQAPairs(session: Session): string {
+  if (!session.qaPairs || session.qaPairs.length === 0) return "";
+  const lines = session.qaPairs.map(
+    (qa) => `**Q:** ${qa.question}\n**A:** ${qa.answer}`
+  );
+  return `\n## Q&A\n${lines.join("\n\n")}`;
+}
+
+// ── Session signals (heuristic) ───────────────────────────────
+
+const CORRECTION_PATTERN = /\b(no[,.]?\s|actually|wait|wrong|instead|not that|don'?t)\b/i;
+
+export function extractSessionSignals(turns: ParsedTurn[]): {
+  errors: number;
+  corrections: number;
+  effortBreakdown: Record<string, number>;
+  firstPrompt: string;
+} {
+  let errors = 0;
+  let corrections = 0;
+  const effortCounts: Record<string, number> = {};
+  let firstPrompt = "";
+
+  for (const turn of turns) {
+    if (turn.type === "error") errors++;
+
+    if (turn.type === "prompt") {
+      if (!firstPrompt) firstPrompt = turn.content;
+      if (CORRECTION_PATTERN.test(turn.content)) corrections++;
+    }
+
+    if (turn.type === "tool" && turn.toolName) {
+      const category = classifyToolEffort(turn.toolName);
+      effortCounts[category] = (effortCounts[category] ?? 0) + 1;
+    }
+  }
+
+  // Convert counts to percentages
+  const total = Object.values(effortCounts).reduce((a, b) => a + b, 0);
+  const effortBreakdown: Record<string, number> = {};
+  if (total > 0) {
+    for (const [cat, count] of Object.entries(effortCounts)) {
+      effortBreakdown[cat] = Math.round((count / total) * 100);
+    }
+  }
+
+  return { errors, corrections, effortBreakdown, firstPrompt };
+}
+
+function classifyToolEffort(toolName: string): string {
+  if (toolName === "Read" || toolName === "Grep" || toolName === "Glob") return "reading";
+  if (toolName === "Edit" || toolName === "Write") return "writing";
+  if (toolName === "Bash") return "running";
+  if (toolName === "Agent") return "delegating";
+  return "other";
+}
+
+function renderSessionSignals(turns: ParsedTurn[]): string {
+  const signals = extractSessionSignals(turns);
+  const lines: string[] = [];
+
+  // Effort breakdown
+  const efforts = Object.entries(signals.effortBreakdown)
+    .sort(([, a], [, b]) => b - a)
+    .map(([cat, pct]) => `${pct}% ${cat}`);
+  if (efforts.length > 0) {
+    lines.push(`Effort: ${efforts.join(", ")}`);
+  }
+
+  if (signals.errors > 0) {
+    lines.push(`Errors encountered: ${signals.errors}`);
+  }
+  if (signals.corrections > 0) {
+    lines.push(`Course corrections: ${signals.corrections}`);
+  }
+
+  if (lines.length === 0) return "";
+  return `\n## Session Signals\n${lines.join("\n")}`;
+}
+
+// ── Heuristic context from first prompt ───────────────────────
+
+function renderHeuristicContext(session: Session, turns: ParsedTurn[]): string {
+  // If enhanced context exists, use that
+  if (session.context) return renderContext(session);
+
+  // Fall back: derive from first user prompt
+  const signals = extractSessionSignals(turns);
+  if (!signals.firstPrompt) return "";
+
+  const cleaned = truncate(signals.firstPrompt, 300);
+  return `\n## Context\n${cleaned}`;
 }
 
 // ── Execution path ─────────────────────────────────────────────
@@ -195,7 +309,8 @@ function truncate(text: string, maxLen: number): string {
 export function renderCompact(session: Session): string {
   const parts: string[] = [
     renderMetadata(session),
-    renderContext(session),
+    renderHeuristicContext(session, []),
+    renderDeveloperTake(session),
     renderExecutionPath(session.executionPath),
   ];
   return parts.filter(Boolean).join("\n");
@@ -209,8 +324,10 @@ function renderSummary(session: Session, turns: ParsedTurn[]): string {
 
   const parts: string[] = [
     renderMetadata(session),
-    renderContext(session),
+    renderHeuristicContext(session, turns),
+    renderDeveloperTake(session),
     renderExecutionPath(session.executionPath),
+    renderSessionSignals(turns),
   ];
 
   if (keyExchanges.length > 0) {
@@ -218,6 +335,7 @@ function renderSummary(session: Session, turns: ParsedTurn[]): string {
   }
 
   parts.push(renderFilesChanged(session.filesChanged));
+  parts.push(renderQAPairs(session));
 
   return parts.filter(Boolean).join("\n");
 }
@@ -229,8 +347,10 @@ function renderFull(session: Session, turns: ParsedTurn[]): string {
 
   const parts: string[] = [
     renderMetadata(session),
-    renderContext(session),
+    renderHeuristicContext(session, turns),
+    renderDeveloperTake(session),
     renderExecutionPath(session.executionPath),
+    renderSessionSignals(turns),
   ];
 
   if (allTurns.length > 0) {
@@ -238,6 +358,7 @@ function renderFull(session: Session, turns: ParsedTurn[]): string {
   }
 
   parts.push(renderFilesChanged(session.filesChanged));
+  parts.push(renderQAPairs(session));
 
   return parts.filter(Boolean).join("\n");
 }

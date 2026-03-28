@@ -6,6 +6,7 @@ import { getSessionRow } from '../db.js';
 import { ensureSessionIndexed } from '../sync.js';
 import { exportSessionContext, type ExportTier } from '../context-export.js';
 import { buildTranscriptResponse } from '../transcript.js';
+import { loadEnhancedData } from '../settings.js';
 import { displayNameFromDir, type RouteContext } from './context.js';
 
 /**
@@ -63,8 +64,30 @@ export function createSessionsRouter(ctx: RouteContext): Router {
 
       const parsed = await parseSession(resolved.filePath);
       const analyzerInput = bridgeToAnalyzer(parsed, { sessionId: id, projectName: resolved.projectName });
-      const session = analyzeSession(analyzerInput);
+      let session = analyzeSession(analyzerInput);
       const turns: ParsedTurn[] = analyzerInput.turns;
+
+      // Merge enhanced data (LLM-generated title, context, developer take,
+      // execution steps, Q&A) when available — hybrid output
+      const enhanced = loadEnhancedData(id);
+      if (enhanced) {
+        session = {
+          ...session,
+          title: enhanced.title || session.title,
+          context: enhanced.context || session.context,
+          developerTake: enhanced.developerTake || session.developerTake,
+          skills: enhanced.skills.length > 0 ? enhanced.skills : session.skills,
+          executionPath: enhanced.executionSteps.length > 0
+            ? enhanced.executionSteps.map((s) => ({
+                stepNumber: s.stepNumber,
+                title: s.title,
+                description: s.body,
+              }))
+            : session.executionPath,
+          qaPairs: enhanced.qaPairs || session.qaPairs,
+          status: enhanced.uploaded ? 'uploaded' : 'enhanced',
+        };
+      }
 
       const result = exportSessionContext(session, turns, { tier: format });
 

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   exportSessionContext,
   estimateTokens,
+  extractSessionSignals,
   type ExportTier,
 } from "./context-export.js";
 import type { Session, ParsedTurn, ExecutionStep, FileChange } from "./analyzer.js";
@@ -290,5 +291,165 @@ describe("exportSessionContext — edge cases", () => {
     ];
     const result = exportSessionContext(makeSession(), turns);
     expect(result.content).toContain("[Tool:Bash]");
+  });
+});
+
+// ── tool breakdown in metadata ────────────────────────────────
+
+describe("exportSessionContext — tool breakdown", () => {
+  it("includes tool breakdown in metadata header", () => {
+    const result = exportSessionContext(makeSession(), []);
+    expect(result.content).toContain("Tools: Edit(12), Read(8), Bash(5)");
+  });
+
+  it("includes tool call count in duration line", () => {
+    const result = exportSessionContext(makeSession(), []);
+    expect(result.content).toContain("25 tool calls");
+  });
+
+  it("omits tool breakdown when empty", () => {
+    const result = exportSessionContext(makeSession({ toolBreakdown: [] }), []);
+    expect(result.content).not.toContain("Tools:");
+  });
+});
+
+// ── session signals ───────────────────────────────────────────
+
+describe("extractSessionSignals", () => {
+  it("counts errors from turns", () => {
+    const turns = [
+      makeTurn({ type: "error", content: "Module not found" }),
+      makeTurn({ type: "error", content: "Cannot compile" }),
+      makeTurn({ type: "prompt", content: "fix it" }),
+    ];
+    const signals = extractSessionSignals(turns);
+    expect(signals.errors).toBe(2);
+  });
+
+  it("counts corrections from user prompts", () => {
+    const turns = [
+      makeTurn({ type: "prompt", content: "no, don't use that approach" }),
+      makeTurn({ type: "prompt", content: "actually, try the other way" }),
+      makeTurn({ type: "prompt", content: "looks good" }),
+    ];
+    const signals = extractSessionSignals(turns);
+    expect(signals.corrections).toBe(2);
+  });
+
+  it("computes effort breakdown by tool category", () => {
+    const turns = [
+      makeTurn({ type: "tool", content: "", toolName: "Read" }),
+      makeTurn({ type: "tool", content: "", toolName: "Read" }),
+      makeTurn({ type: "tool", content: "", toolName: "Grep" }),
+      makeTurn({ type: "tool", content: "", toolName: "Edit" }),
+      makeTurn({ type: "tool", content: "", toolName: "Bash" }),
+    ];
+    const signals = extractSessionSignals(turns);
+    expect(signals.effortBreakdown.reading).toBe(60);
+    expect(signals.effortBreakdown.writing).toBe(20);
+    expect(signals.effortBreakdown.running).toBe(20);
+  });
+
+  it("extracts first user prompt", () => {
+    const turns = [
+      makeTurn({ type: "response", content: "Hello" }),
+      makeTurn({ type: "prompt", content: "Fix the auth bug" }),
+      makeTurn({ type: "prompt", content: "Also check the tests" }),
+    ];
+    const signals = extractSessionSignals(turns);
+    expect(signals.firstPrompt).toBe("Fix the auth bug");
+  });
+});
+
+describe("exportSessionContext — session signals section", () => {
+  it("includes session signals in summary tier", () => {
+    const turns = [
+      makeTurn({ type: "prompt", content: "Fix the bug" }),
+      makeTurn({ type: "tool", content: "", toolName: "Read" }),
+      makeTurn({ type: "tool", content: "", toolName: "Edit" }),
+      makeTurn({ type: "error", content: "Compile error" }),
+      makeTurn({ type: "prompt", content: "no, actually use the other approach" }),
+      makeTurn({ type: "tool", content: "", toolName: "Edit" }),
+    ];
+    const result = exportSessionContext(makeSession(), turns);
+    expect(result.content).toContain("## Session Signals");
+    expect(result.content).toContain("Effort:");
+    expect(result.content).toContain("Errors encountered: 1");
+    expect(result.content).toContain("Course corrections: 1");
+  });
+
+  it("omits signals section when no tools or errors", () => {
+    const turns = [
+      makeTurn({ type: "prompt", content: "explain this code" }),
+      makeTurn({ type: "response", content: "sure" }),
+    ];
+    const result = exportSessionContext(makeSession(), turns);
+    expect(result.content).not.toContain("## Session Signals");
+  });
+});
+
+// ── enhanced data rendering ───────────────────────────────────
+
+describe("exportSessionContext — enhanced data", () => {
+  it("includes developer take when present", () => {
+    const session = makeSession({
+      developerTake: "The tricky part was threading the CSP headers through the proxy.",
+    });
+    const result = exportSessionContext(session, makeTurns());
+    expect(result.content).toContain("## Developer Take");
+    expect(result.content).toContain("threading the CSP headers");
+  });
+
+  it("omits developer take when absent", () => {
+    const result = exportSessionContext(makeSession(), makeTurns());
+    expect(result.content).not.toContain("## Developer Take");
+  });
+
+  it("includes Q&A pairs when present", () => {
+    const session = makeSession({
+      qaPairs: [
+        { question: "Why did you choose Ed25519?", answer: "Speed and small key size." },
+        { question: "What about RSA?", answer: "Too slow for CLI use." },
+      ],
+    });
+    const result = exportSessionContext(session, makeTurns());
+    expect(result.content).toContain("## Q&A");
+    expect(result.content).toContain("**Q:** Why did you choose Ed25519?");
+    expect(result.content).toContain("**A:** Speed and small key size.");
+  });
+
+  it("omits Q&A when absent", () => {
+    const result = exportSessionContext(makeSession(), makeTurns());
+    expect(result.content).not.toContain("## Q&A");
+  });
+
+  it("uses first prompt as context when no enhanced context", () => {
+    const session = makeSession({ context: undefined });
+    const turns = [
+      makeTurn({ type: "prompt", content: "Migrate the auth system to JWT tokens" }),
+    ];
+    const result = exportSessionContext(session, turns);
+    expect(result.content).toContain("## Context");
+    expect(result.content).toContain("Migrate the auth system to JWT tokens");
+  });
+
+  it("prefers enhanced context over first-prompt fallback", () => {
+    const session = makeSession({ context: "Sprint cleanup after security audit." });
+    const turns = [
+      makeTurn({ type: "prompt", content: "Fix the injection" }),
+    ];
+    const result = exportSessionContext(session, turns);
+    expect(result.content).toContain("Sprint cleanup after security audit.");
+    // Should not have the first prompt as a separate context
+    const contextSection = result.content.split("## Context")[1]?.split("##")[0] ?? "";
+    expect(contextSection).not.toContain("Fix the injection");
+  });
+
+  it("compact tier includes developer take", () => {
+    const session = makeSession({
+      developerTake: "Hard-won lesson about CSP headers.",
+    });
+    const result = exportSessionContext(session, [], { tier: "compact" });
+    expect(result.content).toContain("## Developer Take");
   });
 });
