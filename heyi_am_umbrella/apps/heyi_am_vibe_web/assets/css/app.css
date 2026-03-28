@@ -4257,6 +4257,14 @@ body:has(.vibe-page) {
 .vibe-terminal-body .vb { font-weight: 700; }
 .vibe-terminal-body .vd { color: #5ee6e6; }
 
+/* Desktop: wide layout, hide narrow */
+.vibe-terminal-narrow { display: none; }
+
+@media (max-width: 700px) {
+  .vibe-terminal-wide { display: none; }
+  .vibe-terminal-narrow { display: block; }
+}
+
 /* ── Archetype Gallery ── */
 
 .vibe-archetypes {
