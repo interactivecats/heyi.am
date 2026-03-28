@@ -4204,6 +4204,59 @@ body:has(.vibe-page) {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Terminal Preview ── */
+
+.vibe-preview {
+  margin-top: 2.5rem;
+}
+
+.vibe-preview h2 {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--vibe-accent);
+  margin-bottom: 1rem;
+}
+
+.vibe-terminal {
+  background: #0a0a14;
+  border: 1px solid var(--vibe-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.vibe-terminal-bar {
+  display: flex;
+  gap: 6px;
+  padding: 0.75rem 1rem;
+  background: #151520;
+  border-bottom: 1px solid var(--vibe-border);
+}
+
+.vibe-terminal-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--vibe-border);
+}
+
+.vibe-terminal-body {
+  padding: 1.25rem 1.5rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--vibe-text);
+  overflow-x: auto;
+  margin: 0;
+  white-space: pre;
+}
+
+/* Terminal color spans */
+.vibe-terminal-body .vc { color: #5ee6e6; }
+.vibe-terminal-body .vb { font-weight: 700; }
+.vibe-terminal-body .vd { color: #5ee6e6; }
+
 /* ── Archetype Gallery ── */
 
 .vibe-archetypes {
