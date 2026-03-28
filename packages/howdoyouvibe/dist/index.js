@@ -86,7 +86,10 @@ if (process.stdin.isTTY) {
             console.log(" done!\n");
             console.log(`  ${result.url}`);
             console.log(`  Download card: ${result.card_url}`);
-            console.log(`  Delete your vibe: ${result.delete_url}`);
+            console.log("");
+            console.log(`  Delete code: ${result.delete_code}`);
+            console.log(`  Delete link: ${result.delete_url}`);
+            console.log("  Save this — it's the only way to remove your vibe.");
             openUrl(result.url);
         }
         else {
@@ -99,7 +102,7 @@ if (process.stdin.isTTY) {
     console.log("  should not be used for hiring, evaluation, or any");
     console.log("  employment decision. Have fun with it.");
     console.log("");
-    console.log(`  Archive, analyze and share your AI work with ${link("https://heyiam.com", "heyiam.com")}`);
+    console.log(`  Archive, search, and share your AI coding sessions with ${link("https://heyiam.com", "heyiam.com")}`);
     console.log("");
 }
 //# sourceMappingURL=index.js.map

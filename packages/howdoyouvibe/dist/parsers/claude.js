@@ -181,6 +181,55 @@ export function mapAgentRole(subagentType) {
     }
     return subagentType.toLowerCase();
 }
+/** Aggregate token usage across all assistant messages. */
+function aggregateTokenUsage(entries) {
+    let hasUsage = false;
+    const totals = {
+        input_tokens: 0,
+        output_tokens: 0,
+        cache_read_input_tokens: 0,
+        cache_creation_input_tokens: 0,
+    };
+    for (const entry of entries) {
+        if (entry.type !== "assistant")
+            continue;
+        const usage = entry.message?.usage;
+        if (!usage)
+            continue;
+        hasUsage = true;
+        totals.input_tokens += usage.input_tokens ?? 0;
+        totals.output_tokens += usage.output_tokens ?? 0;
+        totals.cache_read_input_tokens += usage.cache_read_input_tokens ?? 0;
+        totals.cache_creation_input_tokens += usage.cache_creation_input_tokens ?? 0;
+    }
+    return hasUsage ? totals : undefined;
+}
+/** Collect unique model names used across assistant messages. */
+function extractModels(entries) {
+    const models = new Set();
+    for (const entry of entries) {
+        if (entry.type !== "assistant")
+            continue;
+        const model = entry.message?.model;
+        if (model)
+            models.add(model);
+    }
+    return models.size > 0 ? [...models].sort() : undefined;
+}
+/** Extract custom title from custom-title entries, or slug from any entry. */
+function extractSessionMeta(entries) {
+    let customTitle;
+    let slug;
+    for (const entry of entries) {
+        if (entry.type === "custom-title" && typeof entry.customTitle === "string") {
+            customTitle = entry.customTitle;
+        }
+        if (entry.slug && !slug) {
+            slug = entry.slug;
+        }
+    }
+    return { customTitle, slug };
+}
 async function parse(path) {
     const raw = await readFile(path, "utf-8");
     const entries = parseEntries(raw);
@@ -189,6 +238,9 @@ async function parse(path) {
     const turns = countTurns(entries);
     const { duration_ms, wall_clock_ms, start_time, end_time } = computeDuration(entries);
     const loc_stats = computeLocStats(entries);
+    const token_usage = aggregateTokenUsage(entries);
+    const models_used = extractModels(entries);
+    const { customTitle, slug } = extractSessionMeta(entries);
     const cwd = entries.find((e) => e.cwd)?.cwd;
     return {
         source: "claude",
@@ -202,6 +254,10 @@ async function parse(path) {
         start_time,
         end_time,
         cwd,
+        token_usage,
+        models_used,
+        custom_title: customTitle,
+        slug,
     };
 }
 export const claudeParser = {

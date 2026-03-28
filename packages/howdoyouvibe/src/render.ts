@@ -151,7 +151,6 @@ export function renderCard(
   const dailyHours = stats.avg_daily_hours > 0 ? `  ·  ${c.cyan}${stats.avg_daily_hours}${c.reset}h/day avg` : "";
   lines.push(`${INDENT}${c.cyan}${fmt(stats.total_turns)}${c.reset} turns across ${c.cyan}${stats.session_count}${c.reset} sessions${dailyHours}`);
   lines.push(`${INDENT}Based on the last ~30 days of sessions. All analysis ran locally.`);
-  lines.push(`${INDENT}Powered by ${link("https://heyiam.com", "heyiam.com")}`);
   lines.push("");
 
   console.log(lines.join("\n"));
