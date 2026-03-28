@@ -21,6 +21,7 @@ import {
   getAllSessionMetas,
   getAllProjectStats,
   getSessionsByProject,
+  getProjectUuid,
 } from '../db.js';
 import { ensureSessionIndexed, displayNameFromDir } from '../sync.js';
 
@@ -215,6 +216,7 @@ export function buildProjectDetail(
     project: {
       name: proj.name,
       dirName: proj.dirName,
+      uuid: getProjectUuid(db, proj.dirName),
       sessionCount: proj.sessionCount,
       description: enhanceCache?.result?.narrative ?? '',
       totalLoc,

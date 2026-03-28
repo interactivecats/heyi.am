@@ -187,11 +187,10 @@ Select at most 10 sessions. A focused portfolio is better than an exhaustive one
 
 Return JSON with this exact structure:
 {
-  "selected": [{ "sessionId": "...", "reason": "Brief explanation of why this is interesting" }],
-  "skipped": [{ "sessionId": "...", "reason": "Brief explanation of why skipped" }]
+  "selected": [{ "sessionId": "...", "reason": "Brief explanation of why this is interesting" }]
 }
 
-Every session in the input must appear in either selected or skipped.`;
+Only include selected sessions. Do NOT include a "skipped" array — everything not selected is implicitly skipped.`;
 
 async function llmTriage(
   sessions: Array<SessionMetaWithStats & { signals: SessionSignals }>,
@@ -212,15 +211,18 @@ async function llmTriage(
   }));
 
   try {
-    const response = await client.messages.create({
+    // Use streaming to avoid the SDK's 10-minute timeout on large inputs
+    const stream = client.messages.stream({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 40000,
+      max_tokens: 4096,
       system: TRIAGE_PROMPT,
       messages: [{
         role: 'user',
         content: JSON.stringify(input),
       }],
     });
+
+    const response = await stream.finalMessage();
 
     // If the model hit the token limit, the JSON is likely truncated
     if (response.stop_reason !== 'end_turn') return null;
@@ -234,12 +236,18 @@ async function llmTriage(
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return null;
 
-    const parsed = JSON.parse(jsonMatch[0]) as TriageResult;
+    const parsed = JSON.parse(jsonMatch[0]) as { selected: Array<{ sessionId: string; reason: string }> };
 
     // Validate structure
-    if (!Array.isArray(parsed.selected) || !Array.isArray(parsed.skipped)) return null;
+    if (!Array.isArray(parsed.selected)) return null;
 
-    return parsed;
+    // Derive skipped from selected — everything not selected is skipped
+    const selectedIds = new Set(parsed.selected.map((s) => s.sessionId));
+    const skipped = sessions
+      .filter((s) => !selectedIds.has(s.sessionId))
+      .map((s) => ({ sessionId: s.sessionId, reason: 'Not selected by LLM' }));
+
+    return { selected: parsed.selected, skipped, triageMethod: 'llm' as const };
   } catch (err) {
     console.error('[triage] LLM triage failed, falling back to scoring:', (err as Error).message);
     return null;

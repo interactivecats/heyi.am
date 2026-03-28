@@ -81,6 +81,7 @@ export interface Session {
 export interface Project {
   name: string
   dirName: string
+  uuid: string
   sessionCount: number
   description: string
   totalLoc: number

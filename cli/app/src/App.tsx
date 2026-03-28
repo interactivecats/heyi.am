@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Link, useParams } from 'react-router-dom'
+import { fetchProjectDetail } from './api'
 import { AppShell } from './components/shared'
 import { FirstRun } from './components/FirstRun'
 import { SourceAudit } from './components/SourceAudit'
@@ -64,10 +65,19 @@ function ExportDropdown({ dirName }: { dirName: string }) {
 
 function ProjectDetailWrapper() {
   const { dirName } = useParams<{ dirName: string }>()
+  const [projectUuid, setProjectUuid] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!dirName) return
+    fetchProjectDetail(dirName).then((d) => {
+      if (d.project.uuid) setProjectUuid(d.project.uuid)
+    }).catch(() => {})
+  }, [dirName])
+
   return (
     <AppShell
       back={{ label: 'Projects', to: '/projects' }}
-      chips={[{ label: dirName ?? 'Project' }]}
+      chips={[{ label: projectUuid ?? '...' }]}
       actions={
         <>
           <Link
