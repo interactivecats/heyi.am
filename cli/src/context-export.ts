@@ -193,15 +193,28 @@ function renderExecutionPath(steps: ExecutionStep[]): string {
 
 // ── Files changed ──────────────────────────────────────────────
 
+const MAX_FILES_SHOWN = 15;
+
 function renderFilesChanged(files: FileChange[]): string {
   if (files.length === 0) return "";
-  const lines = files.map(
+  // Sort by total churn, show top files
+  const sorted = [...files].sort(
+    (a, b) => (b.additions + b.deletions) - (a.additions + a.deletions)
+  );
+  const shown = sorted.slice(0, MAX_FILES_SHOWN);
+  const lines = shown.map(
     (f) => `${f.path} (+${f.additions}, -${f.deletions})`
   );
+  if (files.length > MAX_FILES_SHOWN) {
+    lines.push(`... and ${files.length - MAX_FILES_SHOWN} more files`);
+  }
   return `\n## Files Changed\n${lines.join("\n")}`;
 }
 
 // ── Key exchanges (summary tier) ───────────────────────────────
+
+/** Max key exchanges to include in summary tier. */
+const MAX_KEY_EXCHANGES = 20;
 
 /** Determine if a turn is a "key exchange" worth including in summary. */
 function isKeyExchange(turn: ParsedTurn, index: number, turns: ParsedTurn[]): boolean {
@@ -237,15 +250,15 @@ function isKeyExchange(turn: ParsedTurn, index: number, turns: ParsedTurn[]): bo
 /** Format a turn for the key exchanges section. */
 function formatTurnForExchange(turn: ParsedTurn): string {
   if (turn.type === "prompt") {
-    const text = truncate(turn.content, 300);
+    const text = truncate(turn.content, 150);
     return `[User]: ${text}`;
   }
   if (turn.type === "response") {
-    const text = truncate(turn.content, 300);
+    const text = truncate(turn.content, 150);
     return `[Assistant]: ${text}`;
   }
   if (turn.type === "error") {
-    return `[Error]: ${truncate(turn.content, 200)}`;
+    return `[Error]: ${truncate(turn.content, 150)}`;
   }
   if (turn.type === "tool") {
     return formatToolTurn(turn);
@@ -317,10 +330,22 @@ export function renderCompact(session: Session): string {
 }
 
 function renderSummary(session: Session, turns: ParsedTurn[]): string {
-  const keyExchanges = turns
+  const allExchanges = turns
     .map((turn, i) => ({ turn, i }))
     .filter(({ turn, i }) => isKeyExchange(turn, i, turns))
     .map(({ turn }) => formatTurnForExchange(turn));
+
+  // Cap key exchanges — keep first few + last few for context
+  let keyExchanges: string[];
+  if (allExchanges.length > MAX_KEY_EXCHANGES) {
+    const half = Math.floor(MAX_KEY_EXCHANGES / 2);
+    const head = allExchanges.slice(0, half);
+    const tail = allExchanges.slice(-half);
+    const skipped = allExchanges.length - MAX_KEY_EXCHANGES;
+    keyExchanges = [...head, `[... ${skipped} exchanges omitted ...]`, ...tail];
+  } else {
+    keyExchanges = allExchanges;
+  }
 
   const parts: string[] = [
     renderMetadata(session),

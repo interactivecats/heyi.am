@@ -266,9 +266,9 @@ describe("exportSessionContext — edge cases", () => {
     const turns = [makeTurn({ type: "prompt", content: "a".repeat(500) })];
     const result = exportSessionContext(makeSession(), turns);
     expect(result.content).toContain("...");
-    // The truncated content should not exceed 303 chars ([User]: + 300)
+    // The truncated content should not exceed 158 chars ([User]: + 150)
     const userLine = result.content.split("\n").find((l) => l.startsWith("[User]:"))!;
-    expect(userLine.length).toBeLessThanOrEqual(311);
+    expect(userLine.length).toBeLessThanOrEqual(160);
   });
 
   it("includes error turns as key exchanges in summary", () => {
