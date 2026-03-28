@@ -71,11 +71,31 @@ The CLI is where all content creation happens: session discovery, archiving, sea
 | `src/redact.ts` | Two-layer secret scanning (secretlint + regex) |
 | `src/search.ts` | Full-text search with faceted filters |
 | `src/context-export.ts` | Export sessions as compressed context for AI |
-| `src/llm/triage.ts` | 3-layer session selection |
+| `src/llm/triage.ts` | 3-layer session selection (see [AI Triage](#ai-triage) below) |
 | `src/llm/project-enhance.ts` | Project narrative + question generation |
 | `src/render/` | React SSR to HTML fragments |
 | `src/routes/` | Express routers (projects, sessions, publish, enhance, search) |
 | `app/src/` | React frontend (dashboard, upload flow, session viewer) |
+
+### AI Triage
+
+Session triage uses 3 layers to pick the best sessions for a portfolio:
+
+1. **Hard floor** — filters out sessions under 5 min or 3 turns
+2. **Scoring fallback** — heuristic score (correction count, tool diversity, LOC, etc.) used when LLM is unavailable
+3. **LLM triage** — sends session metadata to Haiku 4.5, which returns a JSON selection with reasons
+
+**Token budget:** `max_tokens` is set to 40,000 to support up to ~1,000 sessions. Each session produces ~35 output tokens (UUID + reason + JSON syntax). A truncation guard (`stop_reason !== 'end_turn'`) falls back to scoring if the response is cut short.
+
+**Cost estimate** (Haiku 4.5, at 1,000 sessions):
+
+| | Tokens | Rate | Cost |
+|---|---|---|---|
+| Input | ~75k | $1.00/MTok | ~$0.08 |
+| Output | ~36k | $5.00/MTok | ~$0.18 |
+| **Total** | | | **~$0.25** |
+
+At typical usage (50-100 sessions) each triage call costs under $0.03.
 
 ---
 

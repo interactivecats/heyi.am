@@ -214,13 +214,16 @@ async function llmTriage(
   try {
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2048,
+      max_tokens: 40000,
       system: TRIAGE_PROMPT,
       messages: [{
         role: 'user',
         content: JSON.stringify(input),
       }],
     });
+
+    // If the model hit the token limit, the JSON is likely truncated
+    if (response.stop_reason !== 'end_turn') return null;
 
     const text = response.content
       .filter((b): b is Anthropic.TextBlock => b.type === 'text')
