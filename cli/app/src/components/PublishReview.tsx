@@ -10,6 +10,18 @@ type UploadState =
   | { step: 'done'; projectUrl: string; uploaded: number; failed: number }
   | { step: 'error'; message: string }
 
+/** Extract a short project name from an encoded dir path (e.g. "-Users-ben-Dev-myapp" → "myapp"). */
+function projectNameFromDir(encoded: string): string {
+  const devIdx = encoded.indexOf('-Dev-')
+  if (devIdx !== -1) return encoded.slice(devIdx + 5)
+  const segments = encoded.split('-').filter(Boolean)
+  return segments.length > 0 ? segments[segments.length - 1] : encoded
+}
+
+function slugify(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
 export function PublishReview() {
   const { dirName = '' } = useParams()
   const [state, setState] = useState<UploadState>({ step: 'review' })
@@ -24,9 +36,10 @@ export function PublishReview() {
 
     const cache = detail?.enhanceCache
     const project = detail?.project
+    const name = project?.name ?? projectNameFromDir(dirName)
     const payload = {
-      title: project?.name ?? dirName,
-      slug: dirName,
+      title: name,
+      slug: slugify(name),
       narrative: cache?.result?.narrative ?? '',
       repoUrl: cache?.repoUrl ?? '',
       projectUrl: cache?.projectUrl ?? '',

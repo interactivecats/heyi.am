@@ -28,17 +28,24 @@ defmodule HeyiAmAppWeb.ProjectApiControllerTest do
       assert %{"error" => %{"code" => "MISSING_PROJECT"}} = json_response(conn, 400)
     end
 
-    test "returns 422 for invalid slug format", %{conn: _conn} do
+    test "normalizes invalid slug to valid format", %{conn: _conn} do
       {conn, _user} = api_conn_with_auth()
 
       conn = post(conn, ~p"/api/projects", %{
-        project: %{slug: "Invalid Slug!", title: "Bad"}
+        project: %{slug: "Invalid Slug!", title: "Normalized"}
       })
 
-      assert %{"error" => %{"code" => "VALIDATION_FAILED", "details" => errors}} =
-               json_response(conn, 422)
+      assert %{"slug" => "invalid-slug"} = json_response(conn, 201)
+    end
 
-      assert errors["slug"]
+    test "returns 422 for slug that normalizes to empty", %{conn: _conn} do
+      {conn, _user} = api_conn_with_auth()
+
+      conn = post(conn, ~p"/api/projects", %{
+        project: %{slug: "!!!", title: "Bad"}
+      })
+
+      assert %{"error" => %{"code" => "VALIDATION_FAILED"}} = json_response(conn, 422)
     end
 
     test "two users can have the same slug", %{conn: _conn} do

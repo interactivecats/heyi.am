@@ -1,6 +1,7 @@
 <HeyiAmAppWeb.AppShell.app_shell>
   <:status>
     <%= if @current_scope && @current_scope.user do %>
+      <a href={~p"/dashboard"} class="topbar-nav-link">Dashboard</a>
       <a href={~p"/users/settings"} class="topbar-nav-link">Settings</a>
       <.link href={~p"/users/log-out"} method="delete" class="btn btn-secondary btn-sm">
         Log out

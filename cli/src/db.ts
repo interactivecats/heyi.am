@@ -2,6 +2,7 @@
 // Replaces stats-cache.json with a proper database layer
 
 import Database from 'better-sqlite3';
+import crypto from 'node:crypto';
 import { mkdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
@@ -14,7 +15,7 @@ import type { SessionMeta } from './parsers/index.js';
 const CONFIG_DIR = join(homedir(), '.config', 'heyiam');
 export const DB_PATH = join(CONFIG_DIR, 'sessions.db');
 
-const CURRENT_SCHEMA_VERSION = 2;
+const CURRENT_SCHEMA_VERSION = 3;
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -112,6 +113,9 @@ function runMigrations(db: Database.Database): void {
   if (currentVersion < 2) {
     migrateToV2(db);
   }
+  if (currentVersion < 3) {
+    migrateToV3(db);
+  }
 }
 
 function migrateToV2(db: Database.Database): void {
@@ -192,6 +196,20 @@ function migrateToV2(db: Database.Database): void {
     } else {
       db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(CURRENT_SCHEMA_VERSION);
     }
+  });
+  tx();
+}
+
+function migrateToV3(db: Database.Database): void {
+  const tx = db.transaction(() => {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS project_uuids (
+        project_dir TEXT PRIMARY KEY,
+        uuid TEXT NOT NULL
+      )
+    `);
+
+    db.prepare('UPDATE schema_version SET version = ?').run(CURRENT_SCHEMA_VERSION);
   });
   tx();
 }
@@ -706,4 +724,16 @@ export function getDashboardStats(db: Database.Database): DashboardStats {
       latestDate: p.latestDate,
     })),
   };
+}
+
+// ── Project UUIDs ────────────────────────────────────────────
+
+/** Get or create a stable UUID for a project directory. */
+export function getProjectUuid(db: Database.Database, projectDir: string): string {
+  const row = db.prepare('SELECT uuid FROM project_uuids WHERE project_dir = ?').get(projectDir) as { uuid: string } | undefined;
+  if (row) return row.uuid;
+
+  const uuid = crypto.randomUUID();
+  db.prepare('INSERT INTO project_uuids (project_dir, uuid) VALUES (?, ?)').run(projectDir, uuid);
+  return uuid;
 }

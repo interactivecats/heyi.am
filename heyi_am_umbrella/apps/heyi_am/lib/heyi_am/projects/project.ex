@@ -3,6 +3,7 @@ defmodule HeyiAm.Projects.Project do
   import Ecto.Changeset
 
   schema "projects" do
+    field :client_project_id, Ecto.UUID
     field :slug, :string
     field :title, :string
     field :narrative, :string
@@ -26,21 +27,44 @@ defmodule HeyiAm.Projects.Project do
   end
 
   def changeset(project, attrs) do
-    attrs = sanitize_html(attrs)
+    attrs = attrs |> sanitize_html() |> normalize_slug()
 
     project
     |> cast(attrs, [
-      :slug, :title, :narrative, :repo_url, :project_url, :screenshot_key,
+      :client_project_id, :slug, :title, :narrative, :repo_url, :project_url, :screenshot_key,
       :timeline, :skills, :total_sessions, :total_loc, :total_duration_minutes,
       :total_agent_duration_minutes, :total_files_changed, :skipped_sessions, :rendered_html, :user_id
     ])
     |> validate_required([:slug, :title, :user_id])
     |> validate_length(:slug, max: 100)
     |> validate_length(:title, max: 200)
-    |> validate_format(:slug, ~r/^[a-z0-9-]+$/, message: "must be lowercase alphanumeric with hyphens")
+    |> validate_format(:slug, ~r/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, message: "must be lowercase alphanumeric with hyphens, cannot start or end with hyphen")
     |> unique_constraint([:user_id, :slug])
+    |> unique_constraint([:user_id, :client_project_id], name: :projects_user_id_client_project_id_index)
     |> foreign_key_constraint(:user_id)
   end
+
+  defp normalize_slug(%{"slug" => slug} = attrs) when is_binary(slug) do
+    normalized =
+      slug
+      |> String.downcase()
+      |> String.replace(~r/[^a-z0-9]+/, "-")
+      |> String.replace(~r/^-|-$/, "")
+      |> String.slice(0, 100)
+
+    Map.put(attrs, "slug", normalized)
+  end
+  defp normalize_slug(%{slug: slug} = attrs) when is_binary(slug) do
+    normalized =
+      slug
+      |> String.downcase()
+      |> String.replace(~r/[^a-z0-9]+/, "-")
+      |> String.replace(~r/^-|-$/, "")
+      |> String.slice(0, 100)
+
+    Map.put(attrs, :slug, normalized)
+  end
+  defp normalize_slug(attrs), do: attrs
 
   defp sanitize_html(%{"rendered_html" => html} = attrs) when is_binary(html) do
     Map.put(attrs, "rendered_html", HeyiAm.HtmlSanitizer.sanitize(html))

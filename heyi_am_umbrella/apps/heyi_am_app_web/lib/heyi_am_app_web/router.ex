@@ -150,6 +150,7 @@ defmodule HeyiAmAppWeb.Router do
 
     live_session :require_authenticated_user,
       on_mount: [{HeyiAmAppWeb.UserAuth, :require_authenticated}] do
+      live "/dashboard", DashboardLive
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
       live "/onboarding/username", ClaimUsernameLive
@@ -159,6 +160,9 @@ defmodule HeyiAmAppWeb.Router do
     post "/users/update-password", UserSessionController, :update_password
     get "/users/settings/export", UserSessionController, :export
     delete "/users/settings/delete-account", UserSessionController, :delete_account
+
+    get "/preview/project/:slug", PreviewController, :project
+    get "/preview/session/:id", PreviewController, :session
   end
 
   scope "/", HeyiAmAppWeb do

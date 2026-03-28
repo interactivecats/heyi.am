@@ -33,21 +33,31 @@ defmodule HeyiAm.Projects do
   end
 
   def list_user_projects_with_published_shares(user_id) do
-    published = from(s in Share, where: s.status != "draft", order_by: [asc: s.recorded_at])
+    listed = from(s in Share, where: s.status == "listed", order_by: [asc: s.recorded_at])
 
     Project
     |> where([p], p.user_id == ^user_id)
     |> order_by([p], asc: p.inserted_at)
-    |> preload(shares: ^published)
+    |> preload(shares: ^listed)
+    |> Repo.all()
+  end
+
+  def list_user_projects_with_all_shares(user_id) do
+    all_shares = from(s in Share, order_by: [desc: s.recorded_at])
+
+    Project
+    |> where([p], p.user_id == ^user_id)
+    |> order_by([p], asc: p.inserted_at)
+    |> preload(shares: ^all_shares)
     |> Repo.all()
   end
 
   def get_project_with_published_shares(user_id, slug) do
-    published = from(s in Share, where: s.status != "draft", order_by: [asc: s.recorded_at])
+    listed = from(s in Share, where: s.status == "listed", order_by: [asc: s.recorded_at])
 
     Project
     |> where([p], p.user_id == ^user_id and p.slug == ^slug)
-    |> preload(shares: ^published)
+    |> preload(shares: ^listed)
     |> Repo.one()
   end
 
@@ -71,20 +81,45 @@ defmodule HeyiAm.Projects do
     end
   end
 
+  def get_project_by_client_id(user_id, client_project_id) do
+    Repo.get_by(Project, user_id: user_id, client_project_id: client_project_id)
+  end
+
   def upsert_project(user_id, attrs) do
-    # Normalize to string keys so changeset cast doesn't get mixed atom/string maps
     attrs = Map.new(attrs, fn {k, v} -> {to_string(k), v} end)
+    client_id = attrs["client_project_id"]
     slug = attrs["slug"]
 
-    # Skip lookup when slug is nil — changeset validation will handle the error
-    existing = if slug, do: get_project_by_slug(user_id, slug), else: nil
+    existing =
+      (client_id && get_project_by_client_id(user_id, client_id)) ||
+        (slug && get_project_by_slug(user_id, slug))
 
-    case existing do
-      nil ->
-        create_project(Map.put(attrs, "user_id", user_id))
+    result =
+      case existing do
+        nil -> create_project(Map.put(attrs, "user_id", user_id))
+        %Project{} = project -> update_project(project, attrs)
+      end
 
-      %Project{} = project ->
-        update_project(project, attrs)
+    case result do
+      {:error, %Ecto.Changeset{} = changeset} ->
+        if slug_conflict?(changeset), do: {:error, :slug_conflict}, else: {:error, changeset}
+
+      ok ->
+        ok
     end
+  end
+
+  defp slug_conflict?(%Ecto.Changeset{} = changeset) do
+    Enum.any?(changeset.errors, fn
+      {_field, {_, opts}} ->
+        Keyword.get(opts, :constraint_name) == "projects_user_id_slug_index"
+
+      _ ->
+        false
+    end)
+  end
+
+  def delete_project(%Project{} = project) do
+    Repo.delete(project)
   end
 end

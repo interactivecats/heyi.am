@@ -9,6 +9,7 @@ import { renderProjectHtml, renderSessionHtml } from '../render/index.js';
 import { buildSessionRenderData, buildSessionCard, buildProjectRenderData } from '../render/build-render-data.js';
 import type { SessionCard } from '../render/types.js';
 import { buildAgentSummary, type RouteContext } from './context.js';
+import { displayNameFromDir } from '../sync.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -123,17 +124,18 @@ export function createPreviewRouter(ctx: RouteContext): Router {
       }));
 
       const projAny = proj as Record<string, unknown>;
+      const name = (projAny.name as string) || displayNameFromDir(projAny.dirName as string);
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       const renderData = buildProjectRenderData({
         username: auth?.username || 'preview',
-        slug: projAny.dirName as string,
-        title: projAny.name as string,
+        slug,
+        title: name,
         narrative: enhanceResult?.narrative || (projAny.description as string) || '',
         repoUrl: (req.query.repoUrl as string) || undefined,
         projectUrl: (req.query.projectUrl as string) || undefined,
         screenshotUrl: (() => {
-          const ssSlug = (projAny.name as string).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-          return existsSync(path.join(SCREENSHOTS_DIR, `${ssSlug}.png`))
-            ? `/screenshots/${ssSlug}.png`
+          return existsSync(path.join(SCREENSHOTS_DIR, `${slug}.png`))
+            ? `/screenshots/${slug}.png`
             : undefined;
         })(),
         timeline: enrichedTimeline,

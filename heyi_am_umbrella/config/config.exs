@@ -42,7 +42,9 @@ config :heyi_am_public_web, HeyiAmPublicWeb.Endpoint,
 
 # ── App web (:heyi_am_app_web) — heyiam.com, port 4001 ──────
 
-config :heyi_am_app_web, generators: [context_app: :heyi_am]
+config :heyi_am_app_web,
+  generators: [context_app: :heyi_am],
+  public_url: "http://localhost:4000"
 
 config :heyi_am_app_web, HeyiAmAppWeb.Endpoint,
   url: [host: "localhost"],

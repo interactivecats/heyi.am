@@ -10,6 +10,8 @@ import { buildSessionRenderData, buildSessionCard, buildProjectRenderData } from
 import type { SessionCard } from '../render/types.js';
 import type { ProjectEnhanceResult } from '../llm/project-enhance.js';
 import { buildAgentSummary, type RouteContext } from './context.js';
+import { displayNameFromDir } from '../sync.js';
+import { getProjectUuid } from '../db.js';
 
 export function createPublishRouter(ctx: RouteContext): Router {
   const router = Router();
@@ -93,7 +95,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
     }
 
     const {
-      title, slug, narrative, repoUrl, projectUrl,
+      title: rawTitle, slug: rawSlug, narrative, repoUrl, projectUrl,
       timeline, skills, totalSessions, totalLoc,
       totalDurationMinutes, totalAgentDurationMinutes,
       totalFilesChanged,
@@ -117,6 +119,14 @@ export function createPublishRouter(ctx: RouteContext): Router {
       screenshotBase64?: string;
     };
 
+    // Ensure slug is the short project name, not the full encoded directory path
+    const shortName = displayNameFromDir(String(project));
+    const baseSlug = shortName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const title = rawTitle === rawSlug ? shortName : rawTitle;
+
+    // Get stable project UUID from CLI database
+    const clientProjectId = getProjectUuid(ctx.db, String(project));
+
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
@@ -128,43 +138,59 @@ export function createPublishRouter(ctx: RouteContext): Router {
     };
 
     try {
-      // Step 1: Upsert project on Phoenix
+      // Step 1: Upsert project on Phoenix (with slug conflict retry)
       send({ type: 'project', status: 'creating' });
 
-      const projectRes = await fetch(`${API_URL}/api/projects`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${auth.token}`,
-        },
-        body: JSON.stringify({
-          project: {
-            title, slug, narrative,
-            repo_url: repoUrl || null,
-            project_url: projectUrl || null,
-            timeline, skills,
-            total_sessions: totalSessions,
-            total_loc: totalLoc,
-            total_duration_minutes: totalDurationMinutes,
-            total_agent_duration_minutes: totalAgentDurationMinutes || null,
-            total_files_changed: totalFilesChanged,
-            skipped_sessions: skippedSessions,
-          },
-        }),
-      });
+      let slug = baseSlug;
+      let projectRes: globalThis.Response | null = null;
+      const MAX_SLUG_RETRIES = 10;
 
-      if (!projectRes.ok) {
-        const errBody = await projectRes.json().catch(() => ({ error: 'Project creation failed' }));
+      for (let attempt = 0; attempt <= MAX_SLUG_RETRIES; attempt++) {
+        projectRes = await fetch(`${API_URL}/api/projects`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${auth.token}`,
+          },
+          body: JSON.stringify({
+            project: {
+              client_project_id: clientProjectId,
+              title, slug, narrative,
+              repo_url: repoUrl || null,
+              project_url: projectUrl || null,
+              timeline, skills,
+              total_sessions: totalSessions,
+              total_loc: totalLoc,
+              total_duration_minutes: totalDurationMinutes,
+              total_agent_duration_minutes: totalAgentDurationMinutes || null,
+              total_files_changed: totalFilesChanged,
+              skipped_sessions: skippedSessions,
+            },
+          }),
+        });
+
+        if (projectRes.status === 409) {
+          // Slug conflict — try with suffix
+          slug = `${baseSlug}-${attempt + 1}`;
+          send({ type: 'project', status: 'slug_conflict', slug, retry: attempt + 1 });
+          continue;
+        }
+        break;
+      }
+
+      if (!projectRes!.ok) {
+        const errBody = await projectRes!.json().catch(() => ({ error: 'Project creation failed' }));
         const rawErr = (errBody as { error?: unknown }).error;
         const errMsg = typeof rawErr === 'string' ? rawErr
+          : (rawErr && typeof rawErr === 'object' && 'details' in rawErr) ? JSON.stringify((rawErr as { details: unknown }).details)
           : (rawErr && typeof rawErr === 'object' && 'message' in rawErr) ? (rawErr as { message: string }).message
-          : `HTTP ${projectRes.status}`;
+          : `HTTP ${projectRes!.status}`;
         send({ type: 'project', status: 'failed', error: errMsg, fatal: true });
         res.end();
         return;
       }
 
-      const projectData = await projectRes.json() as { project_id: number; slug: string };
+      const projectData = await projectRes!.json() as { project_id: number; slug: string };
       send({ type: 'project', status: 'created', projectId: projectData.project_id, slug: projectData.slug });
 
       let screenshotUploaded = false;
@@ -477,6 +503,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
             },
             body: JSON.stringify({
               project: {
+                client_project_id: clientProjectId,
                 title, slug, narrative,
                 repo_url: repoUrl || null,
                 project_url: projectUrl || null,

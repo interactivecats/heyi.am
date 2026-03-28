@@ -22,6 +22,7 @@ import {
   countPreservedSessions,
   getContextSummary,
   getDashboardStats,
+  getProjectUuid,
   type UpsertSessionInput,
 } from './db.js';
 import type { SessionAnalysis } from './parsers/types.js';
@@ -128,7 +129,7 @@ describe('db', () => {
   describe('openDatabase', () => {
     it('creates schema_version table with current version', () => {
       const row = db.prepare('SELECT version FROM schema_version').get() as { version: number };
-      expect(row.version).toBe(2);
+      expect(row.version).toBe(3);
     });
 
     it('creates sessions table', () => {
@@ -155,8 +156,27 @@ describe('db', () => {
     it('is idempotent — opening twice does not error', () => {
       const db2 = openDatabase(join(tmpDir, 'test.db'));
       const row = db2.prepare('SELECT version FROM schema_version').get() as { version: number };
-      expect(row.version).toBe(2);
+      expect(row.version).toBe(3);
       db2.close();
+    });
+  });
+
+  describe('getProjectUuid', () => {
+    it('generates a UUID for a new project', () => {
+      const uuid = getProjectUuid(db, '-Users-ben-Dev-myapp');
+      expect(uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    });
+
+    it('returns the same UUID for the same project dir', () => {
+      const uuid1 = getProjectUuid(db, '-Users-ben-Dev-myapp');
+      const uuid2 = getProjectUuid(db, '-Users-ben-Dev-myapp');
+      expect(uuid1).toBe(uuid2);
+    });
+
+    it('returns different UUIDs for different project dirs', () => {
+      const uuid1 = getProjectUuid(db, '-Users-ben-Dev-app1');
+      const uuid2 = getProjectUuid(db, '-Users-ben-Dev-app2');
+      expect(uuid1).not.toBe(uuid2);
     });
   });
 

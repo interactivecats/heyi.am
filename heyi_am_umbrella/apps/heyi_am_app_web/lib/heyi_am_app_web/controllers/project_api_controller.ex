@@ -19,6 +19,11 @@ defmodule HeyiAmAppWeb.ProjectApiController do
           |> put_status(:created)
           |> json(%{project_id: project.id, slug: project.slug})
 
+        {:error, :slug_conflict} ->
+          conn
+          |> put_status(:conflict)
+          |> json(%{error: %{code: "SLUG_CONFLICT", slug: project_params["slug"]}})
+
         {:error, changeset} ->
           conn
           |> put_status(:unprocessable_entity)

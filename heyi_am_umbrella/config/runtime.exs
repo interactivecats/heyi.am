@@ -138,6 +138,9 @@ if config_env() == :prod do
     http: shared_http,
     secret_key_base: secret_key_base
 
+  config :heyi_am_app_web,
+    public_url: "https://#{public_host}"
+
   config :heyi_am_app_web, HeyiAmAppWeb.Endpoint,
     url: [host: app_host, port: 443, scheme: "https"],
     check_origin: ["https://#{app_host}"],

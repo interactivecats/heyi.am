@@ -27,7 +27,7 @@ defmodule HeyiAm.Shares do
   def get_published_share_by_project_slug(user_id, project_slug, session_slug) do
     Share
     |> join(:inner, [s], p in assoc(s, :project))
-    |> where([s, p], s.user_id == ^user_id and s.slug == ^session_slug and p.slug == ^project_slug and s.status != "draft")
+    |> where([s, p], s.user_id == ^user_id and s.slug == ^session_slug and p.slug == ^project_slug and s.status == "listed")
     |> preload([:user, :project])
     |> Repo.one()
   end
@@ -71,7 +71,7 @@ defmodule HeyiAm.Shares do
   def list_shares_for_project(project_id) do
     Share
     |> where(project_id: ^project_id)
-    |> where([s], s.status in ["listed", "unlisted"])
+    |> where([s], s.status == "listed")
     |> order_by([s], desc: s.recorded_at)
     |> Repo.all()
   end
@@ -81,6 +81,17 @@ defmodule HeyiAm.Shares do
     |> where([s], s.token == ^token and s.status != "draft")
     |> select([s], %{token: s.token, status: s.status, session_storage_key: s.session_storage_key})
     |> Repo.one()
+  end
+
+  def list_unassigned_shares_for_user(user_id) do
+    Share
+    |> where([s], s.user_id == ^user_id and is_nil(s.project_id))
+    |> order_by([s], desc: s.inserted_at)
+    |> Repo.all()
+  end
+
+  def get_user_share(user_id, share_id) do
+    Repo.get_by(Share, id: share_id, user_id: user_id)
   end
 
   def generate_token do

@@ -80,6 +80,28 @@ defmodule HeyiAm.ProjectsContextTest do
     end
   end
 
+  describe "list_user_projects_with_all_shares/1" do
+    test "returns projects with all shares including drafts" do
+      user = make_user()
+      {:ok, project} = Projects.create_project(%{slug: "all-shares", title: "All", user_id: user.id})
+
+      {:ok, _listed} = Shares.create_share(%{token: "t-all-listed", title: "Listed", status: "listed", user_id: user.id, project_id: project.id})
+      {:ok, _draft} = Shares.create_share(%{token: "t-all-draft", title: "Draft", status: "draft", user_id: user.id, project_id: project.id})
+      {:ok, _unlisted} = Shares.create_share(%{token: "t-all-unlisted", title: "Unlisted", status: "unlisted", user_id: user.id, project_id: project.id})
+
+      [result] = Projects.list_user_projects_with_all_shares(user.id)
+      assert length(result.shares) == 3
+    end
+
+    test "does not include other users' projects" do
+      user1 = make_user()
+      user2 = make_user()
+      project_fixture(user1.id, %{slug: "user1-all"})
+
+      assert Projects.list_user_projects_with_all_shares(user2.id) == []
+    end
+  end
+
   describe "get_project_with_published_shares/2" do
     test "returns project with published shares by slug" do
       user = make_user()

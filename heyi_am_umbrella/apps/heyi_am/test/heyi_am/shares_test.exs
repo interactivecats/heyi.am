@@ -198,7 +198,7 @@ defmodule HeyiAm.SharesTest do
   end
 
   describe "list_shares_for_project/1" do
-    test "returns published shares for a project" do
+    test "returns only listed shares for a project" do
       user = user_fixture()
       {:ok, project} = HeyiAm.Projects.create_project(%{slug: "list-test", title: "List", user_id: user.id})
 
@@ -207,8 +207,8 @@ defmodule HeyiAm.SharesTest do
       share_fixture(%{project_id: project.id, user_id: user.id, status: "draft"})
 
       shares = Shares.list_shares_for_project(project.id)
-      assert length(shares) == 2
-      assert Enum.all?(shares, &(&1.status in ["listed", "unlisted"]))
+      assert length(shares) == 1
+      assert Enum.all?(shares, &(&1.status == "listed"))
     end
 
     test "does not return shares from other projects" do
@@ -221,6 +221,49 @@ defmodule HeyiAm.SharesTest do
 
       shares = Shares.list_shares_for_project(proj1.id)
       assert length(shares) == 1
+    end
+  end
+
+  describe "list_unassigned_shares_for_user/1" do
+    test "returns shares without a project" do
+      user = user_fixture()
+      share_fixture(%{user_id: user.id, status: "draft"})
+
+      shares = Shares.list_unassigned_shares_for_user(user.id)
+      assert length(shares) == 1
+    end
+
+    test "excludes shares with a project" do
+      user = user_fixture()
+      {:ok, project} = HeyiAm.Projects.create_project(%{slug: "assigned", title: "Assigned", user_id: user.id})
+      share_fixture(%{user_id: user.id, project_id: project.id})
+
+      assert Shares.list_unassigned_shares_for_user(user.id) == []
+    end
+
+    test "does not return other users' shares" do
+      user1 = user_fixture()
+      user2 = user_fixture()
+      share_fixture(%{user_id: user1.id})
+
+      assert Shares.list_unassigned_shares_for_user(user2.id) == []
+    end
+  end
+
+  describe "get_user_share/2" do
+    test "returns share for correct owner" do
+      user = user_fixture()
+      share = share_fixture(%{user_id: user.id})
+
+      assert Shares.get_user_share(user.id, share.id) != nil
+    end
+
+    test "returns nil for wrong owner" do
+      user1 = user_fixture()
+      user2 = user_fixture()
+      share = share_fixture(%{user_id: user1.id})
+
+      assert Shares.get_user_share(user2.id, share.id) == nil
     end
   end
 
