@@ -4233,12 +4233,6 @@ body:has(.vibe-page) {
   background: var(--vibe-surface);
   border: 1px solid var(--vibe-border);
   border-radius: 8px;
-  text-decoration: none;
-  transition: border-color 0.15s;
-}
-
-.vibe-archetype-card:hover {
-  border-color: var(--vibe-accent);
 }
 
 .vibe-archetype-name {

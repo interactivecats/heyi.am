@@ -28,11 +28,11 @@
   <section class="vibe-archetypes" aria-labelledby="archetypes-heading">
     <h2 id="archetypes-heading">The archetypes</h2>
     <div class="vibe-archetype-grid">
-      <%= for {id, meta} <- @archetype_meta do %>
-        <a href={~p"/archetypes/#{id}"} class="vibe-archetype-card">
+      <%= for {_id, meta} <- @archetype_meta do %>
+        <div class="vibe-archetype-card">
           <span class="vibe-archetype-name"><%= meta.name %></span>
           <span class="vibe-archetype-tagline"><%= meta.tagline %></span>
-        </a>
+        </div>
       <% end %>
     </div>
   </section>
