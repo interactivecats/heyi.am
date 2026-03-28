@@ -65,19 +65,19 @@ function ExportDropdown({ dirName }: { dirName: string }) {
 
 function ProjectDetailWrapper() {
   const { dirName } = useParams<{ dirName: string }>()
-  const [projectUuid, setProjectUuid] = useState<string | null>(null)
+  const [projectName, setProjectName] = useState<string | null>(null)
 
   useEffect(() => {
     if (!dirName) return
     fetchProjectDetail(dirName).then((d) => {
-      if (d.project.uuid) setProjectUuid(d.project.uuid)
+      setProjectName(d.project.name)
     }).catch(() => {})
   }, [dirName])
 
   return (
     <AppShell
       back={{ label: 'Projects', to: '/projects' }}
-      chips={[{ label: projectUuid ?? '...' }]}
+      chips={[{ label: projectName ?? '...' }]}
       actions={
         <>
           <Link
