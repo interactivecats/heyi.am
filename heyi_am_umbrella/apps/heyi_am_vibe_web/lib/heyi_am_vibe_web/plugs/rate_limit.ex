@@ -23,25 +23,43 @@ defmodule HeyiAmVibeWeb.Plugs.RateLimit do
       {:deny, _limit} ->
         retry_after = div(period, 1_000)
 
-        conn
-        |> put_resp_header("retry-after", to_string(retry_after))
-        |> put_resp_content_type("application/json")
-        |> send_resp(429, Jason.encode!(%{
-          error: %{
-            code: "RATE_LIMITED",
-            message: "Too many requests.",
-            retry_after: retry_after
-          }
-        }))
-        |> halt()
+        conn = put_resp_header(conn, "retry-after", to_string(retry_after))
+
+        accepts_html =
+          case get_req_header(conn, "accept") do
+            [accept | _] -> String.contains?(accept, "text/html")
+            _ -> false
+          end
+
+        if accepts_html do
+          conn
+          |> put_resp_content_type("text/html")
+          |> send_resp(429, "Too many requests. Try again in #{retry_after}s.")
+          |> halt()
+        else
+          conn
+          |> put_resp_content_type("application/json")
+          |> send_resp(429, Jason.encode!(%{
+            error: %{
+              code: "RATE_LIMITED",
+              message: "Too many requests.",
+              retry_after: retry_after
+            }
+          }))
+          |> halt()
+        end
     end
   end
 
   defp bucket_key(conn, action) do
     ip =
-      conn.remote_ip
-      |> :inet.ntoa()
-      |> to_string()
+      case get_req_header(conn, "x-forwarded-for") do
+        [forwarded | _] ->
+          forwarded |> String.split(",") |> List.first() |> String.trim()
+
+        _ ->
+          conn.remote_ip |> :inet.ntoa() |> to_string()
+      end
 
     "rate_limit:#{action}:#{ip}"
   end

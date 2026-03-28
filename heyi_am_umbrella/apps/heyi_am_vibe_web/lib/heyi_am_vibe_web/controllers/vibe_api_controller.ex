@@ -25,6 +25,16 @@ defmodule HeyiAmVibeWeb.VibeApiController do
     "vibe-coder" => "The Vibe Coder"
   }
 
+  @allowed_stat_keys ~w(
+    expletives corrections please_rate avg_prompt_words longest_prompt_words
+    question_rate one_word_turn_rate reasoning_rate late_night_rate weekend_rate
+    apologies read_write_ratio test_runs failed_tests longest_tool_chain
+    self_corrections bash_commands override_success_rate longest_autopilot
+    first_blood_min redirects_per_hour turn_density scope_creep interruptions
+    secret_leaks_user secret_leaks_ai plan_mode_uses agent_spawns avg_daily_hours
+    total_turns session_count total_duration_min
+  )
+
   @modifier_phrases %{
     "says-please" => "who says please",
     "codes-at-3am" => "who codes at 3am",
@@ -97,7 +107,10 @@ defmodule HeyiAmVibeWeb.VibeApiController do
     else
       archetype_name = Map.get(@archetype_names, archetype_id, "The Vibe Coder")
       safe_modifier = Map.get(@modifier_phrases, modifier_id)
-      safe_stats = stats |> Enum.filter(fn {_k, v} -> is_number(v) end) |> Map.new()
+      safe_stats =
+        stats
+        |> Enum.filter(fn {k, v} -> is_number(v) and k in @allowed_stat_keys end)
+        |> Map.new()
 
       headline_task = Task.async(fn -> generate_headline(safe_stats, archetype_name, safe_modifier) end)
       narrative_task = Task.async(fn -> generate_narrative(safe_stats, archetype_name, safe_modifier) end)

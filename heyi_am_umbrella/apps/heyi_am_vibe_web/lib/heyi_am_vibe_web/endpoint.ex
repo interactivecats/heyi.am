@@ -1,8 +1,12 @@
 defmodule HeyiAmVibeWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :heyi_am_vibe_web
 
-  # No Plug.Session — vibes are anonymous
-  # No LiveView socket — no interactive features
+  # Minimal session for CSRF protection on delete form
+  plug Plug.Session,
+    store: :cookie,
+    key: "_vibe_csrf",
+    signing_salt: "vibe_csrf_salt",
+    same_site: "Lax"
 
   plug Plug.Static,
     at: "/",
@@ -23,7 +27,8 @@ defmodule HeyiAmVibeWeb.Endpoint do
   plug Plug.Parsers,
     parsers: [:urlencoded, :json],
     pass: ["*/*"],
-    json_decoder: Phoenix.json_library()
+    json_decoder: Phoenix.json_library(),
+    length: 16_384
 
   plug Plug.MethodOverride
   plug Plug.Head

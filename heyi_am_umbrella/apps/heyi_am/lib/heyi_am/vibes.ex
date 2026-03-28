@@ -91,9 +91,11 @@ defmodule HeyiAm.Vibes do
 
   defp generate_delete_code do
     words = @delete_words
-    w1 = Enum.random(words) |> String.upcase()
-    w2 = Enum.random(words) |> String.upcase()
-    digits = :rand.uniform(9000) + 999
+    len = length(words)
+    <<b1, b2, b3::16>> = :crypto.strong_rand_bytes(4)
+    w1 = Enum.at(words, rem(b1, len)) |> String.upcase()
+    w2 = Enum.at(words, rem(b2, len)) |> String.upcase()
+    digits = rem(b3, 9000) + 1000
     "#{w1}-#{w2}-#{digits}"
   end
 
