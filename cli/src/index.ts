@@ -39,6 +39,21 @@ program
     if (opts.verbose) process.env.HEYIAM_VERBOSE = '1';
     const port = parseInt(opts.port, 10);
 
+    // Check if another instance is already running on this port
+    try {
+      const res = await fetch(`http://localhost:${port}/api/dashboard`);
+      if (res.ok) {
+        console.log(`\nheyiam is already running at http://localhost:${port}`);
+        console.log('Opening existing instance...\n');
+        if (opts.open) {
+          open(`http://localhost:${port}`).catch(() => {});
+        }
+        return;
+      }
+    } catch {
+      // Port not in use — good, start the server
+    }
+
     if (opts.demo) {
       const { seedDemoMode } = await import('./demo-seed.js');
       const demoDir = seedDemoMode();
