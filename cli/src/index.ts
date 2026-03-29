@@ -43,12 +43,16 @@ program
     try {
       const res = await fetch(`http://localhost:${port}/api/dashboard`);
       if (res.ok) {
-        console.log(`\nheyiam is already running at http://localhost:${port}`);
-        console.log('Opening existing instance...\n');
-        if (opts.open) {
-          open(`http://localhost:${port}`).catch(() => {});
+        const body = await res.json().catch(() => null);
+        // Verify it's actually heyiam (not some other server on this port)
+        if (body && typeof body.stats?.sessionCount === 'number') {
+          console.log(`\nheyiam is already running at http://localhost:${port}`);
+          console.log('Opening existing instance...\n');
+          if (opts.open) {
+            open(`http://localhost:${port}`).catch(() => {});
+          }
+          return;
         }
-        return;
       }
     } catch {
       // Port not in use — good, start the server

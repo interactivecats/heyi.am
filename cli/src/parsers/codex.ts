@@ -304,7 +304,6 @@ export interface CodexSessionFile {
   cwd: string;
 }
 
-// Use shared readFirstLineEfficient from types.ts for discovery
 
 async function walkDir(dir: string, pattern: RegExp, results: string[]): Promise<void> {
   let entries;

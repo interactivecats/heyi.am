@@ -8,7 +8,6 @@ import {
   type ToolUseBlock,
   type ContentBlock,
   type TokenUsage,
-  readFirstLineEfficient,
   readFirstChunk,
 } from "./types.js";
 

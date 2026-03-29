@@ -73,8 +73,9 @@ export async function listSessions(basePath?: string): Promise<SessionMeta[]> {
   allSessions.push(...cursorSessions);
 
   // 3. Codex sessions
+  let codexFiles: Awaited<ReturnType<typeof discoverCodexSessions>> = [];
   try {
-    const codexFiles = await discoverCodexSessions();
+    codexFiles = await discoverCodexSessions();
     for (const cf of codexFiles) {
       allSessions.push({
         path: cf.path,
@@ -95,11 +96,9 @@ export async function listSessions(basePath?: string): Promise<SessionMeta[]> {
       realPaths.set(encodeDirPath(ws.projectDir), ws.projectDir);
     }
   } catch {}
-  try {
-    for (const cf of await discoverCodexSessions()) {
-      realPaths.set(encodeDirPath(cf.cwd), cf.cwd);
-    }
-  } catch {}
+  for (const cf of codexFiles) {
+    realPaths.set(encodeDirPath(cf.cwd), cf.cwd);
+  }
 
   // Collect known real project dirs for Gemini hash resolution
   const knownDirs = [...realPaths.values()];

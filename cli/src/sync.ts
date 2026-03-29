@@ -268,8 +268,6 @@ export async function syncSessionIndex(
   return result;
 }
 
-// ── Quick Sync (for CLI) ─────────────────────────────────────
-
 // ── Full Rebuild ─────────────────────────────────────────────
 
 /**
