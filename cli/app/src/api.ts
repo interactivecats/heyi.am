@@ -366,6 +366,10 @@ export async function startSignup(username: string): Promise<DeviceCodeInfo> {
   return post<DeviceCodeInfo>('/auth/signup', { username })
 }
 
+export async function startLogin(): Promise<DeviceCodeInfo> {
+  return post<DeviceCodeInfo>('/auth/login')
+}
+
 // ── Dashboard (SQLite-backed) ─────────────────────────────────
 
 export async function fetchDashboard(): Promise<DashboardResponse> {

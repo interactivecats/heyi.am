@@ -218,7 +218,7 @@ export function Search() {
                         <div className="flex items-center gap-3 font-mono text-[0.6875rem] text-outline shrink-0">
                           <span>{formatDuration(r.durationMinutes)}</span>
                           <span>{r.turns} turns</span>
-                          <span>{formatLoc(r.linesOfCode)} LOC</span>
+                          <span>{formatLoc(r.linesOfCode)} lines</span>
                         </div>
                       </div>
 

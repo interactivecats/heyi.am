@@ -32,6 +32,8 @@ export interface SessionAnalysis {
   source?: string;
   turns: ParsedTurn[];
   filesChanged: ParsedFileChange[];
+  /** Authoritative total LOC (additions + deletions) from parser loc_stats */
+  locTotal?: number;
   rawLog: string[];
   childAnalyses?: SessionAnalysis[];
   agentRole?: string;
@@ -389,7 +391,7 @@ export function analyzeSession(analysis: SessionAnalysis): Session {
     durationMinutes: analysis.durationMinutes,
     ...(analysis.wallClockMinutes != null ? { wallClockMinutes: analysis.wallClockMinutes } : {}),
     turns: analysis.turns.length,
-    linesOfCode: computeLinesOfCode(analysis.filesChanged),
+    linesOfCode: analysis.locTotal ?? computeLinesOfCode(analysis.filesChanged),
     status: 'draft',
     projectName: analysis.projectName,
     rawLog: analysis.rawLog,

@@ -61,6 +61,15 @@ defmodule HeyiAm.Projects do
     |> Repo.one()
   end
 
+  def get_project_with_accessible_shares(user_id, slug) do
+    visible = from(s in Share, where: s.status in ["listed", "unlisted"], order_by: [asc: s.recorded_at])
+
+    Project
+    |> where([p], p.user_id == ^user_id and p.slug == ^slug)
+    |> preload(shares: ^visible)
+    |> Repo.one()
+  end
+
   def get_project_with_all_shares(user_id, slug) do
     all_shares = from(s in Share, order_by: [asc: s.recorded_at])
 
@@ -96,8 +105,11 @@ defmodule HeyiAm.Projects do
 
     result =
       case existing do
-        nil -> create_project(Map.put(attrs, "user_id", user_id))
-        %Project{} = project -> update_project(project, attrs)
+        nil ->
+          create_project(Map.put(attrs, "user_id", user_id))
+
+        %Project{} = project ->
+          update_project(project, attrs)
       end
 
     case result do

@@ -134,5 +134,48 @@ defmodule HeyiAm.ProjectsContextTest do
       result = Projects.get_project_with_published_shares(user.id, "proj-d")
       assert result.shares == []
     end
+
+    test "excludes unlisted shares" do
+      user = make_user()
+      {:ok, project} = Projects.create_project(%{slug: "proj-u", title: "Proj", user_id: user.id})
+      {:ok, _} = Shares.create_share(%{token: "t-u", title: "Unlisted", status: "unlisted", user_id: user.id, project_id: project.id})
+
+      result = Projects.get_project_with_published_shares(user.id, "proj-u")
+      assert result.shares == []
+    end
+  end
+
+  describe "get_project_with_accessible_shares/2" do
+    test "returns listed and unlisted shares" do
+      user = make_user()
+      {:ok, project} = Projects.create_project(%{slug: "acc-proj", title: "Accessible", user_id: user.id})
+      {:ok, _} = Shares.create_share(%{token: "t-acc-listed", title: "Listed", status: "listed", user_id: user.id, project_id: project.id})
+      {:ok, _} = Shares.create_share(%{token: "t-acc-unlisted", title: "Unlisted", status: "unlisted", user_id: user.id, project_id: project.id})
+
+      result = Projects.get_project_with_accessible_shares(user.id, "acc-proj")
+      assert length(result.shares) == 2
+    end
+
+    test "excludes draft shares" do
+      user = make_user()
+      {:ok, project} = Projects.create_project(%{slug: "acc-draft", title: "Draft", user_id: user.id})
+      {:ok, _} = Shares.create_share(%{token: "t-acc-d", title: "Draft", status: "draft", user_id: user.id, project_id: project.id})
+
+      result = Projects.get_project_with_accessible_shares(user.id, "acc-draft")
+      assert result.shares == []
+    end
+
+    test "returns nil for wrong user" do
+      user1 = make_user()
+      user2 = make_user()
+      project_fixture(user1.id, %{slug: "acc-nope"})
+
+      assert Projects.get_project_with_accessible_shares(user2.id, "acc-nope") == nil
+    end
+
+    test "returns nil for non-existent slug" do
+      user = make_user()
+      assert Projects.get_project_with_accessible_shares(user.id, "ghost") == nil
+    end
   end
 end

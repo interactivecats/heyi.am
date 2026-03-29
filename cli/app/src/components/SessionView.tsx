@@ -250,7 +250,7 @@ export function SessionView() {
           <span className="text-ghost">|</span>
           <span>{filesChanged.length} files</span>
           <span className="text-ghost">|</span>
-          <span>{formatLoc(session.linesOfCode)} LOC</span>
+          <span>{formatLoc(session.linesOfCode)} lines</span>
         </div>
 
         {/* Developer take */}

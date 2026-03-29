@@ -3,7 +3,7 @@ defmodule HeyiAm.Shares.Share do
   import Ecto.Changeset
 
   @valid_templates ~w(editorial terminal minimal brutalist campfire neon-night)
-  @valid_statuses ~w(draft listed unlisted)
+  @valid_statuses ~w(draft listed unlisted archived)
 
   schema "shares" do
     field :token, :string

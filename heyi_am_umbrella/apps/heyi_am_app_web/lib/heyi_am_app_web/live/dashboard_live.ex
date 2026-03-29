@@ -96,9 +96,9 @@ defmodule HeyiAmAppWeb.DashboardLive do
         </div>
 
         <div class="project-card-stats">
-          <span class="label-sm">{length(project.shares)} sessions</span>
+          <span class="label-sm">{project.total_sessions || length(project.shares)} sessions</span>
           <span :if={project.total_duration_minutes} class="label-sm">{format_duration(project.total_duration_minutes)}</span>
-          <span :if={project.total_loc} class="label-sm">{format_number(project.total_loc)} loc</span>
+          <span :if={project.total_loc} class="label-sm">{format_number(project.total_loc)} lines changed</span>
           <span :if={project.total_files_changed} class="label-sm">{project.total_files_changed} files</span>
         </div>
 
@@ -122,7 +122,7 @@ defmodule HeyiAmAppWeb.DashboardLive do
           <summary class="project-sessions-toggle">
             <span class="label-md">Sessions</span>
             <span class="label-sm" style="color: var(--outline);">
-              {count_by_status(project.shares)}
+              {count_by_status(project.shares)}<span :if={project.total_sessions && project.total_sessions > length(project.shares)}> of {project.total_sessions} total</span>
             </span>
           </summary>
           <div class="project-sessions-list">
@@ -132,7 +132,7 @@ defmodule HeyiAmAppWeb.DashboardLive do
                 <div class="session-meta">
                   <span :if={share.duration_minutes} class="label-sm">{share.duration_minutes}m</span>
                   <span :if={share.files_changed} class="label-sm">{share.files_changed} files</span>
-                  <span :if={share.loc_changed} class="label-sm">{share.loc_changed} loc</span>
+                  <span :if={share.loc_changed} class="label-sm">{share.loc_changed} lines</span>
                 </div>
               </div>
               <div class="session-row-actions">
@@ -141,6 +141,7 @@ defmodule HeyiAmAppWeb.DashboardLive do
                     <option value="draft" selected={share.status == "draft"}>Private</option>
                     <option value="unlisted" selected={share.status == "unlisted"}>Unlisted</option>
                     <option value="listed" selected={share.status == "listed"}>Published</option>
+                    <option value="archived" selected={share.status == "archived"}>Archived</option>
                   </select>
                 </form>
                 <button
@@ -169,7 +170,7 @@ defmodule HeyiAmAppWeb.DashboardLive do
               <div class="session-meta">
                 <span :if={share.duration_minutes} class="label-sm">{share.duration_minutes}m</span>
                 <span :if={share.files_changed} class="label-sm">{share.files_changed} files</span>
-                <span :if={share.loc_changed} class="label-sm">{share.loc_changed} loc</span>
+                <span :if={share.loc_changed} class="label-sm">{share.loc_changed} lines</span>
               </div>
             </div>
             <div class="session-row-actions">
@@ -282,11 +283,24 @@ defmodule HeyiAmAppWeb.DashboardLive do
 
     all_shares = Enum.flat_map(projects, & &1.shares) ++ unassigned
 
+    # Use project-level totals (from CLI) when available, fall back to share counts
+    total_sessions =
+      projects
+      |> Enum.map(fn p -> p.total_sessions || length(p.shares) end)
+      |> Enum.sum()
+      |> Kernel.+(length(unassigned))
+
+    total_minutes =
+      projects
+      |> Enum.map(fn p -> p.total_duration_minutes || Enum.sum(Enum.map(p.shares, &(&1.duration_minutes || 0))) end)
+      |> Enum.sum()
+      |> Kernel.+(unassigned |> Enum.map(&(&1.duration_minutes || 0)) |> Enum.sum())
+
     socket
     |> assign(:projects, projects)
     |> assign(:unassigned, unassigned)
-    |> assign(:total_sessions, length(all_shares))
-    |> assign(:total_minutes, all_shares |> Enum.map(& (&1.duration_minutes || 0)) |> Enum.sum())
+    |> assign(:total_sessions, total_sessions)
+    |> assign(:total_minutes, total_minutes)
     |> assign(:published_count, Enum.count(all_shares, &(&1.status == "listed")))
   end
 
@@ -318,12 +332,14 @@ defmodule HeyiAmAppWeb.DashboardLive do
     listed = Enum.count(shares, &(&1.status == "listed"))
     draft = Enum.count(shares, &(&1.status == "draft"))
     unlisted = Enum.count(shares, &(&1.status == "unlisted"))
+    archived = Enum.count(shares, &(&1.status == "archived"))
 
     parts =
       [
         if(listed > 0, do: "#{listed} published"),
         if(unlisted > 0, do: "#{unlisted} unlisted"),
-        if(draft > 0, do: "#{draft} private")
+        if(draft > 0, do: "#{draft} private"),
+        if(archived > 0, do: "#{archived} archived")
       ]
       |> Enum.reject(&is_nil/1)
 

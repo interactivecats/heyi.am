@@ -4,6 +4,11 @@ defmodule HeyiAmAppWeb.PreviewController do
   alias HeyiAm.Projects
   alias HeyiAm.Shares
 
+  # Inline the render template CSS at compile time
+  @portfolio_css_path Path.expand("../../../priv/static/css/portfolio.css", __DIR__)
+  @external_resource @portfolio_css_path
+  @portfolio_css (if File.exists?(@portfolio_css_path), do: File.read!(@portfolio_css_path), else: "")
+
   def project(conn, %{"slug" => slug}) do
     user = conn.assigns.current_scope.user
 
@@ -41,8 +46,6 @@ defmodule HeyiAmAppWeb.PreviewController do
   end
 
   defp preview_shell(rendered_html, title) do
-    public_css = Application.get_env(:heyi_am_app_web, :public_url) <> "/assets/css/app.css"
-    public_js = Application.get_env(:heyi_am_app_web, :public_url) <> "/assets/js/app.js"
     safe_title = title |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
 
     """
@@ -55,18 +58,18 @@ defmodule HeyiAmAppWeb.PreviewController do
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
       <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-      <link rel="stylesheet" href="#{public_css}" />
-      <script defer src="#{public_js}"></script>
       <style>
+        #{@portfolio_css}
         .preview-banner {
           position: sticky; top: 0; z-index: 100;
-          background: #191c1e; color: #f0f1f3;
+          background: var(--primary, #084471); color: #f0f1f3;
           font-family: 'IBM Plex Mono', monospace;
           font-size: 0.75rem; font-weight: 500;
           letter-spacing: 0.04em; text-transform: uppercase;
           text-align: center; padding: 0.5rem;
         }
       </style>
+      <script defer src="/js/mount.js"></script>
     </head>
     <body>
       <div class="preview-banner">Preview — not publicly visible</div>

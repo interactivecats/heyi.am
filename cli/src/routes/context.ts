@@ -144,10 +144,17 @@ export function buildSessionList(
     }
   }
 
-  // Pre-load per-session file changes from session_files table
-  const fileStmt = db.prepare(
-    'SELECT file_path, additions, deletions FROM session_files WHERE session_id = ? ORDER BY (additions + deletions) DESC LIMIT 20',
-  );
+  // Pre-load per-session file changes (parent + children, deduplicated by path)
+  const fileStmt = db.prepare(`
+    SELECT file_path, SUM(additions) as additions, SUM(deletions) as deletions
+    FROM session_files
+    WHERE session_id IN (
+      SELECT id FROM sessions WHERE id = ? OR parent_session_id = ?
+    )
+    GROUP BY file_path
+    ORDER BY (SUM(additions) + SUM(deletions)) DESC
+    LIMIT 20
+  `);
 
   return parentRows.map((r) => {
     const enhanced = loadEnhancedData(r.id);
@@ -155,12 +162,13 @@ export function buildSessionList(
     const skills: string[] = enhanced?.skills ?? (r.skills ? JSON.parse(r.skills) : []);
     const locAdded = r.loc_added ?? 0;
     const locRemoved = r.loc_removed ?? 0;
+    const childLoc = (children ?? []).reduce((s, c) => s + c.linesOfCode, 0);
 
-    // Use individual file changes from session_files when available
-    const fileRows = fileStmt.all(r.id) as Array<{ file_path: string; additions: number; deletions: number }>;
+    // File changes: parent + children, grouped by path
+    const fileRows = fileStmt.all(r.id, r.id) as Array<{ file_path: string; additions: number; deletions: number }>;
     const filesChanged = fileRows.length > 0
       ? fileRows.map((f) => ({ path: f.file_path, additions: f.additions, deletions: f.deletions }))
-      : (locAdded > 0 || locRemoved > 0)
+      : (locAdded + childLoc > 0)
         ? [{ path: '(aggregate)', additions: locAdded, deletions: locRemoved }]
         : [];
 
@@ -172,7 +180,7 @@ export function buildSessionList(
       durationMinutes: r.duration_minutes ?? 0,
       wallClockMinutes: r.wall_clock_minutes ?? undefined,
       turns: r.turns ?? 0,
-      linesOfCode: locAdded + locRemoved,
+      linesOfCode: locAdded + locRemoved + (children ?? []).reduce((s, c) => s + c.linesOfCode, 0),
       filesChanged,
       status: (enhanced?.uploaded ? 'uploaded' : enhanced ? 'enhanced' : 'draft') as Session['status'],
       projectName,
@@ -211,7 +219,7 @@ export function buildProjectDetail(
   const totalLoc = sessionStats.reduce((sum, s) => sum + (s.linesOfCode || 0), 0);
   const totalDuration = sessionStats.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
   const totalFiles = (db.prepare(
-    'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ? AND is_subagent = 0)',
+    'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ?)',
   ).get(proj.dirName) as { c: number }).c;
   const agentDurationRow = db.prepare(
     'SELECT COALESCE(SUM(duration_minutes), 0) as total FROM sessions WHERE project_dir = ? AND is_subagent = 1',
@@ -480,7 +488,7 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
         totalLoc: dbStats.totalLoc,
         totalDuration: dbStats.totalDuration,
         totalFiles: (db.prepare(
-          'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ? AND is_subagent = 0)',
+          'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ?)',
         ).get(proj.dirName) as { c: number }).c,
         skills: dbStats.skills,
         dateRange: (() => {

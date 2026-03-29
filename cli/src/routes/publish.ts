@@ -326,7 +326,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
                 project_name: proj.name,
                 project_id: projectData.project_id,
                 slug: sessionSlug,
-                status: 'listed',
+                status: 'unlisted',
                 source_tool: sessionSourceTool,
                 agent_summary: agentSummary,
                 rendered_html: sessionRenderedHtml,
@@ -359,7 +359,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
               slug: sessionSlug,
               project_name: proj.name,
               narrative: sessionNarrative,
-              status: 'listed' as const,
+              status: 'unlisted' as const,
               raw_log: [] as string[],
               execution_path: (enhanced?.executionSteps ?? session.executionPath ?? []).map((s, i) => ({
                 label: s.title ?? `Step ${i + 1}`,
@@ -466,35 +466,26 @@ export function createPublishRouter(ctx: RouteContext): Router {
         }
       }
 
-      // Step 3: Render project HTML and update on Phoenix
+      // Step 3: Render project HTML using the same path as HTML export
       if (uploadedSessionCards.length > 0) {
         try {
-          const projectRenderData = buildProjectRenderData({
-            username: auth.username,
-            slug: projectData.slug,
-            title,
-            narrative,
-            repoUrl: repoUrl || undefined,
-            projectUrl: projectUrl || undefined,
-            screenshotUrl: screenshotUploaded
-              ? `/${auth.username}/${projectData.slug}/screenshot.png`
-              : undefined,
-            timeline: (timeline ?? []).map((t) => ({
-              period: t.period,
-              label: t.label,
-              sessions: t.sessions as Array<Record<string, unknown>>,
-            })),
-            skills,
-            totalSessions,
-            totalLoc,
-            totalDurationMinutes,
-            totalAgentDurationMinutes: totalAgentDurationMinutes ?? undefined,
-            totalFilesChanged,
-            sessionCards: uploadedSessionCards,
-          });
-          const projectHtml = renderProjectHtml(projectRenderData);
-
           send({ type: 'project', status: 'rendering' });
+
+          const { buildProjectDetail } = await import('./context.js');
+          const { generateProjectHtmlFragment } = await import('../export.js');
+          const detail = buildProjectDetail(ctx.db, proj!);
+          const cache = (detail.enhanceCache as import('../settings.js').ProjectEnhanceCache)
+            ?? { fingerprint: 'upload', enhancedAt: new Date().toISOString(), selectedSessionIds, result: { narrative, arc: [], skills, timeline, questions: [] } };
+          const totalFiles = (detail.project as Record<string, unknown>).totalFiles as number;
+
+          if (repoUrl) (cache as unknown as Record<string, unknown>).repoUrl = repoUrl;
+          if (projectUrl) (cache as unknown as Record<string, unknown>).projectUrl = projectUrl;
+
+          const projectHtml = generateProjectHtmlFragment(
+            String(project), cache, detail.sessions,
+            auth.username, { totalFilesChanged: totalFiles },
+          );
+
           const renderRes = await fetch(`${API_URL}/api/projects`, {
             method: 'POST',
             headers: {
@@ -541,10 +532,10 @@ export function createPublishRouter(ctx: RouteContext): Router {
         });
       }
 
-      const publishedUrl = `/${auth.username}/${projectData.slug}`;
+      const dashboardUrl = `${API_URL}/dashboard`;
       send({
         type: 'done',
-        projectUrl: publishedUrl,
+        projectUrl: dashboardUrl,
         projectId: projectData.project_id,
         slug: projectData.slug,
         uploaded: uploadedCount,

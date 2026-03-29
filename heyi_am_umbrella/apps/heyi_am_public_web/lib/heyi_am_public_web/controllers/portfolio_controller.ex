@@ -53,7 +53,7 @@ defmodule HeyiAmPublicWeb.PortfolioController do
         |> render(:"404")
 
       user ->
-        case Projects.get_project_with_published_shares(user.id, slug) do
+        case Projects.get_project_with_accessible_shares(user.id, slug) do
           nil ->
             conn
             |> put_status(:not_found)
@@ -96,7 +96,7 @@ defmodule HeyiAmPublicWeb.PortfolioController do
   def screenshot(conn, %{"username" => username, "project" => slug}) do
     user = Accounts.get_user_by_username(username)
 
-    case user && Projects.get_project_with_published_shares(user.id, slug) do
+    case user && Projects.get_project_with_accessible_shares(user.id, slug) do
       nil ->
         conn |> put_status(:not_found) |> text("")
 

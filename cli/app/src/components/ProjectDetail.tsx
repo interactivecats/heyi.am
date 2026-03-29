@@ -402,7 +402,7 @@ export function ProjectDetail() {
                 ? `${formatDuration(project.totalDuration)} / ${formatDuration(project.totalAgentDuration)}`
                 : formatDuration(project.totalDuration),
             },
-            { label: 'LOC', value: formatLoc(project.totalLoc) },
+            { label: 'Lines changed', value: formatLoc(project.totalLoc) },
             { label: 'Files', value: project.totalFiles },
           ]}
         />
@@ -415,7 +415,7 @@ export function ProjectDetail() {
 
         {/* Growth Chart — with v3-style annotations */}
         <Card className="mb-4">
-          <SectionHeader title="Project growth" meta="cumulative LOC" />
+          <SectionHeader title="Project growth" meta="lines changed" />
           <GrowthChart
             sessions={sessions}
             totalLoc={project.totalLoc}
@@ -488,7 +488,7 @@ export function ProjectDetail() {
                   {s.title}
                 </h4>
                 <span className="text-on-surface-variant text-xs">
-                  {formatDuration(s.durationMinutes)} · {s.turns} turns · {formatLoc(s.linesOfCode)} LOC
+                  {formatDuration(s.durationMinutes)} · {s.turns} turns · {formatLoc(s.linesOfCode)} lines
                 </span>
                 {s.skills?.[0] && (
                   <div className="mt-2">

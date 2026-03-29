@@ -198,7 +198,7 @@ defmodule HeyiAm.SharesTest do
   end
 
   describe "list_shares_for_project/1" do
-    test "returns only listed shares for a project" do
+    test "returns listed and unlisted shares, excludes drafts" do
       user = user_fixture()
       {:ok, project} = HeyiAm.Projects.create_project(%{slug: "list-test", title: "List", user_id: user.id})
 
@@ -207,8 +207,8 @@ defmodule HeyiAm.SharesTest do
       share_fixture(%{project_id: project.id, user_id: user.id, status: "draft"})
 
       shares = Shares.list_shares_for_project(project.id)
-      assert length(shares) == 1
-      assert Enum.all?(shares, &(&1.status == "listed"))
+      assert length(shares) == 2
+      assert Enum.all?(shares, &(&1.status != "draft"))
     end
 
     test "does not return shares from other projects" do

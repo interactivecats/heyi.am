@@ -425,14 +425,13 @@ export function getAllProjectStats(db: Database.Database): ProjectStats[] {
   const rows = db.prepare(`
     SELECT
       project_dir,
-      COUNT(*) as session_count,
+      SUM(CASE WHEN is_subagent = 0 THEN 1 ELSE 0 END) as session_count,
       COALESCE(SUM(loc_added + loc_removed), 0) as total_loc,
-      COALESCE(SUM(duration_minutes), 0) as total_duration,
-      COALESCE(SUM(turns), 0) as total_turns,
-      MAX(start_time) as latest_date,
+      COALESCE(SUM(CASE WHEN is_subagent = 0 THEN duration_minutes ELSE 0 END), 0) as total_duration,
+      COALESCE(SUM(CASE WHEN is_subagent = 0 THEN turns ELSE 0 END), 0) as total_turns,
+      MAX(CASE WHEN is_subagent = 0 THEN start_time END) as latest_date,
       GROUP_CONCAT(DISTINCT source) as sources
     FROM sessions
-    WHERE is_subagent = 0
     GROUP BY project_dir
     ORDER BY latest_date DESC
   `).all() as Array<{

@@ -840,7 +840,7 @@ function MockProjectPage({
           <div className="grid grid-cols-4 gap-3 mb-4">
             <StatCard label="Sessions" value={16} />
             <StatCard label="You / Agents" value="52h / 78h" />
-            <StatCard label="LOC" value={formatLoc(totalLoc)} />
+            <StatCard label="Lines changed" value={formatLoc(totalLoc)} />
             <StatCard label="Files" value={847} />
           </div>
         </div>
@@ -893,7 +893,7 @@ function MockProjectPage({
         {/* ── Growth Chart (REAL component) ───────────────── */}
         <div ref={(el) => { sectionRefs.current[2] = el }} className="px-5 pb-4">
           <Card>
-            <SectionHeader title="Project growth" meta="cumulative LOC" />
+            <SectionHeader title="Project growth" meta="lines changed" />
             <GrowthChart
               sessions={MOCK_SESSION_DATA}
               totalLoc={totalLoc}
@@ -961,7 +961,7 @@ function MockProjectPage({
                     {s.title}
                   </h4>
                   <span className="text-on-surface-variant text-xs">
-                    {formatDuration(s.durationMinutes)} · {s.turns} turns · {formatLoc(s.linesOfCode)} LOC
+                    {formatDuration(s.durationMinutes)} · {s.turns} turns · {formatLoc(s.linesOfCode)} lines
                   </span>
                   {s.skills?.[0] && (
                     <div className="mt-2">
@@ -1009,7 +1009,7 @@ function MockProjectPage({
               <MockStatBox label="Active Time" value={formatDuration(selectedSession.durationMinutes)} primary />
               <MockStatBox label="Turns" value={selectedSession.turns} />
               <MockStatBox label="Files" value={selectedSession.filesChanged?.length ?? '—'} />
-              <MockStatBox label="LOC" value={formatLoc(selectedSession.linesOfCode)} />
+              <MockStatBox label="Lines changed" value={formatLoc(selectedSession.linesOfCode)} />
             </div>
 
             {/* Developer take — only when enhanced */}

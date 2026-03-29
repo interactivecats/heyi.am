@@ -90,7 +90,7 @@ export function SessionOverlay({ session, sessionPageUrl, onClose }: SessionOver
               {hasChildren && <SplitLine you="You" agent={`${session.children!.length} agents`} />}
             </StatBox>
             <StatBox label="Files" value={session.filesChanged?.length === 1 && session.filesChanged[0]?.path === '(aggregate)' ? '—' : (session.filesChanged?.length ?? '—')} />
-            <StatBox label="LOC" value={formatLoc(session.linesOfCode)}>
+            <StatBox label="Lines changed" value={formatLoc(session.linesOfCode)}>
               {hasChildren && <SplitLine you={formatLoc(Math.max(0, session.linesOfCode - session.children!.reduce((s, c) => s + c.linesOfCode, 0)))} agent={formatLoc(session.children!.reduce((s, c) => s + c.linesOfCode, 0))} />}
             </StatBox>
           </div>

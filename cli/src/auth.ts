@@ -54,7 +54,7 @@ export function saveAuthToken(token: string, username: string, configDir: string
 
 export async function checkAuthStatus(
   apiBaseUrl: string,
-  configDir: string = CONFIG_DIR,
+  configDir: string = getConfigDir(),
   fetchFn: typeof fetch = fetch,
 ): Promise<{ authenticated: boolean; username?: string }> {
   const auth = getAuthToken(configDir);
@@ -72,7 +72,7 @@ export async function checkAuthStatus(
 
 export async function deviceAuthFlow(
   apiBaseUrl: string,
-  configDir: string = CONFIG_DIR,
+  configDir: string = getConfigDir(),
   options: {
     fetchFn?: typeof fetch;
     openBrowser?: (url: string) => Promise<void>;

@@ -363,30 +363,29 @@ export interface HtmlFile {
  * Generate HTML files in memory (no disk writes).
  * Returns an array of {path, content} for zipping.
  */
-export function generateHtmlFiles(
+
+// ── Shared render helpers ─────────────────────────────────────
+
+function buildProjectRenderInputs(
   dirName: string,
   cache: ProjectEnhanceCache,
   sessions: Session[],
-  username: string = 'local',
+  username: string,
   opts?: ExportOpts,
-): HtmlFile[] {
-  const files: HtmlFile[] = [];
+) {
   const { result } = cache;
   const slug = slugify(dirName);
   const title = dirName.replace(/^-/, '').replace(/-/g, ' ');
 
-  // Use ALL sessions — same as dashboard
-  const sessionCards = sessions.map((session) => {
-    return buildSessionCard({
-      sessionId: session.id,
-      session,
-      enhanced: null,
-      username,
-      projectSlug: slug,
-      sessionSlug: slugify(session.title),
-      sourceTool: session.source ?? 'unknown',
-    });
-  });
+  const sessionCards = sessions.map((session) => buildSessionCard({
+    sessionId: session.id,
+    session,
+    enhanced: null,
+    username,
+    projectSlug: slug,
+    sessionSlug: slugify(session.title),
+    sourceTool: session.source ?? 'unknown',
+  }));
 
   const totalLoc = sessions.reduce((sum, s) => sum + s.linesOfCode, 0);
   const totalDurationMinutes = sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
@@ -396,6 +395,52 @@ export function generateHtmlFiles(
     .reduce((sum, s) => sum + s.children!.reduce((cs, c) => cs + c.durationMinutes, 0), 0);
   const totalAgentDurationMinutes = totalAgentMinutes > 0 ? totalDurationMinutes + totalAgentMinutes : undefined;
 
+  return { result, slug, title, sessionCards, totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged };
+}
+
+/**
+ * Render just the project HTML fragment (no shell, no scripts).
+ * Used by the upload flow to store rendered_html in the DB.
+ */
+export function generateProjectHtmlFragment(
+  dirName: string,
+  cache: ProjectEnhanceCache,
+  sessions: Session[],
+  username: string = 'local',
+  opts?: ExportOpts,
+): string {
+  const { result, slug, title, sessionCards, totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged } =
+    buildProjectRenderInputs(dirName, cache, sessions, username, opts);
+
+  const renderData = buildProjectRenderData({
+    username, slug, title,
+    narrative: result.narrative,
+    repoUrl: cache.repoUrl,
+    projectUrl: cache.projectUrl,
+    timeline: result.timeline.map((t) => ({ period: t.period, label: t.label, sessions: t.sessions as unknown as Array<Record<string, unknown>> })),
+    skills: result.skills,
+    totalSessions: sessions.length,
+    totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged,
+    sessionCards,
+  });
+
+  return renderProjectHtml(renderData, {
+    arc: result.arc,
+    fullSessions: sessions as unknown as Array<Record<string, unknown>>,
+  });
+}
+
+export function generateHtmlFiles(
+  dirName: string,
+  cache: ProjectEnhanceCache,
+  sessions: Session[],
+  username: string = 'local',
+  opts?: ExportOpts,
+): HtmlFile[] {
+  const files: HtmlFile[] = [];
+  const { result, slug, title, sessionCards, totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged } =
+    buildProjectRenderInputs(dirName, cache, sessions, username, opts);
+
   const screenshotUrl = resolveScreenshotDataUri(dirName, cache);
 
   const projectRenderData = buildProjectRenderData({
@@ -404,17 +449,10 @@ export function generateHtmlFiles(
     repoUrl: cache.repoUrl,
     projectUrl: cache.projectUrl,
     screenshotUrl,
-    timeline: result.timeline.map((t) => ({
-      period: t.period,
-      label: t.label,
-      sessions: t.sessions as unknown as Array<Record<string, unknown>>,
-    })),
+    timeline: result.timeline.map((t) => ({ period: t.period, label: t.label, sessions: t.sessions as unknown as Array<Record<string, unknown>> })),
     skills: result.skills,
     totalSessions: sessions.length,
-    totalLoc,
-    totalDurationMinutes,
-    totalAgentDurationMinutes,
-    totalFilesChanged,
+    totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged,
     sessionCards,
     sessionBaseUrl: './sessions',
   });

@@ -14,9 +14,10 @@ defmodule HeyiAm.Shares do
 
   def get_published_share_by_token(token) do
     case Repo.get_by(Share, token: token) do
-      nil -> nil
-      %{status: "draft"} -> nil
-      share -> Repo.preload(share, [:user, :project])
+      %{status: status} = share when status in ["listed", "unlisted"] ->
+        Repo.preload(share, [:user, :project])
+      _ ->
+        nil
     end
   end
 
@@ -27,7 +28,7 @@ defmodule HeyiAm.Shares do
   def get_published_share_by_project_slug(user_id, project_slug, session_slug) do
     Share
     |> join(:inner, [s], p in assoc(s, :project))
-    |> where([s, p], s.user_id == ^user_id and s.slug == ^session_slug and p.slug == ^project_slug and s.status == "listed")
+    |> where([s, p], s.user_id == ^user_id and s.slug == ^session_slug and p.slug == ^project_slug and s.status in ["listed", "unlisted"])
     |> preload([:user, :project])
     |> Repo.one()
   end
@@ -71,14 +72,14 @@ defmodule HeyiAm.Shares do
   def list_shares_for_project(project_id) do
     Share
     |> where(project_id: ^project_id)
-    |> where([s], s.status == "listed")
+    |> where([s], s.status in ["listed", "unlisted"])
     |> order_by([s], desc: s.recorded_at)
     |> Repo.all()
   end
 
   def get_published_share_by_token_slim(token) do
     Share
-    |> where([s], s.token == ^token and s.status != "draft")
+    |> where([s], s.token == ^token and s.status in ["listed", "unlisted"])
     |> select([s], %{token: s.token, status: s.status, session_storage_key: s.session_storage_key})
     |> Repo.one()
   end
@@ -92,6 +93,12 @@ defmodule HeyiAm.Shares do
 
   def get_user_share(user_id, share_id) do
     Repo.get_by(Share, id: share_id, user_id: user_id)
+  end
+
+  def archive_project_sessions(project_id) do
+    Share
+    |> where([s], s.project_id == ^project_id and s.status in ["listed", "unlisted"])
+    |> Repo.update_all(set: [status: "archived"])
   end
 
   def generate_token do

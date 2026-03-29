@@ -79,7 +79,7 @@ export function Boundaries() {
                 included.map((s) => (
                   <Note key={s.id} title={s.title}>
                     <span className="font-mono text-xs text-on-surface-variant">
-                      {s.source ?? 'unknown'} &middot; {(s.filesChanged?.length ?? 0)} files &middot; {s.linesOfCode} LOC
+                      {s.source ?? 'unknown'} &middot; {(s.filesChanged?.length ?? 0)} files &middot; {s.linesOfCode} lines
                     </span>
                   </Note>
                 ))

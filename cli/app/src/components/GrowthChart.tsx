@@ -409,7 +409,7 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
         )}
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#191c1e' }}>{formatLoc(totalLoc)}</div>
-          <div style={{ color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Total LOC</div>
+          <div style={{ color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Lines changed</div>
         </div>
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#191c1e' }}>{totalFiles}</div>

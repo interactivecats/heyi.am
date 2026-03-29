@@ -149,6 +149,7 @@ defmodule HeyiAmAppWeb.ProjectApiController do
 
   defp image_content_type?(_), do: false
 
+
   defp format_errors(changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
       Regex.replace(~r"%{(\w+)}", msg, fn _, key ->

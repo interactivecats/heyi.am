@@ -144,7 +144,7 @@ export function Projects() {
                   <div className="grid grid-cols-4 gap-3 mt-3">
                     <StatCard label="Sessions" value={p.sessionCount} valueSize="text-lg" />
                     <StatCard label="Time" value={formatDuration(p.totalDuration)} valueSize="text-lg" />
-                    <StatCard label="LOC" value={formatLoc(p.totalLoc)} valueSize="text-lg" />
+                    <StatCard label="Lines changed" value={formatLoc(p.totalLoc)} valueSize="text-lg" />
                     <StatCard label="Files" value={p.totalFiles} valueSize="text-lg" />
                   </div>
                 </Card>

@@ -138,7 +138,7 @@ export function ProjectSessions() {
             <span className="font-mono text-[9px] uppercase tracking-wider text-outline">Sort:</span>
             <SortHeader label="Date" sortKey="date" />
             <SortHeader label="Duration" sortKey="duration" />
-            <SortHeader label="LOC" sortKey="loc" />
+            <SortHeader label="Lines" sortKey="loc" />
             <SortHeader label="Turns" sortKey="turns" />
           </div>
         </div>
@@ -162,7 +162,7 @@ export function ProjectSessions() {
                   <span className="text-ghost">|</span>
                   <span>{s.turns} turns</span>
                   <span className="text-ghost">|</span>
-                  <span>{formatLoc(s.linesOfCode)} LOC</span>
+                  <span>{formatLoc(s.linesOfCode)} lines</span>
                 </div>
                 {s.developerTake && (
                   <p className="text-xs text-on-surface-variant mt-1 line-clamp-1">

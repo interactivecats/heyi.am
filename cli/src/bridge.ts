@@ -54,6 +54,7 @@ export function bridgeToAnalyzer(
     projectName: opts.projectName,
     turns,
     filesChanged,
+    locTotal: parsed.loc_stats.loc_added + parsed.loc_stats.loc_removed,
     rawLog,
     ...(parsed.cwd ? { cwd: parsed.cwd } : {}),
     ...(opts.agentRole ? { agentRole: opts.agentRole } : {}),
@@ -205,24 +206,10 @@ function computePerFileChanges(toolCalls: ToolCall[], locStats?: LocStats, cwd?:
     .map(([path, stats]) => ({ path: stripHomePath(path, cwd), ...stats }))
     .sort((a, b) => a.path.localeCompare(b.path));
 
-  // When tool-call-based computation yields nothing, fall back to
-  // the parser's loc_stats (which may have data from workspace metadata
-  // or other source-specific mechanisms).
-  if (result.length === 0 && locStats && (locStats.loc_added > 0 || locStats.loc_removed > 0)) {
-    // Use per-file data from loc_stats if available
-    if (locStats.files_changed.length > 0) {
-      const perFile = Math.ceil(locStats.loc_added / locStats.files_changed.length);
-      const perFileDel = Math.ceil(locStats.loc_removed / locStats.files_changed.length);
-      return locStats.files_changed.map((path) => ({
-        path: stripHomePath(path, cwd),
-        additions: perFile,
-        deletions: perFileDel,
-      }));
-    }
-    // No per-file paths available — return empty array.
-    // Aggregate LOC data still flows through loc_stats on the parser output.
-    return [];
-  }
+  // When tool-call-based computation yields nothing, return empty.
+  // The total LOC still flows through loc_stats on the parser output
+  // and is stored as loc_added/loc_removed on the sessions table.
+  // We don't fake per-file attribution we don't have.
 
   return result;
 }

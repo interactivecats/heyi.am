@@ -99,7 +99,7 @@ function SessionOverview({
             ? `${formatDuration(project.totalDuration)} / ${formatDuration(project.totalAgentDuration)}`
             : formatDuration(project.totalDuration)}
         />
-        <StatCard label="LOC" value={formatLoc(project.totalLoc)} />
+        <StatCard label="Lines changed" value={formatLoc(project.totalLoc)} />
         <StatCard label="Files" value={String(project.totalFiles)} />
       </div>
 
@@ -433,7 +433,7 @@ function TriageResults({
       <PhaseBar current="triage" />
 
       <div className="upload-flow__scan-status">
-        &#10003; Scanned {sessions.length} sessions &middot; {formatDuration(project.totalDuration)} &middot; {formatLoc(project.totalLoc)} LOC
+        &#10003; Scanned {sessions.length} sessions &middot; {formatDuration(project.totalDuration)} &middot; {formatLoc(project.totalLoc)} lines
       </div>
 
       <h2 className="upload-flow__title">AI selected {selectedCount} sessions to showcase</h2>
@@ -462,7 +462,7 @@ function TriageResults({
               key={item.sessionId}
               sessionId={item.sessionId}
               title={s?.title ?? item.sessionId}
-              stats={s ? `${formatDuration(s.durationMinutes)} \u00b7 ${formatLoc(s.linesOfCode)} LOC \u00b7 ${s.turns} turns` : ''}
+              stats={s ? `${formatDuration(s.durationMinutes)} \u00b7 ${formatLoc(s.linesOfCode)} lines \u00b7 ${s.turns} turns` : ''}
               reason={item.reason}
               variant="selected"
               checked={isSelected}
@@ -486,7 +486,7 @@ function TriageResults({
                 key={item.sessionId}
                 sessionId={item.sessionId}
                 title={s?.title ?? item.sessionId}
-                stats={s ? `${formatDuration(s.durationMinutes)} \u00b7 ${formatLoc(s.linesOfCode)} LOC \u00b7 ${s.turns} turns` : ''}
+                stats={s ? `${formatDuration(s.durationMinutes)} \u00b7 ${formatLoc(s.linesOfCode)} lines \u00b7 ${s.turns} turns` : ''}
                 reason={item.reason}
                 variant="skipped"
                 checked={isSelected}

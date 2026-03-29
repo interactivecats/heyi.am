@@ -62,7 +62,7 @@
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-card__label">LOC</div>
+      <div class="stat-card__label">Lines changed</div>
       <div class="stat-card__value">{{ project.totalLoc | formatLoc }}</div>
     </div>
     <div class="stat-card">
@@ -187,7 +187,7 @@
           <div class="session-card__bar session-card__bar--{{ forloop.index0 | durationColor }}"></div>
           <h4 class="session-card__title">{{ session.title }}</h4>
           <span class="session-card__meta">
-            {{ session.durationMinutes | formatDuration }} &middot; {{ session.turns }} turns &middot; {{ session.locChanged | formatLoc }} LOC
+            {{ session.durationMinutes | formatDuration }} &middot; {{ session.turns }} turns &middot; {{ session.locChanged | formatLoc }} lines
           </span>
           {% if session.skills.size > 0 %}
           <div class="session-card__skills">

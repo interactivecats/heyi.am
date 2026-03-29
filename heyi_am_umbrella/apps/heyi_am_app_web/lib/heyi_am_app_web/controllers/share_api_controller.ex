@@ -20,7 +20,7 @@ defmodule HeyiAmAppWeb.ShareApiController do
       log_key = "sessions/#{token}/log.json"
       session_key = "sessions/#{token}/session.json"
 
-      status = if session_params["status"] in ~w(listed unlisted), do: session_params["status"], else: "listed"
+      status = if session_params["status"] in ~w(listed unlisted), do: session_params["status"], else: "unlisted"
 
       verified_project_id =
         case session_params["project_id"] do
