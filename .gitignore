@@ -39,7 +39,6 @@ heyi_minio/
 .gemini/
 
 # AI tool config files (root-level)
-.teamrc.yaml
 team-knowledge.md
 AGENTS.md
 GEMINI.md
