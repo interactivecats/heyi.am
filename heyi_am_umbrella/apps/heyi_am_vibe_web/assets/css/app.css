@@ -47,7 +47,6 @@
 
   background: var(--vibe-bg);
   color: var(--vibe-text);
-  min-height: 100vh;
   font-family: 'IBM Plex Mono', 'SF Mono', 'Fira Code', monospace;
   padding: 2rem 1.5rem;
   max-width: 720px;
@@ -57,6 +56,7 @@
 /* Override app layout background for vibe pages */
 body:has(.vibe-page) {
   background: #0a0a0f !important;
+  min-height: 100vh;
 }
 
 /* ── Focus styles (a11y) ── */
@@ -204,7 +204,9 @@ body:has(.vibe-page) {
 
 .vibe-actions {
   margin-top: 1.5rem;
-  text-align: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
 }
 
 .vibe-btn {
@@ -556,7 +558,7 @@ body:has(.vibe-page) {
   font-size: 0.6875rem;
   color: var(--vibe-text-muted, #6b7280);
   border-top: 1px solid var(--vibe-border, #1f2937);
-  max-width: 720px;
+  max-width: 900px;
   margin: 3rem auto 0;
 }
 

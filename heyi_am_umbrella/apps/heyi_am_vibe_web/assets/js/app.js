@@ -88,3 +88,35 @@ document.querySelectorAll("[role=alert][data-flash]").forEach((el) => {
     el.setAttribute("hidden", "")
   })
 })
+
+// Copy URL button
+document.addEventListener("click", function(e) {
+  var btn = e.target.closest("[data-copy-url]")
+  if (!btn) return
+
+  var url = window.location.href
+  function done() {
+    btn.textContent = "[ copied! ]"
+    setTimeout(function() { btn.textContent = "[ copy link ]" }, 2000)
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(done).catch(function() {
+      fallbackCopy(url, done)
+    })
+  } else {
+    fallbackCopy(url, done)
+  }
+})
+
+function fallbackCopy(text, cb) {
+  var ta = document.createElement("textarea")
+  ta.value = text
+  ta.style.position = "fixed"
+  ta.style.opacity = "0"
+  document.body.appendChild(ta)
+  ta.select()
+  document.execCommand("copy")
+  document.body.removeChild(ta)
+  cb()
+}
