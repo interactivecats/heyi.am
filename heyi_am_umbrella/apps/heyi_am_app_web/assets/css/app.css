@@ -1686,6 +1686,54 @@ body {
   color: var(--outline);
 }
 
+.session-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.session-title--link {
+  color: var(--on-surface);
+  text-decoration: none;
+}
+.session-title--link:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.badge-new {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--primary);
+  background: var(--primary-fixed);
+  padding: 0.0625rem 0.375rem;
+  border-radius: var(--radius-xs);
+  flex-shrink: 0;
+}
+
+.btn-copy-link {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary);
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--outline-variant);
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-copy-link:hover {
+  background: var(--primary-fixed);
+  text-decoration: none;
+}
+
 .session-row-actions {
   display: flex;
   align-items: center;

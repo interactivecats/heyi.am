@@ -24,7 +24,7 @@ defmodule HeyiAmAppWeb.DashboardLive do
         <h1 class="headline-lg">Dashboard</h1>
         <a
           :if={@current_scope.user.username}
-          href={"#{Application.get_env(:heyi_am_app_web, :public_url)}/#{@current_scope.user.username}"}
+          href={"#{public_url()}/#{@current_scope.user.username}"}
           target="_blank"
           class="btn-tertiary"
         >
@@ -68,7 +68,7 @@ defmodule HeyiAmAppWeb.DashboardLive do
           </div>
           <a
             :if={@current_scope.user.username && has_listed?(project) && project.rendered_html}
-            href={"#{Application.get_env(:heyi_am_app_web, :public_url)}/#{@current_scope.user.username}/#{project.slug}"}
+            href={"#{public_url()}/#{@current_scope.user.username}/#{project.slug}"}
             target="_blank"
             class="btn-tertiary"
           >
@@ -118,7 +118,7 @@ defmodule HeyiAmAppWeb.DashboardLive do
           </form>
         </div>
 
-        <details class="project-sessions">
+        <details class="project-sessions" open={has_recent_uploads?(project.shares)}>
           <summary class="project-sessions-toggle">
             <span class="label-md">Sessions</span>
             <span class="label-sm" style="color: var(--outline);">
@@ -128,7 +128,10 @@ defmodule HeyiAmAppWeb.DashboardLive do
           <div class="project-sessions-list">
             <div :for={share <- project.shares} class="session-row" id={"share-#{share.id}"}>
               <div class="session-row-info">
-                <span class="title-sm session-title">{share.title}</span>
+                <div class="session-title-row">
+                  <.session_title_link share={share} username={@current_scope.user.username} />
+                  <span :if={is_recent?(share)} class="badge-new">New</span>
+                </div>
                 <div class="session-meta">
                   <span :if={share.duration_minutes} class="label-sm">{share.duration_minutes}m</span>
                   <span :if={share.files_changed} class="label-sm">{share.files_changed} files</span>
@@ -136,6 +139,16 @@ defmodule HeyiAmAppWeb.DashboardLive do
                 </div>
               </div>
               <div class="session-row-actions">
+                <a
+                  :if={share.status in ["unlisted", "listed"] && share.token}
+                  id={"copy-#{share.id}"}
+                  phx-hook="CopyLink"
+                  data-url={"#{public_url()}/s/#{share.token}"}
+                  href="#"
+                  class="btn-copy-link"
+                >
+                  Copy link
+                </a>
                 <form phx-change="update_status" phx-value-share-id={share.id}>
                   <select name="status" class={"status-select status-select--#{share.status}"}>
                     <option value="draft" selected={share.status == "draft"}>Private</option>
@@ -166,7 +179,10 @@ defmodule HeyiAmAppWeb.DashboardLive do
         <div class="project-sessions-list">
           <div :for={share <- @unassigned} class="session-row" id={"share-#{share.id}"}>
             <div class="session-row-info">
-              <span class="title-sm session-title">{share.title}</span>
+              <div class="session-title-row">
+                <.session_title_link share={share} username={@current_scope.user.username} />
+                <span :if={is_recent?(share)} class="badge-new">New</span>
+              </div>
               <div class="session-meta">
                 <span :if={share.duration_minutes} class="label-sm">{share.duration_minutes}m</span>
                 <span :if={share.files_changed} class="label-sm">{share.files_changed} files</span>
@@ -174,6 +190,16 @@ defmodule HeyiAmAppWeb.DashboardLive do
               </div>
             </div>
             <div class="session-row-actions">
+              <a
+                :if={share.status in ["unlisted", "listed"] && share.token}
+                id={"copy-#{share.id}"}
+                phx-hook="CopyLink"
+                data-url={"#{public_url()}/s/#{share.token}"}
+                href="#"
+                class="btn-copy-link"
+              >
+                Copy link
+              </a>
               <form phx-change="update_status" phx-value-share-id={share.id}>
                 <select name="status" class={"status-select status-select--#{share.status}"}>
                   <option value="draft" selected={share.status == "draft"}>Private</option>
@@ -198,6 +224,23 @@ defmodule HeyiAmAppWeb.DashboardLive do
     """
   end
 
+  defp session_title_link(assigns) do
+    ~H"""
+    <%= cond do %>
+      <% @share.status == "listed" && @share.token -> %>
+        <a href={"#{public_url()}/s/#{@share.token}"} target="_blank" class="title-sm session-title session-title--link">
+          {@share.title}
+        </a>
+      <% @share.rendered_html -> %>
+        <a href={~p"/preview/session/#{@share.id}"} target="_blank" class="title-sm session-title session-title--link">
+          {@share.title}
+        </a>
+      <% true -> %>
+        <span class="title-sm session-title">{@share.title}</span>
+    <% end %>
+    """
+  end
+
   @impl true
   def handle_event("update_status", %{"share-id" => share_id, "status" => status}, socket) do
     user = socket.assigns.current_scope.user
@@ -217,7 +260,8 @@ defmodule HeyiAmAppWeb.DashboardLive do
     end
   end
 
-  def handle_event("update_project_status", %{"project-id" => project_id, "status" => status}, socket) do
+  def handle_event("update_project_status", %{"project-id" => project_id, "status" => status}, socket)
+      when status in ["draft", "unlisted", "listed"] do
     user = socket.assigns.current_scope.user
 
     case Projects.get_user_project(user.id, project_id) do
@@ -304,6 +348,8 @@ defmodule HeyiAmAppWeb.DashboardLive do
     |> assign(:published_count, Enum.count(all_shares, &(&1.status == "listed")))
   end
 
+  defp public_url, do: Application.get_env(:heyi_am_app_web, :public_url)
+
   defp format_duration(nil), do: "0m"
   defp format_duration(minutes) when minutes < 60, do: "#{minutes}m"
   defp format_duration(minutes), do: "#{div(minutes, 60)}h"
@@ -326,6 +372,17 @@ defmodule HeyiAmAppWeb.DashboardLive do
 
   defp has_listed?(project) do
     Enum.any?(project.shares, &(&1.status == "listed"))
+  end
+
+  defp is_recent?(share) do
+    case share.inserted_at do
+      nil -> false
+      ts -> DateTime.diff(DateTime.utc_now(), ts, :second) < 3600
+    end
+  end
+
+  defp has_recent_uploads?(shares) do
+    Enum.any?(shares, &is_recent?/1)
   end
 
   defp count_by_status(shares) do

@@ -7,7 +7,7 @@ defmodule HeyiAmPublicWeb do
   and NO CSRF protection (there are no forms to protect).
   """
 
-  def static_paths, do: ~w(assets fonts images favicon.ico favicon.svg robots.txt)
+  def static_paths, do: ~w(assets fonts images js favicon.ico favicon.svg robots.txt)
 
   def router do
     quote do
