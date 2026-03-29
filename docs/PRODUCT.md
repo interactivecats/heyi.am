@@ -237,7 +237,7 @@ Both `/:username/:project/:session-slug` and `/s/:token` resolve to the same ses
 
 ## Design System
 
-See `mockups/full/DESIGN.md` for the canonical spec ("The Calibrated Archive").
+"The Calibrated Archive" — engineering workbench aesthetic, not consumer app.
 
 - **Fonts**: Space Grotesk (display), Inter (body), IBM Plex Mono (labels/code)
 - **Primary accent**: Seal Blue (#084471)
