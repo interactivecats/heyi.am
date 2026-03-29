@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AppShell, Card, Chip, StatCard, SectionHeader, Note } from './shared'
-import { fetchArchiveStats, fetchSourceAudit, type ArchiveStats, type SourceAuditResult } from '../api'
+import { fetchArchiveStats, fetchSourceAudit, syncArchive, verifyArchive, exportArchive, type ArchiveStats, type SourceAuditResult, type VerifyArchiveResult } from '../api'
 
 interface ArchiveRow {
   source: string
@@ -28,9 +28,15 @@ export function ArchiveView() {
   const [rows, setRows] = useState<ArchiveRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [syncMessage, setSyncMessage] = useState<string | null>(null)
+  const [verifying, setVerifying] = useState(false)
+  const [verifyResult, setVerifyResult] = useState<VerifyArchiveResult | null>(null)
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
 
-  useEffect(() => {
-    Promise.all([fetchArchiveStats(), fetchSourceAudit()])
+  function refreshData() {
+    return Promise.all([fetchArchiveStats(), fetchSourceAudit()])
       .then(([archiveData, sourceData]: [ArchiveStats, SourceAuditResult]) => {
         setStats({
           archived: archiveData.total,
@@ -46,11 +52,56 @@ export function ArchiveView() {
           })),
         )
       })
-      .catch(() => {
-        setError(true)
-      })
+  }
+
+  useEffect(() => {
+    refreshData()
+      .catch(() => setError(true))
       .finally(() => setLoading(false))
   }, [])
+
+  async function handleSync() {
+    setSyncing(true)
+    setSyncMessage(null)
+    try {
+      const result = await syncArchive()
+      if (result.archived === 0) {
+        setSyncMessage('Archive is up to date — no new sessions to sync.')
+      } else {
+        setSyncMessage(`Archived ${result.archived} new session${result.archived !== 1 ? 's' : ''}.`)
+      }
+      await refreshData()
+    } catch {
+      setSyncMessage('Sync failed. Check the console for details.')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  async function handleVerify() {
+    setVerifying(true)
+    setVerifyResult(null)
+    try {
+      const result = await verifyArchive()
+      setVerifyResult(result)
+    } catch {
+      setVerifyResult({ total: 0, verified: 0, missing: 0, errors: ['Verification failed. Check the console for details.'] })
+    } finally {
+      setVerifying(false)
+    }
+  }
+
+  async function handleExport() {
+    setExporting(true)
+    setExportError(null)
+    try {
+      await exportArchive()
+    } catch (err) {
+      setExportError((err as Error).message)
+    } finally {
+      setExporting(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -84,11 +135,19 @@ export function ArchiveView() {
       chips={[{ label: 'Archive' }]}
       actions={
         <div className="flex items-center gap-2">
-          <button className="inline-flex items-center gap-1.5 font-semibold text-[0.8125rem] px-3.5 py-1.5 rounded-sm text-primary border border-ghost hover:border-outline transition-colors bg-transparent">
-            Archive now
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="inline-flex items-center gap-1.5 font-semibold text-[0.8125rem] px-3.5 py-1.5 rounded-sm text-primary border border-ghost hover:border-outline transition-colors bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {syncing ? 'Syncing…' : 'Archive now'}
           </button>
-          <button className="inline-flex items-center gap-1.5 font-semibold text-[0.8125rem] px-3.5 py-1.5 rounded-sm text-primary border border-ghost hover:border-outline transition-colors bg-transparent">
-            Export archive
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="inline-flex items-center gap-1.5 font-semibold text-[0.8125rem] px-3.5 py-1.5 rounded-sm text-primary border border-ghost hover:border-outline transition-colors bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {exporting ? 'Exporting…' : 'Export archive'}
           </button>
         </div>
       }
@@ -116,6 +175,19 @@ export function ArchiveView() {
           <StatCard label="Sources covered" value={stats.sources} />
           <StatCard label="Last sync" value={stats.lastSync} />
         </div>
+
+        {syncMessage && (
+          <>
+            <div className="h-3" />
+            <Note>{syncMessage}</Note>
+          </>
+        )}
+        {exportError && (
+          <>
+            <div className="h-3" />
+            <Note>Export failed: {exportError}</Note>
+          </>
+        )}
 
         <div className="h-5" />
 
@@ -178,10 +250,35 @@ export function ArchiveView() {
               >
                 Go to projects
               </Link>
-              <button className="inline-flex items-center gap-1.5 font-semibold text-[0.8125rem] px-3.5 py-1.5 rounded-sm text-primary border border-ghost hover:border-outline transition-colors bg-transparent">
-                Verify integrity
+              <button
+                onClick={handleVerify}
+                disabled={verifying}
+                className="inline-flex items-center gap-1.5 font-semibold text-[0.8125rem] px-3.5 py-1.5 rounded-sm text-primary border border-ghost hover:border-outline transition-colors bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {verifying ? 'Verifying…' : 'Verify integrity'}
               </button>
             </div>
+            {verifyResult && (
+              <>
+                <div className="h-3" />
+                {verifyResult.missing === 0 && verifyResult.errors.length === 0 ? (
+                  <Note>
+                    All {verifyResult.verified} archived file{verifyResult.verified !== 1 ? 's' : ''} verified.
+                  </Note>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    <Note>
+                      Verified {verifyResult.verified}/{verifyResult.total} — {verifyResult.missing} missing.
+                    </Note>
+                    {verifyResult.errors.map((err, i) => (
+                      <span key={i} className="text-xs text-on-surface-variant font-mono break-all">
+                        {err}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </Card>
         </div>
       </div>

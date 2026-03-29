@@ -176,8 +176,36 @@ export async function fetchArchiveStats(): Promise<ArchiveStats> {
   return get<ArchiveStats>('/archive/stats')
 }
 
-export async function syncArchive(): Promise<{ synced: number }> {
-  return post<{ synced: number }>('/archive/sync')
+export async function syncArchive(): Promise<{ archived: number; alreadyArchived: number }> {
+  return post<{ archived: number; alreadyArchived: number }>('/archive/sync')
+}
+
+export async function exportArchive(): Promise<void> {
+  const res = await fetch(`${API_BASE}/archive/export`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Export failed' }))
+    throw new Error(err.error ?? `Export failed: ${res.status}`)
+  }
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] ?? 'heyiam-archive.tar.gz'
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
+export async function verifyArchive(): Promise<VerifyArchiveResult> {
+  return get<VerifyArchiveResult>('/archive/verify')
+}
+
+export interface VerifyArchiveResult {
+  total: number
+  verified: number
+  missing: number
+  errors: string[]
 }
 
 export async function fetchProjectDetail(dirName: string): Promise<ProjectDetail> {
