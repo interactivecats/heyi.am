@@ -74,7 +74,7 @@ function formatGap(ms: number): string {
   return d === 1 ? '1 day gap' : `${d} days gap`
 }
 
-function formatTimestamp(dateStr: string): string {
+export function formatTimestamp(dateStr: string): string {
   const d = new Date(dateStr)
   const mon = d.toLocaleString('en-US', { month: 'short' })
   const day = d.getDate()
@@ -99,7 +99,7 @@ const MIN_W = 160
 const MAX_W = 480
 const MIN_CW = 120
 
-function timeToPx(minutes: number): number {
+export function timeToPx(minutes: number): number {
   return Math.min(Math.max(minutes * 3, MIN_W), MAX_W)
 }
 
@@ -131,7 +131,7 @@ export function computeSegments(sessions: Session[]): Seg[] {
 
 // ── Parallel track helpers ────────────────────────────────────────
 
-function assignLanes(sessions: Session[]): Map<string, number> {
+export function assignLanes(sessions: Session[]): Map<string, number> {
   const sorted = [...sessions].sort((a, b) => sessionStart(a) - sessionStart(b))
   const laneEnds: number[] = []
   const assignment = new Map<string, number>()
@@ -153,7 +153,7 @@ function assignLanes(sessions: Session[]): Map<string, number> {
   return assignment
 }
 
-function timeToX(timeMs: number, rangeStartMs: number, rangeEndMs: number, xStart: number, xEnd: number): number {
+export function timeToX(timeMs: number, rangeStartMs: number, rangeEndMs: number, xStart: number, xEnd: number): number {
   if (rangeEndMs === rangeStartMs) return xStart
   const ratio = (timeMs - rangeStartMs) / (rangeEndMs - rangeStartMs)
   return xStart + ratio * (xEnd - xStart)
