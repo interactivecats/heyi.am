@@ -3,6 +3,8 @@
 [![npm version](https://img.shields.io/npm/v/heyiam)](https://www.npmjs.com/package/heyiam)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
+> **Note:** This project is under active development. Expect breaking changes until v1.0.
+
 A portfolio that shows **how you think with AI**, not what the AI said.
 
 heyi.am discovers your AI coding sessions from Claude Code, Cursor, OpenAI Codex CLI, and Google Gemini CLI — then helps you turn them into structured case studies that show your problem-solving process.
