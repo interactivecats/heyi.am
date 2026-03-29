@@ -27,20 +27,28 @@ program
   .description('Start the local server and open the browser')
   .option('-p, --port <number>', 'Port to run on', '17845')
   .option('--no-open', 'Start server without opening browser')
+  .option('--demo', 'Start with fake data for screenshots and recordings')
   .action(async (opts) => {
     const port = parseInt(opts.port, 10);
 
+    if (opts.demo) {
+      const { seedDemoMode } = await import('./demo-seed.js');
+      const demoDir = seedDemoMode();
+      process.env.HEYIAM_CONFIG_DIR = demoDir;
+      console.log('\n🎬 Demo mode — using fake data, no real sessions loaded.\n');
+    }
+
     const apiKey = getAnthropicApiKey();
-    if (!apiKey) {
+    if (!apiKey && !opts.demo) {
       console.log('\n⚠  No Anthropic API key found.');
       console.log('   AI enhancement requires an API key. Add one in Settings after the app opens.');
       console.log('   Or set ANTHROPIC_API_KEY in your environment.\n');
     }
 
-    const server = await startServer(port);
+    const server = await startServer(port, { demo: !!opts.demo });
     const url = `http://localhost:${port}`;
     console.log(`\nheyiam running at ${url}`);
-    if (!apiKey) {
+    if (!apiKey && !opts.demo) {
       console.log(`Open ${url}/settings to add your Anthropic API key`);
     }
     console.log('Press Ctrl+C to stop\n');

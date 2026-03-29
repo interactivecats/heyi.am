@@ -16,36 +16,38 @@ export interface DeviceCodeResponse {
   interval: number;
 }
 
-const CONFIG_DIR = join(homedir(), '.config', 'heyiam');
+function getConfigDir(): string {
+  return process.env.HEYIAM_CONFIG_DIR || join(homedir(), '.config', 'heyiam');
+}
 const AUTH_FILE = 'auth.json';
 
-export function ensureConfigDir(configDir: string = CONFIG_DIR): void {
+export function ensureConfigDir(configDir: string = getConfigDir()): void {
   mkdirSync(configDir, { recursive: true });
 }
 
-export function readConfig<T>(filename: string, configDir: string = CONFIG_DIR): T | null {
+export function readConfig<T>(filename: string, configDir: string = getConfigDir()): T | null {
   const filePath = join(configDir, filename);
   if (!existsSync(filePath)) return null;
   return JSON.parse(readFileSync(filePath, 'utf-8')) as T;
 }
 
-export function writeConfig(filename: string, data: unknown, configDir: string = CONFIG_DIR): void {
+export function writeConfig(filename: string, data: unknown, configDir: string = getConfigDir()): void {
   ensureConfigDir(configDir);
   writeFileSync(join(configDir, filename), JSON.stringify(data, null, 2), { mode: 0o600 });
 }
 
-export function getAuthToken(configDir: string = CONFIG_DIR): AuthConfig | null {
+export function getAuthToken(configDir: string = getConfigDir()): AuthConfig | null {
   return readConfig<AuthConfig>(AUTH_FILE, configDir);
 }
 
-export function deleteAuthToken(configDir: string = CONFIG_DIR): void {
+export function deleteAuthToken(configDir: string = getConfigDir()): void {
   const filePath = join(configDir, AUTH_FILE);
   if (existsSync(filePath)) {
     unlinkSync(filePath);
   }
 }
 
-export function saveAuthToken(token: string, username: string, configDir: string = CONFIG_DIR): void {
+export function saveAuthToken(token: string, username: string, configDir: string = getConfigDir()): void {
   const config: AuthConfig = { token, username, savedAt: new Date().toISOString() };
   writeConfig(AUTH_FILE, config, configDir);
 }

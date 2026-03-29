@@ -144,15 +144,25 @@ export function buildSessionList(
     }
   }
 
+  // Pre-load per-session file changes from session_files table
+  const fileStmt = db.prepare(
+    'SELECT file_path, additions, deletions FROM session_files WHERE session_id = ? ORDER BY (additions + deletions) DESC LIMIT 20',
+  );
+
   return parentRows.map((r) => {
     const enhanced = loadEnhancedData(r.id);
     const children = childMap.get(r.id);
     const skills: string[] = enhanced?.skills ?? (r.skills ? JSON.parse(r.skills) : []);
     const locAdded = r.loc_added ?? 0;
     const locRemoved = r.loc_removed ?? 0;
-    const filesChanged = (locAdded > 0 || locRemoved > 0)
-      ? [{ path: '(aggregate)', additions: locAdded, deletions: locRemoved }]
-      : [];
+
+    // Use individual file changes from session_files when available
+    const fileRows = fileStmt.all(r.id) as Array<{ file_path: string; additions: number; deletions: number }>;
+    const filesChanged = fileRows.length > 0
+      ? fileRows.map((f) => ({ path: f.file_path, additions: f.additions, deletions: f.deletions }))
+      : (locAdded > 0 || locRemoved > 0)
+        ? [{ path: '(aggregate)', additions: locAdded, deletions: locRemoved }]
+        : [];
 
     return {
       id: r.id,
@@ -179,7 +189,7 @@ export function buildSessionList(
       qaPairs: enhanced?.qaPairs,
       toolBreakdown: [],
       turnTimeline: [],
-      toolCalls: 0,
+      toolCalls: r.tool_calls ?? 0,
       children,
       isOrchestrated: (children?.length ?? 0) > 0,
       childCount: children?.length ?? 0,

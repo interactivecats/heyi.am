@@ -12,8 +12,14 @@ import type { SessionMeta } from './parsers/index.js';
 
 // ── Constants ────────────────────────────────────────────────
 
-const CONFIG_DIR = join(homedir(), '.config', 'heyiam');
-export const DB_PATH = join(CONFIG_DIR, 'sessions.db');
+function getConfigDir(): string {
+  return process.env.HEYIAM_CONFIG_DIR || join(homedir(), '.config', 'heyiam');
+}
+export function getDbPath(): string {
+  return join(getConfigDir(), 'sessions.db');
+}
+// Keep backward-compat for any external consumers
+export const DB_PATH = join(homedir(), '.config', 'heyiam', 'sessions.db');
 
 const CURRENT_SCHEMA_VERSION = 3;
 
@@ -75,7 +81,7 @@ export interface ProjectStats {
 
 let _db: Database.Database | null = null;
 
-export function getDatabase(dbPath: string = DB_PATH): Database.Database {
+export function getDatabase(dbPath: string = getDbPath()): Database.Database {
   if (_db) return _db;
   _db = openDatabase(dbPath);
   return _db;
@@ -90,7 +96,7 @@ function closeDatabase(): void {
 
 // ── Open / Migrate ───────────────────────────────────────────
 
-export function openDatabase(dbPath: string = DB_PATH): Database.Database {
+export function openDatabase(dbPath: string = getDbPath()): Database.Database {
   mkdirSync(join(dbPath, '..'), { recursive: true });
 
   const db = new Database(dbPath);

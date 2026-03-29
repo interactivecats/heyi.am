@@ -76,29 +76,32 @@ export function createApp(sessionsBasePath?: string, dbPath?: string) {
   return app;
 }
 
-export function startServer(port: number = 17845): Promise<Server> {
+export function startServer(port: number = 17845, options?: { demo?: boolean }): Promise<Server> {
   const app = createApp();
   const db = getDatabase();
 
-  // Run initial sync in the background (non-blocking)
-  // Uses syncWithTracking so the dashboard can observe progress via /api/sync/progress
-  syncWithTracking(db).then((result) => {
-    if (result.indexed > 0) {
-      console.log(`Indexed ${result.indexed} sessions (${result.skipped} up-to-date)`);
-    }
-  }).catch(() => {});
+  if (!options?.demo) {
+    // Run initial sync in the background (non-blocking)
+    syncWithTracking(db).then((result) => {
+      if (result.indexed > 0) {
+        console.log(`Indexed ${result.indexed} sessions (${result.skipped} up-to-date)`);
+      }
+    }).catch(() => {});
+  }
 
   return new Promise((resolve) => {
     const server = app.listen(port, '127.0.0.1', () => {
-      // Start live sync after server is listening
-      const stopFileWatcher = startFileWatcher(db);
-      const stopCursorPolling = startCursorPolling(db);
+      if (!options?.demo) {
+        // Start live sync after server is listening
+        const stopFileWatcher = startFileWatcher(db);
+        const stopCursorPolling = startCursorPolling(db);
 
-      // Clean up watchers when server closes
-      server.on('close', () => {
-        stopFileWatcher();
-        stopCursorPolling();
-      });
+        // Clean up watchers when server closes
+        server.on('close', () => {
+          stopFileWatcher();
+          stopCursorPolling();
+        });
+      }
 
       resolve(server);
     });
