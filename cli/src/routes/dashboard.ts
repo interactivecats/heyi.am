@@ -35,7 +35,8 @@ export function createDashboardRouter(ctx: RouteContext): Router {
         };
       });
 
-      const isEmpty = stats.sessionCount === 0 && sync.status !== 'syncing';
+      // Only report isEmpty after sync has finished — while idle/syncing we don't know yet
+      const isEmpty = stats.sessionCount === 0 && sync.status === 'done';
 
       res.json({
         stats: {

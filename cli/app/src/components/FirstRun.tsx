@@ -72,7 +72,8 @@ export function FirstRun() {
         }
 
         // Show sync progress whenever sync is running (even if some sessions already indexed)
-        if (data.sync.status === 'syncing') {
+        if (data.sync.status === 'syncing' || (data.isEmpty && data.sync.status !== 'done')) {
+          // Sync still in progress — wait for it before deciding
           setStep('syncing')
           setSyncProgress(data.sync)
 
@@ -101,7 +102,7 @@ export function FirstRun() {
 
           cleanupRef = unsub
         } else if (data.isEmpty) {
-          setStep('dashboard') // nothing to onboard with
+          setStep('dashboard') // sync done, truly empty
         } else {
           // Sync already done, has data — start from reveal
           setStep('reveal')
