@@ -69,19 +69,16 @@ const match = matchArchetype(stats);
 let cloudConsent = false;
 if (process.stdin.isTTY) {
   console.log("");
-  console.log("  To generate your narrative, we send computed stats (numbers");
-  console.log("  only) to howdoyouvibe.com. No session text, no file paths,");
-  console.log("  no project names. Stats are processed in memory and not");
-  console.log("  stored unless you choose to share. Shared vibes are public.");
-  console.log(`  Privacy: ${link("https://heyiam.com/privacy", "heyiam.com/privacy")}`);
+  console.log("  Share to howdoyouvibe.com for an AI-written roast of your stats.");
+  console.log("  No code or session content is shared — only computed numbers.");
   console.log("");
-  cloudConsent = await promptYesNo("  Send stats to generate narrative?");
+  cloudConsent = await promptYesNo("  Generate AI narrative now?");
   if (!cloudConsent) {
     console.log("  No problem — running fully local.\n");
   }
 }
 
-const { headline, narrative } = cloudConsent
+let { headline, narrative } = cloudConsent
   ? await fetchNarrative(stats, match)
   : localResult(stats, match);
 
@@ -96,9 +93,9 @@ if (process.stdin.isTTY) {
     console.log(ok ? "  Copied!" : "  Couldn't copy — clipboard not available.");
   }
 
-  const wantsShare = cloudConsent && await promptYesNo("  Share online?");
+  const wantsShare = await promptYesNo("  Post to howdoyouvibe.com? Get a shareable link and delete code.");
   if (wantsShare) {
-    process.stdout.write("  Sharing...");
+    process.stdout.write("  Publishing...");
     const result = await shareVibe(stats, match, headline, narrative);
     if (result) {
       console.log(" done!\n");
@@ -114,11 +111,6 @@ if (process.stdin.isTTY) {
     }
   }
 
-  console.log("");
-  console.log("  This is a personality quiz, not a performance review.");
-  console.log("  Stats are approximate, based on incomplete data, and");
-  console.log("  should not be used for hiring, evaluation, or any");
-  console.log("  employment decision. Have fun with it.");
   console.log("");
   console.log(`  Archive, search, and share your AI coding sessions with ${link("https://heyiam.com", "heyiam.com")}`);
   console.log("");

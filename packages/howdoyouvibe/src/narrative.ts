@@ -25,7 +25,9 @@ export async function fetchNarrative(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        stats,
+        stats: Object.fromEntries(
+          Object.entries(stats).filter(([, v]) => typeof v === "number"),
+        ),
         archetype_id: match.primary.id,
         modifier_id: match.modifier?.id ?? null,
       }),
