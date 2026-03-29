@@ -10,11 +10,13 @@ if System.get_env("PHX_SERVER") do
   config :heyi_am_vibe_web, HeyiAmVibeWeb.Endpoint, server: true
 end
 
-# ── Umami analytics ──────────────────────────────────────────
+# ── Umami analytics (per-app website IDs) ───────────────────
 
 if umami_url = System.get_env("UMAMI_SCRIPT_URL") do
   config :heyi_am, umami_script_url: umami_url
-  config :heyi_am, umami_website_id: System.get_env("UMAMI_WEBSITE_ID")
+  config :heyi_am_public_web, umami_website_id: System.get_env("UMAMI_PUBLIC_WEBSITE_ID")
+  config :heyi_am_app_web, umami_website_id: System.get_env("UMAMI_APP_WEBSITE_ID")
+  config :heyi_am_vibe_web, umami_website_id: System.get_env("UMAMI_VIBE_WEBSITE_ID")
 end
 
 # ── LLM proxy ────────────────────────────────────────────────

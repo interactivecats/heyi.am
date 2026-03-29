@@ -42,6 +42,12 @@
     <%!-- NO LiveView JS — this endpoint has no LiveView --%>
     <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
     </script>
+    <%!-- @heyiam/ui mount script — renders WorkTimeline, GrowthChart, etc. into data-* mount points --%>
+    <script defer type="text/javascript" src={~p"/assets/js/mount.js"}>
+    </script>
+    <%= if umami_url = Application.get_env(:heyi_am, :umami_script_url) do %>
+      <script defer src={umami_url} data-website-id={Application.get_env(:heyi_am_public_web, :umami_website_id)}></script>
+    <% end %>
   </head>
   <body>
     {@inner_content}

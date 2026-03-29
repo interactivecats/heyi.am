@@ -4,10 +4,11 @@ defmodule HeyiAmPublicWeb.Router do
   @strict_csp %{
     "content-security-policy" =>
       "default-src 'self'; " <>
-        "script-src 'self'; " <>
+        "script-src 'self' https://analytics.interactivecats.com; " <>
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " <>
         "font-src https://fonts.gstatic.com; " <>
         "img-src 'self' data: https:; " <>
+        "connect-src 'self' https://analytics.interactivecats.com; " <>
         "frame-src 'none'; " <>
         "frame-ancestors 'none'; " <>
         "object-src 'none'"

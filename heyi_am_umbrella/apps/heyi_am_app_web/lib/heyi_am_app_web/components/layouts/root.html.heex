@@ -15,6 +15,9 @@
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
     <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
     </script>
+    <%= if umami_url = Application.get_env(:heyi_am, :umami_script_url) do %>
+      <script defer src={umami_url} data-website-id={Application.get_env(:heyi_am_app_web, :umami_website_id)}></script>
+    <% end %>
   </head>
   <body>
     {@inner_content}

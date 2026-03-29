@@ -47,12 +47,16 @@ When this variable is unset, tracing is disabled (no overhead). Set Signoz reten
 
 ### Umami Analytics (optional)
 
-| Variable | Example |
-|---|---|
-| `UMAMI_SCRIPT_URL` | `https://analytics.example.com/script.js` |
-| `UMAMI_WEBSITE_ID` | `a1b2c3d4-...` |
+Each app gets its own Umami website ID for separate tracking dashboards.
 
-When these are unset, no analytics script is injected.
+| Variable | Example | Notes |
+|---|---|---|
+| `UMAMI_SCRIPT_URL` | `https://analytics.example.com/script.js` | Shared across all apps |
+| `UMAMI_PUBLIC_WEBSITE_ID` | `a1b2c3d4-...` | heyi.am (public portfolios) |
+| `UMAMI_APP_WEBSITE_ID` | `e5f6g7h8-...` | heyiam.com (auth + API) |
+| `UMAMI_VIBE_WEBSITE_ID` | `i9j0k1l2-...` | howdoyouvibe.com (vibes) |
+
+When `UMAMI_SCRIPT_URL` is unset, no analytics script is injected on any app.
 
 ### LLM Proxy (optional)
 
@@ -288,9 +292,11 @@ GITHUB_CLIENT_SECRET=
 # OpenTelemetry / Signoz (optional)
 OTEL_ENDPOINT=http://signoz-otel-collector:4318
 
-# Umami Analytics (optional)
+# Umami Analytics (optional, per-app website IDs)
 UMAMI_SCRIPT_URL=https://analytics.example.com/script.js
-UMAMI_WEBSITE_ID=
+UMAMI_PUBLIC_WEBSITE_ID=
+UMAMI_APP_WEBSITE_ID=
+UMAMI_VIBE_WEBSITE_ID=
 
 # LLM Proxy (optional)
 LLM_PROVIDER=gemini
