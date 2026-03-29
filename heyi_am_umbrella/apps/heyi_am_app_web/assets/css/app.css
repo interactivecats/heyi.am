@@ -1239,13 +1239,20 @@ body {
 }
 
 .flash-message {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
   max-width: 24rem;
-  padding: var(--spacing-4);
+  padding: var(--spacing-3) var(--spacing-4);
   border-radius: var(--radius-sm);
   border: var(--ghost-border);
   box-shadow: var(--shadow-ambient);
   font-family: var(--font-body);
   font-size: 0.875rem;
+}
+
+.flash-message p {
+  flex: 1;
 }
 
 .flash-message--info {
@@ -1256,6 +1263,27 @@ body {
 .flash-message--error {
   background-color: var(--error-container);
   color: var(--error);
+}
+
+.flash-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-1);
+  color: inherit;
+  opacity: 0.5;
+}
+
+.flash-close:hover {
+  opacity: 0.8;
+}
+
+.flash-close-icon {
+  width: 1rem;
+  height: 1rem;
 }
 
 

@@ -82,9 +82,9 @@
 
 
 // Handle flash close
-document.querySelectorAll("[role=alert][data-flash]").forEach((el) => {
-  el.addEventListener("click", () => {
-    el.setAttribute("hidden", "")
+document.querySelectorAll(".flash-close").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    btn.closest("[data-flash]").setAttribute("hidden", "")
   })
 })
 

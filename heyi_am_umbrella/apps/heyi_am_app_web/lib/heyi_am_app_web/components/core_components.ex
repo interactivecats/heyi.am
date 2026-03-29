@@ -9,7 +9,6 @@ defmodule HeyiAmAppWeb.CoreComponents do
 
   attr :id, :string, doc: "the optional id of flash container"
   attr :flash, :map, default: %{}, doc: "the map of flash messages to display"
-  attr :title, :string, default: nil
   attr :kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup"
   attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
 
@@ -24,25 +23,17 @@ defmodule HeyiAmAppWeb.CoreComponents do
       id={@id}
       data-flash
       role="alert"
-      class="toast toast-top toast-end z-50"
+      class={[
+        "flash-message",
+        @kind == :info && "flash-message--info",
+        @kind == :error && "flash-message--error"
+      ]}
       {@rest}
     >
-      <div class={[
-        "alert w-80 sm:w-96 max-w-80 sm:max-w-96 text-wrap",
-        @kind == :info && "alert-info",
-        @kind == :error && "alert-error"
-      ]}>
-        <.icon :if={@kind == :info} name="hero-information-circle" class="size-5 shrink-0" />
-        <.icon :if={@kind == :error} name="hero-exclamation-circle" class="size-5 shrink-0" />
-        <div>
-          <p :if={@title} class="font-semibold">{@title}</p>
-          <p>{msg}</p>
-        </div>
-        <div class="flex-1" />
-        <button type="button" class="group self-start cursor-pointer" aria-label={gettext("close")}>
-          <.icon name="hero-x-mark" class="size-5 opacity-40 group-hover:opacity-70" />
-        </button>
-      </div>
+      <p>{msg}</p>
+      <button type="button" class="flash-close" aria-label={gettext("close")}>
+        <.icon name="hero-x-mark" class="flash-close-icon" />
+      </button>
     </div>
     """
   end

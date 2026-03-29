@@ -29,3 +29,10 @@ let liveSocket = new LiveSocket("/live", Socket, {
 liveSocket.connect()
 
 window.liveSocket = liveSocket
+
+// Flash close buttons
+document.querySelectorAll(".flash-close").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    btn.closest("[data-flash]").setAttribute("hidden", "")
+  })
+})
