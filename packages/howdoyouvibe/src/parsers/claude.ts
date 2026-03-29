@@ -8,6 +8,7 @@ import {
   type ToolUseBlock,
   type ContentBlock,
   type TokenUsage,
+  IDLE_THRESHOLD_MS,
 } from "./types.js";
 
 function parseEntries(raw: string): RawEntry[] {
@@ -83,7 +84,6 @@ function countTurns(entries: RawEntry[]): number {
   return turns;
 }
 
-const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
 
 function computeDuration(entries: RawEntry[]): {
   duration_ms: number;
@@ -199,13 +199,6 @@ async function detect(path: string): Promise<boolean> {
   } catch {
     return false;
   }
-}
-
-export function mapAgentRole(subagentType: string): string {
-  if (subagentType.startsWith("trc-")) {
-    return subagentType.slice(4);
-  }
-  return subagentType.toLowerCase();
 }
 
 /** Aggregate token usage across all assistant messages. */

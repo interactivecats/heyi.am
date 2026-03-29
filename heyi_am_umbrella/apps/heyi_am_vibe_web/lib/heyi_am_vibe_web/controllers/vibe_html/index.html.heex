@@ -1,8 +1,13 @@
 <div class="vibe-page vibe-index">
   <header class="vibe-hero">
-    <h1 class="vibe-title">HOW DO YOU VIBE?</h1>
+    <pre class="vibe-ascii-logo" aria-hidden="true"><span class="va"> _                       _                        _  _
+| |_  ___ __ __ __ _  __| |___  _  _ ___ _  ___ _(_)| |__  ___
+| ' \/ _ \\ V  V // _` / _ / _ \| || / _ \ || \ V / || '_ \/ -_)
+|_||_\___/ \_/\_/ \__,_\___\___/ \_, \___/\_,_|\_/|_||_.__/\___|
+                                 |__/</span></pre>
+    <span class="sr-only">How do you vibe?</span>
     <p class="vibe-subtitle">Find out how you work with AI coding tools.</p>
-    <code class="vibe-cmd" aria-label="Run this command to get your vibe">npx howdoyouvibe</code>
+    <code class="vibe-cmd" aria-label="Run this command to get your vibe"><span class="vibe-prompt">$</span> npx howdoyouvibe</code>
     <%= if @count >= 1000 do %>
       <p class="vibe-counter">
         <strong><%= @count |> Integer.to_string() |> String.replace(~r/\B(?=(\d{3})+(?!\d))/, ",") %></strong> devs have vibed
@@ -12,7 +17,7 @@
 
   <%= if @count >= 1000 and @distribution != [] do %>
     <section class="vibe-distribution" aria-labelledby="dist-heading">
-      <h2 id="dist-heading">Archetype breakdown</h2>
+      <h2 id="dist-heading">── archetype breakdown ──</h2>
       <nav class="vibe-dist-list" aria-label="Archetypes">
         <%= for {archetype_id, count} <- @distribution do %>
           <% meta = Map.get(@archetype_meta, archetype_id, %{name: archetype_id, tagline: ""}) %>
@@ -26,7 +31,7 @@
   <% end %>
 
   <section class="vibe-preview" aria-label="Example CLI output">
-    <h2 id="preview-heading">What you'll get</h2>
+    <h2 id="preview-heading">── what you'll get ──</h2>
     <div class="vibe-terminal">
       <div class="vibe-terminal-bar">
         <span class="vibe-terminal-dot"></span>
@@ -50,12 +55,12 @@ disorder.
 <span class="vd">────────────────────────────────────────────────────────────────────────────────</span>
 
 <span class="vb">YOUR VOICE                  THE AI'S HABITS             THE BACK-AND-FORTH</span>
-Expletives: <span class="vc">14</span>              Read:write: <span class="vc">5.2:1</span> careful   Override win: <span class="vc">91%</span> of <span class="vc">23</span>
-Corrections: <span class="vc">23</span>             Test runs: <span class="vc">187 22%</span>F         Leash: <span class="vc">204</span> turns <span class="vc">trust</span>
+Expletives: <span class="vc">14</span>              Read:write: <span class="vc">5.2:1</span> careful   Corrections: <span class="vc">23</span>
+Please rate: <span class="vc">4%</span> nope        Test runs: <span class="vc">187 22%</span>F         Leash: <span class="vc">204</span> turns <span class="vc">trust</span>
 Avg prompt: <span class="vc">89w</span>             Longest burst: <span class="vc">312</span> deep     1st correction: <span class="vc">24m</span> patient
-Please rate: <span class="vc">4%</span> nope        Self-fixes: <span class="vc">94</span>              Scope creep: <span class="vc">8</span>
-Late night: <span class="vc">63%</span>             Agents spawned: <span class="vc">47</span>          Plans made: <span class="vc">3</span>
-Secrets leaked: <span class="vc">2</span>
+Please rate: <span class="vc">4%</span> nope        Self-fixes: <span class="vc">94</span>              Redirects/hr: <span class="vc">0.8</span> hands off
+Late night: <span class="vc">63%</span>             Agents spawned: <span class="vc">47</span>          Scope creep: <span class="vc">8</span>
+Secrets leaked: <span class="vc">2</span>                                          Plans made: <span class="vc">3</span>
 
 <span class="vd">════════════════════════════════════════════════════════════════════════════════</span>
 Claude Code <span class="vc">94%</span>  ·  Cursor <span class="vc">6%</span>
@@ -94,7 +99,7 @@ Burst: <span class="vc">312</span> deep · Self-fixes: <span class="vc">94</span
 Agents spawned: <span class="vc">47</span>
 
 <span class="vb">THE BACK-AND-FORTH</span>
-Override win: <span class="vc">91%</span> of <span class="vc">23</span>
+Corrections: <span class="vc">23</span>
 Leash: <span class="vc">204</span> turns <span class="vc">trust</span>
 1st correction: <span class="vc">24m</span> patient
 Scope creep: <span class="vc">8</span> · Plans: <span class="vc">3</span>
@@ -108,7 +113,7 @@ All analysis ran locally.</pre>
   </section>
 
   <section class="vibe-archetypes" aria-labelledby="archetypes-heading">
-    <h2 id="archetypes-heading">The archetypes</h2>
+    <h2 id="archetypes-heading">── the archetypes ──</h2>
     <div class="vibe-archetype-grid">
       <%= for {_id, meta} <- @archetype_meta do %>
         <div class="vibe-archetype-card">
@@ -121,7 +126,7 @@ All analysis ran locally.</pre>
 
   <%= if @recent != [] do %>
     <section class="vibe-recent" aria-labelledby="recent-heading">
-      <h2 id="recent-heading">Recent vibes</h2>
+      <h2 id="recent-heading">── recent vibes ──</h2>
       <div class="vibe-grid">
         <%= for vibe <- @recent do %>
           <% meta = Map.get(@archetype_meta, vibe.archetype_id, %{name: "Vibe Coder", tagline: ""}) %>

@@ -28,7 +28,7 @@ defmodule HeyiAmVibeWeb.VibeControllerTest do
     test "shows recent vibes when they exist", %{conn: conn} do
       {:ok, _vibe} = Vibes.create_vibe(@valid_vibe_attrs)
       conn = get(conn, ~p"/")
-      assert html_response(conn, 200) =~ "Recent vibes"
+      assert html_response(conn, 200) =~ "recent vibes"
     end
   end
 
@@ -39,7 +39,7 @@ defmodule HeyiAmVibeWeb.VibeControllerTest do
       conn = get(conn, ~p"/#{vibe.short_id}")
       response = html_response(conn, 200)
       assert response =~ vibe.headline
-      assert response =~ "HOW DO YOU VIBE?"
+      assert response =~ "howdoyouvibe.com"
     end
 
     test "returns 404 for unknown short_id", %{conn: conn} do
@@ -64,10 +64,11 @@ defmodule HeyiAmVibeWeb.VibeControllerTest do
   describe "GET /:short_id/card.png" do
     setup [:create_vibe]
 
-    test "returns SVG card image", %{conn: conn, vibe: vibe} do
+    test "returns card image", %{conn: conn, vibe: vibe} do
       conn = get(conn, ~p"/#{vibe.short_id}/card.png")
       assert response(conn, 200)
-      assert get_resp_header(conn, "content-type") |> hd() =~ "image/svg+xml"
+      content_type = get_resp_header(conn, "content-type") |> hd()
+      assert content_type =~ "image/png" or content_type =~ "image/svg+xml"
       assert get_resp_header(conn, "cache-control") |> hd() =~ "immutable"
     end
 

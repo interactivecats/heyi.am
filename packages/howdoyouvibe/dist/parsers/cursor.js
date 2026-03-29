@@ -1,6 +1,7 @@
 import { readdir, readFile, access } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { homedir, platform } from "node:os";
+import { IDLE_THRESHOLD_MS, } from "./types.js";
 let Database = null;
 async function loadSqlite() {
     if (Database)
@@ -256,7 +257,6 @@ function countTurnsFromBubbles(bubbles) {
     }
     return turns;
 }
-const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
 function computeDurationFromBubbles(bubbles) {
     const timestamps = [];
     let startStr = null;

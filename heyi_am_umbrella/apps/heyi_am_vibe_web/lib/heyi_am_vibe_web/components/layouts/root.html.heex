@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={assigns[:og_description] || "Find out how you work with AI coding tools. Run npx howdoyouvibe to get your vibe."} />
-    <meta name="theme-color" content="#0f0f1a" />
+    <meta name="theme-color" content="#0a0a0f" />
     <title>
       <%= assigns[:page_title] || "HOW DO YOU VIBE?" %>
     </title>
@@ -20,7 +20,7 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
     <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
     </script>
@@ -31,7 +31,7 @@
       {@inner_content}
     </main>
     <footer class="vibe-site-footer">
-      Brought to you by <a href="https://heyiam.com">heyiam.com</a>
+      <span aria-hidden="true">──</span> brought to you by <a href="https://heyiam.com">heyiam.com</a> <span aria-hidden="true">──</span>
     </footer>
   </body>
 </html>

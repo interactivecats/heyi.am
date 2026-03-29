@@ -12,6 +12,10 @@ const {
   TEST_CMD_RE,
   SCOPE_CREEP_RE,
   APOLOGY_RE,
+  SECRET_LEAK_RE,
+  SECRET_EXAMPLE_RE,
+  AI_ADMISSION_RE,
+  COMPACTION_RE,
 } = _patterns;
 
 // ─── Regex pattern tests ─────────────────────────────────────────────────
@@ -224,6 +228,67 @@ describe("APOLOGY_RE", () => {
   ])("matches even in context: %s", (text) => {
     // "sorry" as a word is still an apology signal
     expect(APOLOGY_RE.test(text)).toBe(true);
+  });
+});
+
+describe("SECRET_EXAMPLE_RE", () => {
+  it.each([
+    "ghp_1234567890abcdefghijklmnopqrstuvwxyz",
+    "AKIAIOSFODNN7EXAMPLE",
+    "AKIAXXXXXXXXXXXXXXXX",
+    "Bearer invalid-garbage-token",
+    "ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij",
+    "sk-test-1234567890abcdefghijklmnopqrstuvwxyz",
+  ])("filters out example token: %s", (text) => {
+    expect(SECRET_EXAMPLE_RE.test(text)).toBe(true);
+  });
+
+  it.each([
+    "ghp_RealLookingTokenWithMixedCaseLetter1234",
+    "AKIAZ7TCBMQAWD5NPXRU",
+    "sk-ant-api03-realTokenHereThatIsLong",
+  ])("does NOT filter real-looking token: %s", (text) => {
+    SECRET_EXAMPLE_RE.lastIndex = 0;
+    expect(SECRET_EXAMPLE_RE.test(text)).toBe(false);
+  });
+});
+
+describe("AI_ADMISSION_RE (tightened)", () => {
+  it.each([
+    "That's wrong, let me fix this",
+    "I made a mistake in the import",
+    "oops, wrong file",
+    "that was wrong",
+    "actually, that is wrong",
+    "my mistake, I'll correct it",
+    "my bad",
+    "I introduced a bug in the last edit",
+    "let me fix that error",
+    "let me correct this issue",
+  ])("matches genuine admission: %s", (text) => {
+    expect(AI_ADMISSION_RE.test(text)).toBe(true);
+  });
+
+  it.each([
+    "Let me fix the styling.",
+    "I'll fix the imports now.",
+    "Let me update the config.",
+    "Sorry about the wait.",
+  ])("does NOT match routine work: %s", (text) => {
+    AI_ADMISSION_RE.lastIndex = 0;
+    expect(AI_ADMISSION_RE.test(text)).toBe(false);
+  });
+});
+
+describe("COMPACTION_RE", () => {
+  it("matches compaction summary", () => {
+    expect(COMPACTION_RE.test(
+      "This session is being continued from a previous conversation that ran out of context."
+    )).toBe(true);
+  });
+
+  it("does not match regular text", () => {
+    expect(COMPACTION_RE.test("Fix the login page")).toBe(false);
   });
 });
 
@@ -558,5 +623,67 @@ describe("computeVibeStats", () => {
 
     expect(stats.corrections).toBe(1);
     expect(stats.override_success_rate).toBe(1);
+  });
+
+  it("skips compaction summaries to avoid double-counting", () => {
+    const entries: RawEntry[] = [
+      makeEntry("user", "damn, fix this"),
+      makeEntry("assistant", "OK."),
+      // Compaction summary re-quoting the "damn"
+      makeEntry("user", 'This session is being continued from a previous conversation that ran out of context. The user said "damn, fix this" and...'),
+      makeEntry("assistant", "Continuing where we left off."),
+      makeEntry("user", "now add tests"),
+      makeEntry("assistant", "Done."),
+    ];
+
+    const stats = computeVibeStats([makeSession(entries)]);
+
+    // Should only count the original "damn", not the one in the compaction summary
+    expect(stats.expletives).toBe(1);
+    // Compaction entry should not count as a user turn
+    expect(stats.corrections).toBe(0);
+  });
+
+  it("filters out example/test tokens from secret count", () => {
+    const entries: RawEntry[] = [
+      makeEntry("user", "here's a test: ghp_1234567890abcdefghijklmnopqrstuvwxyz"),
+      makeEntry("assistant", [
+        { type: "text", text: "I see the token AKIAIOSFODNN7EXAMPLE in your config." },
+      ]),
+      makeEntry("user", "check this too: Bearer invalid-garbage-token"),
+      makeEntry("assistant", "OK."),
+    ];
+
+    const stats = computeVibeStats([makeSession(entries)]);
+
+    // All tokens are obviously fake/example — should not count
+    expect(stats.secret_leaks_user).toBe(0);
+    expect(stats.secret_leaks_ai).toBe(0);
+  });
+
+  it("counts real-looking secrets", () => {
+    const entries: RawEntry[] = [
+      makeEntry("user", "use this key: AKIAZ7TCBMQAWD5NPXRU"),
+      makeEntry("assistant", "Got it."),
+    ];
+
+    const stats = computeVibeStats([makeSession(entries)]);
+
+    expect(stats.secret_leaks_user).toBe(1);
+  });
+
+  it("does NOT count normal re-edits without error or admission", () => {
+    const entries: RawEntry[] = [
+      makeEntry("user", "fix the component"),
+      makeToolEntry("Edit", { file_path: "comp.tsx", old_string: "a", new_string: "b" }),
+      // AI edits same file again — normal iterative work
+      makeEntry("assistant", "Now I'll add the props."),
+      makeToolEntry("Edit", { file_path: "comp.tsx", old_string: "b", new_string: "c" }),
+      makeEntry("user", "ok"),
+    ];
+
+    const stats = computeVibeStats([makeSession(entries)]);
+
+    expect(stats.self_corrections).toBe(0);
   });
 });

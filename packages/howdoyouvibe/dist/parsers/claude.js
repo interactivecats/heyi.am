@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { IDLE_THRESHOLD_MS, } from "./types.js";
 function parseEntries(raw) {
     const entries = [];
     for (const line of raw.split("\n")) {
@@ -72,7 +73,6 @@ function countTurns(entries) {
     }
     return turns;
 }
-const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
 function computeDuration(entries) {
     const timestamps = [];
     let startStr = null;
@@ -174,12 +174,6 @@ async function detect(path) {
     catch {
         return false;
     }
-}
-export function mapAgentRole(subagentType) {
-    if (subagentType.startsWith("trc-")) {
-        return subagentType.slice(4);
-    }
-    return subagentType.toLowerCase();
 }
 /** Aggregate token usage across all assistant messages. */
 function aggregateTokenUsage(entries) {

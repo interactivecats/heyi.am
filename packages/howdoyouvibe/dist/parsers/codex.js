@@ -1,6 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
+import { IDLE_THRESHOLD_MS, } from "./types.js";
 // -- Parsing --
 function parseLines(raw) {
     const lines = [];
@@ -96,7 +97,6 @@ function countTurns(lines) {
     }
     return Math.max(turns, 1);
 }
-const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
 function computeDuration(lines) {
     const timestamps = [];
     let startStr = null;

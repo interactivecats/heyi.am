@@ -1,7 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { claudeParser, mapAgentRole } from "./claude.js";
+import { claudeParser } from "./claude.js";
 import { cursorParser, discoverCursorWorkspaces, listConversations, type CursorWorkspace } from "./cursor.js";
 import { codexParser, discoverCodexSessions } from "./codex.js";
 import { geminiParser, discoverGeminiSessions, resolveProjectDirs } from "./gemini.js";
@@ -27,9 +27,6 @@ export interface SessionMeta {
   sessionId: string;
   projectDir: string;
   isSubagent: boolean;
-  parentSessionId?: string;
-  agentRole?: string;
-  children?: SessionMeta[];
 }
 
 export function encodeDirPath(absolutePath: string): string {
@@ -119,7 +116,7 @@ async function listCursorSessions(): Promise<SessionMeta[]> {
       if (conv.createdAt < CURSOR_DATA_CUTOFF) continue;
 
       const params = new URLSearchParams();
-      if (conv.name) params.set("name", conv.name);
+      params.set("name", conv.name);
       if (conv.createdAt) params.set("createdAt", String(conv.createdAt));
       if (conv.lastUpdatedAt) params.set("lastUpdatedAt", String(conv.lastUpdatedAt));
       if (conv.totalLinesAdded) params.set("linesAdded", String(conv.totalLinesAdded));
@@ -181,19 +178,10 @@ async function tryAddSession(
   projectDir: string,
   isSubagent: boolean,
   out: SessionMeta[],
-  parentSessionId?: string,
-  agentRole?: string,
 ): Promise<void> {
   for (const parser of parsers) {
     if (await parser.detect(fullPath)) {
-      const meta: SessionMeta = { path: fullPath, source: parser.name, sessionId, projectDir, isSubagent };
-      if (parentSessionId) {
-        meta.parentSessionId = parentSessionId;
-      }
-      if (agentRole) {
-        meta.agentRole = agentRole;
-      }
-      out.push(meta);
+      out.push({ path: fullPath, source: parser.name, sessionId, projectDir, isSubagent });
       break;
     }
   }

@@ -31,6 +31,8 @@ defmodule HeyiAm.Vibes.Vibe do
     vibe
     |> cast(attrs, @required ++ @optional)
     |> validate_required(@required)
+    |> sanitize_text(:headline)
+    |> sanitize_text(:narrative)
     |> validate_length(:short_id, max: 10)
     |> validate_length(:headline, max: 76)
     |> validate_length(:narrative, max: 500)
@@ -41,6 +43,24 @@ defmodule HeyiAm.Vibes.Vibe do
     |> validate_stats()
     |> validate_sources()
     |> unique_constraint(:short_id)
+  end
+
+  # Strip control characters, null bytes, and HTML/XML tags from free-text fields.
+  # HEEx auto-escapes on output, but this is defense-in-depth: we never store
+  # markup or shell metacharacters in the first place.
+  defp sanitize_text(changeset, field) do
+    case get_change(changeset, field) do
+      nil -> changeset
+      value when is_binary(value) ->
+        cleaned =
+          value
+          |> String.replace(~r/<[^>]*>/, "")           # strip HTML/XML tags
+          |> String.replace(~r/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/, "")  # strip control chars (keep \n, \r, \t)
+          |> String.trim()
+
+        put_change(changeset, field, cleaned)
+      _ -> changeset
+    end
   end
 
   def valid_archetypes, do: @valid_archetypes
@@ -65,6 +85,8 @@ defmodule HeyiAm.Vibes.Vibe do
           [stats: "too large (max #{@max_stats_bytes} bytes)"]
         not Enum.all?(value, fn {_k, v} -> is_number(v) end) ->
           [stats: "all values must be numbers"]
+        not Enum.all?(value, fn {k, _v} -> is_binary(k) and Regex.match?(~r/^[a-z_]{1,40}$/, k) end) ->
+          [stats: "keys must be lowercase alpha/underscore, max 40 chars"]
         true ->
           []
       end

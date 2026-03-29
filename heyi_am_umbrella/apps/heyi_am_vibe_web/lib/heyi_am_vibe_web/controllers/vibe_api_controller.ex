@@ -2,28 +2,11 @@ defmodule HeyiAmVibeWeb.VibeApiController do
   use HeyiAmVibeWeb, :controller
 
   alias HeyiAm.Vibes
+  alias HeyiAm.Vibes.Meta
   alias HeyiAm.LLM.Provider
 
-  @archetype_names %{
-    "night-owl" => "The Night Owl",
-    "backseat-driver" => "The Backseat Driver",
-    "delegator" => "The Delegator",
-    "cowboy" => "The Cowboy",
-    "overthinker" => "The Overthinker",
-    "speed-runner" => "The Speed Runner",
-    "debugger" => "The Debugger",
-    "diplomat" => "The Diplomat",
-    "architect" => "The Architect",
-    "pair-programmer" => "The Pair Programmer",
-    "marathon-runner" => "The Marathon Runner",
-    "scientist" => "The Scientist",
-    "puppeteer" => "The Puppeteer",
-    "weekend-warrior" => "The Weekend Warrior",
-    "orchestrator" => "The Orchestrator",
-    "minimalist" => "The Minimalist",
-    "secret-spiller" => "The Secret Spiller",
-    "vibe-coder" => "The Vibe Coder"
-  }
+  @archetype_names Meta.archetype_names()
+  @modifier_phrases Meta.modifier_phrases()
 
   @allowed_stat_keys ~w(
     expletives corrections please_rate avg_prompt_words longest_prompt_words
@@ -34,25 +17,6 @@ defmodule HeyiAmVibeWeb.VibeApiController do
     secret_leaks_user secret_leaks_ai plan_mode_uses agent_spawns avg_daily_hours
     total_turns session_count total_duration_min
   )
-
-  @modifier_phrases %{
-    "says-please" => "who says please",
-    "codes-at-3am" => "who codes at 3am",
-    "reads-5x-more" => "who reads 5x more than writes",
-    "never-tests" => "who never tests",
-    "cusses-under-pressure" => "who cusses under pressure",
-    "writes-essays" => "who writes essays for prompts",
-    "lets-ai-cook" => "who lets the AI cook",
-    "asks-more-than-tells" => "who asks more than tells",
-    "scope-creeps" => "who scope-creeps every session",
-    "ships-on-weekends" => "who ships on weekends",
-    "spawns-agents" => "who spawns agents for everything",
-    "plans-first" => "who plans before coding",
-    "interrupts-often" => "who interrupts mid-thought",
-    "marathon-sessions" => "who codes for hours straight",
-    "one-word-prompts" => "who speaks in commands",
-    "leaks-secrets" => "who leaks secrets to the AI"
-  }
 
   def create(conn, params) do
     attrs = %{

@@ -26,18 +26,12 @@ export function link(url, text) {
 }
 const LINE = "═".repeat(80);
 const THIN = "─".repeat(80);
-const PLAIN_LINE = "═".repeat(80);
 const INDENT = "  ";
 function pct(n) {
     return `${Math.round(n * 100)}%`;
 }
 function formatSources(sources) {
     return sources.map((s) => SOURCE_DISPLAY_NAMES[s] ?? s).join(", ");
-}
-/** Pad a stat label:value to a fixed column width for two-column layout */
-function statCol(label, value, width = 28) {
-    const text = `${label}: ${value}`;
-    return text.padEnd(width);
 }
 /** Check if a stat value is "boring" — zero, or too uninteresting to show */
 function isZero(v) {
@@ -122,7 +116,7 @@ export function renderCard(stats, headline, narrative) {
     }
     const dailyHours = stats.avg_daily_hours > 0 ? `  ·  ${c.cyan}${stats.avg_daily_hours}${c.reset}h/day avg` : "";
     lines.push(`${INDENT}${c.cyan}${fmt(stats.total_turns)}${c.reset} turns across ${c.cyan}${stats.session_count}${c.reset} sessions${dailyHours}`);
-    lines.push(`${INDENT}Based on the last ~30 days of sessions. All analysis ran locally.`);
+    lines.push(`${INDENT}For entertainment only. Stats use simple regex matching and may not be 100% accurate.`);
     lines.push("");
     console.log(lines.join("\n"));
 }
@@ -131,8 +125,6 @@ function buildStatColumns(stats) {
     const voiceCol = [];
     if (!isZero(stats.expletives))
         voiceCol.push(["Expletives", fmt(stats.expletives)]);
-    if (!isZero(stats.corrections))
-        voiceCol.push(["Corrections", fmt(stats.corrections)]);
     if (stats.avg_prompt_words > 50)
         voiceCol.push(["Avg prompt", `${stats.avg_prompt_words}w${wow("prompt", stats.avg_prompt_words, [[150, " essays"], [100, " verbose"]])}`]);
     if (stats.please_rate > 0.1)
@@ -165,8 +157,8 @@ function buildStatColumns(stats) {
     if (stats.agent_spawns > 0)
         aiCol.push(["Agents spawned", `${fmt(stats.agent_spawns)}`]);
     const collabCol = [];
-    if (!isZero(stats.override_success_rate) && stats.corrections > 0)
-        collabCol.push(["Override win", `${pct(stats.override_success_rate)} of ${fmt(stats.corrections)}`]);
+    if (!isZero(stats.corrections))
+        collabCol.push(["Corrections", fmt(stats.corrections)]);
     if (stats.longest_autopilot > 5)
         collabCol.push(["Leash", `${fmt(stats.longest_autopilot)} turns${wow("auto", stats.longest_autopilot, [[1000, " wow"], [200, " trust"]])}`]);
     if (stats.first_blood_min > 2)

@@ -1,4 +1,6 @@
 export type SessionSource = "claude" | "cursor" | "codex" | "gemini" | "antigravity";
+/** Gaps longer than this between messages count as idle, not active time. */
+export declare const IDLE_THRESHOLD_MS: number;
 /** Display names for source tools */
 export declare const SOURCE_DISPLAY_NAMES: Record<SessionSource, string>;
 export interface ToolCall {

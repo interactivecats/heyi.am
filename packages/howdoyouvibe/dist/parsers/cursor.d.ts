@@ -1,4 +1,4 @@
-import type { SessionParser, SessionAnalysis } from "./types.js";
+import { type SessionParser, type SessionAnalysis } from "./types.js";
 interface CursorBubble {
     _v?: number;
     type: number;

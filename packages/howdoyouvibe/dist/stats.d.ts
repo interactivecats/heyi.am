@@ -10,6 +10,8 @@ export declare const _patterns: {
     SCOPE_CREEP_RE: RegExp;
     APOLOGY_RE: RegExp;
     SECRET_LEAK_RE: RegExp;
+    SECRET_EXAMPLE_RE: RegExp;
     INTERRUPT_RE: RegExp;
     AI_ADMISSION_RE: RegExp;
+    COMPACTION_RE: RegExp;
 };

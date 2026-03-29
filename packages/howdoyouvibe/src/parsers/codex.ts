@@ -1,12 +1,13 @@
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import type {
-  SessionParser,
-  SessionAnalysis,
-  RawEntry,
-  ToolCall,
-  LocStats,
+import {
+  type SessionParser,
+  type SessionAnalysis,
+  type RawEntry,
+  type ToolCall,
+  type LocStats,
+  IDLE_THRESHOLD_MS,
 } from "./types.js";
 
 // -- Codex JSONL types --
@@ -138,7 +139,6 @@ function countTurns(lines: CodexLine[]): number {
   return Math.max(turns, 1);
 }
 
-const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
 
 function computeDuration(lines: CodexLine[]): {
   duration_ms: number;

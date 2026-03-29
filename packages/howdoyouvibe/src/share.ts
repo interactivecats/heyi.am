@@ -1,11 +1,6 @@
 import type { VibeStats } from "./types.js";
 import type { ArchetypeMatch } from "./archetypes.js";
-
-function formatRetryWait(seconds: number): string {
-  if (seconds >= 3600) return `${Math.ceil(seconds / 3600)}h`;
-  if (seconds >= 60) return `${Math.ceil(seconds / 60)}m`;
-  return `${seconds}s`;
-}
+import { formatRetryWait } from "./utils.js";
 
 const SHARE_URL = process.env.VIBE_API_URL
   ? `${process.env.VIBE_API_URL}/api/vibes`

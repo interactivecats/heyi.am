@@ -60,6 +60,7 @@ config :heyi_am, app_host: nil
 config :heyi_am, vibe_host: nil
 
 config :heyi_am, rate_limiting_enabled: false
+config :heyi_am_vibe_web, rate_limiting_enabled: false
 
 config :logger, level: :warning
 

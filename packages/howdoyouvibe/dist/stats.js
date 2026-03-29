@@ -38,13 +38,26 @@ const APOLOGY_RE = /\b(?:sorry|apologi[zs]e|apologies|my (?:mistake|bad|apologie
  */
 const SECRET_LEAK_RE = /(?:sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36}|gho_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9_]{40,}|AKIA[0-9A-Z]{16}|AIzaSy[a-zA-Z0-9_-]{33}|xox[bpoas]-[a-zA-Z0-9-]+|Bearer\s+[a-zA-Z0-9._\-]{20,}|(?:postgres|mysql|mongodb(?:\+srv)?):\/\/[^\s]{10,}|-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----)/;
 /**
+ * Filter out obvious test/example tokens that match SECRET_LEAK_RE.
+ * These appear when discussing or building secret detection features.
+ */
+const SECRET_EXAMPLE_RE = /(?:1234567890|EXAMPLE|XXXXXXXX|invalid-garbage|test[_-]?token|example[_-]?key|your[_-]?(?:api[_-]?key|token)|<your|sk-test-|sk-proj-test|ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ)/i;
+/**
  * Interruptions: user cancelled the AI mid-response.
  */
 const INTERRUPT_RE = /\[Request interrupted by user(?:\s+for tool use)?\]/;
 /**
  * AI self-correction signals: the AI realizes it made a mistake.
+ * Tightened to require stronger signals — "let me fix" alone is too common
+ * in normal operation. Require explicit error acknowledgment.
  */
-const AI_ADMISSION_RE = /\b(?:let me fix|let me correct|that'?s (?:wrong|not right|incorrect|not correct)|I (?:made a|my) mistake|I should have|oops|that was wrong|actually,? (?:that|this) (?:is|was) wrong|sorry,? (?:that|let me))\b/i;
+const AI_ADMISSION_RE = /\b(?:that'?s (?:wrong|not right|incorrect|not correct)|I (?:made a|my) mistake|I should have|oops|that was wrong|actually,? (?:that|this) (?:is|was) wrong|I introduced (?:a|an) (?:bug|error|issue)|my (?:mistake|bad|error)|let me (?:fix|correct) (?:that|this|my))\b/i;
+/**
+ * Compaction summaries: Claude Code injects these when a conversation is
+ * compacted. They re-quote prior user messages, which would double-count
+ * expletives, corrections, and other text-based stats.
+ */
+const COMPACTION_RE = /^This session is being continued from a previous conversation/;
 /**
  * Question detection: trim trailing whitespace then check for `?`
  */
@@ -64,7 +77,12 @@ function getUserText(entry) {
     const content = entry.message?.content;
     if (typeof content === "string") {
         const cleaned = cleanAssistantText(content);
-        return cleaned || null;
+        if (!cleaned)
+            return null;
+        // Skip compaction summaries — they re-quote prior user messages
+        if (COMPACTION_RE.test(cleaned))
+            return null;
+        return cleaned;
     }
     if (Array.isArray(content)) {
         const texts = content
@@ -74,7 +92,11 @@ function getUserText(entry) {
         // Skip entries that are only tool_result blocks (not real user messages)
         if (texts.length === 0)
             return null;
-        return texts.join("\n");
+        const joined = texts.join("\n");
+        // Skip compaction summaries — they re-quote prior user messages
+        if (COMPACTION_RE.test(joined))
+            return null;
+        return joined;
     }
     return null;
 }
@@ -217,7 +239,6 @@ export function computeVibeStats(sessions) {
             ? Math.max(1, Math.round(analysis.duration_ms / 60_000))
             : 0;
         // Track previous entry type for correction detection
-        let prevEntryHadToolUse = false;
         let prevEntryWasAssistant = false;
         let currentToolChain = 0;
         let currentAutopilot = 0;
@@ -231,10 +252,15 @@ export function computeVibeStats(sessions) {
             // ── Secret detection (all entry types) ──
             const allText = getAllText(entry);
             if (allText && SECRET_LEAK_RE.test(allText)) {
-                if (entry.type === "user")
-                    secretLeaksUser++;
-                else if (entry.type === "assistant")
-                    secretLeaksAi++;
+                // Extract the matched token and check if it's an obvious example/test value
+                const secretMatch = allText.match(SECRET_LEAK_RE);
+                const isExample = secretMatch && SECRET_EXAMPLE_RE.test(secretMatch[0]);
+                if (!isExample) {
+                    if (entry.type === "user")
+                        secretLeaksUser++;
+                    else if (entry.type === "assistant")
+                        secretLeaksAi++;
+                }
             }
             // ── User turn stats ──
             const userText = getUserText(entry);
@@ -326,7 +352,6 @@ export function computeVibeStats(sessions) {
                 currentToolChain = 0;
                 filesEditedInRun.clear();
                 aiAdmittedMistakeInRun = false;
-                prevEntryHadToolUse = false;
                 prevEntryWasAssistant = false;
             }
             // ── Assistant turn stats ──
@@ -374,8 +399,9 @@ export function computeVibeStats(sessions) {
                     // Agent spawns
                     if (tool.name === "Agent")
                         agentSpawns++;
-                    // Self-corrections: same file edited again AND there's a signal
-                    // the AI knows it messed up (error in tool result, or admission in text)
+                    // Self-corrections: same file edited again AND the AI explicitly
+                    // acknowledged a mistake in text (tightened regex excludes routine
+                    // "let me fix" phrasing)
                     if (tool.name === "Edit" || tool.name === "Write") {
                         const filePath = typeof tool.input.file_path === "string" ? tool.input.file_path : null;
                         if (filePath) {
@@ -386,7 +412,6 @@ export function computeVibeStats(sessions) {
                         }
                     }
                 }
-                prevEntryHadToolUse = toolBlocks.length > 0;
                 prevEntryWasAssistant = true;
             }
         }
@@ -475,7 +500,9 @@ export const _patterns = {
     SCOPE_CREEP_RE,
     APOLOGY_RE,
     SECRET_LEAK_RE,
+    SECRET_EXAMPLE_RE,
     INTERRUPT_RE,
     AI_ADMISSION_RE,
+    COMPACTION_RE,
 };
 //# sourceMappingURL=stats.js.map

@@ -99,8 +99,7 @@ async function listCursorSessions() {
             if (conv.createdAt < CURSOR_DATA_CUTOFF)
                 continue;
             const params = new URLSearchParams();
-            if (conv.name)
-                params.set("name", conv.name);
+            params.set("name", conv.name);
             if (conv.createdAt)
                 params.set("createdAt", String(conv.createdAt));
             if (conv.lastUpdatedAt)
@@ -154,17 +153,10 @@ async function listClaudeSessions() {
     }
     return parents;
 }
-async function tryAddSession(fullPath, sessionId, projectDir, isSubagent, out, parentSessionId, agentRole) {
+async function tryAddSession(fullPath, sessionId, projectDir, isSubagent, out) {
     for (const parser of parsers) {
         if (await parser.detect(fullPath)) {
-            const meta = { path: fullPath, source: parser.name, sessionId, projectDir, isSubagent };
-            if (parentSessionId) {
-                meta.parentSessionId = parentSessionId;
-            }
-            if (agentRole) {
-                meta.agentRole = agentRole;
-            }
-            out.push(meta);
+            out.push({ path: fullPath, source: parser.name, sessionId, projectDir, isSubagent });
             break;
         }
     }

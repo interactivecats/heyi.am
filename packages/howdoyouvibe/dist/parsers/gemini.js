@@ -2,7 +2,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { homedir } from "node:os";
-const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
+import { IDLE_THRESHOLD_MS, } from "./types.js";
 const GEMINI_BASE = () => join(homedir(), ".gemini", "tmp");
 // --- File path extraction from message text ---
 const ABS_PATH_RE = /(?:^|\s)(\/[\w./-]+\.\w+)/g;
@@ -128,14 +128,6 @@ async function parse(path) {
     if (allEntries.length === 0) {
         return analyzeSession([]);
     }
-    const groups = groupBySession(allEntries);
-    if (path.startsWith("gemini://")) {
-        const url = new URL(path);
-        const sessionId = url.searchParams.get("session");
-        if (sessionId && groups.has(sessionId)) {
-            return analyzeSession(groups.get(sessionId));
-        }
-    }
     const sorted = allEntries.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     return analyzeSession(sorted);
 }
@@ -192,5 +184,4 @@ export function resolveProjectDirs(sessions, knownDirs) {
         projectDir: hashToDir.get(s.projectHash) ?? s.projectDir,
     }));
 }
-export { parseGeminiLog, groupBySession, analyzeSession, extractFileRefsFromText };
 //# sourceMappingURL=gemini.js.map

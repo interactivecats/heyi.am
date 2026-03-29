@@ -101,9 +101,11 @@ defmodule HeyiAm.Vibes do
 
   defp generate_short_id do
     alphabet = String.graphemes(@nanoid_alphabet)
+    len = length(alphabet)
+    bytes = :crypto.strong_rand_bytes(@nanoid_length)
 
-    1..@nanoid_length
-    |> Enum.map(fn _ -> Enum.random(alphabet) end)
-    |> Enum.join()
+    for <<b <- bytes>>, into: "" do
+      Enum.at(alphabet, rem(b, len))
+    end
   end
 end

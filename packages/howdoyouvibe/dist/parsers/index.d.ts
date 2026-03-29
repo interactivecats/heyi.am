@@ -8,9 +8,6 @@ export interface SessionMeta {
     sessionId: string;
     projectDir: string;
     isSubagent: boolean;
-    parentSessionId?: string;
-    agentRole?: string;
-    children?: SessionMeta[];
 }
 export declare function encodeDirPath(absolutePath: string): string;
 /**

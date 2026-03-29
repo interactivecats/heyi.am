@@ -1,4 +1,4 @@
-import type { SessionParser } from "./types.js";
+import { type SessionParser } from "./types.js";
 export declare const codexParser: SessionParser;
 export interface CodexSessionFile {
     path: string;

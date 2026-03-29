@@ -1,13 +1,17 @@
 <div class="vibe-page vibe-show">
   <article class="vibe-card">
-    <span class="vibe-label">HOW DO YOU VIBE?</span>
+    <span class="vibe-label">howdoyouvibe.com</span>
+    <hr class="vibe-divider vibe-divider-double" aria-hidden="true" />
+
     <h1 class="vibe-headline"><%= @headline %></h1>
     <p class="vibe-narrative"><%= @vibe.narrative %></p>
+
+    <hr class="vibe-divider" aria-hidden="true" />
 
     <div class="vibe-stats-columns" role="list" aria-label="Vibe stats">
       <%= if @voice_stats != [] do %>
         <section class="vibe-stat-col" role="listitem">
-          <h2>Your Voice</h2>
+          <h2>YOUR VOICE</h2>
           <dl>
             <%= for {label, value} <- @voice_stats do %>
               <div><dt><%= label %></dt><dd><%= value %></dd></div>
@@ -18,7 +22,7 @@
 
       <%= if @ai_stats != [] do %>
         <section class="vibe-stat-col" role="listitem">
-          <h2>The AI's Habits</h2>
+          <h2>THE AI'S HABITS</h2>
           <dl>
             <%= for {label, value} <- @ai_stats do %>
               <div><dt><%= label %></dt><dd><%= value %></dd></div>
@@ -29,7 +33,7 @@
 
       <%= if @collab_stats != [] do %>
         <section class="vibe-stat-col" role="listitem">
-          <h2>The Back-and-forth</h2>
+          <h2>THE BACK-AND-FORTH</h2>
           <dl>
             <%= for {label, value} <- @collab_stats do %>
               <div><dt><%= label %></dt><dd><%= value %></dd></div>
@@ -39,18 +43,20 @@
       <% end %>
     </div>
 
+    <hr class="vibe-divider vibe-divider-double" aria-hidden="true" />
+
     <footer class="vibe-footer">
       <%= Integer.to_string(@vibe.total_turns) |> String.replace(~r/\B(?=(\d{3})+(?!\d))/, ",") %> turns · <%= @vibe.session_count %> sessions<%= if @vibe.sources && @vibe.sources != [], do: " · #{Enum.join(@vibe.sources, ", ")}" %>
     </footer>
   </article>
 
   <div class="vibe-actions">
-    <a href={~p"/#{@vibe.short_id}/card.png"} class="vibe-btn" download="vibe-card.svg">Download card</a>
+    <a href={~p"/#{@vibe.short_id}/card.png"} class="vibe-btn" download="vibe-card.png">[ download card ]</a>
   </div>
 
   <div class="vibe-cta-secondary">
-    <p>Get your vibe</p>
-    <code aria-label="Run this command to get your vibe">npx howdoyouvibe</code>
+    <p>get your vibe</p>
+    <code aria-label="Run this command to get your vibe"><span class="vibe-prompt">$</span> npx howdoyouvibe</code>
     <p class="vibe-cta-link">Full portfolio at <a href="https://heyi.am">heyi.am</a></p>
   </div>
 </div>

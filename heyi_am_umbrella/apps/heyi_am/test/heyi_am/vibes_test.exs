@@ -57,6 +57,45 @@ defmodule HeyiAm.VibesTest do
     end
   end
 
+  describe "input sanitization" do
+    test "strips HTML tags from headline" do
+      attrs = valid_vibe_attributes(%{
+        "short_id" => "san1234", "delete_code" => "testcode123",
+        "headline" => "The <script>alert(1)</script>Coder"
+      })
+      changeset = Vibe.changeset(%Vibe{}, attrs)
+      assert Ecto.Changeset.get_change(changeset, :headline) == "The alert(1)Coder"
+    end
+
+    test "strips HTML tags from narrative" do
+      attrs = valid_vibe_attributes(%{
+        "short_id" => "san1235", "delete_code" => "testcode123",
+        "narrative" => "You code <img src=x onerror=alert(1)> all night."
+      })
+      changeset = Vibe.changeset(%Vibe{}, attrs)
+      assert Ecto.Changeset.get_change(changeset, :narrative) == "You code  all night."
+    end
+
+    test "strips control characters" do
+      attrs = valid_vibe_attributes(%{
+        "short_id" => "san1236", "delete_code" => "testcode123",
+        "headline" => "The\x00Null\x07Bell"
+      })
+      changeset = Vibe.changeset(%Vibe{}, attrs)
+      assert Ecto.Changeset.get_change(changeset, :headline) == "TheNullBell"
+    end
+
+    test "rejects stat keys with special characters" do
+      attrs = valid_vibe_attributes(%{
+        "short_id" => "san1237", "delete_code" => "testcode123",
+        "stats" => %{"<script>" => 1}
+      })
+      changeset = Vibe.changeset(%Vibe{}, attrs)
+      refute changeset.valid?
+      assert %{stats: _} = errors_on(changeset)
+    end
+  end
+
   describe "get_vibe_by_short_id/1" do
     test "returns the vibe" do
       vibe = vibe_fixture()

@@ -2,46 +2,10 @@ defmodule HeyiAmVibeWeb.VibeController do
   use HeyiAmVibeWeb, :controller
 
   alias HeyiAm.Vibes
+  alias HeyiAm.Vibes.Meta
 
-  @archetype_meta %{
-    "night-owl" => %{name: "The Night Owl", tagline: "Codes when the world sleeps."},
-    "backseat-driver" => %{name: "The Backseat Driver", tagline: "Knows when the AI is wrong."},
-    "delegator" => %{name: "The Delegator", tagline: "Points and lets the AI run."},
-    "cowboy" => %{name: "The Cowboy", tagline: "Writes first, reads later."},
-    "overthinker" => %{name: "The Overthinker", tagline: "Every prompt is a paragraph."},
-    "speed-runner" => %{name: "The Speed Runner", tagline: "In and out. No wasted time."},
-    "debugger" => %{name: "The Debugger", tagline: "Tests, fails, fixes, repeats."},
-    "diplomat" => %{name: "The Diplomat", tagline: "Thanks the AI, trusts the AI."},
-    "architect" => %{name: "The Architect", tagline: "Reads 5x more than writes."},
-    "pair-programmer" => %{name: "The Pair Programmer", tagline: "Treats the AI like a colleague."},
-    "marathon-runner" => %{name: "The Marathon Runner", tagline: "Sessions that never end."},
-    "scientist" => %{name: "The Scientist", tagline: "Hypothesize, test, repeat."},
-    "puppeteer" => %{name: "The Puppeteer", tagline: "Pulls every string."},
-    "weekend-warrior" => %{name: "The Weekend Warrior", tagline: "Saves the real coding for Saturday."},
-    "orchestrator" => %{name: "The Orchestrator", tagline: "Spawns agents like they're threads."},
-    "minimalist" => %{name: "The Minimalist", tagline: "Says less. Gets more."},
-    "secret-spiller" => %{name: "The Secret Spiller", tagline: "Accidentally shares everything."},
-    "vibe-coder" => %{name: "The Vibe Coder", tagline: "Vibes with the machine."}
-  }
-
-  @modifier_phrases %{
-    "says-please" => "who says please",
-    "codes-at-3am" => "who codes at 3am",
-    "reads-5x-more" => "who reads 5x more than writes",
-    "never-tests" => "who never tests",
-    "cusses-under-pressure" => "who cusses under pressure",
-    "writes-essays" => "who writes essays for prompts",
-    "lets-ai-cook" => "who lets the AI cook",
-    "asks-more-than-tells" => "who asks more than tells",
-    "scope-creeps" => "who scope-creeps every session",
-    "ships-on-weekends" => "who ships on weekends",
-    "spawns-agents" => "who spawns agents for everything",
-    "plans-first" => "who plans before coding",
-    "interrupts-often" => "who interrupts mid-thought",
-    "marathon-sessions" => "who codes for hours straight",
-    "one-word-prompts" => "who speaks in commands",
-    "leaks-secrets" => "who leaks secrets to the AI"
-  }
+  @archetype_meta Meta.archetype_meta()
+  @modifier_phrases Meta.modifier_phrases()
 
   def index(conn, _params) do
     count = Vibes.count_vibes()
@@ -148,14 +112,65 @@ defmodule HeyiAmVibeWeb.VibeController do
             }
           )
 
-        conn
-        |> put_resp_content_type("image/svg+xml")
-        |> put_resp_header("cache-control", "public, max-age=86400, immutable")
-        |> put_resp_header(
-          "content-security-policy",
-          "default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com"
-        )
-        |> send_resp(200, svg)
+        case svg_to_png(svg) do
+          {:ok, png} ->
+            conn
+            |> put_resp_content_type("image/png")
+            |> put_resp_header("cache-control", "public, max-age=86400, immutable")
+            |> send_resp(200, png)
+
+          :no_converter ->
+            # Fallback to SVG if no PNG converter is installed
+            conn
+            |> put_resp_content_type("image/svg+xml")
+            |> put_resp_header("cache-control", "public, max-age=86400, immutable")
+            |> send_resp(200, svg)
+        end
+    end
+  end
+
+  # Convert SVG to PNG using a system tool.
+  # Safe from RCE: the SVG is generated from our own template — user data
+  # (headline, narrative, stats) is interpolated into XML text nodes, never
+  # into command arguments. The tool reads from a temp file, not stdin.
+  defp svg_to_png(svg) do
+    tmp_svg = Path.join(System.tmp_dir!(), "vibe_card_#{:erlang.unique_integer([:positive])}.svg")
+    tmp_png = Path.rootname(tmp_svg) <> ".png"
+
+    try do
+      File.write!(tmp_svg, svg)
+
+      result =
+        cond do
+          System.find_executable("rsvg-convert") ->
+            System.cmd("rsvg-convert", ["--width", "1200", "--format", "png", "--output", tmp_png, tmp_svg],
+              stderr_to_stdout: true)
+
+          System.find_executable("magick") ->
+            System.cmd("magick", [tmp_svg, "-resize", "1200x630", tmp_png],
+              stderr_to_stdout: true)
+
+          System.find_executable("convert") ->
+            System.cmd("convert", [tmp_svg, "-resize", "1200x630", tmp_png],
+              stderr_to_stdout: true)
+
+          true ->
+            {:skip, 1}
+        end
+
+      case result do
+        {_, 0} ->
+          case File.read(tmp_png) do
+            {:ok, png} -> {:ok, png}
+            _ -> :no_converter
+          end
+
+        _ ->
+          :no_converter
+      end
+    after
+      File.rm(tmp_svg)
+      File.rm(tmp_png)
     end
   end
 
@@ -237,12 +252,12 @@ defmodule HeyiAmVibeWeb.VibeController do
     voice =
       [
         stat(stats, "expletives", "Expletives", &format_num/1),
-        stat(stats, "corrections", "Corrections", &format_num/1),
         stat(stats, "avg_prompt_words", "Avg prompt", fn v -> "#{v} words" end),
         stat(stats, "please_rate", "Please rate", &format_pct/1),
         stat(stats, "question_rate", "Questions", &format_pct/1),
         stat(stats, "late_night_rate", "Late night", &format_pct/1),
-        stat(stats, "reasoning_rate", "Thinks out loud", &format_pct/1)
+        stat(stats, "reasoning_rate", "Thinks out loud", &format_pct/1),
+        stat(stats, "interruptions", "Interruptions", &format_num/1)
       ]
       |> Enum.reject(&is_nil/1)
       |> Enum.take(6)
@@ -266,9 +281,7 @@ defmodule HeyiAmVibeWeb.VibeController do
 
     collab =
       [
-        stat_with(stats, "override_success_rate", "corrections", "Override success", fn rate, corr ->
-          "#{format_pct(rate)} of #{format_num(corr)}"
-        end),
+        stat(stats, "corrections", "Corrections", &format_num/1),
         stat(stats, "longest_autopilot", "Longest leash", fn v -> "#{format_num(v)} turns" end),
         stat(stats, "first_blood_min", "First correction", fn v -> "#{v} min" end),
         stat(stats, "redirects_per_hour", "Redirects/hr", &format_num/1),
@@ -289,12 +302,4 @@ defmodule HeyiAmVibeWeb.VibeController do
     end
   end
 
-  defp stat_with(stats, key1, key2, label, fmt) do
-    v1 = stats[key1]
-    v2 = stats[key2]
-
-    if is_number(v1) and v1 > 0 and is_number(v2) and v2 > 0,
-      do: {label, fmt.(v1, v2)},
-      else: nil
-  end
 end

@@ -1,13 +1,14 @@
 import { readdir, readFile, access } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { homedir, platform } from "node:os";
-import type {
-  SessionParser,
-  SessionAnalysis,
-  ToolCall,
-  LocStats,
-  RawEntry,
-  ContentBlock,
+import {
+  type SessionParser,
+  type SessionAnalysis,
+  type ToolCall,
+  type LocStats,
+  type RawEntry,
+  type ContentBlock,
+  IDLE_THRESHOLD_MS,
 } from "./types.js";
 
 // --- better-sqlite3 dynamic import ---
@@ -368,7 +369,6 @@ function countTurnsFromBubbles(bubbles: CursorBubble[]): number {
   return turns;
 }
 
-const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
 
 function computeDurationFromBubbles(bubbles: CursorBubble[]): {
   duration_ms: number;

@@ -123,7 +123,7 @@ describe("renderCard", () => {
     // Numbers are wrapped in ANSI cyan escapes — strip them for assertion
     const plain = output.replace(/\x1b\[[0-9;]*m/g, "");
     expect(plain).toContain("847 turns across 23 sessions");
-    expect(output).toContain("All analysis ran locally");
+    expect(output).toContain("entertainment only");
 
     spy.mockRestore();
   });

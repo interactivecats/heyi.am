@@ -37,7 +37,8 @@ defmodule HeyiAmVibeWeb.Integration.VibeLifecycleTest do
     conn = build_conn()
     conn = get(conn, "/#{short_id}/card.png")
     assert response(conn, 200)
-    assert get_resp_header(conn, "content-type") |> hd() =~ "image/svg+xml"
+    content_type = get_resp_header(conn, "content-type") |> hd()
+    assert content_type =~ "image/png" or content_type =~ "image/svg+xml"
 
     # 5. View delete confirmation page
     conn = build_conn()
