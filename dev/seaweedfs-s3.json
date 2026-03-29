@@ -4,8 +4,8 @@
       "name": "admin",
       "credentials": [
         {
-          "accessKey": "heyi_admin",
-          "secretKey": "heyi_secret_key"
+          "accessKey": "your_access_key",
+          "secretKey": "your_secret_key"
         }
       ],
       "actions": [

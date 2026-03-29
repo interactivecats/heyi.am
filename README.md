@@ -1,6 +1,11 @@
 # heyi.am
 
+[![npm version](https://img.shields.io/npm/v/heyiam)](https://www.npmjs.com/package/heyiam)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+
 A portfolio that shows **how you think with AI**, not what the AI said.
+
+heyi.am discovers your AI coding sessions from Claude Code, Cursor, OpenAI Codex CLI, and Google Gemini CLI — then helps you turn them into structured case studies that show your problem-solving process.
 
 ## Get Started
 
@@ -8,7 +13,7 @@ A portfolio that shows **how you think with AI**, not what the AI said.
 npx heyiam
 ```
 
-This opens a local dashboard at `localhost:17845` that discovers your AI coding sessions from Claude Code, Cursor, OpenAI Codex CLI, and Google Gemini CLI.
+This opens a local dashboard at `localhost:17845` that discovers your AI coding sessions.
 
 From there you can browse projects, search sessions, and publish portfolio case studies to `heyi.am/:username`.
 
@@ -71,3 +76,11 @@ docker compose -f docker-compose.dev.yml exec phoenix mix test
 | [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | System architecture, key decisions, file layout |
 | [HOWDOYOUVIBE.md](./docs/HOWDOYOUVIBE.md) | howdoyouvibe implementation spec |
 | [COOLIFY_DEPLOY.md](./docs/COOLIFY_DEPLOY.md) | Production deployment |
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup instructions and guidelines.
+
+## License
+
+[MIT](./LICENSE)

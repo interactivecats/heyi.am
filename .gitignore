@@ -38,6 +38,21 @@ heyi_minio/
 .cursor/
 .gemini/
 
+# AI tool config files (root-level)
+.teamrc.yaml
+team-knowledge.md
+AGENTS.md
+GEMINI.md
+
+# Internal docs
+docs/STRATEGY.md
+mockups/
+
+# Certificates and keys
+*.pem
+*.key
+*.p12
+
 # Umbrella
 heyi_am_umbrella/_build/
 heyi_am_umbrella/deps/

@@ -140,7 +140,7 @@ describe('scanTextSync — secrets', () => {
 
 describe('scanTextSync — PII', () => {
   it('detects email addresses', () => {
-    const findings = scanTextSync('contact ben.cates@gmail.com for info');
+    const findings = scanTextSync('contact jane.doe@gmail.com for info');
     expect(findings.some(f => f.pattern === 'Email Address')).toBe(true);
     expect(findings[0].severity).toBe('medium');
   });
