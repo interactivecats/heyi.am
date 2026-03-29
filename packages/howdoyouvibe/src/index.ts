@@ -112,6 +112,7 @@ if (process.stdin.isTTY) {
   }
 
   console.log("");
-  console.log(`  Archive, search, and share your AI coding sessions with ${link("https://heyiam.com", "heyiam.com")}`);
+  console.log(`  Did you know? Claude Code only saves ~30 days of sessions.`);
+  console.log(`  Keep a local archive and create a public portfolio at ${link("https://heyiam.com", "heyiam.com")}`);
   console.log("");
 }
