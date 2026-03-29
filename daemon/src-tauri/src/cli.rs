@@ -8,27 +8,22 @@ use std::process::Command;
 /// Resolve the full path to npx, since GUI apps on macOS don't inherit
 /// the shell PATH. Checks common Node manager locations.
 fn find_npx() -> String {
+    let home = dirs::home_dir().unwrap_or_default();
     let candidates = [
         // Homebrew (Apple Silicon)
-        "/opt/homebrew/bin/npx",
+        "/opt/homebrew/bin/npx".to_string(),
         // Homebrew (Intel)
-        "/usr/local/bin/npx",
-        // nvm default
-        &format!(
-            "{}/.nvm/versions/node/{}/bin/npx",
-            dirs::home_dir().unwrap_or_default().display(),
-            "current"  // symlink if exists
-        ),
+        "/usr/local/bin/npx".to_string(),
         // fnm
-        &format!(
+        format!(
             "{}/.local/share/fnm/aliases/default/bin/npx",
-            dirs::home_dir().unwrap_or_default().display(),
+            home.display(),
         ),
     ];
 
     for path in &candidates {
-        if std::path::Path::new(path).exists() {
-            return path.to_string();
+        if std::path::Path::new(path.as_str()).exists() {
+            return path.clone();
         }
     }
 
@@ -55,8 +50,7 @@ fn augmented_path() -> String {
     let home = dirs::home_dir().unwrap_or_default();
     let existing = std::env::var("PATH").unwrap_or_default();
     format!(
-        "/opt/homebrew/bin:/usr/local/bin:{}/.nvm/versions/node/current/bin:{}/.local/share/fnm/aliases/default/bin:{}",
-        home.display(),
+        "/opt/homebrew/bin:/usr/local/bin:{}/.local/share/fnm/aliases/default/bin:{}",
         home.display(),
         existing
     )
@@ -71,28 +65,34 @@ pub async fn run_heyiam(
     let npx = find_npx();
     let path_env = augmented_path();
 
-    // Try local dev build via tsx (for development)
-    let cli_dir = std::path::PathBuf::from("/Users/benjamincates/Dev/heyi.am/cli");
-    let index_ts = cli_dir.join("src/index.ts");
+    // Try local dev build via tsx (development only — compiled out in release)
+    #[cfg(debug_assertions)]
+    {
+        let cli_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .join("cli");
+        let index_ts = cli_dir.join("src/index.ts");
 
-    if index_ts.exists() {
-        let result = Command::new(&npx)
-            .args(["tsx", "src/index.ts"])
-            .args(args)
-            .current_dir(&cli_dir)
-            .env("PATH", &path_env)
-            .output();
+        if index_ts.exists() {
+            let result = Command::new(&npx)
+                .args(["tsx", "src/index.ts"])
+                .args(args)
+                .current_dir(&cli_dir)
+                .env("PATH", &path_env)
+                .output();
 
-        if let Ok(output) = result {
-            if output.status.success() {
-                return Some(String::from_utf8_lossy(&output.stdout).to_string());
+            if let Ok(output) = result {
+                if output.status.success() {
+                    return Some(String::from_utf8_lossy(&output.stdout).to_string());
+                }
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                eprintln!(
+                    "[heyiam-tray] tsx dev failed ({}): {}",
+                    args.join(" "),
+                    stderr.lines().next().unwrap_or("unknown error")
+                );
             }
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            eprintln!(
-                "[heyiam-tray] tsx dev failed ({}): {}",
-                args.join(" "),
-                stderr.lines().next().unwrap_or("unknown error")
-            );
         }
     }
 

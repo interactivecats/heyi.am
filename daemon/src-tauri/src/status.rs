@@ -8,6 +8,14 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
+/// Sanitize a string for safe embedding in AppleScript dialog strings.
+/// Whitelist approach: only allow safe printable ASCII.
+pub fn sanitize_for_dialog(s: &str) -> String {
+    s.chars()
+        .filter(|c| c.is_ascii_alphanumeric() || " .,;:!?()-_/=+".contains(*c))
+        .collect()
+}
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DaemonStatus {
@@ -29,6 +37,10 @@ pub fn write_pid_file() {
     let pid = std::process::id();
     let pid_file = dir.join("daemon.pid");
     fs::write(pid_file, pid.to_string()).ok();
+}
+
+pub fn remove_pid_file() {
+    fs::remove_file(daemon_dir().join("daemon.pid")).ok();
 }
 
 pub fn update_status_file() {
@@ -101,9 +113,10 @@ pub fn show_status_notification() {
     };
 
     // Use display dialog instead of notification (no permissions needed)
+    let safe_msg = sanitize_for_dialog(&message);
     let script = format!(
         r#"display dialog "{}" with title "heyi.am Daemon" buttons {{"OK"}} default button "OK" with icon note"#,
-        message.replace('"', "\\\"").replace('\n', "\\n")
+        safe_msg
     );
 
     Command::new("osascript")

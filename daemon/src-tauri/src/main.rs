@@ -1,15 +1,14 @@
 // heyi.am tray daemon — background archiving and session indexing
 //
-// Sits in the system tray (macOS menu bar / Windows system tray / Linux appindicator).
-// Periodically calls `heyiam archive` and `heyiam sync` to preserve sessions
-// and keep the search index current. Also watches session source directories
-// for real-time changes.
+// Sits in the macOS menu bar. Periodically calls `heyiam archive` and
+// `heyiam sync` to preserve sessions and keep the search index current.
+// Syncs every 15 minutes — no file watcher needed since sessions are
+// preserved via hard-links and the index only matters for completed work.
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod cli;
 mod status;
-mod watcher;
 
 use std::time::Duration;
 use tauri::{
@@ -76,7 +75,8 @@ fn main() {
                             status::show_status_notification();
                         }
                         "quit" => {
-                            std::process::exit(0);
+                            status::remove_pid_file();
+                            app.exit(0);
                         }
                         _ => {}
                     }
@@ -93,14 +93,6 @@ fn main() {
                 loop {
                     tokio::time::sleep(Duration::from_secs(SYNC_INTERVAL_SECS)).await;
                     run_sync(&sync_handle).await;
-                }
-            });
-
-            // Start file watcher
-            let watcher_handle = handle.clone();
-            std::thread::spawn(move || {
-                if let Err(e) = watcher::start_watching(watcher_handle) {
-                    eprintln!("File watcher error: {}", e);
                 }
             });
 
@@ -148,13 +140,11 @@ async fn run_sync_inner(handle: &tauri::AppHandle, show_dialog: bool) {
             .unwrap_or("Sync failed")
             .trim()
             .to_string();
-        // Sanitize: strip all non-printable and AppleScript-special characters
-        let sanitize = |s: &str| -> String {
-            s.chars()
-                .filter(|c| c.is_ascii_alphanumeric() || " .,;:!?()-_/=+".contains(*c))
-                .collect()
-        };
-        let msg = format!("{}\\n{}", sanitize(&archive_msg), sanitize(&sync_msg));
+        let msg = format!(
+            "{}\\n{}",
+            status::sanitize_for_dialog(&archive_msg),
+            status::sanitize_for_dialog(&sync_msg)
+        );
         let script = format!(
             r#"display dialog "{}" with title "heyi.am Sync" buttons {{"OK"}} default button "OK" with icon note"#,
             msg
