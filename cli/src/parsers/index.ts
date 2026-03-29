@@ -456,7 +456,10 @@ async function tryAddSession(
         meta.agentRole = agentRole;
       }
       out.push(meta);
-      break;
+      return;
     }
+  }
+  if (process.env.HEYIAM_VERBOSE === '1') {
+    console.log(`[discovery] No parser matched: ${fullPath}`);
   }
 }

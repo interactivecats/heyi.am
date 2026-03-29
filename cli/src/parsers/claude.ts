@@ -9,6 +9,7 @@ import {
   type ContentBlock,
   type TokenUsage,
   readFirstLineEfficient,
+  readFirstChunk,
 } from "./types.js";
 
 /**
@@ -222,16 +223,32 @@ async function detect(path: string): Promise<boolean> {
   if (!path.endsWith(".jsonl")) return false;
 
   try {
-    const firstLine = await readFirstLineEfficient(path);
-    if (!firstLine) return false;
-    const entry = JSON.parse(firstLine) as Record<string, unknown>;
-    // Claude sessions have sessionId + uuid (unique to Claude format).
-    // version is usually present but not required (varies across Claude Code versions).
-    return (
-      typeof entry.sessionId === "string" &&
-      typeof entry.uuid === "string" &&
-      typeof entry.type === "string"
-    );
+    const chunk = await readFirstChunk(path);
+    if (!chunk) return false;
+
+    // Check multiple lines — the first line is often a file-history-snapshot
+    // that lacks sessionId/uuid, followed by actual session entries
+    for (const line of chunk.split("\n").slice(0, 10)) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      let entry: Record<string, unknown>;
+      try {
+        entry = JSON.parse(trimmed);
+      } catch {
+        continue; // truncated line at chunk boundary
+      }
+      // file-history-snapshot is written exclusively by Claude Code
+      if (entry.type === "file-history-snapshot") return true;
+      // Standard Claude entry: has sessionId + uuid
+      if (
+        typeof entry.sessionId === "string" &&
+        typeof entry.uuid === "string" &&
+        typeof entry.type === "string"
+      ) {
+        return true;
+      }
+    }
+    return false;
   } catch {
     return false;
   }

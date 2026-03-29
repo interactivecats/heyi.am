@@ -128,18 +128,29 @@ export interface SessionParser {
 
 /**
  * Read only the first line of a file without loading the entire file into memory.
- * Session files can be 100MB+, so we read only the first 8KB to find the first newline.
+ * Session files can be 100MB+, so we read only the first 64KB to find the first newline.
+ * First lines can be large (CLAUDE.md injection, subagent payloads).
  */
 export async function readFirstLineEfficient(filePath: string): Promise<string | null> {
+  const chunk = await readFirstChunk(filePath);
+  if (!chunk) return null;
+  const nl = chunk.indexOf("\n");
+  return nl === -1 ? chunk : chunk.slice(0, nl);
+}
+
+/**
+ * Read the first 64KB of a file. Returns the raw content for multi-line inspection.
+ * Used by detect() functions that need to check multiple lines (e.g., Claude sessions
+ * where the first line may be a file-history-snapshot, not a session entry).
+ */
+export async function readFirstChunk(filePath: string): Promise<string | null> {
   let fh;
   try {
     fh = await open(filePath, "r");
-    const buf = Buffer.alloc(8192);
-    const { bytesRead } = await fh.read(buf, 0, 8192, 0);
+    const buf = Buffer.alloc(65536);
+    const { bytesRead } = await fh.read(buf, 0, 65536, 0);
     if (bytesRead === 0) return null;
-    const str = buf.toString("utf-8", 0, bytesRead);
-    const nl = str.indexOf("\n");
-    return nl === -1 ? str : str.slice(0, nl);
+    return buf.toString("utf-8", 0, bytesRead);
   } catch {
     return null;
   } finally {

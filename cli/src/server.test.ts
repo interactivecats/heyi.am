@@ -160,6 +160,12 @@ const CHILD_SESSION: RawEntry[] = [
   }),
 ];
 
+// Session that starts with file-history-snapshot (common in real Claude sessions)
+const FILE_HISTORY_SESSION: string = [
+  JSON.stringify({ type: 'file-history-snapshot', messageId: 'msg_001', snapshot: { files: {} }, isSnapshotUpdate: false }),
+  ...TEST_SESSION.map((e) => JSON.stringify(e)),
+].join('\n') + '\n';
+
 beforeAll(async () => {
   tmpDir = join(tmpdir(), `heyiam-server-test-${Date.now()}`);
   // Create project directories with session files
@@ -167,6 +173,8 @@ beforeAll(async () => {
   await mkdir(projectDir, { recursive: true });
   await writeFile(join(projectDir, 'abc-123.jsonl'), toJsonl(TEST_SESSION));
   await writeFile(join(projectDir, 'def-456.jsonl'), toJsonl(TEST_SESSION));
+  // Session starting with file-history-snapshot (must also be detected)
+  await writeFile(join(projectDir, 'fhs-789.jsonl'), FILE_HISTORY_SESSION);
 
   // Create subagent sessions under abc-123
   const subagentDir = join(projectDir, 'abc-123', 'subagents');
@@ -198,7 +206,8 @@ describe('GET /api/projects (real parser)', () => {
     const app = createApp(tmpDir);
     const res = await request(app).get('/api/projects');
     const myapp = res.body.projects.find((p: { name: string }) => p.name === 'myapp');
-    expect(myapp.sessionCount).toBe(2);
+    // 3 sessions: abc-123, def-456, fhs-789 (file-history-snapshot start)
+    expect(myapp.sessionCount).toBe(3);
   });
 
   it('includes dirName for URL routing', async () => {
@@ -227,14 +236,15 @@ describe('GET /api/projects/:project/sessions (real parser)', () => {
     const res = await request(app).get('/api/projects/myapp/sessions');
     expect(res.status).toBe(200);
     expect(res.body.sessions).toBeInstanceOf(Array);
-    expect(res.body.sessions.length).toBe(2);
+    // 3 sessions: abc-123, def-456, fhs-789 (file-history-snapshot)
+    expect(res.body.sessions.length).toBe(3);
   });
 
   it('also matches by dirName', async () => {
     const app = createApp(tmpDir);
     const res = await request(app).get('/api/projects/-Users-test-Dev-myapp/sessions');
     expect(res.status).toBe(200);
-    expect(res.body.sessions.length).toBe(2);
+    expect(res.body.sessions.length).toBe(3);
   });
 
   it('returns empty array for unknown project', async () => {
@@ -780,8 +790,8 @@ describe('POST /api/projects/:project/triage (SSE)', () => {
     const events = parseSSE(res.body as string);
     const hardFloors = events.filter((e) => e.type === 'hard_floor');
 
-    // myapp has 2 sessions (abc-123 and def-456)
-    expect(hardFloors).toHaveLength(2);
+    // myapp has 3 sessions (abc-123, def-456, fhs-789)
+    expect(hardFloors).toHaveLength(3);
     // Each hard_floor event should have passed boolean
     hardFloors.forEach((e) => {
       expect(typeof e.passed).toBe('boolean');
@@ -1008,6 +1018,57 @@ describe('SPA fallback', () => {
     const app = createApp(tmpDir);
     const res = await request(app).get('/api/projects');
     expect(res.status).toBe(200);
+  });
+});
+
+describe('fresh install simulation', () => {
+  let freshDir: string;
+  let freshDbPath: string;
+
+  beforeAll(async () => {
+    freshDir = join(tmpdir(), `heyiam-fresh-${Date.now()}`);
+    freshDbPath = join(freshDir, 'fresh.db');
+    await mkdir(freshDir, { recursive: true });
+
+    // Create sessions — mix of normal and file-history-snapshot starts
+    const projectDir = join(freshDir, 'sessions', '-Users-test-Dev-proj');
+    await mkdir(projectDir, { recursive: true });
+
+    // Normal session
+    await writeFile(join(projectDir, 'normal-001.jsonl'), toJsonl(TEST_SESSION));
+
+    // Session starting with file-history-snapshot (30%+ of real sessions)
+    await writeFile(join(projectDir, 'fhs-002.jsonl'), FILE_HISTORY_SESSION);
+  });
+
+  afterAll(async () => {
+    await rm(freshDir, { recursive: true, force: true });
+  });
+
+  it('discovers both normal and file-history-snapshot sessions', async () => {
+    const { listSessions } = await import('./parsers/index.js');
+    const sessions = await listSessions(join(freshDir, 'sessions'));
+    expect(sessions.length).toBe(2);
+    expect(sessions.every(s => s.source === 'claude')).toBe(true);
+  });
+
+  it('syncs all sessions into a fresh database', async () => {
+    const { openDatabase, getSessionCount } = await import('./db.js');
+    const { syncSessionIndex } = await import('./sync.js');
+    const db = openDatabase(freshDbPath);
+    const result = await syncSessionIndex(db, join(freshDir, 'sessions'));
+    expect(result.discovered).toBe(2);
+    expect(result.indexed).toBe(2);
+    expect(result.errors).toBe(0);
+    db.close();
+  });
+
+  it('serves projects via API after sync', async () => {
+    const app = createApp(join(freshDir, 'sessions'), freshDbPath);
+    const projRes = await request(app).get('/api/projects');
+    expect(projRes.status).toBe(200);
+    expect(projRes.body.projects.length).toBe(1);
+    expect(projRes.body.projects[0].name).toBe('proj');
   });
 });
 

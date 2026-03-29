@@ -299,6 +299,36 @@ describe("claudeParser.detect", () => {
     expect(await claudeParser.detect(path)).toBe(true);
   });
 
+  it("detects sessions starting with file-history-snapshot", async () => {
+    const path = join(tmpDir, "file-history.jsonl");
+    const snapshotLine = JSON.stringify({
+      type: "file-history-snapshot",
+      messageId: "msg_001",
+      snapshot: { files: {} },
+      isSnapshotUpdate: false,
+    });
+    const sessionLine = JSON.stringify({
+      type: "user",
+      uuid: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      sessionId: "test-file-history",
+      message: { role: "user", content: "hello" },
+    });
+    await writeFile(path, snapshotLine + "\n" + sessionLine + "\n");
+    expect(await claudeParser.detect(path)).toBe(true);
+  });
+
+  it("detects sessions with ONLY file-history-snapshot as first line", async () => {
+    const path = join(tmpDir, "only-snapshot.jsonl");
+    const snapshotLine = JSON.stringify({
+      type: "file-history-snapshot",
+      messageId: "msg_001",
+      snapshot: {},
+    });
+    await writeFile(path, snapshotLine + "\n");
+    expect(await claudeParser.detect(path)).toBe(true);
+  });
+
   it("rejects Codex-format files (no uuid field)", async () => {
     const path = join(tmpDir, "codex-format.jsonl");
     const entry = {

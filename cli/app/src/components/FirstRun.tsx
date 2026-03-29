@@ -72,7 +72,7 @@ export function FirstRun() {
         }
 
         // Show sync progress whenever sync is running (even if some sessions already indexed)
-        if (data.sync.status === 'syncing' || (data.isEmpty && data.sync.status !== 'done')) {
+        if (data.sync.status === 'syncing') {
           // Sync still in progress — wait for it before deciding
           setStep('syncing')
           setSyncProgress(data.sync)

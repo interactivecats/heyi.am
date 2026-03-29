@@ -5,7 +5,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { Server } from 'node:http';
 import { getDatabase } from './db.js';
-import { syncWithTracking, startFileWatcher, startCursorPolling } from './sync.js';
+import { syncWithTracking, startFileWatcher, startCursorPolling, markSyncPending } from './sync.js';
 import {
   createRouteContext,
   createProjectsRouter,
@@ -91,6 +91,8 @@ export function startServer(port: number = 17845, options?: { demo?: boolean }):
   const db = getDatabase();
 
   if (!options?.demo) {
+    // Mark sync as pending synchronously so dashboard knows sync will happen
+    markSyncPending();
     // Run initial sync in the background (non-blocking)
     syncWithTracking(db).then((result) => {
       if (result.indexed > 0) {

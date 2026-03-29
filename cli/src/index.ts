@@ -34,7 +34,9 @@ program
   .option('-p, --port <number>', 'Port to run on', '17845')
   .option('--no-open', 'Start server without opening browser')
   .option('--demo', 'Start with fake data for screenshots and recordings')
+  .option('--verbose', 'Show detailed sync and discovery logs')
   .action(async (opts) => {
+    if (opts.verbose) process.env.HEYIAM_VERBOSE = '1';
     const port = parseInt(opts.port, 10);
 
     if (opts.demo) {

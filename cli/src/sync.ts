@@ -73,6 +73,11 @@ export function getSyncState(): SyncState {
   return { ..._syncState };
 }
 
+/** Mark sync as pending (syncing) synchronously, before the async call starts. */
+export function markSyncPending(): void {
+  _syncState = { ..._syncState, status: 'syncing', phase: 'discovering', startedAt: Date.now() };
+}
+
 export function onSyncProgress(listener: SyncListener): () => void {
   _syncListeners.add(listener);
   return () => { _syncListeners.delete(listener); };
@@ -209,7 +214,14 @@ export async function syncSessionIndex(
 
   // Phase 1: Discover sessions (parents only from listSessions)
   onProgress?.({ phase: 'discovering' });
+  const verbose = process.env.HEYIAM_VERBOSE === '1';
+  if (verbose) console.log('[sync] Discovering sessions...');
   const parentSessions = await listSessions(basePath);
+  if (verbose) {
+    const bySrc: Record<string, number> = {};
+    for (const s of parentSessions) bySrc[s.source] = (bySrc[s.source] ?? 0) + 1;
+    console.log(`[sync] Discovered ${parentSessions.length} parent sessions:`, bySrc);
+  }
 
   // Flatten: include children (subagents) so they get indexed into the DB too.
   // Without this, the detail endpoint can't build childMap from DB rows.
