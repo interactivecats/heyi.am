@@ -141,7 +141,6 @@ body:has(.vibe-page) {
   line-height: 1.7;
   color: var(--vibe-text-dim);
   margin-bottom: 1.5rem;
-  max-width: 580px;
 }
 
 /* ── Stats — three column layout ── */
