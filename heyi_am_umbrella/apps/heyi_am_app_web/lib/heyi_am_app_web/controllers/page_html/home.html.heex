@@ -1,24 +1,14 @@
 <%!-- ── Hero ── --%>
   <section class="landing-hero">
     <h1 class="display-md" style="margin-block-end: var(--spacing-6);">
-      Proof-of-work for AI-native developers.
+      Archive your coding sessions.<br />
+      Enhance them. Search them. Share them.
     </h1>
-    <p class="body-lg" style="color: var(--on-surface-variant); max-width: 38rem; margin-inline: auto; margin-block-end: var(--spacing-6);">
-      heyi.am turns Claude Code, Cursor, Codex, and Gemini sessions into project case studies with timelines, decisions, and real build stats.
+    <p class="body-lg" style="color: var(--on-surface-variant); max-width: 38rem; margin-inline: auto; margin-block-end: var(--spacing-8);">
+      A local-first CLI that turns your AI coding history from Claude Code, Cursor, Codex, and Gemini
+      into a searchable archive and publishable portfolio.
     </p>
-    <p class="title-md" style="margin-block-end: var(--spacing-1);">
-      Not a transcript dump. Not AI fluff.
-    </p>
-    <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-8);">
-      A portfolio that shows judgment, iteration, and execution.
-    </p>
-    <div style="display: flex; gap: var(--spacing-3); justify-content: center; margin-block-end: var(--spacing-10);">
-      <a href="/users/register" class="btn btn-primary">Upload your first project</a>
-      <a href={HeyiAmAppWeb.Helpers.public_url("/ben")} class="btn btn-secondary">See example portfolio</a>
-    </div>
-
-    <%!-- Terminal visual --%>
-    <div class="terminal" style="max-width: 34rem; margin-inline: auto; text-align: start;">
+    <div class="terminal" style="max-width: 28rem; margin-inline: auto; text-align: start; margin-block-end: var(--spacing-8);">
       <div class="terminal-header">
         <div class="terminal-dots">
           <span class="terminal-dot terminal-dot--red"></span>
@@ -28,252 +18,296 @@
         <span style="font-size: 0.625rem; color: rgba(255,255,255,0.4);">terminal</span>
       </div>
       <div class="terminal-line"><span class="terminal-prompt">$</span> npx heyiam</div>
-      <div class="terminal-line"><span style="color: var(--inverse-primary);">[INFO]</span> Found 3 projects (21 sessions)</div>
-      <div class="terminal-line"><span style="color: var(--inverse-primary);">[INFO]</span> Sources: Claude Code, Cursor, Gemini CLI</div>
-      <div class="terminal-line" style="margin-block-start: 0.25rem;"><span class="terminal-success">&#10003;</span> AI selected 8 of 21 sessions</div>
-      <div class="terminal-line"><span class="terminal-success">&#10003;</span> Project narrative generated</div>
-      <div class="terminal-line"><span class="terminal-success">&#10003;</span> Uploaded: heyi.am/ben/heyi-am</div>
-      <div class="terminal-line"><span class="terminal-prompt">$</span> <span class="terminal-cursor"></span></div>
+    </div>
+    <div style="display: flex; gap: var(--spacing-3); justify-content: center;">
+      <a href="/users/register" class="btn btn-primary">Get started</a>
+      <a href={HeyiAmAppWeb.Helpers.public_url("/ben")} class="btn btn-secondary">See example portfolio</a>
     </div>
   </section>
 
-  <%!-- ── Framing Line ── --%>
-  <div class="landing-framing">
-    <p class="body-md" style="color: var(--on-surface-variant);">
-      Your sessions already contain the story. heyi.am turns them into something worth sharing.
-    </p>
-  </div>
+  <%!-- ── Feature: Archive ── --%>
+  <section class="landing-feature">
+    <div class="landing-feature-inner">
+      <div class="landing-feature-text">
+        <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-2);">Archive</div>
+        <h2 class="headline-lg" style="margin-block-end: var(--spacing-3);">Every session, automatically discovered</h2>
+        <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
+          Run <code style="font-family: var(--font-mono); font-size: 0.875em;">npx heyiam</code> and it indexes
+          every AI coding session on your machine. Claude Code, Cursor, Codex, Gemini CLI — all in one place.
+        </p>
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          Tracks timelines, lines changed, tools used, and files touched.
+          Everything stays local in SQLite.
+        </p>
+      </div>
+      <div class="landing-feature-screenshot">
+        <div class="screenshot-frame">
+          <div class="screenshot-dots">
+            <span class="screenshot-dot screenshot-dot--red"></span>
+            <span class="screenshot-dot screenshot-dot--yellow"></span>
+            <span class="screenshot-dot screenshot-dot--green"></span>
+          </div>
+          <img src="/images/screenshots/archive.png" alt="Project timeline showing sessions over time" loading="lazy" />
+        </div>
+      </div>
+    </div>
+  </section>
 
-  <%!-- ── Positioning (dark) ── --%>
+  <%!-- ── Feature: Enhance ── --%>
+  <section class="landing-feature">
+    <div class="landing-feature-inner landing-feature-inner--reverse">
+      <div class="landing-feature-text">
+        <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-2);">Enhance</div>
+        <h2 class="headline-lg" style="margin-block-end: var(--spacing-3);">AI reads your sessions. Extracts the signal.</h2>
+        <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
+          One command generates narrative summaries, extracts skills,
+          identifies key decisions, and builds a project arc from your raw session data.
+        </p>
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          You answer a few targeted questions so the final writeup sounds like you, not a summary generator.
+        </p>
+      </div>
+      <div class="landing-feature-screenshot">
+        <div class="screenshot-frame">
+          <div class="screenshot-dots">
+            <span class="screenshot-dot screenshot-dot--red"></span>
+            <span class="screenshot-dot screenshot-dot--yellow"></span>
+            <span class="screenshot-dot screenshot-dot--green"></span>
+          </div>
+          <img src="/images/screenshots/enhance.png" alt="AI enhancement extracting skills and narrative" loading="lazy" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ── Feature: Search ── --%>
+  <section class="landing-feature">
+    <div class="landing-feature-inner">
+      <div class="landing-feature-text">
+        <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-2);">Search</div>
+        <h2 class="headline-lg" style="margin-block-end: var(--spacing-3);">Full-text search across everything</h2>
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          Search across all sessions instantly. Find that one conversation
+          where you solved a tricky bug, or trace how your approach to a problem evolved.
+        </p>
+      </div>
+      <div class="landing-feature-screenshot">
+        <div class="screenshot-frame">
+          <div class="screenshot-dots">
+            <span class="screenshot-dot screenshot-dot--red"></span>
+            <span class="screenshot-dot screenshot-dot--yellow"></span>
+            <span class="screenshot-dot screenshot-dot--green"></span>
+          </div>
+          <img src="/images/screenshots/search.png" alt="Search results showing matched sessions" loading="lazy" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ── Feature: Share ── --%>
+  <section class="landing-feature">
+    <div class="landing-feature-inner landing-feature-inner--reverse">
+      <div class="landing-feature-text">
+        <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-2);">Share</div>
+        <h2 class="headline-lg" style="margin-block-end: var(--spacing-3);">Publish to heyi.am/you</h2>
+        <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
+          Choose what to publish. Your portfolio shows project narratives, skill breakdowns,
+          work timelines, and session detail — a complete picture of how you build.
+        </p>
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          Nothing is public by default. You control what gets shared.
+        </p>
+      </div>
+      <div class="landing-feature-screenshot">
+        <div class="screenshot-frame">
+          <div class="screenshot-dots">
+            <span class="screenshot-dot screenshot-dot--red"></span>
+            <span class="screenshot-dot screenshot-dot--yellow"></span>
+            <span class="screenshot-dot screenshot-dot--green"></span>
+          </div>
+          <img src="/images/screenshots/project.png" alt="Published project page with stats and timeline" loading="lazy" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <%!-- ── Feature: Multi-agent Timeline ── --%>
+  <section class="landing-feature landing-feature--full">
+    <div class="landing-section" style="padding-block: 0;">
+      <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-2);">Visualize</div>
+      <h2 class="headline-lg" style="margin-block-end: var(--spacing-3);">See how you work with agents</h2>
+      <p class="body-md" style="color: var(--on-surface-variant); max-width: 38rem; margin-block-end: var(--spacing-8);">
+        Multi-agent sessions render as fork-join waveforms along a timeline. Agents fan out from the
+        main thread, work in parallel, and rejoin — so you can see orchestration at a glance.
+      </p>
+    </div>
+    <%!-- Mock multi-agent work timeline — fork-join waveform style --%>
+    <%!-- Each agent forks from center, curves to its lane, runs horizontally, curves back.
+         joinX varies per agent based on duration (short=tight U, long=wide with flat middle).
+         Uses bezierForkJoin pattern: M forkX cY C forkX+cp cY, forkX+cp laneY, forkX+2cp laneY L joinX-2cp laneY C joinX-cp laneY, joinX-cp cY, joinX cY --%>
+    <div class="mock-timeline" role="img" aria-label="Multi-agent work timeline visualization">
+      <svg viewBox="0 0 960 340" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto;">
+        <%!-- Main thread line --%>
+        <line x1="30" y1="155" x2="940" y2="155" stroke="#084471" stroke-width="1.5" />
+
+        <%!-- ═══ Session 1: 12 agents, fork=50, varying joinX ═══ --%>
+        <circle cx="50" cy="155" r="5" fill="#084471" />
+        <text x="108" y="30" fill="#084471" font-family="'IBM Plex Mono', monospace" font-size="9" font-weight="600">Rebuild auth + portfolio...</text>
+        <text x="108" y="41" fill="#9ca3af" font-family="'IBM Plex Mono', monospace" font-size="8">2h 12m  Mar 19, 7:03 PM</text>
+
+        <%!-- frontend: lane y=55, long (joinX=290) --%>
+        <path d="M 50 155 C 100 155, 100 55, 150 55 L 190 55 C 240 55, 240 155, 290 155" fill="none" stroke="#7c3aed" stroke-width="1.5" opacity="0.7" />
+        <%!-- backend: lane y=75, medium-long (joinX=240) --%>
+        <path d="M 50 155 C 97 155, 97 75, 145 75 L 145 75 C 192 75, 192 155, 240 155" fill="none" stroke="#0891b2" stroke-width="1.5" opacity="0.7" />
+        <%!-- qa: lane y=93, long (joinX=305) --%>
+        <path d="M 50 155 C 100 155, 100 93, 150 93 L 205 93 C 255 93, 255 155, 305 155" fill="none" stroke="#059669" stroke-width="1.5" opacity="0.7" />
+        <%!-- ux: lane y=109, short (joinX=145) --%>
+        <path d="M 50 155 C 74 155, 74 109, 97 109 L 98 109 C 121 109, 121 155, 145 155" fill="none" stroke="#d97706" stroke-width="1.5" opacity="0.7" />
+        <%!-- reviewer: lane y=123, medium (joinX=200) --%>
+        <path d="M 50 155 C 87 155, 87 123, 125 123 L 125 123 C 162 123, 162 155, 200 155" fill="none" stroke="#e11d48" stroke-width="1.5" opacity="0.7" />
+        <%!-- architect: lane y=138, short (joinX=125) --%>
+        <path d="M 50 155 C 69 155, 69 138, 87 138 L 88 138 C 106 138, 106 155, 125 155" fill="none" stroke="#7e22ce" stroke-width="1.5" opacity="0.7" />
+        <%!-- tester: lane y=172, medium (joinX=215) --%>
+        <path d="M 50 155 C 91 155, 91 172, 132 172 L 133 172 C 174 172, 174 155, 215 155" fill="none" stroke="#16a34a" stroke-width="1.5" opacity="0.7" />
+        <%!-- security: lane y=188, short (joinX=150) --%>
+        <path d="M 50 155 C 75 155, 75 188, 100 188 L 100 188 C 125 188, 125 155, 150 155" fill="none" stroke="#475569" stroke-width="1.5" opacity="0.7" />
+        <%!-- research: lane y=204, long (joinX=280) --%>
+        <path d="M 50 155 C 100 155, 100 204, 150 204 L 180 204 C 230 204, 230 155, 280 155" fill="none" stroke="#6366f1" stroke-width="1.5" opacity="0.7" />
+        <%!-- planner: lane y=220, medium (joinX=210) --%>
+        <path d="M 50 155 C 90 155, 90 220, 130 220 L 130 220 C 170 220, 170 155, 210 155" fill="none" stroke="#0d9488" stroke-width="1.5" opacity="0.7" />
+        <%!-- wiring: lane y=238, long (joinX=310) --%>
+        <path d="M 50 155 C 100 155, 100 238, 150 238 L 210 238 C 260 238, 260 155, 310 155" fill="none" stroke="#c026d3" stroke-width="1.5" opacity="0.7" />
+        <%!-- build-fix: lane y=258, medium-long (joinX=260) --%>
+        <path d="M 50 155 C 100 155, 100 258, 150 258 L 160 258 C 210 258, 210 155, 260 155" fill="none" stroke="#ea580c" stroke-width="1.5" opacity="0.7" />
+
+        <circle cx="310" cy="155" r="5" fill="#084471" />
+
+        <%!-- ═══ Session 2: solo (no agents) ═══ --%>
+        <circle cx="350" cy="155" r="3" fill="#084471" />
+        <line x1="350" y1="155" x2="400" y2="155" stroke="#084471" stroke-width="3" />
+        <circle cx="400" cy="155" r="3" fill="#084471" />
+
+        <%!-- ═══ Session 3: 18 agents (dense burst), fork=430, varying joinX ═══ --%>
+        <circle cx="430" cy="155" r="5" fill="#084471" />
+        <text x="500" y="18" fill="#084471" font-family="'IBM Plex Mono', monospace" font-size="9" font-weight="600">Phase 1-4 redesign: sch...</text>
+        <text x="500" y="29" fill="#9ca3af" font-family="'IBM Plex Mono', monospace" font-size="8">52m  Mar 20, 10:38 AM</text>
+
+        <%!-- 18 agents with gap=13, lanes from ~50 to ~260, varied joinX (490-690) --%>
+        <%!-- frontend: y=50, long (joinX=680) --%>
+        <path d="M 430 155 C 480 155, 480 50, 530 50 L 580 50 C 630 50, 630 155, 680 155" fill="none" stroke="#7c3aed" stroke-width="1.5" opacity="0.65" />
+        <%!-- backend: y=63, medium (joinX=590) --%>
+        <path d="M 430 155 C 470 155, 470 63, 510 63 L 510 63 C 550 63, 550 155, 590 155" fill="none" stroke="#0891b2" stroke-width="1.5" opacity="0.65" />
+        <%!-- qa: y=76, short (joinX=510) --%>
+        <path d="M 430 155 C 450 155, 450 76, 470 76 L 470 76 C 490 76, 490 155, 510 155" fill="none" stroke="#059669" stroke-width="1.5" opacity="0.65" />
+        <%!-- ux: y=89, long (joinX=670) --%>
+        <path d="M 430 155 C 480 155, 480 89, 530 89 L 570 89 C 620 89, 620 155, 670 155" fill="none" stroke="#d97706" stroke-width="1.5" opacity="0.65" />
+        <%!-- reviewer: y=102, medium (joinX=580) --%>
+        <path d="M 430 155 C 467 155, 467 102, 505 102 L 505 102 C 542 102, 542 155, 580 155" fill="none" stroke="#e11d48" stroke-width="1.5" opacity="0.65" />
+        <%!-- architect: y=115, short (joinX=505) --%>
+        <path d="M 430 155 C 449 155, 449 115, 467 115 L 468 115 C 486 115, 486 155, 505 155" fill="none" stroke="#7e22ce" stroke-width="1.5" opacity="0.65" />
+        <%!-- tester: y=128, medium (joinX=560) --%>
+        <path d="M 430 155 C 462 155, 462 128, 495 128 L 495 128 C 527 128, 527 155, 560 155" fill="none" stroke="#16a34a" stroke-width="1.5" opacity="0.65" />
+        <%!-- security: y=141, long (joinX=690) --%>
+        <path d="M 430 155 C 480 155, 480 141, 530 141 L 590 141 C 640 141, 640 155, 690 155" fill="none" stroke="#475569" stroke-width="1.5" opacity="0.65" />
+        <%!-- explore: y=148, short (joinX=495) --%>
+        <path d="M 430 155 C 446 155, 446 148, 462 148 L 463 148 C 479 148, 479 155, 495 155" fill="none" stroke="#94a3b8" stroke-width="1.5" opacity="0.65" />
+        <%!-- research: y=168, medium (joinX=570) --%>
+        <path d="M 430 155 C 465 155, 465 168, 500 168 L 500 168 C 535 168, 535 155, 570 155" fill="none" stroke="#6366f1" stroke-width="1.5" opacity="0.65" />
+        <%!-- planner: y=181, short (joinX=500) --%>
+        <path d="M 430 155 C 447 155, 447 181, 465 181 L 465 181 C 482 181, 482 155, 500 155" fill="none" stroke="#0d9488" stroke-width="1.5" opacity="0.65" />
+        <%!-- wiring: y=194, long (joinX=660) --%>
+        <path d="M 430 155 C 480 155, 480 194, 530 194 L 560 194 C 610 194, 610 155, 660 155" fill="none" stroke="#c026d3" stroke-width="1.5" opacity="0.65" />
+        <%!-- build-fix: y=207, medium (joinX=575) --%>
+        <path d="M 430 155 C 466 155, 466 207, 502 207 L 503 207 C 539 207, 539 155, 575 155" fill="none" stroke="#ea580c" stroke-width="1.5" opacity="0.65" />
+        <%!-- agent-1: y=220, short (joinX=510) --%>
+        <path d="M 430 155 C 450 155, 450 220, 470 220 L 470 220 C 490 220, 490 155, 510 155" fill="none" stroke="#2563eb" stroke-width="1.5" opacity="0.65" />
+        <%!-- agent-2: y=233, medium-long (joinX=630) --%>
+        <path d="M 430 155 C 480 155, 480 233, 530 233 L 530 233 C 580 233, 580 155, 630 155" fill="none" stroke="#ca8a04" stroke-width="1.5" opacity="0.65" />
+        <%!-- agent-3: y=246, short (joinX=515) --%>
+        <path d="M 430 155 C 451 155, 451 246, 472 246 L 473 246 C 494 246, 494 155, 515 155" fill="none" stroke="#be185d" stroke-width="1.5" opacity="0.65" />
+        <%!-- agent-4: y=259, long (joinX=685) --%>
+        <path d="M 430 155 C 480 155, 480 259, 530 259 L 585 259 C 635 259, 635 155, 685 155" fill="none" stroke="#4f46e5" stroke-width="1.5" opacity="0.65" />
+        <%!-- agent-5: y=272, medium (joinX=555) --%>
+        <path d="M 430 155 C 461 155, 461 272, 492 272 L 493 272 C 524 272, 524 155, 555 155" fill="none" stroke="#0e7490" stroke-width="1.5" opacity="0.65" />
+
+        <circle cx="690" cy="155" r="5" fill="#084471" />
+
+        <%!-- ═══ Gap ═══ --%>
+        <line x1="690" y1="155" x2="755" y2="155" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="4 4" />
+        <text x="722" y="175" fill="#9ca3af" font-family="'IBM Plex Mono', monospace" font-size="8" text-anchor="middle">2h gap</text>
+
+        <%!-- ═══ Session 4: 8 agents, fork=770, varying joinX ═══ --%>
+        <circle cx="770" cy="155" r="5" fill="#084471" />
+        <text x="800" y="52" fill="#084471" font-family="'IBM Plex Mono', monospace" font-size="9" font-weight="600">heyi.am portfolio</text>
+        <text x="800" y="63" fill="#9ca3af" font-family="'IBM Plex Mono', monospace" font-size="8">4h 35m  Mar 20, 1:19 PM</text>
+
+        <%!-- frontend: y=80, long (joinX=930) --%>
+        <path d="M 770 155 C 810 155, 810 80, 850 80 L 850 80 C 890 80, 890 155, 930 155" fill="none" stroke="#7c3aed" stroke-width="1.5" opacity="0.7" />
+        <%!-- backend: y=98, medium (joinX=880) --%>
+        <path d="M 770 155 C 797 155, 797 98, 825 98 L 825 98 C 852 98, 852 155, 880 155" fill="none" stroke="#0891b2" stroke-width="1.5" opacity="0.7" />
+        <%!-- qa: y=116, short (joinX=835) --%>
+        <path d="M 770 155 C 786 155, 786 116, 802 116 L 803 116 C 819 116, 819 155, 835 155" fill="none" stroke="#059669" stroke-width="1.5" opacity="0.7" />
+        <%!-- reviewer: y=136, medium (joinX=870) --%>
+        <path d="M 770 155 C 795 155, 795 136, 820 136 L 820 136 C 845 136, 845 155, 870 155" fill="none" stroke="#e11d48" stroke-width="1.5" opacity="0.7" />
+        <%!-- tester: y=174, long (joinX=925) --%>
+        <path d="M 770 155 C 808 155, 808 174, 847 174 L 848 174 C 886 174, 886 155, 925 155" fill="none" stroke="#16a34a" stroke-width="1.5" opacity="0.7" />
+        <%!-- ux: y=194, short (joinX=840) --%>
+        <path d="M 770 155 C 787 155, 787 194, 805 194 L 805 194 C 822 194, 822 155, 840 155" fill="none" stroke="#d97706" stroke-width="1.5" opacity="0.7" />
+        <%!-- architect: y=214, medium-long (joinX=910) --%>
+        <path d="M 770 155 C 805 155, 805 214, 840 214 L 840 214 C 875 214, 875 155, 910 155" fill="none" stroke="#7e22ce" stroke-width="1.5" opacity="0.7" />
+        <%!-- security: y=234, medium (joinX=875) --%>
+        <path d="M 770 155 C 796 155, 796 234, 822 234 L 823 234 C 849 234, 849 155, 875 155" fill="none" stroke="#475569" stroke-width="1.5" opacity="0.7" />
+
+        <circle cx="930" cy="155" r="5" fill="#084471" />
+
+        <%!-- Legend --%>
+        <g transform="translate(50, 305)">
+          <text x="0" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8" font-weight="600">18 agents:</text>
+          <circle cx="68" cy="-3" r="4" fill="#084471" /><text x="78" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">main</text>
+          <circle cx="115" cy="-3" r="3" fill="#7c3aed" /><text x="123" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">frontend</text>
+          <circle cx="185" cy="-3" r="3" fill="#0891b2" /><text x="193" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">backend</text>
+          <circle cx="255" cy="-3" r="3" fill="#059669" /><text x="263" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">qa</text>
+          <circle cx="290" cy="-3" r="3" fill="#d97706" /><text x="298" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">ux</text>
+          <circle cx="320" cy="-3" r="3" fill="#e11d48" /><text x="328" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">reviewer</text>
+          <circle cx="390" cy="-3" r="3" fill="#7e22ce" /><text x="398" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">architect</text>
+          <circle cx="465" cy="-3" r="3" fill="#16a34a" /><text x="473" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">tester</text>
+          <circle cx="520" cy="-3" r="3" fill="#475569" /><text x="528" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">security</text>
+          <text x="590" y="0" fill="#9ca3af" font-family="'IBM Plex Mono', monospace" font-size="8">+9 more</text>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <%!-- ── Proof of Work ── --%>
   <section class="landing-positioning">
     <div class="landing-positioning-inner">
       <div class="landing-positioning-headlines">
         <h2 class="headline-lg" style="color: var(--inverse-on-surface);">GitHub shows code.</h2>
         <h2 class="headline-lg" style="color: var(--inverse-on-surface);">Resumes show claims.</h2>
-        <h2 class="display-sm" style="color: var(--inverse-primary);">heyi.am shows how you think.</h2>
+        <h2 class="display-sm" style="color: var(--inverse-primary);">heyi.am shows proof of work.</h2>
       </div>
       <div class="landing-positioning-body">
         <p class="body-md" style="color: var(--inverse-on-surface); opacity: 0.85; margin-block-end: var(--spacing-6);">
-          AI coding tools are great at recording the work, but terrible at presenting it.
-          The real signal is buried in long sessions, dead ends, rewrites, and decisions that never make it into a README.
+          Every line changed, every decision made, every tool used — timestamped and traceable back
+          to the original session. Your coding sessions are the evidence.
         </p>
         <p class="body-md" style="color: var(--inverse-on-surface); opacity: 0.85; margin-block-end: var(--spacing-6);">
-          heyi.am turns that build history into a public artifact people can actually read:
+          Not a polished highlight reel. The actual record of how you build software:
         </p>
         <ul class="landing-positioning-list">
-          <li>what you built</li>
-          <li>where it got hard</li>
-          <li>how you used AI</li>
-          <li>what decisions were yours</li>
-          <li>what shipped</li>
+          <li>session timestamps and durations</li>
+          <li>git-backed diffs per session</li>
+          <li>tool usage traces</li>
+          <li>agent orchestration patterns</li>
+          <li>your decisions vs. AI suggestions</li>
         </ul>
       </div>
     </div>
-  </section>
-
-  <%!-- ── How It Works ── --%>
-  <section id="how-it-works" class="landing-section">
-    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">How it works</div>
-    <h2 class="headline-lg" style="margin-block-end: var(--spacing-12);">Turn session history into a project page</h2>
-    <div class="landing-steps">
-      <div class="landing-step">
-        <div class="landing-step-number">1</div>
-        <div class="landing-step-content">
-          <h3 class="headline-sm" style="margin-block-end: var(--spacing-2);">Scan your sessions</h3>
-          <p class="body-md" style="color: var(--on-surface-variant);">
-            Run <code style="font-family: var(--font-mono); font-size: 0.875em;">npx heyiam</code> and heyi.am reads your local sessions from Claude Code, Cursor, Codex, and Gemini.
-          </p>
-        </div>
-      </div>
-      <div class="landing-step">
-        <div class="landing-step-number">2</div>
-        <div class="landing-step-content">
-          <h3 class="headline-sm" style="margin-block-end: var(--spacing-2);">Group them into projects</h3>
-          <p class="body-md" style="color: var(--on-surface-variant);">
-            Sessions from the same build get clustered automatically, even across tools and phases.
-          </p>
-        </div>
-      </div>
-      <div class="landing-step">
-        <div class="landing-step-number">3</div>
-        <div class="landing-step-content">
-          <h3 class="headline-sm" style="margin-block-end: var(--spacing-2);">Extract the signal</h3>
-          <p class="body-md" style="color: var(--on-surface-variant);">
-            The AI selects the sessions worth showing, identifies the turning points, and drafts a narrative around the real work.
-          </p>
-        </div>
-      </div>
-      <div class="landing-step">
-        <div class="landing-step-number">4</div>
-        <div class="landing-step-content">
-          <h3 class="headline-sm" style="margin-block-end: var(--spacing-2);">Add your voice</h3>
-          <p class="body-md" style="color: var(--on-surface-variant);">
-            You answer a few targeted questions so the final writeup sounds like you, not like a summary generator.
-          </p>
-        </div>
-      </div>
-      <div class="landing-step">
-        <div class="landing-step-number">5</div>
-        <div class="landing-step-content">
-          <h3 class="headline-sm" style="margin-block-end: var(--spacing-2);">Upload</h3>
-          <p class="body-md" style="color: var(--on-surface-variant);">
-            Share a project page with timeline, case studies, and accurate stats from the full build history.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <%!-- ── What Gets Uploaded ── --%>
-  <section class="landing-section">
-    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">What gets uploaded</div>
-    <h2 class="headline-lg" style="margin-block-end: var(--spacing-8);">A project page, not a transcript dump</h2>
-    <div class="landing-takes-grid">
-      <div class="card card-padded">
-        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Project Narrative</h3>
-        <p class="body-sm" style="color: var(--on-surface-variant);">
-          A sharp explanation of what you built, why it mattered, and what made it hard.
-        </p>
-      </div>
-      <div class="card card-padded">
-        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Timeline</h3>
-        <p class="body-sm" style="color: var(--on-surface-variant);">
-          Sessions grouped by phase so the project reads like a build story, not a chat archive.
-        </p>
-      </div>
-      <div class="card card-padded">
-        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Session Case Studies</h3>
-        <p class="body-sm" style="color: var(--on-surface-variant);">
-          Featured sessions expanded into mini writeups with execution paths, key decisions, and developer commentary.
-        </p>
-      </div>
-      <div class="card card-padded">
-        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Accurate Stats</h3>
-        <p class="body-sm" style="color: var(--on-surface-variant);">
-          Total time, sessions, files, and code volume computed from the full local history — not just the parts you upload.
-        </p>
-      </div>
-      <div class="card card-padded">
-        <h3 class="title-md" style="margin-block-end: var(--spacing-3);">Your Voice</h3>
-        <p class="body-sm" style="color: var(--on-surface-variant);">
-          AI drafts the structure. You shape the final story.
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <%!-- ── Example Portfolio ── --%>
-  <section class="landing-section">
-    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">Example</div>
-    <h2 class="headline-lg" style="margin-block-end: var(--spacing-4);">See what an AI-native portfolio looks like</h2>
-    <p class="body-md" style="color: var(--on-surface-variant); max-width: 40rem; margin-block-end: var(--spacing-8);">
-      A good project page doesn't just show the final product.
-      It shows the path: rewrites, wrong turns, hard decisions, and the moments where the builder had to step in and redirect the work.
-    </p>
-    <a href={HeyiAmAppWeb.Helpers.public_url("/ben")} style="text-decoration: none; color: inherit; display: block; max-width: 40rem;">
-      <div class="card card-padded card--elevated" style="transition: box-shadow 0.15s ease;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div class="headline-sm" style="margin-block-end: var(--spacing-2);">ben</div>
-            <p class="body-sm" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
-              Built heyi.am itself through 100+ sessions spanning spec rewrites, parser audits, editor rebuilds, and security-heavy implementation work.
-            </p>
-            <div style="display: flex; gap: var(--spacing-2); flex-wrap: wrap;">
-              <span class="chip chip--primary">Elixir</span>
-              <span class="chip chip--primary">Phoenix</span>
-              <span class="chip">TypeScript</span>
-              <span class="chip">React</span>
-            </div>
-          </div>
-          <span class="label-md" style="color: var(--primary); white-space: nowrap; margin-inline-start: var(--spacing-4);">View portfolio &rarr;</span>
-        </div>
-      </div>
-    </a>
-  </section>
-
-  <%!-- ── Why It Matters ── --%>
-  <section class="landing-section">
-    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">Why it matters</div>
-    <h2 class="headline-lg" style="margin-block-end: var(--spacing-8);">From activity to identity</h2>
-    <div class="landing-dual-grid">
-      <div>
-        <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-6);">
-          Most existing tools help developers look polished, show activity, decorate GitHub, or post updates.
-        </p>
-        <p class="body-md" style="color: var(--on-surface-variant);">
-          Very few help them turn raw work into <strong style="color: var(--on-surface);">credible narrative proof</strong>.
-        </p>
-      </div>
-      <div>
-        <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
-          heyi.am helps AI-native developers show:
-        </p>
-        <ul class="stack stack--sm" style="list-style: none; color: var(--on-surface-variant);">
-          <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--primary);">what they actually built</li>
-          <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--primary);">how they think</li>
-          <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--primary);">how they steer AI</li>
-          <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--primary);">where they apply judgment</li>
-          <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--primary);">what kind of builder they are</li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <%!-- ── Who It's For ── --%>
-  <section class="landing-section">
-    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">Built for</div>
-    <h2 class="headline-lg" style="margin-block-end: var(--spacing-8);">Built for people who build with AI</h2>
-    <div class="landing-features-grid">
-      <div class="card card-padded">
-        <p class="body-md" style="color: var(--on-surface-variant);">
-          Developers using Claude Code as a serious build tool
-        </p>
-      </div>
-      <div class="card card-padded">
-        <p class="body-md" style="color: var(--on-surface-variant);">
-          Cursor, Codex, and Gemini power users
-        </p>
-      </div>
-      <div class="card card-padded">
-        <p class="body-md" style="color: var(--on-surface-variant);">
-          Indie hackers shipping quickly with agents
-        </p>
-      </div>
-      <div class="card card-padded">
-        <p class="body-md" style="color: var(--on-surface-variant);">
-          Freelancers and consultants who need stronger case studies
-        </p>
-      </div>
-      <div class="card card-padded">
-        <p class="body-md" style="color: var(--on-surface-variant);">
-          Job seekers who want more than &ldquo;I used AI to build X&rdquo;
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <%!-- ── Trust / Control ── --%>
-  <section class="landing-section" style="max-width: 40rem;">
-    <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-3);">Trust</div>
-    <h2 class="headline-lg" style="margin-block-end: var(--spacing-4);">You stay in control</h2>
-    <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-6);">
-      Your sessions are messy. Public pages shouldn't be.
-      heyi.am is designed to help you upload the signal without exposing the noise.
-    </p>
-    <ul class="stack stack--sm" style="list-style: none; color: var(--on-surface-variant);">
-      <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--outline-variant);">Review before uploading</li>
-      <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--outline-variant);">Control what gets featured</li>
-      <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--outline-variant);">Keep your voice in the final writeup</li>
-      <li class="body-md" style="padding-inline-start: var(--spacing-4); border-inline-start: 2px solid var(--outline-variant);">Upload polished pages from real build history</li>
-    </ul>
   </section>
 
   <%!-- ── Final CTA ── --%>
   <section style="text-align: center; padding-block: var(--spacing-20); padding-inline: var(--spacing-4);">
-    <h2 class="display-sm" style="margin-block-end: var(--spacing-4);">Upload your first AI-native case study</h2>
-    <p class="body-lg" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-3);">
-      Your sessions already prove the work.
-    </p>
+    <h2 class="display-sm" style="margin-block-end: var(--spacing-4);">Your sessions already prove the work</h2>
     <p class="body-lg" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-8);">
       heyi.am turns that proof into a portfolio worth sending.
     </p>
