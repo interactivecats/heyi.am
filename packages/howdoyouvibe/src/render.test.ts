@@ -120,7 +120,9 @@ describe("renderCard", () => {
     expect(output).toContain("YOUR VOICE");
     expect(output).toContain("THE AI'S HABITS");
     expect(output).toContain("THE BACK-AND-FORTH");
-    expect(output).toContain("847 turns across 23 sessions");
+    // Numbers are wrapped in ANSI cyan escapes — strip them for assertion
+    const plain = output.replace(/\x1b\[[0-9;]*m/g, "");
+    expect(plain).toContain("847 turns across 23 sessions");
     expect(output).toContain("All analysis ran locally");
 
     spy.mockRestore();
