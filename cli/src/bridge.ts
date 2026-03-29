@@ -82,6 +82,12 @@ export function cleanAssistantText(text: string): string {
   cleaned = cleaned.replace(/<fast_mode_info>[\s\S]*?<\/fast_mode_info>/g, "");
   // Remove <user-prompt-submit-hook>...</user-prompt-submit-hook>
   cleaned = cleaned.replace(/<user-prompt-submit-hook>[\s\S]*?<\/user-prompt-submit-hook>/g, "");
+  // Remove <environment_context>...</environment_context> (Codex injects these)
+  cleaned = cleaned.replace(/<environment_context>[\s\S]*?<\/environment_context>/g, "");
+  // Remove <local-command-*>...</local-command-*> tags
+  cleaned = cleaned.replace(/<local-command-[a-z-]*>[\s\S]*?<\/local-command-[a-z-]*>/g, "");
+  // Remove <command-name>...</command-name> and <command-message>...</command-message>
+  cleaned = cleaned.replace(/<command-(?:name|message|args)>[\s\S]*?<\/command-(?:name|message|args)>/g, "");
   // Collapse excessive whitespace left behind
   cleaned = cleaned.replace(/\n{3,}/g, "\n\n").trim();
   return cleaned;

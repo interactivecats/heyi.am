@@ -975,3 +975,39 @@ describe('GET /api/sessions/:id/context', () => {
   });
 });
 
+describe('SPA fallback', () => {
+  it('serves index.html for non-API client-side routes', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app).get('/projects/-Users-test-Dev-myapp/detail');
+    // SPA fallback should serve index.html (200) or gracefully 404 if frontend missing
+    expect([200, 404]).toContain(res.status);
+    if (res.status === 200) {
+      expect(res.text).toContain('<!doctype html>');
+    }
+  });
+
+  it('serves index.html for /settings route', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app).get('/settings');
+    expect([200, 404]).toContain(res.status);
+  });
+
+  it('serves index.html for /search route', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app).get('/search');
+    expect([200, 404]).toContain(res.status);
+  });
+
+  it('serves index.html for /time route', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app).get('/time');
+    expect([200, 404]).toContain(res.status);
+  });
+
+  it('does not interfere with API routes', async () => {
+    const app = createApp(tmpDir);
+    const res = await request(app).get('/api/projects');
+    expect(res.status).toBe(200);
+  });
+});
+

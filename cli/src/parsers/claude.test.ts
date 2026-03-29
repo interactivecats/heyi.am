@@ -284,6 +284,31 @@ describe("claudeParser.detect", () => {
   it("rejects non-existent files", async () => {
     expect(await claudeParser.detect(join(tmpDir, "nope.jsonl"))).toBe(false);
   });
+
+  it("detects sessions without version field (newer Claude Code formats)", async () => {
+    const path = join(tmpDir, "no-version.jsonl");
+    const entry = {
+      type: "progress",
+      uuid: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      sessionId: "test-no-version",
+      cwd: "/Users/test/project",
+      data: { type: "hook_progress" },
+    };
+    await writeFile(path, JSON.stringify(entry) + "\n");
+    expect(await claudeParser.detect(path)).toBe(true);
+  });
+
+  it("rejects Codex-format files (no uuid field)", async () => {
+    const path = join(tmpDir, "codex-format.jsonl");
+    const entry = {
+      timestamp: new Date().toISOString(),
+      type: "session_meta",
+      payload: { id: "codex-123", cwd: "/Users/test", cli_version: "0.108.0" },
+    };
+    await writeFile(path, JSON.stringify(entry) + "\n");
+    expect(await claudeParser.detect(path)).toBe(false);
+  });
 });
 
 describe("claudeParser.parse — basic session", () => {

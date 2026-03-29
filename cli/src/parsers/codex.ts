@@ -1,12 +1,13 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import type {
-  SessionParser,
-  SessionAnalysis,
-  RawEntry,
-  ToolCall,
-  LocStats,
+import {
+  type SessionParser,
+  type SessionAnalysis,
+  type RawEntry,
+  type ToolCall,
+  type LocStats,
+  readFirstLineEfficient,
 } from "./types.js";
 
 // -- Codex JSONL types --
@@ -250,8 +251,7 @@ function toRawEntries(lines: CodexLine[], sessionId: string, cwd?: string): RawE
 async function detect(path: string): Promise<boolean> {
   if (!path.endsWith(".jsonl")) return false;
   try {
-    const raw = await readFile(path, "utf-8");
-    const firstLine = raw.split("\n")[0];
+    const firstLine = await readFirstLineEfficient(path);
     if (!firstLine) return false;
     const entry = JSON.parse(firstLine) as Record<string, unknown>;
     if (entry.type !== "session_meta") return false;
@@ -304,15 +304,7 @@ export interface CodexSessionFile {
   cwd: string;
 }
 
-async function readFirstLine(filePath: string): Promise<string | null> {
-  try {
-    const raw = await readFile(filePath, "utf-8");
-    const nl = raw.indexOf("\n");
-    return nl === -1 ? raw : raw.slice(0, nl);
-  } catch {
-    return null;
-  }
-}
+// Use shared readFirstLineEfficient from types.ts for discovery
 
 async function walkDir(dir: string, pattern: RegExp, results: string[]): Promise<void> {
   let entries;
@@ -337,12 +329,16 @@ export async function discoverCodexSessions(): Promise<CodexSessionFile[]> {
   await walkDir(sessionsDir, /^rollout-.*\.jsonl$/, files);
 
   const results: CodexSessionFile[] = [];
+  const seenIds = new Set<string>();
   for (const filePath of files) {
-    const firstLine = await readFirstLine(filePath);
+    const firstLine = await readFirstLineEfficient(filePath);
     if (!firstLine) continue;
     try {
       const entry = JSON.parse(firstLine) as { type?: string; payload?: SessionMetaPayload };
       if (entry.type !== "session_meta" || !entry.payload?.cwd || !entry.payload?.id) continue;
+      // Codex creates separate rollout files for continuations of the same session
+      if (seenIds.has(entry.payload.id)) continue;
+      seenIds.add(entry.payload.id);
       results.push({
         path: filePath,
         sessionId: entry.payload.id,

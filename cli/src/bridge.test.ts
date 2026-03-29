@@ -439,6 +439,21 @@ describe("cleanAssistantText", () => {
     const input = "Before\n\n\n<antml_thinking>thought</antml_thinking>\n\n\nAfter";
     expect(cleanAssistantText(input)).toBe("Before\n\nAfter");
   });
+
+  it("removes environment_context blocks (Codex)", () => {
+    const input = "<environment_context><cwd>/Users/ben/project</cwd></environment_context>Fix the bug";
+    expect(cleanAssistantText(input)).toBe("Fix the bug");
+  });
+
+  it("removes local-command-* blocks", () => {
+    const input = "Text <local-command-stdout>output here</local-command-stdout> end";
+    expect(cleanAssistantText(input)).toBe("Text  end");
+  });
+
+  it("removes command-name and command-message blocks", () => {
+    const input = "<command-name>compact</command-name><command-message>do it</command-message>Real text";
+    expect(cleanAssistantText(input)).toBe("Real text");
+  });
 });
 
 describe("bridgeToAnalyzer - cleanAssistantText integration", () => {

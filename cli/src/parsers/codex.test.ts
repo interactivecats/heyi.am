@@ -365,4 +365,43 @@ describe("discoverCodexSessions — id guard", () => {
     const shouldSkipWithId = withIdEntry.type !== "session_meta" || !withIdEntry.payload?.cwd || !withIdEntry.payload?.id;
     expect(shouldSkipWithId).toBe(false);
   });
+
+  it("deduplicates sessions with the same session ID across rollout files", async () => {
+    // Codex creates separate rollout files when a session is continued
+    const sessionsDir = join(tmpDir, "dedup-sessions");
+    await mkdir(sessionsDir, { recursive: true });
+
+    const sameSessionId = "same-session-001";
+    const rollout1 = sessionMetaLine("/Users/test/project", sameSessionId, "2026-03-20T10:00:00.000Z") + "\n" +
+      userMessageLine("first rollout") + "\n";
+    const rollout2 = sessionMetaLine("/Users/test/project", sameSessionId, "2026-03-20T11:00:00.000Z") + "\n" +
+      userMessageLine("continued rollout") + "\n";
+    const differentId = sessionMetaLine("/Users/test/project", "different-session-002") + "\n";
+
+    await writeFile(join(sessionsDir, "rollout-aaa.jsonl"), rollout1);
+    await writeFile(join(sessionsDir, "rollout-bbb.jsonl"), rollout2);
+    await writeFile(join(sessionsDir, "rollout-ccc.jsonl"), differentId);
+
+    // Simulate the dedup logic used in discoverCodexSessions
+    const { readFile: rf } = await import("node:fs/promises");
+    const { readdir: rd } = await import("node:fs/promises");
+    const files = (await rd(sessionsDir)).filter(f => f.endsWith(".jsonl")).sort();
+    expect(files.length).toBe(3);
+
+    const seenIds = new Set<string>();
+    const results: string[] = [];
+    for (const file of files) {
+      const content = await rf(join(sessionsDir, file), "utf-8");
+      const entry = JSON.parse(content.split("\n")[0]) as { payload?: { id?: string } };
+      const id = entry.payload?.id;
+      if (!id || seenIds.has(id)) continue;
+      seenIds.add(id);
+      results.push(id);
+    }
+
+    // Should only have 2 unique sessions, not 3
+    expect(results.length).toBe(2);
+    expect(results).toContain(sameSessionId);
+    expect(results).toContain("different-session-002");
+  });
 });

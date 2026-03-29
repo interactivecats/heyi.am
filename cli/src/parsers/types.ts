@@ -1,3 +1,5 @@
+import { open } from "node:fs/promises";
+
 export type SessionSource = "claude" | "cursor" | "codex" | "gemini" | "antigravity";
 
 /** Display names for source tools */
@@ -122,4 +124,25 @@ export interface SessionParser {
   name: string;
   detect(path: string): Promise<boolean>;
   parse(path: string): Promise<SessionAnalysis>;
+}
+
+/**
+ * Read only the first line of a file without loading the entire file into memory.
+ * Session files can be 100MB+, so we read only the first 8KB to find the first newline.
+ */
+export async function readFirstLineEfficient(filePath: string): Promise<string | null> {
+  let fh;
+  try {
+    fh = await open(filePath, "r");
+    const buf = Buffer.alloc(8192);
+    const { bytesRead } = await fh.read(buf, 0, 8192, 0);
+    if (bytesRead === 0) return null;
+    const str = buf.toString("utf-8", 0, bytesRead);
+    const nl = str.indexOf("\n");
+    return nl === -1 ? str : str.slice(0, nl);
+  } catch {
+    return null;
+  } finally {
+    await fh?.close();
+  }
 }

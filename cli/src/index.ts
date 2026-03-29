@@ -14,13 +14,19 @@ import { exportSessionContext, type ExportTier } from './context-export.js';
 import { SOURCE_DISPLAY_NAMES, type SessionSource } from './parsers/types.js';
 import { syncSessionIndex, fullReindex } from './sync.js';
 import { formatLoc } from './format-utils.js';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
+const __pkg_dir = dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(resolve(__pkg_dir, '..', 'package.json'), 'utf-8'));
 
 const program = new Command();
 
 program
   .name('heyiam')
   .description('Turn AI coding sessions into portfolio case studies')
-  .version('0.1.7');
+  .version(pkg.version);
 
 program
   .command('open')

@@ -8,6 +8,7 @@ import {
   type ToolUseBlock,
   type ContentBlock,
   type TokenUsage,
+  readFirstLineEfficient,
 } from "./types.js";
 
 /**
@@ -221,15 +222,15 @@ async function detect(path: string): Promise<boolean> {
   if (!path.endsWith(".jsonl")) return false;
 
   try {
-    const raw = await readFile(path, "utf-8");
-    const firstLine = raw.split("\n")[0];
+    const firstLine = await readFirstLineEfficient(path);
     if (!firstLine) return false;
     const entry = JSON.parse(firstLine) as Record<string, unknown>;
-    // Claude sessions have sessionId, type, and typically version fields
+    // Claude sessions have sessionId + uuid (unique to Claude format).
+    // version is usually present but not required (varies across Claude Code versions).
     return (
       typeof entry.sessionId === "string" &&
-      typeof entry.type === "string" &&
-      typeof entry.version === "string"
+      typeof entry.uuid === "string" &&
+      typeof entry.type === "string"
     );
   } catch {
     return false;

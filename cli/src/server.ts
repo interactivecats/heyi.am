@@ -74,8 +74,13 @@ export function createApp(sessionsBasePath?: string, dbPath?: string) {
   app.use(express.static(staticDir));
 
   // SPA fallback -- serve index.html for non-API routes
+  const indexPath = path.join(staticDir, 'index.html');
   app.get('/{*splat}', (_req: Request, res: Response) => {
-    res.sendFile(path.join(staticDir, 'index.html'));
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        res.status(404).send('Page not found');
+      }
+    });
   });
 
   return app;
