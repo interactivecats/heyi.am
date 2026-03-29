@@ -82,12 +82,20 @@ config :esbuild,
     args: ~w(css/app.css --bundle --outdir=../priv/static/assets/css),
     cd: Path.expand("../apps/heyi_am_app_web/assets", __DIR__)
   ],
+  heyi_am_public_web_js: [
+    args: ~w(js/app.js --bundle --outdir=../priv/static/assets/js),
+    cd: Path.expand("../apps/heyi_am_public_web/assets", __DIR__)
+  ],
   heyi_am_public_web_css: [
     args: ~w(css/app.css --bundle --outdir=../priv/static/assets/css),
     cd: Path.expand("../apps/heyi_am_public_web/assets", __DIR__)
   ],
   heyi_am_vibe_web_css: [
     args: ~w(css/app.css --bundle --outdir=../priv/static/assets/css),
+    cd: Path.expand("../apps/heyi_am_vibe_web/assets", __DIR__)
+  ],
+  heyi_am_vibe_web_js: [
+    args: ~w(js/app.js --bundle --outdir=../priv/static/assets/js),
     cd: Path.expand("../apps/heyi_am_vibe_web/assets", __DIR__)
   ]
 

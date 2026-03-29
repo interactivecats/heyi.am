@@ -66,7 +66,9 @@ defmodule HeyiAm.Umbrella.MixProject do
       "assets.deploy": [
         "esbuild heyi_am_app_web --minify",
         "esbuild heyi_am_app_web_css --minify",
+        "esbuild heyi_am_public_web_js --minify",
         "esbuild heyi_am_public_web_css --minify",
+        "esbuild heyi_am_vibe_web_js --minify",
         "esbuild heyi_am_vibe_web_css --minify",
         "phx.digest"
       ]

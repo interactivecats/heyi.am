@@ -75,6 +75,7 @@ config :heyi_am_vibe_web, HeyiAmVibeWeb.Endpoint,
   debug_errors: true,
   secret_key_base: dev_secret_key_base,
   watchers: [
+    esbuild_js: {Esbuild, :install_and_run, [:heyi_am_vibe_web_js, ~w(--sourcemap=inline --watch)]},
     esbuild_css: {Esbuild, :install_and_run, [:heyi_am_vibe_web_css, ~w(--sourcemap=inline --watch)]}
   ]
 
