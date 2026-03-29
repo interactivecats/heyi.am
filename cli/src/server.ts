@@ -1,6 +1,7 @@
 import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import path from 'node:path';
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { Server } from 'node:http';
 import { getDatabase } from './db.js';
@@ -65,7 +66,11 @@ export function createApp(sessionsBasePath?: string, dbPath?: string) {
   app.use(createDashboardRouter(ctx));
 
   // ── Static files ───────────────────────────────────────────
-  const staticDir = path.resolve(__dirname, '..', 'app', 'dist');
+  // In production (npm package), frontend is copied to dist/public/ by the build script.
+  // In dev, fall back to app/dist/ (Vite's output).
+  const prodDir = path.resolve(__dirname, 'public');
+  const devDir = path.resolve(__dirname, '..', 'app', 'dist');
+  const staticDir = existsSync(prodDir) ? prodDir : devDir;
   app.use(express.static(staticDir));
 
   // SPA fallback -- serve index.html for non-API routes
