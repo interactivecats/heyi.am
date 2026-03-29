@@ -11,7 +11,7 @@ import type { SessionCard } from '../render/types.js';
 import type { ProjectEnhanceResult } from '../llm/project-enhance.js';
 import { buildAgentSummary, type RouteContext } from './context.js';
 import { displayNameFromDir } from '../sync.js';
-import { getProjectUuid } from '../db.js';
+import { getProjectUuid, getFileCountWithChildren } from '../db.js';
 
 export function createPublishRouter(ctx: RouteContext): Router {
   const router = Router();
@@ -305,6 +305,12 @@ export function createPublishRouter(ctx: RouteContext): Router {
 
             uploadedSessionCards.push(buildSessionCard(renderOpts));
 
+            const childLoc = agentSummary?.agents?.reduce(
+              (s: number, a: { loc_changed?: number }) => s + (a.loc_changed ?? 0), 0,
+            ) ?? 0;
+            const totalLocChanged = (session.linesOfCode ?? 0) + childLoc;
+            const totalFilesChanged = getFileCountWithChildren(ctx.db, sessionId) || session.filesChanged?.length || 0;
+
             const sessionPayload = {
               session: {
                 title: sessionTitle,
@@ -312,8 +318,8 @@ export function createPublishRouter(ctx: RouteContext): Router {
                 context: enhanced?.context ?? '',
                 duration_minutes: session.durationMinutes ?? 0,
                 turns: session.turns ?? 0,
-                files_changed: session.filesChanged?.length ?? 0,
-                loc_changed: session.linesOfCode ?? 0,
+                files_changed: totalFilesChanged,
+                loc_changed: totalLocChanged,
                 recorded_at: sessionRecordedAt,
                 end_time: session.endTime ? new Date(session.endTime).toISOString() : null,
                 cwd: session.cwd ?? null,
@@ -342,7 +348,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
               duration_minutes: session.durationMinutes ?? 0,
               turns: session.turns ?? 0,
               files_changed: (session.filesChanged ?? []).slice(0, 20).map((f) => (typeof f === 'string' ? { path: f, additions: 0, deletions: 0 } : f)),
-              loc_changed: session.linesOfCode ?? 0,
+              loc_changed: totalLocChanged,
               date: sessionRecordedAt,
               end_time: (() => {
                 if (!session.endTime || !session.date) return null;

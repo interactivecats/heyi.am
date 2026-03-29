@@ -171,6 +171,11 @@ function computePerFileChanges(toolCalls: ToolCall[], locStats?: LocStats, cwd?:
   // Track writes for dedup (last write wins)
   const writeLineCounts = new Map<string, number>();
 
+  // Track accumulated Edit additions/deletions per file so a subsequent
+  // Write can reset them (the Write overwrites the entire file).
+  const editAdded = new Map<string, number>();
+  const editRemoved = new Map<string, number>();
+
   for (const call of toolCalls) {
     if (call.name === "Write") {
       const filePath = call.input.file_path;
@@ -187,6 +192,16 @@ function computePerFileChanges(toolCalls: ToolCall[], locStats?: LocStats, cwd?:
         existing.additions += lines;
       }
 
+      // Reset accumulated Edit stats — the Write replaces the entire file
+      const prevEditAdd = editAdded.get(filePath) ?? 0;
+      const prevEditRem = editRemoved.get(filePath) ?? 0;
+      if (prevEditAdd > 0 || prevEditRem > 0) {
+        existing.additions -= prevEditAdd;
+        existing.deletions -= prevEditRem;
+        editAdded.delete(filePath);
+        editRemoved.delete(filePath);
+      }
+
       writeLineCounts.set(filePath, lines);
       files.set(filePath, existing);
     } else if (call.name === "Edit") {
@@ -196,9 +211,14 @@ function computePerFileChanges(toolCalls: ToolCall[], locStats?: LocStats, cwd?:
       if (typeof filePath !== "string") continue;
 
       const existing = files.get(filePath) ?? { additions: 0, deletions: 0 };
-      existing.additions += typeof newStr === "string" ? newStr.split("\n").length : 0;
-      existing.deletions += typeof oldStr === "string" ? oldStr.split("\n").length : 0;
+      const newLines = typeof newStr === "string" ? newStr.split("\n").length : 0;
+      const oldLines = typeof oldStr === "string" ? oldStr.split("\n").length : 0;
+      existing.additions += newLines;
+      existing.deletions += oldLines;
       files.set(filePath, existing);
+
+      editAdded.set(filePath, (editAdded.get(filePath) ?? 0) + newLines);
+      editRemoved.set(filePath, (editRemoved.get(filePath) ?? 0) + oldLines);
     }
   }
 

@@ -477,6 +477,16 @@ export function getAllProjectStats(db: Database.Database): ProjectStats[] {
   });
 }
 
+// ── Read: Get File Count Including Children ──────────────────
+
+export function getFileCountWithChildren(db: Database.Database, sessionId: string): number {
+  const row = db.prepare(`
+    SELECT COUNT(DISTINCT file_path) as c FROM session_files
+    WHERE session_id IN (SELECT id FROM sessions WHERE id = ? OR parent_session_id = ?)
+  `).get(sessionId, sessionId) as { c: number };
+  return row.c;
+}
+
 // ── Read: Get Session Row ────────────────────────────────────
 
 export function getSessionRow(db: Database.Database, sessionId: string): SessionRow | null {

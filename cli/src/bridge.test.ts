@@ -212,6 +212,63 @@ describe("bridgeToAnalyzer", () => {
     expect(result.filesChanged[0].additions).toBe(3);
   });
 
+  it("resets Edit accumulations when a Write overwrites the file", () => {
+    const parsed = makeParserOutput({
+      tool_calls: [
+        // Three Edits on the same file
+        { id: "t1", name: "Edit", input: { file_path: "/app/main.ts", old_string: "a\nb\nc\nd\ne", new_string: "x\ny\nz\nw\nv\nq\nr\ns" } },
+        { id: "t2", name: "Edit", input: { file_path: "/app/main.ts", old_string: "old1\nold2\nold3", new_string: "new1\nnew2\nnew3" } },
+        { id: "t3", name: "Edit", input: { file_path: "/app/main.ts", old_string: "foo\nbar", new_string: "baz\nqux\nquux\nquuz" } },
+        // Then a full Write replaces everything
+        { id: "t4", name: "Write", input: { file_path: "/app/main.ts", content: "line1\nline2\nline3\nline4\nline5" } },
+      ],
+      loc_stats: {
+        // Parser computes correct totals (Write replaces all prior Edits)
+        loc_added: 5,
+        loc_removed: 0,
+        loc_net: 5,
+        files_changed: ["/app/main.ts"],
+      },
+    });
+
+    const result = bridgeToAnalyzer(parsed, { sessionId: "x", projectName: "p" });
+    expect(result.filesChanged).toHaveLength(1);
+
+    const file = result.filesChanged[0];
+    // Per-file stats should match session total: only the Write counts
+    expect(file.additions).toBe(5);
+    expect(file.deletions).toBe(0);
+
+    // locTotal should match the sum of per-file changes
+    expect(result.locTotal).toBe(file.additions + file.deletions);
+  });
+
+  it("handles Edit-only files alongside Write-after-Edit files", () => {
+    const parsed = makeParserOutput({
+      tool_calls: [
+        // File A: Edit then Write (Write-after-Edit)
+        { id: "t1", name: "Edit", input: { file_path: "/app/a.ts", old_string: "old", new_string: "new\nstuff" } },
+        { id: "t2", name: "Write", input: { file_path: "/app/a.ts", content: "final\ncontent" } },
+        // File B: Edit only (no Write, so Edits stand)
+        { id: "t3", name: "Edit", input: { file_path: "/app/b.ts", old_string: "x\ny", new_string: "a\nb\nc" } },
+      ],
+    });
+
+    const result = bridgeToAnalyzer(parsed, { sessionId: "x", projectName: "p" });
+    expect(result.filesChanged).toHaveLength(2);
+
+    const fileA = result.filesChanged.find((f) => f.path === "/app/a.ts")!;
+    const fileB = result.filesChanged.find((f) => f.path === "/app/b.ts")!;
+
+    // File A: Write replaced everything — only Write counts
+    expect(fileA.additions).toBe(2); // "final\ncontent" = 2 lines
+    expect(fileA.deletions).toBe(0);
+
+    // File B: Edit-only — Edits stand
+    expect(fileB.additions).toBe(3);
+    expect(fileB.deletions).toBe(2);
+  });
+
   it("builds raw log from entries", () => {
     const parsed = makeParserOutput({
       raw_entries: [

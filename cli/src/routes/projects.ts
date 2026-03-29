@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { statSync } from 'node:fs';
-import { toAgentChild, bridgeChildSessions, aggregateChildStats, type AgentChild } from '../bridge.js';
+import { type AgentChild } from '../bridge.js';
 import { loadProjectEnhanceResult, getUploadedState } from '../settings.js';
 import { RouteContext, buildSessionList, buildProjectDetail } from './context.js';
 
@@ -120,17 +120,31 @@ export function createProjectsRouter(ctx: RouteContext): Router {
         return;
       }
 
-      const session = await ctx.loadSession(meta.path, proj.name, meta.sessionId);
+      // DB-backed session data (includes children LOC/files, single source of truth)
+      const sessionList = buildSessionList(ctx.db, proj.dirName, proj.name);
+      const dbSession = sessionList.find((s) => s.id === id);
 
-      const parsedChildren = await bridgeChildSessions(meta, proj.name);
-      const children = parsedChildren.map(toAgentChild);
-      const aggregated = children.length > 0 ? aggregateChildStats(parsedChildren) : undefined;
+      // Parse from file only for rich content not stored in DB
+      const parsed = await ctx.loadSession(meta.path, proj.name, meta.sessionId);
+
+      const base = dbSession ?? parsed;
+      const children = base.children;
+      const aggregatedStats = children && children.length > 0
+        ? {
+            agentCount: children.length,
+            totalLoc: children.reduce((s, c) => s + c.linesOfCode, 0),
+            totalDurationMinutes: children.reduce((s, c) => s + c.durationMinutes, 0),
+          }
+        : undefined;
 
       res.json({
         session: {
-          ...session,
-          ...(children.length > 0 ? { children, isOrchestrated: true } : {}),
-          ...(aggregated ? { aggregatedStats: aggregated } : {}),
+          ...base,
+          // Layer in rich content from parse that DB doesn't store
+          toolBreakdown: parsed.toolBreakdown,
+          turnTimeline: parsed.turnTimeline,
+          rawLog: parsed.rawLog,
+          ...(aggregatedStats ? { aggregatedStats } : {}),
         },
       });
     } catch (err) {
