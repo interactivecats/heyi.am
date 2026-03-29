@@ -96,7 +96,9 @@ export function startServer(port: number = 17845, options?: { demo?: boolean }):
       if (result.indexed > 0) {
         console.log(`Indexed ${result.indexed} sessions (${result.skipped} up-to-date)`);
       }
-    }).catch(() => {});
+    }).catch((err) => {
+      console.error('[sync] Initial sync failed:', (err as Error).message);
+    });
   }
 
   return new Promise((resolve) => {
