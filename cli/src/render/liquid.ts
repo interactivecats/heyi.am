@@ -99,7 +99,7 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
   // Use full session data when available (charts need complete Session objects).
   // Strip rawLog and turnTimeline — huge, unused by charts, and could break HTML attributes.
   const chartSessions = (extras?.fullSessions ?? allSessions.map((s) => ({
-    id: s.token, title: s.title, date: s.recordedAt,
+    id: s.token, slug: s.slug, title: s.title, date: s.recordedAt,
     durationMinutes: s.durationMinutes, turns: s.turns,
     linesOfCode: s.locChanged, status: 'enhanced',
     projectName: data.project.title, rawLog: [],

@@ -23069,12 +23069,19 @@
     const [active, setActive] = (0, import_react3.useState)(null);
     showOverlay = (session) => setActive(session);
     if (!active) return null;
-    const projectEl = document.querySelector("[data-session-base-url]");
+    const projectEl = document.querySelector(".heyiam-project");
     const baseUrl = projectEl?.getAttribute("data-session-base-url");
     let sessionPageUrl;
     if (baseUrl) {
       const slug = active.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "untitled";
       sessionPageUrl = `${baseUrl}/${slug}.html`;
+    } else {
+      const username = projectEl?.getAttribute("data-username");
+      const projectSlug = projectEl?.getAttribute("data-project-slug");
+      const sessionSlug = active.slug;
+      if (username && projectSlug && sessionSlug) {
+        sessionPageUrl = `/@${username}/${projectSlug}/${sessionSlug}`;
+      }
     }
     return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
       SessionOverlay,

@@ -55,33 +55,4 @@ defmodule HeyiAmPublicWeb.ShareControllerTest do
     end
   end
 
-  describe "GET /s/:token/transcript" do
-    test "renders transcript page for published share", %{conn: conn} do
-      user = user_fixture(%{username: "txdev"})
-
-      _share =
-        create_share_with_html(%{
-          user_id: user.id,
-          token: "tx-token",
-          title: "Transcript Session",
-          status: "listed",
-          rendered_html: "<div>content</div>",
-          skills: [],
-          duration_minutes: 15,
-          turns: 5,
-          files_changed: 2,
-          loc_changed: 50
-        })
-
-      conn = get(conn, "/s/tx-token/transcript")
-      response = html_response(conn, 200)
-      assert response =~ "Transcript Session"
-    end
-
-    test "returns 404 for unknown token", %{conn: conn} do
-      conn = get(conn, "/s/nonexistent/transcript")
-      assert html_response(conn, 404) =~ "Page not found"
-    end
-  end
-
 end

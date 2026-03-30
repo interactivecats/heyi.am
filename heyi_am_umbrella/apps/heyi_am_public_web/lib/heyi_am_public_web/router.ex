@@ -59,7 +59,6 @@ defmodule HeyiAmPublicWeb.Router do
     pipe_through :browser
 
     get "/:token", ShareController, :show
-    get "/:token/transcript", ShareController, :transcript
   end
 
   # Public portfolio pages — MUST be last (/:username is a catch-all)

@@ -180,7 +180,6 @@ Three levels:
 - Agent timeline SVG (fork/join for orchestrated, simple line for single-agent)
 - Tool breakdown, turn timeline, files changed (collapsible)
 - Full narrative
-- "View full transcript" link
 
 ### Session Templates
 

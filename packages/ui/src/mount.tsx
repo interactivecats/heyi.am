@@ -46,10 +46,10 @@ function OverlayRoot({ sessions }: { sessions: Map<string, Session> }) {
 
   if (!active) return null;
 
-  // Only link to session pages when running in a local HTML export
-  // (indicated by data-session-base-url on the project container).
-  // On Phoenix-served pages, session HTML files don't exist.
-  const projectEl = document.querySelector('[data-session-base-url]');
+  // Build session page URL based on context:
+  // - Local HTML export: data-session-base-url → ./sessions/{slug}.html
+  // - Phoenix-served: data-username + data-project-slug → /@user/project/session-slug
+  const projectEl = document.querySelector('.heyiam-project');
   const baseUrl = projectEl?.getAttribute('data-session-base-url');
   let sessionPageUrl: string | undefined;
   if (baseUrl) {
@@ -59,6 +59,13 @@ function OverlayRoot({ sessions }: { sessions: Map<string, Session> }) {
       .replace(/^-|-$/g, '')
       .slice(0, 80) || 'untitled';
     sessionPageUrl = `${baseUrl}/${slug}.html`;
+  } else {
+    const username = projectEl?.getAttribute('data-username');
+    const projectSlug = projectEl?.getAttribute('data-project-slug');
+    const sessionSlug = (active as Record<string, unknown>).slug as string | undefined;
+    if (username && projectSlug && sessionSlug) {
+      sessionPageUrl = `/@${username}/${projectSlug}/${sessionSlug}`;
+    }
   }
 
   return (
