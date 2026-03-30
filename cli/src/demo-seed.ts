@@ -1,14 +1,14 @@
 /**
  * Seeds a demo environment with fake data for marketing recordings.
  *
- * Creates a self-contained directory at ~/.config/heyiam/demo/ with:
+ * Creates a self-contained directory at ~/.local/share/heyiam/demo/ with:
  *   - sessions.db       — SQLite database with fake sessions + FTS
  *   - enhanced/          — fake enhanced data for select sessions
  *   - project-enhance/   — cached project narrative
  *   - settings.json      — onboarding complete, fake API key
  *   - sessions/          — minimal JSONL session files
  *
- * The real ~/.config/heyiam/ is never touched.
+ * The real ~/.local/share/heyiam/ is never touched.
  */
 
 import { join } from 'node:path';
@@ -23,7 +23,7 @@ import {
   DEMO_ENHANCE_RESULT,
 } from './demo-data.js';
 
-const DEMO_DIR = join(homedir(), '.config', 'heyiam', 'demo');
+const DEMO_DIR = join(homedir(), '.local', 'share', 'heyiam', 'demo');
 
 /**
  * Seed the demo environment. Returns the path so the caller can set

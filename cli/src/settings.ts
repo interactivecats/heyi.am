@@ -7,6 +7,12 @@ import { readConfig, writeConfig } from './auth.js';
 function getConfigDir(): string {
   return process.env.HEYIAM_CONFIG_DIR || join(homedir(), '.config', 'heyiam');
 }
+
+/** XDG data directory — DB, enhanced data, archives, screenshots, published state. */
+export function getDataDir(): string {
+  return process.env.HEYIAM_DATA_DIR || join(homedir(), '.local', 'share', 'heyiam');
+}
+
 const ENHANCED_DIR = 'enhanced';
 const PROJECT_ENHANCE_DIR = 'project-enhance';
 const SETTINGS_FILE = 'settings.json';
@@ -22,7 +28,7 @@ export interface Settings {
 const SESSIONS_DIR = 'sessions';
 
 /** Directory where archived session hard links are stored. */
-export function getArchiveDir(configDir: string = getConfigDir()): string {
+export function getArchiveDir(configDir: string = getDataDir()): string {
   return join(configDir, SESSIONS_DIR);
 }
 
@@ -87,11 +93,11 @@ export interface EnhancedData {
   uploaded?: boolean;
 }
 
-function enhancedDir(configDir: string = getConfigDir()): string {
+function enhancedDir(configDir: string = getDataDir()): string {
   return join(configDir, ENHANCED_DIR);
 }
 
-function enhancedPath(sessionId: string, configDir: string = getConfigDir()): string {
+function enhancedPath(sessionId: string, configDir: string = getDataDir()): string {
   return join(enhancedDir(configDir), `${sessionId}.json`);
 }
 
@@ -183,11 +189,11 @@ export function buildProjectFingerprint(
   return createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 16);
 }
 
-function projectEnhanceDir(configDir: string = getConfigDir()): string {
+function projectEnhanceDir(configDir: string = getDataDir()): string {
   return join(configDir, PROJECT_ENHANCE_DIR);
 }
 
-function projectEnhancePath(projectDirName: string, configDir: string = getConfigDir()): string {
+function projectEnhancePath(projectDirName: string, configDir: string = getDataDir()): string {
   // Sanitize project dir name for filesystem
   const safe = projectDirName.replace(/[^a-zA-Z0-9._-]/g, '_');
   return join(projectEnhanceDir(configDir), `${safe}.json`);
@@ -261,11 +267,11 @@ export interface UploadedState {
 
 const UPLOADED_DIR = 'published';
 
-function uploadedDir(configDir: string = getConfigDir()): string {
+function uploadedDir(configDir: string = getDataDir()): string {
   return join(configDir, UPLOADED_DIR);
 }
 
-function uploadedPath(projectDirName: string, configDir: string = getConfigDir()): string {
+function uploadedPath(projectDirName: string, configDir: string = getDataDir()): string {
   const safe = projectDirName.replace(/[^a-zA-Z0-9._-]/g, '_');
   return join(uploadedDir(configDir), `${safe}.json`);
 }

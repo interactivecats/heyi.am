@@ -19,7 +19,7 @@ export function createDashboardRouter(ctx: RouteContext): Router {
 
       // Count enhanced projects by checking the enhance cache directory
       let enhancedCount = 0;
-      const enhanceDir = join(homedir(), '.config', 'heyiam', 'project-enhance');
+      const enhanceDir = join(homedir(), '.local', 'share', 'heyiam', 'project-enhance');
       try {
         const files = readdirSync(enhanceDir).filter((f) => f.endsWith('.json'));
         enhancedCount = files.length;

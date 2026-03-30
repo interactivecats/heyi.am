@@ -44,7 +44,7 @@
 
 **4-app umbrella.** Each Phoenix endpoint has strict invariants: `public_web` has no `Plug.Session`, `app_web` has no `raw()`, `vibe_web` has neither. These guarantees are enforced by the code structure, not by developer discipline.
 
-**SQLite session index.** The CLI maintains `~/.config/heyiam/sessions.db` for instant project lookup and full-text search across all sessions from all tools. Replaces filesystem scanning.
+**SQLite session index.** The CLI maintains `~/.local/share/heyiam/sessions.db` for instant project lookup and full-text search across all sessions from all tools. Replaces filesystem scanning.
 
 **Multi-tool parsers.** Session parsers for Claude Code, Cursor, Codex CLI, and Gemini CLI all produce a consistent `SessionAnalysis` contract. Adding a new tool means writing one parser.
 
@@ -63,7 +63,7 @@ The CLI is where all content creation happens: session discovery, archiving, sea
 | `src/index.ts` | CLI entry point (commands: open, time, search, context, archive, sync, status, daemon) |
 | `src/server.ts` | Express server, binds all routers |
 | `src/parsers/` | Multi-tool session parsers (claude, cursor, codex, gemini) |
-| `src/db.ts` | SQLite session index (`~/.config/heyiam/sessions.db`) |
+| `src/db.ts` | SQLite session index (`~/.local/share/heyiam/sessions.db`) |
 | `src/sync.ts` | Observable sync engine (file watcher + Cursor polling) |
 | `src/archive.ts` | Hard-link archiving (survives tool cleanup) |
 | `src/bridge.ts` | Parser → Analyzer conversion, per-file LOC computation |
@@ -120,13 +120,13 @@ The archive (`src/archive.ts`) preserves session files that tools will delete. C
 
 - **Hard links** for file-based sources (zero extra disk space — same inode)
 - **JSONL export** for Cursor (stores in its own SQLite DB, can't hard-link)
-- Location: `~/.config/heyiam/sessions/`
+- Location: `~/.local/share/heyiam/sessions/`
 
 Discovery scans live directories first, then the archive. Live files take precedence (may still be receiving entries). Archive files are only used for sessions whose live copy is gone.
 
 ### SQLite Index
 
-The DB (`src/db.ts`) at `~/.config/heyiam/sessions.db` stores:
+The DB (`src/db.ts`) at `~/.local/share/heyiam/sessions.db` stores:
 - **Session metadata**: duration, LOC, turns, skills, models, timestamps, active intervals
 - **Full-text search index** (FTS5): every turn's content (truncated to 10KB/turn)
 - **Per-file changes**: `session_files` table with additions/deletions per file

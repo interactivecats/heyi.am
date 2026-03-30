@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { homedir, platform } from 'node:os';
 import { get as httpGet } from 'node:http';
 
-export const SCREENSHOTS_DIR = join(homedir(), '.config', 'heyiam', 'screenshots');
+export const SCREENSHOTS_DIR = join(homedir(), '.local', 'share', 'heyiam', 'screenshots');
 
 /** Known Chrome binary paths by platform */
 const CHROME_PATHS: Record<string, string[]> = {

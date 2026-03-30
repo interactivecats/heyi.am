@@ -50,13 +50,13 @@ Before any publishing happens, the CLI is useful on its own — a local gallery 
 
 AI tools delete sessions. Claude Code purges after 30 days. Cursor stores in SQLite that gets overwritten. The CLI archives session files so they survive:
 
-- **File-based tools** (Claude Code, Codex, Gemini): hard links to `~/.config/heyiam/archive/` — zero extra disk space until the original is deleted
+- **File-based tools** (Claude Code, Codex, Gemini): hard links to `~/.local/share/heyiam/archive/` — zero extra disk space until the original is deleted
 - **Cursor**: exports conversation data as JSONL to the archive directory
 - Idempotent — runs on every CLI command, not just `heyiam archive`
 
 ### SQLite Session Index
 
-All sessions from all tools are indexed into `~/.config/heyiam/sessions.db`:
+All sessions from all tools are indexed into `~/.local/share/heyiam/sessions.db`:
 
 - Full-text search across session content
 - Per-project aggregation (sessions, time, LOC, files, skills)

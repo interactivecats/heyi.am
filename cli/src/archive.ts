@@ -63,13 +63,13 @@ export async function archiveSessionFiles(
  * Preserves the relative structure under the project directory.
  *
  * Claude:  ~/.claude/projects/{projectDir}/{sessionId}.jsonl
- *       →  ~/.config/heyiam/sessions/{projectDir}/{sessionId}.jsonl
+ *       →  ~/.local/share/heyiam/sessions/{projectDir}/{sessionId}.jsonl
  *
  * Codex:   ~/.codex/sessions/{nested}/{rollout-xxx}.jsonl
- *       →  ~/.config/heyiam/sessions/{projectDir}/{rollout-xxx}.jsonl
+ *       →  ~/.local/share/heyiam/sessions/{projectDir}/{rollout-xxx}.jsonl
  *
  * Gemini:  ~/.gemini/tmp/{hash}/logs.json
- *       →  ~/.config/heyiam/sessions/{projectDir}/{hash}.json
+ *       →  ~/.local/share/heyiam/sessions/{projectDir}/{hash}.json
  */
 function archiveDestination(
   originalPath: string,

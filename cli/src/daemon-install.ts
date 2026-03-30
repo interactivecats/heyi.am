@@ -1,7 +1,7 @@
 // Download and install the heyiam tray daemon binary from GitHub releases.
 //
 // Detects platform + arch, fetches the correct binary from the latest
-// daemon release, and saves it to ~/.config/heyiam/daemon/heyiam-tray.
+// daemon release, and saves it to ~/.local/share/heyiam/daemon/heyiam-tray.
 
 import { createWriteStream, mkdirSync, chmodSync, existsSync, renameSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
@@ -43,7 +43,7 @@ export function getAssetName(): string | null {
  * Returns the directory where the daemon binary is stored.
  */
 export function getDaemonDir(): string {
-  return join(homedir(), '.config', 'heyiam', 'daemon');
+  return join(homedir(), '.local', 'share', 'heyiam', 'daemon');
 }
 
 /**

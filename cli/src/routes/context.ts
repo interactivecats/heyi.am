@@ -313,7 +313,7 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
     if (!basePath) {
       const archiveResult = await archiveSessionFiles(allSessions);
       if (archiveResult.archived > 0) {
-        console.log(`Preserved ${archiveResult.archived} sessions → ~/.config/heyiam/sessions/`);
+        console.log(`Preserved ${archiveResult.archived} sessions → ~/.local/share/heyiam/sessions/`);
       }
     }
 

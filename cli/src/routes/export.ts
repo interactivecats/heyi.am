@@ -8,7 +8,7 @@ import type { ProjectEnhanceCache } from '../settings.js';
 import { exportMarkdown, exportHtml, generateHtmlFiles, createZipBuffer } from '../export.js';
 import { type RouteContext, buildProjectDetail } from './context.js';
 
-const EXPORTS_BASE = path.resolve(process.env.HOME || '~', '.config', 'heyiam', 'exports');
+const EXPORTS_BASE = path.resolve(process.env.HOME || '~', '.local', 'share', 'heyiam', 'exports');
 
 /** Validate that an output path is within the safe exports directory. */
 function safeExportPath(outputPath: string | undefined, dirName: string, format: string): string {

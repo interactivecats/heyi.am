@@ -12,14 +12,13 @@ import type { SessionMeta } from './parsers/index.js';
 
 // ── Constants ────────────────────────────────────────────────
 
-function getConfigDir(): string {
-  return process.env.HEYIAM_CONFIG_DIR || join(homedir(), '.config', 'heyiam');
+function getDataDir(): string {
+  return process.env.HEYIAM_DATA_DIR || join(homedir(), '.local', 'share', 'heyiam');
 }
 export function getDbPath(): string {
-  return join(getConfigDir(), 'sessions.db');
+  return join(getDataDir(), 'sessions.db');
 }
-// Keep backward-compat for any external consumers
-export const DB_PATH = join(homedir(), '.config', 'heyiam', 'sessions.db');
+export const DB_PATH = join(homedir(), '.local', 'share', 'heyiam', 'sessions.db');
 
 const CURRENT_SCHEMA_VERSION = 5;
 

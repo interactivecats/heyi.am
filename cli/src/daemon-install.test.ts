@@ -30,9 +30,9 @@ describe('daemon-install', () => {
   });
 
   describe('getDaemonDir', () => {
-    it('returns path under ~/.config/heyiam/daemon', () => {
+    it('returns path under ~/.local/share/heyiam/daemon', () => {
       const dir = getDaemonDir();
-      expect(dir).toBe(join(homedir(), '.config', 'heyiam', 'daemon'));
+      expect(dir).toBe(join(homedir(), '.local', 'share', 'heyiam', 'daemon'));
     });
   });
 
@@ -40,7 +40,7 @@ describe('daemon-install', () => {
     it('returns path ending with heyiam-tray', () => {
       const path = getDaemonBinaryPath();
       const expectedExt = process.platform === 'win32' ? '.exe' : '';
-      expect(path).toBe(join(homedir(), '.config', 'heyiam', 'daemon', `heyiam-tray${expectedExt}`));
+      expect(path).toBe(join(homedir(), '.local', 'share', 'heyiam', 'daemon', `heyiam-tray${expectedExt}`));
     });
 
     it('lives inside getDaemonDir', () => {

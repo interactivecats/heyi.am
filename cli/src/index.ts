@@ -482,7 +482,7 @@ program
     const { existsSync, readFileSync } = await import('node:fs');
     const { join } = await import('node:path');
     const { homedir } = await import('node:os');
-    const pidFile = join(homedir(), '.config', 'heyiam', 'daemon', 'daemon.pid');
+    const pidFile = join(homedir(), '.local', 'share', 'heyiam', 'daemon', 'daemon.pid');
     let daemonRunning = false;
     if (existsSync(pidFile)) {
       const pid = parseInt(readFileSync(pidFile, 'utf-8').trim(), 10);
@@ -490,7 +490,7 @@ program
     }
 
     // Status file
-    const statusFile = join(homedir(), '.config', 'heyiam', 'daemon', 'status.json');
+    const statusFile = join(homedir(), '.local', 'share', 'heyiam', 'daemon', 'status.json');
     let lastSync = 'never';
     if (existsSync(statusFile)) {
       try {
@@ -538,7 +538,7 @@ daemon
     const { spawn } = await import('node:child_process');
     const { writeFileSync, mkdirSync } = await import('node:fs');
 
-    const daemonDir = join(homedir(), '.config', 'heyiam', 'daemon');
+    const daemonDir = join(homedir(), '.local', 'share', 'heyiam', 'daemon');
     const binaryPath = join(daemonDir, 'heyiam-tray');
     const pidFile = join(daemonDir, 'daemon.pid');
 
@@ -572,7 +572,7 @@ daemon
     const { join } = await import('node:path');
     const { homedir } = await import('node:os');
 
-    const pidFile = join(homedir(), '.config', 'heyiam', 'daemon', 'daemon.pid');
+    const pidFile = join(homedir(), '.local', 'share', 'heyiam', 'daemon', 'daemon.pid');
 
     if (!existsSync(pidFile)) {
       console.log('\n  Daemon is not running.\n');
@@ -598,7 +598,7 @@ daemon
     const { join } = await import('node:path');
     const { homedir } = await import('node:os');
 
-    const daemonDir = join(homedir(), '.config', 'heyiam', 'daemon');
+    const daemonDir = join(homedir(), '.local', 'share', 'heyiam', 'daemon');
     const pidFile = join(daemonDir, 'daemon.pid');
     const statusFile = join(daemonDir, 'status.json');
     const binaryPath = join(daemonDir, 'heyiam-tray');
@@ -684,7 +684,7 @@ daemon
     const { homedir } = await import('node:os');
 
     // Stop first
-    const pidFile = join(homedir(), '.config', 'heyiam', 'daemon', 'daemon.pid');
+    const pidFile = join(homedir(), '.local', 'share', 'heyiam', 'daemon', 'daemon.pid');
     if (existsSync(pidFile)) {
       const pid = parseInt((await import('node:fs')).readFileSync(pidFile, 'utf-8').trim(), 10);
       try { process.kill(pid, 'SIGTERM'); } catch { /* already dead */ }
@@ -692,7 +692,7 @@ daemon
     }
 
     // Remove binary
-    const binaryPath = join(homedir(), '.config', 'heyiam', 'daemon', 'heyiam-tray');
+    const binaryPath = join(homedir(), '.local', 'share', 'heyiam', 'daemon', 'heyiam-tray');
     if (existsSync(binaryPath)) unlinkSync(binaryPath);
 
     // Remove auto-start registration (macOS launchd, Linux XDG)
