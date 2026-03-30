@@ -48,7 +48,7 @@ defmodule HeyiAmAppWeb.DashboardLive do
             </p>
           </div>
 
-          <div :if={project.shares != []} class="project-visibility-control">
+          <div :if={project.shares != [] and project_status(project) != "archived"} class="project-visibility-control">
             <form phx-change="update_project_status" phx-value-project-id={project.id}>
               <div class="segmented-control">
                 <label class={"segmented-control-option #{if project_status(project) == "draft", do: "segmented-control-option--active segmented-control-option--draft"}"}>
@@ -191,7 +191,8 @@ defmodule HeyiAmAppWeb.DashboardLive do
 
       project ->
         project_with_shares = Projects.get_project_with_all_shares(user.id, project.slug)
-        results = Enum.map(project_with_shares.shares, &Shares.update_share(&1, %{status: status}))
+        active_shares = Enum.reject(project_with_shares.shares, &(&1.status == "archived"))
+        results = Enum.map(active_shares, &Shares.update_share(&1, %{status: status}))
         failed = Enum.count(results, &match?({:error, _}, &1))
 
         if failed > 0 do
@@ -239,9 +240,14 @@ defmodule HeyiAmAppWeb.DashboardLive do
   defp format_number(n), do: "#{n}"
 
   defp project_status(project) do
-    statuses = Enum.map(project.shares, & &1.status) |> Enum.uniq()
+    statuses =
+      project.shares
+      |> Enum.reject(&(&1.status == "archived"))
+      |> Enum.map(& &1.status)
+      |> Enum.uniq()
 
     cond do
+      statuses == [] -> "archived"
       statuses == ["listed"] -> "listed"
       statuses == ["draft"] -> "draft"
       statuses == ["unlisted"] -> "unlisted"

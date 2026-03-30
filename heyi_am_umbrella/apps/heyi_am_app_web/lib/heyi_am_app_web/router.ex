@@ -109,7 +109,7 @@ defmodule HeyiAmAppWeb.Router do
   end
 
   # Dev mailbox
-  if Application.compile_env(:heyi_am, :dev_routes) do
+  if Application.compile_env(:heyi_am_app_web, :dev_routes) do
     scope "/dev" do
       pipe_through :browser
 

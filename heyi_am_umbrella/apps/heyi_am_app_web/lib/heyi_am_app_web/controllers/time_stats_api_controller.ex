@@ -36,7 +36,7 @@ defmodule HeyiAmAppWeb.TimeStatsApiController do
     projects
     |> Enum.with_index(1)
     |> Enum.map(fn {p, idx} ->
-      name = if anonymized, do: "Project #{<<64 + idx>>}", else: p["name"] || "Untitled"
+      name = if anonymized, do: "Project #{idx}", else: p["name"] || "Untitled"
 
       %{
         "name" => name,

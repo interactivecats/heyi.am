@@ -42,6 +42,10 @@ defmodule HeyiAmAppWeb.PreviewController do
   defp render_preview(conn, html, title) do
     conn
     |> put_resp_header("content-type", "text/html; charset=utf-8")
+    |> put_resp_header(
+      "content-security-policy",
+      "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'none'; frame-src 'none'"
+    )
     |> send_resp(200, preview_shell(html, title))
   end
 

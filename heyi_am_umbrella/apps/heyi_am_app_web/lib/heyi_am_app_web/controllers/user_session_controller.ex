@@ -115,7 +115,7 @@ defmodule HeyiAmAppWeb.UserSessionController do
         # Set return path to device auth if device_code is present
         conn =
           if device_code && device_code != "" do
-            put_session(conn, :user_return_to, "/device?code=#{device_code}")
+            put_session(conn, :user_return_to, "/device?code=#{URI.encode_www_form(device_code)}")
           else
             conn
           end
