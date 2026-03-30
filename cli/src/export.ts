@@ -439,11 +439,14 @@ export function generateProjectHtmlFragment(
   const { result, slug, title, sessionCards, totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged, totalTokens } =
     buildProjectRenderInputs(dirName, cache, sessions, username, opts);
 
+  const screenshotUrl = resolveScreenshotDataUri(dirName, cache);
+
   const renderData = buildProjectRenderData({
     username, slug, title,
     narrative: result.narrative,
     repoUrl: cache.repoUrl,
     projectUrl: cache.projectUrl,
+    screenshotUrl,
     timeline: result.timeline.map((t) => ({ period: t.period, label: t.label, sessions: t.sessions as unknown as Array<Record<string, unknown>> })),
     skills: result.skills,
     totalSessions: sessions.length,
