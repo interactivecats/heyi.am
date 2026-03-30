@@ -32,8 +32,13 @@ defmodule HeyiAmPublicWeb.PortfolioController do
             )
 
           _ ->
-            render(conn, :empty_portfolio,
+            projects =
+              Projects.list_user_projects_with_published_shares(user.id)
+              |> Enum.filter(fn p -> p.rendered_html && p.shares != [] end)
+
+            render(conn, :portfolio,
               portfolio_user: user,
+              projects: projects,
               page_title: display_name,
               og_title: "#{display_name} — heyi.am",
               og_description: og_description,

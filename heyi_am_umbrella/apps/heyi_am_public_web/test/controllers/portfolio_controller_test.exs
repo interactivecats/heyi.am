@@ -19,7 +19,7 @@ defmodule HeyiAmPublicWeb.PortfolioControllerTest do
 
       conn = get(conn, "/emptydev")
       response = html_response(conn, 200)
-      assert response =~ "No sessions shared yet"
+      assert response =~ "No published projects yet"
     end
 
     test "returns 404 for unknown username", %{conn: conn} do

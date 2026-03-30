@@ -71,75 +71,44 @@ defmodule HeyiAmAppWeb.DashboardLiveTest do
     end
   end
 
-  describe "update_status" do
-    test "changes session status", %{conn: conn} do
+  describe "update_project_status" do
+    test "changes all sessions in a project to the new status", %{conn: conn} do
       user = make_user()
-      share = share_fixture(%{user_id: user.id, status: "draft", title: "Status Test"})
+      {:ok, project} = Projects.create_project(%{slug: "vis-proj", title: "Visibility Project", user_id: user.id})
+      share1 = share_fixture(%{user_id: user.id, project_id: project.id, status: "draft", title: "Session A"})
+      share2 = share_fixture(%{user_id: user.id, project_id: project.id, status: "draft", title: "Session B"})
 
       {:ok, lv, _html} =
         conn
         |> log_in_user(user)
         |> live(~p"/dashboard")
 
-      html =
-        lv
-        |> element("#share-#{share.id} form")
-        |> render_change(%{"status" => "listed", "share-id" => to_string(share.id)})
+      render_hook(lv, "update_project_status", %{
+        "project-id" => to_string(project.id),
+        "status" => "listed"
+      })
 
-      assert html =~ "Published"
-
-      updated = Shares.get_share_by_token!(share.token)
-      assert updated.status == "listed"
+      assert Shares.get_share_by_token!(share1.token).status == "listed"
+      assert Shares.get_share_by_token!(share2.token).status == "listed"
     end
 
-    test "cannot update another user's session", %{conn: conn} do
+    test "cannot update another user's project", %{conn: conn} do
       user1 = make_user()
       user2 = make_user()
-      share = share_fixture(%{user_id: user1.id, status: "draft"})
+      {:ok, project} = Projects.create_project(%{slug: "other-proj", title: "Other", user_id: user1.id})
+      share = share_fixture(%{user_id: user1.id, project_id: project.id, status: "draft"})
 
       {:ok, lv, _html} =
         conn
         |> log_in_user(user2)
         |> live(~p"/dashboard")
 
-      assert render_hook(lv, "update_status", %{"share-id" => to_string(share.id), "status" => "listed"}) =~
-               "Session not found"
+      assert render_hook(lv, "update_project_status", %{
+               "project-id" => to_string(project.id),
+               "status" => "listed"
+             }) =~ "Project not found"
 
-      unchanged = Shares.get_share_by_token!(share.token)
-      assert unchanged.status == "draft"
-    end
-  end
-
-  describe "delete_session" do
-    test "deletes a session", %{conn: conn} do
-      user = make_user()
-      share = share_fixture(%{user_id: user.id, title: "To Delete"})
-
-      {:ok, lv, _html} =
-        conn
-        |> log_in_user(user)
-        |> live(~p"/dashboard")
-
-      html = render_click(lv, "delete_session", %{"share-id" => to_string(share.id)})
-
-      assert html =~ "Session deleted"
-      refute Shares.get_share_by_token(share.token)
-    end
-
-    test "cannot delete another user's session", %{conn: conn} do
-      user1 = make_user()
-      user2 = make_user()
-      share = share_fixture(%{user_id: user1.id})
-
-      {:ok, lv, _html} =
-        conn
-        |> log_in_user(user2)
-        |> live(~p"/dashboard")
-
-      assert render_click(lv, "delete_session", %{"share-id" => to_string(share.id)}) =~
-               "Session not found"
-
-      assert Shares.get_share_by_token(share.token)
+      assert Shares.get_share_by_token!(share.token).status == "draft"
     end
   end
 end

@@ -1,0 +1,49 @@
+<.public_shell logo_href={"/" <> @portfolio_user.username} current_page="Portfolio">
+  <:nav_item href={"/" <> @portfolio_user.username} label="Portfolio" />
+  <:nav_item href={"/" <> @portfolio_user.username <> "/time"} label="Time" />
+  <:status>
+    <span class="topbar-status">@{@portfolio_user.username}</span>
+  </:status>
+
+  <div class="portfolio-page">
+    <div class="portfolio-page-header">
+      <h1 class="portfolio-page-name">
+        {@portfolio_user.display_name || @portfolio_user.username}
+      </h1>
+      <p :if={@portfolio_user.bio} class="portfolio-page-bio">{@portfolio_user.bio}</p>
+    </div>
+
+    <%= if @projects == [] do %>
+      <div class="portfolio-page-empty">
+        <p class="body-md" style="color: var(--on-surface-variant);">
+          No published projects yet.
+        </p>
+      </div>
+    <% else %>
+      <div class="portfolio-project-list">
+        <a :for={project <- @projects}
+           href={"/" <> @portfolio_user.username <> "/" <> project.slug}
+           class="portfolio-project-card"
+        >
+          <div class="portfolio-project-card-body">
+            <h2 class="portfolio-project-title">{project.title}</h2>
+            <p :if={project.narrative} class="portfolio-project-narrative">
+              {String.slice(project.narrative, 0, 160)}
+            </p>
+            <div :if={project.skills != []} class="portfolio-project-skills">
+              <span :for={skill <- Enum.take(project.skills, 5)} class="chip">{skill}</span>
+              <span :if={length(project.skills) > 5} class="chip" style="color: var(--outline); background: transparent;">
+                +{length(project.skills) - 5}
+              </span>
+            </div>
+            <div class="portfolio-project-stats">
+              <span>{length(project.shares)} sessions</span>
+              <span :if={project.total_duration_minutes}>{format_duration(project.total_duration_minutes)}</span>
+              <span :if={project.total_loc}>{format_number(project.total_loc)} lines</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    <% end %>
+  </div>
+</.public_shell>

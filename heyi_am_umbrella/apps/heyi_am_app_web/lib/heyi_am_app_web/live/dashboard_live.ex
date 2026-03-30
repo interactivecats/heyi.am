@@ -107,94 +107,42 @@ defmodule HeyiAmAppWeb.DashboardLive do
           <span :if={length(project.skills) > 5} class="chip chip--more">+{length(project.skills) - 5}</span>
         </div>
 
-        <details class="project-sessions" open={has_recent_uploads?(project.shares)}>
+        <details class="project-sessions" open>
           <summary class="project-sessions-toggle">
             <span class="label-md">Sessions</span>
             <span class="label-sm" style="color: var(--outline);">
-              {count_by_status(project.shares)}
+              {length(project.shares)} uploaded
             </span>
           </summary>
           <div class="project-sessions-list">
             <div :for={share <- project.shares} class="session-row" id={"share-#{share.id}"}>
               <div class="session-row-main">
-                <.session_title_link share={share} username={@current_scope.user.username} />
-                <span :if={is_recent?(share)} class="badge-new">New</span>
+                <.session_title_link share={share} username={@current_scope.user.username} project_status={project_status(project)} />
               </div>
-              <div class="session-row-bottom">
-                <div class="session-meta">
-                  <span :if={share.duration_minutes}>{share.duration_minutes}m</span>
-                  <span :if={share.files_changed}>{share.files_changed} files</span>
-                  <span :if={share.loc_changed}>{format_number(share.loc_changed)} lines</span>
-                </div>
-                <div class="session-row-actions">
-                  <form phx-change="update_status" phx-value-share-id={share.id}>
-                    <select name="status" class={"status-select status-select--#{share.status}"}>
-                      <option value="draft" selected={share.status == "draft"}>Private</option>
-                      <option value="unlisted" selected={share.status == "unlisted"}>Unlisted</option>
-                      <option value="listed" selected={share.status == "listed"}>Published</option>
-                    </select>
-                  </form>
-                  <button
-                    phx-click="delete_session"
-                    phx-value-share-id={share.id}
-                    data-confirm="Delete this session? This cannot be undone."
-                    class="btn-delete"
-                    aria-label="Delete session"
-                  >
-                    &times;
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </details>
-
-        <div class="project-card-footer">
-          <button
-            phx-click="delete_project"
-            phx-value-project-id={project.id}
-            data-confirm={"Delete \"#{project.title}\" and all its sessions? This cannot be undone."}
-            class="btn-delete-project"
-          >
-            Delete project
-          </button>
-        </div>
-      </div>
-
-      <div :if={@unassigned != []} class="project-card project-card--unassigned">
-        <div class="project-card-top">
-          <h2 class="title-lg" style="color: var(--on-surface-variant);">Unassigned Sessions</h2>
-        </div>
-        <div class="project-sessions-list">
-          <div :for={share <- @unassigned} class="session-row" id={"share-#{share.id}"}>
-            <div class="session-row-main">
-              <.session_title_link share={share} username={@current_scope.user.username} />
-              <span :if={is_recent?(share)} class="badge-new">New</span>
-            </div>
-            <div class="session-row-bottom">
               <div class="session-meta">
                 <span :if={share.duration_minutes}>{share.duration_minutes}m</span>
                 <span :if={share.files_changed}>{share.files_changed} files</span>
                 <span :if={share.loc_changed}>{format_number(share.loc_changed)} lines</span>
               </div>
-              <div class="session-row-actions">
-                <form phx-change="update_status" phx-value-share-id={share.id}>
-                  <select name="status" class={"status-select status-select--#{share.status}"}>
-                    <option value="draft" selected={share.status == "draft"}>Private</option>
-                    <option value="unlisted" selected={share.status == "unlisted"}>Unlisted</option>
-                    <option value="listed" selected={share.status == "listed"}>Published</option>
-                  </select>
-                </form>
-                <button
-                  phx-click="delete_session"
-                  phx-value-share-id={share.id}
-                  data-confirm="Delete this session? This cannot be undone."
-                  class="btn-delete"
-                  aria-label="Delete session"
-                >
-                  &times;
-                </button>
-              </div>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div :if={@unassigned != []} class="project-card project-card--unassigned">
+        <div class="project-card-top">
+          <h2 class="title-lg" style="color: var(--on-surface-variant);">Unassigned Sessions</h2>
+          <span class="label-sm" style="color: var(--outline);">{length(@unassigned)} sessions not linked to a project</span>
+        </div>
+        <div class="project-sessions-list">
+          <div :for={share <- @unassigned} class="session-row" id={"share-#{share.id}"}>
+            <div class="session-row-main">
+              <span class="title-sm session-title">{share.title}</span>
+            </div>
+            <div class="session-meta">
+              <span :if={share.duration_minutes}>{share.duration_minutes}m</span>
+              <span :if={share.files_changed}>{share.files_changed} files</span>
+              <span :if={share.loc_changed}>{format_number(share.loc_changed)} lines</span>
             </div>
           </div>
         </div>
@@ -203,10 +151,14 @@ defmodule HeyiAmAppWeb.DashboardLive do
     """
   end
 
+  attr :share, :map, required: true
+  attr :username, :string, required: true
+  attr :project_status, :string, required: true
+
   defp session_title_link(assigns) do
     ~H"""
     <%= cond do %>
-      <% @share.status in ["listed", "unlisted"] && @share.token -> %>
+      <% @project_status in ["listed", "unlisted"] && @share.token -> %>
         <a href={"#{public_url()}/s/#{@share.token}"} target="_blank" class="title-sm session-title session-title--link">
           {@share.title}
         </a>
@@ -221,24 +173,6 @@ defmodule HeyiAmAppWeb.DashboardLive do
   end
 
   @impl true
-  def handle_event("update_status", %{"share-id" => share_id, "status" => status}, socket) do
-    user = socket.assigns.current_scope.user
-
-    case Shares.get_user_share(user.id, share_id) do
-      nil ->
-        {:noreply, put_flash(socket, :error, "Session not found.")}
-
-      share ->
-        case Shares.update_share(share, %{status: status}) do
-          {:ok, _share} ->
-            {:noreply, load_data(socket, user)}
-
-          {:error, _changeset} ->
-            {:noreply, put_flash(socket, :error, "Could not update status.")}
-        end
-    end
-  end
-
   def handle_event("update_project_status", %{"project-id" => project_id, "status" => status}, socket)
       when status in ["draft", "unlisted", "listed"] do
     user = socket.assigns.current_scope.user
@@ -256,46 +190,6 @@ defmodule HeyiAmAppWeb.DashboardLive do
           {:noreply, socket |> put_flash(:error, "#{failed} session(s) failed to update.") |> load_data(user)}
         else
           {:noreply, load_data(socket, user)}
-        end
-    end
-  end
-
-  def handle_event("delete_project", %{"project-id" => project_id}, socket) do
-    user = socket.assigns.current_scope.user
-
-    case Projects.get_user_project(user.id, project_id) do
-      nil ->
-        {:noreply, put_flash(socket, :error, "Project not found.")}
-
-      project ->
-        # Delete all sessions belonging to this project first
-        project_with_shares = Projects.get_project_with_all_shares(user.id, project.slug)
-        Enum.each(project_with_shares.shares, &Shares.delete_share/1)
-
-        case Projects.delete_project(project) do
-          {:ok, _} ->
-            {:noreply, socket |> put_flash(:info, "Project deleted.") |> load_data(user)}
-
-          {:error, _} ->
-            {:noreply, put_flash(socket, :error, "Could not delete project.")}
-        end
-    end
-  end
-
-  def handle_event("delete_session", %{"share-id" => share_id}, socket) do
-    user = socket.assigns.current_scope.user
-
-    case Shares.get_user_share(user.id, share_id) do
-      nil ->
-        {:noreply, put_flash(socket, :error, "Session not found.")}
-
-      share ->
-        case Shares.delete_share(share) do
-          {:ok, _} ->
-            {:noreply, socket |> put_flash(:info, "Session deleted.") |> load_data(user)}
-
-          {:error, _} ->
-            {:noreply, put_flash(socket, :error, "Could not delete session.")}
         end
     end
   end
@@ -349,32 +243,4 @@ defmodule HeyiAmAppWeb.DashboardLive do
     end
   end
 
-  defp is_recent?(share) do
-    case share.inserted_at do
-      nil -> false
-      ts -> DateTime.diff(DateTime.utc_now(), ts, :second) < 3600
-    end
-  end
-
-  defp has_recent_uploads?(shares) do
-    Enum.any?(shares, &is_recent?/1)
-  end
-
-  defp count_by_status(shares) do
-    listed = Enum.count(shares, &(&1.status == "listed"))
-    draft = Enum.count(shares, &(&1.status == "draft"))
-    unlisted = Enum.count(shares, &(&1.status == "unlisted"))
-    archived = Enum.count(shares, &(&1.status == "archived"))
-
-    parts =
-      [
-        if(listed > 0, do: "#{listed} published"),
-        if(unlisted > 0, do: "#{unlisted} unlisted"),
-        if(draft > 0, do: "#{draft} private"),
-        if(archived > 0, do: "#{archived} archived")
-      ]
-      |> Enum.reject(&is_nil/1)
-
-    Enum.join(parts, ", ")
-  end
 end
