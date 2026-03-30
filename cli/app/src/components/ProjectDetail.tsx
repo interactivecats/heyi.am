@@ -138,6 +138,7 @@ export function ProjectDetail() {
   const [selectedSession, setSelectedSession] = useState<Session | null>(null)
 
   // Project metadata fields
+  const [projectTitle, setProjectTitle] = useState('')
   const [repoUrl, setRepoUrl] = useState('')
   const [projectUrl, setProjectUrl] = useState('')
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null)
@@ -152,6 +153,7 @@ export function ProjectDetail() {
       .then((d) => {
         setDetail(d)
         // Populate metadata from enhance cache
+        if (d.enhanceCache?.title) setProjectTitle(d.enhanceCache.title)
         if (d.enhanceCache?.repoUrl) setRepoUrl(d.enhanceCache.repoUrl)
         if (d.enhanceCache?.projectUrl) setProjectUrl(d.enhanceCache.projectUrl)
         if (d.enhanceCache?.screenshotBase64) setScreenshotPreview(d.enhanceCache.screenshotBase64)
@@ -173,9 +175,9 @@ export function ProjectDetail() {
       dirName,
       cache?.selectedSessionIds ?? [],
       cache?.result ?? { narrative: '', arc: [], skills: [], timeline: [], questions: [] },
-      { repoUrl: repoUrl || undefined, projectUrl: projectUrl || undefined, screenshotBase64: screenshotPreview ?? undefined },
+      { title: projectTitle || undefined, repoUrl: repoUrl || undefined, projectUrl: projectUrl || undefined, screenshotBase64: screenshotPreview ?? undefined },
     ).then(() => setMetadataDirty(false)).catch(() => {})
-  }, [dirName, detail, repoUrl, projectUrl, screenshotPreview])
+  }, [dirName, detail, projectTitle, repoUrl, projectUrl, screenshotPreview])
 
   useEffect(() => {
     if (!metadataDirty) return
@@ -381,7 +383,13 @@ export function ProjectDetail() {
       <main className="p-6 overflow-y-auto max-w-[1200px] mx-auto">
         <div className="flex items-center justify-between mb-1">
           <div>
-            <h2 className="font-display text-xl font-bold text-on-surface">{project.name}</h2>
+            <input
+              type="text"
+              value={projectTitle}
+              placeholder={project.name}
+              onChange={(e) => { setProjectTitle(e.target.value); setMetadataDirty(true) }}
+              className="font-display text-xl font-bold text-on-surface bg-transparent border-none outline-none w-full hover:bg-surface-low focus:bg-surface-low rounded px-1 -ml-1 transition-colors placeholder:text-on-surface-variant/50"
+            />
             <span className="text-on-surface-variant text-[0.8125rem]">
               {project.dateRange
                 ? typeof project.dateRange === 'string'

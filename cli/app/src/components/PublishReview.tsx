@@ -38,7 +38,7 @@ export function PublishReview() {
 
     const cache = detail?.enhanceCache
     const project = detail?.project
-    const name = project?.name ?? projectNameFromDir(dirName)
+    const name = cache?.title || project?.name || projectNameFromDir(dirName)
     const payload = {
       title: name,
       slug: slugify(name),

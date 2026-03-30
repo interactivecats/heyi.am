@@ -127,6 +127,7 @@ export interface ProjectEnhanceCacheResponse {
   fingerprint: string
   enhancedAt: string
   selectedSessionIds: string[]
+  title?: string
   repoUrl?: string
   projectUrl?: string
   screenshotBase64?: string
