@@ -38,6 +38,7 @@ export interface VibeStats {
     total_turns: number;
     session_count: number;
     total_duration_min: number;
+    total_tokens: number;
     sources: SessionSource[];
     source_breakdown: Record<string, number>;
 }

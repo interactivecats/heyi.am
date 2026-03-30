@@ -149,6 +149,24 @@ async function listClaudeSessions() {
                 const sessionId = file.name.replace(/\.jsonl$/, "");
                 await tryAddSession(fullPath, sessionId, projectDir, false, parents);
             }
+            else if (file.isDirectory()) {
+                // Subagent sessions live in <session-id>/subagents/*.jsonl
+                const subagentsDir = join(projectPath, file.name, "subagents");
+                let subFiles;
+                try {
+                    subFiles = await readdir(subagentsDir, { withFileTypes: true });
+                }
+                catch {
+                    continue;
+                }
+                for (const sub of subFiles) {
+                    if (sub.name.endsWith(".jsonl") && !sub.isDirectory()) {
+                        const fullPath = join(subagentsDir, sub.name);
+                        const sessionId = sub.name.replace(/\.jsonl$/, "");
+                        await tryAddSession(fullPath, sessionId, projectDir, true, parents);
+                    }
+                }
+            }
         }
     }
     return parents;

@@ -34,6 +34,7 @@ function makeStats(overrides = {}) {
         total_turns: 847,
         session_count: 23,
         total_duration_min: 480,
+        total_tokens: 18_100_000,
         sources: ["claude", "cursor"],
         source_breakdown: { claude: 15, cursor: 8 },
         ...overrides,
@@ -125,6 +126,23 @@ describe("renderCard", () => {
         expect(output).not.toContain("Scope creep:");
         expect(output).not.toContain("Apologies:");
         expect(output).not.toContain("Self-corrections:");
+        spy.mockRestore();
+    });
+    it("shows token count in footer", () => {
+        const spy = vi.spyOn(console, "log").mockImplementation(() => { });
+        const stats = makeStats({ total_tokens: 18_100_000 });
+        renderCard(stats, TEST_HEADLINE, null);
+        const output = spy.mock.calls[0][0];
+        const plain = output.replace(/\x1b\[[0-9;]*m/g, "");
+        expect(plain).toContain("18.1M tokens");
+        spy.mockRestore();
+    });
+    it("hides token count when zero", () => {
+        const spy = vi.spyOn(console, "log").mockImplementation(() => { });
+        const stats = makeStats({ total_tokens: 0 });
+        renderCard(stats, TEST_HEADLINE, null);
+        const output = spy.mock.calls[0][0];
+        expect(output).not.toContain("tokens");
         spy.mockRestore();
     });
     it("renders without narrative", () => {

@@ -227,6 +227,7 @@ export function computeVibeStats(sessions) {
     const activeDays = new Set(); // track unique days for avg daily hours
     let totalTurns = 0;
     let totalDurationMin = 0;
+    let totalTokens = 0;
     const sourcesSet = new Set();
     const sourceCount = {};
     for (const session of sessions) {
@@ -238,6 +239,10 @@ export function computeVibeStats(sessions) {
         totalDurationMin += analysis.duration_ms > 0
             ? Math.max(1, Math.round(analysis.duration_ms / 60_000))
             : 0;
+        if (analysis.token_usage) {
+            totalTokens += (analysis.token_usage.input_tokens ?? 0)
+                + (analysis.token_usage.output_tokens ?? 0);
+        }
         // Track previous entry type for correction detection
         let prevEntryWasAssistant = false;
         let currentToolChain = 0;
@@ -479,6 +484,7 @@ export function computeVibeStats(sessions) {
         total_turns: totalTurns,
         session_count: sessions.length,
         total_duration_min: totalDurationMin,
+        total_tokens: totalTokens,
         sources: [...sourcesSet],
         source_breakdown: sourceCount,
     };

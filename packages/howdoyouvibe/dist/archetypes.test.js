@@ -35,6 +35,7 @@ function makeStats(overrides = {}) {
         total_turns: 100,
         session_count: 5,
         total_duration_min: 60,
+        total_tokens: 0,
         sources: ["claude"],
         source_breakdown: { claude: 5 },
         ...overrides,

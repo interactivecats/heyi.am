@@ -41,6 +41,14 @@ function isZero(v) {
 function fmt(n) {
     return n >= 1000 ? n.toLocaleString() : String(n);
 }
+/** Format token counts as human-readable (e.g., "18.1M", "450K") */
+function fmtTokens(n) {
+    if (n >= 1_000_000)
+        return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000)
+        return `${(n / 1_000).toFixed(0)}K`;
+    return String(n);
+}
 /** Add a "wow" comment for extreme stat values */
 function wow(label, value, thresholds) {
     for (const [t, comment] of thresholds) {
@@ -115,7 +123,8 @@ export function renderCard(stats, headline, narrative) {
         lines.push(`${INDENT}${parts.join("  ·  ")}`);
     }
     const dailyHours = stats.avg_daily_hours > 0 ? `  ·  ${c.cyan}${stats.avg_daily_hours}${c.reset}h/day avg` : "";
-    lines.push(`${INDENT}${c.cyan}${fmt(stats.total_turns)}${c.reset} turns across ${c.cyan}${stats.session_count}${c.reset} sessions${dailyHours}`);
+    const tokenStr = stats.total_tokens > 0 ? `  ·  ${c.cyan}${fmtTokens(stats.total_tokens)}${c.reset} tokens` : "";
+    lines.push(`${INDENT}${c.cyan}${fmt(stats.total_turns)}${c.reset} turns across ${c.cyan}${stats.session_count}${c.reset} sessions${dailyHours}${tokenStr}`);
     lines.push(`${INDENT}For entertainment only. Stats use simple regex matching and may not be 100% accurate.`);
     lines.push("");
     console.log(lines.join("\n"));
@@ -256,6 +265,8 @@ export function formatTextBlock(stats, headline, narrative) {
     footerParts.push(`${fmt(stats.total_turns)} turns · ${stats.session_count} sessions`);
     if (stats.avg_daily_hours > 0)
         footerParts.push(`${stats.avg_daily_hours}h/day`);
+    if (stats.total_tokens > 0)
+        footerParts.push(`${fmtTokens(stats.total_tokens)} tokens`);
     lines.push(footerParts.join(" · "));
     lines.push(`npx howdoyouvibe`);
     return lines.join("\n");

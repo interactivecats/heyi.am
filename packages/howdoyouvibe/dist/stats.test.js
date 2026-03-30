@@ -578,5 +578,36 @@ describe("computeVibeStats", () => {
         const stats = computeVibeStats([makeSession(entries)]);
         expect(stats.self_corrections).toBe(0);
     });
+    it("aggregates total_tokens from session token_usage", () => {
+        const entries = [
+            makeEntry("user", "help"),
+            makeEntry("assistant", "OK."),
+        ];
+        const session = makeSession(entries);
+        session.analysis.token_usage = {
+            input_tokens: 1000,
+            output_tokens: 500,
+            cache_read_input_tokens: 200,
+            cache_creation_input_tokens: 100,
+        };
+        const session2 = makeSession(entries);
+        session2.analysis.token_usage = {
+            input_tokens: 3000,
+            output_tokens: 1500,
+            cache_read_input_tokens: 0,
+            cache_creation_input_tokens: 0,
+        };
+        const stats = computeVibeStats([session, session2]);
+        // total_tokens = (1000+500) + (3000+1500) = 6000
+        expect(stats.total_tokens).toBe(6000);
+    });
+    it("sets total_tokens to 0 when no token_usage exists", () => {
+        const entries = [
+            makeEntry("user", "help"),
+            makeEntry("assistant", "OK."),
+        ];
+        const stats = computeVibeStats([makeSession(entries)]);
+        expect(stats.total_tokens).toBe(0);
+    });
 });
 //# sourceMappingURL=stats.test.js.map
