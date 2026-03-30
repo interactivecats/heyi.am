@@ -56,10 +56,12 @@ defmodule HeyiAmAppWeb.ShareApiController do
             existing_log_key = "sessions/#{share.token}/log.json"
             existing_session_key = "sessions/#{share.token}/session.json"
 
+            # Preserve existing visibility — don't reset a published session to unlisted
             Shares.update_share(
               share,
               attrs
               |> Map.delete("token")
+              |> Map.delete("status")
               |> Map.put("raw_storage_key", existing_raw_key)
               |> Map.put("log_storage_key", existing_log_key)
               |> Map.put("session_storage_key", existing_session_key)
