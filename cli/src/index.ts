@@ -673,6 +673,22 @@ daemon
     console.log('\n  Daemon uninstalled.\n');
   });
 
+// ── Logout command ──────────────────────────────────────────
+
+program
+  .command('logout')
+  .description('Disconnect from heyiam.com (remove stored auth token)')
+  .action(async () => {
+    const { getAuthToken, deleteAuthToken } = await import('./auth.js');
+    const auth = getAuthToken();
+    if (!auth) {
+      console.log('\n  Not currently logged in.\n');
+      return;
+    }
+    deleteAuthToken();
+    console.log(`\n  Logged out from @${auth.username}.\n`);
+  });
+
 // ── Helpers ──────────────────────────────────────────────────
 
 function formatDateShort(iso: string): string {
@@ -693,7 +709,7 @@ const isDirectRun = resolvedArgv.endsWith('/dist/index.js') ||
 
 if (isDirectRun) {
   const args = process.argv.slice(2);
-  const knownCommands = ['open', 'time', 'search', 'context', 'reindex', 'archive', 'sync', 'status', 'daemon'];
+  const knownCommands = ['open', 'time', 'search', 'context', 'reindex', 'archive', 'sync', 'status', 'daemon', 'logout'];
   if (args.length === 0 || !knownCommands.includes(args[0])) {
     process.argv.splice(2, 0, 'open');
   }

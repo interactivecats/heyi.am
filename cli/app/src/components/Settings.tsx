@@ -4,6 +4,7 @@ import {
   fetchApiKeyStatus,
   saveApiKey,
   fetchAuthStatus,
+  logout,
   type ApiKeyStatus,
   type AuthStatus,
 } from '../api'
@@ -14,6 +15,7 @@ export function Settings() {
   const [keyInput, setKeyInput] = useState('')
   const [showKey, setShowKey] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
   const [loading, setLoading] = useState(true)
 
   const [privacyDefaults, setPrivacyDefaults] = useState({
@@ -53,6 +55,16 @@ export function Settings() {
       setShowKey(false)
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleLogout() {
+    setLoggingOut(true)
+    try {
+      await logout()
+      setAuth({ authenticated: false })
+    } finally {
+      setLoggingOut(false)
     }
   }
 
@@ -174,6 +186,13 @@ export function Settings() {
                   <span className="text-xs text-on-surface-variant">
                     Authenticated via device auth. Required for publishing.
                   </span>
+                  <button
+                    className="ml-auto text-xs font-medium px-2.5 py-1 rounded-md text-on-surface-variant hover:text-on-surface transition-colors"
+                    onClick={handleLogout}
+                    disabled={loggingOut}
+                  >
+                    {loggingOut ? 'Disconnecting...' : 'Disconnect'}
+                  </button>
                 </>
               ) : (
                 <span className="text-[13px] text-on-surface-variant">

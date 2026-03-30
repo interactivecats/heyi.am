@@ -398,6 +398,10 @@ export async function startLogin(): Promise<DeviceCodeInfo> {
   return post<DeviceCodeInfo>('/auth/login')
 }
 
+export async function logout(): Promise<void> {
+  await post('/auth/logout')
+}
+
 // ── Dashboard (SQLite-backed) ─────────────────────────────────
 
 export async function fetchDashboard(): Promise<DashboardResponse> {

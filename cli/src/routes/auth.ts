@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express';
-import { checkAuthStatus, saveAuthToken } from '../auth.js';
+import { checkAuthStatus, saveAuthToken, deleteAuthToken } from '../auth.js';
 import { API_URL } from '../config.js';
 import type { RouteContext } from './context.js';
 
@@ -115,6 +115,16 @@ export function createAuthRouter(_ctx: RouteContext): Router {
       }
     } catch {
       res.status(500).json({ error: 'Poll failed' });
+    }
+  });
+
+  // Logout — delete local auth token
+  router.post('/api/auth/logout', (_req: Request, res: Response) => {
+    try {
+      deleteAuthToken();
+      res.json({ ok: true });
+    } catch {
+      res.status(500).json({ error: 'Failed to remove auth token' });
     }
   });
 
