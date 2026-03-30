@@ -112,6 +112,7 @@ interface BuildProjectRenderOpts {
   totalDurationMinutes: number;
   totalAgentDurationMinutes?: number;
   totalFilesChanged: number;
+  totalTokens?: number;
   sessionCards: SessionCard[];
   allSessionCards?: SessionCard[];
   sessionBaseUrl?: string;
@@ -138,6 +139,7 @@ export function buildProjectRenderData(opts: BuildProjectRenderOpts): ProjectRen
       totalDurationMinutes: opts.totalDurationMinutes,
       totalAgentDurationMinutes: opts.totalAgentDurationMinutes,
       totalFilesChanged: opts.totalFilesChanged,
+      ...(opts.totalTokens ? { totalTokens: opts.totalTokens } : {}),
     },
     sessions: opts.sessionCards,
     allSessions: opts.allSessionCards,

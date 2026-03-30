@@ -42,6 +42,8 @@ export interface SessionAnalysis {
   cwd?: string;
   /** Active time intervals as [startMs, endMs] pairs for overlap-aware project aggregation */
   activeIntervals?: [number, number][];
+  /** Token usage from parser (input + output tokens) */
+  tokenUsage?: { input: number; output: number };
 }
 
 // ── Output types (mirrors cli/app/src/types.ts) ────────────────
@@ -115,6 +117,8 @@ export interface Session {
   source?: string;
   /** Active time intervals as [startMs, endMs] pairs for overlap-aware project aggregation */
   activeIntervals?: [number, number][];
+  /** Token usage: input and output token counts */
+  tokenUsage?: { input: number; output: number };
 }
 
 // ── Skill extraction ───────────────────────────────────────────
@@ -412,5 +416,6 @@ export function analyzeSession(analysis: SessionAnalysis): Session {
     ...(analysis.cwd ? { cwd: analysis.cwd } : {}),
     ...(analysis.source ? { source: analysis.source } : {}),
     ...(analysis.activeIntervals ? { activeIntervals: analysis.activeIntervals } : {}),
+    ...(analysis.tokenUsage ? { tokenUsage: analysis.tokenUsage } : {}),
   };
 }

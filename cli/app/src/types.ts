@@ -95,6 +95,8 @@ export interface Project {
   uploadedSessions?: string[]
   enhancedAt?: string | null
   totalAgentDuration?: number
+  totalInputTokens?: number
+  totalOutputTokens?: number
 }
 
 // ── Enhance / Cache ───────────────────────────────────────────

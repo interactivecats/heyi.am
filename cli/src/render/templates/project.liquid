@@ -45,13 +45,9 @@
   </div>
   {% endif %}
 
-  {%- comment -%} Stats grid {%- endcomment -%}
-  <div class="stat-grid">
-    <div class="stat-card">
-      <div class="stat-card__label">Sessions</div>
-      <div class="stat-card__value">{{ project.totalSessions }}</div>
-    </div>
-    <div class="stat-card">
+  {%- comment -%} Stats: hero time card + compact grid {%- endcomment -%}
+  <div class="stat-hero-layout">
+    <div class="stat-card stat-card--hero">
       <div class="stat-card__label">{{ durationLabel }}</div>
       <div class="stat-card__value">
         {% if project.totalAgentDurationMinutes %}
@@ -60,14 +56,32 @@
           {{ project.totalDurationMinutes | formatDuration }}
         {% endif %}
       </div>
+      {% if efficiencyMultiplier %}
+      <div class="stat-card__sub">
+        <div class="stat-card__label">Efficiency multiplier</div>
+        <div class="stat-card__value stat-card__value--sm">{{ efficiencyMultiplier }}</div>
+      </div>
+      {% endif %}
     </div>
-    <div class="stat-card">
-      <div class="stat-card__label">Lines changed</div>
-      <div class="stat-card__value">{{ project.totalLoc | formatLoc }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card__label">Files</div>
-      <div class="stat-card__value">{{ project.totalFilesChanged }}</div>
+    <div class="stat-grid--compact">
+      <div class="stat-card">
+        <div class="stat-card__label">Sessions</div>
+        <div class="stat-card__value">{{ project.totalSessions }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Lines changed</div>
+        <div class="stat-card__value">{{ project.totalLoc | formatLoc }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Files</div>
+        <div class="stat-card__value">{{ project.totalFilesChanged }}</div>
+      </div>
+      {% if project.totalTokens %}
+      <div class="stat-card">
+        <div class="stat-card__label">Tokens</div>
+        <div class="stat-card__value">{{ project.totalTokens | formatTokens }}</div>
+      </div>
+      {% endif %}
     </div>
   </div>
 

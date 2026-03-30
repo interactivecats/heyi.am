@@ -23,6 +23,12 @@ function formatLoc(loc: number): string {
   return loc >= 1000 ? `${(loc / 1000).toFixed(1)}k` : String(loc)
 }
 
+function formatTokens(tokens: number): string {
+  if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M`
+  if (tokens >= 1000) return `${(tokens / 1000).toFixed(0)}k`
+  return String(tokens)
+}
+
 function formatDate(iso: string): string {
   try {
     return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -43,13 +49,20 @@ function ProjectHero({
   narrative,
   screenshotSrc,
   projectName,
+  humanTime,
+  agentTime,
   stats,
 }: {
   narrative: string
   screenshotSrc?: string
   projectName: string
+  humanTime: string
+  agentTime?: string
   stats: Array<{ label: string; value: string | number }>
 }) {
+  const multiplier = agentTime ? (parseFloat(agentTime) / parseFloat(humanTime)) : undefined
+  const multiplierStr = multiplier && multiplier > 1 ? `${multiplier.toFixed(1)}x` : undefined
+
   return (
     <div className="flex flex-col gap-4 mb-4">
       {screenshotSrc && (
@@ -83,10 +96,36 @@ function ProjectHero({
         </Card>
       )}
 
-      <div className="grid grid-cols-4 gap-3">
-        {stats.map((s) => (
-          <StatCard key={s.label} label={s.label} value={s.value} />
-        ))}
+      {/* Stats: hero time card + compact grid */}
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-3">
+        {/* Hero: time + efficiency */}
+        <div className="bg-surface-lowest border border-ghost rounded-md p-4 flex flex-col justify-between">
+          <div>
+            <div className="font-mono text-[9px] uppercase tracking-wider text-on-surface-variant mb-1">
+              {agentTime ? 'You / Agents' : 'Time'}
+            </div>
+            <div className="font-display font-bold text-on-surface text-2xl">
+              {agentTime ? `${humanTime} / ${agentTime}` : humanTime}
+            </div>
+          </div>
+          {multiplierStr && (
+            <div className="mt-2 pt-2 border-t border-ghost">
+              <div className="font-mono text-[9px] uppercase tracking-wider text-on-surface-variant mb-0.5">
+                Efficiency multiplier
+              </div>
+              <div className="font-display font-bold text-on-surface text-lg">
+                {multiplierStr}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Compact stats grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
+          {stats.map((s) => (
+            <StatCard key={s.label} label={s.label} value={s.value} />
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -394,16 +433,15 @@ export function ProjectDetail() {
               : screenshotSrc
           }
           projectName={project.name}
+          humanTime={formatDuration(project.totalDuration)}
+          agentTime={project.totalAgentDuration ? formatDuration(project.totalAgentDuration) : undefined}
           stats={[
             { label: 'Sessions', value: project.sessionCount },
-            {
-              label: project.totalAgentDuration ? 'You / Agents' : 'Time',
-              value: project.totalAgentDuration
-                ? `${formatDuration(project.totalDuration)} / ${formatDuration(project.totalAgentDuration)}`
-                : formatDuration(project.totalDuration),
-            },
             { label: 'Lines changed', value: formatLoc(project.totalLoc) },
             { label: 'Files', value: project.totalFiles },
+            ...((project.totalInputTokens || project.totalOutputTokens)
+              ? [{ label: 'Tokens', value: formatTokens((project.totalInputTokens ?? 0) + (project.totalOutputTokens ?? 0)) }]
+              : []),
           ]}
         />
 

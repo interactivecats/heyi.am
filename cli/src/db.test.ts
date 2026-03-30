@@ -129,7 +129,7 @@ describe('db', () => {
   describe('openDatabase', () => {
     it('creates schema_version table with current version', () => {
       const row = db.prepare('SELECT version FROM schema_version').get() as { version: number };
-      expect(row.version).toBe(4);
+      expect(row.version).toBe(5);
     });
 
     it('creates sessions table', () => {
@@ -156,7 +156,7 @@ describe('db', () => {
     it('is idempotent — opening twice does not error', () => {
       const db2 = openDatabase(join(tmpDir, 'test.db'));
       const row = db2.prepare('SELECT version FROM schema_version').get() as { version: number };
-      expect(row.version).toBe(4);
+      expect(row.version).toBe(5);
       db2.close();
     });
   });

@@ -733,3 +733,30 @@ describe("sumIntervalMs", () => {
     expect(sumIntervalMs([[0, 100], [200, 350]])).toBe(250);
   });
 });
+
+describe("bridgeToAnalyzer — token usage", () => {
+  it("passes token_usage through to tokenUsage", () => {
+    const parsed = makeParserOutput({
+      token_usage: {
+        input_tokens: 50000,
+        output_tokens: 12000,
+        cache_read_input_tokens: 30000,
+        cache_creation_input_tokens: 5000,
+      },
+    });
+    const result = bridgeToAnalyzer(parsed, {
+      sessionId: "token-test",
+      projectName: "test",
+    });
+    expect(result.tokenUsage).toEqual({ input: 50000, output: 12000 });
+  });
+
+  it("omits tokenUsage when parser has no token_usage", () => {
+    const parsed = makeParserOutput();
+    const result = bridgeToAnalyzer(parsed, {
+      sessionId: "no-tokens",
+      projectName: "test",
+    });
+    expect(result.tokenUsage).toBeUndefined();
+  });
+});

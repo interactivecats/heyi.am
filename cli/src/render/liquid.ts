@@ -30,6 +30,12 @@ engine.registerFilter('formatLoc', (loc: number) => {
   return loc >= 1000 ? `${(loc / 1000).toFixed(1)}k` : String(loc);
 });
 
+engine.registerFilter('formatTokens', (tokens: number) => {
+  if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M`;
+  if (tokens >= 1000) return `${(tokens / 1000).toFixed(0)}k`;
+  return String(tokens);
+});
+
 engine.registerFilter('formatDate', (iso: string) => {
   if (!iso) return '';
   try {
@@ -110,6 +116,10 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
   const growthJson = sessionsJson; // same data for both charts
 
   const durationLabel = data.project.totalAgentDurationMinutes ? 'You / Agents' : 'Time';
+  const efficiencyMultiplier = data.project.totalAgentDurationMinutes && data.project.totalDurationMinutes > 0
+    ? (data.project.totalAgentDurationMinutes / data.project.totalDurationMinutes)
+    : undefined;
+  const efficiencyStr = efficiencyMultiplier && efficiencyMultiplier > 1 ? `${efficiencyMultiplier.toFixed(1)}x` : undefined;
 
   // Pick featured sessions — same logic as ProjectDetail.tsx
   const featuredSessionIds = new Set<string>();
@@ -162,6 +172,7 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
     sessionsJson,
     growthJson,
     durationLabel,
+    efficiencyMultiplier: efficiencyStr,
   });
 }
 

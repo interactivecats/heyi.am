@@ -57,6 +57,7 @@ export interface ProjectDetail {
   totalDurationMinutes: number;
   totalAgentDurationMinutes?: number;
   totalFilesChanged: number;
+  totalTokens?: number;
 }
 
 export interface SessionCard {

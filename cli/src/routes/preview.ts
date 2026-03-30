@@ -145,6 +145,7 @@ export function createPreviewRouter(ctx: RouteContext): Router {
         totalDurationMinutes: projAny.totalDuration as number,
         totalAgentDurationMinutes: projAny.totalAgentDuration as number,
         totalFilesChanged: projAny.totalFiles as number,
+        totalTokens: ((projAny.totalInputTokens as number) || 0) + ((projAny.totalOutputTokens as number) || 0) || undefined,
         sessionCards,
         allSessionCards,
         sessionBaseUrl: `/preview/project/${encodeURIComponent(projectParam)}/session`,

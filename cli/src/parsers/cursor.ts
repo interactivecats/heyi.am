@@ -587,6 +587,19 @@ export async function parseCursorConversation(
   const turns = countTurnsFromBubbles(bubbles);
   const { duration_ms, wall_clock_ms, start_time, end_time, active_intervals } = computeDurationFromBubbles(bubbles);
   const loc_stats = computeLocFromBubbles(bubbles);
+
+  // Aggregate token usage from bubble tokenCount fields
+  let inputTokens = 0;
+  let outputTokens = 0;
+  for (const b of bubbles) {
+    if (b.tokenCount) {
+      inputTokens += b.tokenCount.inputTokens ?? 0;
+      outputTokens += b.tokenCount.outputTokens ?? 0;
+    }
+  }
+  const token_usage = (inputTokens > 0 || outputTokens > 0)
+    ? { input_tokens: inputTokens, output_tokens: outputTokens, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
+    : undefined;
   const raw_entries = bubblesToRawEntries(bubbles, conversationId);
 
   // If no user message exists but we have a conversation name, prepend a
@@ -647,6 +660,7 @@ export async function parseCursorConversation(
     start_time: start_time ?? hintDate,
     end_time: end_time ?? hintEndDate ?? hintDate,
     active_intervals: finalIntervals,
+    token_usage,
   };
 }
 

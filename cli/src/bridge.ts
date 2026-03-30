@@ -61,6 +61,12 @@ export function bridgeToAnalyzer(
     ...(opts.parentSessionId ? { parentSessionId: opts.parentSessionId } : {}),
     source: parsed.source,
     activeIntervals: parsed.active_intervals,
+    ...(parsed.token_usage ? {
+      tokenUsage: {
+        input: parsed.token_usage.input_tokens,
+        output: parsed.token_usage.output_tokens,
+      },
+    } : {}),
   };
 }
 

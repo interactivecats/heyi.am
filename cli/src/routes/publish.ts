@@ -164,6 +164,8 @@ export function createPublishRouter(ctx: RouteContext): Router {
               total_duration_minutes: totalDurationMinutes,
               total_agent_duration_minutes: totalAgentDurationMinutes || null,
               total_files_changed: totalFilesChanged,
+              total_input_tokens: (req.body as Record<string, unknown>).totalInputTokens || null,
+              total_output_tokens: (req.body as Record<string, unknown>).totalOutputTokens || null,
               skipped_sessions: skippedSessions,
             },
           }),

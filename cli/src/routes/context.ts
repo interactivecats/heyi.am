@@ -232,6 +232,9 @@ export function buildSessionList(
       children,
       isOrchestrated: (children?.length ?? 0) > 0,
       childCount: children?.length ?? 0,
+      ...(r.input_tokens || r.output_tokens ? {
+        tokenUsage: { input: r.input_tokens, output: r.output_tokens },
+      } : {}),
     } satisfies Session & { childCount: number };
   });
 }
@@ -258,6 +261,9 @@ export function buildProjectDetail(
     'SELECT COALESCE(SUM(duration_minutes), 0) as total FROM sessions WHERE project_dir = ? AND is_subagent = 1',
   ).get(proj.dirName) as { total: number };
   const totalAgentDuration = totalDuration + agentDurationRow.total;
+  const tokenRow = db.prepare(
+    'SELECT COALESCE(SUM(input_tokens), 0) as input, COALESCE(SUM(output_tokens), 0) as output FROM sessions WHERE project_dir = ?',
+  ).get(proj.dirName) as { input: number; output: number };
   const allSkills = [...new Set(sessionStats.flatMap((s) => s.skills || []))];
 
   const uploaded = getUploadedState(proj.dirName);
@@ -280,6 +286,8 @@ export function buildProjectDetail(
       isUploaded: !!uploaded,
       uploadedSessionCount: uploaded?.uploadedSessions?.length || 0,
       enhancedAt: enhanceCache?.enhancedAt ?? null,
+      totalInputTokens: tokenRow.input,
+      totalOutputTokens: tokenRow.output,
     },
     sessions: sessionStats.filter((s) => s.date),
     enhanceCache: enhanceCache ?? null,
@@ -539,6 +547,8 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
         uploadedSessions: published?.uploadedSessions ?? [],
         enhancedAt: enhanceCache?.enhancedAt ?? null,
         totalAgentDuration: agentRow.total,
+        totalInputTokens: dbStats.totalInputTokens,
+        totalOutputTokens: dbStats.totalOutputTokens,
       };
     }
 
@@ -586,6 +596,8 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
       uploadedSessions: published?.uploadedSessions ?? [],
       enhancedAt: enhanceCache?.enhancedAt ?? null,
       totalAgentDuration,
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
     };
   }
 

@@ -298,6 +298,7 @@ export async function exportHtml(
     .filter((s) => s.isOrchestrated && s.children)
     .reduce((sum, s) => sum + s.children!.reduce((cs, c) => cs + c.durationMinutes, 0), 0);
   const totalAgentDurationMinutes = totalAgentMinutes > 0 ? totalDurationMinutes + totalAgentMinutes : undefined;
+  const totalTokens = sessions.reduce((sum, s) => sum + (s.tokenUsage?.input ?? 0) + (s.tokenUsage?.output ?? 0), 0) || undefined;
 
   // Resolve screenshot for embedding
   const screenshotUrl = resolveScreenshotDataUri(dirName, cache);
@@ -322,6 +323,7 @@ export async function exportHtml(
     totalDurationMinutes,
     totalAgentDurationMinutes,
     totalFilesChanged,
+    totalTokens,
     sessionCards,
     sessionBaseUrl: './sessions',
   });
@@ -413,8 +415,9 @@ function buildProjectRenderInputs(
     .filter((s) => s.isOrchestrated && s.children)
     .reduce((sum, s) => sum + s.children!.reduce((cs, c) => cs + c.durationMinutes, 0), 0);
   const totalAgentDurationMinutes = totalAgentMinutes > 0 ? totalDurationMinutes + totalAgentMinutes : undefined;
+  const totalTokens = sessions.reduce((sum, s) => sum + (s.tokenUsage?.input ?? 0) + (s.tokenUsage?.output ?? 0), 0) || undefined;
 
-  return { result, slug, title, sessionCards, totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged };
+  return { result, slug, title, sessionCards, totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged, totalTokens };
 }
 
 /**
@@ -428,7 +431,7 @@ export function generateProjectHtmlFragment(
   username: string = 'local',
   opts?: ExportOpts,
 ): string {
-  const { result, slug, title, sessionCards, totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged } =
+  const { result, slug, title, sessionCards, totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged, totalTokens } =
     buildProjectRenderInputs(dirName, cache, sessions, username, opts);
 
   const renderData = buildProjectRenderData({
@@ -439,7 +442,7 @@ export function generateProjectHtmlFragment(
     timeline: result.timeline.map((t) => ({ period: t.period, label: t.label, sessions: t.sessions as unknown as Array<Record<string, unknown>> })),
     skills: result.skills,
     totalSessions: sessions.length,
-    totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged,
+    totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged, totalTokens,
     sessionCards,
   });
 
@@ -457,7 +460,7 @@ export function generateHtmlFiles(
   opts?: ExportOpts,
 ): HtmlFile[] {
   const files: HtmlFile[] = [];
-  const { result, slug, title, sessionCards, totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged } =
+  const { result, slug, title, sessionCards, totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged, totalTokens } =
     buildProjectRenderInputs(dirName, cache, sessions, username, opts);
 
   const screenshotUrl = resolveScreenshotDataUri(dirName, cache);
@@ -471,7 +474,7 @@ export function generateHtmlFiles(
     timeline: result.timeline.map((t) => ({ period: t.period, label: t.label, sessions: t.sessions as unknown as Array<Record<string, unknown>> })),
     skills: result.skills,
     totalSessions: sessions.length,
-    totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged,
+    totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged, totalTokens,
     sessionCards,
     sessionBaseUrl: './sessions',
   });

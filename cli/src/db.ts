@@ -21,7 +21,7 @@ export function getDbPath(): string {
 // Keep backward-compat for any external consumers
 export const DB_PATH = join(homedir(), '.config', 'heyiam', 'sessions.db');
 
-const CURRENT_SCHEMA_VERSION = 4;
+const CURRENT_SCHEMA_VERSION = 5;
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -53,6 +53,8 @@ export interface SessionRow {
   indexed_at: string | null;
   context_summary: string | null;
   active_intervals: string | null; // JSON array of [startMs, endMs] pairs
+  input_tokens: number;
+  output_tokens: number;
 }
 
 /** Stats shape compatible with the old SessionStats from server.ts */
@@ -76,6 +78,8 @@ export interface ProjectStats {
   skills: string[];
   sources: string[];
   latestDate: string;
+  totalInputTokens: number;
+  totalOutputTokens: number;
 }
 
 // ── Singleton ────────────────────────────────────────────────
@@ -126,6 +130,9 @@ function runMigrations(db: Database.Database): void {
   if (currentVersion < 4) {
     migrateToV4(db);
   }
+  if (currentVersion < 5) {
+    migrateToV5(db);
+  }
 }
 
 function migrateToV2(db: Database.Database): void {
@@ -169,6 +176,8 @@ function migrateToV2(db: Database.Database): void {
         indexed_at TEXT,
         context_summary TEXT,
         active_intervals TEXT,
+        input_tokens INTEGER NOT NULL DEFAULT 0,
+        output_tokens INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (parent_session_id) REFERENCES sessions(id) ON DELETE CASCADE
       )
     `);
@@ -220,6 +229,20 @@ function migrateToV3(db: Database.Database): void {
       )
     `);
 
+    db.prepare('UPDATE schema_version SET version = ?').run(CURRENT_SCHEMA_VERSION);
+  });
+  tx();
+}
+
+function migrateToV5(db: Database.Database): void {
+  const tx = db.transaction(() => {
+    const cols = db.prepare("PRAGMA table_info(sessions)").all() as Array<{ name: string }>;
+    if (!cols.some(c => c.name === 'input_tokens')) {
+      db.exec('ALTER TABLE sessions ADD COLUMN input_tokens INTEGER NOT NULL DEFAULT 0');
+    }
+    if (!cols.some(c => c.name === 'output_tokens')) {
+      db.exec('ALTER TABLE sessions ADD COLUMN output_tokens INTEGER NOT NULL DEFAULT 0');
+    }
     db.prepare('UPDATE schema_version SET version = ?').run(CURRENT_SCHEMA_VERSION);
   });
   tx();
@@ -286,14 +309,14 @@ export function upsertSession(db: Database.Database, input: UpsertSessionInput):
       files_changed, tool_calls, skills, files_touched, models_used,
       cwd, parent_session_id, agent_role, is_subagent,
       file_path, file_mtime, file_size, indexed_at, context_summary,
-      active_intervals
+      active_intervals, input_tokens, output_tokens
     ) VALUES (
       ?, ?, ?, ?, ?, ?,
       ?, ?, ?, ?, ?, ?,
       ?, ?, ?, ?, ?,
       ?, ?, ?, ?,
       ?, ?, ?, ?, ?,
-      ?
+      ?, ?, ?
     )
     ON CONFLICT(id) DO UPDATE SET
       project_dir = excluded.project_dir,
@@ -321,7 +344,9 @@ export function upsertSession(db: Database.Database, input: UpsertSessionInput):
       file_size = excluded.file_size,
       indexed_at = excluded.indexed_at,
       context_summary = excluded.context_summary,
-      active_intervals = excluded.active_intervals
+      active_intervals = excluded.active_intervals,
+      input_tokens = excluded.input_tokens,
+      output_tokens = excluded.output_tokens
   `);
 
   stmt.run(
@@ -352,6 +377,8 @@ export function upsertSession(db: Database.Database, input: UpsertSessionInput):
     new Date().toISOString(),
     input.contextSummary ?? null,
     analysis.active_intervals?.length ? JSON.stringify(analysis.active_intervals) : null,
+    session.tokenUsage?.input ?? 0,
+    session.tokenUsage?.output ?? 0,
   );
 }
 
@@ -452,7 +479,9 @@ export function getAllProjectStats(db: Database.Database): ProjectStats[] {
       COALESCE(SUM(CASE WHEN is_subagent = 0 THEN duration_minutes ELSE 0 END), 0) as total_duration,
       COALESCE(SUM(CASE WHEN is_subagent = 0 THEN turns ELSE 0 END), 0) as total_turns,
       MAX(CASE WHEN is_subagent = 0 THEN start_time END) as latest_date,
-      GROUP_CONCAT(DISTINCT source) as sources
+      GROUP_CONCAT(DISTINCT source) as sources,
+      COALESCE(SUM(input_tokens), 0) as total_input_tokens,
+      COALESCE(SUM(output_tokens), 0) as total_output_tokens
     FROM sessions
     GROUP BY project_dir
     ORDER BY latest_date DESC
@@ -464,6 +493,8 @@ export function getAllProjectStats(db: Database.Database): ProjectStats[] {
     total_turns: number;
     latest_date: string | null;
     sources: string | null;
+    total_input_tokens: number;
+    total_output_tokens: number;
   }>;
 
   // Collect all skills in a single query, grouped by project
@@ -495,6 +526,8 @@ export function getAllProjectStats(db: Database.Database): ProjectStats[] {
       skills: projectSkills ? [...projectSkills].sort() : [],
       sources: row.sources ? row.sources.split(',') : [],
       latestDate: row.latest_date ?? '',
+      totalInputTokens: row.total_input_tokens,
+      totalOutputTokens: row.total_output_tokens,
     };
   });
 }
