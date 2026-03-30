@@ -51,6 +51,7 @@ defmodule HeyiAm.MixProject do
       {:gen_smtp, "~> 1.2"},
       {:opentelemetry, "~> 1.7"},
       {:opentelemetry_api, "~> 1.5"},
+      {:opentelemetry_exporter, "~> 1.10"},
       {:opentelemetry_ecto, "~> 1.2"},
       {:hammer, "~> 6.1"},
       {:html_sanitize_ex, "~> 1.4"}

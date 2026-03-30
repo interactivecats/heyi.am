@@ -110,7 +110,8 @@ config :hammer,
              cleanup_interval_ms: 60_000 * 10]}
 
 config :opentelemetry,
-  span_processor: :batch
+  span_processor: :batch,
+  traces_exporter: :none
 
 config :ex_aws, json_codec: Jason
 
