@@ -1,7 +1,7 @@
 <article style="max-width: var(--content-narrow); margin-inline: auto; padding: var(--spacing-8) var(--spacing-4);">
     <h1 class="display-sm" style="margin-block-end: var(--spacing-8);">Terms of Use</h1>
     <p class="label-sm" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-8);">
-      Last updated: March 21, 2026
+      Last updated: March 30, 2026
     </p>
 
     <section style="margin-block-end: var(--spacing-8);">
@@ -38,11 +38,12 @@
     </section>
 
     <section style="margin-block-end: var(--spacing-8);">
-      <h2 class="title-md" style="margin-block-end: var(--spacing-3);">5. Sealed Sessions</h2>
+      <h2 class="title-md" style="margin-block-end: var(--spacing-3);">5. Secret Detection</h2>
       <p class="body-md" style="color: var(--on-surface-variant);">
-        Sealed sessions are cryptographically signed with Ed25519 to verify authenticity.
-        Sealing attests that the session data has not been modified after signing.
-        heyi.am does not guarantee the accuracy of the underlying session content itself.
+        The CLI attempts to detect and redact common secret patterns (API keys, tokens, credentials)
+        before upload using regex pattern matching and secretlint. This detection is not guaranteed to
+        catch all secrets. You are responsible for reviewing your session content before publishing and
+        ensuring it does not contain credentials or sensitive information you do not wish to share.
       </p>
     </section>
 
