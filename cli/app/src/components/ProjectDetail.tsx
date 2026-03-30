@@ -378,7 +378,7 @@ export function ProjectDetail() {
       </aside>
 
       {/* Main content */}
-      <main className="p-6 overflow-y-auto">
+      <main className="p-6 overflow-y-auto max-w-[1200px] mx-auto">
         <div className="flex items-center justify-between mb-1">
           <div>
             <h2 className="font-display text-xl font-bold text-on-surface">{project.name}</h2>

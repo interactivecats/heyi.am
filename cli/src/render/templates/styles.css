@@ -159,7 +159,7 @@ a:hover { text-decoration: underline; }
 /* ── Project Page ── */
 
 .heyiam-project {
-  max-width: 960px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
 }
@@ -375,7 +375,7 @@ a:hover { text-decoration: underline; }
 /* ── Session Page ── */
 
 .heyiam-session {
-  max-width: 960px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
 }
