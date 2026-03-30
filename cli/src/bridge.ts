@@ -60,6 +60,7 @@ export function bridgeToAnalyzer(
     ...(opts.agentRole ? { agentRole: opts.agentRole } : {}),
     ...(opts.parentSessionId ? { parentSessionId: opts.parentSessionId } : {}),
     source: parsed.source,
+    activeIntervals: parsed.active_intervals,
   };
 }
 
@@ -376,6 +377,31 @@ export function toAgentChild(session: Session): AgentChild {
     linesOfCode: session.linesOfCode,
     date: session.date,
   };
+}
+
+/**
+ * Merge overlapping time intervals into non-overlapping union.
+ * Used to compute true human hours across concurrent sessions.
+ * Each interval is [startMs, endMs]. Returns merged intervals sorted by start.
+ */
+export function mergeActiveIntervals(intervals: [number, number][]): [number, number][] {
+  if (intervals.length === 0) return [];
+  const sorted = [...intervals].sort((a, b) => a[0] - b[0]);
+  const merged: [number, number][] = [sorted[0]];
+  for (let i = 1; i < sorted.length; i++) {
+    const last = merged[merged.length - 1];
+    if (sorted[i][0] <= last[1]) {
+      last[1] = Math.max(last[1], sorted[i][1]);
+    } else {
+      merged.push(sorted[i]);
+    }
+  }
+  return merged;
+}
+
+/** Sum total milliseconds from a list of non-overlapping intervals. */
+export function sumIntervalMs(intervals: [number, number][]): number {
+  return intervals.reduce((sum, [start, end]) => sum + (end - start), 0);
 }
 
 /** Compute aggregated stats from fully-parsed child sessions. */

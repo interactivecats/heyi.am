@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type Database from 'better-sqlite3';
 import { listSessions, parseSession, type SessionMeta } from '../parsers/index.js';
-import { bridgeToAnalyzer } from '../bridge.js';
+import { bridgeToAnalyzer, mergeActiveIntervals, sumIntervalMs } from '../bridge.js';
 import { analyzeSession, type Session, type AgentChild } from '../analyzer.js';
 import {
   loadEnhancedData, loadProjectEnhanceResult,
@@ -50,6 +50,37 @@ export interface SessionStats {
 }
 
 // ── Pure helpers ─────────────────────────────────────────────
+
+/**
+ * Compute merged human-hours duration for a project by reading active_intervals
+ * from the DB and merging overlapping intervals across non-subagent sessions.
+ * Falls back to the provided naiveSumMinutes when intervals are not available (pre-v4 data).
+ */
+function computeMergedDurationFromDb(
+  db: Database.Database,
+  projectDir: string,
+  naiveSumMinutes: number,
+): number {
+  const rows = db.prepare(
+    'SELECT active_intervals FROM sessions WHERE project_dir = ? AND is_subagent = 0 AND active_intervals IS NOT NULL',
+  ).all(projectDir) as Array<{ active_intervals: string }>;
+
+  if (rows.length === 0) return naiveSumMinutes;
+
+  const allIntervals: [number, number][] = [];
+  for (const row of rows) {
+    try {
+      const parsed = JSON.parse(row.active_intervals) as [number, number][];
+      allIntervals.push(...parsed);
+    } catch { /* skip malformed */ }
+  }
+
+  if (allIntervals.length === 0) return naiveSumMinutes;
+
+  const merged = mergeActiveIntervals(allIntervals);
+  const mergedMinutes = Math.round(sumIntervalMs(merged) / 60_000);
+  return mergedMinutes > 0 ? mergedMinutes : naiveSumMinutes;
+}
 
 import { escapeHtml } from '../format-utils.js';
 export { escapeHtml };
@@ -217,7 +248,9 @@ export function buildProjectDetail(
   const sessionStats = buildSessionList(db, proj.dirName, proj.name);
 
   const totalLoc = sessionStats.reduce((sum, s) => sum + (s.linesOfCode || 0), 0);
-  const totalDuration = sessionStats.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
+  // Merge overlapping active intervals for true human hours
+  const naiveDuration = sessionStats.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
+  const totalDuration = computeMergedDurationFromDb(db, proj.dirName, naiveDuration);
   const totalFiles = (db.prepare(
     'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ?)',
   ).get(proj.dirName) as { c: number }).c;
@@ -480,13 +513,16 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
         'SELECT COALESCE(SUM(duration_minutes), 0) as total FROM sessions WHERE project_dir = ?',
       ).get(proj.dirName) as { total: number };
 
+      // Merge overlapping intervals for true human hours
+      const mergedDuration = computeMergedDurationFromDb(db, proj.dirName, dbStats.totalDuration);
+
       return {
         name: proj.name,
         dirName: proj.dirName,
         sessionCount: dbStats.sessionCount,
         description: '',
         totalLoc: dbStats.totalLoc,
-        totalDuration: dbStats.totalDuration,
+        totalDuration: mergedDuration,
         totalFiles: (db.prepare(
           'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ?)',
         ).get(proj.dirName) as { c: number }).c,
@@ -514,7 +550,8 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
 
     const totalLoc = allStats.reduce((s, st) => s + st.loc, 0);
     const totalFiles = allStats.reduce((s, st) => s + st.files, 0);
-    const totalDuration = allStats.reduce((s, st) => s + st.duration, 0);
+    const naiveDuration = allStats.reduce((s, st) => s + st.duration, 0);
+    const totalDuration = computeMergedDurationFromDb(db, proj.dirName, naiveDuration);
 
     let totalAgentDuration = totalDuration;
     for (const meta of parentMetas) {

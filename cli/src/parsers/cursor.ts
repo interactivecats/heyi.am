@@ -377,6 +377,7 @@ function computeDurationFromBubbles(bubbles: CursorBubble[]): {
   wall_clock_ms: number;
   start_time: string | null;
   end_time: string | null;
+  active_intervals: [number, number][];
 } {
   const timestamps: number[] = [];
   let startStr: string | null = null;
@@ -391,24 +392,32 @@ function computeDurationFromBubbles(bubbles: CursorBubble[]): {
   }
 
   if (timestamps.length < 2 || !startStr || !endStr) {
-    return { duration_ms: 0, wall_clock_ms: 0, start_time: startStr, end_time: endStr };
+    return { duration_ms: 0, wall_clock_ms: 0, start_time: startStr, end_time: endStr, active_intervals: [] };
   }
 
   const wallClock = timestamps[timestamps.length - 1] - timestamps[0];
 
   let activeMs = 0;
+  const active_intervals: [number, number][] = [];
+  let intervalStart = timestamps[0];
+
   for (let i = 1; i < timestamps.length; i++) {
     const gap = timestamps[i] - timestamps[i - 1];
     if (gap < IDLE_THRESHOLD_MS) {
       activeMs += gap;
+    } else {
+      active_intervals.push([intervalStart, timestamps[i - 1]]);
+      intervalStart = timestamps[i];
     }
   }
+  active_intervals.push([intervalStart, timestamps[timestamps.length - 1]]);
 
   return {
     duration_ms: Math.max(activeMs, 0),
     wall_clock_ms: Math.max(wallClock, 0),
     start_time: startStr,
     end_time: endStr,
+    active_intervals,
   };
 }
 
@@ -569,13 +578,14 @@ export async function parseCursorConversation(
       raw_entries,
       start_time: hintDate,
       end_time: hintDate,
+      active_intervals: [],
     };
   }
 
   const toolCalls = extractToolCallsFromBubbles(bubbles);
   const filesTouched = extractFilesFromBubbles(bubbles);
   const turns = countTurnsFromBubbles(bubbles);
-  const { duration_ms, wall_clock_ms, start_time, end_time } = computeDurationFromBubbles(bubbles);
+  const { duration_ms, wall_clock_ms, start_time, end_time, active_intervals } = computeDurationFromBubbles(bubbles);
   const loc_stats = computeLocFromBubbles(bubbles);
   const raw_entries = bubblesToRawEntries(bubbles, conversationId);
 
@@ -602,9 +612,12 @@ export async function parseCursorConversation(
   // Fall back to workspace metadata for duration when bubble timestamps are missing
   let finalDuration = duration_ms;
   let finalWallClock = wall_clock_ms;
+  let finalIntervals = active_intervals;
   if (finalDuration === 0 && hints?.createdAt && hints?.lastUpdatedAt) {
     finalWallClock = hints.lastUpdatedAt - hints.createdAt;
     finalDuration = finalWallClock; // best estimate without per-bubble idle detection
+    // Best-effort single interval from workspace metadata
+    finalIntervals = [[hints.createdAt, hints.lastUpdatedAt]];
   }
 
   // Fall back to workspace metadata for LOC when bubble tool calls lack detail
@@ -633,6 +646,7 @@ export async function parseCursorConversation(
     raw_entries,
     start_time: start_time ?? hintDate,
     end_time: end_time ?? hintEndDate ?? hintDate,
+    active_intervals: finalIntervals,
   };
 }
 

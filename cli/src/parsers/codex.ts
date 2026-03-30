@@ -148,6 +148,7 @@ function computeDuration(lines: CodexLine[]): {
   wall_clock_ms: number;
   start_time: string | null;
   end_time: string | null;
+  active_intervals: [number, number][];
 } {
   const timestamps: number[] = [];
   let startStr: string | null = null;
@@ -161,21 +162,31 @@ function computeDuration(lines: CodexLine[]): {
   }
 
   if (timestamps.length < 2 || !startStr || !endStr) {
-    return { duration_ms: 0, wall_clock_ms: 0, start_time: startStr, end_time: endStr };
+    return { duration_ms: 0, wall_clock_ms: 0, start_time: startStr, end_time: endStr, active_intervals: [] };
   }
 
   const wallClock = timestamps[timestamps.length - 1] - timestamps[0];
   let activeMs = 0;
+  const active_intervals: [number, number][] = [];
+  let intervalStart = timestamps[0];
+
   for (let i = 1; i < timestamps.length; i++) {
     const gap = timestamps[i] - timestamps[i - 1];
-    if (gap < IDLE_THRESHOLD_MS) activeMs += gap;
+    if (gap < IDLE_THRESHOLD_MS) {
+      activeMs += gap;
+    } else {
+      active_intervals.push([intervalStart, timestamps[i - 1]]);
+      intervalStart = timestamps[i];
+    }
   }
+  active_intervals.push([intervalStart, timestamps[timestamps.length - 1]]);
 
   return {
     duration_ms: Math.max(activeMs, 0),
     wall_clock_ms: Math.max(wallClock, 0),
     start_time: startStr,
     end_time: endStr,
+    active_intervals,
   };
 }
 
@@ -271,7 +282,7 @@ async function parse(path: string): Promise<SessionAnalysis> {
   const toolCalls = extractToolCalls(lines);
   const filesTouched = extractFilesTouched(toolCalls, cwd);
   const turns = countTurns(lines);
-  const { duration_ms, wall_clock_ms, start_time, end_time } = computeDuration(lines);
+  const { duration_ms, wall_clock_ms, start_time, end_time, active_intervals } = computeDuration(lines);
   const loc_stats = computeLocStats(toolCalls);
   const raw_entries = toRawEntries(lines, sessionId, cwd);
 
@@ -286,6 +297,7 @@ async function parse(path: string): Promise<SessionAnalysis> {
     raw_entries,
     start_time,
     end_time,
+    active_intervals,
     cwd,
   };
 }

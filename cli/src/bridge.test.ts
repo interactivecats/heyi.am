@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { bridgeToAnalyzer, aggregateChildStats, deduplicateChildren, childDedupeKey, cleanAssistantText } from "./bridge.js";
+import { bridgeToAnalyzer, aggregateChildStats, deduplicateChildren, childDedupeKey, cleanAssistantText, mergeActiveIntervals, sumIntervalMs } from "./bridge.js";
 import type { Session } from "./analyzer.js";
 import type { SessionAnalysis as ParserOutput, RawEntry } from "./parsers/types.js";
 
@@ -655,5 +655,81 @@ describe("childDedupeKey", () => {
     const key1 = childDedupeKey(undefined, "2026-03-20T10:00:00.000Z");
     const key2 = childDedupeKey(undefined, "2026-03-20T10:00:10.000Z");
     expect(key1).toBe(key2);
+  });
+});
+
+describe("mergeActiveIntervals", () => {
+  it("returns empty for empty input", () => {
+    expect(mergeActiveIntervals([])).toEqual([]);
+  });
+
+  it("returns single interval unchanged", () => {
+    expect(mergeActiveIntervals([[100, 200]])).toEqual([[100, 200]]);
+  });
+
+  it("merges two fully overlapping intervals", () => {
+    // Session A: 0-60min, Session B: 0-60min (identical parallel sessions)
+    const result = mergeActiveIntervals([[0, 60], [0, 60]]);
+    expect(result).toEqual([[0, 60]]);
+  });
+
+  it("merges two partially overlapping intervals", () => {
+    // Session A: 0-60, Session B: 30-90
+    const result = mergeActiveIntervals([[0, 60], [30, 90]]);
+    expect(result).toEqual([[0, 90]]);
+  });
+
+  it("keeps non-overlapping intervals separate", () => {
+    // Session A: 0-30, idle gap, Session A: 60-90
+    const result = mergeActiveIntervals([[0, 30], [60, 90]]);
+    expect(result).toEqual([[0, 30], [60, 90]]);
+  });
+
+  it("handles three parallel sessions for 1 hour: human hours = 1h", () => {
+    const hour = 3_600_000;
+    const result = mergeActiveIntervals([
+      [0, hour],
+      [0, hour],
+      [0, hour],
+    ]);
+    expect(result).toEqual([[0, hour]]);
+    expect(sumIntervalMs(result)).toBe(hour);
+  });
+
+  it("handles session with idle gap + another session during the gap", () => {
+    // Session A: active 0-30, idle 30-60, active 60-90
+    // Session B: active 40-50 (during A's idle gap)
+    const result = mergeActiveIntervals([
+      [0, 30], [60, 90],  // Session A intervals
+      [40, 50],            // Session B interval
+    ]);
+    expect(result).toEqual([[0, 30], [40, 50], [60, 90]]);
+    expect(sumIntervalMs(result)).toBe(30 + 10 + 30); // 70
+  });
+
+  it("handles adjacent intervals (touching but not overlapping)", () => {
+    const result = mergeActiveIntervals([[0, 30], [30, 60]]);
+    expect(result).toEqual([[0, 60]]);
+  });
+
+  it("sorts unsorted input correctly", () => {
+    const result = mergeActiveIntervals([[60, 90], [0, 30], [20, 40]]);
+    expect(result).toEqual([[0, 40], [60, 90]]);
+  });
+
+  it("does not mutate original array", () => {
+    const original: [number, number][] = [[60, 90], [0, 30]];
+    mergeActiveIntervals(original);
+    expect(original).toEqual([[60, 90], [0, 30]]);
+  });
+});
+
+describe("sumIntervalMs", () => {
+  it("returns 0 for empty intervals", () => {
+    expect(sumIntervalMs([])).toBe(0);
+  });
+
+  it("sums multiple intervals", () => {
+    expect(sumIntervalMs([[0, 100], [200, 350]])).toBe(250);
   });
 });

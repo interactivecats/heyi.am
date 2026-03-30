@@ -110,6 +110,7 @@ function computeDuration(entries: RawEntry[]): {
   wall_clock_ms: number;
   start_time: string | null;
   end_time: string | null;
+  active_intervals: [number, number][];
 } {
   const timestamps: number[] = [];
   let startStr: string | null = null;
@@ -123,25 +124,33 @@ function computeDuration(entries: RawEntry[]): {
   }
 
   if (timestamps.length < 2 || !startStr || !endStr) {
-    return { duration_ms: 0, wall_clock_ms: 0, start_time: startStr, end_time: endStr };
+    return { duration_ms: 0, wall_clock_ms: 0, start_time: startStr, end_time: endStr, active_intervals: [] };
   }
 
   const wallClock = timestamps[timestamps.length - 1] - timestamps[0];
 
-  // Sum only active segments (gaps under threshold)
+  // Sum only active segments (gaps under threshold) and track intervals
   let activeMs = 0;
+  const active_intervals: [number, number][] = [];
+  let intervalStart = timestamps[0];
+
   for (let i = 1; i < timestamps.length; i++) {
     const gap = timestamps[i] - timestamps[i - 1];
     if (gap < IDLE_THRESHOLD_MS) {
       activeMs += gap;
+    } else {
+      active_intervals.push([intervalStart, timestamps[i - 1]]);
+      intervalStart = timestamps[i];
     }
   }
+  active_intervals.push([intervalStart, timestamps[timestamps.length - 1]]);
 
   return {
     duration_ms: Math.max(activeMs, 0),
     wall_clock_ms: Math.max(wallClock, 0),
     start_time: startStr,
     end_time: endStr,
+    active_intervals,
   };
 }
 
@@ -350,7 +359,7 @@ async function parse(path: string): Promise<SessionAnalysis> {
   const toolCalls = extractToolCalls(entries);
   const filesTouched = extractFilesTouched(toolCalls);
   const turns = countTurns(entries);
-  const { duration_ms, wall_clock_ms, start_time, end_time } = computeDuration(entries);
+  const { duration_ms, wall_clock_ms, start_time, end_time, active_intervals } = computeDuration(entries);
   const loc_stats = computeLocStats(entries);
   const token_usage = aggregateTokenUsage(entries);
   const models_used = extractModels(entries);
@@ -370,6 +379,7 @@ async function parse(path: string): Promise<SessionAnalysis> {
     raw_entries: entries,
     start_time,
     end_time,
+    active_intervals,
     cwd,
     token_usage,
     models_used,

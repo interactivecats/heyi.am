@@ -364,7 +364,13 @@ async function scanClaudeDir(
         const children = await collectSubagents(join(projectPath, file.name), projectDir, parentSessionId);
         if (children.length > 0) {
           const existing = childrenByParentId.get(parentSessionId) ?? [];
-          existing.push(...children);
+          // Deduplicate: skip children already discovered (live takes precedence over archive)
+          for (const child of children) {
+            if (!seenSessionIds.has(child.sessionId)) {
+              existing.push(child);
+              seenSessionIds.add(child.sessionId);
+            }
+          }
           childrenByParentId.set(parentSessionId, existing);
         }
       }

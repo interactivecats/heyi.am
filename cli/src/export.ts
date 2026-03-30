@@ -21,12 +21,31 @@ import {
   DEFAULT_ACCENT,
 } from './render/build-render-data.js';
 import type { Session } from './analyzer.js';
+import { mergeActiveIntervals, sumIntervalMs } from './bridge.js';
 import { SCREENSHOTS_DIR } from './screenshot.js';
 
 export interface ExportResult {
   files: string[];
   totalBytes: number;
   outputPath: string;
+}
+
+// ── Duration merging ────────────────────────────────────────────
+
+/** Compute merged human-hours from Session[] with activeIntervals. Falls back to naive sum. */
+function computeMergedSessionDuration(sessions: Session[]): number {
+  const allIntervals: [number, number][] = [];
+  for (const s of sessions) {
+    if (s.activeIntervals?.length) {
+      allIntervals.push(...s.activeIntervals);
+    }
+  }
+  if (allIntervals.length === 0) {
+    return sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
+  }
+  const merged = mergeActiveIntervals(allIntervals);
+  const minutes = Math.round(sumIntervalMs(merged) / 60_000);
+  return minutes > 0 ? minutes : sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
 }
 
 // ── Helpers ────────────────────────────────────────────────────
@@ -169,7 +188,7 @@ function buildReadme(
   lines.push(`## Stats\n`);
   lines.push(`- Sessions: ${sessions.length}`);
   const totalLoc = sessions.reduce((sum, s) => sum + s.linesOfCode, 0);
-  const totalMin = sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
+  const totalMin = computeMergedSessionDuration(sessions);
   const totalFiles = sessions.reduce((sum, s) => sum + s.filesChanged.length, 0);
   lines.push(`- Lines of code: ${totalLoc.toLocaleString()}`);
   lines.push(`- Total time: ${(totalMin / 60).toFixed(1)}h`);
@@ -272,7 +291,7 @@ export async function exportHtml(
 
   // Compute stats the same way the dashboard does
   const totalLoc = sessions.reduce((sum, s) => sum + s.linesOfCode, 0);
-  const totalDurationMinutes = sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
+  const totalDurationMinutes = computeMergedSessionDuration(sessions);
   const totalFilesChanged = opts?.totalFilesChanged ?? sessions.reduce((sum, s) => sum + s.filesChanged.length, 0);
   // Agent duration: sum child durations across all orchestrated sessions
   const totalAgentMinutes = sessions
@@ -388,7 +407,7 @@ function buildProjectRenderInputs(
   }));
 
   const totalLoc = sessions.reduce((sum, s) => sum + s.linesOfCode, 0);
-  const totalDurationMinutes = sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
+  const totalDurationMinutes = computeMergedSessionDuration(sessions);
   const totalFilesChanged = opts?.totalFilesChanged ?? sessions.reduce((sum, s) => sum + s.filesChanged.length, 0);
   const totalAgentMinutes = sessions
     .filter((s) => s.isOrchestrated && s.children)

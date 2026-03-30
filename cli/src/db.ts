@@ -21,7 +21,7 @@ export function getDbPath(): string {
 // Keep backward-compat for any external consumers
 export const DB_PATH = join(homedir(), '.config', 'heyiam', 'sessions.db');
 
-const CURRENT_SCHEMA_VERSION = 3;
+const CURRENT_SCHEMA_VERSION = 4;
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -52,6 +52,7 @@ export interface SessionRow {
   file_size: number | null;
   indexed_at: string | null;
   context_summary: string | null;
+  active_intervals: string | null; // JSON array of [startMs, endMs] pairs
 }
 
 /** Stats shape compatible with the old SessionStats from server.ts */
@@ -122,6 +123,9 @@ function runMigrations(db: Database.Database): void {
   if (currentVersion < 3) {
     migrateToV3(db);
   }
+  if (currentVersion < 4) {
+    migrateToV4(db);
+  }
 }
 
 function migrateToV2(db: Database.Database): void {
@@ -164,6 +168,7 @@ function migrateToV2(db: Database.Database): void {
         file_size INTEGER,
         indexed_at TEXT,
         context_summary TEXT,
+        active_intervals TEXT,
         FOREIGN KEY (parent_session_id) REFERENCES sessions(id) ON DELETE CASCADE
       )
     `);
@@ -220,6 +225,19 @@ function migrateToV3(db: Database.Database): void {
   tx();
 }
 
+function migrateToV4(db: Database.Database): void {
+  const tx = db.transaction(() => {
+    // Add active_intervals column for overlap-aware human hours aggregation
+    const cols = db.prepare("PRAGMA table_info(sessions)").all() as Array<{ name: string }>;
+    if (!cols.some(c => c.name === 'active_intervals')) {
+      db.exec('ALTER TABLE sessions ADD COLUMN active_intervals TEXT');
+    }
+
+    db.prepare('UPDATE schema_version SET version = ?').run(CURRENT_SCHEMA_VERSION);
+  });
+  tx();
+}
+
 // ── Staleness Check ──────────────────────────────────────────
 
 export function isSessionStale(
@@ -267,13 +285,15 @@ export function upsertSession(db: Database.Database, input: UpsertSessionInput):
       duration_minutes, wall_clock_minutes, turns, loc_added, loc_removed, loc_net,
       files_changed, tool_calls, skills, files_touched, models_used,
       cwd, parent_session_id, agent_role, is_subagent,
-      file_path, file_mtime, file_size, indexed_at, context_summary
+      file_path, file_mtime, file_size, indexed_at, context_summary,
+      active_intervals
     ) VALUES (
       ?, ?, ?, ?, ?, ?,
       ?, ?, ?, ?, ?, ?,
       ?, ?, ?, ?, ?,
       ?, ?, ?, ?,
-      ?, ?, ?, ?, ?
+      ?, ?, ?, ?, ?,
+      ?
     )
     ON CONFLICT(id) DO UPDATE SET
       project_dir = excluded.project_dir,
@@ -300,7 +320,8 @@ export function upsertSession(db: Database.Database, input: UpsertSessionInput):
       file_mtime = excluded.file_mtime,
       file_size = excluded.file_size,
       indexed_at = excluded.indexed_at,
-      context_summary = excluded.context_summary
+      context_summary = excluded.context_summary,
+      active_intervals = excluded.active_intervals
   `);
 
   stmt.run(
@@ -330,6 +351,7 @@ export function upsertSession(db: Database.Database, input: UpsertSessionInput):
     fileSize,
     new Date().toISOString(),
     input.contextSummary ?? null,
+    analysis.active_intervals?.length ? JSON.stringify(analysis.active_intervals) : null,
   );
 }
 

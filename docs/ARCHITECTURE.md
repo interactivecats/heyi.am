@@ -99,6 +99,53 @@ At typical usage (50-100 sessions) each triage call costs under $0.03.
 
 ---
 
+## Session Discovery & Storage
+
+### Discovery
+
+Session discovery (`src/parsers/index.ts`) scans four tool directories:
+
+| Tool | Location | Format |
+|------|----------|--------|
+| Claude Code | `~/.claude/projects/{dir}/{id}.jsonl` | JSONL |
+| Cursor | Cursor's internal SQLite DB | Export to JSONL |
+| Codex | `~/.codex/sessions/` | JSONL |
+| Gemini | `~/.gemini/tmp/` | JSON |
+
+Claude Code sessions may have **subagents** in `{id}/subagents/*.jsonl`. Discovery flattens parents + children into a single list, deduplicating by session ID to avoid double-counting when the same session exists in both the live directory and the archive.
+
+### Archive
+
+The archive (`src/archive.ts`) preserves session files that tools will delete. Claude Code deletes sessions after 30 days.
+
+- **Hard links** for file-based sources (zero extra disk space — same inode)
+- **JSONL export** for Cursor (stores in its own SQLite DB, can't hard-link)
+- Location: `~/.config/heyiam/sessions/`
+
+Discovery scans live directories first, then the archive. Live files take precedence (may still be receiving entries). Archive files are only used for sessions whose live copy is gone.
+
+### SQLite Index
+
+The DB (`src/db.ts`) at `~/.config/heyiam/sessions.db` stores:
+- **Session metadata**: duration, LOC, turns, skills, models, timestamps, active intervals
+- **Full-text search index** (FTS5): every turn's content (truncated to 10KB/turn)
+- **Per-file changes**: `session_files` table with additions/deletions per file
+- **Context summary**: compact text summary for offline access after source deletion
+
+The DB enables instant dashboard rendering and search without re-parsing JSONL files.
+
+### Duration Calculation
+
+See [DURATION.md](./DURATION.md) for the full explanation. Summary:
+
+- **Human hours ("You")**: Merge overlapping active intervals across concurrent sessions. One human running 3 parallel sessions for 1 hour = 1 human hour.
+- **Agent hours ("Agents")**: Simple sum across all sessions including subagents. Parallel work is additive (3 agents × 1 hour = 3 agent hours).
+- **Per-session duration**: Unchanged — sum of sub-threshold gaps within that session.
+
+Active intervals are stored in the DB (`active_intervals` JSON column) at index time, so project-level aggregation never needs to re-parse JSONL files.
+
+---
+
 ## Phoenix Web App (`heyi_am_umbrella/`)
 
 Phoenix is a thin serving layer. It stores pre-rendered HTML and wraps it in a layout shell with OG tags, nav, and footer. Auth, API, and settings live on a separate domain.

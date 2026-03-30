@@ -40,6 +40,8 @@ export interface SessionAnalysis {
   parentSessionId?: string | null;
   /** Working directory where the session was started */
   cwd?: string;
+  /** Active time intervals as [startMs, endMs] pairs for overlap-aware project aggregation */
+  activeIntervals?: [number, number][];
 }
 
 // ── Output types (mirrors cli/app/src/types.ts) ────────────────
@@ -111,6 +113,8 @@ export interface Session {
   quickEnhanced?: boolean;
   /** Source tool: "claude", "cursor", "codex", "gemini", "antigravity" */
   source?: string;
+  /** Active time intervals as [startMs, endMs] pairs for overlap-aware project aggregation */
+  activeIntervals?: [number, number][];
 }
 
 // ── Skill extraction ───────────────────────────────────────────
@@ -407,5 +411,6 @@ export function analyzeSession(analysis: SessionAnalysis): Session {
     ...(isOrchestrated ? { isOrchestrated } : {}),
     ...(analysis.cwd ? { cwd: analysis.cwd } : {}),
     ...(analysis.source ? { source: analysis.source } : {}),
+    ...(analysis.activeIntervals ? { activeIntervals: analysis.activeIntervals } : {}),
   };
 }

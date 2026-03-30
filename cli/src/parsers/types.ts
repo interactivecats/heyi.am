@@ -41,6 +41,8 @@ export interface SessionAnalysis {
   parent_session_id?: string | null;
   /** Working directory where the session was started */
   cwd?: string;
+  /** Active time intervals as [startMs, endMs] pairs for overlap-aware aggregation */
+  active_intervals?: [number, number][];
   /** Aggregated token usage across all assistant messages */
   token_usage?: TokenUsage;
   /** Models used in the session (deduplicated) */

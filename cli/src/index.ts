@@ -346,7 +346,10 @@ program
 
     const result = await fullReindex(db, undefined, (p) => {
       if (p.phase === 'indexing' && p.current && p.total) {
-        if (p.current === 1) console.log(`  Indexing ${p.total} sessions...`);
+        if (p.current === 1) {
+          const parentLabel = p.parentCount ? ` (${p.parentCount} sessions + ${p.total - p.parentCount} subagents)` : '';
+          console.log(`  Indexing ${p.total} session files${parentLabel}...`);
+        }
         if (p.current % 50 === 0 || p.current === p.total) {
           const pct = Math.round((p.current / p.total) * 100);
           process.stdout.write(`\r  Progress: ${p.current}/${p.total} (${pct}%)`);
@@ -355,7 +358,8 @@ program
     });
 
     console.log('');
-    console.log(`  Done. ${result.indexed} sessions indexed${result.errors > 0 ? `, ${result.errors} errors` : ''}.\n`);
+    const parentCount = result.indexed > 0 ? ` (${result.indexed} unique)` : '';
+    console.log(`  Done. ${result.indexed} sessions indexed${parentCount}${result.errors > 0 ? `, ${result.errors} errors` : ''}.\n`);
     db.close();
   });
 
