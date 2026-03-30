@@ -41,18 +41,43 @@ program
 
     // Check if another instance is already running on this port
     try {
-      const res = await fetch(`http://localhost:${port}/api/dashboard`);
-      if (res.ok) {
-        const body = await res.json().catch(() => null);
-        // Verify it's actually heyiam (not some other server on this port)
-        if (body && typeof body.stats?.sessionCount === 'number') {
-          console.log(`\nheyiam is already running at http://localhost:${port}`);
+      const versionRes = await fetch(`http://localhost:${port}/api/version`);
+      if (versionRes.ok) {
+        const running = await versionRes.json() as { server?: string; version?: string };
+        // Verify it's actually heyiam (not some random server on this port)
+        if (running.server !== 'heyiam') {
+          console.log(`\nPort ${port} is in use by another process.`);
+          console.log('Use --port to pick a different port.\n');
+          return;
+        }
+        if (running.version === pkg.version) {
+          // Same version — reuse it
+          console.log(`\nheyiam ${pkg.version} is already running at http://localhost:${port}`);
           console.log('Opening existing instance...\n');
           if (opts.open) {
             open(`http://localhost:${port}`).catch(() => {});
           }
           return;
         }
+        // Different version — kill the old instance via PID file (not from HTTP)
+        console.log(`\nheyiam ${running.version ?? '?'} is running but current version is ${pkg.version}.`);
+        console.log('Restarting...');
+        const { readServerPid, removeServerPidFile, isHeyiamProcess } = await import('./server.js');
+        const oldPid = readServerPid();
+        if (oldPid && isHeyiamProcess(oldPid)) {
+          try { process.kill(oldPid, 'SIGTERM'); } catch { /* already gone */ }
+          removeServerPidFile();
+          await new Promise(r => setTimeout(r, 1000));
+        } else if (oldPid) {
+          // PID file is stale (process gone or not heyiam) — clean it up
+          removeServerPidFile();
+        }
+      } else {
+        // Something is on this port but has no version endpoint — not heyiam
+        console.log(`\nPort ${port} is in use by another process.`);
+        console.log('If this is an old heyiam instance, stop it and try again.');
+        console.log('Or use --port to pick a different port.\n');
+        return;
       }
     } catch {
       // Port not in use — good, start the server
@@ -84,10 +109,17 @@ program
       open(url).catch(() => {});
     }
 
+    let shuttingDown = false;
     const shutdown = () => {
+      if (shuttingDown) {
+        // Second Ctrl+C — force exit immediately
+        process.exit(1);
+      }
+      shuttingDown = true;
       console.log('\nShutting down...');
+      server.closeAllConnections();
       server.close(() => process.exit(0));
-      setTimeout(() => process.exit(0), 3000);
+      setTimeout(() => process.exit(0), 2000);
     };
     process.on('SIGINT', shutdown);
     process.on('SIGTERM', shutdown);
