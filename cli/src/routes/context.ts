@@ -232,6 +232,9 @@ export function buildSessionList(
       children,
       isOrchestrated: (children?.length ?? 0) > 0,
       childCount: children?.length ?? 0,
+      ...(r.active_intervals ? {
+        activeIntervals: JSON.parse(r.active_intervals) as [number, number][],
+      } : {}),
       ...(r.input_tokens || r.output_tokens ? {
         tokenUsage: { input: r.input_tokens, output: r.output_tokens },
       } : {}),
