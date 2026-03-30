@@ -5,42 +5,130 @@
     <span class="topbar-status">@{@portfolio_user.username}</span>
   </:status>
 
-  <div class="portfolio-page">
-    <div class="portfolio-page-header">
-      <h1 class="portfolio-page-name">
-        {@portfolio_user.display_name || @portfolio_user.username}
-      </h1>
-      <p :if={@portfolio_user.bio} class="portfolio-page-bio">{@portfolio_user.bio}</p>
+  <div class="pf-page">
+    <%!-- Hero: name + bio + aggregate stats --%>
+    <div class="pf-hero">
+      <div class="pf-hero__identity">
+        <h1 class="pf-hero__name">
+          {@portfolio_user.display_name || @portfolio_user.username}
+        </h1>
+        <p :if={@portfolio_user.bio} class="pf-hero__bio">{@portfolio_user.bio}</p>
+      </div>
+      <div :if={@projects != []} class="pf-hero__stats">
+        <div class="pf-hero__stat">
+          <div class="pf-hero__stat-value">{length(@projects)}</div>
+          <div class="pf-hero__stat-label">Projects</div>
+        </div>
+        <div class="pf-hero__stat">
+          <div class="pf-hero__stat-value">{@total_sessions}</div>
+          <div class="pf-hero__stat-label">Sessions</div>
+        </div>
+        <div class="pf-hero__stat">
+          <div class="pf-hero__stat-value">{format_number(@total_lines)}</div>
+          <div class="pf-hero__stat-label">Lines</div>
+        </div>
+      </div>
     </div>
 
+    <hr class="pf-rule" />
+
     <%= if @projects == [] do %>
-      <div class="portfolio-page-empty">
+      <div class="pf-empty">
         <p class="body-md" style="color: var(--on-surface-variant);">
           No published projects yet.
         </p>
       </div>
     <% else %>
-      <div class="portfolio-project-list">
-        <a :for={project <- @projects}
-           href={"/" <> @portfolio_user.username <> "/" <> project.slug}
-           class="portfolio-project-card"
-        >
-          <div class="portfolio-project-card-body">
-            <h2 class="portfolio-project-title">{project.title}</h2>
-            <p :if={project.narrative} class="portfolio-project-narrative">
-              {String.slice(project.narrative, 0, 160)}
+      <%
+        [featured | rest] = @projects
+        your_min = featured.total_duration_minutes || 0
+        agent_min = featured.total_agent_duration_minutes
+        multiplier = if your_min > 0 && agent_min && agent_min > 0,
+          do: Float.round(agent_min / your_min, 1),
+          else: nil
+      %>
+
+      <div class="pf-grid">
+        <%!-- Featured project (full-width) --%>
+        <a href={"/" <> @portfolio_user.username <> "/" <> featured.slug} class="pf-featured">
+          <div class="pf-featured__left">
+            <span class="pf-featured__label">Latest project</span>
+            <h2 class="pf-featured__title">{featured.title}</h2>
+            <p :if={featured.narrative} class="pf-featured__narrative">
+              {String.slice(featured.narrative, 0, 220)}
             </p>
-            <div :if={project.skills != []} class="portfolio-project-skills">
-              <span :for={skill <- Enum.take(project.skills, 5)} class="chip">{skill}</span>
-              <span :if={length(project.skills) > 5} class="chip" style="color: var(--outline); background: transparent;">
-                +{length(project.skills) - 5}
-              </span>
+            <div :if={featured.skills != []} class="pf-featured__skills">
+              <span :for={skill <- Enum.take(featured.skills, 6)} class="chip chip--violet">{skill}</span>
             </div>
-            <div class="portfolio-project-stats">
-              <span>{length(project.shares)} sessions</span>
-              <span :if={project.total_duration_minutes}>{format_duration(project.total_duration_minutes)}</span>
-              <span :if={project.total_loc}>{format_number(project.total_loc)} lines</span>
+            <div class="pf-featured__stats">
+              <div>
+                <div class="pf-featured__stat-value">{length(featured.shares)}</div>
+                <div class="pf-featured__stat-label">Sessions</div>
+              </div>
+              <div :if={featured.total_duration_minutes}>
+                <div class="pf-featured__stat-value">{format_duration(featured.total_duration_minutes)}</div>
+                <div class="pf-featured__stat-label">Duration</div>
+              </div>
+              <div :if={featured.total_loc}>
+                <div class="pf-featured__stat-value">{format_number(featured.total_loc)}</div>
+                <div class="pf-featured__stat-label">Lines</div>
+              </div>
             </div>
+          </div>
+          <div class="pf-featured__right">
+            <div class="pf-featured__data">
+              <%= if multiplier do %>
+                <div class="pf-featured__big-stat">
+                  <div class="pf-featured__big-stat-value">{multiplier}x</div>
+                  <div class="pf-featured__big-stat-label">AI multiplier</div>
+                </div>
+                <div class="pf-featured__big-stat">
+                  <div class="pf-featured__big-stat-value">
+                    <span>{format_duration(your_min)}</span>
+                    <span class="pf-featured__slash">/</span>
+                    <span>{format_duration(agent_min)}</span>
+                  </div>
+                  <div class="pf-featured__big-stat-label">You / Agents</div>
+                </div>
+              <% else %>
+                <div class="pf-featured__big-stat">
+                  <div class="pf-featured__big-stat-value">{length(featured.shares)}</div>
+                  <div class="pf-featured__big-stat-label">Sessions</div>
+                </div>
+                <div :if={featured.total_loc} class="pf-featured__big-stat">
+                  <div class="pf-featured__big-stat-value">{format_number(featured.total_loc)}</div>
+                  <div class="pf-featured__big-stat-label">Lines changed</div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </a>
+
+        <%!-- Remaining projects in 2-col grid --%>
+        <a :for={project <- rest}
+           href={"/" <> @portfolio_user.username <> "/" <> project.slug}
+           class="pf-card"
+        >
+          <h3 class="pf-card__title">{project.title}</h3>
+          <p :if={project.narrative} class="pf-card__narrative">
+            {String.slice(project.narrative, 0, 160)}
+          </p>
+          <div :if={project.skills != []} class="pf-card__skills">
+            <span :for={skill <- Enum.take(project.skills, 4)} class="chip chip--violet">{skill}</span>
+            <span :if={length(project.skills) > 4} class="chip" style="color: var(--outline); background: transparent;">
+              +{length(project.skills) - 4}
+            </span>
+          </div>
+          <div class="pf-card__footer">
+            <div class="pf-card__stat-row">
+              <span class="pf-card__stat"><strong>{length(project.shares)}</strong> sessions</span>
+              <%= if project.total_duration_minutes && project.total_agent_duration_minutes do %>
+                <span class="pf-card__stat"><strong>{format_duration(project.total_duration_minutes)}</strong> / <strong>{format_duration(project.total_agent_duration_minutes)}</strong></span>
+              <% else %>
+                <span :if={project.total_loc} class="pf-card__stat"><strong>{format_number(project.total_loc)}</strong> lines</span>
+              <% end %>
+            </div>
+            <span class="pf-card__arrow">&rarr;</span>
           </div>
         </a>
       </div>
