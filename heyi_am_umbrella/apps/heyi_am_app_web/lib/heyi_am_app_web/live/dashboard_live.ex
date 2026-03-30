@@ -22,6 +22,14 @@ defmodule HeyiAmAppWeb.DashboardLive do
     <div class="dashboard">
       <div class="dashboard-header">
         <h1 class="headline-lg">Dashboard</h1>
+        <a
+          :if={@current_scope.user.username}
+          href={"#{public_url()}/#{@current_scope.user.username}"}
+          target="_blank"
+          class="btn-tertiary"
+        >
+          View portfolio &rarr;
+        </a>
       </div>
 
       <div :if={@projects == [] and @unassigned == []} class="dashboard-empty">
