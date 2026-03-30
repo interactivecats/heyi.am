@@ -117,6 +117,7 @@ export async function exportMarkdown(
   cache: ProjectEnhanceCache,
   sessions: Session[],
   outputPath: string,
+  opts?: { totalFilesChanged?: number },
 ): Promise<ExportResult> {
   const files: string[] = [];
   let totalBytes = 0;
@@ -127,7 +128,7 @@ export async function exportMarkdown(
   const title = cache.title ?? displayNameFromDir(dirName);
 
   // README.md — project narrative
-  const readme = buildReadme(title, result, sessions);
+  const readme = buildReadme(title, result, sessions, opts?.totalFilesChanged);
   totalBytes += writeAndTrack(join(outputPath, 'README.md'), readme, files);
 
   // sessions/*.md — per-session breakdowns
@@ -152,6 +153,7 @@ function buildReadme(
   title: string,
   result: ProjectEnhanceCache['result'],
   sessions: Session[],
+  totalFilesChanged?: number,
 ): string {
   const lines: string[] = [];
   lines.push(`# ${title}\n`);
@@ -189,7 +191,7 @@ function buildReadme(
   lines.push(`- Sessions: ${sessions.length}`);
   const totalLoc = sessions.reduce((sum, s) => sum + s.linesOfCode, 0);
   const totalMin = computeMergedSessionDuration(sessions);
-  const totalFiles = sessions.reduce((sum, s) => sum + s.filesChanged.length, 0);
+  const totalFiles = totalFilesChanged ?? new Set(sessions.flatMap(s => s.filesChanged.map(f => f.path))).size;
   lines.push(`- Lines of code: ${totalLoc.toLocaleString()}`);
   lines.push(`- Total time: ${(totalMin / 60).toFixed(1)}h`);
   lines.push(`- Files changed: ${totalFiles}`);
@@ -294,7 +296,7 @@ export async function exportHtml(
   // Compute stats the same way the dashboard does
   const totalLoc = sessions.reduce((sum, s) => sum + s.linesOfCode, 0);
   const totalDurationMinutes = computeMergedSessionDuration(sessions);
-  const totalFilesChanged = opts?.totalFilesChanged ?? sessions.reduce((sum, s) => sum + s.filesChanged.length, 0);
+  const totalFilesChanged = opts?.totalFilesChanged ?? new Set(sessions.flatMap(s => s.filesChanged.map(f => f.path))).size;
   // Agent duration: sum child durations across all orchestrated sessions
   const totalAgentMinutes = sessions
     .filter((s) => s.isOrchestrated && s.children)
@@ -417,7 +419,7 @@ function buildProjectRenderInputs(
 
   const totalLoc = sessions.reduce((sum, s) => sum + s.linesOfCode, 0);
   const totalDurationMinutes = computeMergedSessionDuration(sessions);
-  const totalFilesChanged = opts?.totalFilesChanged ?? sessions.reduce((sum, s) => sum + s.filesChanged.length, 0);
+  const totalFilesChanged = opts?.totalFilesChanged ?? new Set(sessions.flatMap(s => s.filesChanged.map(f => f.path))).size;
   const totalAgentMinutes = sessions
     .filter((s) => s.isOrchestrated && s.children)
     .reduce((sum, s) => sum + s.children!.reduce((cs, c) => cs + c.durationMinutes, 0), 0);

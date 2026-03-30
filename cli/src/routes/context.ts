@@ -562,7 +562,9 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
     );
 
     const totalLoc = allStats.reduce((s, st) => s + st.loc, 0);
-    const totalFiles = allStats.reduce((s, st) => s + st.files, 0);
+    const totalFiles = (db.prepare(
+      'SELECT COUNT(DISTINCT file_path) as c FROM session_files WHERE session_id IN (SELECT id FROM sessions WHERE project_dir = ?)',
+    ).get(proj.dirName) as { c: number })?.c ?? allStats.reduce((s, st) => s + st.files, 0);
     const naiveDuration = allStats.reduce((s, st) => s + st.duration, 0);
     const totalDuration = computeMergedDurationFromDb(db, proj.dirName, naiveDuration);
 

@@ -75,8 +75,9 @@ export function createExportRouter(ctx: RouteContext): Router {
       const data = await loadProjectData(ctx, dirName);
       if (!data) { res.status(404).json({ error: 'Project not found' }); return; }
       const cache = (data.enhanceCache as ProjectEnhanceCache) ?? buildFallbackCache(data.sessions);
+      const totalFilesChanged = (data.project as Record<string, unknown>).totalFiles as number;
       const outputPath = path.join(EXPORTS_BASE, dirName, 'markdown');
-      const result = await exportMarkdown(dirName, cache, data.sessions, outputPath);
+      const result = await exportMarkdown(dirName, cache, data.sessions, outputPath, { totalFilesChanged });
       res.json(result);
     } catch (err) {
       console.error('[save-local]', (err as Error).message);
@@ -91,8 +92,9 @@ export function createExportRouter(ctx: RouteContext): Router {
       const data = await loadProjectData(ctx, dirName);
       if (!data) { res.status(404).json({ error: 'Project not found' }); return; }
       const cache = (data.enhanceCache as ProjectEnhanceCache) ?? buildFallbackCache(data.sessions);
+      const totalFilesChanged = (data.project as Record<string, unknown>).totalFiles as number;
       const outDir = safeExportPath(outputPath, dirName, 'markdown');
-      const result = await exportMarkdown(dirName, cache, data.sessions, outDir);
+      const result = await exportMarkdown(dirName, cache, data.sessions, outDir, { totalFilesChanged });
       res.json(result);
     } catch (err) {
       console.error('[export-markdown]', (err as Error).message);
@@ -145,10 +147,11 @@ export function createExportRouter(ctx: RouteContext): Router {
       const data = await loadProjectData(ctx, dirName);
       if (!data) { res.status(404).json({ error: 'Project not found' }); return; }
       const cache = (data.enhanceCache as ProjectEnhanceCache) ?? buildFallbackCache(data.sessions);
+      const totalFilesChanged = (data.project as Record<string, unknown>).totalFiles as number;
 
       // Re-use exportMarkdown to a temp dir, then zip the result
       const tmpDir = path.join(EXPORTS_BASE, '.tmp', `${dirName}-${Date.now()}`);
-      const result = await exportMarkdown(dirName, cache, data.sessions, tmpDir);
+      const result = await exportMarkdown(dirName, cache, data.sessions, tmpDir, { totalFilesChanged });
 
       // Read files into memory and zip
       const entries = result.files.map((filePath) => ({
