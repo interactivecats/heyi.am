@@ -304,26 +304,43 @@ export function extractAgentIdFromEntries(entries: RawEntry[]): string | undefin
   return undefined;
 }
 
-/** Aggregate token usage across all assistant messages. */
+/**
+ * Aggregate token usage across all assistant messages, deduplicated by message.id.
+ *
+ * Claude Code writes each content block of a single API response as a separate
+ * JSONL entry, all sharing the same message.id and carrying identical usage
+ * (cumulative snapshot, not per-block). We keep only the entry with the highest
+ * output_tokens per message.id (the final streaming chunk) to avoid double-counting.
+ */
 function aggregateTokenUsage(entries: RawEntry[]): TokenUsage | undefined {
-  let hasUsage = false;
+  // Deduplicate: for each message.id, keep only the entry with highest output_tokens
+  const byMessageId = new Map<string, TokenUsage>();
+  for (const entry of entries) {
+    if (entry.type !== "assistant") continue;
+    const usage = entry.message?.usage as TokenUsage | undefined;
+    if (!usage) continue;
+    const msgId = entry.message?.id ?? entry.uuid;
+    const existing = byMessageId.get(msgId);
+    if (!existing || (usage.output_tokens ?? 0) > (existing.output_tokens ?? 0)) {
+      byMessageId.set(msgId, usage);
+    }
+  }
+
+  if (byMessageId.size === 0) return undefined;
+
   const totals: TokenUsage = {
     input_tokens: 0,
     output_tokens: 0,
     cache_read_input_tokens: 0,
     cache_creation_input_tokens: 0,
   };
-  for (const entry of entries) {
-    if (entry.type !== "assistant") continue;
-    const usage = entry.message?.usage;
-    if (!usage) continue;
-    hasUsage = true;
-    totals.input_tokens += (usage as TokenUsage).input_tokens ?? 0;
-    totals.output_tokens += (usage as TokenUsage).output_tokens ?? 0;
-    totals.cache_read_input_tokens += (usage as TokenUsage).cache_read_input_tokens ?? 0;
-    totals.cache_creation_input_tokens += (usage as TokenUsage).cache_creation_input_tokens ?? 0;
+  for (const usage of byMessageId.values()) {
+    totals.input_tokens += usage.input_tokens ?? 0;
+    totals.output_tokens += usage.output_tokens ?? 0;
+    totals.cache_read_input_tokens += usage.cache_read_input_tokens ?? 0;
+    totals.cache_creation_input_tokens += usage.cache_creation_input_tokens ?? 0;
   }
-  return hasUsage ? totals : undefined;
+  return totals;
 }
 
 /** Collect unique model names used across assistant messages. */

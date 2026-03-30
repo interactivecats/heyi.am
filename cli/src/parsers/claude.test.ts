@@ -791,14 +791,102 @@ describe("listSessions — parent-child linking", () => {
 // --- Token usage extraction ---
 
 describe("token usage extraction", () => {
-  it("aggregates token usage across assistant messages", async () => {
+  it("deduplicates streaming chunks sharing the same message.id", async () => {
     const path = join(tmpDir, "token-usage.jsonl");
     await writeFile(path, toJsonl(BASIC_SESSION));
     const result = await claudeParser.parse(path);
-    // BASIC_SESSION has 2 assistant entries with usage: { input_tokens: 100, output_tokens: 50 }
+    // BASIC_SESSION has 2 assistant entries sharing id "msg_test" with usage: { input_tokens: 100, output_tokens: 50 }.
+    // These represent content blocks from the same API response — usage should be counted once, not summed.
     expect(result.token_usage).toBeDefined();
-    expect(result.token_usage!.input_tokens).toBe(200);
-    expect(result.token_usage!.output_tokens).toBe(100);
+    expect(result.token_usage!.input_tokens).toBe(100);
+    expect(result.token_usage!.output_tokens).toBe(50);
+  });
+
+  it("aggregates token usage across distinct API messages", async () => {
+    const path = join(tmpDir, "token-multi-msg.jsonl");
+    const entries = [
+      userEntry("first question", "2026-03-20T10:00:00.000Z"),
+      makeEntry({
+        type: "assistant",
+        timestamp: "2026-03-20T10:00:02.000Z",
+        message: {
+          role: "assistant",
+          id: "msg_aaa",
+          model: "claude-opus-4-6",
+          content: [{ type: "text", text: "First response" }],
+          usage: { input_tokens: 100, output_tokens: 200 },
+        },
+      }),
+      userEntry("second question", "2026-03-20T10:00:05.000Z"),
+      makeEntry({
+        type: "assistant",
+        timestamp: "2026-03-20T10:00:07.000Z",
+        message: {
+          role: "assistant",
+          id: "msg_bbb",
+          model: "claude-opus-4-6",
+          content: [{ type: "text", text: "Second response" }],
+          usage: { input_tokens: 150, output_tokens: 300 },
+        },
+      }),
+    ];
+    await writeFile(path, toJsonl(entries));
+    const result = await claudeParser.parse(path);
+    // Two distinct messages — usage should be summed
+    expect(result.token_usage).toBeDefined();
+    expect(result.token_usage!.input_tokens).toBe(250);
+    expect(result.token_usage!.output_tokens).toBe(500);
+  });
+
+  it("keeps highest output_tokens entry per message.id (final streaming chunk)", async () => {
+    const path = join(tmpDir, "token-streaming.jsonl");
+    const entries = [
+      userEntry("do something", "2026-03-20T10:00:00.000Z"),
+      // Streaming chunk 1: text block (partial output_tokens)
+      makeEntry({
+        type: "assistant",
+        timestamp: "2026-03-20T10:00:02.000Z",
+        message: {
+          role: "assistant",
+          id: "msg_stream",
+          model: "claude-opus-4-6",
+          content: [{ type: "text", text: "Let me..." }],
+          usage: { input_tokens: 5000, output_tokens: 2, cache_read_input_tokens: 14000, cache_creation_input_tokens: 4000 },
+        },
+      }),
+      // Streaming chunk 2: tool_use block (partial output_tokens)
+      makeEntry({
+        type: "assistant",
+        timestamp: "2026-03-20T10:00:02.100Z",
+        message: {
+          role: "assistant",
+          id: "msg_stream",
+          model: "claude-opus-4-6",
+          content: [{ type: "tool_use", id: "toolu_01", name: "Read", input: { file_path: "/app/foo.ts" } }],
+          usage: { input_tokens: 5000, output_tokens: 2, cache_read_input_tokens: 14000, cache_creation_input_tokens: 4000 },
+        },
+      }),
+      // Streaming chunk 3: final tool_use block (full output_tokens)
+      makeEntry({
+        type: "assistant",
+        timestamp: "2026-03-20T10:00:02.200Z",
+        message: {
+          role: "assistant",
+          id: "msg_stream",
+          model: "claude-opus-4-6",
+          content: [{ type: "tool_use", id: "toolu_02", name: "Read", input: { file_path: "/app/bar.ts" } }],
+          usage: { input_tokens: 5000, output_tokens: 400, cache_read_input_tokens: 14000, cache_creation_input_tokens: 4000 },
+        },
+      }),
+    ];
+    await writeFile(path, toJsonl(entries));
+    const result = await claudeParser.parse(path);
+    // 3 JSONL entries, 1 unique message — should count once using the final chunk (highest output_tokens)
+    expect(result.token_usage).toBeDefined();
+    expect(result.token_usage!.input_tokens).toBe(5000);
+    expect(result.token_usage!.output_tokens).toBe(400);
+    expect(result.token_usage!.cache_read_input_tokens).toBe(14000);
+    expect(result.token_usage!.cache_creation_input_tokens).toBe(4000);
   });
 
   it("returns undefined when no assistant messages have usage", async () => {
