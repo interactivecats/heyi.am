@@ -92,7 +92,7 @@ export function getDatabase(dbPath: string = getDbPath()): Database.Database {
   return _db;
 }
 
-function closeDatabase(): void {
+export function closeDatabase(): void {
   if (_db) {
     _db.close();
     _db = null;
@@ -212,9 +212,9 @@ function migrateToV2(db: Database.Database): void {
     // Upsert schema version
     const existing = db.prepare('SELECT version FROM schema_version LIMIT 1').get();
     if (existing) {
-      db.prepare('UPDATE schema_version SET version = ?').run(CURRENT_SCHEMA_VERSION);
+      db.prepare('UPDATE schema_version SET version = ?').run(2);
     } else {
-      db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(CURRENT_SCHEMA_VERSION);
+      db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(2);
     }
   });
   tx();
@@ -229,7 +229,7 @@ function migrateToV3(db: Database.Database): void {
       )
     `);
 
-    db.prepare('UPDATE schema_version SET version = ?').run(CURRENT_SCHEMA_VERSION);
+    db.prepare('UPDATE schema_version SET version = ?').run(3);
   });
   tx();
 }
@@ -243,7 +243,7 @@ function migrateToV5(db: Database.Database): void {
     if (!cols.some(c => c.name === 'output_tokens')) {
       db.exec('ALTER TABLE sessions ADD COLUMN output_tokens INTEGER NOT NULL DEFAULT 0');
     }
-    db.prepare('UPDATE schema_version SET version = ?').run(CURRENT_SCHEMA_VERSION);
+    db.prepare('UPDATE schema_version SET version = ?').run(5);
   });
   tx();
 }
@@ -256,7 +256,7 @@ function migrateToV4(db: Database.Database): void {
       db.exec('ALTER TABLE sessions ADD COLUMN active_intervals TEXT');
     }
 
-    db.prepare('UPDATE schema_version SET version = ?').run(CURRENT_SCHEMA_VERSION);
+    db.prepare('UPDATE schema_version SET version = ?').run(4);
   });
   tx();
 }

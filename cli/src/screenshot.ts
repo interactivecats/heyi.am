@@ -51,13 +51,17 @@ function isUrlSafe(raw: string): boolean {
 
   // Reject localhost and private IPs
   const host = parsed.hostname.toLowerCase();
-  if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+  // Strip IPv6 brackets for comparison
+  const bare = host.startsWith('[') ? host.slice(1, -1) : host;
+  if (bare === 'localhost' || bare === '127.0.0.1' || bare === '::1' || bare === '0.0.0.0') {
     // Allow our own preview server
     const port = parsed.port || (parsed.protocol === 'https:' ? '443' : '80');
     if (port !== '17845') return false;
   }
-  // Reject private IP ranges
-  if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.|0\.)/.test(host)) return false;
+  // Reject private IP ranges (IPv4)
+  if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.|0\.)/.test(bare)) return false;
+  // Reject IPv6 private ranges (link-local, ULA, loopback, IPv4-mapped)
+  if (/^(fe80:|fc|fd|::ffff:(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.))/i.test(bare)) return false;
   if (host.endsWith('.local') || host.endsWith('.internal')) return false;
 
   return true;

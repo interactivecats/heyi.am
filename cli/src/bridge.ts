@@ -16,6 +16,7 @@ import type {
   Session,
   ParsedTurn,
   ParsedFileChange,
+  AgentChild,
 } from "./analyzer.js";
 import { analyzeSession } from "./analyzer.js";
 import { parseSession, type SessionMeta } from "./parsers/index.js";
@@ -364,15 +365,7 @@ export async function bridgeChildSessions(
   return deduplicateChildren(results);
 }
 
-/** Canonical type for child/agent data — used everywhere. */
-export interface AgentChild {
-  sessionId: string;
-  role: string;
-  durationMinutes: number;
-  linesOfCode: number;
-  date?: string;
-}
-
+export type { AgentChild } from './analyzer.js';
 
 /** Convert a fully-parsed Session into the canonical AgentChild shape. */
 export function toAgentChild(session: Session): AgentChild {

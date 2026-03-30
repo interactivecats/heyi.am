@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import type { Server } from 'node:http';
-import { getDatabase } from './db.js';
+import { getDatabase, closeDatabase } from './db.js';
 import { syncWithTracking, startFileWatcher, startCursorPolling, markSyncPending } from './sync.js';
 import {
   createRouteContext,
@@ -94,13 +94,15 @@ export function createApp(sessionsBasePath?: string, dbPath?: string) {
     next();
   });
 
-  app.use(cors({ origin: ['http://localhost:17845', 'http://127.0.0.1:17845', 'http://localhost:5173'] }));
+  const corsOrigins = ['http://localhost:17845', 'http://127.0.0.1:17845'];
+  if (process.env.NODE_ENV !== 'production') corsOrigins.push('http://localhost:5173');
+  app.use(cors({ origin: corsOrigins }));
   app.use((_req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     next();
   });
-  app.use(express.json({ limit: '50mb' }));
+  app.use(express.json({ limit: '10mb' }));
 
   // ── Mount domain routers ───────────────────────────────────
   app.use(createProjectsRouter(ctx));
@@ -173,10 +175,11 @@ export function startServer(port: number = 17845, options?: { demo?: boolean }):
         server.on('close', () => {
           stopFileWatcher();
           stopCursorPolling();
+          closeDatabase();
           removeServerPidFile();
         });
       } else {
-        server.on('close', () => { removeServerPidFile(); });
+        server.on('close', () => { closeDatabase(); removeServerPidFile(); });
       }
 
       resolve(server);

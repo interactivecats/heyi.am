@@ -198,8 +198,6 @@ export function createPublishRouter(ctx: RouteContext): Router {
       const projectData = await projectRes!.json() as { project_id: number; slug: string };
       send({ type: 'project', status: 'created', projectId: projectData.project_id, slug: projectData.slug });
 
-      let screenshotUploaded = false;
-
       // Step 1b: Upload screenshot (non-fatal)
       if (screenshotBase64 || projectUrl) {
         try {
@@ -243,7 +241,6 @@ export function createPublishRouter(ctx: RouteContext): Router {
                 },
                 body: JSON.stringify({ key }),
               });
-              screenshotUploaded = true;
               send({ type: 'screenshot', status: 'uploaded' });
             } else {
               send({ type: 'screenshot', status: 'skipped', reason: 'presign failed' });

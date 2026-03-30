@@ -2,6 +2,7 @@
 
 import type Database from 'better-sqlite3';
 import { searchFts, type SessionRow, type FtsSearchResult } from './db.js';
+import { escapeLikeWildcards } from './format-utils.js';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -125,7 +126,7 @@ function searchWithFilters(
 
   if (filters?.project) {
     conditions.push('s.project_dir LIKE ?');
-    params.push(`%${filters.project}%`);
+    params.push(`%${escapeLikeWildcards(filters.project)}%`);
   }
 
   if (filters?.source) {
@@ -165,7 +166,7 @@ function searchWithFilters(
       ORDER BY s.start_time DESC
       LIMIT ?
     `;
-    params.unshift(`%${filters.file}%`);
+    params.unshift(`%${escapeLikeWildcards(filters.file)}%`);
     params.push(MAX_RESULTS);
   } else {
     sql = `
