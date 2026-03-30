@@ -55,12 +55,21 @@ defmodule HeyiAmPublicWeb.PublicRenderingTest do
   test "project with rendered HTML is served at /:username/:project", %{conn: conn} do
     user = user_fixture(%{username: "intprojdev"})
 
-    {:ok, _project} =
+    {:ok, project} =
       HeyiAm.Projects.create_project(%{
         user_id: user.id,
         title: "Int Project",
         slug: "int-project",
         rendered_html: "<div>Integration Project Page</div>"
+      })
+
+    {:ok, _share} =
+      HeyiAm.Shares.create_share(%{
+        user_id: user.id,
+        project_id: project.id,
+        token: "int-proj-share",
+        title: "Published Session",
+        status: "listed"
       })
 
     conn = get(conn, "/intprojdev/int-project")

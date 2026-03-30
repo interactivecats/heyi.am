@@ -39,6 +39,13 @@ defmodule HeyiAmPublicWeb.Router do
     get "/*path", PageController, :redirect_vibes
   end
 
+  # Unlisted project pages
+  scope "/p", HeyiAmPublicWeb do
+    pipe_through :browser
+
+    get "/:token", PortfolioController, :unlisted_project
+  end
+
   # Shared session pages
   scope "/s", HeyiAmPublicWeb do
     pipe_through :browser

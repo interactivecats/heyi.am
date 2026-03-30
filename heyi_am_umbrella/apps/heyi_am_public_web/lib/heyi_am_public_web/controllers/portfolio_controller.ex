@@ -53,8 +53,14 @@ defmodule HeyiAmPublicWeb.PortfolioController do
         |> render(:"404")
 
       user ->
-        case Projects.get_project_with_accessible_shares(user.id, slug) do
+        case Projects.get_project_with_published_shares(user.id, slug) do
           nil ->
+            conn
+            |> put_status(:not_found)
+            |> put_view(HeyiAmPublicWeb.ErrorHTML)
+            |> render(:"404")
+
+          %{shares: []} ->
             conn
             |> put_status(:not_found)
             |> put_view(HeyiAmPublicWeb.ErrorHTML)
@@ -87,6 +93,49 @@ defmodule HeyiAmPublicWeb.PortfolioController do
                 |> put_view(HeyiAmPublicWeb.ErrorHTML)
                 |> render(:"404")
             end
+        end
+    end
+  end
+
+  def unlisted_project(conn, %{"token" => token}) do
+    case Projects.get_project_by_unlisted_token(token) do
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(HeyiAmPublicWeb.ErrorHTML)
+        |> render(:"404")
+
+      %{shares: []} ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(HeyiAmPublicWeb.ErrorHTML)
+        |> render(:"404")
+
+      project ->
+        user = project.user
+        display_name = user.display_name || user.username
+        og_title = "#{project.title} — #{display_name}"
+
+        og_description =
+          if project.narrative && project.narrative != "",
+            do: String.slice(project.narrative, 0, 200),
+            else: "AI-assisted development project on heyi.am"
+
+        case project.rendered_html do
+          html when is_binary(html) and html != "" ->
+            render(conn, :rendered,
+              rendered_html: html,
+              page_title: "#{project.title} — #{display_name}",
+              og_title: og_title,
+              og_description: og_description,
+              og_url: HeyiAmPublicWeb.Endpoint.url() <> "/p/#{token}"
+            )
+
+          _ ->
+            conn
+            |> put_status(:not_found)
+            |> put_view(HeyiAmPublicWeb.ErrorHTML)
+            |> render(:"404")
         end
     end
   end

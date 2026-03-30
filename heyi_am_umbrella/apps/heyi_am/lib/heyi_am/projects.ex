@@ -131,6 +131,15 @@ defmodule HeyiAm.Projects do
     end)
   end
 
+  def get_project_by_unlisted_token(token) do
+    visible = from(s in Share, where: s.status in ["listed", "unlisted"], order_by: [asc: s.recorded_at])
+
+    Project
+    |> where([p], p.unlisted_token == ^token)
+    |> preload([:user, shares: ^visible])
+    |> Repo.one()
+  end
+
   def delete_project(%Project{} = project) do
     Repo.delete(project)
   end

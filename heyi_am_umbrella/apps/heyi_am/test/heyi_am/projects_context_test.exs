@@ -178,4 +178,47 @@ defmodule HeyiAm.ProjectsContextTest do
       assert Projects.get_project_with_accessible_shares(user.id, "ghost") == nil
     end
   end
+
+  describe "unlisted_token" do
+    test "auto-generates token on project creation" do
+      user = make_user()
+      {:ok, project} = Projects.create_project(%{slug: "token-proj", title: "Token", user_id: user.id})
+      assert is_binary(project.unlisted_token)
+      assert byte_size(project.unlisted_token) > 20
+    end
+
+    test "preserves token on update" do
+      user = make_user()
+      {:ok, project} = Projects.create_project(%{slug: "stable-token", title: "Stable", user_id: user.id})
+      original_token = project.unlisted_token
+
+      {:ok, updated} = Projects.update_project(project, %{title: "Updated Title"})
+      assert updated.unlisted_token == original_token
+    end
+
+    test "each project gets a unique token" do
+      user = make_user()
+      {:ok, p1} = Projects.create_project(%{slug: "uniq-1", title: "One", user_id: user.id})
+      {:ok, p2} = Projects.create_project(%{slug: "uniq-2", title: "Two", user_id: user.id})
+      assert p1.unlisted_token != p2.unlisted_token
+    end
+  end
+
+  describe "get_project_by_unlisted_token/1" do
+    test "returns project with user and visible shares" do
+      user = make_user()
+      {:ok, project} = Projects.create_project(%{slug: "by-token", title: "By Token", user_id: user.id})
+      {:ok, _} = Shares.create_share(%{token: "t-bt-listed", title: "Listed", status: "listed", user_id: user.id, project_id: project.id})
+      {:ok, _} = Shares.create_share(%{token: "t-bt-draft", title: "Draft", status: "draft", user_id: user.id, project_id: project.id})
+
+      result = Projects.get_project_by_unlisted_token(project.unlisted_token)
+      assert result.id == project.id
+      assert result.user.id == user.id
+      assert length(result.shares) == 1
+    end
+
+    test "returns nil for unknown token" do
+      assert Projects.get_project_by_unlisted_token("nonexistent-token") == nil
+    end
+  end
 end

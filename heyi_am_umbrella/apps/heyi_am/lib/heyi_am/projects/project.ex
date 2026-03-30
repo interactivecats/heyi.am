@@ -19,6 +19,7 @@ defmodule HeyiAm.Projects.Project do
     field :total_files_changed, :integer
     field :skipped_sessions, {:array, :map}, default: []
     field :rendered_html, :string
+    field :unlisted_token, :string
 
     belongs_to :user, HeyiAm.Accounts.User
     has_many :shares, HeyiAm.Shares.Share
@@ -39,9 +40,23 @@ defmodule HeyiAm.Projects.Project do
     |> validate_length(:slug, max: 100)
     |> validate_length(:title, max: 200)
     |> validate_format(:slug, ~r/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, message: "must be lowercase alphanumeric with hyphens, cannot start or end with hyphen")
+    |> maybe_generate_unlisted_token()
     |> unique_constraint([:user_id, :slug])
     |> unique_constraint([:user_id, :client_project_id], name: :projects_user_id_client_project_id_index)
+    |> unique_constraint(:unlisted_token)
     |> foreign_key_constraint(:user_id)
+  end
+
+  defp maybe_generate_unlisted_token(changeset) do
+    if get_field(changeset, :unlisted_token) do
+      changeset
+    else
+      put_change(changeset, :unlisted_token, generate_token())
+    end
+  end
+
+  defp generate_token do
+    :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
   end
 
   defp normalize_slug(%{"slug" => slug} = attrs) when is_binary(slug) do

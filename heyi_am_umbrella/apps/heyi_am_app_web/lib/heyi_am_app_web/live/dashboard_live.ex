@@ -22,69 +22,134 @@ defmodule HeyiAmAppWeb.DashboardLive do
     <div class="dashboard">
       <div class="dashboard-header">
         <h1 class="headline-lg">Dashboard</h1>
-        <a
-          :if={@current_scope.user.username}
-          href={"#{public_url()}/#{@current_scope.user.username}"}
-          target="_blank"
-          class="btn-tertiary"
-        >
-          View portfolio &rarr;
-        </a>
-      </div>
-
-      <div class="stats-strip">
-        <div class="stat-card">
-          <span class="stat-card-label">Projects</span>
-          <span class="stat-card-value stat-card-value--sm">{length(@projects)}</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-card-label">Sessions</span>
-          <span class="stat-card-value stat-card-value--sm">{@total_sessions}</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-card-label">Time</span>
-          <span class="stat-card-value stat-card-value--sm">{format_duration(@total_minutes)}</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-card-label">Published</span>
-          <span class="stat-card-value stat-card-value--sm">{@published_count}</span>
-        </div>
       </div>
 
       <div :if={@projects == [] and @unassigned == []} class="dashboard-empty">
         <p class="body-md" style="color: var(--on-surface-variant);">
-          No projects or sessions yet. Upload from the CLI to get started.
+          No projects yet. Upload from the CLI to get started.
         </p>
         <code class="label-lg" style="color: var(--primary);">npx heyiam</code>
       </div>
 
       <div :for={project <- @projects} class="project-card" id={"project-#{project.id}"}>
-        <div class="project-card-header">
+        <div class="project-card-top">
           <div class="project-card-info">
-            <h2 class="headline-sm">{project.title}</h2>
+            <h2 class="title-lg">{project.title}</h2>
             <p :if={project.narrative} class="body-sm project-narrative">
-              {String.slice(project.narrative, 0, 160)}<span :if={String.length(project.narrative || "") > 160}>...</span>
+              {String.slice(project.narrative, 0, 120)}<span :if={String.length(project.narrative || "") > 120}>...</span>
             </p>
           </div>
-          <a
-            :if={@current_scope.user.username && has_listed?(project) && project.rendered_html}
-            href={"#{public_url()}/#{@current_scope.user.username}/#{project.slug}"}
-            target="_blank"
-            class="btn-tertiary"
-          >
-            View &rarr;
-          </a>
-          <a
-            :if={!has_listed?(project) && project.rendered_html}
-            href={~p"/preview/project/#{project.slug}"}
-            target="_blank"
-            class="btn-tertiary"
-          >
-            Preview &rarr;
-          </a>
+
+          <div :if={project.shares != []} class="project-visibility-control">
+            <form phx-change="update_project_status" phx-value-project-id={project.id}>
+              <div class="segmented-control">
+                <label class={"segmented-control-option #{if project_status(project) == "draft", do: "segmented-control-option--active segmented-control-option--draft"}"}>
+                  <input type="radio" name="status" value="draft" checked={project_status(project) == "draft"} />
+                  Private
+                </label>
+                <label class={"segmented-control-option #{if project_status(project) == "unlisted", do: "segmented-control-option--active segmented-control-option--unlisted"}"}>
+                  <input type="radio" name="status" value="unlisted" checked={project_status(project) == "unlisted"} />
+                  Unlisted
+                </label>
+                <label class={"segmented-control-option #{if project_status(project) == "listed", do: "segmented-control-option--active segmented-control-option--listed"}"}>
+                  <input type="radio" name="status" value="listed" checked={project_status(project) == "listed"} />
+                  Published
+                </label>
+              </div>
+            </form>
+          </div>
         </div>
 
-        <div class="project-card-actions">
+        <div :if={project_status(project) == "unlisted" && project.unlisted_token} class="project-url-bar project-url-bar--unlisted">
+          <div class="project-url-bar-label">
+            <span class="label-sm">Unlisted</span>
+            <span class="label-sm project-url-bar-hint">Only people with the link can see this</span>
+          </div>
+          <div class="project-url-bar-row">
+            <code class="label-sm project-url-text">{public_url()}/p/#{project.unlisted_token}</code>
+            <a
+              id={"copy-project-#{project.id}"}
+              phx-hook="CopyLink"
+              data-url={"#{public_url()}/p/#{project.unlisted_token}"}
+              href="#"
+              class="btn-copy-link"
+            >
+              Copy
+            </a>
+          </div>
+        </div>
+
+        <div :if={project_status(project) == "listed" && @current_scope.user.username} class="project-url-bar project-url-bar--listed">
+          <div class="project-url-bar-label">
+            <span class="label-sm">Published</span>
+            <span class="label-sm project-url-bar-hint">Visible on your portfolio</span>
+          </div>
+          <div class="project-url-bar-row">
+            <code class="label-sm project-url-text">{public_url()}/#{@current_scope.user.username}/#{project.slug}</code>
+            <a
+              href={"#{public_url()}/#{@current_scope.user.username}/#{project.slug}"}
+              target="_blank"
+              class="btn-copy-link"
+            >
+              Open
+            </a>
+          </div>
+        </div>
+
+        <div class="project-card-meta">
+          <span class="label-sm">{project.total_sessions || length(project.shares)} sessions</span>
+          <span :if={project.total_duration_minutes} class="label-sm">{format_duration(project.total_duration_minutes)}</span>
+          <span :if={project.total_loc} class="label-sm">{format_number(project.total_loc)} lines</span>
+        </div>
+
+        <div :if={project.skills != []} class="project-card-skills">
+          <span :for={skill <- Enum.take(project.skills, 5)} class="chip">{skill}</span>
+          <span :if={length(project.skills) > 5} class="chip chip--more">+{length(project.skills) - 5}</span>
+        </div>
+
+        <details class="project-sessions" open={has_recent_uploads?(project.shares)}>
+          <summary class="project-sessions-toggle">
+            <span class="label-md">Sessions</span>
+            <span class="label-sm" style="color: var(--outline);">
+              {count_by_status(project.shares)}
+            </span>
+          </summary>
+          <div class="project-sessions-list">
+            <div :for={share <- project.shares} class="session-row" id={"share-#{share.id}"}>
+              <div class="session-row-main">
+                <.session_title_link share={share} username={@current_scope.user.username} />
+                <span :if={is_recent?(share)} class="badge-new">New</span>
+              </div>
+              <div class="session-row-bottom">
+                <div class="session-meta">
+                  <span :if={share.duration_minutes}>{share.duration_minutes}m</span>
+                  <span :if={share.files_changed}>{share.files_changed} files</span>
+                  <span :if={share.loc_changed}>{format_number(share.loc_changed)} lines</span>
+                </div>
+                <div class="session-row-actions">
+                  <form phx-change="update_status" phx-value-share-id={share.id}>
+                    <select name="status" class={"status-select status-select--#{share.status}"}>
+                      <option value="draft" selected={share.status == "draft"}>Private</option>
+                      <option value="unlisted" selected={share.status == "unlisted"}>Unlisted</option>
+                      <option value="listed" selected={share.status == "listed"}>Published</option>
+                    </select>
+                  </form>
+                  <button
+                    phx-click="delete_session"
+                    phx-value-share-id={share.id}
+                    data-confirm="Delete this session? This cannot be undone."
+                    class="btn-delete"
+                    aria-label="Delete session"
+                  >
+                    &times;
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <div class="project-card-footer">
           <button
             phx-click="delete_project"
             phx-value-project-id={project.id}
@@ -94,67 +159,30 @@ defmodule HeyiAmAppWeb.DashboardLive do
             Delete project
           </button>
         </div>
+      </div>
 
-        <div class="project-card-stats">
-          <span class="label-sm">{project.total_sessions || length(project.shares)} sessions</span>
-          <span :if={project.total_duration_minutes} class="label-sm">{format_duration(project.total_duration_minutes)}</span>
-          <span :if={project.total_loc} class="label-sm">{format_number(project.total_loc)} lines changed</span>
-          <span :if={project.total_files_changed} class="label-sm">{project.total_files_changed} files</span>
+      <div :if={@unassigned != []} class="project-card project-card--unassigned">
+        <div class="project-card-top">
+          <h2 class="title-lg" style="color: var(--on-surface-variant);">Unassigned Sessions</h2>
         </div>
-
-        <div :if={project.skills != []} class="project-card-skills">
-          <span :for={skill <- Enum.take(project.skills, 6)} class="chip">{skill}</span>
-          <span :if={length(project.skills) > 6} class="chip">+{length(project.skills) - 6}</span>
-        </div>
-
-        <div :if={project.shares != []} class="project-visibility">
-          <span class="label-md">Visibility</span>
-          <form phx-change="update_project_status" phx-value-project-id={project.id}>
-            <select name="status" class={"status-select status-select--#{project_status(project)}"}>
-              <option value="draft" selected={project_status(project) == "draft"}>Private</option>
-              <option value="unlisted" selected={project_status(project) == "unlisted"}>Unlisted</option>
-              <option value="listed" selected={project_status(project) == "listed"}>Published</option>
-            </select>
-          </form>
-        </div>
-
-        <details class="project-sessions" open={has_recent_uploads?(project.shares)}>
-          <summary class="project-sessions-toggle">
-            <span class="label-md">Sessions</span>
-            <span class="label-sm" style="color: var(--outline);">
-              {count_by_status(project.shares)}<span :if={project.total_sessions && project.total_sessions > length(project.shares)}> of {project.total_sessions} total</span>
-            </span>
-          </summary>
-          <div class="project-sessions-list">
-            <div :for={share <- project.shares} class="session-row" id={"share-#{share.id}"}>
-              <div class="session-row-info">
-                <div class="session-title-row">
-                  <.session_title_link share={share} username={@current_scope.user.username} />
-                  <span :if={is_recent?(share)} class="badge-new">New</span>
-                </div>
-                <div class="session-meta">
-                  <span :if={share.duration_minutes} class="label-sm">{share.duration_minutes}m</span>
-                  <span :if={share.files_changed} class="label-sm">{share.files_changed} files</span>
-                  <span :if={share.loc_changed} class="label-sm">{share.loc_changed} lines</span>
-                </div>
+        <div class="project-sessions-list">
+          <div :for={share <- @unassigned} class="session-row" id={"share-#{share.id}"}>
+            <div class="session-row-main">
+              <.session_title_link share={share} username={@current_scope.user.username} />
+              <span :if={is_recent?(share)} class="badge-new">New</span>
+            </div>
+            <div class="session-row-bottom">
+              <div class="session-meta">
+                <span :if={share.duration_minutes}>{share.duration_minutes}m</span>
+                <span :if={share.files_changed}>{share.files_changed} files</span>
+                <span :if={share.loc_changed}>{format_number(share.loc_changed)} lines</span>
               </div>
               <div class="session-row-actions">
-                <a
-                  :if={share.status in ["unlisted", "listed"] && share.token}
-                  id={"copy-#{share.id}"}
-                  phx-hook="CopyLink"
-                  data-url={"#{public_url()}/s/#{share.token}"}
-                  href="#"
-                  class="btn-copy-link"
-                >
-                  Copy link
-                </a>
                 <form phx-change="update_status" phx-value-share-id={share.id}>
                   <select name="status" class={"status-select status-select--#{share.status}"}>
                     <option value="draft" selected={share.status == "draft"}>Private</option>
                     <option value="unlisted" selected={share.status == "unlisted"}>Unlisted</option>
                     <option value="listed" selected={share.status == "listed"}>Published</option>
-                    <option value="archived" selected={share.status == "archived"}>Archived</option>
                   </select>
                 </form>
                 <button
@@ -167,55 +195,6 @@ defmodule HeyiAmAppWeb.DashboardLive do
                   &times;
                 </button>
               </div>
-            </div>
-          </div>
-        </details>
-      </div>
-
-      <div :if={@unassigned != []} class="project-card project-card--unassigned">
-        <div class="project-card-header">
-          <h2 class="headline-sm" style="color: var(--on-surface-variant);">Unassigned Sessions</h2>
-        </div>
-        <div class="project-sessions-list">
-          <div :for={share <- @unassigned} class="session-row" id={"share-#{share.id}"}>
-            <div class="session-row-info">
-              <div class="session-title-row">
-                <.session_title_link share={share} username={@current_scope.user.username} />
-                <span :if={is_recent?(share)} class="badge-new">New</span>
-              </div>
-              <div class="session-meta">
-                <span :if={share.duration_minutes} class="label-sm">{share.duration_minutes}m</span>
-                <span :if={share.files_changed} class="label-sm">{share.files_changed} files</span>
-                <span :if={share.loc_changed} class="label-sm">{share.loc_changed} lines</span>
-              </div>
-            </div>
-            <div class="session-row-actions">
-              <a
-                :if={share.status in ["unlisted", "listed"] && share.token}
-                id={"copy-#{share.id}"}
-                phx-hook="CopyLink"
-                data-url={"#{public_url()}/s/#{share.token}"}
-                href="#"
-                class="btn-copy-link"
-              >
-                Copy link
-              </a>
-              <form phx-change="update_status" phx-value-share-id={share.id}>
-                <select name="status" class={"status-select status-select--#{share.status}"}>
-                  <option value="draft" selected={share.status == "draft"}>Private</option>
-                  <option value="unlisted" selected={share.status == "unlisted"}>Unlisted</option>
-                  <option value="listed" selected={share.status == "listed"}>Published</option>
-                </select>
-              </form>
-              <button
-                phx-click="delete_session"
-                phx-value-share-id={share.id}
-                data-confirm="Delete this session? This cannot be undone."
-                class="btn-delete"
-                aria-label="Delete session"
-              >
-                &times;
-              </button>
             </div>
           </div>
         </div>
@@ -368,10 +347,6 @@ defmodule HeyiAmAppWeb.DashboardLive do
       "unlisted" in statuses -> "unlisted"
       true -> "draft"
     end
-  end
-
-  defp has_listed?(project) do
-    Enum.any?(project.shares, &(&1.status == "listed"))
   end
 
   defp is_recent?(share) do
