@@ -66,7 +66,7 @@ defmodule HeyiAmAppWeb.DashboardLive do
             <span class="label-sm project-url-bar-hint">Only people with the link can see this</span>
           </div>
           <div class="project-url-bar-row">
-            <code class="label-sm project-url-text">{public_url()}/p/#{project.unlisted_token}</code>
+            <code class="label-sm project-url-text">{"#{public_url()}/p/#{project.unlisted_token}"}</code>
             <a
               id={"copy-project-#{project.id}"}
               phx-hook="CopyLink"
@@ -85,7 +85,7 @@ defmodule HeyiAmAppWeb.DashboardLive do
             <span class="label-sm project-url-bar-hint">Visible on your portfolio</span>
           </div>
           <div class="project-url-bar-row">
-            <code class="label-sm project-url-text">{public_url()}/#{@current_scope.user.username}/#{project.slug}</code>
+            <code class="label-sm project-url-text">{"#{public_url()}/#{@current_scope.user.username}/#{project.slug}"}</code>
             <a
               href={"#{public_url()}/#{@current_scope.user.username}/#{project.slug}"}
               target="_blank"
