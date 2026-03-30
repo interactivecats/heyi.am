@@ -28,7 +28,13 @@ defmodule HeyiAmAppWeb.SecurityTest do
     end
   end
 
-  describe "no raw() calls" do
+  describe "no unescaped HTML injection" do
+    # PreviewController renders pre-sanitized HTML via send_resp — this is
+    # intentional and safe because the HTML passes through HtmlSanitizer at
+    # the changeset layer before reaching the database. Any new file that
+    # needs to render raw HTML must be added here with justification.
+    @raw_html_allowlist ["preview_controller.ex"]
+
     test "no raw() calls in any app_web template" do
       app_web_path =
         Path.join([
@@ -48,13 +54,23 @@ defmodule HeyiAmAppWeb.SecurityTest do
 
         violations =
           Enum.filter(all_files, fn file ->
-            content = File.read!(file)
-            # Match raw() calls but not "raw" in comments or strings
-            String.contains?(content, "raw(") and not String.contains?(content, "# raw(")
+            basename = Path.basename(file)
+
+            if basename in @raw_html_allowlist do
+              false
+            else
+              content = File.read!(file)
+              # Match raw() calls but not "raw" in comments or strings
+              has_raw = String.contains?(content, "raw(") and not String.contains?(content, "# raw(")
+              # Also catch string interpolation inside send_resp — functionally equivalent to raw()
+              has_interpolated_resp = Regex.match?(~r/send_resp\(.+#\{/, content)
+
+              has_raw or has_interpolated_resp
+            end
           end)
 
         assert violations == [],
-               "Found raw() calls in app_web files: #{inspect(violations)}"
+               "Found unescaped HTML injection in app_web files (not in allowlist): #{inspect(violations)}"
       end
     end
   end

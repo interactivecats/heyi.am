@@ -43,9 +43,15 @@ defmodule HeyiAm.HtmlSanitizer.Scrubber do
                     aria-describedby aria-labelledby
                     hidden lang dir tabindex)
 
-  @link_attrs ~w(target rel)
+  @link_attrs ~w(target)
   @img_attrs ~w(alt width height loading)
   @table_cell_attrs ~w(colspan rowspan scope)
+
+  # Only data-* attributes that mount.js / CLI components actually use — reject
+  # all others to prevent DOM clobbering and JS hijacking via attacker-controlled values.
+  @allowed_data_attrs ~w(data-work-timeline data-growth-chart data-sessions
+                          data-total-loc data-total-files data-session-id
+                          data-session-base-url data-message-index data-testid)
 
   # Tag rules: allow listed tags, strip everything else
   for tag <- @allowed_tags do
@@ -63,10 +69,13 @@ defmodule HeyiAm.HtmlSanitizer.Scrubber do
     def scrub_attribute(_tag, {unquote(attr), value}), do: {unquote(attr), value}
   end
 
-  # data-* attributes (any data- prefixed attribute is safe)
-  def scrub_attribute(_tag, {"data-" <> _ = attr, value}), do: {attr, value}
+  # Only allowlisted data-* attributes — prevents DOM clobbering / JS hijacking
+  for attr <- @allowed_data_attrs do
+    def scrub_attribute(_tag, {unquote(attr), value}), do: {unquote(attr), value}
+  end
 
-  # Link-specific
+  # Link-specific — rel is forced to "noopener noreferrer" in scrub_attributes,
+  # so we only allow target here (stripped if not _blank)
   for attr <- @link_attrs do
     def scrub_attribute("a", {unquote(attr), value}), do: {unquote(attr), value}
   end
@@ -86,26 +95,52 @@ defmodule HeyiAm.HtmlSanitizer.Scrubber do
   Meta.strip_everything_not_covered()
 
   defp scrub_attributes(tag, attributes) do
-    attributes
-    |> Enum.map(fn attr -> scrub_attribute(tag, attr) end)
-    |> Enum.reject(&is_nil/1)
+    cleaned =
+      attributes
+      |> Enum.map(fn attr -> scrub_attribute(tag, attr) end)
+      |> Enum.reject(&is_nil/1)
+
+    # Force rel="noopener noreferrer" on all <a> tags to prevent reverse tabnabbing
+    if tag == "a" do
+      cleaned
+      |> Enum.reject(fn {k, _} -> k == "rel" end)
+      |> Kernel.++([{"rel", "noopener noreferrer"}])
+    else
+      cleaned
+    end
   end
 
   @max_scheme_length 20
-  @protocol_separator ":|(&#0*58)|(&#x70)|(&#x0*3a)|(%|&#37;)3A"
+  @protocol_separator ":|(&#0*58)|(&#x0*3a)|(%|&#37;)3A"
   @http_like_scheme "(?<scheme>.+?)(#{@protocol_separator})//"
 
+  # Raster image data URIs only — SVG excluded (can contain scripts in non-img contexts)
+  @safe_data_prefixes ["data:image/png;", "data:image/jpeg;", "data:image/jpg;",
+                        "data:image/gif;", "data:image/webp;"]
+
   defp validate_uri(uri, attr_name) do
+    trimmed = String.trim(uri)
+
     valid? =
-      if uri =~ ~r/#{@protocol_separator}/mi do
-        case Regex.named_captures(~r/#{@http_like_scheme}/mi, String.slice(uri, 0..@max_scheme_length)) do
-          %{"scheme" => scheme} when scheme != "" ->
-            String.downcase(scheme) in ["http", "https"]
-          _ ->
-            false
-        end
-      else
-        true  # Relative URLs are safe
+      cond do
+        # Block protocol-relative URLs (//evil.com) — they bypass scheme checks
+        String.starts_with?(trimmed, "//") ->
+          false
+
+        # Raster data:image/* URIs in img src are safe
+        attr_name == "src" and Enum.any?(@safe_data_prefixes, &String.starts_with?(trimmed, &1)) ->
+          true
+
+        trimmed =~ ~r/#{@protocol_separator}/mi ->
+          case Regex.named_captures(~r/#{@http_like_scheme}/mi, String.slice(trimmed, 0..@max_scheme_length)) do
+            %{"scheme" => scheme} when scheme != "" ->
+              String.downcase(scheme) in ["http", "https"]
+            _ ->
+              false
+          end
+
+        true ->
+          true  # Relative URLs (paths, fragments, query strings) are safe
       end
 
     if valid?, do: {attr_name, uri}

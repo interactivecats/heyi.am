@@ -14,7 +14,8 @@ defmodule HeyiAmPublicWeb.PageController do
   end
 
   def redirect_vibes(conn, %{"path" => path}) do
-    target = "https://howdoyouvibe.com/v/" <> Enum.join(path, "/")
+    safe_path = path |> Enum.map(&URI.encode/1) |> Enum.join("/")
+    target = "https://howdoyouvibe.com/v/" <> safe_path
     redirect(conn, external: target)
   end
 end

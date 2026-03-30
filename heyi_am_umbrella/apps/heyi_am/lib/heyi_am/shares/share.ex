@@ -78,6 +78,7 @@ defmodule HeyiAm.Shares.Share do
 
     share
     |> cast(sanitized, [:rendered_html])
+    |> validate_length(:rendered_html, max: 5_000_000, message: "rendered HTML is too large (max 5MB)")
   end
 
   defp sanitize_rendered_html(%{"rendered_html" => html} = attrs) when is_binary(html) do

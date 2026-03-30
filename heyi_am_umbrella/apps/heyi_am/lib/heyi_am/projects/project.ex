@@ -39,6 +39,7 @@ defmodule HeyiAm.Projects.Project do
     |> validate_required([:slug, :title, :user_id])
     |> validate_length(:slug, max: 100)
     |> validate_length(:title, max: 200)
+    |> validate_length(:rendered_html, max: 5_000_000, message: "rendered HTML is too large (max 5MB)")
     |> validate_format(:slug, ~r/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, message: "must be lowercase alphanumeric with hyphens, cannot start or end with hyphen")
     |> maybe_generate_unlisted_token()
     |> unique_constraint([:user_id, :slug])

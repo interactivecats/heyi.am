@@ -32,9 +32,19 @@ defmodule HeyiAm.HtmlSanitizerTest do
       refute result =~ "evil.com"
     end
 
-    test "preserves data attributes" do
-      html = "<div data-username=\"ben\" data-template=\"editorial\">content</div>"
-      assert HtmlSanitizer.sanitize(html) == html
+    test "preserves allowlisted data attributes" do
+      html = "<div data-work-timeline=\"true\" data-session-id=\"abc\">content</div>"
+      result = HtmlSanitizer.sanitize(html)
+      assert result =~ "data-work-timeline"
+      assert result =~ "data-session-id"
+    end
+
+    test "strips non-allowlisted data attributes" do
+      html = "<div data-evil=\"payload\" data-api-url=\"https://evil.com\">content</div>"
+      result = HtmlSanitizer.sanitize(html)
+      refute result =~ "data-evil"
+      refute result =~ "data-api-url"
+      assert result =~ "content"
     end
 
     test "preserves links with https" do
@@ -118,6 +128,63 @@ defmodule HeyiAm.HtmlSanitizerTest do
       result = HtmlSanitizer.sanitize(html)
       refute result =~ "onerror"
       refute result =~ "alert"
+    end
+
+    test "preserves data:image/png URIs in img src" do
+      html = ~s(<img src="data:image/png;base64,iVBORw0KGgo=" alt="screenshot"/>)
+      result = HtmlSanitizer.sanitize(html)
+      assert result =~ "data:image/png;base64,iVBORw0KGgo="
+    end
+
+    test "preserves data:image/jpeg URIs in img src" do
+      html = ~s(<img src="data:image/jpeg;base64,/9j/4AAQ=" alt="photo"/>)
+      result = HtmlSanitizer.sanitize(html)
+      assert result =~ "data:image/jpeg;base64,"
+    end
+
+    test "strips data:image/svg+xml URIs (script execution risk)" do
+      html = ~s(<img src="data:image/svg+xml;base64,PHN2Zz4=" alt="svg"/>)
+      result = HtmlSanitizer.sanitize(html)
+      refute result =~ "data:image/svg"
+    end
+
+    test "strips data:text/html URIs from img src" do
+      payload = "data:text/html,<script>alert(1)</script>"
+      html = ~s(<img src="#{payload}" alt="xss"/>)
+      result = HtmlSanitizer.sanitize(html)
+      refute String.contains?(result, "data:text")
+      refute String.contains?(result, "alert")
+    end
+
+    test "strips data URIs from href (only img src allowed)" do
+      html = ~s(<a href="data:image/png;base64,abc">link</a>)
+      result = HtmlSanitizer.sanitize(html)
+      refute String.contains?(result, "data:image")
+    end
+
+    test "strips protocol-relative URLs (//evil.com)" do
+      html = ~s(<a href="//evil.com/phish">click</a>)
+      result = HtmlSanitizer.sanitize(html)
+      refute result =~ "evil.com"
+    end
+
+    test "strips protocol-relative URLs with whitespace prefix" do
+      html = ~s(<a href="  //evil.com/phish">click</a>)
+      result = HtmlSanitizer.sanitize(html)
+      refute result =~ "evil.com"
+    end
+
+    test "forces rel=noopener noreferrer on all anchor tags" do
+      html = ~s(<a href="https://example.com" target="_blank">link</a>)
+      result = HtmlSanitizer.sanitize(html)
+      assert result =~ ~s(rel="noopener noreferrer")
+    end
+
+    test "overrides attacker-supplied rel attribute" do
+      html = ~s(<a href="https://example.com" rel="opener">link</a>)
+      result = HtmlSanitizer.sanitize(html)
+      assert result =~ ~s(rel="noopener noreferrer")
+      refute result =~ ~s(rel="opener")
     end
 
     test "handles complex nested HTML from CLI render" do
