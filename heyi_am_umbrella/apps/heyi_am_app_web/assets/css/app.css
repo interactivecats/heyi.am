@@ -304,6 +304,15 @@ body {
   letter-spacing: -0.02em;
   color: var(--on-surface);
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.topbar-logo-mark {
+  width: 180px;
+  height: 48px;
+  flex-shrink: 0;
 }
 
 .topbar-nav {

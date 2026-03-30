@@ -24,7 +24,17 @@ defmodule HeyiAmAppWeb.AppShell do
       <header class="topbar" role="banner">
         <div class="topbar-left">
           <a href={@logo_href} class="topbar-logo">
-            {@logo_text}
+            <svg class="topbar-logo-mark" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <line x1="10" y1="25" x2="40" y2="25" stroke="#084471" stroke-width="1" opacity="0.15"/>
+              <line x1="160" y1="25" x2="190" y2="25" stroke="#084471" stroke-width="1" opacity="0.15"/>
+              <circle cx="30" cy="25" r="3" fill="#084471" opacity="0.5"/>
+              <path d="M 30 25 C 45 25, 45 5, 60 5 L 140 5 C 155 5, 155 25, 170 25" fill="none" stroke="#7c3aed" stroke-width="1.5" opacity="0.5"/>
+              <path d="M 30 25 C 42 25, 42 12, 54 12 L 130 12 C 142 12, 142 25, 154 25" fill="none" stroke="#0891b2" stroke-width="1.5" opacity="0.5"/>
+              <path d="M 30 25 C 40 25, 40 38, 50 38 L 135 38 C 145 38, 145 25, 155 25" fill="none" stroke="#059669" stroke-width="1.5" opacity="0.5"/>
+              <path d="M 30 25 C 45 25, 45 45, 60 45 L 145 45 C 160 45, 160 25, 175 25" fill="none" stroke="#e11d48" stroke-width="1.5" opacity="0.45"/>
+              <circle cx="170" cy="25" r="3" fill="#084471" opacity="0.5"/>
+              <text x="100" y="29" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-size="16" font-weight="700" fill="#084471" opacity="0.85">heyi.am</text>
+            </svg>
           </a>
           <nav :if={@nav_item != []} aria-label="Main navigation">
             <ul class="topbar-nav">
