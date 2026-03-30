@@ -1,5 +1,6 @@
 defmodule HeyiAm.Projects do
   import Ecto.Query
+  require Logger
 
   alias HeyiAm.Repo
   alias HeyiAm.Projects.Project
@@ -85,8 +86,24 @@ defmodule HeyiAm.Projects do
 
   def update_screenshot_key(user_id, slug, key) do
     case get_user_project_by_slug(user_id, slug) do
-      nil -> {:error, :not_found}
-      project -> update_project(project, %{"screenshot_key" => key})
+      nil ->
+        {:error, :not_found}
+
+      project ->
+        old_key = project.screenshot_key
+
+        case update_project(project, %{"screenshot_key" => key}) do
+          {:ok, updated} ->
+            # Clean up old S3 image after successful DB update
+            if old_key && old_key != "" && old_key != key do
+              HeyiAm.ObjectStorage.delete_object(old_key)
+            end
+
+            {:ok, updated}
+
+          error ->
+            error
+        end
     end
   end
 
@@ -140,7 +157,33 @@ defmodule HeyiAm.Projects do
     |> Repo.one()
   end
 
-  def delete_project(%Project{} = project) do
-    Repo.delete(project)
+  @doc """
+  Deletes a project owned by `user_id`. Returns `{:error, :not_found}` if the
+  project doesn't exist or doesn't belong to the user (BOLA protection).
+  Cleans up S3 screenshot after successful DB delete.
+  """
+  def delete_project(user_id, slug) when is_integer(user_id) and is_binary(slug) do
+    case get_user_project_by_slug(user_id, slug) do
+      nil ->
+        {:error, :not_found}
+
+      project ->
+        case Repo.delete(project) do
+          {:ok, deleted} ->
+            # Clean up S3 screenshot after successful DB delete
+            if deleted.screenshot_key && deleted.screenshot_key != "" do
+              case HeyiAm.ObjectStorage.delete_object(deleted.screenshot_key) do
+                :ok -> :ok
+                {:error, reason} ->
+                  Logger.warning("Orphaned S3 key #{deleted.screenshot_key}: #{inspect(reason)}")
+              end
+            end
+
+            {:ok, deleted}
+
+          error ->
+            error
+        end
+    end
   end
 end

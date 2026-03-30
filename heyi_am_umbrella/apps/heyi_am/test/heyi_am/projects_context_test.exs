@@ -204,6 +204,30 @@ defmodule HeyiAm.ProjectsContextTest do
     end
   end
 
+  describe "delete_project/2" do
+    test "deletes project owned by user" do
+      user = make_user()
+      {:ok, _project} = Projects.create_project(%{slug: "del-mine", title: "Delete Me", user_id: user.id})
+      assert {:ok, _deleted} = Projects.delete_project(user.id, "del-mine")
+      assert Projects.get_user_project_by_slug(user.id, "del-mine") == nil
+    end
+
+    test "returns not_found for wrong user (BOLA protection)" do
+      user1 = make_user()
+      user2 = make_user()
+      {:ok, _project} = Projects.create_project(%{slug: "not-yours", title: "Theirs", user_id: user1.id})
+
+      assert {:error, :not_found} = Projects.delete_project(user2.id, "not-yours")
+      # Verify project still exists
+      assert Projects.get_user_project_by_slug(user1.id, "not-yours") != nil
+    end
+
+    test "returns not_found for non-existent slug" do
+      user = make_user()
+      assert {:error, :not_found} = Projects.delete_project(user.id, "ghost-project")
+    end
+  end
+
   describe "get_project_by_unlisted_token/1" do
     test "returns project with user and visible shares" do
       user = make_user()
