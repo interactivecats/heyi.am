@@ -91,6 +91,9 @@ docker compose -f docker-compose.dev.yml up -d
 # Tests
 cd cli && npm test
 docker compose -f docker-compose.dev.yml exec phoenix mix test
+
+# Reset onboarding (while CLI is running)
+curl -X POST http://localhost:17845/api/onboarding/reset
 ```
 
 ### Ports
