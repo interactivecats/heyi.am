@@ -50,6 +50,7 @@ export function PublishReview() {
       totalSessions: project?.sessionCount ?? 0,
       totalLoc: project?.totalLoc ?? 0,
       totalDurationMinutes: project?.totalDuration ?? 0,
+      totalAgentDurationMinutes: project?.totalAgentDuration,
       totalFilesChanged: project?.totalFiles ?? 0,
       skippedSessions: [],
       selectedSessionIds: cache?.selectedSessionIds ?? [],
