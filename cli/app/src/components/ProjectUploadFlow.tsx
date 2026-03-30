@@ -20,9 +20,8 @@ import {
 type Step = 'overview' | 'triage' | 'enhance' | 'questions' | 'timeline';
 
 function formatDuration(minutes: number): string {
-  if (minutes < 60) return `${Math.round(minutes)}m`;
   const hours = minutes / 60;
-  return hours >= 10 ? `${Math.round(hours)}h` : `${hours.toFixed(1)}h`;
+  return hours >= 1 ? `${hours.toFixed(1)}h` : `${Math.round(minutes)}m`;
 }
 
 function formatLoc(loc: number): string {

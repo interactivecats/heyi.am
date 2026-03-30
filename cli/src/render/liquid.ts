@@ -21,9 +21,8 @@ const engine = new Liquid({
 // ── Custom filters ───────────────────────────────────────────
 
 engine.registerFilter('formatDuration', (minutes: number) => {
-  if (minutes < 60) return `${Math.round(minutes)}m`;
   const hours = minutes / 60;
-  return hours >= 10 ? `${Math.round(hours)}h` : `${hours.toFixed(1)}h`;
+  return hours >= 1 ? `${hours.toFixed(1)}h` : `${Math.round(minutes)}m`;
 });
 
 engine.registerFilter('formatLoc', (loc: number) => {
