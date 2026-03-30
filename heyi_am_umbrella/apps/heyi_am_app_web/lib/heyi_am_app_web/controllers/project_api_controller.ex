@@ -38,7 +38,7 @@ defmodule HeyiAmAppWeb.ProjectApiController do
     |> json(%{error: %{code: "MISSING_PROJECT", message: "Missing 'project' parameter"}})
   end
 
-  def screenshot_url(conn, %{"slug" => slug, "ext" => ext}) do
+  def screenshot_url(conn, %{"slug" => slug, "key" => key}) do
     user_id = conn.assigns[:current_user_id]
 
     if is_nil(user_id) do
@@ -49,23 +49,20 @@ defmodule HeyiAmAppWeb.ProjectApiController do
           conn |> put_status(:not_found) |> json(%{error: "Project not found"})
 
         _project ->
-          safe_ext = if ext in ["png", "jpg", "jpeg", "webp"], do: ext, else: "png"
-          key = "projects/#{slug}/screenshot.#{safe_ext}"
+          if valid_screenshot_key?(key) do
+            case HeyiAm.ObjectStorage.presign_put(key) do
+              {:ok, url} ->
+                json(conn, %{upload_url: url, key: key})
 
-          case HeyiAm.ObjectStorage.presign_put(key) do
-            {:ok, url} ->
-              json(conn, %{upload_url: url, key: key})
-
-            {:error, reason} ->
-              Logger.error("Presign failed for project #{slug}: #{inspect(reason)}")
-              conn |> put_status(:internal_server_error) |> json(%{error: "Failed to generate upload URL"})
+              {:error, reason} ->
+                Logger.error("Presign failed for project #{slug}: #{inspect(reason)}")
+                conn |> put_status(:internal_server_error) |> json(%{error: "Failed to generate upload URL"})
+            end
+          else
+            conn |> put_status(:bad_request) |> json(%{error: "Invalid image key format"})
           end
       end
     end
-  end
-
-  def screenshot_url(conn, %{"slug" => _slug}) do
-    screenshot_url(conn, Map.put(conn.params, "ext", "png"))
   end
 
   def update_screenshot_key(conn, %{"slug" => slug, "key" => key}) do
@@ -89,7 +86,7 @@ defmodule HeyiAmAppWeb.ProjectApiController do
   end
 
   defp valid_screenshot_key?(key) do
-    Regex.match?(~r/\Aprojects\/[a-zA-Z0-9_\-]+\/[a-zA-Z0-9_\-]+\.(png|jpg|jpeg|webp)\z/, key)
+    Regex.match?(~r/\Aimages\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|jpeg|webp)\z/, key)
   end
 
   def screenshot(conn, %{"username" => username, "slug" => slug}) do

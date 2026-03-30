@@ -175,6 +175,7 @@ defmodule HeyiAmPublicWeb.PortfolioController do
                   conn
                   |> put_resp_header("content-type", content_type)
                   |> put_resp_header("cache-control", "public, max-age=86400")
+                  |> put_resp_header("x-content-type-options", "nosniff")
                   |> send_resp(200, body)
                 else
                   conn |> put_status(:not_found) |> text("")
