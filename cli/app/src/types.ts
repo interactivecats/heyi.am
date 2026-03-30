@@ -262,7 +262,7 @@ export interface RefineResult {
 // ── Settings ─────────────────────────────────────────────────
 
 export interface EnhanceStatus {
-  mode: 'local' | 'proxy' | 'none' | 'unknown'
+  mode: 'local' | 'none' | 'unknown'
   remaining: number | null
   message?: string
 }

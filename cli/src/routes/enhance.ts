@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express';
-import { getProvider, getEnhanceMode } from '../llm/index.js';
+import { getProvider } from '../llm/index.js';
 import { triageSessions, type SessionMetaWithStats } from '../llm/triage.js';
 import { enhanceProject, refineNarrative, type SessionSummary, type SkippedSessionMeta, type ProjectEnhanceResult } from '../llm/project-enhance.js';
 import {

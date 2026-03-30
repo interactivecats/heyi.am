@@ -39,7 +39,7 @@ vi.mock('./llm/index.js', async () => {
       name: 'local',
       enhance: vi.fn().mockImplementation((session: unknown) => summarizeSession(session as never)),
     }),
-    getEnhanceMode: vi.fn().mockReturnValue('local'),
+    hasApiKey: vi.fn().mockReturnValue(true),
   };
 });
 
@@ -366,7 +366,6 @@ describe('GET /api/enhance/status', () => {
     const res = await request(app).get('/api/enhance/status');
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('mode');
-    // In test env with mocked llm module, getEnhanceMode returns 'local'
     expect(res.body.mode).toBe('local');
   });
 });

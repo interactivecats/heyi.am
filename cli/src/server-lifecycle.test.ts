@@ -92,7 +92,7 @@ vi.mock('./summarize.js', () => ({
 
 vi.mock('./llm/index.js', () => ({
   getProvider: vi.fn().mockReturnValue({ name: 'local', enhance: vi.fn() }),
-  getEnhanceMode: vi.fn().mockReturnValue('local'),
+  hasApiKey: vi.fn().mockReturnValue(true),
 }));
 
 vi.mock('./auth.js', () => ({

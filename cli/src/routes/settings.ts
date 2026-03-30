@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey } from '../settings.js';
-import { getEnhanceMode } from '../llm/index.js';
+import { hasApiKey } from '../llm/index.js';
 import type { RouteContext } from './context.js';
 
 export function createSettingsRouter(_ctx: RouteContext): Router {
@@ -12,11 +12,11 @@ export function createSettingsRouter(_ctx: RouteContext): Router {
     if (apiKey && typeof apiKey === 'string' && apiKey.trim()) {
       saveAnthropicApiKey(apiKey.trim());
       console.log('[settings] API key saved');
-      res.json({ ok: true, mode: getEnhanceMode() });
+      res.json({ ok: true, hasKey: hasApiKey() });
     } else {
       clearAnthropicApiKey();
       console.log('[settings] API key cleared');
-      res.json({ ok: true, mode: getEnhanceMode() });
+      res.json({ ok: true, hasKey: hasApiKey() });
     }
   });
 

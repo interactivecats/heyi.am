@@ -32,13 +32,48 @@ From there you can browse projects, search sessions, and publish portfolio case 
 - Two-pass narrative generation with targeted questions about your thinking
 - Portfolio published at `heyi.am/:username/:project`
 
+## CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `heyiam` / `heyiam open` | Start local dashboard at `localhost:17845` |
+| `heyiam search [query]` | Full-text search across all sessions (filters: `--project`, `--source`, `--after`, `--before`, `--skill`, `--file`) |
+| `heyiam time` | Show your time vs agent time per project |
+| `heyiam context <id>` | Export a session as compressed context for AI tools (`--compact`, `--clipboard`) |
+| `heyiam archive` | Discover and archive sessions from all sources |
+| `heyiam sync` | Index sessions into SQLite search database |
+| `heyiam reindex` | Rebuild the search index from scratch |
+| `heyiam status` | Archive health, session counts, daemon status |
+| `heyiam logout` | Remove stored auth token |
+| `heyiam daemon start\|stop\|install\|uninstall\|status` | Background tray daemon management |
+
+## Privacy & Data
+
+**What stays on your machine:**
+- All session files (read from Claude Code, Cursor, Codex, Gemini local storage)
+- The SQLite search index
+- Archived session copies
+- All local commands (`search`, `time`, `context`, `status`, `archive`, `sync`, `reindex`)
+
+**What gets sent to the server (only when you explicitly publish):**
+- Project metadata (name, narrative, skills, stats)
+- Session case studies you choose to upload (redacted — secrets are stripped before upload)
+- Screenshots (uploaded to object storage)
+
+**When the CLI contacts the server:**
+- `heyiam open` with an account — authenticates via device code flow
+- Publishing a project — uploads project + selected session data to `heyiam.com`
+- Never in offline/local-only mode — all local commands work without an account or network
+
+AI enhancement (triage, narrative generation) runs locally using your own `ANTHROPIC_API_KEY`.
+
 ## Also
 
 ```bash
 npx howdoyouvibe
 ```
 
-Standalone personality breakdown from your AI coding sessions. 100% local analysis, optional sharing.
+An entertaining CLI personality breakdown from your AI coding sessions. 100% local analysis, optional sharing. See [docs/HOWDOYOUVIBE.md](./docs/HOWDOYOUVIBE.md) for details.
 
 ## Development
 
