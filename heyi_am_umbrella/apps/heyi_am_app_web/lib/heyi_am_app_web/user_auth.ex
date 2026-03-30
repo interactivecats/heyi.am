@@ -268,7 +268,7 @@ defmodule HeyiAmAppWeb.UserAuth do
   def signed_in_path(_), do: ~p"/users/log-in"
 
   defp signed_in_path_for_user(%Accounts.User{username: nil}), do: ~p"/onboarding/username"
-  defp signed_in_path_for_user(%Accounts.User{}), do: ~p"/users/settings"
+  defp signed_in_path_for_user(%Accounts.User{}), do: ~p"/dashboard"
 
   @doc """
   Plug for routes that require the user to be authenticated.
