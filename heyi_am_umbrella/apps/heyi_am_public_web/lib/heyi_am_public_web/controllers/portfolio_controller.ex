@@ -256,8 +256,8 @@ defmodule HeyiAmPublicWeb.PortfolioController do
           global_max_parallel: global_max_parallel,
           all_roles: all_roles,
           multiplier: multiplier,
-          page_title: "#{display_name} — You / Agents",
-          og_title: "#{display_name} — You / Agents · heyi.am",
+          page_title: "#{display_name} — Human / Agents",
+          og_title: "#{display_name} — Human / Agents · heyi.am",
           og_description: og_description,
           og_url: HeyiAmPublicWeb.Endpoint.url() <> "/#{user.username}/time"
         )

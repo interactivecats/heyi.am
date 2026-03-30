@@ -102,7 +102,7 @@ function ProjectHero({
         <div className="bg-surface-lowest border border-ghost rounded-md p-4 flex flex-col justify-between">
           <div>
             <div className="font-mono text-[9px] uppercase tracking-wider text-on-surface-variant mb-1">
-              {agentTime ? 'You / Agents' : 'Time'}
+              {agentTime ? 'Human / Agents' : 'Time'}
             </div>
             <div className="font-display font-bold text-on-surface text-2xl">
               {agentTime ? `${humanTime} / ${agentTime}` : humanTime}

@@ -840,7 +840,7 @@ function MockProjectPage({
           {/* Stats */}
           <div className="grid grid-cols-4 gap-3 mb-4">
             <StatCard label="Sessions" value={16} />
-            <StatCard label="You / Agents" value="52h / 78h" />
+            <StatCard label="Human / Agents" value="52h / 78h" />
             <StatCard label="Lines changed" value={formatLoc(totalLoc)} />
             <StatCard label="Files" value={847} />
           </div>

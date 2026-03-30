@@ -247,6 +247,51 @@ body {
 }
 
 
+/* ── Info Tooltip ── */
+.info-tooltip {
+  position: relative;
+  display: inline-flex;
+}
+.info-tooltip__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  border: 1px solid var(--outline-variant);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-style: italic;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+  cursor: help;
+}
+.info-tooltip__content {
+  display: none;
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  z-index: 10;
+  width: 20rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--on-surface);
+}
+.info-tooltip__content strong {
+  font-weight: 600;
+}
+.info-tooltip:hover .info-tooltip__content,
+.info-tooltip:focus-within .info-tooltip__content {
+  display: block;
+}
+
 /* ── Surface System ── */
 
 /* Level 0 — Canvas */
@@ -5155,9 +5200,33 @@ body:has(.vibe-page) {
   font-size: clamp(0.8125rem, 1.2vw, 1rem);
 }
 
+.heyiam-project .stat-hero-layout {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.heyiam-project .stat-grid--compact {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+.heyiam-project .stat-card--hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.heyiam-project .stat-card__sub {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--ghost);
+}
+.heyiam-project .stat-card__value--sm {
+  font-size: 1.25rem;
+}
 .heyiam-project .stat-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 0.75rem;
   margin-bottom: 1rem;
 }

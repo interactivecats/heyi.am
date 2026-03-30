@@ -93,7 +93,7 @@ export function SessionDetailOverlay({ session: initialSession, projectDirName, 
               {hasChildren && <SplitLine you={formatDuration(Math.max(0, session.durationMinutes - session.children!.reduce((s, c) => s + c.durationMinutes, 0)))} agent={formatDuration(session.children!.reduce((s, c) => s + c.durationMinutes, 0))} />}
             </StatBox>
             <StatBox label="Turns" value={session.turns}>
-              {hasChildren && <SplitLine you="You" agent={`${session.childCount ?? session.children!.length} agents`} />}
+              {hasChildren && <SplitLine you="Human" agent={`${session.childCount ?? session.children!.length} agents`} />}
             </StatBox>
             <StatBox label="Files" value={session.filesChanged?.length === 1 && session.filesChanged[0]?.path === '(aggregate)' ? '—' : (session.filesChanged?.length ?? '—')} />
             <StatBox label="Lines changed" value={formatLoc(session.linesOfCode)}>

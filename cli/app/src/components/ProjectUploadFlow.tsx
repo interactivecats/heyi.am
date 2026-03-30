@@ -94,7 +94,7 @@ function SessionOverview({
       <div className="upload-flow__stat-grid">
         <StatCard label="Sessions" value={String(project.sessionCount)} />
         <StatCard
-          label={project.totalAgentDuration ? 'You / Agents' : 'Total Time'}
+          label={project.totalAgentDuration ? 'Human / Agents' : 'Total Time'}
           value={project.totalAgentDuration
             ? `${formatDuration(project.totalDuration)} / ${formatDuration(project.totalAgentDuration)}`
             : formatDuration(project.totalDuration)}

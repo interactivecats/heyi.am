@@ -115,7 +115,7 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
   const sessionsJson = JSON.stringify(chartSessions).replace(/'/g, '&#39;');
   const growthJson = sessionsJson; // same data for both charts
 
-  const durationLabel = data.project.totalAgentDurationMinutes ? 'You / Agents' : 'Time';
+  const durationLabel = data.project.totalAgentDurationMinutes ? 'Human / Agents' : 'Time';
   const efficiencyMultiplier = data.project.totalAgentDurationMinutes && data.project.totalDurationMinutes > 0
     ? (data.project.totalAgentDurationMinutes / data.project.totalDurationMinutes)
     : undefined;
