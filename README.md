@@ -57,7 +57,7 @@ From there you can browse projects, search sessions, and publish portfolio case 
 
 **What gets sent to the server (only when you explicitly publish):**
 - Project metadata (name, narrative, skills, stats)
-- Session case studies you choose to upload (redacted — secrets are stripped before upload)
+- Session case studies you choose to upload (redacted — common secret patterns are detected and replaced via regex and secretlint, but this is not a guarantee)
 - Screenshots (uploaded to object storage)
 
 **When the CLI contacts the server:**
@@ -78,6 +78,10 @@ An entertaining CLI personality breakdown from your AI coding sessions. 100% loc
 ## Development
 
 ```bash
+# Install dependencies
+npm install              # root workspaces (packages/*, phoenix/assets)
+cd cli/app && npm install && cd ../..  # dashboard (separate to avoid React conflicts)
+
 # CLI (for local dev, point to Phoenix)
 cd cli && HEYIAM_API_URL=http://localhost:4001 HEYIAM_PUBLIC_URL=http://localhost:4000 npm run dev
 
