@@ -132,7 +132,8 @@ export function createApp(sessionsBasePath?: string, dbPath?: string) {
   const indexPath = path.join(staticDir, 'index.html');
   app.get('/{*splat}', (_req: Request, res: Response) => {
     res.sendFile(indexPath, (err) => {
-      if (err) {
+      if (err && !res.headersSent) {
+        console.error(`[spa] sendFile failed for ${indexPath}:`, (err as Error).message);
         res.status(404).send('Page not found');
       }
     });

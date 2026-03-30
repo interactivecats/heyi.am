@@ -23,6 +23,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
         username, slug, title, narrative, repoUrl, projectUrl, screenshotUrl,
         timeline, skills, totalSessions, totalLoc,
         totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged,
+        totalTokens,
         sessionCards,
       } = req.body as {
         username: string;
@@ -39,6 +40,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
         totalDurationMinutes: number;
         totalAgentDurationMinutes?: number;
         totalFilesChanged: number;
+        totalTokens?: number;
         sessionCards: SessionCard[];
       };
 
@@ -53,6 +55,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
         totalDurationMinutes: totalDurationMinutes || 0,
         totalAgentDurationMinutes,
         totalFilesChanged: totalFilesChanged || 0,
+        totalTokens,
         sessionCards: sessionCards || [],
       });
 
@@ -512,6 +515,8 @@ export function createPublishRouter(ctx: RouteContext): Router {
                 total_duration_minutes: totalDurationMinutes,
                 total_agent_duration_minutes: totalAgentDurationMinutes || null,
                 total_files_changed: totalFilesChanged,
+                total_input_tokens: (req.body as Record<string, unknown>).totalInputTokens || null,
+                total_output_tokens: (req.body as Record<string, unknown>).totalOutputTokens || null,
                 skipped_sessions: skippedSessions,
                 rendered_html: projectHtml,
               },

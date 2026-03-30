@@ -22,8 +22,11 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc && chmod +x dist/index.js && cp -r src/render/templates dist/render/templates && cd app && npx vite build && rm -rf ../dist/public && cp -r dist ../dist/public",
-    "prepublishOnly": "npm run build && find dist -name '*.test.*' -delete",
+    "clean": "rm -rf dist",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && chmod +x dist/index.js && cp -r src/render/templates dist/render/templates && cd app && npx vite build && rm -rf ../dist/public && cp -r dist ../dist/public",
+    "verify-build": "node -e \"const fs=require('fs'); const assert=require('assert'); const pkg=require('./package.json'); assert(fs.existsSync('dist/index.js'),'missing dist/index.js'); assert(fs.existsSync('dist/public/index.html'),'missing dist/public/index.html'); assert(fs.existsSync('dist/render/templates'),'missing templates'); const js=fs.readdirSync('dist/public/assets').filter(f=>f.endsWith('.js')); assert(js.length===1,'expected exactly 1 JS bundle, found '+js.length); const html=fs.readFileSync('dist/public/index.html','utf8'); assert(html.includes(js[0]),'index.html does not reference the JS bundle'); const tests=fs.readdirSync('dist',{recursive:true}).filter(f=>String(f).includes('.test.')); assert(tests.length===0,'test files found in dist: '+tests.join(', ')); console.log('Build verified: v'+pkg.version+' — dist/index.js + frontend + templates, 0 test files')\"",
+    "prepublishOnly": "npm test && npm run build && npm run verify-build",
+    "prepack": "npm run verify-build",
     "dev": "npx concurrently \"npm:dev:api\" \"npm:dev:app\"",
     "dev:api": "tsx watch src/index.ts open --no-open",
     "dev:app": "cd app && npm run dev",

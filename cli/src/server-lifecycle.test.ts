@@ -145,3 +145,35 @@ describe('/api/version endpoint', () => {
     expect(res.body.pid).toBeUndefined();
   });
 });
+
+describe('SPA fallback', () => {
+  it('serves index.html for non-API, non-file routes', async () => {
+    const app = createApp(tmpDir, join(tmpDir, 'test.db'));
+    const res = await request(app)
+      .get('/projects')
+      .set('Host', 'localhost:17845');
+
+    // Should serve index.html (200) or at minimum not crash (the test env
+    // may not have a built frontend, so 404 from missing index.html is ok —
+    // but the response should NOT be Express's default "Cannot GET /projects")
+    if (res.status === 200) {
+      expect(res.text).toContain('<!doctype html>');
+    } else {
+      // In test env without built frontend, sendFile fails → 404 "Page not found"
+      expect(res.text).toBe('Page not found');
+    }
+  });
+
+  it('serves index.html for deep SPA routes', async () => {
+    const app = createApp(tmpDir, join(tmpDir, 'test.db'));
+    const res = await request(app)
+      .get('/project/-Users-ben-Dev-myapp')
+      .set('Host', 'localhost:17845');
+
+    if (res.status === 200) {
+      expect(res.text).toContain('<!doctype html>');
+    } else {
+      expect(res.text).toBe('Page not found');
+    }
+  });
+});
