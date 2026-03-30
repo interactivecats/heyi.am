@@ -43,8 +43,8 @@ Standalone personality breakdown from your AI coding sessions. 100% local analys
 ## Development
 
 ```bash
-# CLI
-cd cli && npm install && npm run dev
+# CLI (for local dev, point to Phoenix)
+cd cli && HEYIAM_API_URL=http://localhost:4001 HEYIAM_PUBLIC_URL=http://localhost:4000 npm run dev
 
 # Phoenix backend (Postgres + Phoenix)
 docker compose -f docker-compose.dev.yml up -d
@@ -68,6 +68,7 @@ docker compose -f docker-compose.dev.yml exec phoenix mix test
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `HEYIAM_API_URL` | `https://heyiam.com` | Phoenix API base URL. Set to `http://localhost:4001` for local dev. |
+| `HEYIAM_PUBLIC_URL` | `https://heyi.am` | Public portfolio base URL. Set to `http://localhost:4000` for local dev. |
 | `ANTHROPIC_API_KEY` | — | Enables local AI enhancement (BYOK). Without it, uses proxy or falls back to no-LLM mode. |
 
 ## Documentation
