@@ -18,7 +18,7 @@ function openUrl(url: string): void {
 
 // ─── Discover and parse all sessions ─────────────────────────────────────
 
-async function discoverAndParse(): Promise<ParsedSession[]> {
+async function discoverAndParse(): Promise<{ sessions: ParsedSession[]; childTokens: number }> {
   const metas = await listSessions();
 
   if (metas.length === 0) {
@@ -27,10 +27,10 @@ async function discoverAndParse(): Promise<ParsedSession[]> {
     process.exit(0);
   }
 
-  // Filter to non-subagent sessions only
   const topLevel = metas.filter((m) => !m.isSubagent);
+  const children = metas.filter((m) => m.isSubagent);
   console.log("  Scanning local AI sessions: ~/.claude, ~/.cursor, ~/.codex, ~/.gemini");
-  console.log(`  Found ${topLevel.length} parent sessions...`);
+  console.log(`  Found ${topLevel.length} parent sessions${children.length > 0 ? ` + ${children.length} subagents` : ""}...`);
 
   const sessions: ParsedSession[] = [];
   let skipped = 0;
@@ -46,16 +46,30 @@ async function discoverAndParse(): Promise<ParsedSession[]> {
     }
   }
 
+  // Parse child sessions for token usage only (behavioral stats come from parents)
+  let childTokens = 0;
+  for (const meta of children) {
+    try {
+      const analysis = await parseSession(meta.path);
+      if (analysis.token_usage) {
+        childTokens += (analysis.token_usage.input_tokens ?? 0)
+          + (analysis.token_usage.output_tokens ?? 0);
+      }
+    } catch {
+      // skip — child parse failures don't matter
+    }
+  }
+
   if (skipped > 0) {
     console.log(`  (${skipped} sessions skipped due to parse errors)`);
   }
 
-  return sessions;
+  return { sessions, childTokens };
 }
 
 // ─── Main ────────────────────────────────────────────────────────────────
 
-const sessions = await discoverAndParse();
+const { sessions, childTokens } = await discoverAndParse();
 
 if (sessions.length === 0) {
   console.log("  No sessions with meaningful content found.");
@@ -63,6 +77,7 @@ if (sessions.length === 0) {
 }
 
 const stats = computeVibeStats(sessions);
+stats.total_tokens += childTokens;
 const match = matchArchetype(stats);
 
 // Privacy consent — ask before any network call
