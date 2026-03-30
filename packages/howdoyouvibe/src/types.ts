@@ -47,6 +47,7 @@ export interface VibeStats {
   total_turns: number;
   session_count: number;
   total_duration_min: number;
+  total_tokens: number;          // total tokens consumed (input + output) across all sessions
   sources: SessionSource[];
   source_breakdown: Record<string, number>; // e.g. { claude: 150, cursor: 50, codex: 16 }
 }

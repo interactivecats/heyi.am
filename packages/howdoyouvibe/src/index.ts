@@ -30,7 +30,7 @@ async function discoverAndParse(): Promise<ParsedSession[]> {
   // Filter to non-subagent sessions only
   const topLevel = metas.filter((m) => !m.isSubagent);
   console.log("  Scanning local AI sessions: ~/.claude, ~/.cursor, ~/.codex, ~/.gemini");
-  console.log(`  Found ${topLevel.length} sessions...`);
+  console.log(`  Found ${topLevel.length} parent sessions...`);
 
   const sessions: ParsedSession[] = [];
   let skipped = 0;

@@ -248,6 +248,7 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
 
   let totalTurns = 0;
   let totalDurationMin = 0;
+  let totalTokens = 0;
   const sourcesSet = new Set<SessionAnalysis["source"]>();
   const sourceCount: Record<string, number> = {};
 
@@ -260,6 +261,10 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
     totalDurationMin += analysis.duration_ms > 0
       ? Math.max(1, Math.round(analysis.duration_ms / 60_000))
       : 0;
+    if (analysis.token_usage) {
+      totalTokens += (analysis.token_usage.input_tokens ?? 0)
+        + (analysis.token_usage.output_tokens ?? 0);
+    }
 
     // Track previous entry type for correction detection
     let prevEntryWasAssistant = false;
@@ -509,6 +514,7 @@ export function computeVibeStats(sessions: ParsedSession[]): VibeStats {
     total_turns: totalTurns,
     session_count: sessions.length,
     total_duration_min: totalDurationMin,
+    total_tokens: totalTokens,
     sources: [...sourcesSet],
     source_breakdown: sourceCount,
   };

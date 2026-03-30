@@ -1,6 +1,6 @@
 {
   "name": "howdoyouvibe",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Find out how you vibe with AI. Scans your local coding sessions and generates a personality breakdown.",
   "type": "module",
   "bin": {

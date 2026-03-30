@@ -130,7 +130,13 @@ export function computeLocStats(entries: RawEntry[]): LocStats {
   let totalRemoved = 0;
   const filesChanged = new Set<string>();
 
+  // Track last-write line counts per file for dedup
   const writeLineCounts = new Map<string, number>();
+
+  // Track accumulated Edit additions/deletions per file so a subsequent
+  // Write can reset them (the Write overwrites the entire file).
+  const editAdded = new Map<string, number>();
+  const editRemoved = new Map<string, number>();
 
   for (const call of toolCalls) {
     if (call.name === "Write") {
@@ -148,6 +154,17 @@ export function computeLocStats(entries: RawEntry[]): LocStats {
         totalAdded += lines;
       }
 
+      // If this file had accumulated Edit additions/deletions, subtract
+      // them because the Write overwrites the entire file content.
+      const prevEditAdded = editAdded.get(filePath) ?? 0;
+      const prevEditRemoved = editRemoved.get(filePath) ?? 0;
+      if (prevEditAdded > 0 || prevEditRemoved > 0) {
+        totalAdded -= prevEditAdded;
+        totalRemoved -= prevEditRemoved;
+        editAdded.delete(filePath);
+        editRemoved.delete(filePath);
+      }
+
       writeLineCounts.set(filePath, lines);
       filesChanged.add(filePath);
     } else if (call.name === "Edit") {
@@ -161,6 +178,11 @@ export function computeLocStats(entries: RawEntry[]): LocStats {
 
       totalAdded += newLines;
       totalRemoved += oldLines;
+
+      // Accumulate Edit stats per file for potential Write reset
+      editAdded.set(filePath, (editAdded.get(filePath) ?? 0) + newLines);
+      editRemoved.set(filePath, (editRemoved.get(filePath) ?? 0) + oldLines);
+
       filesChanged.add(filePath);
     }
   }
@@ -201,26 +223,42 @@ async function detect(path: string): Promise<boolean> {
   }
 }
 
-/** Aggregate token usage across all assistant messages. */
+/**
+ * Aggregate token usage across all assistant messages, deduplicated by message.id.
+ *
+ * Claude Code writes each content block of a single API response as a separate
+ * JSONL entry, all sharing the same message.id and carrying identical usage
+ * (cumulative snapshot, not per-block). We keep only the entry with the highest
+ * output_tokens per message.id (the final streaming chunk) to avoid double-counting.
+ */
 function aggregateTokenUsage(entries: RawEntry[]): TokenUsage | undefined {
-  let hasUsage = false;
+  const byMessageId = new Map<string, TokenUsage>();
+  for (const entry of entries) {
+    if (entry.type !== "assistant") continue;
+    const usage = entry.message?.usage as TokenUsage | undefined;
+    if (!usage) continue;
+    const msgId = entry.message?.id ?? entry.uuid;
+    const existing = byMessageId.get(msgId);
+    if (!existing || (usage.output_tokens ?? 0) > (existing.output_tokens ?? 0)) {
+      byMessageId.set(msgId, usage);
+    }
+  }
+
+  if (byMessageId.size === 0) return undefined;
+
   const totals: TokenUsage = {
     input_tokens: 0,
     output_tokens: 0,
     cache_read_input_tokens: 0,
     cache_creation_input_tokens: 0,
   };
-  for (const entry of entries) {
-    if (entry.type !== "assistant") continue;
-    const usage = entry.message?.usage;
-    if (!usage) continue;
-    hasUsage = true;
-    totals.input_tokens += (usage as TokenUsage).input_tokens ?? 0;
-    totals.output_tokens += (usage as TokenUsage).output_tokens ?? 0;
-    totals.cache_read_input_tokens += (usage as TokenUsage).cache_read_input_tokens ?? 0;
-    totals.cache_creation_input_tokens += (usage as TokenUsage).cache_creation_input_tokens ?? 0;
+  for (const usage of byMessageId.values()) {
+    totals.input_tokens += usage.input_tokens ?? 0;
+    totals.output_tokens += usage.output_tokens ?? 0;
+    totals.cache_read_input_tokens += usage.cache_read_input_tokens ?? 0;
+    totals.cache_creation_input_tokens += usage.cache_creation_input_tokens ?? 0;
   }
-  return hasUsage ? totals : undefined;
+  return totals;
 }
 
 /** Collect unique model names used across assistant messages. */
