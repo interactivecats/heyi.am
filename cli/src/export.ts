@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import type { ProjectEnhanceCache, EnhancedData } from './settings.js';
 import { loadEnhancedData } from './settings.js';
 import { renderProjectHtml, renderSessionHtml } from './render/index.js';
-import { escapeHtml } from './format-utils.js';
+import { escapeHtml, displayNameFromDir } from './format-utils.js';
 import {
   buildProjectRenderData,
   buildSessionRenderData,
@@ -124,7 +124,7 @@ export async function exportMarkdown(
   mkdirSync(outputPath, { recursive: true });
 
   const { result } = cache;
-  const title = dirName.replace(/^-/, '').replace(/-/g, ' ');
+  const title = cache.title ?? displayNameFromDir(dirName);
 
   // README.md — project narrative
   const readme = buildReadme(title, result, sessions);
@@ -257,6 +257,8 @@ function buildSessionMarkdown(session: Session, enhanced: EnhancedData | null): 
 
 export interface ExportOpts {
   totalFilesChanged?: number;
+  title?: string;
+  screenshotUrl?: string;
 }
 
 export async function exportHtml(
@@ -274,7 +276,7 @@ export async function exportHtml(
 
   const { result } = cache;
   const slug = slugify(dirName);
-  const title = dirName.replace(/^-/, '').replace(/-/g, ' ');
+  const title = opts?.title ?? cache.title ?? displayNameFromDir(dirName);
 
   // Use ALL sessions (same as dashboard), build cards for each
   const sessionCards = sessions.map((session) => {
@@ -401,7 +403,7 @@ function buildProjectRenderInputs(
 ) {
   const { result } = cache;
   const slug = slugify(dirName);
-  const title = dirName.replace(/^-/, '').replace(/-/g, ' ');
+  const title = opts?.title ?? cache.title ?? displayNameFromDir(dirName);
 
   const sessionCards = sessions.map((session) => buildSessionCard({
     sessionId: session.id,
@@ -439,7 +441,9 @@ export function generateProjectHtmlFragment(
   const { result, slug, title, sessionCards, totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged, totalTokens } =
     buildProjectRenderInputs(dirName, cache, sessions, username, opts);
 
-  const screenshotUrl = resolveScreenshotDataUri(dirName, cache);
+  // Use explicit URL override (e.g. public https:// path for server upload),
+  // fall back to embedded data URI for standalone local export
+  const screenshotUrl = opts?.screenshotUrl ?? resolveScreenshotDataUri(dirName, cache);
 
   const renderData = buildProjectRenderData({
     username, slug, title,

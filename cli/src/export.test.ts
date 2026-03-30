@@ -122,14 +122,14 @@ describe('exportMarkdown', () => {
     const sessions = [makeSession()];
     const outPath = join(tmpDir, 'md-export');
 
-    const result = await exportMarkdown('heyi-am', cache, sessions, outPath);
+    const result = await exportMarkdown('-Users-test-Dev-heyi-am', cache, sessions, outPath);
 
     expect(result.files.length).toBeGreaterThanOrEqual(3); // README + session + project.json
     expect(result.totalBytes).toBeGreaterThan(0);
     expect(result.outputPath).toBe(outPath);
 
     const readme = readFileSync(join(outPath, 'README.md'), 'utf-8');
-    expect(readme).toContain('# heyi am');
+    expect(readme).toContain('# heyi-am');
     expect(readme).toContain('This project rebuilt auth from scratch.');
     expect(readme).toContain('## Phase 1: Foundation');
     expect(readme).toContain('TypeScript');
@@ -140,7 +140,7 @@ describe('exportMarkdown', () => {
     const sessions = [makeSession()];
     const outPath = join(tmpDir, 'md-sessions');
 
-    await exportMarkdown('heyi-am', cache, sessions, outPath);
+    await exportMarkdown('-Users-test-Dev-heyi-am', cache, sessions, outPath);
 
     const sessionFile = join(outPath, 'sessions', 'auth-rebuild.md');
     expect(existsSync(sessionFile)).toBe(true);
@@ -154,7 +154,7 @@ describe('exportMarkdown', () => {
     const cache = makeCache();
     const outPath = join(tmpDir, 'md-json');
 
-    await exportMarkdown('heyi-am', cache, [makeSession()], outPath);
+    await exportMarkdown('-Users-test-Dev-heyi-am', cache, [makeSession()], outPath);
 
     const json = JSON.parse(readFileSync(join(outPath, 'project.json'), 'utf-8'));
     expect(json.narrative).toBe('This project rebuilt auth from scratch.');
@@ -165,7 +165,7 @@ describe('exportMarkdown', () => {
     const cache = makeCache();
     const outPath = join(tmpDir, 'md-timeline');
 
-    await exportMarkdown('heyi-am', cache, [makeSession()], outPath);
+    await exportMarkdown('-Users-test-Dev-heyi-am', cache, [makeSession()], outPath);
 
     const readme = readFileSync(join(outPath, 'README.md'), 'utf-8');
     expect(readme).toContain('## Timeline');
@@ -178,7 +178,7 @@ describe('exportMarkdown', () => {
     const cache = makeCache();
     const outPath = join(tmpDir, 'md-stats');
 
-    await exportMarkdown('heyi-am', cache, [makeSession()], outPath);
+    await exportMarkdown('-Users-test-Dev-heyi-am', cache, [makeSession()], outPath);
 
     const readme = readFileSync(join(outPath, 'README.md'), 'utf-8');
     expect(readme).toContain('Sessions: 1');
@@ -192,7 +192,7 @@ describe('exportHtml', () => {
     const sessions = [makeSession()];
     const outPath = join(tmpDir, 'html-export');
 
-    const result = await exportHtml('heyi-am', cache, sessions, outPath);
+    const result = await exportHtml('-Users-test-Dev-heyi-am', cache, sessions, outPath);
 
     expect(result.files.length).toBeGreaterThanOrEqual(2); // index + 1 session
     expect(existsSync(join(outPath, 'index.html'))).toBe(true);
@@ -207,7 +207,7 @@ describe('exportHtml', () => {
     const cache = makeCache();
     const outPath = join(tmpDir, 'html-no-js');
 
-    await exportHtml('heyi-am', cache, [makeSession()], outPath);
+    await exportHtml('-Users-test-Dev-heyi-am', cache, [makeSession()], outPath);
 
     const index = readFileSync(join(outPath, 'index.html'), 'utf-8');
     // mount.js is inlined for work timeline / growth chart interactivity
@@ -225,7 +225,7 @@ describe('exportHtml', () => {
     const cache = makeCache();
     const outPath = join(tmpDir, 'html-fonts');
 
-    await exportHtml('heyi-am', cache, [makeSession()], outPath);
+    await exportHtml('-Users-test-Dev-heyi-am', cache, [makeSession()], outPath);
 
     const index = readFileSync(join(outPath, 'index.html'), 'utf-8');
     expect(index).toContain('fonts.googleapis.com');
@@ -237,7 +237,7 @@ describe('exportHtml', () => {
     const sessions = [makeSession({ title: 'Fix <script>alert("xss")</script>' })];
     const outPath = join(tmpDir, 'html-escape');
 
-    await exportHtml('heyi-am', cache, sessions, outPath);
+    await exportHtml('-Users-test-Dev-heyi-am', cache, sessions, outPath);
 
     const index = readFileSync(join(outPath, 'index.html'), 'utf-8');
     expect(index).not.toContain('<script>alert');
@@ -247,7 +247,7 @@ describe('exportHtml', () => {
     const cache = makeCache({ selectedSessionIds: [] });
     const outPath = join(tmpDir, 'html-empty');
 
-    const result = await exportHtml('heyi-am', cache, [], outPath);
+    const result = await exportHtml('-Users-test-Dev-heyi-am', cache, [], outPath);
 
     expect(result.files.length).toBe(1); // just index.html
     expect(existsSync(join(outPath, 'index.html'))).toBe(true);

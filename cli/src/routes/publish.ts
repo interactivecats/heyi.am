@@ -1,7 +1,8 @@
 import { Router, type Request, type Response } from 'express';
 import { readFileSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { getAuthToken } from '../auth.js';
-import { API_URL } from '../config.js';
+import { API_URL, PUBLIC_URL } from '../config.js';
 import { loadEnhancedData, saveEnhancedData, saveUploadedState } from '../settings.js';
 import { captureScreenshot } from '../screenshot.js';
 import { redactSession, redactText, scanTextSync, formatFindings, stripHomePathsInText } from '../redact.js';
@@ -12,6 +13,8 @@ import type { ProjectEnhanceResult } from '../llm/project-enhance.js';
 import { buildAgentSummary, type RouteContext } from './context.js';
 import { displayNameFromDir } from '../sync.js';
 import { getProjectUuid, getFileCountWithChildren } from '../db.js';
+
+const IMAGE_KEY_PREFIX = 'images/';
 
 export function createPublishRouter(ctx: RouteContext): Router {
   const router = Router();
@@ -199,6 +202,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
       send({ type: 'project', status: 'created', projectId: projectData.project_id, slug: projectData.slug });
 
       // Step 1b: Upload screenshot (non-fatal)
+      let uploadedImageKey: string | null = null;
       if (screenshotBase64 || projectUrl) {
         try {
           let imageBuffer: Buffer | null = null;
@@ -218,30 +222,36 @@ export function createPublishRouter(ctx: RouteContext): Router {
           }
 
           if (imageBuffer) {
+            const imageKey = `${IMAGE_KEY_PREFIX}${randomUUID()}.${ext}`;
             const ssUrlRes = await fetch(`${API_URL}/api/projects/${projectData.slug}/screenshot-url`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${auth.token}`,
               },
-              body: JSON.stringify({ ext }),
+              body: JSON.stringify({ key: imageKey }),
             });
             if (ssUrlRes.ok) {
               const { upload_url, key } = await ssUrlRes.json() as { upload_url: string; key: string };
-              await fetch(upload_url, {
+              const putRes = await fetch(upload_url, {
                 method: 'PUT',
                 body: new Uint8Array(imageBuffer),
                 headers: { 'Content-Type': `image/${ext}` },
               });
-              await fetch(`${API_URL}/api/projects/${projectData.slug}/screenshot-key`, {
-                method: 'PATCH',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${auth.token}`,
-                },
-                body: JSON.stringify({ key }),
-              });
-              send({ type: 'screenshot', status: 'uploaded' });
+              if (!putRes.ok) {
+                send({ type: 'screenshot', status: 'skipped', reason: `S3 upload failed: ${putRes.status}` });
+              } else {
+                await fetch(`${API_URL}/api/projects/${projectData.slug}/screenshot-key`, {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${auth.token}`,
+                  },
+                  body: JSON.stringify({ key }),
+                });
+                uploadedImageKey = key;
+                send({ type: 'screenshot', status: 'uploaded' });
+              }
             } else {
               send({ type: 'screenshot', status: 'skipped', reason: 'presign failed' });
             }
@@ -486,12 +496,20 @@ export function createPublishRouter(ctx: RouteContext): Router {
             ?? { fingerprint: 'upload', enhancedAt: new Date().toISOString(), selectedSessionIds, result: { narrative, arc: [], skills, timeline, questions: [] } };
           const totalFiles = (detail.project as Record<string, unknown>).totalFiles as number;
 
-          if (repoUrl) (cache as unknown as Record<string, unknown>).repoUrl = repoUrl;
-          if (projectUrl) (cache as unknown as Record<string, unknown>).projectUrl = projectUrl;
+          const enrichedCache = {
+            ...cache,
+            ...(repoUrl && { repoUrl }),
+            ...(projectUrl && { projectUrl }),
+          };
+
+          // Use unguessable UUID URL — only set if S3 upload actually succeeded
+          const screenshotUrl = uploadedImageKey
+            ? `${PUBLIC_URL}/_img/${uploadedImageKey.replace(IMAGE_KEY_PREFIX, '')}`
+            : undefined;
 
           const projectHtml = generateProjectHtmlFragment(
-            String(project), cache, detail.sessions,
-            auth.username, { totalFilesChanged: totalFiles },
+            String(project), enrichedCache, detail.sessions,
+            auth.username, { totalFilesChanged: totalFiles, title, screenshotUrl },
           );
 
           const renderRes = await fetch(`${API_URL}/api/projects`, {

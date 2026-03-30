@@ -9,6 +9,14 @@ export function formatLoc(loc: number): string {
   return String(loc);
 }
 
+/** Derive a human-readable project name from the encoded directory name. */
+export function displayNameFromDir(dirName: string): string {
+  const devIdx = dirName.indexOf('-Dev-');
+  if (devIdx !== -1) return dirName.slice(devIdx + 5);
+  const segments = dirName.split('-').filter(Boolean);
+  return segments.length > 0 ? segments[segments.length - 1] : dirName;
+}
+
 /** Escape LIKE wildcards in user input for safe use in SQL LIKE clauses. */
 export function escapeLikeWildcards(str: string): string {
   return str.replace(/[%_]/g, (c) => `\\${c}`);

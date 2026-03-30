@@ -19,6 +19,8 @@ import {
 } from './db.js';
 import { renderCompact } from './context-export.js';
 import { getArchiveDir } from './settings.js';
+import { displayNameFromDir } from './format-utils.js';
+export { displayNameFromDir } from './format-utils.js';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -134,13 +136,6 @@ export async function syncWithTracking(
 
 // ── Helpers ──────────────────────────────────────────────────
 
-/** Derive a human-readable project name from the encoded directory name. */
-export function displayNameFromDir(dirName: string): string {
-  const devIdx = dirName.indexOf('-Dev-');
-  if (devIdx !== -1) return dirName.slice(devIdx + 5);
-  const segments = dirName.split('-').filter(Boolean);
-  return segments.length > 0 ? segments[segments.length - 1] : dirName;
-}
 
 /** Get file mtime and size, or zeros on error. */
 function getFileStats(filePath: string): { mtime: number; size: number } {
