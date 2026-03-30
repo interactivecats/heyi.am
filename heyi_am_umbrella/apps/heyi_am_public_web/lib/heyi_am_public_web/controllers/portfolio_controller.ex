@@ -317,7 +317,7 @@ defmodule HeyiAmPublicWeb.PortfolioController do
         end)
         |> Enum.sum()
 
-      session_count = length(shares)
+      session_count = project.total_sessions || length(shares)
 
       avg_agents =
         if session_count > 0,
