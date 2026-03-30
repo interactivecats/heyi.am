@@ -22991,9 +22991,9 @@
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.75rem", marginBottom: "1.25rem" }, children: [
             /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(StatBox, { label: "Active Time", value: formatDuration2(session.durationMinutes), primary: true, children: hasChildren && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(SplitLine, { you: formatDuration2(Math.max(0, session.durationMinutes - session.children.reduce((s, c) => s + c.durationMinutes, 0))), agent: formatDuration2(session.children.reduce((s, c) => s + c.durationMinutes, 0)) }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(StatBox, { label: "Turns", value: session.turns, children: hasChildren && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(SplitLine, { you: "You", agent: `${session.children.length} agents` }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(StatBox, { label: "Turns", value: session.turns, children: hasChildren && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(SplitLine, { you: "Human", agent: `${session.children.length} agents` }) }),
             /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(StatBox, { label: "Files", value: session.filesChanged?.length === 1 && session.filesChanged[0]?.path === "(aggregate)" ? "\u2014" : session.filesChanged?.length ?? "\u2014" }),
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(StatBox, { label: "LOC", value: formatLoc2(session.linesOfCode), children: hasChildren && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(SplitLine, { you: formatLoc2(Math.max(0, session.linesOfCode - session.children.reduce((s, c) => s + c.linesOfCode, 0))), agent: formatLoc2(session.children.reduce((s, c) => s + c.linesOfCode, 0)) }) })
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(StatBox, { label: "Lines changed", value: formatLoc2(session.linesOfCode), children: hasChildren && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(SplitLine, { you: formatLoc2(Math.max(0, session.linesOfCode - session.children.reduce((s, c) => s + c.linesOfCode, 0))), agent: formatLoc2(session.children.reduce((s, c) => s + c.linesOfCode, 0)) }) })
           ] }),
           session.developerTake && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { style: { fontSize: "0.9375rem", lineHeight: 1.6, color: "var(--on-surface, #191c1e)", borderLeft: "3px solid var(--primary, #084471)", paddingLeft: "0.75rem", marginBottom: "1.25rem" }, children: session.developerTake }),
           session.skills && session.skills.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: "0.375rem", marginBottom: "1.25rem" }, children: session.skills.map((skill) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { style: { fontFamily: "var(--font-mono, monospace)", fontSize: "11px", padding: "0.125rem 0.5rem", borderRadius: "0.25rem", background: "var(--violet-bg, #ede9fe)", color: "var(--violet, #6d28d9)" }, children: skill }, skill)) }),
@@ -23069,12 +23069,18 @@
     const [active, setActive] = (0, import_react3.useState)(null);
     showOverlay = (session) => setActive(session);
     if (!active) return null;
-    const slug = active.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "untitled";
+    const projectEl = document.querySelector("[data-session-base-url]");
+    const baseUrl = projectEl?.getAttribute("data-session-base-url");
+    let sessionPageUrl;
+    if (baseUrl) {
+      const slug = active.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "untitled";
+      sessionPageUrl = `${baseUrl}/${slug}.html`;
+    }
     return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
       SessionOverlay,
       {
         session: active,
-        sessionPageUrl: `./sessions/${slug}.html`,
+        sessionPageUrl,
         onClose: () => setActive(null)
       }
     );

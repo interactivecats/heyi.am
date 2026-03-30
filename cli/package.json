@@ -1,6 +1,6 @@
 {
   "name": "heyiam",
-  "version": "0.2.18",
+  "version": "0.2.19",
   "description": "Turn AI coding sessions into portfolio case studies",
   "type": "module",
   "license": "MIT",
@@ -23,7 +23,7 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "rm -rf dist && tsc -p tsconfig.build.json && chmod +x dist/index.js && cp -r src/render/templates dist/render/templates && cd app && npx vite build && rm -rf ../dist/public && cp -r dist ../dist/public",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && chmod +x dist/index.js && cp -r src/render/templates dist/render/templates && (test -f ../packages/ui/dist/mount.js && cp ../packages/ui/dist/mount.js dist/mount.js || echo 'Warning: packages/ui/dist/mount.js not found — skipping') && cd app && npx vite build && rm -rf ../dist/public && cp -r dist ../dist/public",
     "verify-build": "node -e \"const fs=require('fs'); const assert=require('assert'); const pkg=require('./package.json'); assert(fs.existsSync('dist/index.js'),'missing dist/index.js'); assert(fs.existsSync('dist/public/index.html'),'missing dist/public/index.html'); assert(fs.existsSync('dist/render/templates'),'missing templates'); const js=fs.readdirSync('dist/public/assets').filter(f=>f.endsWith('.js')); assert(js.length===1,'expected exactly 1 JS bundle, found '+js.length); const html=fs.readFileSync('dist/public/index.html','utf8'); assert(html.includes(js[0]),'index.html does not reference the JS bundle'); const tests=fs.readdirSync('dist',{recursive:true}).filter(f=>String(f).includes('.test.')); assert(tests.length===0,'test files found in dist: '+tests.join(', ')); console.log('Build verified: v'+pkg.version+' — dist/index.js + frontend + templates, 0 test files')\"",
     "prepublishOnly": "npm run test:backend && npm run build && npm run verify-build",
     "prepack": "npm run verify-build",

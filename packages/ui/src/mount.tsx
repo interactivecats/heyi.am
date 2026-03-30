@@ -46,16 +46,25 @@ function OverlayRoot({ sessions }: { sessions: Map<string, Session> }) {
 
   if (!active) return null;
 
-  const slug = active.title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 80) || 'untitled';
+  // Only link to session pages when running in a local HTML export
+  // (indicated by data-session-base-url on the project container).
+  // On Phoenix-served pages, session HTML files don't exist.
+  const projectEl = document.querySelector('[data-session-base-url]');
+  const baseUrl = projectEl?.getAttribute('data-session-base-url');
+  let sessionPageUrl: string | undefined;
+  if (baseUrl) {
+    const slug = active.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 80) || 'untitled';
+    sessionPageUrl = `${baseUrl}/${slug}.html`;
+  }
 
   return (
     <SessionOverlay
       session={active}
-      sessionPageUrl={`./sessions/${slug}.html`}
+      sessionPageUrl={sessionPageUrl}
       onClose={() => setActive(null)}
     />
   );

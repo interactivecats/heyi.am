@@ -129,11 +129,11 @@ export function createApp(sessionsBasePath?: string, dbPath?: string) {
   app.use(express.static(staticDir));
 
   // SPA fallback -- serve index.html for non-API routes
-  const indexPath = path.join(staticDir, 'index.html');
+  // Express 5 requires { root } option for sendFile (absolute paths fail silently)
   app.get('/{*splat}', (_req: Request, res: Response) => {
-    res.sendFile(indexPath, (err) => {
+    res.sendFile('index.html', { root: staticDir }, (err) => {
       if (err && !res.headersSent) {
-        console.error(`[spa] sendFile failed for ${indexPath}:`, (err as Error).message);
+        console.error(`[spa] sendFile failed for ${staticDir}/index.html:`, (err as Error).message);
         res.status(404).send('Page not found');
       }
     });

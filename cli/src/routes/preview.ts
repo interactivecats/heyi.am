@@ -209,7 +209,11 @@ export function createPreviewRouter(ctx: RouteContext): Router {
 
   // Serve @heyiam/ui mount script for preview pages
   router.get('/heyiam-mount.js', (_req: Request, res: Response) => {
-    const mountPath = path.resolve(__dirname, '..', '..', '..', 'packages', 'ui', 'dist', 'mount.js');
+    // In built dist: dist/mount.js (copied during build)
+    // In dev: ../../../packages/ui/dist/mount.js (monorepo layout)
+    const builtPath = path.resolve(__dirname, '..', 'mount.js');
+    const devPath = path.resolve(__dirname, '..', '..', '..', 'packages', 'ui', 'dist', 'mount.js');
+    const mountPath = existsSync(builtPath) ? builtPath : devPath;
     try {
       const js = readFileSync(mountPath, 'utf-8');
       res.type('application/javascript').send(js);

@@ -332,7 +332,9 @@ export async function exportHtml(
     arc: result.arc,
     fullSessions: sessions as unknown as Array<Record<string, unknown>>,
   });
-  const projectHtml = buildStandalonePage(title, projectBody);
+  const projectHtml = buildStandalonePage(title, projectBody, {
+    description: result.narrative?.slice(0, 200) || undefined,
+  });
   totalBytes += writeAndTrack(join(outputPath, 'index.html'), projectHtml, files);
 
   // Render session pages — only featured sessions (linked from project page)
@@ -342,10 +344,11 @@ export async function exportHtml(
 
   for (const session of featuredSessions) {
     const sessionSlug = slugify(session.title);
+    const enhanced = loadEnhancedData(session.id);
     const renderData = buildSessionRenderData({
       sessionId: session.id,
       session,
-      enhanced: null,
+      enhanced,
       username,
       projectSlug: slug,
       sessionSlug,
@@ -353,9 +356,11 @@ export async function exportHtml(
     });
 
     const sessionBody = renderSessionHtml(renderData);
+    const sessionDesc = (enhanced?.developerTake ?? session.developerTake ?? '').slice(0, 200) || undefined;
     const sessionHtml = buildStandalonePage(
       session.title,
       sessionBody,
+      { description: sessionDesc },
     );
     totalBytes += writeAndTrack(join(sessionsDir, `${sessionSlug}.html`), sessionHtml, files);
   }
@@ -483,21 +488,25 @@ export function generateHtmlFiles(
     arc: result.arc,
     fullSessions: sessions as unknown as Array<Record<string, unknown>>,
   });
-  files.push({ path: 'index.html', content: buildStandalonePage(title, projectBody) });
+  files.push({ path: 'index.html', content: buildStandalonePage(title, projectBody, {
+    description: result.narrative?.slice(0, 200) || undefined,
+  }) });
 
   const featuredSessions = pickFeaturedSessions(sessions, cache);
   for (const session of featuredSessions) {
     const sessionSlug = slugify(session.title);
+    const enhanced = loadEnhancedData(session.id);
     const renderData = buildSessionRenderData({
       sessionId: session.id,
-      session, enhanced: null, username,
+      session, enhanced, username,
       projectSlug: slug, sessionSlug,
       sourceTool: session.source ?? 'unknown',
     });
     const sessionBody = renderSessionHtml(renderData);
+    const sessionDesc = (enhanced?.developerTake ?? session.developerTake ?? '').slice(0, 200) || undefined;
     files.push({
       path: `sessions/${sessionSlug}.html`,
-      content: buildStandalonePage(session.title, sessionBody),
+      content: buildStandalonePage(session.title, sessionBody, { description: sessionDesc }),
     });
   }
 
@@ -599,7 +608,11 @@ function crc32(buf: Buffer): number {
 
 function getInlineMountJs(): string {
   const thisDir = dirname(fileURLToPath(import.meta.url));
-  const mountPath = resolve(thisDir, '..', '..', 'packages', 'ui', 'dist', 'mount.js');
+  // In built dist: dist/mount.js (copied during build)
+  // In dev: ../../packages/ui/dist/mount.js (monorepo layout)
+  const builtPath = resolve(thisDir, 'mount.js');
+  const devPath = resolve(thisDir, '..', '..', 'packages', 'ui', 'dist', 'mount.js');
+  const mountPath = existsSync(builtPath) ? builtPath : devPath;
   try {
     return readFileSync(mountPath, 'utf-8');
   } catch {
@@ -607,7 +620,11 @@ function getInlineMountJs(): string {
   }
 }
 
-function buildStandalonePage(title: string, bodyHtml: string): string {
+interface StandalonePageOpts {
+  description?: string;
+}
+
+function buildStandalonePage(title: string, bodyHtml: string, opts?: StandalonePageOpts): string {
   const css = getInlineCss();
   const cssTag = css
     ? `<style>${css}\nbody { overflow: auto !important; min-height: auto !important; background: var(--color-surface, #f8f9fb); }</style>`
@@ -616,12 +633,26 @@ function buildStandalonePage(title: string, bodyHtml: string): string {
   const mountJs = getInlineMountJs();
   const scriptTag = mountJs ? `<script>${mountJs}</script>` : '';
 
+  const safeTitle = escapeHtml(title);
+  const safeDesc = opts?.description ? escapeHtml(opts.description) : '';
+  const ogTitle = `${safeTitle} — heyi.am`;
+
+  const ogTags = `<meta property="og:title" content="${ogTitle}" />
+  <meta property="og:site_name" content="heyi.am" />
+  <meta property="og:type" content="article" />
+  ${safeDesc ? `<meta property="og:description" content="${safeDesc}" />` : ''}
+  ${safeDesc ? `<meta name="description" content="${safeDesc}" />` : ''}
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="${ogTitle}" />
+  ${safeDesc ? `<meta name="twitter:description" content="${safeDesc}" />` : ''}`;
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${escapeHtml(title)} — heyi.am</title>
+  <title>${ogTitle}</title>
+  ${ogTags}
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />

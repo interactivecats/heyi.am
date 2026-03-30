@@ -1,4 +1,4 @@
-<div class="heyiam-project" data-render-version="2">
+<div class="heyiam-project" data-render-version="2"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %}>
 
   {%- comment -%} Title {%- endcomment -%}
   <h1 class="project-title">{{ project.title }}</h1>

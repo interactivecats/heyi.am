@@ -121,7 +121,7 @@
           </div>
           <div class="pf-card__footer">
             <div class="pf-card__stat-row">
-              <span class="pf-card__stat"><strong>{length(project.shares)}</strong> sessions</span>
+              <span class="pf-card__stat"><strong>{project.total_sessions || length(project.shares)}</strong> sessions</span>
               <%= if project.total_duration_minutes && project.total_agent_duration_minutes do %>
                 <span class="pf-card__stat"><strong>{format_duration(project.total_duration_minutes)}</strong> / <strong>{format_duration(project.total_agent_duration_minutes)}</strong></span>
               <% else %>

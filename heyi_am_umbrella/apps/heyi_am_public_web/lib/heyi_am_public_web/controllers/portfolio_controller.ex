@@ -36,7 +36,7 @@ defmodule HeyiAmPublicWeb.PortfolioController do
               Projects.list_user_projects_with_published_shares(user.id)
               |> Enum.filter(fn p -> p.rendered_html && p.shares != [] end)
 
-            total_sessions = projects |> Enum.map(&length(&1.shares)) |> Enum.sum()
+            total_sessions = projects |> Enum.map(&(&1.total_sessions || length(&1.shares))) |> Enum.sum()
             total_lines = projects |> Enum.map(&(&1.total_loc || 0)) |> Enum.sum()
 
             render(conn, :portfolio,
