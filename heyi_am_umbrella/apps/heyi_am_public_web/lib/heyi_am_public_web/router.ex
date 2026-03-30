@@ -4,14 +4,15 @@ defmodule HeyiAmPublicWeb.Router do
   @strict_csp %{
     "content-security-policy" =>
       "default-src 'self'; " <>
-        "script-src 'self' https://analytics.interactivecats.com; " <>
+        "script-src 'self' https://analytics.interactivecats.com https://static.cloudflareinsights.com; " <>
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " <>
         "font-src https://fonts.gstatic.com; " <>
         "img-src 'self' data: https:; " <>
-        "connect-src 'self' https://analytics.interactivecats.com; " <>
+        "connect-src 'self' https://analytics.interactivecats.com https://cloudflareinsights.com; " <>
         "frame-src 'none'; " <>
         "frame-ancestors 'none'; " <>
-        "object-src 'none'"
+        "object-src 'none'",
+    "x-frame-options" => "DENY"
   }
 
   pipeline :browser do
@@ -37,6 +38,13 @@ defmodule HeyiAmPublicWeb.Router do
     pipe_through :browser
 
     get "/*path", PageController, :redirect_vibes
+  end
+
+  # UUID-keyed images — unguessable, no auth needed
+  scope "/_img", HeyiAmPublicWeb do
+    pipe_through :browser
+
+    get "/:uuid", ImageController, :show
   end
 
   # Unlisted project pages

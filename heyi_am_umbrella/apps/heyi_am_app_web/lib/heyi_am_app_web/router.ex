@@ -18,7 +18,7 @@ defmodule HeyiAmAppWeb.Router do
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " <>
         "font-src https://fonts.gstatic.com; " <>
         "img-src 'self' data: https:; " <>
-        "connect-src 'self' https://analytics.interactivecats.com; " <>
+        "connect-src 'self' https://analytics.interactivecats.com https://cloudflareinsights.com; " <>
         "frame-ancestors 'self'"
     }
     plug :fetch_current_scope_for_user
