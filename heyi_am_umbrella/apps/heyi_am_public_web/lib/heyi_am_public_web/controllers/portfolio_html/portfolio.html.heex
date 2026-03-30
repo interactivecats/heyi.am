@@ -25,7 +25,7 @@
         </div>
         <div class="pf-hero__stat">
           <div class="pf-hero__stat-value">{format_number(@total_lines)}</div>
-          <div class="pf-hero__stat-label">Lines</div>
+          <div class="pf-hero__stat-label">Lines changed</div>
         </div>
       </div>
     </div>
@@ -71,7 +71,7 @@
               </div>
               <div :if={featured.total_loc}>
                 <div class="pf-featured__stat-value">{format_number(featured.total_loc)}</div>
-                <div class="pf-featured__stat-label">Lines</div>
+                <div class="pf-featured__stat-label">Lines changed</div>
               </div>
             </div>
           </div>
@@ -125,7 +125,7 @@
               <%= if project.total_duration_minutes && project.total_agent_duration_minutes do %>
                 <span class="pf-card__stat"><strong>{format_duration(project.total_duration_minutes)}</strong> / <strong>{format_duration(project.total_agent_duration_minutes)}</strong></span>
               <% else %>
-                <span :if={project.total_loc} class="pf-card__stat"><strong>{format_number(project.total_loc)}</strong> lines</span>
+                <span :if={project.total_loc} class="pf-card__stat"><strong>{format_number(project.total_loc)}</strong> lines changed</span>
               <% end %>
             </div>
             <span class="pf-card__arrow">&rarr;</span>

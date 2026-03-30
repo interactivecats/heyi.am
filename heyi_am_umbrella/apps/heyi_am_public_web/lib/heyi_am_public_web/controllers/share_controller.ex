@@ -87,7 +87,7 @@ defmodule HeyiAmPublicWeb.ShareController do
       turns = share.turns || 0
       loc = share.loc_changed || 0
       skills = share.skills |> Enum.take(3) |> Enum.join(", ")
-      summary = "#{duration}min, #{turns} turns, #{loc} LOC"
+      summary = "#{duration}min, #{turns} turns, #{loc} lines changed"
       if skills != "", do: summary <> " — #{skills}", else: summary
     end
   end
