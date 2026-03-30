@@ -35,6 +35,15 @@ defmodule HeyiAmPublicWeb.PortfolioController do
             projects =
               Projects.list_user_projects_with_published_shares(user.id)
               |> Enum.filter(fn p -> p.rendered_html && p.shares != [] end)
+              |> Enum.map(fn p ->
+                if p.total_agent_duration_minutes do
+                  p
+                else
+                  your_min = p.total_duration_minutes || 0
+                  agent_min = compute_agent_minutes(your_min, p.shares)
+                  %{p | total_agent_duration_minutes: agent_min}
+                end
+              end)
 
             total_sessions = projects |> Enum.map(&length(&1.shares)) |> Enum.sum()
             total_lines = projects |> Enum.map(&(&1.total_loc || 0)) |> Enum.sum()
