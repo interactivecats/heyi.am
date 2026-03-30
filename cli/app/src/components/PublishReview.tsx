@@ -129,14 +129,14 @@ export function PublishReview() {
       onClick={handleUpload}
       disabled={state.step === 'uploading'}
     >
-      Send to heyiam.com
+      Upload to heyiam.com
     </button>
   )
 
   return (
     <AppShell
       back={{ label: 'Project', to: `/project/${dirName}` }}
-      chips={[{ label: 'Send to heyiam.com' }]}
+      chips={[{ label: 'Upload to heyiam.com' }]}
       actions={state.step === 'review' ? uploadButton : undefined}
     >
       <div className="p-6">
@@ -269,7 +269,7 @@ export function PublishReview() {
                   className="inline-flex items-center gap-1.5 font-semibold text-[0.8125rem] px-3.5 py-1.5 rounded-sm bg-primary text-on-primary hover:bg-primary-hover transition-colors"
                   onClick={handleUpload}
                 >
-                  Send to heyiam.com
+                  Upload to heyiam.com
                 </button>
               </div>
             </Card>

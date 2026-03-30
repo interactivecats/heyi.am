@@ -91,7 +91,7 @@ function ProjectDetailWrapper() {
             to={`/project/${encodeURIComponent(dirName ?? '')}/publish`}
             className="text-xs text-on-surface-variant hover:text-on-surface transition-colors"
           >
-            Send to heyiam.com
+            Upload to heyiam.com
           </Link>
         </>
       }
