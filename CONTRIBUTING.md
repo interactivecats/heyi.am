@@ -8,9 +8,11 @@ Thanks for your interest in contributing! This guide covers the basics.
 # Clone and install
 git clone https://github.com/interactivecats/heyi.am.git
 cd heyi.am
+npm install
+cd cli/app && npm install && cd ../..
 
 # CLI development
-cd cli && npm install && npm run dev
+cd cli && npm run dev
 
 # Phoenix backend (requires Docker)
 docker compose -f docker-compose.dev.yml up -d
