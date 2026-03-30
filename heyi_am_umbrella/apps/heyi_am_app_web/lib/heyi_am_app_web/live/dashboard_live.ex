@@ -206,7 +206,7 @@ defmodule HeyiAmAppWeb.DashboardLive do
   defp session_title_link(assigns) do
     ~H"""
     <%= cond do %>
-      <% @share.status == "listed" && @share.token -> %>
+      <% @share.status in ["listed", "unlisted"] && @share.token -> %>
         <a href={"#{public_url()}/s/#{@share.token}"} target="_blank" class="title-sm session-title session-title--link">
           {@share.title}
         </a>
