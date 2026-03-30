@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { AppShell, Chip, Card, SectionHeader, StatCard, Note } from './shared'
 import { WorkTimeline } from './WorkTimeline'
 import { GrowthChart } from './GrowthChart'
-import { fetchDashboard, subscribeSyncProgress, completeOnboarding as apiCompleteOnboarding, saveApiKey, checkUsername, startSignup, pollDeviceAuth } from '../api'
+import { fetchDashboard, subscribeSyncProgress, completeOnboarding as apiCompleteOnboarding, saveApiKey, checkUsername, startSignup, startLogin, pollDeviceAuth } from '../api'
 import type { DashboardResponse, DashboardProject, SyncProgressEvent, Session } from '../types'
 
 // ── State machine ───────────────────────────────────────────
@@ -572,7 +572,7 @@ export function FirstRun() {
                           setUsernameStatus('submitting')
                           setUsernameError('')
                           try {
-                            const deviceInfo = await startSignup('')
+                            const deviceInfo = await startLogin()
                             setDeviceCode(deviceInfo.device_code)
                             setAuthPolling(true)
                             setUsernameStatus('idle')
@@ -803,22 +803,6 @@ function MockProjectPage({
               <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6.5 10.5l3-3m-1.5-2a2.5 2.5 0 013.54 3.54l-1.5 1.5m-4.08-1.08a2.5 2.5 0 01-3.54-3.54l1.5-1.5"/></svg>
               heyi.am
             </a>
-          </div>
-
-          {/* Screenshot — always shown */}
-          <div className="rounded-md border border-ghost overflow-hidden shadow-sm mb-3">
-            <div className="flex items-center gap-1.5 px-3 py-2 bg-surface-low border-b border-ghost">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-              <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
-              <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
-            </div>
-            <div className="max-h-96 overflow-y-auto">
-              <img
-                src="/heyi-am-screenshot.png"
-                alt="heyi.am — proof-of-work for AI-native developers"
-                className="w-full h-auto"
-              />
-            </div>
           </div>
 
           {/* Narrative — only when enhanced */}
