@@ -52,6 +52,8 @@ export function PublishReview() {
       totalDurationMinutes: project?.totalDuration ?? 0,
       totalAgentDurationMinutes: project?.totalAgentDuration,
       totalFilesChanged: project?.totalFiles ?? 0,
+      totalInputTokens: project?.totalInputTokens ?? 0,
+      totalOutputTokens: project?.totalOutputTokens ?? 0,
       skippedSessions: [],
       selectedSessionIds: cache?.selectedSessionIds ?? [],
       screenshotBase64: cache?.screenshotBase64 ?? undefined,

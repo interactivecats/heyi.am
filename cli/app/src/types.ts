@@ -231,6 +231,8 @@ export interface UploadPayload {
   totalDurationMinutes: number
   totalAgentDurationMinutes?: number
   totalFilesChanged: number
+  totalInputTokens?: number
+  totalOutputTokens?: number
   skippedSessions: Array<{ title: string; duration: number; loc: number; reason: string }>
   selectedSessionIds: string[]
   screenshotBase64?: string
