@@ -336,7 +336,7 @@ export async function saveProjectEnhanceLocally(
   dirName: string,
   selectedSessionIds: string[],
   result: ProjectEnhanceResult,
-  extras?: { title?: string; repoUrl?: string; projectUrl?: string; screenshotBase64?: string },
+  extras?: { title?: string; repoUrl?: string; projectUrl?: string; screenshotBase64?: string; layout?: string; theme?: string },
 ): Promise<boolean> {
   try {
     await post(`/projects/${enc(dirName)}/enhance-save`, {

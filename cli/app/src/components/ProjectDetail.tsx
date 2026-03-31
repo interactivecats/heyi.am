@@ -9,6 +9,7 @@ import {
   type Session,
 } from '../api'
 import { Card, Note, SectionHeader, StatCard } from './shared'
+import { LayoutThemePicker } from './LayoutThemePicker'
 import { Chip } from './shared/Chip'
 import { WorkTimeline } from './WorkTimeline'
 import { GrowthChart } from './GrowthChart'
@@ -143,6 +144,8 @@ export function ProjectDetail() {
   const [projectUrl, setProjectUrl] = useState('')
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null)
   const [screenshotCapturing, setScreenshotCapturing] = useState(false)
+  const [projectLayout, setProjectLayout] = useState('editorial')
+  const [projectTheme, setProjectTheme] = useState('light-blue')
   const [metadataDirty, setMetadataDirty] = useState(false)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const screenshotInputRef = useRef<HTMLInputElement>(null)
@@ -157,6 +160,8 @@ export function ProjectDetail() {
         if (d.enhanceCache?.repoUrl) setRepoUrl(d.enhanceCache.repoUrl)
         if (d.enhanceCache?.projectUrl) setProjectUrl(d.enhanceCache.projectUrl)
         if (d.enhanceCache?.screenshotBase64) setScreenshotPreview(d.enhanceCache.screenshotBase64)
+        if (d.enhanceCache?.layout) setProjectLayout(d.enhanceCache.layout)
+        if (d.enhanceCache?.theme) setProjectTheme(d.enhanceCache.theme)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -175,9 +180,9 @@ export function ProjectDetail() {
       dirName,
       cache?.selectedSessionIds ?? [],
       cache?.result ?? { narrative: '', arc: [], skills: [], timeline: [], questions: [] },
-      { title: projectTitle || undefined, repoUrl: repoUrl || undefined, projectUrl: projectUrl || undefined, screenshotBase64: screenshotPreview ?? undefined },
+      { title: projectTitle || undefined, repoUrl: repoUrl || undefined, projectUrl: projectUrl || undefined, screenshotBase64: screenshotPreview ?? undefined, layout: projectLayout, theme: projectTheme },
     ).then(() => setMetadataDirty(false)).catch(() => {})
-  }, [dirName, detail, projectTitle, repoUrl, projectUrl, screenshotPreview])
+  }, [dirName, detail, projectTitle, repoUrl, projectUrl, screenshotPreview, projectLayout, projectTheme])
 
   useEffect(() => {
     if (!metadataDirty) return
@@ -278,6 +283,15 @@ export function ProjectDetail() {
             <Chip variant="primary">{project.enhancedAt ? 'Refined' : 'Unrefined'}</Chip>
             <Chip variant="green">{project.isUploaded ? 'Uploaded' : 'Local only'}</Chip>
           </div>
+        </div>
+
+        <div className="mb-4 pt-4 border-t border-ghost">
+          <LayoutThemePicker
+            layout={projectLayout}
+            theme={projectTheme}
+            onLayoutChange={(l) => { setProjectLayout(l); setMetadataDirty(true) }}
+            onThemeChange={(t) => { setProjectTheme(t); setMetadataDirty(true) }}
+          />
         </div>
 
         <Note>The local project page is the main object. Public pages are just one projection of it.</Note>

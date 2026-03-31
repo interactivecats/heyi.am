@@ -280,13 +280,15 @@ export function createEnhanceRouter(ctx: RouteContext): Router {
   // Save project enhance result explicitly
   router.post('/api/projects/:project/enhance-save', async (req: Request, res: Response) => {
     const { project } = req.params;
-    const { selectedSessionIds, result, title, repoUrl, projectUrl, screenshotBase64 } = req.body as {
+    const { selectedSessionIds, result, title, repoUrl, projectUrl, screenshotBase64, layout, theme } = req.body as {
       selectedSessionIds: string[];
       result: ProjectEnhanceResult;
       title?: string;
       repoUrl?: string;
       projectUrl?: string;
       screenshotBase64?: string;
+      layout?: string;
+      theme?: string;
     };
 
     if (!Array.isArray(selectedSessionIds) || !result?.narrative) {
@@ -307,7 +309,7 @@ export function createEnhanceRouter(ctx: RouteContext): Router {
         return;
       }
 
-      saveProjectEnhanceResult(proj.dirName, selectedSessionIds, result, undefined, { title, repoUrl, projectUrl, screenshotBase64 });
+      saveProjectEnhanceResult(proj.dirName, selectedSessionIds, result, undefined, { title, repoUrl, projectUrl, screenshotBase64, layout, theme });
       res.json({ saved: true, enhancedAt: new Date().toISOString() });
     } catch (err) {
       res.status(500).json({ error: { code: 'SAVE_FAILED', message: (err as Error).message } });
