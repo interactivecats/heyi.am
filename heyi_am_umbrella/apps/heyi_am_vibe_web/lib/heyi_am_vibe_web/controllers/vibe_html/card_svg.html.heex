@@ -16,15 +16,15 @@
     <%= @headline %>
   </text>
 
-  <%!-- Narrative --%>
-  <foreignObject x="60" y="95" width="1080" height="55">
-    <div xmlns="http://www.w3.org/1999/xhtml" style="color: #9ca3af; font-family: 'IBM Plex Mono', monospace; font-size: 14px; line-height: 1.55;">
-      <%= @narrative %>
-    </div>
-  </foreignObject>
+  <%!-- Narrative — wrapped as SVG text lines (foreignObject breaks PNG converters) --%>
+  <%= if @narrative do %>
+    <%= for {line, idx} <- @narrative |> wrap_text(90) |> Enum.take(3) |> Enum.with_index() do %>
+      <text x="60" y={112 + idx * 20} fill="#9ca3af" font-family="IBM Plex Mono, monospace" font-size="13"><%= line %></text>
+    <% end %>
+  <% end %>
 
   <%!-- Gray divider — full width --%>
-  <rect x="60" y="165" width="1080" height="1" fill="#1f2937"/>
+  <rect x="60" y="175" width="1080" height="1" fill="#1f2937"/>
 
   <%!-- Three stat columns --%>
 
