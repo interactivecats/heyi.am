@@ -5,7 +5,9 @@ defmodule HeyiAmAppWeb.PageController do
     if conn.assigns[:current_scope] && conn.assigns.current_scope.user do
       redirect(conn, to: ~p"/dashboard")
     else
-      render(conn, :home)
+      conn
+      |> put_layout(html: {HeyiAmAppWeb.Layouts, :landing})
+      |> render(:home)
     end
   end
 

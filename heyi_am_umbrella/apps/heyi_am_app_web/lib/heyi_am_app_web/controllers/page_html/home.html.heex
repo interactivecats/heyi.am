@@ -1,331 +1,259 @@
-<%!-- ── Hero ── --%>
-  <section class="landing-hero">
-    <h1 class="display-md" style="margin-block-end: var(--spacing-6);">
-      Archive your coding sessions.<br />
-      Then enhance, search, and share them.
+<div class="lk">
+
+<%!-- ═══ Nav ═══ --%>
+<nav class="lk-nav">
+  <a href="/" class="lk-nav-logo">heyi<span>.</span>am</a>
+  <div class="lk-nav-links">
+    <a href="#how">How it works</a>
+    <a href={HeyiAmAppWeb.Helpers.public_url("/ben")}>Example</a>
+    <a href="https://github.com/interactivecats/heyi.am" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <a href={~p"/users/log-in"} class="lk-nav-link-auth">Log in</a>
+    <a href={~p"/users/register"} class="lk-nav-btn">Sign up</a>
+  </div>
+</nav>
+
+<%!-- ═══ Hero ═══ --%>
+<section class="lk-hero">
+  <div class="lk-hero-bg-text">heyi.am</div>
+  <div class="lk-hero-content">
+    <div class="lk-hero-eyebrow">FOR AI-NATIVE DEVELOPERS</div>
+    <h1>
+      Show your<br>
+      <span class="lk-text-cycle">
+        <span class="lk-text-cycle-spacer">judgment.</span>
+        <span class="lk-text-cycle-word">decisions.</span>
+        <span class="lk-text-cycle-word">thinking.</span>
+        <span class="lk-text-cycle-word">execution.</span>
+        <span class="lk-text-cycle-word">judgment.</span>
+      </span>
     </h1>
-    <p class="body-lg" style="color: var(--on-surface-variant); max-width: 38rem; margin-inline: auto; margin-block-end: var(--spacing-8);">
-      One CLI indexes your AI coding sessions from Claude Code, Cursor, Codex, and Gemini.
-      Search them locally. Publish what you want.
-    </p>
-    <div class="terminal" style="max-width: 28rem; margin-inline: auto; text-align: start; margin-block-end: var(--spacing-8);">
-      <div class="terminal-header">
-        <div class="terminal-dots">
-          <span class="terminal-dot terminal-dot--red"></span>
-          <span class="terminal-dot terminal-dot--yellow"></span>
-          <span class="terminal-dot terminal-dot--green"></span>
-        </div>
-        <span style="font-size: 0.625rem; color: rgba(255,255,255,0.4);">terminal</span>
-      </div>
-      <div class="terminal-line" style="font-size: 1.125rem;"><span class="terminal-prompt">$</span> npx heyiam</div>
-    </div>
-    <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-8);">
-      Paste this in your terminal. No signup required.</p>
-    <div style="display: flex; gap: var(--spacing-3); justify-content: center; align-items: center;">
-      <a href={HeyiAmAppWeb.Helpers.public_url("/ben")} class="btn btn-primary">See example portfolio</a>
-      <a href="https://github.com/interactivecats/heyi.am" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 0.375rem;" target="_blank" rel="noopener noreferrer">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-        GitHub
-      </a>
-    </div>
-  </section>
 
-  <%!-- ── Feature: Archive ── --%>
-  <section class="landing-feature">
-    <div class="landing-feature-inner">
-      <div class="landing-feature-text">
-        <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-2);">Archive</div>
-        <h2 class="headline-lg" style="margin-block-end: var(--spacing-3);">Every session, automatically discovered</h2>
-        <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
-          Run <code style="font-family: var(--font-mono); font-size: 0.875em;">npx heyiam</code> and it indexes
-          every AI coding session on your machine. Claude Code, Cursor, Codex, Gemini CLI. All in one place.
-        </p>
-        <p class="body-md" style="color: var(--on-surface-variant);">
-          Tracks timelines, lines changed, tools used, and files touched.
-          Everything stays local in SQLite.
-        </p>
-      </div>
-      <div class="landing-feature-screenshot">
-        <div class="screenshot-frame">
-          <div class="screenshot-dots">
-            <span class="screenshot-dot screenshot-dot--red"></span>
-            <span class="screenshot-dot screenshot-dot--yellow"></span>
-            <span class="screenshot-dot screenshot-dot--green"></span>
-          </div>
-          <img src="/images/screenshots/archive.png" alt="Project timeline showing sessions over time" loading="lazy" />
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <%!-- ── Feature: Enhance ── --%>
-  <section class="landing-feature">
-    <div class="landing-feature-inner landing-feature-inner--reverse">
-      <div class="landing-feature-text">
-        <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-2);">Enhance</div>
-        <h2 class="headline-lg" style="margin-block-end: var(--spacing-3);">AI reads your sessions. Extracts the signal.</h2>
-        <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
-          One command pulls out what matters: a summary, the skills you used,
-          the decisions you made, and the shape of the project.
-        </p>
-        <p class="body-md" style="color: var(--on-surface-variant);">
-          You answer a few questions so the writeup sounds like you, not like AI output.
-        </p>
-      </div>
-      <div class="landing-feature-screenshot">
-        <div class="screenshot-frame">
-          <div class="screenshot-dots">
-            <span class="screenshot-dot screenshot-dot--red"></span>
-            <span class="screenshot-dot screenshot-dot--yellow"></span>
-            <span class="screenshot-dot screenshot-dot--green"></span>
-          </div>
-          <img src="/images/screenshots/enhance.png" alt="AI enhancement extracting skills and narrative" loading="lazy" />
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <%!-- ── Feature: Search ── --%>
-  <section class="landing-feature">
-    <div class="landing-feature-inner">
-      <div class="landing-feature-text">
-        <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-2);">Search</div>
-        <h2 class="headline-lg" style="margin-block-end: var(--spacing-3);">Full-text search across everything</h2>
-        <p class="body-md" style="color: var(--on-surface-variant);">
-          Search all your sessions. Find the one where you fixed that weird bug,
-          or see how your approach changed over time.
-        </p>
-      </div>
-      <div class="landing-feature-screenshot">
-        <div class="screenshot-frame">
-          <div class="screenshot-dots">
-            <span class="screenshot-dot screenshot-dot--red"></span>
-            <span class="screenshot-dot screenshot-dot--yellow"></span>
-            <span class="screenshot-dot screenshot-dot--green"></span>
-          </div>
-          <img src="/images/screenshots/search.png" alt="Search results showing matched sessions" loading="lazy" />
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <%!-- ── Feature: Share ── --%>
-  <section class="landing-feature">
-    <div class="landing-feature-inner landing-feature-inner--reverse">
-      <div class="landing-feature-text">
-        <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-2);">Share</div>
-        <h2 class="headline-lg" style="margin-block-end: var(--spacing-3);">Publish to heyi.am/you</h2>
-        <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-4);">
-          Choose what to publish. Your portfolio shows project narratives, skill breakdowns,
-          work timelines, and session detail.
-        </p>
-        <p class="body-md" style="color: var(--on-surface-variant);">
-          Nothing is public by default. You control what gets shared.
-        </p>
-      </div>
-      <div class="landing-feature-screenshot">
-        <div class="screenshot-frame">
-          <div class="screenshot-dots">
-            <span class="screenshot-dot screenshot-dot--red"></span>
-            <span class="screenshot-dot screenshot-dot--yellow"></span>
-            <span class="screenshot-dot screenshot-dot--green"></span>
-          </div>
-          <img src="/images/screenshots/project.png" alt="Published project page with stats and timeline" loading="lazy" />
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <%!-- ── Feature: Multi-agent Timeline ── --%>
-  <section class="landing-feature landing-feature--full">
-    <div class="landing-section" style="padding-block: 0;">
-      <div class="label-md" style="color: var(--primary); margin-block-end: var(--spacing-2);">Visualize</div>
-      <h2 class="headline-lg" style="margin-block-end: var(--spacing-3);">See how you work with agents</h2>
-      <p class="body-md" style="color: var(--on-surface-variant); max-width: 38rem; margin-block-end: var(--spacing-8);">
-        Multi-agent sessions show up as fork-join waveforms on a timeline. Agents fan out from the
-        main thread, run in parallel, and rejoin.
+    <div class="lk-hero-body">
+      <p class="lk-hero-desc">
+        Turn your Claude Code, Cursor, and Gemini sessions into project case studies. Real timelines. Real decisions. Real stats.
       </p>
-    </div>
-    <%!-- Mock multi-agent work timeline — fork-join waveform style --%>
-    <%!-- Each agent forks from center, curves to its lane, runs horizontally, curves back.
-         joinX varies per agent based on duration (short=tight U, long=wide with flat middle).
-         Uses bezierForkJoin pattern: M forkX cY C forkX+cp cY, forkX+cp laneY, forkX+2cp laneY L joinX-2cp laneY C joinX-cp laneY, joinX-cp cY, joinX cY --%>
-    <div class="mock-timeline" role="img" aria-label="Multi-agent work timeline visualization">
-      <svg viewBox="0 0 960 340" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto;">
-        <%!-- Main thread line --%>
-        <line x1="30" y1="155" x2="940" y2="155" stroke="#084471" stroke-width="1.5" />
-
-        <%!-- ═══ Session 1: 12 agents, fork=50, varying joinX ═══ --%>
-        <circle cx="50" cy="155" r="5" fill="#084471" />
-        <text x="108" y="30" fill="#084471" font-family="'IBM Plex Mono', monospace" font-size="9" font-weight="600">Rebuild auth + portfolio...</text>
-        <text x="108" y="41" fill="#9ca3af" font-family="'IBM Plex Mono', monospace" font-size="8">2h 12m  Mar 19, 7:03 PM</text>
-
-        <%!-- frontend: lane y=55, long (joinX=290) --%>
-        <path d="M 50 155 C 100 155, 100 55, 150 55 L 190 55 C 240 55, 240 155, 290 155" fill="none" stroke="#7c3aed" stroke-width="1.5" opacity="0.7" />
-        <%!-- backend: lane y=75, medium-long (joinX=240) --%>
-        <path d="M 50 155 C 97 155, 97 75, 145 75 L 145 75 C 192 75, 192 155, 240 155" fill="none" stroke="#0891b2" stroke-width="1.5" opacity="0.7" />
-        <%!-- qa: lane y=93, long (joinX=305) --%>
-        <path d="M 50 155 C 100 155, 100 93, 150 93 L 205 93 C 255 93, 255 155, 305 155" fill="none" stroke="#059669" stroke-width="1.5" opacity="0.7" />
-        <%!-- ux: lane y=109, short (joinX=145) --%>
-        <path d="M 50 155 C 74 155, 74 109, 97 109 L 98 109 C 121 109, 121 155, 145 155" fill="none" stroke="#d97706" stroke-width="1.5" opacity="0.7" />
-        <%!-- reviewer: lane y=123, medium (joinX=200) --%>
-        <path d="M 50 155 C 87 155, 87 123, 125 123 L 125 123 C 162 123, 162 155, 200 155" fill="none" stroke="#e11d48" stroke-width="1.5" opacity="0.7" />
-        <%!-- architect: lane y=138, short (joinX=125) --%>
-        <path d="M 50 155 C 69 155, 69 138, 87 138 L 88 138 C 106 138, 106 155, 125 155" fill="none" stroke="#7e22ce" stroke-width="1.5" opacity="0.7" />
-        <%!-- tester: lane y=172, medium (joinX=215) --%>
-        <path d="M 50 155 C 91 155, 91 172, 132 172 L 133 172 C 174 172, 174 155, 215 155" fill="none" stroke="#16a34a" stroke-width="1.5" opacity="0.7" />
-        <%!-- security: lane y=188, short (joinX=150) --%>
-        <path d="M 50 155 C 75 155, 75 188, 100 188 L 100 188 C 125 188, 125 155, 150 155" fill="none" stroke="#475569" stroke-width="1.5" opacity="0.7" />
-        <%!-- research: lane y=204, long (joinX=280) --%>
-        <path d="M 50 155 C 100 155, 100 204, 150 204 L 180 204 C 230 204, 230 155, 280 155" fill="none" stroke="#6366f1" stroke-width="1.5" opacity="0.7" />
-        <%!-- planner: lane y=220, medium (joinX=210) --%>
-        <path d="M 50 155 C 90 155, 90 220, 130 220 L 130 220 C 170 220, 170 155, 210 155" fill="none" stroke="#0d9488" stroke-width="1.5" opacity="0.7" />
-        <%!-- wiring: lane y=238, long (joinX=310) --%>
-        <path d="M 50 155 C 100 155, 100 238, 150 238 L 210 238 C 260 238, 260 155, 310 155" fill="none" stroke="#c026d3" stroke-width="1.5" opacity="0.7" />
-        <%!-- build-fix: lane y=258, medium-long (joinX=260) --%>
-        <path d="M 50 155 C 100 155, 100 258, 150 258 L 160 258 C 210 258, 210 155, 260 155" fill="none" stroke="#ea580c" stroke-width="1.5" opacity="0.7" />
-
-        <circle cx="310" cy="155" r="5" fill="#084471" />
-
-        <%!-- ═══ Session 2: solo (no agents) ═══ --%>
-        <circle cx="350" cy="155" r="3" fill="#084471" />
-        <line x1="350" y1="155" x2="400" y2="155" stroke="#084471" stroke-width="3" />
-        <circle cx="400" cy="155" r="3" fill="#084471" />
-
-        <%!-- ═══ Session 3: 18 agents (dense burst), fork=430, varying joinX ═══ --%>
-        <circle cx="430" cy="155" r="5" fill="#084471" />
-        <text x="500" y="18" fill="#084471" font-family="'IBM Plex Mono', monospace" font-size="9" font-weight="600">Phase 1-4 redesign: sch...</text>
-        <text x="500" y="29" fill="#9ca3af" font-family="'IBM Plex Mono', monospace" font-size="8">52m  Mar 20, 10:38 AM</text>
-
-        <%!-- 18 agents with gap=13, lanes from ~50 to ~260, varied joinX (490-690) --%>
-        <%!-- frontend: y=50, long (joinX=680) --%>
-        <path d="M 430 155 C 480 155, 480 50, 530 50 L 580 50 C 630 50, 630 155, 680 155" fill="none" stroke="#7c3aed" stroke-width="1.5" opacity="0.65" />
-        <%!-- backend: y=63, medium (joinX=590) --%>
-        <path d="M 430 155 C 470 155, 470 63, 510 63 L 510 63 C 550 63, 550 155, 590 155" fill="none" stroke="#0891b2" stroke-width="1.5" opacity="0.65" />
-        <%!-- qa: y=76, short (joinX=510) --%>
-        <path d="M 430 155 C 450 155, 450 76, 470 76 L 470 76 C 490 76, 490 155, 510 155" fill="none" stroke="#059669" stroke-width="1.5" opacity="0.65" />
-        <%!-- ux: y=89, long (joinX=670) --%>
-        <path d="M 430 155 C 480 155, 480 89, 530 89 L 570 89 C 620 89, 620 155, 670 155" fill="none" stroke="#d97706" stroke-width="1.5" opacity="0.65" />
-        <%!-- reviewer: y=102, medium (joinX=580) --%>
-        <path d="M 430 155 C 467 155, 467 102, 505 102 L 505 102 C 542 102, 542 155, 580 155" fill="none" stroke="#e11d48" stroke-width="1.5" opacity="0.65" />
-        <%!-- architect: y=115, short (joinX=505) --%>
-        <path d="M 430 155 C 449 155, 449 115, 467 115 L 468 115 C 486 115, 486 155, 505 155" fill="none" stroke="#7e22ce" stroke-width="1.5" opacity="0.65" />
-        <%!-- tester: y=128, medium (joinX=560) --%>
-        <path d="M 430 155 C 462 155, 462 128, 495 128 L 495 128 C 527 128, 527 155, 560 155" fill="none" stroke="#16a34a" stroke-width="1.5" opacity="0.65" />
-        <%!-- security: y=141, long (joinX=690) --%>
-        <path d="M 430 155 C 480 155, 480 141, 530 141 L 590 141 C 640 141, 640 155, 690 155" fill="none" stroke="#475569" stroke-width="1.5" opacity="0.65" />
-        <%!-- explore: y=148, short (joinX=495) --%>
-        <path d="M 430 155 C 446 155, 446 148, 462 148 L 463 148 C 479 148, 479 155, 495 155" fill="none" stroke="#94a3b8" stroke-width="1.5" opacity="0.65" />
-        <%!-- research: y=168, medium (joinX=570) --%>
-        <path d="M 430 155 C 465 155, 465 168, 500 168 L 500 168 C 535 168, 535 155, 570 155" fill="none" stroke="#6366f1" stroke-width="1.5" opacity="0.65" />
-        <%!-- planner: y=181, short (joinX=500) --%>
-        <path d="M 430 155 C 447 155, 447 181, 465 181 L 465 181 C 482 181, 482 155, 500 155" fill="none" stroke="#0d9488" stroke-width="1.5" opacity="0.65" />
-        <%!-- wiring: y=194, long (joinX=660) --%>
-        <path d="M 430 155 C 480 155, 480 194, 530 194 L 560 194 C 610 194, 610 155, 660 155" fill="none" stroke="#c026d3" stroke-width="1.5" opacity="0.65" />
-        <%!-- build-fix: y=207, medium (joinX=575) --%>
-        <path d="M 430 155 C 466 155, 466 207, 502 207 L 503 207 C 539 207, 539 155, 575 155" fill="none" stroke="#ea580c" stroke-width="1.5" opacity="0.65" />
-        <%!-- agent-1: y=220, short (joinX=510) --%>
-        <path d="M 430 155 C 450 155, 450 220, 470 220 L 470 220 C 490 220, 490 155, 510 155" fill="none" stroke="#2563eb" stroke-width="1.5" opacity="0.65" />
-        <%!-- agent-2: y=233, medium-long (joinX=630) --%>
-        <path d="M 430 155 C 480 155, 480 233, 530 233 L 530 233 C 580 233, 580 155, 630 155" fill="none" stroke="#ca8a04" stroke-width="1.5" opacity="0.65" />
-        <%!-- agent-3: y=246, short (joinX=515) --%>
-        <path d="M 430 155 C 451 155, 451 246, 472 246 L 473 246 C 494 246, 494 155, 515 155" fill="none" stroke="#be185d" stroke-width="1.5" opacity="0.65" />
-        <%!-- agent-4: y=259, long (joinX=685) --%>
-        <path d="M 430 155 C 480 155, 480 259, 530 259 L 585 259 C 635 259, 635 155, 685 155" fill="none" stroke="#4f46e5" stroke-width="1.5" opacity="0.65" />
-        <%!-- agent-5: y=272, medium (joinX=555) --%>
-        <path d="M 430 155 C 461 155, 461 272, 492 272 L 493 272 C 524 272, 524 155, 555 155" fill="none" stroke="#0e7490" stroke-width="1.5" opacity="0.65" />
-
-        <circle cx="690" cy="155" r="5" fill="#084471" />
-
-        <%!-- ═══ Gap ═══ --%>
-        <line x1="690" y1="155" x2="755" y2="155" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="4 4" />
-        <text x="722" y="175" fill="#9ca3af" font-family="'IBM Plex Mono', monospace" font-size="8" text-anchor="middle">2h gap</text>
-
-        <%!-- ═══ Session 4: 8 agents, fork=770, varying joinX ═══ --%>
-        <circle cx="770" cy="155" r="5" fill="#084471" />
-        <text x="800" y="52" fill="#084471" font-family="'IBM Plex Mono', monospace" font-size="9" font-weight="600">heyi.am portfolio</text>
-        <text x="800" y="63" fill="#9ca3af" font-family="'IBM Plex Mono', monospace" font-size="8">4h 35m  Mar 20, 1:19 PM</text>
-
-        <%!-- frontend: y=80, long (joinX=930) --%>
-        <path d="M 770 155 C 810 155, 810 80, 850 80 L 850 80 C 890 80, 890 155, 930 155" fill="none" stroke="#7c3aed" stroke-width="1.5" opacity="0.7" />
-        <%!-- backend: y=98, medium (joinX=880) --%>
-        <path d="M 770 155 C 797 155, 797 98, 825 98 L 825 98 C 852 98, 852 155, 880 155" fill="none" stroke="#0891b2" stroke-width="1.5" opacity="0.7" />
-        <%!-- qa: y=116, short (joinX=835) --%>
-        <path d="M 770 155 C 786 155, 786 116, 802 116 L 803 116 C 819 116, 819 155, 835 155" fill="none" stroke="#059669" stroke-width="1.5" opacity="0.7" />
-        <%!-- reviewer: y=136, medium (joinX=870) --%>
-        <path d="M 770 155 C 795 155, 795 136, 820 136 L 820 136 C 845 136, 845 155, 870 155" fill="none" stroke="#e11d48" stroke-width="1.5" opacity="0.7" />
-        <%!-- tester: y=174, long (joinX=925) --%>
-        <path d="M 770 155 C 808 155, 808 174, 847 174 L 848 174 C 886 174, 886 155, 925 155" fill="none" stroke="#16a34a" stroke-width="1.5" opacity="0.7" />
-        <%!-- ux: y=194, short (joinX=840) --%>
-        <path d="M 770 155 C 787 155, 787 194, 805 194 L 805 194 C 822 194, 822 155, 840 155" fill="none" stroke="#d97706" stroke-width="1.5" opacity="0.7" />
-        <%!-- architect: y=214, medium-long (joinX=910) --%>
-        <path d="M 770 155 C 805 155, 805 214, 840 214 L 840 214 C 875 214, 875 155, 910 155" fill="none" stroke="#7e22ce" stroke-width="1.5" opacity="0.7" />
-        <%!-- security: y=234, medium (joinX=875) --%>
-        <path d="M 770 155 C 796 155, 796 234, 822 234 L 823 234 C 849 234, 849 155, 875 155" fill="none" stroke="#475569" stroke-width="1.5" opacity="0.7" />
-
-        <circle cx="930" cy="155" r="5" fill="#084471" />
-
-        <%!-- Legend --%>
-        <g transform="translate(50, 305)">
-          <text x="0" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8" font-weight="600">18 agents:</text>
-          <circle cx="68" cy="-3" r="4" fill="#084471" /><text x="78" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">main</text>
-          <circle cx="115" cy="-3" r="3" fill="#7c3aed" /><text x="123" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">frontend</text>
-          <circle cx="185" cy="-3" r="3" fill="#0891b2" /><text x="193" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">backend</text>
-          <circle cx="255" cy="-3" r="3" fill="#059669" /><text x="263" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">qa</text>
-          <circle cx="290" cy="-3" r="3" fill="#d97706" /><text x="298" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">ux</text>
-          <circle cx="320" cy="-3" r="3" fill="#e11d48" /><text x="328" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">reviewer</text>
-          <circle cx="390" cy="-3" r="3" fill="#7e22ce" /><text x="398" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">architect</text>
-          <circle cx="465" cy="-3" r="3" fill="#16a34a" /><text x="473" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">tester</text>
-          <circle cx="520" cy="-3" r="3" fill="#475569" /><text x="528" y="0" fill="#42474e" font-family="'IBM Plex Mono', monospace" font-size="8">security</text>
-          <text x="590" y="0" fill="#9ca3af" font-family="'IBM Plex Mono', monospace" font-size="8">+9 more</text>
-        </g>
-      </svg>
-    </div>
-  </section>
-
-  <%!-- ── Proof of Work ── --%>
-  <section class="landing-positioning">
-    <div class="landing-positioning-inner">
-      <div class="landing-positioning-headlines">
-        <h2 class="headline-lg" style="color: var(--inverse-on-surface);">GitHub shows code.</h2>
-        <h2 class="headline-lg" style="color: var(--inverse-on-surface);">Resumes show claims.</h2>
-        <h2 class="display-sm" style="color: var(--inverse-primary);">heyi.am shows proof of work.</h2>
-      </div>
-      <div class="landing-positioning-body">
-        <p class="body-md" style="color: var(--inverse-on-surface); opacity: 0.85; margin-block-end: var(--spacing-6);">
-          Lines changed, decisions made, tools used — timestamped and linked to the
-          original session. The sessions tell the story.
-        </p>
-        <p class="body-md" style="color: var(--inverse-on-surface); opacity: 0.85; margin-block-end: var(--spacing-6);">
-          Not a highlight reel. The actual record of how you build:
-        </p>
-        <ul class="landing-positioning-list">
-          <li>session timestamps and durations</li>
-          <li>git-backed diffs per session</li>
-          <li>tool usage traces</li>
-          <li>agent orchestration patterns</li>
-          <li>your decisions vs. AI suggestions</li>
-        </ul>
+      <div class="lk-terminal-mini">
+        <div><span class="lk-tm-prompt">$</span> npx heyiam</div>
+        <div><span class="lk-tm-dim"># scanning 21 sessions...</span></div>
+        <div><span class="lk-tm-ok">✓</span> 3 projects · 8 case studies</div>
+        <div><span class="lk-tm-ok">✓</span> Published → heyi.am/ben</div>
       </div>
     </div>
-  </section>
 
-  <%!-- ── Final CTA ── --%>
-  <section style="text-align: center; padding-block: var(--spacing-20); padding-inline: var(--spacing-4);">
-    <h2 class="display-sm" style="margin-block-end: var(--spacing-4);">Your sessions already prove the work</h2>
-    <p class="body-lg" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-8);">
-      heyi.am makes it easy to share.
-    </p>
-    <div class="terminal" style="max-width: 28rem; margin-inline: auto; text-align: start; margin-block-end: var(--spacing-8);">
-      <div class="terminal-line" style="font-size: 1.125rem;"><span class="terminal-prompt">$</span> npx heyiam</div>
+    <div class="lk-hero-cmd-row">
+      <div class="lk-hero-cmd" id="copy-cmd">
+        <span class="lk-tm-prompt">$</span> npx heyiam
+        <span class="lk-hero-cmd-hint" id="copy-hint">Copy</span>
+      </div>
+      <a href={HeyiAmAppWeb.Helpers.public_url("/ben")} class="lk-btn-ghost">See example portfolio</a>
     </div>
-    <p class="body-md" style="color: var(--on-surface-variant); margin-block-end: var(--spacing-8);">
-      Paste this in your terminal. No signup required.</p>
-    <div style="display: flex; gap: var(--spacing-3); justify-content: center; align-items: center;">
-      <a href={HeyiAmAppWeb.Helpers.public_url("/ben")} class="btn btn-primary">See example portfolio</a>
-      <a href="https://github.com/interactivecats/heyi.am" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 0.375rem;" target="_blank" rel="noopener noreferrer">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-        GitHub
-      </a>
+    <p class="lk-hero-no-signup">No signup required · runs locally · free</p>
+  </div>
+</section>
+
+<%!-- ═══ Marquee ═══ --%>
+<div class="lk-strip">
+  <div class="lk-strip-track">
+    <span class="lk-strip-item"><span class="lk-strip-dot"></span>Claude Code</span>
+    <span class="lk-strip-item"><span class="lk-strip-dot"></span>Cursor</span>
+    <span class="lk-strip-item"><span class="lk-strip-dot"></span>OpenAI Codex</span>
+    <span class="lk-strip-item"><span class="lk-strip-dot"></span>Gemini CLI</span>
+    <span class="lk-strip-item"><span class="lk-strip-dot"></span>Project Narratives</span>
+    <span class="lk-strip-item"><span class="lk-strip-dot"></span>Build Timelines</span>
+    <span class="lk-strip-item"><span class="lk-strip-dot"></span>Case Studies</span>
+    <span class="lk-strip-item"><span class="lk-strip-dot"></span>Accurate Stats</span>
+    <span class="lk-strip-item"><span class="lk-strip-dot"></span>Claude Code</span>
+    <span class="lk-strip-item"><span class="lk-strip-dot"></span>Cursor</span>
+    <span class="lk-strip-item"><span class="lk-strip-dot"></span>OpenAI Codex</span>
+    <span class="lk-strip-item"><span class="lk-strip-dot"></span>Gemini CLI</span>
+    <span class="lk-strip-item"><span class="lk-strip-dot"></span>Project Narratives</span>
+    <span class="lk-strip-item"><span class="lk-strip-dot"></span>Build Timelines</span>
+    <span class="lk-strip-item"><span class="lk-strip-dot"></span>Case Studies</span>
+    <span class="lk-strip-item"><span class="lk-strip-dot"></span>Accurate Stats</span>
+  </div>
+</div>
+
+<%!-- ═══ The Transformation ═══ --%>
+<section id="how" class="lk-section">
+  <div class="lk-section-tag">The transformation</div>
+  <div class="lk-section-title">From git log to project story.</div>
+  <div class="lk-section-desc">Same project. One tells you what changed. The other tells you why.</div>
+
+  <div class="lk-transform-grid">
+    <%!-- Left: Git commits --%>
+    <div class="lk-transform-left">
+      <div class="lk-git-header">
+        <span class="lk-git-icon">⌥</span> git log --oneline
+      </div>
+      <div class="lk-git-log">
+        <div class="lk-git-commit"><span class="lk-git-hash">e4a1f09</span> fix: SSE keepalive for idle conns</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">bc47d12</span> test: verify 10k concurrent SSE</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">a3f8d21</span> fix: memory leak in SSE pool</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">c7b2e41</span> fix: SSE reconnection on timeout</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">91d3f8a</span> chore: remove dead WS code</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">7e1b4c9</span> refactor: WS → SSE pipeline</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">f92a3e5</span> revert: undo ORM migration</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">2d8c7a1</span> feat: ORM migration for analytics</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">83b1e4f</span> fix: race in event aggregator</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">4f7c3d2</span> fix: pool exhaustion under load</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">b5e91f3</span> fix: WS drops at 10k conns</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">d1e9a7c</span> test: WS integration tests</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">72f6b3a</span> feat: WS heartbeat + reconnect</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">8ca2d67</span> feat: WebSocket pipeline</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">e5d2c91</span> feat: event ingestion worker</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">3b6f2e8</span> feat: D3 chart rendering</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">a92c1d4</span> feat: analytics API endpoints</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">19e7f4b</span> feat: time-series queries</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">6e8d5b3</span> feat: PG schema for events</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">47c9d1e</span> feat: event partitioning</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">c4d8a23</span> feat: responsive widget grid</div>
+        <div class="lk-git-commit"><span class="lk-git-hash">d39a7c4</span> init: scaffold</div>
+      </div>
+      <div class="lk-git-footer">
+        21 commits. No context. No decisions. No story.
+      </div>
     </div>
-  </section>
+
+    <%!-- Right: heyi.am project page --%>
+    <div class="lk-transform-right">
+      <div class="lk-page-chrome">
+        <div class="lk-page-chrome-dots"><span></span><span></span><span></span></div>
+        <div class="lk-page-chrome-url">heyi.am/alex/analytics-dashboard</div>
+      </div>
+      <div class="lk-page-body">
+        <div class="lk-page-title">Real-time Analytics Dashboard</div>
+        <div class="lk-page-stats-row">
+          <div class="lk-page-stat-group">
+            <div class="lk-page-stat-group-row">
+              <div class="lk-page-stat-item"><span class="lk-page-stat-value">6h</span><span class="lk-page-stat-label">you</span></div>
+              <div class="lk-page-stat-item"><span class="lk-page-stat-value">18h</span><span class="lk-page-stat-label">agents</span></div>
+            </div>
+            <div class="lk-page-leverage">3x leverage</div>
+          </div>
+          <div class="lk-page-stat-item"><span class="lk-page-stat-value">4</span><span class="lk-page-stat-label">sessions</span></div>
+          <div class="lk-page-stat-item"><span class="lk-page-stat-value">2,340</span><span class="lk-page-stat-label">lines changed</span></div>
+          <div class="lk-page-stat-item"><span class="lk-page-stat-value">23</span><span class="lk-page-stat-label">files</span></div>
+        </div>
+        <div class="lk-page-narrative-card">
+          Started with a WebSocket approach but hit a wall at 10k concurrent connections. Rebuilt the pipeline around SSE after the second session. Claude kept suggesting an ORM migration that would have broken backward compat. I caught it, rolled back, and wrote the migration by hand.
+        </div>
+        <div class="lk-page-section-label">Agent work</div>
+        <div class="lk-page-work-timeline">
+          <svg viewBox="0 0 400 60" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="30" r="3" fill="var(--lk-orange)"/><line x1="23" y1="30" x2="70" y2="30" stroke="var(--lk-orange)" stroke-width="2"/><circle cx="70" cy="30" r="3" fill="var(--lk-orange)"/>
+            <text x="45" y="52" fill="var(--lk-text-3)" font-family="var(--font-mono)" font-size="7" text-anchor="middle">Mar 14</text>
+            <line x1="75" y1="30" x2="110" y2="30" stroke="var(--lk-text-3)" stroke-width="1" stroke-dasharray="3 3" opacity="0.4"/>
+            <circle cx="115" cy="30" r="4" fill="var(--lk-orange)"/>
+            <path d="M 115 30 C 135 30, 135 14, 155 14 L 185 14 C 205 14, 205 30, 225 30" fill="none" stroke="var(--lk-blue)" stroke-width="1.5" opacity="0.7"/>
+            <path d="M 115 30 C 140 30, 140 44, 165 44 L 175 44 C 200 44, 200 30, 225 30" fill="none" stroke="#a78bfa" stroke-width="1.5" opacity="0.7"/>
+            <line x1="115" y1="30" x2="225" y2="30" stroke="var(--lk-orange)" stroke-width="2"/><circle cx="225" cy="30" r="4" fill="var(--lk-orange)"/>
+            <text x="170" y="52" fill="var(--lk-text-3)" font-family="var(--font-mono)" font-size="7" text-anchor="middle">Mar 15</text>
+            <line x1="230" y1="30" x2="260" y2="30" stroke="var(--lk-text-3)" stroke-width="1" stroke-dasharray="3 3" opacity="0.4"/>
+            <circle cx="265" cy="30" r="4" fill="var(--lk-orange)"/>
+            <path d="M 265 30 C 280 30, 280 12, 295 12 L 325 12 C 340 12, 340 30, 355 30" fill="none" stroke="#4ade80" stroke-width="1.5" opacity="0.7"/>
+            <path d="M 265 30 C 285 30, 285 22, 305 22 L 315 22 C 335 22, 335 30, 355 30" fill="none" stroke="var(--lk-blue)" stroke-width="1.5" opacity="0.7"/>
+            <path d="M 265 30 C 280 30, 280 40, 295 40 L 310 40 C 325 40, 325 30, 340 30" fill="none" stroke="#fbbf24" stroke-width="1.5" opacity="0.7"/>
+            <line x1="265" y1="30" x2="355" y2="30" stroke="var(--lk-orange)" stroke-width="2"/><circle cx="355" cy="30" r="4" fill="var(--lk-orange)"/>
+            <text x="310" y="52" fill="var(--lk-text-3)" font-family="var(--font-mono)" font-size="7" text-anchor="middle">Mar 16</text>
+          </svg>
+        </div>
+        <div class="lk-page-section-label">Phases</div>
+        <div class="lk-page-phases">
+          <div class="lk-page-phase-item"><div class="lk-phase-dot lk-dot-orange"></div><div><div class="lk-phase-title">Architecture exploration</div><div class="lk-phase-desc">WebSocket prototype, load testing, discovered 10k limit</div></div></div>
+          <div class="lk-page-phase-item"><div class="lk-phase-dot lk-dot-blue"></div><div><div class="lk-phase-title">SSE rebuild + migration fix</div><div class="lk-phase-desc">Caught Claude's bad ORM migration, rewrote by hand</div></div></div>
+          <div class="lk-page-phase-item"><div class="lk-phase-dot lk-dot-green"></div><div><div class="lk-phase-title">Load testing + ship</div><div class="lk-phase-desc">Verified 10k concurrent, deployed to production</div></div></div>
+        </div>
+        <div class="lk-page-chips">
+          <span>React</span><span>SSE</span><span>PostgreSQL</span><span>Architecture</span><span>Load Testing</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%!-- ═══ Local-First ═══ --%>
+<section class="lk-section">
+  <div class="lk-section-tag">Local-first</div>
+  <div class="lk-section-title">Useful before you upload anything.</div>
+  <div class="lk-section-desc">No account. No data leaves your machine. Run the CLI and it starts working for you immediately.</div>
+
+  <div class="lk-split" style="margin-top: 3rem;">
+    <div class="lk-split-panel">
+      <h3>The problem</h3>
+      <div class="lk-split-sub">Your sessions are disappearing</div>
+      <div class="lk-split-line">Claude Code deletes after 30 days</div>
+      <div class="lk-split-line">Cursor stores in locked SQLite</div>
+      <div class="lk-split-line">No cross-tool search</div>
+      <div class="lk-split-line">No way to re-use past context</div>
+    </div>
+    <div class="lk-split-panel lk-split-after">
+      <h3>What heyi.am does locally</h3>
+      <div class="lk-split-sub">Before you ever create an account</div>
+      <div class="lk-split-line"><span class="lk-hl-orange">→</span> Archives sessions permanently (hard links)</div>
+      <div class="lk-split-line"><span class="lk-hl-orange">→</span> Indexes everything in local SQLite</div>
+      <div class="lk-split-line"><span class="lk-hl-orange">→</span> Full-text search across all 4 tools</div>
+      <div class="lk-split-line"><span class="lk-hl-orange">→</span> You vs. agent time tracking</div>
+      <div class="lk-split-line"><span class="lk-hl-orange">→</span> Re-export sessions as AI context</div>
+    </div>
+  </div>
+
+  <div class="lk-audience-grid" style="margin-top: 2rem; justify-content: center;">
+    <div class="lk-audience-badge"><span class="lk-badge-dot"></span>No account needed</div>
+    <div class="lk-audience-badge"><span class="lk-badge-dot"></span>Everything stays on your machine</div>
+    <div class="lk-audience-badge"><span class="lk-badge-dot"></span>Works offline</div>
+    <div class="lk-audience-badge"><span class="lk-badge-dot"></span>Portfolio when you're ready</div>
+  </div>
+</section>
+
+<%!-- ═══ Built For ═══ --%>
+<section class="lk-section">
+  <div class="lk-section-tag">Audience</div>
+  <div class="lk-section-title">Built for people who build with AI</div>
+  <div class="lk-audience-grid">
+    <div class="lk-audience-badge"><span class="lk-badge-dot"></span>Claude Code power users</div>
+    <div class="lk-audience-badge"><span class="lk-badge-dot"></span>Cursor developers</div>
+    <div class="lk-audience-badge"><span class="lk-badge-dot"></span>Codex early adopters</div>
+    <div class="lk-audience-badge"><span class="lk-badge-dot"></span>Gemini CLI builders</div>
+    <div class="lk-audience-badge"><span class="lk-badge-dot"></span>Indie hackers shipping with agents</div>
+    <div class="lk-audience-badge"><span class="lk-badge-dot"></span>Freelancers &amp; consultants</div>
+    <div class="lk-audience-badge"><span class="lk-badge-dot"></span>Job seekers with AI experience</div>
+    <div class="lk-audience-badge"><span class="lk-badge-dot"></span>Open source maintainers</div>
+  </div>
+</section>
+
+<%!-- ═══ CTA ═══ --%>
+<section class="lk-final-cta">
+  <div class="lk-hero-bg-text">ship it</div>
+  <h2>Your sessions already<br>prove the work.</h2>
+  <p>heyi.am turns that proof into a portfolio worth sending.</p>
+  <div class="lk-final-cmd" id="copy-cmd-2">
+    <span class="lk-tm-prompt">$</span> npx heyiam
+  </div>
+  <br>
+  <div class="lk-hero-ctas" style="justify-content: center;">
+    <a href={~p"/users/register"} class="lk-btn-fill">Get started free</a>
+    <a href={HeyiAmAppWeb.Helpers.public_url("/ben")} class="lk-btn-ghost">View example →</a>
+  </div>
+</section>
+
+<footer class="lk-footer">
+  <span>© 2026 heyi.am</span>
+  <div style="display: flex; gap: 1.5rem;">
+    <a href={~p"/terms"}>Terms</a>
+    <a href={~p"/privacy"}>Privacy</a>
+    <a href="https://github.com/interactivecats/heyi.am" target="_blank" rel="noopener noreferrer">GitHub</a>
+  </div>
+</footer>
+
+</div>
+
+<script>
+  // Copy commands
+  document.querySelectorAll('[id^="copy-cmd"]').forEach(el => {
+    el.addEventListener('click', () => {
+      navigator.clipboard.writeText('npx heyiam');
+      const hint = el.querySelector('.lk-hero-cmd-hint');
+      if (hint) hint.textContent = 'Copied!';
+    });
+  });
+</script>
