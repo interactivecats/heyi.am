@@ -126,11 +126,9 @@ defmodule HeyiAmVibeWeb.VibeController do
             |> send_resp(200, png)
 
           :no_converter ->
-            # Fallback to SVG if no PNG converter is installed
             conn
-            |> put_resp_content_type("image/svg+xml")
-            |> put_resp_header("cache-control", "public, max-age=86400, immutable")
-            |> send_resp(200, svg)
+            |> put_status(:service_unavailable)
+            |> json(%{error: "PNG conversion unavailable — rsvg-convert not installed"})
         end
     end
   end
