@@ -162,10 +162,8 @@ export interface ProjectEnhanceCache {
   repoUrl?: string;
   projectUrl?: string;
   screenshotBase64?: string;
-  /** Layout override for this project (editorial, kinetic, terminal, minimal). */
-  layout?: string;
-  /** Theme override for this project (light-blue, dark-orange, etc.). */
-  theme?: string;
+  /** Template override for this project (uses user default if not set). */
+  template?: string;
   result: {
     narrative: string;
     arc: Array<{ phase: number; title: string; description: string }>;
@@ -220,7 +218,7 @@ export function saveProjectEnhanceResult(
   selectedSessionIds: string[],
   result: ProjectEnhanceCache['result'],
   configDir?: string,
-  extras?: { title?: string; repoUrl?: string; projectUrl?: string; screenshotBase64?: string; layout?: string; theme?: string },
+  extras?: { title?: string; repoUrl?: string; projectUrl?: string; screenshotBase64?: string },
 ): void {
   const dir = projectEnhanceDir(configDir);
   mkdirSync(dir, { recursive: true });
@@ -233,8 +231,6 @@ export function saveProjectEnhanceResult(
     ...(extras?.repoUrl ? { repoUrl: extras.repoUrl } : {}),
     ...(extras?.projectUrl ? { projectUrl: extras.projectUrl } : {}),
     ...(extras?.screenshotBase64 ? { screenshotBase64: extras.screenshotBase64 } : {}),
-    ...(extras?.layout ? { layout: extras.layout } : {}),
-    ...(extras?.theme ? { theme: extras.theme } : {}),
     result,
   };
   writeFileSync(projectEnhancePath(projectDirName, configDir), JSON.stringify(cache, null, 2), { mode: 0o600 });

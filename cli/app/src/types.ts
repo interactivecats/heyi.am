@@ -131,8 +131,6 @@ export interface ProjectEnhanceCacheResponse {
   repoUrl?: string
   projectUrl?: string
   screenshotBase64?: string
-  layout?: string
-  theme?: string
   result: ProjectEnhanceResult
   isFresh: boolean
 }

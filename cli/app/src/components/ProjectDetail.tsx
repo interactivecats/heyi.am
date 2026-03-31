@@ -9,7 +9,6 @@ import {
   type Session,
 } from '../api'
 import { Card, Note, SectionHeader, StatCard } from './shared'
-import { LayoutThemePicker } from './LayoutThemePicker'
 import { Chip } from './shared/Chip'
 import { WorkTimeline } from './WorkTimeline'
 import { GrowthChart } from './GrowthChart'
@@ -144,8 +143,6 @@ export function ProjectDetail() {
   const [projectUrl, setProjectUrl] = useState('')
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null)
   const [screenshotCapturing, setScreenshotCapturing] = useState(false)
-  const [projectLayout, setProjectLayout] = useState('classic')
-  const [projectTheme, setProjectTheme] = useState('seal-blue')
   const [metadataDirty, setMetadataDirty] = useState(false)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const screenshotInputRef = useRef<HTMLInputElement>(null)
@@ -160,8 +157,6 @@ export function ProjectDetail() {
         if (d.enhanceCache?.repoUrl) setRepoUrl(d.enhanceCache.repoUrl)
         if (d.enhanceCache?.projectUrl) setProjectUrl(d.enhanceCache.projectUrl)
         if (d.enhanceCache?.screenshotBase64) setScreenshotPreview(d.enhanceCache.screenshotBase64)
-        if (d.enhanceCache?.layout) setProjectLayout(d.enhanceCache.layout)
-        if (d.enhanceCache?.theme) setProjectTheme(d.enhanceCache.theme)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -180,9 +175,9 @@ export function ProjectDetail() {
       dirName,
       cache?.selectedSessionIds ?? [],
       cache?.result ?? { narrative: '', arc: [], skills: [], timeline: [], questions: [] },
-      { title: projectTitle || undefined, repoUrl: repoUrl || undefined, projectUrl: projectUrl || undefined, screenshotBase64: screenshotPreview ?? undefined, layout: projectLayout, theme: projectTheme },
+      { title: projectTitle || undefined, repoUrl: repoUrl || undefined, projectUrl: projectUrl || undefined, screenshotBase64: screenshotPreview ?? undefined },
     ).then(() => setMetadataDirty(false)).catch(() => {})
-  }, [dirName, detail, projectTitle, repoUrl, projectUrl, screenshotPreview, projectLayout, projectTheme])
+  }, [dirName, detail, projectTitle, repoUrl, projectUrl, screenshotPreview])
 
   useEffect(() => {
     if (!metadataDirty) return
@@ -267,11 +262,30 @@ export function ProjectDetail() {
   return (
     <div className="grid grid-cols-[240px_1fr] min-h-[calc(100vh-48px)]">
       {/* Sidebar */}
-      <aside className="border-r border-ghost bg-surface-low p-4 overflow-y-auto">
-
-        {/* 1. Project links + screenshot (top) */}
+      <aside className="border-r border-ghost bg-surface-low p-4">
         <div className="mb-4">
+          <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-1.5">Source mix</div>
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {tools.map((t) => (
+              <Chip key={t}>{t}</Chip>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-1.5">Status</div>
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            <Chip variant="primary">{project.enhancedAt ? 'Refined' : 'Unrefined'}</Chip>
+            <Chip variant="green">{project.isUploaded ? 'Uploaded' : 'Local only'}</Chip>
+          </div>
+        </div>
+
+        <Note>The local project page is the main object. Public pages are just one projection of it.</Note>
+
+        {/* Project metadata */}
+        <div className="mt-6 pt-4 border-t border-ghost">
           <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-3">Project links</div>
+
           <label className="block mb-3">
             <span className="text-[0.75rem] font-medium text-on-surface-variant block mb-1">Repo URL</span>
             <input
@@ -282,6 +296,7 @@ export function ProjectDetail() {
               className="w-full text-xs font-mono px-2 py-1.5 rounded-sm border border-ghost bg-surface-lowest text-on-surface placeholder:text-outline"
             />
           </label>
+
           <label className="block mb-3">
             <span className="text-[0.75rem] font-medium text-on-surface-variant block mb-1">Project URL</span>
             <input
@@ -292,6 +307,7 @@ export function ProjectDetail() {
               className="w-full text-xs font-mono px-2 py-1.5 rounded-sm border border-ghost bg-surface-lowest text-on-surface placeholder:text-outline"
             />
           </label>
+
           <div className="mb-2">
             <span className="text-[0.75rem] font-medium text-on-surface-variant block mb-1">Screenshot</span>
             {screenshotPreview ? (
@@ -356,47 +372,15 @@ export function ProjectDetail() {
               }}
             />
           </div>
-        </div>
 
-        {/* 2. Theme + Layout picker */}
-        <div className="mb-4 pt-4 border-t border-ghost">
-          <LayoutThemePicker
-            layout={projectLayout}
-            theme={projectTheme}
-            onLayoutChange={(l) => { setProjectLayout(l); setMetadataDirty(true) }}
-            onThemeChange={(t) => { setProjectTheme(t); setMetadataDirty(true) }}
-          />
+          {metadataDirty && (
+            <div className="text-[9px] font-mono text-outline mt-2">Saving...</div>
+          )}
         </div>
-
-        {/* 3. Source mix + Status */}
-        <div className="pt-4 border-t border-ghost">
-          <div className="mb-3">
-            <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-1.5">Source mix</div>
-            <div className="flex flex-wrap gap-1">
-              {tools.map((t) => (
-                <Chip key={t}>{t}</Chip>
-              ))}
-            </div>
-          </div>
-          <div className="mb-3">
-            <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-1.5">Status</div>
-            <div className="flex flex-wrap gap-1">
-              <Chip variant="primary">{project.enhancedAt ? 'Refined' : 'Unrefined'}</Chip>
-              <Chip variant="green">{project.isUploaded ? 'Uploaded' : 'Local only'}</Chip>
-            </div>
-          </div>
-        </div>
-
-        {metadataDirty && (
-          <div className="text-[9px] font-mono text-outline mt-2">Saving...</div>
-        )}
       </aside>
 
-      {/* Main content — data-template drives CSS theme overrides */}
-      <main
-        className="p-6 overflow-y-auto max-w-[1200px] mx-auto"
-        data-theme={projectTheme}
-      >
+      {/* Main content */}
+      <main className="p-6 overflow-y-auto max-w-[1200px] mx-auto">
         <div className="flex items-center justify-between mb-1">
           <div>
             <input
@@ -448,112 +432,119 @@ export function ProjectDetail() {
         )}
         <div className="h-4" />
 
-        {/* ── Layout-ordered sections ── */}
-        {(() => {
-          const heroBlock = (
-            <ProjectHero
-              key="hero"
-              narrative={narrative}
-              screenshotSrc={
-                screenshotPreview
-                  ? (screenshotPreview.startsWith('data:') ? screenshotPreview : `data:image/png;base64,${screenshotPreview}`)
-                  : screenshotSrc
-              }
-              projectName={project.name}
-              humanTime={formatDuration(project.totalDuration)}
-              agentTime={project.totalAgentDuration ? formatDuration(project.totalAgentDuration) : undefined}
-              stats={[
-                { label: 'Sessions', value: project.sessionCount },
-                { label: 'Lines changed', value: formatLoc(project.totalLoc) },
-                { label: 'Files', value: project.totalFiles },
-                ...((project.totalInputTokens || project.totalOutputTokens)
-                  ? [{ label: 'Tokens', value: formatTokens((project.totalInputTokens ?? 0) + (project.totalOutputTokens ?? 0)) }]
-                  : []),
-              ]}
-            />
-          )
-
-          const timelineBlock = (
-            <Card key="timeline" className="mb-4">
-              <SectionHeader title="Work timeline" meta="sessions over time" />
-              <WorkTimeline sessions={sessions} maxHeight={300} />
-            </Card>
-          )
-
-          const growthBlock = (
-            <Card key="growth" className="mb-4">
-              <SectionHeader title="Project growth" meta="lines changed" />
-              <GrowthChart sessions={sessions} totalLoc={project.totalLoc} totalFiles={project.totalFiles} keyMoments={keyMoments} />
-            </Card>
-          )
-
-          const decisionsSourceBlock = (
-            <div key="decisions" className="grid grid-cols-2 gap-4 mb-4">
-              <Card>
-                <SectionHeader title="Key decisions" meta="signal" />
-                <div className="flex flex-col gap-3">
-                  {phases.length > 0 ? (
-                    phases.slice(0, 3).map((phase) => (
-                      <Note key={phase.phase} title={phase.title}>{phase.description}</Note>
-                    ))
-                  ) : (
-                    <Note>Enhance this project to extract key decisions.</Note>
-                  )}
-                </div>
-              </Card>
-              <Card>
-                <SectionHeader title="Source breakdown" meta="provenance" />
-                <SourceTable sessions={sessions} />
-              </Card>
-            </div>
-          )
-
-          const phasesBlock = phases.length > 0 ? (
-            <Card key="phases" className="mb-4">
-              <SectionHeader title="Project phases" meta="timeline" />
-              <div className="relative pl-5">
-                <div className="absolute left-1 top-1.5 bottom-1.5 w-0.5 bg-ghost rounded-full" />
-                {phases.map((phase) => (
-                  <div key={phase.phase} className="relative pb-4 last:pb-0">
-                    <div className="absolute -left-5 top-1.5 w-2 h-2 rounded-full bg-primary shadow-[0_0_0_3px_rgba(8,68,113,0.1)]" />
-                    <div className="font-mono text-[0.6875rem] uppercase tracking-wider text-on-surface-variant">{phase.title}</div>
-                    <Note><span className="text-on-surface-variant">{phase.description}</span></Note>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          ) : null
-
-          const sessionsBlock = (
-            <Card key="sessions">
-              <SectionHeader title="Featured sessions">
-                <Link to={`/project/${encodeURIComponent(dirName ?? '')}/sessions`} className="font-mono text-[11px] text-primary hover:underline">
-                  All {sessions.length} sessions →
-                </Link>
-              </SectionHeader>
-              <div className="grid grid-cols-2 gap-3">
-                {featuredSessions.map((s, i) => (
-                  <button key={s.id} type="button" onClick={() => setSelectedSession(s)} className="text-left bg-surface-lowest border border-ghost rounded-sm p-4 cursor-pointer transition-shadow hover:shadow-md">
-                    <div className={`h-1 rounded-full mb-3 ${DURATION_COLORS[i % DURATION_COLORS.length]}`} />
-                    <h4 className="font-display text-[0.8125rem] font-semibold text-on-surface mb-1 line-clamp-2">{s.title}</h4>
-                    <span className="text-on-surface-variant text-xs">{formatDuration(s.durationMinutes)} · {s.turns} turns · {formatLoc(s.linesOfCode)} lines</span>
-                    {s.skills?.[0] && (<div className="mt-2"><Chip variant="violet">{s.skills[0]}</Chip></div>)}
-                  </button>
-                ))}
-              </div>
-            </Card>
-          )
-
-          // Section order by layout
-          const layouts: Record<string, React.ReactNode[]> = {
-            'classic':       [heroBlock, timelineBlock, growthBlock, decisionsSourceBlock, phasesBlock, sessionsBlock],
-            'stats-forward': [heroBlock, timelineBlock, decisionsSourceBlock, phasesBlock, growthBlock, sessionsBlock],
-            'command-line':  [heroBlock, decisionsSourceBlock, phasesBlock, timelineBlock, growthBlock, sessionsBlock],
-            'typography':    [heroBlock, phasesBlock, decisionsSourceBlock, timelineBlock, growthBlock, sessionsBlock],
+        {/* Narrative + Stats beside Screenshot */}
+        <ProjectHero
+          narrative={narrative}
+          screenshotSrc={
+            screenshotPreview
+              ? (screenshotPreview.startsWith('data:') ? screenshotPreview : `data:image/png;base64,${screenshotPreview}`)
+              : screenshotSrc
           }
+          projectName={project.name}
+          humanTime={formatDuration(project.totalDuration)}
+          agentTime={project.totalAgentDuration ? formatDuration(project.totalAgentDuration) : undefined}
+          stats={[
+            { label: 'Sessions', value: project.sessionCount },
+            { label: 'Lines changed', value: formatLoc(project.totalLoc) },
+            { label: 'Files', value: project.totalFiles },
+            ...((project.totalInputTokens || project.totalOutputTokens)
+              ? [{ label: 'Tokens', value: formatTokens((project.totalInputTokens ?? 0) + (project.totalOutputTokens ?? 0)) }]
+              : []),
+          ]}
+        />
 
-          return layouts[projectLayout] ?? layouts['classic']
-        })()}
+        {/* Work Timeline — full agent visualization */}
+        <Card className="mb-4">
+          <SectionHeader title="Work timeline" meta="sessions over time" />
+          <WorkTimeline sessions={sessions} maxHeight={300} />
+        </Card>
+
+        {/* Growth Chart — with v3-style annotations */}
+        <Card className="mb-4">
+          <SectionHeader title="Project growth" meta="lines changed" />
+          <GrowthChart
+            sessions={sessions}
+            totalLoc={project.totalLoc}
+            totalFiles={project.totalFiles}
+            keyMoments={keyMoments}
+          />
+        </Card>
+
+        {/* Key decisions + Source breakdown */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <Card>
+            <SectionHeader title="Key decisions" meta="signal" />
+            <div className="flex flex-col gap-3">
+              {phases.length > 0 ? (
+                phases.slice(0, 3).map((phase) => (
+                  <Note key={phase.phase} title={phase.title}>{phase.description}</Note>
+                ))
+              ) : (
+                <Note>Enhance this project to extract key decisions.</Note>
+              )}
+            </div>
+          </Card>
+          <Card>
+            <SectionHeader title="Source breakdown" meta="provenance" />
+            <SourceTable sessions={sessions} />
+          </Card>
+        </div>
+
+        {/* Project phases */}
+        {phases.length > 0 && (
+          <Card className="mb-4">
+            <SectionHeader title="Project phases" meta="timeline" />
+            <div className="relative pl-5">
+              <div className="absolute left-1 top-1.5 bottom-1.5 w-0.5 bg-ghost rounded-full" />
+              {phases.map((phase) => (
+                <div key={phase.phase} className="relative pb-4 last:pb-0">
+                  <div className="absolute -left-5 top-1.5 w-2 h-2 rounded-full bg-primary shadow-[0_0_0_3px_rgba(8,68,113,0.1)]" />
+                  <div className="font-mono text-[0.6875rem] uppercase tracking-wider text-on-surface-variant">
+                    {phase.title}
+                  </div>
+                  <Note>
+                    <span className="text-on-surface-variant">{phase.description}</span>
+                  </Note>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Featured sessions — card grid */}
+        <Card>
+          <SectionHeader title="Featured sessions">
+            <Link
+              to={`/project/${encodeURIComponent(dirName ?? '')}/sessions`}
+              className="font-mono text-[11px] text-primary hover:underline"
+            >
+              All {sessions.length} sessions →
+            </Link>
+          </SectionHeader>
+          <div className="grid grid-cols-2 gap-3">
+            {featuredSessions.map((s, i) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setSelectedSession(s)}
+                className="text-left bg-surface-lowest border border-ghost rounded-sm p-4 cursor-pointer transition-shadow hover:shadow-md"
+              >
+                <div className={`h-1 rounded-full mb-3 ${DURATION_COLORS[i % DURATION_COLORS.length]}`} />
+                <h4 className="font-display text-[0.8125rem] font-semibold text-on-surface mb-1 line-clamp-2">
+                  {s.title}
+                </h4>
+                <span className="text-on-surface-variant text-xs">
+                  {formatDuration(s.durationMinutes)} · {s.turns} turns · {formatLoc(s.linesOfCode)} lines
+                </span>
+                {s.skills?.[0] && (
+                  <div className="mt-2">
+                    <Chip variant="violet">{s.skills[0]}</Chip>
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </Card>
       </main>
 
       {/* Session overlay */}
