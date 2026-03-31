@@ -153,12 +153,26 @@ export function createPreviewRouter(ctx: RouteContext): Router {
 
       // Resolve layout: query param > enhance cache > default
       const layoutParam = req.query.layout as string | undefined;
-      const layout = layoutParam || cached?.layout || 'editorial';
+      const layoutName = layoutParam || cached?.layout || 'classic';
+
+      // Map layout name to template directory
+      const layoutToDir: Record<string, string> = {
+        'classic': 'editorial',
+        'stats-forward': 'kinetic',
+        'command-line': 'terminal',
+        'typography': 'minimal',
+        // Also accept template dir names directly for backward compat
+        'editorial': 'editorial',
+        'kinetic': 'kinetic',
+        'terminal': 'terminal',
+        'minimal': 'minimal',
+      };
+      const templateDir = layoutToDir[layoutName] || 'editorial';
 
       const bodyHtml = renderProjectHtml(renderData, {
         arc: enhanceResult?.arc,
         fullSessions: allSessionCards as unknown as Array<Record<string, unknown>>,
-      }, layout);
+      }, templateDir);
       res.type('html').send(ctx.buildPreviewPage(
         projAny.name as string,
         bodyHtml,

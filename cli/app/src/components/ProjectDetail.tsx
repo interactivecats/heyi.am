@@ -144,9 +144,8 @@ export function ProjectDetail() {
   const [projectUrl, setProjectUrl] = useState('')
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null)
   const [screenshotCapturing, setScreenshotCapturing] = useState(false)
-  const [projectLayout, setProjectLayout] = useState('editorial')
-  const [projectTheme, setProjectTheme] = useState('light-blue')
-  const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit')
+  const [projectLayout, setProjectLayout] = useState('classic')
+  const [projectTheme, setProjectTheme] = useState('seal-blue')
   const [previewKey, setPreviewKey] = useState(0)
   const [metadataDirty, setMetadataDirty] = useState(false)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -269,39 +268,11 @@ export function ProjectDetail() {
   return (
     <div className="grid grid-cols-[240px_1fr] min-h-[calc(100vh-48px)]">
       {/* Sidebar */}
-      <aside className="border-r border-ghost bg-surface-low p-4">
+      <aside className="border-r border-ghost bg-surface-low p-4 overflow-y-auto">
+
+        {/* 1. Project links + screenshot (top) */}
         <div className="mb-4">
-          <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-1.5">Source mix</div>
-          <div className="flex flex-wrap gap-1 mt-1.5">
-            {tools.map((t) => (
-              <Chip key={t}>{t}</Chip>
-            ))}
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-1.5">Status</div>
-          <div className="flex flex-wrap gap-1 mt-1.5">
-            <Chip variant="primary">{project.enhancedAt ? 'Refined' : 'Unrefined'}</Chip>
-            <Chip variant="green">{project.isUploaded ? 'Uploaded' : 'Local only'}</Chip>
-          </div>
-        </div>
-
-        <div className="mb-4 pt-4 border-t border-ghost">
-          <LayoutThemePicker
-            layout={projectLayout}
-            theme={projectTheme}
-            onLayoutChange={(l) => { setProjectLayout(l); setMetadataDirty(true); setPreviewKey((k) => k + 1); setViewMode('preview') }}
-            onThemeChange={(t) => { setProjectTheme(t); setMetadataDirty(true); setPreviewKey((k) => k + 1) }}
-          />
-        </div>
-
-        <Note>The local project page is the main object. Public pages are just one projection of it.</Note>
-
-        {/* Project metadata */}
-        <div className="mt-6 pt-4 border-t border-ghost">
           <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-3">Project links</div>
-
           <label className="block mb-3">
             <span className="text-[0.75rem] font-medium text-on-surface-variant block mb-1">Repo URL</span>
             <input
@@ -312,7 +283,6 @@ export function ProjectDetail() {
               className="w-full text-xs font-mono px-2 py-1.5 rounded-sm border border-ghost bg-surface-lowest text-on-surface placeholder:text-outline"
             />
           </label>
-
           <label className="block mb-3">
             <span className="text-[0.75rem] font-medium text-on-surface-variant block mb-1">Project URL</span>
             <input
@@ -323,7 +293,6 @@ export function ProjectDetail() {
               className="w-full text-xs font-mono px-2 py-1.5 rounded-sm border border-ghost bg-surface-lowest text-on-surface placeholder:text-outline"
             />
           </label>
-
           <div className="mb-2">
             <span className="text-[0.75rem] font-medium text-on-surface-variant block mb-1">Screenshot</span>
             {screenshotPreview ? (
@@ -388,56 +357,44 @@ export function ProjectDetail() {
               }}
             />
           </div>
-
-          {metadataDirty && (
-            <div className="text-[9px] font-mono text-outline mt-2">Saving...</div>
-          )}
         </div>
+
+        {/* 2. Theme + Layout picker */}
+        <div className="mb-4 pt-4 border-t border-ghost">
+          <LayoutThemePicker
+            layout={projectLayout}
+            theme={projectTheme}
+            onLayoutChange={(l) => { setProjectLayout(l); setMetadataDirty(true); setPreviewKey((k) => k + 1) }}
+            onThemeChange={(t, defaultLayout) => { setProjectTheme(t); setProjectLayout(defaultLayout); setMetadataDirty(true); setPreviewKey((k) => k + 1) }}
+          />
+        </div>
+
+        {/* 3. Source mix + Status */}
+        <div className="pt-4 border-t border-ghost">
+          <div className="mb-3">
+            <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-1.5">Source mix</div>
+            <div className="flex flex-wrap gap-1">
+              {tools.map((t) => (
+                <Chip key={t}>{t}</Chip>
+              ))}
+            </div>
+          </div>
+          <div className="mb-3">
+            <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-1.5">Status</div>
+            <div className="flex flex-wrap gap-1">
+              <Chip variant="primary">{project.enhancedAt ? 'Refined' : 'Unrefined'}</Chip>
+              <Chip variant="green">{project.isUploaded ? 'Uploaded' : 'Local only'}</Chip>
+            </div>
+          </div>
+        </div>
+
+        {metadataDirty && (
+          <div className="text-[9px] font-mono text-outline mt-2">Saving...</div>
+        )}
       </aside>
 
       {/* Main content */}
       <main className="p-6 overflow-y-auto max-w-[1200px] mx-auto">
-        {/* Edit / Preview toggle */}
-        <div className="flex items-center gap-2 mb-4">
-          <button
-            type="button"
-            onClick={() => setViewMode('edit')}
-            className={`text-xs font-mono px-3 py-1 rounded-sm border transition-colors ${
-              viewMode === 'edit'
-                ? 'border-primary bg-primary/5 text-primary'
-                : 'border-ghost text-on-surface-variant hover:border-outline-variant'
-            }`}
-          >
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => { setViewMode('preview'); setPreviewKey((k) => k + 1) }}
-            className={`text-xs font-mono px-3 py-1 rounded-sm border transition-colors ${
-              viewMode === 'preview'
-                ? 'border-primary bg-primary/5 text-primary'
-                : 'border-ghost text-on-surface-variant hover:border-outline-variant'
-            }`}
-          >
-            Preview
-          </button>
-          {viewMode === 'preview' && (
-            <span className="text-[9px] font-mono text-outline ml-2">
-              Showing {projectLayout} layout
-            </span>
-          )}
-        </div>
-
-        {viewMode === 'preview' ? (
-          <iframe
-            key={previewKey}
-            src={`/preview/project/${encodeURIComponent(dirName!)}?layout=${projectLayout}`}
-            className="w-full border border-ghost rounded-md"
-            style={{ height: 'calc(100vh - 120px)', background: '#fff' }}
-            title="Project preview"
-          />
-        ) : (
-        <>
         <div className="flex items-center justify-between mb-1">
           <div>
             <input
@@ -602,8 +559,6 @@ export function ProjectDetail() {
             ))}
           </div>
         </Card>
-        </>
-        )}
       </main>
 
       {/* Session overlay */}

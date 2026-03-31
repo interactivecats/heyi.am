@@ -5,7 +5,8 @@
  * - **Layout**: Liquid template structure (section order, card style, sidebar vs not)
  * - **Theme**: CSS color scheme (light/dark mode + accent color)
  *
- * The combination of layout + theme produces the final rendered page.
+ * Each theme has a default layout. Selecting a theme auto-selects its layout
+ * unless the user has explicitly overridden the layout.
  */
 
 import { readFileSync } from 'node:fs';
@@ -21,21 +22,33 @@ export interface LayoutInfo {
   name: string;
   label: string;
   description: string;
+  /** Liquid template directory name */
+  templateDir: string;
 }
 
 export const LAYOUTS: LayoutInfo[] = [
-  { name: 'editorial', label: 'Editorial', description: 'Card-based with sidebar session detail' },
-  { name: 'kinetic', label: 'Kinetic', description: 'Stats-forward hero row, full-width sections' },
-  { name: 'terminal', label: 'Terminal', description: 'Command-output style, tree phases, log entries' },
-  { name: 'minimal', label: 'Minimal', description: 'Pure typography, no cards, ruled sections' },
+  { name: 'classic', label: 'Classic', description: 'Card-based with sidebar session detail', templateDir: 'editorial' },
+  { name: 'stats-forward', label: 'Stats-Forward', description: 'Hero stats row, full-width sections', templateDir: 'kinetic' },
+  { name: 'command-line', label: 'Command Line', description: 'Terminal-style with tree phases and log entries', templateDir: 'terminal' },
+  { name: 'typography', label: 'Typography', description: 'Pure typography, no cards, ruled sections', templateDir: 'minimal' },
 ];
 
 const LAYOUT_NAMES = new Set(LAYOUTS.map((l) => l.name));
 
-export const DEFAULT_LAYOUT = 'editorial';
+export const DEFAULT_LAYOUT = 'classic';
 
 export function isValidLayout(name: string): boolean {
   return LAYOUT_NAMES.has(name);
+}
+
+export function getLayoutInfo(name: string): LayoutInfo | undefined {
+  return LAYOUTS.find((l) => l.name === name);
+}
+
+/** Map layout name to the Liquid template directory. */
+export function getTemplateDir(layoutName: string): string {
+  const layout = getLayoutInfo(layoutName);
+  return layout?.templateDir ?? 'editorial';
 }
 
 // ── Themes ──────────────────────────────────────────────────
@@ -47,20 +60,22 @@ export interface ThemeInfo {
   accent: string;
   bg: string;
   text: string;
+  /** Default layout for this theme */
+  defaultLayout: string;
 }
 
 export const THEMES: ThemeInfo[] = [
-  { name: 'light-blue', label: 'Light — Seal Blue', mode: 'light', accent: '#084471', bg: '#ffffff', text: '#191c1e' },
-  { name: 'light-neutral', label: 'Light — Neutral', mode: 'light', accent: '#1c1917', bg: '#fafaf9', text: '#1c1917' },
-  { name: 'dark-orange', label: 'Dark — Orange', mode: 'dark', accent: '#f97316', bg: '#09090b', text: '#fafafa' },
-  { name: 'dark-green', label: 'Dark — Green', mode: 'dark', accent: '#4ade80', bg: '#0a0a0a', text: '#d4d4d8' },
-  { name: 'dark-blue', label: 'Dark — Blue', mode: 'dark', accent: '#3b82f6', bg: '#09090b', text: '#fafafa' },
-  { name: 'dark-violet', label: 'Dark — Violet', mode: 'dark', accent: '#a78bfa', bg: '#09090b', text: '#fafafa' },
+  { name: 'seal-blue', label: 'Seal Blue', mode: 'light', accent: '#084471', bg: '#ffffff', text: '#191c1e', defaultLayout: 'classic' },
+  { name: 'warm-stone', label: 'Warm Stone', mode: 'light', accent: '#1c1917', bg: '#fafaf9', text: '#1c1917', defaultLayout: 'typography' },
+  { name: 'ember', label: 'Ember', mode: 'dark', accent: '#f97316', bg: '#09090b', text: '#fafafa', defaultLayout: 'stats-forward' },
+  { name: 'matrix', label: 'Matrix', mode: 'dark', accent: '#4ade80', bg: '#0a0a0a', text: '#d4d4d8', defaultLayout: 'command-line' },
+  { name: 'midnight', label: 'Midnight', mode: 'dark', accent: '#3b82f6', bg: '#09090b', text: '#fafafa', defaultLayout: 'stats-forward' },
+  { name: 'twilight', label: 'Twilight', mode: 'dark', accent: '#a78bfa', bg: '#09090b', text: '#fafafa', defaultLayout: 'classic' },
 ];
 
 const THEME_NAMES = new Set(THEMES.map((t) => t.name));
 
-export const DEFAULT_THEME = 'light-blue';
+export const DEFAULT_THEME = 'seal-blue';
 
 export function isValidTheme(name: string): boolean {
   return THEME_NAMES.has(name);
@@ -72,28 +87,21 @@ export function getThemeInfo(name: string): ThemeInfo | undefined {
 
 // ── Resolution ──────────────────────────────────────────────
 
-/**
- * Resolve which layout to use.
- * Priority: project override → user default → 'editorial'
- */
 export function resolveLayout(projectLayout?: string, userDefault?: string): string {
   if (projectLayout && isValidLayout(projectLayout)) return projectLayout;
   if (userDefault && isValidLayout(userDefault)) return userDefault;
   return DEFAULT_LAYOUT;
 }
 
-/**
- * Resolve which theme to use.
- */
 export function resolveTheme(projectTheme?: string, userDefault?: string): string {
   if (projectTheme && isValidTheme(projectTheme)) return projectTheme;
   if (userDefault && isValidTheme(userDefault)) return userDefault;
   return DEFAULT_THEME;
 }
 
-// Backward compat: "template" maps to layout name for server validation
+// Backward compat: server validates "template" field against layout template dirs
 export function isValidTemplate(name: string): boolean {
-  return isValidLayout(name);
+  return LAYOUTS.some((l) => l.templateDir === name);
 }
 
 export function resolveTemplate(projectTemplate?: string, userDefault?: string): string {
@@ -102,12 +110,7 @@ export function resolveTemplate(projectTemplate?: string, userDefault?: string):
 
 // ── CSS loading ─────────────────────────────────────────────
 
-/**
- * Load concatenated CSS for a layout + theme combination.
- * Used by export.ts for standalone HTML and by preview.
- */
 export function getTemplateCss(layoutName: string): string {
-  // For now, use the single styles.css until CSS is split.
   try {
     return readFileSync(resolve(TEMPLATES_DIR, 'styles.css'), 'utf-8');
   } catch {
@@ -116,9 +119,5 @@ export function getTemplateCss(layoutName: string): string {
 }
 
 export function getTemplateNames(): string[] {
-  return LAYOUTS.map((l) => l.name);
-}
-
-export function getLayoutInfo(name: string): LayoutInfo | undefined {
-  return LAYOUTS.find((l) => l.name === name);
+  return LAYOUTS.map((l) => l.templateDir);
 }
