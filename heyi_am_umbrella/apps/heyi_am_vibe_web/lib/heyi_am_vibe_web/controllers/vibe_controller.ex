@@ -95,6 +95,11 @@ defmodule HeyiAmVibeWeb.VibeController do
 
         {voice, ai, collab} = build_stat_columns(vibe.stats)
 
+        narrative_lines = HeyiAmVibeWeb.VibeHTML.wrap_text(vibe.narrative, 90)
+        narrative_line_count = length(narrative_lines)
+        # Narrative starts at y=112, each line is 20px, plus 15px padding + 1px divider
+        stats_y = 112 + narrative_line_count * 20 + 16
+
         svg =
           Phoenix.Template.render_to_string(
             HeyiAmVibeWeb.VibeHTML,
@@ -102,7 +107,8 @@ defmodule HeyiAmVibeWeb.VibeController do
             "html",
             %{
               headline: headline,
-              narrative: vibe.narrative,
+              narrative_lines: narrative_lines,
+              stats_y: stats_y,
               voice_stats: voice,
               ai_stats: ai,
               collab_stats: collab,

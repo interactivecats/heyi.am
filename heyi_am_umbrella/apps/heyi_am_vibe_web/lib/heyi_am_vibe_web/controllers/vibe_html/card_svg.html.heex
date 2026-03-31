@@ -16,37 +16,35 @@
     <%= @headline %>
   </text>
 
-  <%!-- Narrative — wrapped as SVG text lines (foreignObject breaks PNG converters) --%>
-  <%= if @narrative do %>
-    <%= for {line, idx} <- @narrative |> wrap_text(90) |> Enum.take(3) |> Enum.with_index() do %>
-      <text x="60" y={112 + idx * 20} fill="#9ca3af" font-family="IBM Plex Mono, monospace" font-size="13"><%= line %></text>
-    <% end %>
+  <%!-- Narrative — dynamic line count, all lines rendered --%>
+  <%= for {line, idx} <- Enum.with_index(@narrative_lines) do %>
+    <text x="60" y={112 + idx * 20} fill="#9ca3af" font-family="IBM Plex Mono, monospace" font-size="13"><%= line %></text>
   <% end %>
 
-  <%!-- Gray divider — full width --%>
-  <rect x="60" y="175" width="1080" height="1" fill="#1f2937"/>
+  <%!-- Gray divider — positioned after narrative --%>
+  <rect x="60" y={@stats_y - 15} width="1080" height="1" fill="#1f2937"/>
 
-  <%!-- Three stat columns --%>
+  <%!-- Three stat columns — y positions computed from narrative length --%>
 
   <%!-- Column 1: Your Voice --%>
-  <text x="60" y="200" fill="#22c55e" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="700" letter-spacing="0.12em">YOUR VOICE</text>
+  <text x="60" y={@stats_y} fill="#22c55e" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="700" letter-spacing="0.12em">YOUR VOICE</text>
   <%= for {{label, value}, idx} <- Enum.with_index(@voice_stats) do %>
-    <text x="60" y={224 + idx * 22} fill="#9ca3af" font-family="IBM Plex Mono, monospace" font-size="13"><%= label %></text>
-    <text x="380" y={224 + idx * 22} fill="#06b6d4" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="500" text-anchor="end"><%= value %></text>
+    <text x="60" y={@stats_y + 24 + idx * 22} fill="#9ca3af" font-family="IBM Plex Mono, monospace" font-size="13"><%= label %></text>
+    <text x="380" y={@stats_y + 24 + idx * 22} fill="#06b6d4" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="500" text-anchor="end"><%= value %></text>
   <% end %>
 
   <%!-- Column 2: The AI's Habits --%>
-  <text x="430" y="200" fill="#22c55e" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="700" letter-spacing="0.12em">THE AI'S HABITS</text>
+  <text x="430" y={@stats_y} fill="#22c55e" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="700" letter-spacing="0.12em">THE AI'S HABITS</text>
   <%= for {{label, value}, idx} <- Enum.with_index(@ai_stats) do %>
-    <text x="430" y={224 + idx * 22} fill="#9ca3af" font-family="IBM Plex Mono, monospace" font-size="13"><%= label %></text>
-    <text x="750" y={224 + idx * 22} fill="#06b6d4" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="500" text-anchor="end"><%= value %></text>
+    <text x="430" y={@stats_y + 24 + idx * 22} fill="#9ca3af" font-family="IBM Plex Mono, monospace" font-size="13"><%= label %></text>
+    <text x="750" y={@stats_y + 24 + idx * 22} fill="#06b6d4" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="500" text-anchor="end"><%= value %></text>
   <% end %>
 
   <%!-- Column 3: The Back-and-forth --%>
-  <text x="800" y="200" fill="#22c55e" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="700" letter-spacing="0.12em">THE BACK-AND-FORTH</text>
+  <text x="800" y={@stats_y} fill="#22c55e" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="700" letter-spacing="0.12em">THE BACK-AND-FORTH</text>
   <%= for {{label, value}, idx} <- Enum.with_index(@collab_stats) do %>
-    <text x="800" y={224 + idx * 22} fill="#9ca3af" font-family="IBM Plex Mono, monospace" font-size="13"><%= label %></text>
-    <text x="1140" y={224 + idx * 22} fill="#06b6d4" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="500" text-anchor="end"><%= value %></text>
+    <text x="800" y={@stats_y + 24 + idx * 22} fill="#9ca3af" font-family="IBM Plex Mono, monospace" font-size="13"><%= label %></text>
+    <text x="1140" y={@stats_y + 24 + idx * 22} fill="#06b6d4" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="500" text-anchor="end"><%= value %></text>
   <% end %>
 
   <%!-- Bottom green line — full width --%>
