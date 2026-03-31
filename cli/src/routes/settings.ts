@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express';
-import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey } from '../settings.js';
+import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, getSettings, setDefaultTemplate } from '../settings.js';
 import { hasApiKey } from '../llm/index.js';
+import { isValidTemplate, DEFAULT_TEMPLATE } from '../render/templates.js';
 import type { RouteContext } from './context.js';
 
 export function createSettingsRouter(_ctx: RouteContext): Router {
@@ -27,6 +28,24 @@ export function createSettingsRouter(_ctx: RouteContext): Router {
       hasKey: !!key,
       maskedKey: key ? `...${key.slice(-4)}` : null,
     });
+  });
+
+  // Get current portfolio theme
+  router.get('/api/settings/theme', (_req: Request, res: Response) => {
+    const settings = getSettings();
+    res.json({ template: settings.defaultTemplate ?? DEFAULT_TEMPLATE });
+  });
+
+  // Set portfolio theme
+  router.post('/api/settings/theme', (req: Request, res: Response) => {
+    const { template } = req.body as { template?: string };
+    if (!template || !isValidTemplate(template)) {
+      res.status(400).json({ error: 'Invalid template. Options: editorial, kinetic, terminal, minimal' });
+      return;
+    }
+    setDefaultTemplate(template);
+    console.log(`[settings] Portfolio theme set to: ${template}`);
+    res.json({ ok: true, template });
   });
 
   return router;

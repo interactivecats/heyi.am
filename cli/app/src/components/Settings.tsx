@@ -4,10 +4,20 @@ import {
   fetchApiKeyStatus,
   saveApiKey,
   fetchAuthStatus,
+  fetchTheme,
+  saveTheme,
   logout,
   type ApiKeyStatus,
   type AuthStatus,
 } from '../api'
+
+const TEMPLATES = [
+  { name: 'editorial', label: 'Classic', previewBg: '#ffffff', previewAccent: '#084471', previewCard: '#f3f4f6' },
+  { name: 'kinetic', label: 'Kinetic', previewBg: '#09090b', previewAccent: '#f97316', previewCard: '#18181b' },
+  { name: 'terminal', label: 'Terminal', previewBg: '#0a0a0a', previewAccent: '#4ade80', previewCard: '#141414' },
+  { name: 'minimal', label: 'Typography', previewBg: '#fafaf9', previewAccent: '#1c1917', previewCard: '#f5f5f4' },
+  { name: 'showcase', label: 'Showcase', previewBg: '#09090b', previewAccent: '#818cf8', previewCard: '#18181b' },
+] as const
 
 export function Settings() {
   const [apiKey, setApiKey] = useState<ApiKeyStatus | null>(null)
@@ -17,6 +27,7 @@ export function Settings() {
   const [saving, setSaving] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [currentTheme, setCurrentTheme] = useState('editorial')
 
   const [privacyDefaults, setPrivacyDefaults] = useState({
     localOnly: true,
@@ -28,9 +39,11 @@ export function Settings() {
     Promise.all([
       fetchApiKeyStatus().catch(() => ({ hasKey: false }) as ApiKeyStatus),
       fetchAuthStatus().catch(() => ({ authenticated: false }) as AuthStatus),
-    ]).then(([key, authStatus]) => {
+      fetchTheme().catch(() => ({ template: 'editorial' })),
+    ]).then(([key, authStatus, theme]) => {
       setApiKey(key)
       setAuth(authStatus)
+      setCurrentTheme(theme.template)
     }).finally(() => setLoading(false))
   }, [])
 
@@ -165,6 +178,52 @@ export function Settings() {
                 checked={privacyDefaults.excludeOpenClaw}
                 onChange={() => togglePrivacy('excludeOpenClaw')}
               />
+            </div>
+          </Card>
+        </div>
+
+        <div className="mt-4">
+          <Card>
+            <SectionHeader title="Portfolio theme" />
+            <p className="text-xs text-on-surface-variant mb-4">
+              Applies to all published pages: portfolio, projects, and sessions.
+            </p>
+            <div className="grid grid-cols-5 gap-3">
+              {TEMPLATES.map((t) => (
+                <button
+                  key={t.name}
+                  type="button"
+                  onClick={() => { setCurrentTheme(t.name); saveTheme(t.name) }}
+                  className={`flex flex-col items-center gap-2 p-3 rounded-md border-2 transition-all ${
+                    currentTheme === t.name
+                      ? 'border-primary bg-primary/5'
+                      : 'border-ghost hover:border-outline-variant'
+                  }`}
+                >
+                  <div
+                    className="w-full aspect-[4/3] rounded-sm overflow-hidden border border-ghost"
+                    style={{ background: t.previewBg }}
+                  >
+                    <div className="p-2 h-full flex flex-col gap-1">
+                      <div className="h-1.5 rounded-sm" style={{ width: '50%', background: t.previewAccent, opacity: 0.7 }} />
+                      <div className="h-2.5 rounded-sm" style={{ background: t.previewCard }} />
+                      <div className="flex gap-1 flex-1">
+                        <div className="flex-1 h-2 rounded-sm" style={{ background: t.previewCard }} />
+                        <div className="flex-1 h-2 rounded-sm" style={{ background: t.previewCard }} />
+                      </div>
+                      <div className="flex gap-1">
+                        <div className="flex-1 h-1.5 rounded-sm" style={{ background: t.previewCard }} />
+                        <div className="flex-1 h-1.5 rounded-sm" style={{ background: t.previewCard }} />
+                      </div>
+                    </div>
+                  </div>
+                  <span className={`text-xs font-mono ${
+                    currentTheme === t.name ? 'text-primary font-medium' : 'text-on-surface-variant'
+                  }`}>
+                    {t.label}
+                  </span>
+                </button>
+              ))}
             </div>
           </Card>
         </div>

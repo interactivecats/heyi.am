@@ -24,6 +24,7 @@ export const BUILT_IN_TEMPLATES: TemplateInfo[] = [
   { name: 'kinetic', description: 'Dark theme with orange accents and stats-forward layout', accent: '#f97316', mode: 'dark' },
   { name: 'terminal', description: 'Green-on-black terminal aesthetic', accent: '#4ade80', mode: 'dark' },
   { name: 'minimal', description: 'Ultra-clean light mode with serif typography', accent: '#1c1917', mode: 'light' },
+  { name: 'showcase', description: 'Dark with scroll animations and violet accents', accent: '#818cf8', mode: 'dark' },
 ];
 
 const BUILT_IN_NAMES = new Set(BUILT_IN_TEMPLATES.map((t) => t.name));

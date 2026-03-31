@@ -282,6 +282,18 @@ export async function saveApiKey(key: string): Promise<void> {
   await post('/settings/api-key', { apiKey: key })
 }
 
+export async function fetchTheme(): Promise<{ template: string }> {
+  try {
+    return await get<{ template: string }>('/settings/theme')
+  } catch {
+    return { template: 'editorial' }
+  }
+}
+
+export async function saveTheme(template: string): Promise<void> {
+  await post('/settings/theme', { template })
+}
+
 export async function fetchAuthStatus(): Promise<AuthStatus> {
   try {
     return await get<AuthStatus>('/auth/status')

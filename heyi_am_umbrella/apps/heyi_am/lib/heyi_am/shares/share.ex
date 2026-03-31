@@ -2,7 +2,7 @@ defmodule HeyiAm.Shares.Share do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @valid_templates ~w(editorial kinetic terminal minimal brutalist campfire neon-night)
+  @valid_templates ~w(editorial kinetic terminal minimal showcase brutalist campfire neon-night)
   @valid_statuses ~w(draft listed unlisted archived)
 
   schema "shares" do
