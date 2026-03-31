@@ -52,8 +52,9 @@ RUN mix release heyi_am
 FROM ${RUNNER_IMAGE} AS final
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates curl librsvg2-bin \
-  && rm -rf /var/lib/apt/lists/*
+  && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates curl librsvg2-bin fonts-ibm-plex \
+  && rm -rf /var/lib/apt/lists/* \
+  && fc-cache -f
 
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
