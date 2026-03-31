@@ -146,7 +146,6 @@ export function ProjectDetail() {
   const [screenshotCapturing, setScreenshotCapturing] = useState(false)
   const [projectLayout, setProjectLayout] = useState('classic')
   const [projectTheme, setProjectTheme] = useState('seal-blue')
-  const [previewKey, setPreviewKey] = useState(0)
   const [metadataDirty, setMetadataDirty] = useState(false)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const screenshotInputRef = useRef<HTMLInputElement>(null)
@@ -364,8 +363,8 @@ export function ProjectDetail() {
           <LayoutThemePicker
             layout={projectLayout}
             theme={projectTheme}
-            onLayoutChange={(l) => { setProjectLayout(l); setMetadataDirty(true); setPreviewKey((k) => k + 1) }}
-            onThemeChange={(t, defaultLayout) => { setProjectTheme(t); setProjectLayout(defaultLayout); setMetadataDirty(true); setPreviewKey((k) => k + 1) }}
+            onLayoutChange={(l) => { setProjectLayout(l); setMetadataDirty(true) }}
+            onThemeChange={(t, defaultLayout) => { setProjectTheme(t); setProjectLayout(defaultLayout); setMetadataDirty(true) }}
           />
         </div>
 
@@ -393,8 +392,11 @@ export function ProjectDetail() {
         )}
       </aside>
 
-      {/* Main content */}
-      <main className="p-6 overflow-y-auto max-w-[1200px] mx-auto">
+      {/* Main content — data-template drives CSS theme overrides */}
+      <main
+        className="p-6 overflow-y-auto max-w-[1200px] mx-auto"
+        data-template={{ classic: 'editorial', 'stats-forward': 'kinetic', 'command-line': 'terminal', typography: 'minimal' }[projectLayout] ?? 'editorial'}
+      >
         <div className="flex items-center justify-between mb-1">
           <div>
             <input
