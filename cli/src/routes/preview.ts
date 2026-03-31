@@ -151,7 +151,14 @@ export function createPreviewRouter(ctx: RouteContext): Router {
         sessionBaseUrl: `/preview/project/${encodeURIComponent(projectParam)}/session`,
       });
 
-      const bodyHtml = renderProjectHtml(renderData);
+      // Resolve layout: query param > enhance cache > default
+      const layoutParam = req.query.layout as string | undefined;
+      const layout = layoutParam || cached?.layout || 'editorial';
+
+      const bodyHtml = renderProjectHtml(renderData, {
+        arc: enhanceResult?.arc,
+        fullSessions: allSessionCards as unknown as Array<Record<string, unknown>>,
+      }, layout);
       res.type('html').send(ctx.buildPreviewPage(
         projAny.name as string,
         bodyHtml,

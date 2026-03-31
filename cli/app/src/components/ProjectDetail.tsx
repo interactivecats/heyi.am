@@ -146,6 +146,8 @@ export function ProjectDetail() {
   const [screenshotCapturing, setScreenshotCapturing] = useState(false)
   const [projectLayout, setProjectLayout] = useState('editorial')
   const [projectTheme, setProjectTheme] = useState('light-blue')
+  const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit')
+  const [previewKey, setPreviewKey] = useState(0)
   const [metadataDirty, setMetadataDirty] = useState(false)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const screenshotInputRef = useRef<HTMLInputElement>(null)
@@ -289,8 +291,8 @@ export function ProjectDetail() {
           <LayoutThemePicker
             layout={projectLayout}
             theme={projectTheme}
-            onLayoutChange={(l) => { setProjectLayout(l); setMetadataDirty(true) }}
-            onThemeChange={(t) => { setProjectTheme(t); setMetadataDirty(true) }}
+            onLayoutChange={(l) => { setProjectLayout(l); setMetadataDirty(true); setPreviewKey((k) => k + 1); setViewMode('preview') }}
+            onThemeChange={(t) => { setProjectTheme(t); setMetadataDirty(true); setPreviewKey((k) => k + 1) }}
           />
         </div>
 
@@ -395,6 +397,47 @@ export function ProjectDetail() {
 
       {/* Main content */}
       <main className="p-6 overflow-y-auto max-w-[1200px] mx-auto">
+        {/* Edit / Preview toggle */}
+        <div className="flex items-center gap-2 mb-4">
+          <button
+            type="button"
+            onClick={() => setViewMode('edit')}
+            className={`text-xs font-mono px-3 py-1 rounded-sm border transition-colors ${
+              viewMode === 'edit'
+                ? 'border-primary bg-primary/5 text-primary'
+                : 'border-ghost text-on-surface-variant hover:border-outline-variant'
+            }`}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => { setViewMode('preview'); setPreviewKey((k) => k + 1) }}
+            className={`text-xs font-mono px-3 py-1 rounded-sm border transition-colors ${
+              viewMode === 'preview'
+                ? 'border-primary bg-primary/5 text-primary'
+                : 'border-ghost text-on-surface-variant hover:border-outline-variant'
+            }`}
+          >
+            Preview
+          </button>
+          {viewMode === 'preview' && (
+            <span className="text-[9px] font-mono text-outline ml-2">
+              Showing {projectLayout} layout
+            </span>
+          )}
+        </div>
+
+        {viewMode === 'preview' ? (
+          <iframe
+            key={previewKey}
+            src={`/preview/project/${encodeURIComponent(dirName!)}?layout=${projectLayout}`}
+            className="w-full border border-ghost rounded-md"
+            style={{ height: 'calc(100vh - 120px)', background: '#fff' }}
+            title="Project preview"
+          />
+        ) : (
+        <>
         <div className="flex items-center justify-between mb-1">
           <div>
             <input
@@ -559,6 +602,8 @@ export function ProjectDetail() {
             ))}
           </div>
         </Card>
+        </>
+        )}
       </main>
 
       {/* Session overlay */}
