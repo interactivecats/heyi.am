@@ -113,7 +113,7 @@ interface LayoutThemePickerProps {
   layout: string
   theme: string
   onLayoutChange: (layout: string) => void
-  onThemeChange: (theme: string, defaultLayout: string) => void
+  onThemeChange: (theme: string) => void
 }
 
 export function LayoutThemePicker({ layout, theme, onLayoutChange, onThemeChange }: LayoutThemePickerProps) {
@@ -124,10 +124,7 @@ export function LayoutThemePicker({ layout, theme, onLayoutChange, onThemeChange
         <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-1.5">Theme</div>
         <select
           value={theme}
-          onChange={(e) => {
-            const t = THEMES.find((th) => th.name === e.target.value)
-            onThemeChange(e.target.value, t?.defaultLayout ?? 'classic')
-          }}
+          onChange={(e) => onThemeChange(e.target.value)}
           className="w-full text-xs font-mono px-2 py-1.5 rounded-sm border border-ghost bg-surface-lowest text-on-surface appearance-none cursor-pointer"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' fill='none' stroke='%2372787e' stroke-width='1.5'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
         >

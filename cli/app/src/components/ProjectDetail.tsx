@@ -364,7 +364,7 @@ export function ProjectDetail() {
             layout={projectLayout}
             theme={projectTheme}
             onLayoutChange={(l) => { setProjectLayout(l); setMetadataDirty(true) }}
-            onThemeChange={(t, defaultLayout) => { setProjectTheme(t); setProjectLayout(defaultLayout); setMetadataDirty(true) }}
+            onThemeChange={(t) => { setProjectTheme(t); setMetadataDirty(true) }}
           />
         </div>
 
@@ -395,7 +395,7 @@ export function ProjectDetail() {
       {/* Main content — data-template drives CSS theme overrides */}
       <main
         className="p-6 overflow-y-auto max-w-[1200px] mx-auto"
-        data-template={{ classic: 'editorial', 'stats-forward': 'kinetic', 'command-line': 'terminal', typography: 'minimal' }[projectLayout] ?? 'editorial'}
+        data-template={{ 'seal-blue': 'editorial', 'warm-stone': 'minimal', 'ember': 'kinetic', 'matrix': 'terminal', 'midnight': 'kinetic', 'twilight': 'editorial' }[projectTheme] ?? 'editorial'}
       >
         <div className="flex items-center justify-between mb-1">
           <div>
