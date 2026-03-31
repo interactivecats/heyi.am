@@ -52,11 +52,7 @@ RUN mix release heyi_am
 FROM ${RUNNER_IMAGE} AS final
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates curl librsvg2-bin fontconfig unzip \
-  && curl -sL -o /tmp/ibm-plex-mono.zip "https://fonts.google.com/download?family=IBM+Plex+Mono" \
-  && mkdir -p /usr/share/fonts/ibm-plex-mono \
-  && unzip -q /tmp/ibm-plex-mono.zip -d /usr/share/fonts/ibm-plex-mono \
-  && rm /tmp/ibm-plex-mono.zip \
+  && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates curl librsvg2-bin fonts-jetbrains-mono \
   && rm -rf /var/lib/apt/lists/* \
   && fc-cache -f
 

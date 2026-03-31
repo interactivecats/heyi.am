@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <%!-- Font loaded from system (IBM Plex Mono installed in Docker via Google Fonts) --%>
+  <%!-- Font loaded from system (fonts-jetbrains-mono Debian package) --%>
 
   <%!-- Background — true black --%>
   <rect width="1200" height="630" fill="#0a0a0f"/>
@@ -8,13 +8,13 @@
   <rect x="60" y="32" width="1080" height="3" fill="#22c55e"/>
 
   <%!-- Headline --%>
-  <text x="60" y="82" fill="#22c55e" font-family="IBM Plex Mono, monospace" font-size="32" font-weight="700">
+  <text x="60" y="82" fill="#22c55e" font-family="JetBrains Mono, monospace" font-size="32" font-weight="700">
     <%= @headline %>
   </text>
 
   <%!-- Narrative — dynamic line count, all lines rendered --%>
   <%= for {line, idx} <- Enum.with_index(@narrative_lines) do %>
-    <text x="60" y={112 + idx * 20} fill="#9ca3af" font-family="IBM Plex Mono, monospace" font-size="13"><%= line %></text>
+    <text x="60" y={112 + idx * 20} fill="#9ca3af" font-family="JetBrains Mono, monospace" font-size="13"><%= line %></text>
   <% end %>
 
   <%!-- Gray divider — positioned after narrative --%>
@@ -23,36 +23,36 @@
   <%!-- Three stat columns — y positions computed from narrative length --%>
 
   <%!-- Column 1: Your Voice --%>
-  <text x="60" y={@stats_y} fill="#22c55e" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="700" letter-spacing="0.12em">YOUR VOICE</text>
+  <text x="60" y={@stats_y} fill="#22c55e" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" letter-spacing="0.12em">YOUR VOICE</text>
   <%= for {{label, value}, idx} <- Enum.with_index(@voice_stats) do %>
-    <text x="60" y={@stats_y + 24 + idx * 22} fill="#9ca3af" font-family="IBM Plex Mono, monospace" font-size="13"><%= label %></text>
-    <text x="380" y={@stats_y + 24 + idx * 22} fill="#06b6d4" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="500" text-anchor="end"><%= value %></text>
+    <text x="60" y={@stats_y + 24 + idx * 22} fill="#9ca3af" font-family="JetBrains Mono, monospace" font-size="13"><%= label %></text>
+    <text x="380" y={@stats_y + 24 + idx * 22} fill="#06b6d4" font-family="JetBrains Mono, monospace" font-size="13" font-weight="500" text-anchor="end"><%= value %></text>
   <% end %>
 
   <%!-- Column 2: The AI's Habits --%>
-  <text x="430" y={@stats_y} fill="#22c55e" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="700" letter-spacing="0.12em">THE AI'S HABITS</text>
+  <text x="430" y={@stats_y} fill="#22c55e" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" letter-spacing="0.12em">THE AI'S HABITS</text>
   <%= for {{label, value}, idx} <- Enum.with_index(@ai_stats) do %>
-    <text x="430" y={@stats_y + 24 + idx * 22} fill="#9ca3af" font-family="IBM Plex Mono, monospace" font-size="13"><%= label %></text>
-    <text x="750" y={@stats_y + 24 + idx * 22} fill="#06b6d4" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="500" text-anchor="end"><%= value %></text>
+    <text x="430" y={@stats_y + 24 + idx * 22} fill="#9ca3af" font-family="JetBrains Mono, monospace" font-size="13"><%= label %></text>
+    <text x="750" y={@stats_y + 24 + idx * 22} fill="#06b6d4" font-family="JetBrains Mono, monospace" font-size="13" font-weight="500" text-anchor="end"><%= value %></text>
   <% end %>
 
   <%!-- Column 3: The Back-and-forth --%>
-  <text x="800" y={@stats_y} fill="#22c55e" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="700" letter-spacing="0.12em">THE BACK-AND-FORTH</text>
+  <text x="800" y={@stats_y} fill="#22c55e" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" letter-spacing="0.12em">THE BACK-AND-FORTH</text>
   <%= for {{label, value}, idx} <- Enum.with_index(@collab_stats) do %>
-    <text x="800" y={@stats_y + 24 + idx * 22} fill="#9ca3af" font-family="IBM Plex Mono, monospace" font-size="13"><%= label %></text>
-    <text x="1140" y={@stats_y + 24 + idx * 22} fill="#06b6d4" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="500" text-anchor="end"><%= value %></text>
+    <text x="800" y={@stats_y + 24 + idx * 22} fill="#9ca3af" font-family="JetBrains Mono, monospace" font-size="13"><%= label %></text>
+    <text x="1140" y={@stats_y + 24 + idx * 22} fill="#06b6d4" font-family="JetBrains Mono, monospace" font-size="13" font-weight="500" text-anchor="end"><%= value %></text>
   <% end %>
 
   <%!-- Bottom green line — full width --%>
   <rect x="60" y="525" width="1080" height="3" fill="#22c55e"/>
 
   <%!-- Session info --%>
-  <text x="60" y="562" fill="#6b7280" font-family="IBM Plex Mono, monospace" font-size="13">
+  <text x="60" y="562" fill="#6b7280" font-family="JetBrains Mono, monospace" font-size="13">
     <%= @total_turns |> Integer.to_string() |> String.replace(~r/\B(?=(\d{3})+(?!\d))/, ",") %> turns · <%= @session_count %> sessions<%= if @sources != "", do: " · #{@sources}" %>
   </text>
 
   <%!-- Watermark --%>
-  <text x="60" y="600" fill="#22c55e" font-family="IBM Plex Mono, monospace" font-size="14" font-weight="700">howdoyouvibe.com</text>
+  <text x="60" y="600" fill="#22c55e" font-family="JetBrains Mono, monospace" font-size="14" font-weight="700">howdoyouvibe.com</text>
   <rect x="980" y="580" width="180" height="32" fill="#111116" stroke="#1f2937"/>
-  <text x="1070" y="601" fill="#22c55e" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="500" text-anchor="middle">$ npx howdoyouvibe</text>
+  <text x="1070" y="601" fill="#22c55e" font-family="JetBrains Mono, monospace" font-size="13" font-weight="500" text-anchor="middle">$ npx howdoyouvibe</text>
 </svg>
