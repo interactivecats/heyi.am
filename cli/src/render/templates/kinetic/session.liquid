@@ -1,0 +1,75 @@
+<div class="heyiam-session kinetic" data-render-version="2" data-template="kinetic">
+
+  {%- comment -%} No sidebar layout — single column, stats-forward {%- endcomment -%}
+  <div class="kinetic-session-layout">
+
+    {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
+
+    {% render 'partials/_session-header', session: session %}
+
+    {%- comment -%} Inline tools + files (no sidebar) {%- endcomment -%}
+    {% if session.toolBreakdown.size > 0 %}
+    <section class="kinetic-inline-section">
+      <h3 class="kinetic-section-label">Tools</h3>
+      <div class="kinetic-inline-list">
+        {% for t in session.toolBreakdown %}
+        <span class="kinetic-inline-tag">{{ t.tool }} <em>{{ t.count }}</em></span>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {% if session.topFiles.size > 0 %}
+    <section class="kinetic-inline-section">
+      <h3 class="kinetic-section-label">Top Files</h3>
+      <div class="kinetic-file-list">
+        {% for f in session.topFiles %}
+        <div class="kinetic-file-entry">
+          <span class="kinetic-file-path">{{ f.path }}</span>
+          <span class="kinetic-file-diff"><span class="kinetic-adds">+{{ f.additions }}</span> <span class="kinetic-dels">-{{ f.deletions }}</span></span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Skills {%- endcomment -%}
+    {% if session.skills.size > 0 %}
+    <section class="kinetic-inline-section">
+      <h3 class="kinetic-section-label">Skills</h3>
+      <div class="chip-list">
+        {% for skill in session.skills %}
+        <span class="chip chip--violet">{{ skill }}</span>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Narrative {%- endcomment -%}
+    {% if session.narrative != blank %}
+    <section class="kinetic-inline-section">
+      <h3 class="kinetic-section-label">Narrative</h3>
+      <p>{{ session.narrative }}</p>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Highlights {%- endcomment -%}
+    {% if session.highlights.size > 0 %}
+    <section class="kinetic-inline-section">
+      <h3 class="kinetic-section-label">Highlights</h3>
+      <ul class="highlights-list">
+        {% for h in session.highlights %}
+        <li>{{ h }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Beats {%- endcomment -%}
+    {% render 'partials/_beats', session: session %}
+
+    {%- comment -%} Q&A {%- endcomment -%}
+    {% render 'partials/_qa', session: session %}
+
+  </div>
+</div>

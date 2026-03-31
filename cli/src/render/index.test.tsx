@@ -244,3 +244,108 @@ describe('renderSessionHtml', () => {
     expect(html).toContain('&lt;script&gt;');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Template-specific rendering (kinetic, terminal, minimal)
+// ---------------------------------------------------------------------------
+
+const CUSTOM_TEMPLATES = ['kinetic', 'terminal', 'minimal'] as const;
+
+describe.each(CUSTOM_TEMPLATES)('%s template — project', (templateName) => {
+  it('renders with data-template and data-render-version attributes', () => {
+    const html = renderProjectHtml(makeProjectData(), undefined, templateName);
+    expect(html).toContain(`data-template="${templateName}"`);
+    expect(html).toContain('data-render-version="2"');
+  });
+
+  it('renders project title', () => {
+    const html = renderProjectHtml(makeProjectData(), undefined, templateName);
+    expect(html).toContain('My Project');
+  });
+
+  it('renders stats data', () => {
+    const html = renderProjectHtml(makeProjectData(), undefined, templateName);
+    expect(html).toContain('5'); // totalSessions
+  });
+
+  it('renders narrative', () => {
+    const html = renderProjectHtml(makeProjectData(), undefined, templateName);
+    expect(html).toContain('Building something useful');
+  });
+
+  it('renders skills', () => {
+    const html = renderProjectHtml(makeProjectData(), undefined, templateName);
+    expect(html).toContain('TypeScript');
+  });
+
+  it('renders session entries', () => {
+    const html = renderProjectHtml(makeProjectData(), undefined, templateName);
+    expect(html).toContain('First Session');
+  });
+
+  it('produces a fragment, not a full document', () => {
+    const html = renderProjectHtml(makeProjectData(), undefined, templateName);
+    expect(html).not.toContain('<html');
+    expect(html).not.toContain('<head>');
+  });
+});
+
+describe.each(CUSTOM_TEMPLATES)('%s template — session', (templateName) => {
+  it('renders with data-template and data-render-version attributes', () => {
+    const html = renderSessionHtml(makeSessionData(), templateName);
+    expect(html).toContain(`data-template="${templateName}"`);
+    expect(html).toContain('data-render-version="2"');
+  });
+
+  it('renders session title', () => {
+    const html = renderSessionHtml(makeSessionData(), templateName);
+    expect(html).toContain('Adding render pipeline');
+  });
+
+  it('renders dev take', () => {
+    const html = renderSessionHtml(makeSessionData(), templateName);
+    expect(html).toContain('Built the static HTML renderer');
+  });
+
+  it('renders stats', () => {
+    const html = renderSessionHtml(makeSessionData(), templateName);
+    expect(html).toContain('25'); // turns
+  });
+
+  it('renders tools inline', () => {
+    const html = renderSessionHtml(makeSessionData(), templateName);
+    expect(html).toContain('Read');
+    expect(html).toContain('15');
+  });
+
+  it('renders top files', () => {
+    const html = renderSessionHtml(makeSessionData(), templateName);
+    expect(html).toContain('src/render/index.tsx');
+    expect(html).toContain('+100');
+  });
+
+  it('renders beats', () => {
+    const html = renderSessionHtml(makeSessionData(), templateName);
+    expect(html).toContain('Setup');
+    expect(html).toContain('Created render directory');
+  });
+
+  it('renders Q&amp;A', () => {
+    const html = renderSessionHtml(makeSessionData(), templateName);
+    expect(html).toContain('Why static rendering?');
+  });
+
+  it('omits optional sections when data is absent', () => {
+    const data = makeSessionData();
+    data.session.beats = undefined;
+    data.session.qaPairs = undefined;
+    data.session.highlights = undefined;
+    data.session.toolBreakdown = undefined;
+    data.session.topFiles = undefined;
+    data.session.narrative = undefined;
+    const html = renderSessionHtml(data, templateName);
+    // Should still render without errors
+    expect(html).toContain(`data-template="${templateName}"`);
+    expect(html).toContain('Adding render pipeline');
+  });
+});

@@ -1,0 +1,90 @@
+<div class="heyiam-project minimal" data-render-version="2" data-template="minimal"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
+
+  {%- comment -%} Big serif title {%- endcomment -%}
+  <h1 class="minimal-title">{{ project.title }}</h1>
+
+  {% render 'partials/_links', project: project %}
+
+  {%- comment -%} Stats as understated inline text {%- endcomment -%}
+  <div class="minimal-stats-inline">
+    <span>{{ durationLabel }}: {% if project.totalAgentDurationMinutes %}{{ project.totalDurationMinutes | formatDuration }} / {{ project.totalAgentDurationMinutes | formatDuration }}{% else %}{{ project.totalDurationMinutes | formatDuration }}{% endif %}</span>
+    {% if efficiencyMultiplier %}<span class="minimal-stats-sep">&middot;</span><span>{{ efficiencyMultiplier }} efficiency</span>{% endif %}
+    <span class="minimal-stats-sep">&middot;</span>
+    <span>{{ project.totalSessions }} sessions</span>
+    <span class="minimal-stats-sep">&middot;</span>
+    <span>{{ project.totalLoc | formatLoc }} lines</span>
+    <span class="minimal-stats-sep">&middot;</span>
+    <span>{{ project.totalFilesChanged }} files</span>
+    {% if project.totalTokens %}<span class="minimal-stats-sep">&middot;</span><span>{{ project.totalTokens | formatTokens }} tokens</span>{% endif %}
+  </div>
+
+  {% render 'partials/_screenshot', project: project %}
+
+  {%- comment -%} Narrative with generous line-height {%- endcomment -%}
+  {% if project.narrative != blank %}
+  <div class="minimal-narrative">
+    <p>{{ project.narrative }}</p>
+  </div>
+  <hr class="minimal-rule" />
+  {% endif %}
+
+  {%- comment -%} Charts {%- endcomment -%}
+  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
+
+  <hr class="minimal-rule" />
+
+  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
+
+  <hr class="minimal-rule" />
+
+  {%- comment -%} Key decisions {%- endcomment -%}
+  {% render 'partials/_key-decisions', arc: arc %}
+
+  <hr class="minimal-rule" />
+
+  {%- comment -%} Source breakdown {%- endcomment -%}
+  {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+
+  <hr class="minimal-rule" />
+
+  {%- comment -%} Phases as date-aligned list {%- endcomment -%}
+  {% if arc.size > 0 %}
+  <div class="minimal-section">
+    <h2 class="minimal-section-heading">Phases</h2>
+    <div class="minimal-phase-list">
+      {% for phase in arc %}
+      <div class="minimal-phase-item">
+        <div class="minimal-phase-title">{{ phase.title }}</div>
+        <div class="minimal-phase-desc">{{ phase.description }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <hr class="minimal-rule" />
+  {% endif %}
+
+  {%- comment -%} Skills {%- endcomment -%}
+  {% render 'partials/_skills', skills: project.skills %}
+
+  <hr class="minimal-rule" />
+
+  {%- comment -%} Sessions as simple list items {%- endcomment -%}
+  {% if featuredSessions.size > 0 %}
+  <div class="minimal-section">
+    <h2 class="minimal-section-heading">Sessions <span class="minimal-meta">{{ sessions.size }} total</span></h2>
+    <ul class="minimal-session-list">
+      {% for session in featuredSessions %}
+      <li class="minimal-session-item">
+        {% if sessionBaseUrl %}<a href="{{ sessionBaseUrl }}/{{ session.slug | default: session.token }}.html" class="minimal-session-link">{% endif %}
+        <span class="minimal-session-title">{{ session.title }}</span>
+        <span class="minimal-session-meta">{{ session.durationMinutes | formatDuration }} &middot; {{ session.turns }} turns &middot; {{ session.locChanged | formatLoc }} lines</span>
+        {% if sessionBaseUrl %}</a>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+
+</div>

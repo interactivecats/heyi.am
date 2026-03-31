@@ -21,6 +21,7 @@ interface BuildSessionRenderOpts {
   sessionSlug: string;
   sourceTool: string;
   agentSummary?: AgentSummary | null;
+  template?: string;
 }
 
 /**
@@ -63,7 +64,7 @@ export function buildSessionRenderData(opts: BuildSessionRenderOpts): SessionRen
       ),
       recordedAt: sessionRecordedAt,
       sourceTool,
-      template: 'editorial',
+      template: opts.template ?? 'editorial',
       agentSummary: agentSummary ?? undefined,
     },
   };

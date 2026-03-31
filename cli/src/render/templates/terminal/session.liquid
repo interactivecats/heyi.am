@@ -1,0 +1,111 @@
+<div class="heyiam-session terminal" data-render-version="2" data-template="terminal">
+
+  {%- comment -%} Prompt-style breadcrumb {%- endcomment -%}
+  <div class="term-prompt">
+    <span class="term-prompt__char">&#10095;</span>
+    <a href="/@{{ user.username }}">{{ user.username }}</a>{% if projectSlug %}/<a href="/@{{ user.username }}/p/{{ projectSlug }}">{{ projectSlug }}</a>{% endif %}/<span>{{ session.title }}</span>
+  </div>
+
+  {%- comment -%} # Title {%- endcomment -%}
+  <h1 class="term-heading"># {{ session.title }}</h1>
+
+  <div class="term-meta">
+    <time datetime="{{ session.recordedAt }}">{{ session.recordedAt | formatDate }}</time>
+    <span class="term-meta__sep">&middot;</span>
+    <span>{{ session.sourceTool }}</span>
+  </div>
+
+  {%- comment -%} Dev take as blockquote {%- endcomment -%}
+  {% if session.devTake != blank %}
+  <blockquote class="term-blockquote">{{ session.devTake }}</blockquote>
+  {% endif %}
+
+  {% if session.context != blank %}
+  <p class="term-context">{{ session.context }}</p>
+  {% endif %}
+
+  {%- comment -%} Stats as tabular output {%- endcomment -%}
+  <div class="term-section">
+    <div class="term-comment"># stats</div>
+    <table class="term-table">
+      <tr><td class="term-table__key">Active</td><td class="term-table__val">{{ session.durationMinutes | formatDuration }}</td></tr>
+      <tr><td class="term-table__key">Turns</td><td class="term-table__val">{{ session.turns }}</td></tr>
+      <tr><td class="term-table__key">Lines changed</td><td class="term-table__val">{{ session.locChanged | localeNumber }}</td></tr>
+      <tr><td class="term-table__key">Files</td><td class="term-table__val">{{ session.filesChanged }}</td></tr>
+    </table>
+  </div>
+
+  {%- comment -%} Tools as inline list {%- endcomment -%}
+  {% if session.toolBreakdown.size > 0 %}
+  <div class="term-section">
+    <div class="term-comment"># tools</div>
+    {% for t in session.toolBreakdown %}
+    <div class="term-list-entry">
+      <span class="term-list-entry__key">{{ t.tool }}</span>
+      <span class="term-list-entry__val">{{ t.count }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {%- comment -%} Files as inline list {%- endcomment -%}
+  {% if session.topFiles.size > 0 %}
+  <div class="term-section">
+    <div class="term-comment"># top files</div>
+    {% for f in session.topFiles %}
+    <div class="term-file-entry">
+      <span class="term-file-path">{{ f.path }}</span>
+      <span class="term-file-diff"><span class="term-adds">+{{ f.additions }}</span> <span class="term-dels">-{{ f.deletions }}</span></span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {%- comment -%} Skills {%- endcomment -%}
+  {% if session.skills.size > 0 %}
+  <div class="term-section">
+    <div class="term-comment"># skills</div>
+    <div class="term-inline-skills">
+      {% for skill in session.skills %}
+      <span class="term-skill-tag">{{ skill }}</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Narrative {%- endcomment -%}
+  {% if session.narrative != blank %}
+  <div class="term-section">
+    <div class="term-comment"># narrative</div>
+    <blockquote class="term-blockquote">{{ session.narrative }}</blockquote>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Highlights {%- endcomment -%}
+  {% if session.highlights.size > 0 %}
+  <div class="term-section">
+    <div class="term-comment"># highlights</div>
+    {% for h in session.highlights %}
+    <div class="term-list-item">* {{ h }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {%- comment -%} Beats as numbered terminal output {%- endcomment -%}
+  {% if session.beats.size > 0 %}
+  <div class="term-section">
+    <div class="term-comment"># execution path</div>
+    {% for beat in session.beats %}
+    <div class="term-beat">
+      <span class="term-beat__num">[{{ beat.stepNumber }}]</span>
+      <strong class="term-beat__title">{{ beat.title }}</strong>
+      <p class="term-beat__body">{{ beat.body }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {%- comment -%} Q&A {%- endcomment -%}
+  {% render 'partials/_qa', session: session %}
+
+</div>

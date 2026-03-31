@@ -23,6 +23,8 @@ export interface Settings {
   archiveSessions?: boolean;
   /** ISO timestamp when onboarding was completed or skipped. */
   onboardingCompletedAt?: string;
+  /** Default template for rendering project/session pages. */
+  defaultTemplate?: string;
 }
 
 const SESSIONS_DIR = 'sessions';
@@ -49,6 +51,16 @@ export function saveAnthropicApiKey(apiKey: string, configDir?: string): void {
 export function clearAnthropicApiKey(configDir?: string): void {
   const settings = getSettings(configDir);
   delete settings.anthropicApiKey;
+  writeConfig(SETTINGS_FILE, settings, configDir);
+}
+
+export function getDefaultTemplate(configDir?: string): string | undefined {
+  return getSettings(configDir).defaultTemplate;
+}
+
+export function setDefaultTemplate(templateName: string, configDir?: string): void {
+  const settings = getSettings(configDir);
+  settings.defaultTemplate = templateName;
   writeConfig(SETTINGS_FILE, settings, configDir);
 }
 
@@ -150,6 +162,8 @@ export interface ProjectEnhanceCache {
   repoUrl?: string;
   projectUrl?: string;
   screenshotBase64?: string;
+  /** Template override for this project (uses user default if not set). */
+  template?: string;
   result: {
     narrative: string;
     arc: Array<{ phase: number; title: string; description: string }>;

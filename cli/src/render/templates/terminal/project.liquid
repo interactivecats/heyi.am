@@ -1,0 +1,93 @@
+<div class="heyiam-project terminal" data-render-version="2" data-template="terminal"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
+
+  {%- comment -%} Prompt-style breadcrumb {%- endcomment -%}
+  <div class="term-prompt">
+    <span class="term-prompt__char">&#10095;</span> <span class="term-prompt__path">@{{ user.username }}/{{ project.slug }}</span>
+  </div>
+
+  {%- comment -%} # Title {%- endcomment -%}
+  <h1 class="term-heading"># {{ project.title }}</h1>
+
+  {% render 'partials/_links', project: project %}
+
+  {% render 'partials/_screenshot', project: project %}
+
+  {%- comment -%} Stats as tabular output {%- endcomment -%}
+  <div class="term-section">
+    <div class="term-comment"># stats</div>
+    <table class="term-table">
+      <tr><td class="term-table__key">{{ durationLabel }}</td><td class="term-table__val">{% if project.totalAgentDurationMinutes %}{{ project.totalDurationMinutes | formatDuration }} / {{ project.totalAgentDurationMinutes | formatDuration }}{% else %}{{ project.totalDurationMinutes | formatDuration }}{% endif %}</td></tr>
+      {% if efficiencyMultiplier %}<tr><td class="term-table__key">Efficiency</td><td class="term-table__val">{{ efficiencyMultiplier }}</td></tr>{% endif %}
+      <tr><td class="term-table__key">Sessions</td><td class="term-table__val">{{ project.totalSessions }}</td></tr>
+      <tr><td class="term-table__key">Lines changed</td><td class="term-table__val">{{ project.totalLoc | formatLoc }}</td></tr>
+      <tr><td class="term-table__key">Files</td><td class="term-table__val">{{ project.totalFilesChanged }}</td></tr>
+      {% if project.totalTokens %}<tr><td class="term-table__key">Tokens</td><td class="term-table__val">{{ project.totalTokens | formatTokens }}</td></tr>{% endif %}
+    </table>
+  </div>
+
+  {%- comment -%} Narrative as green-bordered blockquote {%- endcomment -%}
+  {% if project.narrative != blank %}
+  <div class="term-section">
+    <div class="term-comment"># narrative</div>
+    <blockquote class="term-blockquote">{{ project.narrative }}</blockquote>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Charts {%- endcomment -%}
+  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
+  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
+
+  {%- comment -%} Key decisions {%- endcomment -%}
+  {% if arc.size > 0 %}
+  <div class="term-section">
+    <div class="term-comment"># key decisions</div>
+    {% for phase in arc limit: 3 %}
+    <div class="term-decision">
+      <span class="term-decision__bullet">*</span>
+      <strong>{{ phase.title }}</strong> &mdash; {{ phase.description }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {%- comment -%} Source breakdown {%- endcomment -%}
+  {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+
+  {%- comment -%} Phases as tree {%- endcomment -%}
+  {% if arc.size > 0 %}
+  <div class="term-section">
+    <div class="term-comment"># phases</div>
+    <div class="term-tree">
+      {% for phase in arc %}
+      <div class="term-tree__node">
+        {% if forloop.last %}<span class="term-tree__branch">&#9492;&#9472;&#9472;</span>{% else %}<span class="term-tree__branch">&#9500;&#9472;&#9472;</span>{% endif %}
+        <span class="term-tree__label">{{ phase.title }}</span>
+        <span class="term-tree__desc">&mdash; {{ phase.description }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Skills {%- endcomment -%}
+  {% render 'partials/_skills', skills: project.skills %}
+
+  {%- comment -%} Sessions as list entries {%- endcomment -%}
+  {% if featuredSessions.size > 0 %}
+  <div class="term-section">
+    <div class="term-comment"># sessions ({{ sessions.size }} total)</div>
+    {% for session in featuredSessions %}
+    <div class="term-session-entry">
+      {% if sessionBaseUrl %}<a href="{{ sessionBaseUrl }}/{{ session.slug | default: session.token }}.html" class="term-session-link">{% endif %}
+      <span class="term-session-entry__idx">[{{ forloop.index }}]</span>
+      <span class="term-session-entry__title">{{ session.title }}</span>
+      <span class="term-session-entry__meta">{{ session.durationMinutes | formatDuration }} &middot; {{ session.turns }} turns &middot; {{ session.locChanged | formatLoc }} loc</span>
+      {% if sessionBaseUrl %}</a>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+
+</div>

@@ -1,0 +1,42 @@
+<div class="heyiam-project kinetic" data-render-version="2" data-template="kinetic"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
+
+  {%- comment -%} Hero row: title + stats side by side {%- endcomment -%}
+  <div class="kinetic-hero">
+    <div class="kinetic-hero__title-block">
+      <h1 class="project-title">{{ project.title }}</h1>
+      {% render 'partials/_links', project: project %}
+    </div>
+    <div class="kinetic-hero__stats">
+      {% render 'partials/_stats', project: project, durationLabel: durationLabel, efficiencyMultiplier: efficiencyMultiplier %}
+    </div>
+  </div>
+
+  {%- comment -%} Screenshot {%- endcomment -%}
+  {% render 'partials/_screenshot', project: project %}
+
+  {%- comment -%} Full-width narrative {%- endcomment -%}
+  <div class="kinetic-narrative">
+    {% render 'partials/_narrative', narrative: project.narrative %}
+  </div>
+
+  {%- comment -%} Charts {%- endcomment -%}
+  <div class="kinetic-charts">
+    {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
+    {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
+  </div>
+
+  {%- comment -%} Two-col: phases + sources {%- endcomment -%}
+  <div class="two-col">
+    {% render 'partials/_phases', arc: arc %}
+    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+  </div>
+
+  {%- comment -%} Skills {%- endcomment -%}
+  {% render 'partials/_skills', skills: project.skills %}
+
+  {%- comment -%} Sessions {%- endcomment -%}
+  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
+
+  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+
+</div>

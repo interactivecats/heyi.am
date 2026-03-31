@@ -1,0 +1,111 @@
+<div class="heyiam-session minimal" data-render-version="2" data-template="minimal">
+
+  {%- comment -%} Clean single-column layout {%- endcomment -%}
+  <div class="minimal-session-layout">
+
+    {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
+
+    {%- comment -%} Serif title {%- endcomment -%}
+    <h1 class="minimal-title">{{ session.title }}</h1>
+
+    <div class="minimal-session-meta">
+      <time datetime="{{ session.recordedAt }}">{{ session.recordedAt | formatDate }}</time>
+      <span class="minimal-stats-sep">&middot;</span>
+      <span>{{ session.sourceTool }}</span>
+    </div>
+
+    {% if session.devTake != blank %}
+    <blockquote class="minimal-devtake">
+      <p>{{ session.devTake }}</p>
+    </blockquote>
+    {% endif %}
+
+    {% if session.context != blank %}
+    <p class="minimal-context">{{ session.context }}</p>
+    {% endif %}
+
+    {%- comment -%} Stats inline {%- endcomment -%}
+    <div class="minimal-stats-inline">
+      <span>{{ session.durationMinutes | formatDuration }} active</span>
+      <span class="minimal-stats-sep">&middot;</span>
+      <span>{{ session.turns }} turns</span>
+      <span class="minimal-stats-sep">&middot;</span>
+      <span>{{ session.locChanged | localeNumber }} lines</span>
+      <span class="minimal-stats-sep">&middot;</span>
+      <span>{{ session.filesChanged }} files</span>
+    </div>
+
+    <hr class="minimal-rule" />
+
+    {%- comment -%} Tools inline {%- endcomment -%}
+    {% if session.toolBreakdown.size > 0 %}
+    <div class="minimal-section">
+      <h2 class="minimal-section-heading">Tools</h2>
+      <div class="minimal-inline-list">
+        {% for t in session.toolBreakdown %}
+        <span class="minimal-inline-item">{{ t.tool }} ({{ t.count }})</span>
+        {% endfor %}
+      </div>
+    </div>
+    <hr class="minimal-rule" />
+    {% endif %}
+
+    {%- comment -%} Files {%- endcomment -%}
+    {% if session.topFiles.size > 0 %}
+    <div class="minimal-section">
+      <h2 class="minimal-section-heading">Top Files</h2>
+      <ul class="minimal-file-list">
+        {% for f in session.topFiles %}
+        <li class="minimal-file-item">
+          <span class="minimal-file-path">{{ f.path }}</span>
+          <span class="minimal-file-diff">+{{ f.additions }} -{{ f.deletions }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    <hr class="minimal-rule" />
+    {% endif %}
+
+    {%- comment -%} Skills {%- endcomment -%}
+    {% if session.skills.size > 0 %}
+    <div class="minimal-section">
+      <h2 class="minimal-section-heading">Skills</h2>
+      <div class="chip-list">
+        {% for skill in session.skills %}
+        <span class="chip chip--violet">{{ skill }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    <hr class="minimal-rule" />
+    {% endif %}
+
+    {%- comment -%} Narrative {%- endcomment -%}
+    {% if session.narrative != blank %}
+    <div class="minimal-section">
+      <h2 class="minimal-section-heading">Narrative</h2>
+      <p class="minimal-narrative-text">{{ session.narrative }}</p>
+    </div>
+    <hr class="minimal-rule" />
+    {% endif %}
+
+    {%- comment -%} Highlights {%- endcomment -%}
+    {% if session.highlights.size > 0 %}
+    <div class="minimal-section">
+      <h2 class="minimal-section-heading">Highlights</h2>
+      <ul class="minimal-highlights">
+        {% for h in session.highlights %}
+        <li>{{ h }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <hr class="minimal-rule" />
+    {% endif %}
+
+    {%- comment -%} Beats {%- endcomment -%}
+    {% render 'partials/_beats', session: session %}
+
+    {%- comment -%} Q&A {%- endcomment -%}
+    {% render 'partials/_qa', session: session %}
+
+  </div>
+</div>

@@ -94,11 +94,12 @@ export function renderProjectHtml(
     arc?: Array<{ phase: number; title: string; description: string }>;
     fullSessions?: Array<Record<string, unknown>>;
   },
+  templateName?: string,
 ): string {
   validateProject(data);
 
   try {
-    return renderProject(data, extras);
+    return renderProject(data, extras, templateName);
   } catch (err: unknown) {
     throw new RenderError(
       'RENDER_FAILED',
@@ -114,11 +115,11 @@ export function renderProjectHtml(
  * @throws {RenderError} with code VALIDATION_ERROR if required fields are missing
  * @throws {RenderError} with code RENDER_FAILED if Liquid rendering fails
  */
-export function renderSessionHtml(data: SessionRenderData): string {
+export function renderSessionHtml(data: SessionRenderData, templateName?: string): string {
   validateSession(data);
 
   try {
-    return renderSession(data);
+    return renderSession(data, templateName);
   } catch (err: unknown) {
     throw new RenderError(
       'RENDER_FAILED',
