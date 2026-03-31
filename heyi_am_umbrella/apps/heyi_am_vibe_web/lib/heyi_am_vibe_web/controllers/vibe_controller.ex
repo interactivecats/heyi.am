@@ -144,7 +144,13 @@ defmodule HeyiAmVibeWeb.VibeController do
     tmp_png = Path.rootname(tmp_svg) <> ".png"
 
     try do
-      File.write!(tmp_svg, svg)
+      # Strip Phoenix debug attributes and comments that break SVG renderers
+      clean_svg =
+        svg
+        |> String.replace(~r/ data-phx-loc="[^"]*"/, "")
+        |> String.replace(~r/<!-- <.*?> -->/s, "")
+
+      File.write!(tmp_svg, clean_svg)
 
       result =
         cond do
