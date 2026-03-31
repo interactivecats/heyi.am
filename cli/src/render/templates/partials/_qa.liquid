@@ -1,0 +1,13 @@
+{% if session.qaPairs.size > 0 %}
+<section class="content-section">
+  <h2 class="content-section__heading">Q&amp;A</h2>
+  <div class="qa-list">
+    {% for qa in session.qaPairs %}
+    <div class="qa-pair">
+      <p class="qa-pair__question">{{ qa.question }}</p>
+      <p class="qa-pair__answer">{{ qa.answer }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}

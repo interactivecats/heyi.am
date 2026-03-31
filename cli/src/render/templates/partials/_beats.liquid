@@ -1,0 +1,16 @@
+{% if session.beats.size > 0 %}
+<section class="content-section">
+  <h2 class="content-section__heading">Execution Path</h2>
+  <ol class="beats-list">
+    {% for beat in session.beats %}
+    <li class="beat">
+      <span class="beat__number">{{ beat.stepNumber }}</span>
+      <div class="beat__content">
+        <strong class="beat__title">{{ beat.title }}</strong>
+        <p class="beat__body">{{ beat.body }}</p>
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}

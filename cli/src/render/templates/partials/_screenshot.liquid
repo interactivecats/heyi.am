@@ -1,0 +1,12 @@
+{% if project.screenshotUrl %}
+<div class="browser-chrome">
+  <div class="browser-chrome__bar">
+    <span class="browser-chrome__dot browser-chrome__dot--red"></span>
+    <span class="browser-chrome__dot browser-chrome__dot--yellow"></span>
+    <span class="browser-chrome__dot browser-chrome__dot--green"></span>
+  </div>
+  <div class="browser-chrome__viewport">
+    <img src="{{ project.screenshotUrl }}" alt="Screenshot of {{ project.title }}" class="browser-chrome__img" loading="lazy" />
+  </div>
+</div>
+{% endif %}

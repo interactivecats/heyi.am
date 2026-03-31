@@ -1,0 +1,39 @@
+<header class="session-header">
+  <h1 class="session-header__title">{{ session.title }}</h1>
+
+  <div class="session-header__meta">
+    <time class="session-header__date" datetime="{{ session.recordedAt }}">
+      {{ session.recordedAt | formatDate }}
+    </time>
+    <span class="session-header__source">{{ session.sourceTool }}</span>
+  </div>
+
+  {% if session.devTake != blank %}
+  <blockquote class="session-header__devtake">
+    <p>{{ session.devTake }}</p>
+  </blockquote>
+  {% endif %}
+
+  {% if session.context != blank %}
+  <p class="session-header__context">{{ session.context }}</p>
+  {% endif %}
+
+  <div class="stat-grid stat-grid--4">
+    <span class="stat">
+      <span class="stat__value">{{ session.durationMinutes | formatDuration }}</span>
+      <span class="stat__label">active</span>
+    </span>
+    <span class="stat">
+      <span class="stat__value">{{ session.turns }}</span>
+      <span class="stat__label">turns</span>
+    </span>
+    <span class="stat">
+      <span class="stat__value">{{ session.locChanged | localeNumber }}</span>
+      <span class="stat__label">lines changed</span>
+    </span>
+    <span class="stat">
+      <span class="stat__value">{{ session.filesChanged }}</span>
+      <span class="stat__label">files</span>
+    </span>
+  </div>
+</header>

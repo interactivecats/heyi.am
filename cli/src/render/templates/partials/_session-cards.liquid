@@ -1,0 +1,30 @@
+{% if featuredSessions.size > 0 %}
+<div class="card">
+  <div class="section-header">
+    <h3 class="section-header__title">Featured sessions</h3>
+    <span class="section-header__meta">{{ totalSessionCount }} total</span>
+  </div>
+  <div class="session-grid">
+    {% for session in featuredSessions %}
+    {% if sessionBaseUrl %}
+    <a href="{{ sessionBaseUrl }}/{{ session.slug | default: session.token }}.html" class="session-card-link">
+    {% endif %}
+      <div class="session-card" data-session-id="{{ session.token }}">
+        <div class="session-card__bar session-card__bar--{{ forloop.index0 | durationColor }}"></div>
+        <h4 class="session-card__title">{{ session.title }}</h4>
+        <span class="session-card__meta">
+          {{ session.durationMinutes | formatDuration }} &middot; {{ session.turns }} turns &middot; {{ session.locChanged | formatLoc }} lines
+        </span>
+        {% if session.skills.size > 0 %}
+        <div class="session-card__skills">
+          <span class="chip chip--violet">{{ session.skills[0] }}</span>
+        </div>
+        {% endif %}
+      </div>
+    {% if sessionBaseUrl %}
+    </a>
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endif %}

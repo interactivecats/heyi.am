@@ -86,7 +86,10 @@ interface RenderProjectExtras {
   fullSessions?: Array<Record<string, unknown>>;
 }
 
-export function renderProject(data: ProjectRenderData, extras?: RenderProjectExtras): string {
+const DEFAULT_TEMPLATE = 'editorial';
+
+export function renderProject(data: ProjectRenderData, extras?: RenderProjectExtras, templateName?: string): string {
+  const template = templateName || DEFAULT_TEMPLATE;
   // Pre-compute derived data for the template
   const allSessions = data.allSessions || data.sessions;
 
@@ -163,7 +166,7 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
     return true;
   }).slice(0, 6);
 
-  return engine.renderFileSync('project', {
+  return engine.renderFileSync(`${template}/project`, {
     ...data,
     arc: extras?.arc ?? [],
     featuredSessions,
@@ -175,6 +178,7 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
   });
 }
 
-export function renderSession(data: SessionRenderData): string {
-  return engine.renderFileSync('session', data);
+export function renderSession(data: SessionRenderData, templateName?: string): string {
+  const template = templateName || DEFAULT_TEMPLATE;
+  return engine.renderFileSync(`${template}/session`, data);
 }

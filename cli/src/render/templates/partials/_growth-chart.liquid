@@ -1,0 +1,7 @@
+<div class="card">
+  <div class="section-header">
+    <h3 class="section-header__title">Project growth</h3>
+    <span class="section-header__meta">cumulative LOC</span>
+  </div>
+  <div data-growth-chart data-total-loc="{{ project.totalLoc }}" data-total-files="{{ project.totalFilesChanged }}" data-sessions='{{ growthJson | raw }}'></div>
+</div>

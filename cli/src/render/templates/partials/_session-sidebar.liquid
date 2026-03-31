@@ -1,0 +1,30 @@
+<aside class="session-sidebar">
+  {% if session.toolBreakdown.size > 0 %}
+  <div class="sidebar-section">
+    <h3 class="sidebar-section__heading">Tool Usage</h3>
+    <ul class="tool-list">
+      {% for t in session.toolBreakdown %}
+      <li class="tool-list__item">
+        <span class="tool-list__name">{{ t.tool }}</span>
+        <span class="tool-list__count">{{ t.count }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if session.topFiles.size > 0 %}
+  <div class="sidebar-section">
+    <h3 class="sidebar-section__heading">Top Files</h3>
+    <ul class="file-list">
+      {% for f in session.topFiles %}
+      <li class="file-list__item">
+        <span class="file-list__path">{{ f.path }}</span>
+        <span class="file-list__adds">+{{ f.additions }}</span>
+        <span class="file-list__dels">-{{ f.deletions }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+</aside>

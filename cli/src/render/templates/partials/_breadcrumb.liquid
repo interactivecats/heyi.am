@@ -1,0 +1,9 @@
+<nav class="breadcrumb">
+  <a href="/@{{ user.username }}">{{ user.username }}</a>
+  {% if projectSlug %}
+  <span class="breadcrumb__sep" aria-hidden="true">/</span>
+  <a href="/@{{ user.username }}/p/{{ projectSlug }}">{{ projectSlug }}</a>
+  {% endif %}
+  <span class="breadcrumb__sep" aria-hidden="true">/</span>
+  <span>{{ session.title }}</span>
+</nav>

@@ -1,0 +1,20 @@
+{% if arc.size > 0 %}
+<div class="card">
+  <div class="section-header">
+    <h3 class="section-header__title">Project phases</h3>
+    <span class="section-header__meta">timeline</span>
+  </div>
+  <div class="phase-timeline">
+    <div class="phase-timeline__line"></div>
+    {% for phase in arc %}
+    <div class="phase-timeline__item">
+      <div class="phase-timeline__dot"></div>
+      <div class="phase-timeline__label">{{ phase.title }}</div>
+      <div class="note">
+        <div class="note__body">{{ phase.description }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
