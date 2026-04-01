@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, getSettings, setDefaultTemplate } from '../settings.js';
 import { hasApiKey } from '../llm/index.js';
-import { isValidTemplate, DEFAULT_TEMPLATE } from '../render/templates.js';
+import { isValidTemplate, DEFAULT_TEMPLATE, BUILT_IN_TEMPLATES } from '../render/templates.js';
 import type { RouteContext } from './context.js';
 
 export function createSettingsRouter(_ctx: RouteContext): Router {
@@ -30,6 +30,20 @@ export function createSettingsRouter(_ctx: RouteContext): Router {
     });
   });
 
+  // List available templates
+  router.get('/api/templates', (_req: Request, res: Response) => {
+    const templates = BUILT_IN_TEMPLATES.map((t) => ({
+      name: t.name,
+      label: t.label,
+      description: t.description,
+      accent: t.accent,
+      mode: t.mode,
+      tags: t.tags,
+      builtIn: true,
+    }));
+    res.json({ templates });
+  });
+
   // Get current portfolio theme
   router.get('/api/settings/theme', (_req: Request, res: Response) => {
     const settings = getSettings();
@@ -40,7 +54,7 @@ export function createSettingsRouter(_ctx: RouteContext): Router {
   router.post('/api/settings/theme', (req: Request, res: Response) => {
     const { template } = req.body as { template?: string };
     if (!template || !isValidTemplate(template)) {
-      res.status(400).json({ error: 'Invalid template. Options: editorial, kinetic, terminal, minimal' });
+      res.status(400).json({ error: 'Invalid template name' });
       return;
     }
     setDefaultTemplate(template);

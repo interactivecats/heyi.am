@@ -282,6 +282,25 @@ export async function saveApiKey(key: string): Promise<void> {
   await post('/settings/api-key', { apiKey: key })
 }
 
+export interface TemplateInfo {
+  name: string
+  label: string
+  description: string
+  accent: string
+  mode: 'light' | 'dark'
+  tags: string[]
+  builtIn: boolean
+}
+
+export async function fetchTemplates(): Promise<TemplateInfo[]> {
+  try {
+    const data = await get<{ templates: TemplateInfo[] }>('/templates')
+    return data.templates
+  } catch {
+    return []
+  }
+}
+
 export async function fetchTheme(): Promise<{ template: string }> {
   try {
     return await get<{ template: string }>('/settings/theme')

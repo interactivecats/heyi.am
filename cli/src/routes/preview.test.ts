@@ -28,6 +28,7 @@ vi.mock('../render/index.js', () => ({
 
 vi.mock('../render/templates.js', () => ({
   getTemplateCss: vi.fn().mockReturnValue('body { color: red; }'),
+  isValidTemplate: (name: string) => ['editorial', 'kinetic', 'terminal', 'minimal', 'showcase'].includes(name),
 }));
 
 vi.mock('../render/build-render-data.js', () => ({
@@ -198,5 +199,68 @@ describe('GET /preview/project/:project', () => {
     const res = await request(app).get('/preview/project/my-project');
     expect(res.status).toBe(200);
     expect(res.text).toBe('<html>preview</html>');
+  });
+
+  it('uses ?template= override when valid', async () => {
+    const app = makeApp();
+
+    const res = await request(app).get('/preview/project/my-project?template=kinetic');
+    expect(res.status).toBe(200);
+    expect(renderProjectHtml).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      'kinetic',
+    );
+  });
+
+  it('ignores invalid ?template= and falls back to default', async () => {
+    vi.mocked(getDefaultTemplate).mockReturnValue('terminal');
+    const app = makeApp();
+
+    const res = await request(app).get('/preview/project/my-project?template=nonexistent');
+    expect(res.status).toBe(200);
+    expect(renderProjectHtml).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      'terminal',
+    );
+  });
+});
+
+describe('GET /api/projects/:project/render with ?template=', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('uses ?template= override when valid', async () => {
+    const app = makeApp();
+
+    const res = await request(app).get('/api/projects/my-project/render?template=kinetic');
+    expect(res.status).toBe(200);
+    expect(res.body.template).toBe('kinetic');
+    expect(renderProjectHtml).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      'kinetic',
+    );
+    expect(getTemplateCss).toHaveBeenCalledWith('kinetic');
+  });
+
+  it('ignores invalid ?template= and falls back to user default', async () => {
+    vi.mocked(getDefaultTemplate).mockReturnValue('terminal');
+    const app = makeApp();
+
+    const res = await request(app).get('/api/projects/my-project/render?template=bogus');
+    expect(res.status).toBe(200);
+    expect(res.body.template).toBe('terminal');
+  });
+
+  it('?template= takes precedence over user default', async () => {
+    vi.mocked(getDefaultTemplate).mockReturnValue('terminal');
+    const app = makeApp();
+
+    const res = await request(app).get('/api/projects/my-project/render?template=showcase');
+    expect(res.status).toBe(200);
+    expect(res.body.template).toBe('showcase');
   });
 });

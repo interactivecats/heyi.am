@@ -6,7 +6,7 @@ import { getAuthToken } from '../auth.js';
 import { loadEnhancedData, loadProjectEnhanceResult, getDefaultTemplate } from '../settings.js';
 import { SCREENSHOTS_DIR } from '../screenshot.js';
 import { renderProjectHtml, renderSessionHtml } from '../render/index.js';
-import { getTemplateCss } from '../render/templates.js';
+import { getTemplateCss, isValidTemplate } from '../render/templates.js';
 import { buildSessionRenderData, buildSessionCard, buildProjectRenderData } from '../render/build-render-data.js';
 import type { SessionCard, ProjectRenderData } from '../render/types.js';
 import { buildAgentSummary, type RouteContext } from './context.js';
@@ -198,12 +198,24 @@ export function createPreviewRouter(ctx: RouteContext): Router {
   router.get('/preview/project/:project', async (req: Request, res: Response) => {
     try {
       const projectParam = String(req.params.project);
-      const { renderData, projName } = await buildProjectPreviewData(ctx, projectParam, {
+      const templateOverride = req.query.template as string | undefined;
+      const { renderData, enhanceResult, projName } = await buildProjectPreviewData(ctx, projectParam, {
         repoUrl: req.query.repoUrl as string | undefined,
         projectUrl: req.query.projectUrl as string | undefined,
       });
 
-      const bodyHtml = renderProjectHtml(renderData);
+      // Use template override if valid, otherwise fall back to user default
+      const templateName = (templateOverride && isValidTemplate(templateOverride))
+        ? templateOverride
+        : (getDefaultTemplate() || 'editorial');
+
+      let bodyHtml: string;
+      try {
+        bodyHtml = renderProjectHtml(renderData, { arc: enhanceResult?.arc }, templateName);
+      } catch {
+        bodyHtml = renderProjectHtml(renderData, { arc: enhanceResult?.arc }, 'editorial');
+      }
+
       res.type('html').send(ctx.buildPreviewPage(
         projName,
         bodyHtml,
@@ -223,17 +235,21 @@ export function createPreviewRouter(ctx: RouteContext): Router {
   router.get('/api/projects/:project/render', async (req: Request, res: Response) => {
     try {
       const projectParam = String(req.params.project);
+      const templateOverride = req.query.template as string | undefined;
       const { renderData, enhanceResult } = await buildProjectPreviewData(ctx, projectParam, {
         repoUrl: req.query.repoUrl as string | undefined,
         projectUrl: req.query.projectUrl as string | undefined,
       });
 
-      let templateName = getDefaultTemplate() || 'editorial';
+      // Use template override if valid, otherwise fall back to user default
+      let templateName = (templateOverride && isValidTemplate(templateOverride))
+        ? templateOverride
+        : (getDefaultTemplate() || 'editorial');
       let html: string;
       try {
         html = renderProjectHtml(renderData, { arc: enhanceResult?.arc }, templateName);
       } catch {
-        // Template files may not exist yet (e.g. showcase) — fall back to editorial
+        // Template files may not exist yet (e.g. showcase) -- fall back to editorial
         templateName = 'editorial';
         html = renderProjectHtml(renderData, { arc: enhanceResult?.arc }, templateName);
       }

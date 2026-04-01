@@ -1,23 +1,23 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { AppShell, Card, SectionHeader } from './shared'
 import {
   fetchApiKeyStatus,
   saveApiKey,
   fetchAuthStatus,
+  fetchTemplates,
   fetchTheme,
-  saveTheme,
   logout,
   type ApiKeyStatus,
   type AuthStatus,
+  type TemplateInfo,
 } from '../api'
 
-const TEMPLATES = [
-  { name: 'editorial', label: 'Classic', previewBg: '#ffffff', previewAccent: '#084471', previewCard: '#f3f4f6' },
-  { name: 'kinetic', label: 'Kinetic', previewBg: '#09090b', previewAccent: '#f97316', previewCard: '#18181b' },
-  { name: 'terminal', label: 'Terminal', previewBg: '#0a0a0a', previewAccent: '#4ade80', previewCard: '#141414' },
-  { name: 'minimal', label: 'Typography', previewBg: '#fafaf9', previewAccent: '#1c1917', previewCard: '#f5f5f4' },
-  { name: 'showcase', label: 'Showcase', previewBg: '#09090b', previewAccent: '#818cf8', previewCard: '#18181b' },
-] as const
+/** Preview background color derived from template mode */
+function previewBgForTemplate(t: TemplateInfo): string {
+  if (t.mode === 'dark') return '#09090b'
+  return '#ffffff'
+}
 
 export function Settings() {
   const [apiKey, setApiKey] = useState<ApiKeyStatus | null>(null)
@@ -28,6 +28,7 @@ export function Settings() {
   const [loggingOut, setLoggingOut] = useState(false)
   const [loading, setLoading] = useState(true)
   const [currentTheme, setCurrentTheme] = useState('editorial')
+  const [templates, setTemplates] = useState<TemplateInfo[]>([])
 
   const [privacyDefaults, setPrivacyDefaults] = useState({
     localOnly: true,
@@ -40,10 +41,12 @@ export function Settings() {
       fetchApiKeyStatus().catch(() => ({ hasKey: false }) as ApiKeyStatus),
       fetchAuthStatus().catch(() => ({ authenticated: false }) as AuthStatus),
       fetchTheme().catch(() => ({ template: 'editorial' })),
-    ]).then(([key, authStatus, theme]) => {
+      fetchTemplates().catch(() => []),
+    ]).then(([key, authStatus, theme, templateList]) => {
       setApiKey(key)
       setAuth(authStatus)
       setCurrentTheme(theme.template)
+      setTemplates(templateList)
     }).finally(() => setLoading(false))
   }, [])
 
@@ -185,46 +188,46 @@ export function Settings() {
         <div className="mt-4">
           <Card>
             <SectionHeader title="Portfolio theme" />
-            <p className="text-xs text-on-surface-variant mb-4">
-              Applies to all published pages: portfolio, projects, and sessions.
-            </p>
-            <div className="grid grid-cols-5 gap-3">
-              {TEMPLATES.map((t) => (
-                <button
-                  key={t.name}
-                  type="button"
-                  onClick={() => { setCurrentTheme(t.name); saveTheme(t.name) }}
-                  className={`flex flex-col items-center gap-2 p-3 rounded-md border-2 transition-all ${
-                    currentTheme === t.name
-                      ? 'border-primary bg-primary/5'
-                      : 'border-ghost hover:border-outline-variant'
-                  }`}
-                >
+
+            {(() => {
+              const active = templates.find((t) => t.name === currentTheme) ?? templates[0]
+              if (!active) {
+                return (
+                  <p className="text-xs text-on-surface-variant">
+                    No templates available.
+                  </p>
+                )
+              }
+              const bg = previewBgForTemplate(active)
+              return (
+                <div className="flex items-center gap-4">
                   <div
-                    className="w-full aspect-[4/3] rounded-sm overflow-hidden border border-ghost"
-                    style={{ background: t.previewBg }}
+                    className="w-20 h-14 rounded-md overflow-hidden border border-ghost shrink-0"
+                    style={{ background: bg }}
                   >
                     <div className="p-2 h-full flex flex-col gap-1">
-                      <div className="h-1.5 rounded-sm" style={{ width: '50%', background: t.previewAccent, opacity: 0.7 }} />
-                      <div className="h-2.5 rounded-sm" style={{ background: t.previewCard }} />
-                      <div className="flex gap-1 flex-1">
-                        <div className="flex-1 h-2 rounded-sm" style={{ background: t.previewCard }} />
-                        <div className="flex-1 h-2 rounded-sm" style={{ background: t.previewCard }} />
-                      </div>
-                      <div className="flex gap-1">
-                        <div className="flex-1 h-1.5 rounded-sm" style={{ background: t.previewCard }} />
-                        <div className="flex-1 h-1.5 rounded-sm" style={{ background: t.previewCard }} />
+                      <div className="h-1.5 w-1/3 rounded-sm" style={{ background: active.accent, opacity: 0.8 }} />
+                      <div className="h-1 w-2/3 rounded-sm" style={{ background: active.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }} />
+                      <div className="flex gap-0.5 mt-0.5">
+                        <div className="flex-1 h-3 rounded-sm" style={{ background: active.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }} />
+                        <div className="flex-1 h-3 rounded-sm" style={{ background: active.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }} />
+                        <div className="flex-1 h-3 rounded-sm" style={{ background: active.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }} />
                       </div>
                     </div>
                   </div>
-                  <span className={`text-xs font-mono ${
-                    currentTheme === t.name ? 'text-primary font-medium' : 'text-on-surface-variant'
-                  }`}>
-                    {t.label}
-                  </span>
-                </button>
-              ))}
-            </div>
+                  <div>
+                    <div className="text-sm font-medium text-on-surface">{active.label}</div>
+                    <div className="text-xs text-on-surface-variant">{active.description}</div>
+                  </div>
+                  <Link
+                    to="/templates"
+                    className="ml-auto text-xs font-mono text-primary hover:underline shrink-0"
+                  >
+                    Browse themes &rarr;
+                  </Link>
+                </div>
+              )
+            })()}
           </Card>
         </div>
 
