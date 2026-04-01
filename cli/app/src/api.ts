@@ -294,6 +294,18 @@ export async function saveTheme(template: string): Promise<void> {
   await post('/settings/theme', { template })
 }
 
+export async function deleteProjectScreenshot(dirName: string): Promise<void> {
+  await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/screenshot`, { method: 'DELETE' })
+}
+
+export async function fetchProjectRender(dirName: string): Promise<{ html: string; css: string; template: string; screenshotUrl?: string } | null> {
+  try {
+    return await get<{ html: string; css: string; template: string; screenshotUrl?: string }>(`/projects/${encodeURIComponent(dirName)}/render`)
+  } catch {
+    return null
+  }
+}
+
 export async function fetchAuthStatus(): Promise<AuthStatus> {
   try {
     return await get<AuthStatus>('/auth/status')

@@ -3,7 +3,7 @@
   {%- comment -%} Hero row: title + stats side by side {%- endcomment -%}
   <div class="kinetic-hero">
     <div class="kinetic-hero__title-block">
-      <h1 class="project-title">{{ project.title }}</h1>
+      <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
       {% render 'partials/_links', project: project %}
     </div>
     <div class="kinetic-hero__stats">

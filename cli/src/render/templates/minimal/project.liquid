@@ -1,7 +1,7 @@
 <div class="heyiam-project minimal" data-render-version="2" data-template="minimal"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
   {%- comment -%} Big serif title {%- endcomment -%}
-  <h1 class="minimal-title">{{ project.title }}</h1>
+  <h1 class="minimal-title" data-editable="title">{{ project.title }}</h1>
 
   {% render 'partials/_links', project: project %}
 

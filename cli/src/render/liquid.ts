@@ -94,7 +94,7 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
   const allSessions = data.allSessions || data.sessions;
 
   const sourceCounts: Record<string, number> = {};
-  for (const s of data.sessions) {
+  for (const s of allSessions) {
     const src = s.sourceTool || 'unknown';
     sourceCounts[src] = (sourceCounts[src] || 0) + 1;
   }
