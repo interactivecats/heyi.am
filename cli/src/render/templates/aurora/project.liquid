@@ -1,0 +1,30 @@
+<div class="heyiam-project aurora" data-render-version="2" data-template="aurora"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
+
+  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+
+  {% render 'partials/_links', project: project %}
+
+  {% render 'partials/_screenshot', project: project %}
+
+  {% render 'partials/_narrative', narrative: project.narrative %}
+
+  {% render 'partials/_stats', project: project, durationLabel: durationLabel, efficiencyMultiplier: efficiencyMultiplier %}
+
+  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
+
+  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
+
+  <div class="two-col">
+    {% render 'partials/_key-decisions', arc: arc %}
+    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+  </div>
+
+  {% render 'partials/_phases', arc: arc %}
+
+  {% render 'partials/_skills', skills: project.skills %}
+
+  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
+
+  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+
+</div>

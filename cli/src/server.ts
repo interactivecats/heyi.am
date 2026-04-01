@@ -97,9 +97,14 @@ export function createApp(sessionsBasePath?: string, dbPath?: string) {
   const corsOrigins = ['http://localhost:17845', 'http://127.0.0.1:17845'];
   if (process.env.NODE_ENV !== 'production') corsOrigins.push('http://localhost:5173');
   app.use(cors({ origin: corsOrigins }));
-  app.use((_req, res, next) => {
+  app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
+    // Allow same-origin framing for preview pages (used by template browser iframes)
+    if (req.path.startsWith('/preview/')) {
+      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    } else {
+      res.setHeader('X-Frame-Options', 'DENY');
+    }
     next();
   });
   app.use(express.json({ limit: '10mb' }));

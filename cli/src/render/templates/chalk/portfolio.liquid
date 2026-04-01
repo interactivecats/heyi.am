@@ -1,0 +1,11 @@
+<div class="heyiam-portfolio chalk" data-render-version="2" data-template="chalk" data-username="{{ user.username }}">
+
+  {% render 'partials/_portfolio-header', user: user %}
+
+  {% render 'partials/_portfolio-stats', projects: projects, totalSessions: totalSessions, totalDurationMinutes: totalDurationMinutes, totalAgentDurationMinutes: totalAgentDurationMinutes, totalLoc: totalLoc, efficiencyMultiplier: efficiencyMultiplier %}
+
+  {% render 'partials/_portfolio-projects', projects: projects %}
+
+  {% render 'partials/_footer' %}
+
+</div>

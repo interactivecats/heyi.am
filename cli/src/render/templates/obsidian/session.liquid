@@ -1,0 +1,47 @@
+<div class="heyiam-session obsidian" data-render-version="2" data-template="obsidian">
+
+  <div class="session-layout">
+
+    {% render 'partials/_session-sidebar', session: session %}
+
+    <main class="session-main">
+
+      {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
+
+      {% render 'partials/_session-header', session: session %}
+
+      {% if session.skills.size > 0 %}
+      <section class="content-section">
+        <div class="chip-list">
+          {% for skill in session.skills %}
+          <span class="chip chip--violet">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if session.narrative != blank %}
+      <section class="content-section">
+        <h2 class="content-section__heading">Narrative</h2>
+        <p>{{ session.narrative }}</p>
+      </section>
+      {% endif %}
+
+      {% if session.highlights.size > 0 %}
+      <section class="content-section">
+        <h2 class="content-section__heading">Highlights</h2>
+        <ul class="highlights-list">
+          {% for h in session.highlights %}
+          <li>{{ h }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {% render 'partials/_beats', session: session %}
+
+      {% render 'partials/_qa', session: session %}
+
+    </main>
+  </div>
+</div>

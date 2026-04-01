@@ -15,6 +15,15 @@ import { displayNameFromDir } from '../sync.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
+ * In-memory cache for expensive buildProjectPreviewData calls.
+ * Keyed by project param — the render data is template-agnostic,
+ * so we cache once and re-render with different templates cheaply.
+ * TTL: 30 seconds (long enough for template browser to load all iframes).
+ */
+const previewDataCache = new Map<string, { data: { renderData: ProjectRenderData; enhanceResult: any; projName: string }; ts: number }>();
+const PREVIEW_CACHE_TTL = 30_000;
+
+/**
  * Build project render data and enhance result from a project parameter.
  * Shared between the full-page preview and the JSON render endpoint.
  */
@@ -27,6 +36,13 @@ async function buildProjectPreviewData(
   enhanceResult: NonNullable<ReturnType<typeof loadProjectEnhanceResult>>['result'] | undefined;
   projName: string;
 }> {
+  // Check cache (only when no query overrides, which are rare)
+  if (!queryOverrides?.repoUrl && !queryOverrides?.projectUrl) {
+    const cached = previewDataCache.get(projectParam);
+    if (cached && Date.now() - cached.ts < PREVIEW_CACHE_TTL) {
+      return cached.data;
+    }
+  }
   const rawProjects = await ctx.getProjects();
   const rawProj = rawProjects.find((p) => p.name === projectParam || p.dirName === projectParam);
   if (!rawProj) {
@@ -152,7 +168,12 @@ async function buildProjectPreviewData(
     sessionBaseUrl: `/preview/project/${encodeURIComponent(projectParam)}/session`,
   });
 
-  return { renderData, enhanceResult, projName: projAny.name as string };
+  const result = { renderData, enhanceResult, projName: projAny.name as string };
+
+  // Cache the result (template-agnostic data, re-rendered cheaply per template)
+  previewDataCache.set(projectParam, { data: result, ts: Date.now() });
+
+  return result;
 }
 
 /** Sentinel error for project-not-found so callers can return 404. */
