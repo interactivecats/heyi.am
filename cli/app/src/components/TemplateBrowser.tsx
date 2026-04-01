@@ -356,11 +356,26 @@ function TemplateCard({
         animationDelay: `${index * 30}ms`,
       }}
     >
-      {/* Preview area */}
-      <div className="border-b border-ghost">
-        <LazyIframePreview
-          template={t}
-          firstProjectDir={firstProjectDir}
+      {/* Preview area — loads static mockup HTML (instant, mock data) */}
+      <div className="border-b border-ghost relative overflow-hidden" style={{ height: '220px' }}>
+        <TemplateWireframe template={t} className="absolute inset-0 w-full h-full" />
+        <iframe
+          src={`/preview/template/${t.name}?page=project`}
+          style={{
+            width: '1200px',
+            height: '900px',
+            transform: 'scale(0.2)',
+            transformOrigin: 'top left',
+            border: 'none',
+            pointerEvents: 'none',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+          }}
+          loading="lazy"
+          tabIndex={-1}
+          aria-hidden="true"
+          title={`${t.label} preview`}
         />
       </div>
 
@@ -409,16 +424,14 @@ function TemplateCard({
               Apply
             </button>
           )}
-          {firstProjectDir && (
-            <a
-              href={`/preview/project/${encodeURIComponent(firstProjectDir)}?template=${t.name}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] text-on-surface-variant hover:text-primary transition-colors font-medium"
-            >
-              Full preview &rarr;
-            </a>
-          )}
+          <a
+            href={`/preview/template/${t.name}?page=project`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] text-on-surface-variant hover:text-primary transition-colors font-medium"
+          >
+            Full preview &rarr;
+          </a>
         </div>
       </div>
     </article>
@@ -547,24 +560,68 @@ function TemplateWireframe({
   className?: string
 }) {
   const bg = previewBgForTemplate(t)
-  const bar = t.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'
-  const block = t.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'
-  const footer = t.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'
+  const isDark = t.mode === 'dark'
+  const text = isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)'
+  const textDim = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'
+  const block = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'
+  const blockHover = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
 
   return (
     <div
-      className={`rounded-md overflow-hidden border border-ghost ${className}`}
-      style={{ background: bg }}
+      className={`overflow-hidden ${className}`}
+      style={{ background: bg, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}
     >
-      <div className="p-3 h-full flex flex-col gap-1.5">
-        <div className="h-2 w-1/3 rounded-sm" style={{ background: t.accent, opacity: 0.8 }} />
-        <div className="h-1.5 w-2/3 rounded-sm" style={{ background: bar }} />
-        <div className="flex gap-1 mt-1">
-          <div className="flex-1 h-8 rounded-sm" style={{ background: block }} />
-          <div className="flex-1 h-8 rounded-sm" style={{ background: block }} />
-          <div className="flex-1 h-8 rounded-sm" style={{ background: block }} />
+      {/* Title bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: block }} />
+        <div style={{ height: '10px', width: '35%', borderRadius: '2px', background: text }} />
+      </div>
+
+      {/* Accent line */}
+      <div style={{ height: '2px', width: '40%', background: t.accent, opacity: 0.8, borderRadius: '1px' }} />
+
+      {/* Stats row */}
+      <div style={{ display: 'flex', gap: '6px' }}>
+        <div style={{ flex: 1, height: '28px', borderRadius: '4px', background: block, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px' }}>
+          <div style={{ width: '14px', height: '6px', background: t.accent, opacity: 0.6, borderRadius: '1px' }} />
+          <div style={{ width: '20px', height: '3px', background: textDim, borderRadius: '1px' }} />
         </div>
-        <div className="h-3 rounded-sm mt-auto" style={{ background: footer }} />
+        <div style={{ flex: 1, height: '28px', borderRadius: '4px', background: block, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px' }}>
+          <div style={{ width: '14px', height: '6px', background: text, opacity: 0.4, borderRadius: '1px' }} />
+          <div style={{ width: '20px', height: '3px', background: textDim, borderRadius: '1px' }} />
+        </div>
+        <div style={{ flex: 1, height: '28px', borderRadius: '4px', background: block, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px' }}>
+          <div style={{ width: '14px', height: '6px', background: text, opacity: 0.4, borderRadius: '1px' }} />
+          <div style={{ width: '20px', height: '3px', background: textDim, borderRadius: '1px' }} />
+        </div>
+      </div>
+
+      {/* Narrative block */}
+      <div style={{ background: block, borderRadius: '4px', padding: '8px', borderLeft: `2px solid ${t.accent}`, opacity: 0.7 }}>
+        <div style={{ height: '3px', width: '90%', background: textDim, borderRadius: '1px', marginBottom: '4px' }} />
+        <div style={{ height: '3px', width: '75%', background: textDim, borderRadius: '1px', marginBottom: '4px' }} />
+        <div style={{ height: '3px', width: '60%', background: textDim, borderRadius: '1px' }} />
+      </div>
+
+      {/* Chart area */}
+      <div style={{ display: 'flex', gap: '6px', flex: 1, minHeight: '24px' }}>
+        <div style={{ flex: 2, background: block, borderRadius: '4px', position: 'relative', overflow: 'hidden' }}>
+          {/* Mini bar chart */}
+          <div style={{ position: 'absolute', bottom: '3px', left: '4px', right: '4px', display: 'flex', gap: '2px', alignItems: 'flex-end' }}>
+            <div style={{ flex: 1, height: '8px', background: t.accent, opacity: 0.5, borderRadius: '1px 1px 0 0' }} />
+            <div style={{ flex: 1, height: '14px', background: t.accent, opacity: 0.6, borderRadius: '1px 1px 0 0' }} />
+            <div style={{ flex: 1, height: '10px', background: t.accent, opacity: 0.5, borderRadius: '1px 1px 0 0' }} />
+            <div style={{ flex: 1, height: '18px', background: t.accent, opacity: 0.7, borderRadius: '1px 1px 0 0' }} />
+            <div style={{ flex: 1, height: '12px', background: t.accent, opacity: 0.5, borderRadius: '1px 1px 0 0' }} />
+          </div>
+        </div>
+        <div style={{ flex: 1, background: blockHover, borderRadius: '4px' }} />
+      </div>
+
+      {/* Session cards row */}
+      <div style={{ display: 'flex', gap: '4px' }}>
+        <div style={{ flex: 1, height: '16px', borderRadius: '3px', background: block, borderTop: `2px solid ${t.accent}` }} />
+        <div style={{ flex: 1, height: '16px', borderRadius: '3px', background: block, borderTop: `2px solid ${isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)'}` }} />
       </div>
     </div>
   )

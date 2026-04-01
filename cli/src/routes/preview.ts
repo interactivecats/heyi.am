@@ -187,6 +187,53 @@ class ProjectNotFoundError extends Error {
 export function createPreviewRouter(ctx: RouteContext): Router {
   const router = Router();
 
+  // Serve template mockup previews (static HTML with mock data — instant, no processing)
+  // Used by the template browser for fast previews
+  router.get('/preview/template/:name', (req: Request, res: Response) => {
+    const name = String(req.params.name);
+    if (!isValidTemplate(name)) {
+      res.status(404).send('Template not found');
+      return;
+    }
+    const page = (req.query.page as string) || 'project';
+    // Look for mockup files in docs/mockups/{name}/{page}.html
+    const mockupPath = path.resolve(__dirname, '..', '..', '..', 'docs', 'mockups', name, `${page}.html`);
+    if (existsSync(mockupPath)) {
+      let html = readFileSync(mockupPath, 'utf-8');
+      // Rewrite relative asset paths so images load correctly
+      html = html.replace(/\.\.\/assets\//g, '/preview/template-assets/');
+      // Rewrite relative page links to point to the mockup versions
+      html = html.replace(/\.\/portfolio\.html/g, `/preview/template/${name}?page=portfolio`);
+      html = html.replace(/\.\/project\.html/g, `/preview/template/${name}?page=project`);
+      html = html.replace(/\.\/session\.html/g, `/preview/template/${name}?page=session`);
+      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+      res.send(html);
+    } else {
+      res.status(404).send('Mockup not found');
+    }
+  });
+
+  // Serve mockup assets (headshots, etc.)
+  router.get('/preview/template-assets/:filename', (req: Request, res: Response) => {
+    const filename = String(req.params.filename);
+    // Only allow expected image files
+    if (!/^[\w-]+\.(jpg|png)$/.test(filename)) {
+      res.status(400).end();
+      return;
+    }
+    const assetPath = path.resolve(__dirname, '..', '..', '..', 'docs', 'mockups', 'assets', filename);
+    if (existsSync(assetPath)) {
+      const ext = filename.endsWith('.png') ? 'image/png' : 'image/jpeg';
+      res.setHeader('Content-Type', ext);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(readFileSync(assetPath));
+    } else {
+      res.status(404).end();
+    }
+  });
+
   // Serve local screenshot files
   router.get('/screenshots/:slug.png', (req: Request, res: Response) => {
     const filePath = path.join(SCREENSHOTS_DIR, `${req.params.slug}.png`);
