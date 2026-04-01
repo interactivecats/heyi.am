@@ -300,50 +300,52 @@
       animation: pulse-cyan 3s ease-in-out infinite;
     }
 
-    /* ── Leverage stat ── */
-    .stat-card--leverage {
-      grid-column: span 2;
-      box-shadow: 0 0 16px var(--neon-pink-dim), 0 0 16px var(--neon-cyan-dim);
+    /* ── Leverage standalone section ── */
+    .neon-leverage {
+      text-align: center;
+      padding: 2rem 1rem;
+      margin-block: 1rem;
     }
-    .leverage-nums {
-      display: flex;
-      align-items: baseline;
-      justify-content: center;
-      gap: 1rem;
-      margin-bottom: 0.5rem;
-    }
-    .leverage-nums .lev-val {
+    .neon-leverage__multi {
       font-family: var(--neon-font-display);
-      font-size: 1.25rem;
+      font-size: 3rem;
       font-weight: 700;
+      color: var(--neon-pink);
+      text-shadow: 0 0 30px var(--neon-pink-glow, rgba(236,72,153,0.5)), 0 0 60px var(--neon-pink-glow, rgba(236,72,153,0.25));
+      line-height: 1;
     }
-    .leverage-nums .lev-val--pink { color: var(--neon-pink); }
-    .leverage-nums .lev-val--cyan { color: var(--neon-cyan); }
-    .leverage-nums .lev-lbl {
-      font-size: 0.6875rem;
+    .neon-leverage__context {
+      font-family: var(--neon-font-mono, var(--font-mono));
+      font-size: 0.875rem;
       color: var(--neon-text-tertiary);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      margin-block-start: 0.5rem;
+      letter-spacing: 0.02em;
     }
-    .neon-leverage-bar {
+    .neon-leverage__context span {
+      color: var(--neon-cyan);
+    }
+    .neon-leverage__bar {
       height: 4px;
       border-radius: 2px;
       background: rgba(255,255,255,0.06);
       display: flex;
       overflow: hidden;
+      max-width: 300px;
+      margin: 0.75rem auto 0;
     }
-    .neon-leverage-bar__human {
+    .neon-leverage__human {
       height: 100%;
-      width: 19%;
       background: rgba(255,255,255,0.25);
       border-radius: 2px 0 0 2px;
     }
-    .neon-leverage-bar__agent {
+    .neon-leverage__agent {
       height: 100%;
-      width: 81%;
       background: var(--neon-cyan);
       box-shadow: 0 0 8px var(--neon-cyan-glow);
       border-radius: 0 2px 2px 0;
+    }
+    @media (max-width: 480px) {
+      .neon-leverage__multi { font-size: 2.25rem; }
     }
 
     /* ── Section Heading ── */
@@ -703,21 +705,19 @@
             <div class="stat-value cyan" data-target="28">0</div>
             <div class="stat-label">Sessions</div>
           </div>
-          <div class="stat-card stat-card--leverage" role="figure" aria-label="24 hours you, 100 hours agents, 4.2x leverage">
-            <div class="leverage-nums">
-              <span><span class="lev-val lev-val--pink">24h</span> <span class="lev-lbl">you</span></span>
-              <span><span class="lev-val lev-val--cyan">100h</span> <span class="lev-lbl">agents</span></span>
-              <span><span class="lev-val lev-val--pink">4.2x</span></span>
-            </div>
-            <div class="neon-leverage-bar">
-              <div class="neon-leverage-bar__human"></div>
-              <div class="neon-leverage-bar__agent"></div>
-            </div>
-          </div>
           <div class="stat-card" role="figure" aria-label="18,400 lines of code">
             <div class="stat-value cyan" data-target="18400" data-format="comma">0</div>
             <div class="stat-label">Lines Changed</div>
           </div>
+        </div>
+      </section>
+
+      <!-- Leverage -->
+      <section class="fade-in" aria-label="AI leverage" role="figure">
+        <div class="neon-leverage">
+          <div class="neon-leverage__multi">4.2&times;</div>
+          <div class="neon-leverage__context">24h you &middot; <span>100h agents</span></div>
+          <div class="neon-leverage__bar"><div class="neon-leverage__human" style="width:19%"></div><div class="neon-leverage__agent" style="width:81%"></div></div>
         </div>
       </section>
 

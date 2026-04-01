@@ -7,7 +7,46 @@
       {% render 'partials/_links', project: project %}
     </div>
     <div class="kinetic-hero__stats">
-      {% render 'partials/_stats', project: project, durationLabel: durationLabel, efficiencyMultiplier: efficiencyMultiplier %}
+      {%- comment -%} Simplified leverage: multiplier large, detail small, no legend {%- endcomment -%}
+      {% if efficiencyMultiplier %}
+      <div class="kinetic-leverage" role="status" aria-label="Leverage: {{ efficiencyMultiplier }}">
+        <div class="kinetic-leverage__multiplier" style="color: var(--accent, #f97316);">{{ efficiencyMultiplier }}</div>
+        <div class="kinetic-leverage__detail">
+          <span style="opacity: 0.5;">{{ project.totalDurationMinutes | formatDuration }} you</span>
+          <span style="opacity: 0.35;" aria-hidden="true">/</span>
+          <span style="color: var(--accent, #f97316);">{{ project.totalAgentDurationMinutes | formatDuration }} agents</span>
+        </div>
+        <div class="kinetic-leverage__bar" aria-hidden="true">
+          <div class="kinetic-leverage__bar-fill" style="background: var(--accent, #f97316);"></div>
+        </div>
+      </div>
+      {% endif %}
+      <div class="stat-grid--compact">
+        {% unless efficiencyMultiplier %}
+        <div class="stat-card">
+          <div class="stat-card__label">Time</div>
+          <div class="stat-card__value">{{ project.totalDurationMinutes | formatDuration }}</div>
+        </div>
+        {% endunless %}
+        <div class="stat-card">
+          <div class="stat-card__label">Sessions</div>
+          <div class="stat-card__value">{{ project.totalSessions }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__label">Lines changed</div>
+          <div class="stat-card__value">{{ project.totalLoc | formatLoc }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__label">Files</div>
+          <div class="stat-card__value">{{ project.totalFilesChanged }}</div>
+        </div>
+        {% if project.totalTokens %}
+        <div class="stat-card">
+          <div class="stat-card__label">Tokens</div>
+          <div class="stat-card__value">{{ project.totalTokens | formatTokens }}</div>
+        </div>
+        {% endif %}
+      </div>
     </div>
   </div>
 

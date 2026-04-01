@@ -1,0 +1,66 @@
+<div class="heyiam-portfolio carbon" data-render-version="2" data-template="carbon" data-username="{{ user.username }}">
+
+  <h1 class="project-title">{{ user.displayName }}</h1>
+  {% if user.bio != blank %}
+  <p class="narrative-text">{{ user.bio }}</p>
+  {% endif %}
+
+  {%- comment -%} Stats grid {%- endcomment -%}
+  <div class="stat-grid" role="list" aria-label="Portfolio statistics">
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Projects</div>
+      <div class="stat-card__value">{{ projects.size }}</div>
+    </div>
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Sessions</div>
+      <div class="stat-card__value">{{ totalSessions }}</div>
+    </div>
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Lines</div>
+      <div class="stat-card__value">{{ totalLoc | formatLoc }}</div>
+    </div>
+  </div>
+
+  {%- comment -%} Leverage: horizontal strip {%- endcomment -%}
+  {% if efficiencyMultiplier %}
+  <div class="carbon-leverage-strip" role="status" aria-label="Leverage multiplier: {{ efficiencyMultiplier }}">
+    <div class="carbon-leverage-strip__left">
+      <span class="carbon-leverage-strip__multiplier" style="color: var(--accent, #94a3b8);">{{ efficiencyMultiplier }}</span>
+    </div>
+    <div class="carbon-leverage-strip__divider" aria-hidden="true"></div>
+    <div class="carbon-leverage-strip__right">
+      <div class="carbon-leverage-strip__row">
+        <span class="carbon-leverage-strip__label" style="opacity: 0.5;">you</span>
+        <span class="carbon-leverage-strip__value" style="opacity: 0.5;">{{ totalDurationMinutes | formatDuration }}</span>
+      </div>
+      <div class="carbon-leverage-strip__row">
+        <span class="carbon-leverage-strip__label" style="color: var(--accent, #94a3b8);">agents</span>
+        <span class="carbon-leverage-strip__value" style="color: var(--accent, #94a3b8);">{{ totalAgentDurationMinutes | formatDuration }}</span>
+      </div>
+    </div>
+    <div class="carbon-leverage-strip__bar" aria-hidden="true">
+      <div class="carbon-leverage-strip__bar-fill" style="background: var(--accent, #94a3b8);"></div>
+    </div>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Projects list {%- endcomment -%}
+  {% if projects.size > 0 %}
+  <div class="card">
+    <div class="section-header">
+      <h3 class="section-header__title">Projects</h3>
+    </div>
+    <div class="session-grid">
+      {% for project in projects %}
+      <div class="session-card">
+        <h4 class="session-card__title">{{ project.title }}</h4>
+        <span class="session-card__meta">{{ project.totalSessions }} sessions &middot; {{ project.totalLoc | formatLoc }} lines</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+
+</div>

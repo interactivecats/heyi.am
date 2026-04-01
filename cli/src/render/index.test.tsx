@@ -2,11 +2,13 @@ import { describe, it, expect } from 'vitest';
 import {
   renderProjectHtml,
   renderSessionHtml,
+  renderPortfolioHtml,
   RenderError,
 } from './index.js';
 import type {
   ProjectRenderData,
   SessionRenderData,
+  PortfolioRenderData,
 } from './types.js';
 
 // ---------------------------------------------------------------------------
@@ -287,6 +289,253 @@ describe.each(CUSTOM_TEMPLATES)('%s template — project', (templateName) => {
     const html = renderProjectHtml(makeProjectData(), undefined, templateName);
     expect(html).not.toContain('<html');
     expect(html).not.toContain('<head>');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Portfolio fixtures
+// ---------------------------------------------------------------------------
+
+function makePortfolioData(overrides?: Partial<PortfolioRenderData>): PortfolioRenderData {
+  return {
+    user: {
+      username: 'testuser',
+      accent: '#084471',
+      displayName: 'Test User',
+      bio: 'Building things that matter',
+      location: 'San Francisco, CA',
+      status: 'active',
+      email: 'test@example.com',
+      githubUrl: 'https://github.com/testuser',
+      linkedinUrl: 'https://linkedin.com/in/testuser',
+      twitterHandle: 'testuser',
+      websiteUrl: 'https://testuser.dev',
+    },
+    projects: [
+      {
+        slug: 'my-project',
+        title: 'My Project',
+        narrative: 'A project about building cool things with TypeScript',
+        totalSessions: 5,
+        totalLoc: 800,
+        totalDurationMinutes: 120,
+        totalFilesChanged: 30,
+        skills: ['TypeScript', 'React'],
+        publishedCount: 3,
+      },
+      {
+        slug: 'second-project',
+        title: 'Second Project',
+        narrative: 'Another project',
+        totalSessions: 3,
+        totalLoc: 400,
+        totalDurationMinutes: 60,
+        totalFilesChanged: 15,
+        skills: ['Elixir'],
+        publishedCount: 2,
+      },
+    ],
+    totalDurationMinutes: 180,
+    totalLoc: 1200,
+    totalSessions: 8,
+    ...overrides,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Portfolio rendering (editorial — default)
+// ---------------------------------------------------------------------------
+
+describe('renderPortfolioHtml', () => {
+  it('returns HTML with user display name', () => {
+    const html = renderPortfolioHtml(makePortfolioData());
+    expect(html).toContain('Test User');
+  });
+
+  it('renders user bio', () => {
+    const html = renderPortfolioHtml(makePortfolioData());
+    expect(html).toContain('Building things that matter');
+  });
+
+  it('renders user location', () => {
+    const html = renderPortfolioHtml(makePortfolioData());
+    expect(html).toContain('San Francisco, CA');
+  });
+
+  it('renders contact links', () => {
+    const html = renderPortfolioHtml(makePortfolioData());
+    expect(html).toContain('mailto:test@example.com');
+    expect(html).toContain('https://github.com/testuser');
+    expect(html).toContain('https://linkedin.com/in/testuser');
+    expect(html).toContain('@testuser');
+    expect(html).toContain('testuser.dev');
+  });
+
+  it('renders project cards', () => {
+    const html = renderPortfolioHtml(makePortfolioData());
+    expect(html).toContain('My Project');
+    expect(html).toContain('Second Project');
+    expect(html).toContain('project-card');
+  });
+
+  it('renders aggregate stats', () => {
+    const html = renderPortfolioHtml(makePortfolioData());
+    expect(html).toContain('8'); // totalSessions
+    expect(html).toContain('1.2k'); // totalLoc formatted
+  });
+
+  it('renders total time when no agent duration', () => {
+    const html = renderPortfolioHtml(makePortfolioData());
+    expect(html).toContain('Total Time');
+    expect(html).toContain('3.0h'); // 180 min
+  });
+
+  it('renders leverage when agent duration is provided', () => {
+    const data = makePortfolioData({ totalAgentDurationMinutes: 360 });
+    const html = renderPortfolioHtml(data);
+    expect(html).toContain('You');
+    expect(html).toContain('Agents');
+  });
+
+  it('renders skill chips on project cards', () => {
+    const html = renderPortfolioHtml(makePortfolioData());
+    expect(html).toContain('TypeScript');
+    expect(html).toContain('chip');
+  });
+
+  it('omits optional profile fields gracefully', () => {
+    const data = makePortfolioData();
+    data.user.bio = '';
+    data.user.location = '';
+    data.user.email = undefined;
+    data.user.githubUrl = undefined;
+    data.user.linkedinUrl = undefined;
+    data.user.twitterHandle = undefined;
+    data.user.websiteUrl = undefined;
+    const html = renderPortfolioHtml(data);
+    expect(html).toContain('Test User');
+    expect(html).not.toContain('portfolio-bio');
+    expect(html).not.toContain('portfolio-location');
+    expect(html).not.toContain('mailto:');
+  });
+
+  it('handles empty projects array', () => {
+    const data = makePortfolioData({ projects: [] });
+    const html = renderPortfolioHtml(data);
+    expect(html).toContain('Test User');
+    expect(html).not.toContain('project-card');
+  });
+
+  it('produces a fragment, not a full HTML document', () => {
+    const html = renderPortfolioHtml(makePortfolioData());
+    expect(html).not.toContain('<html');
+    expect(html).not.toContain('<head>');
+    expect(html).not.toContain('<body');
+  });
+
+  it('includes data-template and data-render-version', () => {
+    const html = renderPortfolioHtml(makePortfolioData());
+    expect(html).toContain('data-template="editorial"');
+    expect(html).toContain('data-render-version="2"');
+  });
+
+  it('throws VALIDATION_ERROR when user is missing', () => {
+    const bad = makePortfolioData();
+    (bad as any).user = null;
+    expect(() => renderPortfolioHtml(bad)).toThrow(RenderError);
+  });
+
+  it('throws VALIDATION_ERROR when username is missing', () => {
+    const bad = makePortfolioData();
+    (bad.user as any).username = '';
+    expect(() => renderPortfolioHtml(bad)).toThrow(RenderError);
+  });
+
+  it('throws VALIDATION_ERROR when projects is not an array', () => {
+    const bad = makePortfolioData();
+    (bad as any).projects = 'not-an-array';
+    expect(() => renderPortfolioHtml(bad)).toThrow(RenderError);
+  });
+
+  it('HTML-encodes user content to prevent XSS', () => {
+    const data = makePortfolioData();
+    data.user.bio = '<script>alert("xss")</script>';
+    const html = renderPortfolioHtml(data);
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&lt;script&gt;');
+  });
+
+  it('renders project narrative truncated', () => {
+    const data = makePortfolioData();
+    data.projects[0].narrative = 'A'.repeat(200);
+    const html = renderPortfolioHtml(data);
+    // truncate: 120 leaves 117 chars + '...'
+    expect(html).toContain('...');
+  });
+
+  it('renders resume link when resumeUrl is provided', () => {
+    const data = makePortfolioData();
+    data.user.resumeUrl = 'https://example.com/resume.pdf';
+    const html = renderPortfolioHtml(data);
+    expect(html).toContain('Resume (PDF)');
+    expect(html).toContain('download');
+  });
+
+  it('renders photo when photoUrl is provided', () => {
+    const data = makePortfolioData();
+    data.user.photoUrl = 'https://example.com/photo.jpg';
+    const html = renderPortfolioHtml(data);
+    expect(html).toContain('portfolio-photo');
+    expect(html).toContain('https://example.com/photo.jpg');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Portfolio — template-specific rendering
+// ---------------------------------------------------------------------------
+
+const PORTFOLIO_TEMPLATES = ['editorial', 'kinetic', 'terminal', 'minimal'] as const;
+
+describe.each(PORTFOLIO_TEMPLATES)('%s template — portfolio', (templateName) => {
+  it('renders with data-template and data-render-version attributes', () => {
+    const html = renderPortfolioHtml(makePortfolioData(), templateName);
+    expect(html).toContain(`data-template="${templateName}"`);
+    expect(html).toContain('data-render-version="2"');
+  });
+
+  it('renders user display name', () => {
+    const html = renderPortfolioHtml(makePortfolioData(), templateName);
+    expect(html).toContain('Test User');
+  });
+
+  it('renders project titles', () => {
+    const html = renderPortfolioHtml(makePortfolioData(), templateName);
+    expect(html).toContain('My Project');
+    expect(html).toContain('Second Project');
+  });
+
+  it('renders stats data', () => {
+    const html = renderPortfolioHtml(makePortfolioData(), templateName);
+    expect(html).toContain('8'); // totalSessions
+  });
+
+  it('produces a fragment, not a full document', () => {
+    const html = renderPortfolioHtml(makePortfolioData(), templateName);
+    expect(html).not.toContain('<html');
+    expect(html).not.toContain('<head>');
+  });
+
+  it('renders with empty projects without error', () => {
+    const data = makePortfolioData({ projects: [] });
+    const html = renderPortfolioHtml(data, templateName);
+    expect(html).toContain(`data-template="${templateName}"`);
+    expect(html).toContain('Test User');
+  });
+
+  it('renders with leverage data when agent duration provided', () => {
+    const data = makePortfolioData({ totalAgentDurationMinutes: 360 });
+    const html = renderPortfolioHtml(data, templateName);
+    expect(html).toContain(`data-template="${templateName}"`);
   });
 });
 

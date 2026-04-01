@@ -1,0 +1,59 @@
+<div class="heyiam-portfolio grid" data-render-version="2" data-template="grid" data-username="{{ user.username }}">
+
+  <h1 class="project-title">{{ user.displayName }}</h1>
+  {% if user.bio != blank %}
+  <p class="narrative-text">{{ user.bio }}</p>
+  {% endif %}
+
+  <div class="grid-bento" role="list" aria-label="Portfolio statistics">
+    {% if efficiencyMultiplier %}
+    <div class="grid-leverage-cell" role="listitem" aria-label="Leverage: {{ efficiencyMultiplier }}">
+      <div class="grid-leverage-cell__left">
+        <span class="grid-leverage-cell__multiplier" style="color: var(--accent, #6366f1);">{{ efficiencyMultiplier }}</span>
+      </div>
+      <div class="grid-leverage-cell__right">
+        <div class="grid-leverage-cell__row">
+          <span style="opacity: 0.5;">{{ totalDurationMinutes | formatDuration }} you</span>
+        </div>
+        <div class="grid-leverage-cell__row">
+          <span style="color: var(--accent, #6366f1);">{{ totalAgentDurationMinutes | formatDuration }} agents</span>
+        </div>
+        <div class="grid-leverage-cell__bar" aria-hidden="true">
+          <div class="grid-leverage-cell__bar-fill" style="background: var(--accent, #6366f1);"></div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Projects</div>
+      <div class="stat-card__value">{{ projects.size }}</div>
+    </div>
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Sessions</div>
+      <div class="stat-card__value">{{ totalSessions }}</div>
+    </div>
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Lines</div>
+      <div class="stat-card__value">{{ totalLoc | formatLoc }}</div>
+    </div>
+  </div>
+
+  {% if projects.size > 0 %}
+  <div class="card">
+    <div class="section-header">
+      <h3 class="section-header__title">Projects</h3>
+    </div>
+    <div class="session-grid">
+      {% for project in projects %}
+      <div class="session-card">
+        <h4 class="session-card__title">{{ project.title }}</h4>
+        <span class="session-card__meta">{{ project.totalSessions }} sessions &middot; {{ project.totalLoc | formatLoc }} lines</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+
+</div>

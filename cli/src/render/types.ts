@@ -18,6 +18,14 @@ export interface PortfolioUser extends UserInfo {
   bio: string;
   location: string;
   status: string;
+  email?: string;
+  phone?: string;
+  photoUrl?: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  twitterHandle?: string;
+  websiteUrl?: string;
+  resumeUrl?: string;
 }
 
 export interface PortfolioProject {
@@ -27,6 +35,7 @@ export interface PortfolioProject {
   totalSessions: number;
   totalLoc: number;
   totalDurationMinutes: number;
+  totalAgentDurationMinutes?: number;
   totalFilesChanged: number;
   skills: string[];
   publishedCount: number;
@@ -35,6 +44,14 @@ export interface PortfolioProject {
 export interface PortfolioRenderData {
   user: PortfolioUser;
   projects: PortfolioProject[];
+  /** Aggregate human duration across all projects (minutes) */
+  totalDurationMinutes: number;
+  /** Aggregate agent duration across all projects (minutes) */
+  totalAgentDurationMinutes?: number;
+  /** Aggregate lines changed across all projects */
+  totalLoc: number;
+  /** Aggregate sessions across all projects */
+  totalSessions: number;
 }
 
 export interface ProjectTimeline {

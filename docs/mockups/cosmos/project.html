@@ -304,75 +304,41 @@ a:focus-visible {
   letter-spacing: 0.08em;
   margin-block-start: 0.125rem;
 }
-.cos-stat-pill--donut {
-  flex-direction: row;
-  gap: 0.75rem;
-  align-items: center;
-  flex: 2;
-  min-width: 200px;
-}
-.cos-donut-ring {
-  width: 48px;
-  height: 48px;
-  flex-shrink: 0;
-}
-.cos-donut-ring circle {
-  fill: none;
-  stroke-width: 5;
-}
-.cos-donut-ring .ring-bg {
-  stroke: var(--cos-border);
-}
-.cos-donut-ring .ring-human {
-  stroke: rgba(255, 255, 255, 0.25);
-  stroke-dasharray: 0 100;
-  stroke-dashoffset: 25;
-  transition: stroke-dasharray 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.cos-donut-ring .ring-agent {
-  stroke: var(--cos-accent);
-  stroke-dasharray: 0 100;
-  stroke-dashoffset: 25;
-  transition: stroke-dasharray 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
-}
-.cos-donut-ring.animated .ring-human {
-  stroke-dasharray: 19 81;
-}
-.cos-donut-ring.animated .ring-agent {
-  stroke-dasharray: 81 19;
-}
-.cos-donut-labels {
+/* ── Leverage ring ── */
+.cos-leverage {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
 }
-.cos-donut-labels .donut-line {
+.cos-leverage__ring svg {
+  display: block;
+}
+.cos-leverage__labels {
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
-}
-.cos-donut-labels .donut-val {
+  gap: 1rem;
   font-family: var(--font-display);
+}
+.cos-leverage__human {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--cos-text);
-  line-height: 1.2;
+  color: var(--cos-text-secondary);
 }
-.cos-donut-labels .donut-val--agent {
-  color: var(--cos-accent);
-}
-.cos-donut-labels .donut-lbl {
+.cos-leverage__human small,
+.cos-leverage__agent small {
   font-size: 0.625rem;
+  font-weight: 400;
   color: var(--cos-text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  margin-inline-start: 0.25rem;
 }
-.cos-donut-labels .donut-multi {
-  font-family: var(--font-display);
-  font-size: 0.875rem;
+.cos-leverage__agent {
+  font-size: 1rem;
   font-weight: 700;
   color: var(--cos-accent);
-  margin-top: 0.125rem;
 }
 
 /* ── Section Title ── */
@@ -805,24 +771,6 @@ a:focus-visible {
           <span class="stat-value" data-target="8">0</span>
           <span class="stat-label">Sessions</span>
         </div>
-        <div class="cos-stat-pill cos-stat-pill--donut">
-          <svg class="cos-donut-ring" viewBox="0 0 36 36" aria-label="8.1 hours you, 34.4 hours agents">
-            <circle class="ring-bg" cx="18" cy="18" r="16" />
-            <circle class="ring-human" cx="18" cy="18" r="16" stroke-linecap="round"
-              style="stroke-dasharray: 0 100; stroke-dashoffset: 25;" />
-            <circle class="ring-agent" cx="18" cy="18" r="16"
-              style="stroke-dasharray: 0 100; stroke-dashoffset: -50;" />
-          </svg>
-          <div class="cos-donut-labels">
-            <div class="donut-line">
-              <span class="donut-val">8.1h</span>
-              <span class="donut-lbl">you</span>
-              <span class="donut-val donut-val--agent">34.4h</span>
-              <span class="donut-lbl">agents</span>
-            </div>
-            <div class="donut-multi">4.2x leverage</div>
-          </div>
-        </div>
         <div class="cos-stat-pill">
           <span class="stat-value" data-target="4460" data-format="comma">0</span>
           <span class="stat-label">LOC</span>
@@ -834,6 +782,19 @@ a:focus-visible {
         <div class="cos-stat-pill">
           <span class="stat-value" data-target="2.1" data-suffix="M" data-decimal="true">0</span>
           <span class="stat-label">Tokens</span>
+        </div>
+      </div>
+      <div class="cos-leverage" role="figure" aria-label="Leverage: 4.2x multiplier, 8.1 hours human, 34.4 hours agent">
+        <div class="cos-leverage__ring">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="5"/>
+            <circle cx="32" cy="32" r="26" fill="none" stroke="var(--cos-accent)" stroke-width="5" stroke-dasharray="132 163" stroke-dashoffset="-33" stroke-linecap="round" style="filter:drop-shadow(0 0 4px var(--cos-accent))"/>
+            <text x="32" y="36" text-anchor="middle" font-family="var(--font-display)" font-size="14" font-weight="700" fill="var(--cos-accent)">4.2&#215;</text>
+          </svg>
+        </div>
+        <div class="cos-leverage__labels">
+          <span class="cos-leverage__human">8.1h <small>you</small></span>
+          <span class="cos-leverage__agent">34.4h <small>agents</small></span>
         </div>
       </div>
     </section>
@@ -1206,14 +1167,6 @@ a:focus-visible {
     entries.forEach(function(entry) {
       if (entry.isIntersecting) {
         entry.target.querySelectorAll('.stat-value[data-target]').forEach(animateCounter);
-        // Animate donut ring
-        var donut = entry.target.querySelector('.cos-donut-ring');
-        if (donut) {
-          var human = donut.querySelector('.ring-human');
-          var agent = donut.querySelector('.ring-agent');
-          if (human) human.style.strokeDasharray = '19 81';
-          if (agent) agent.style.strokeDasharray = '81 19';
-        }
         statsObserver.unobserve(entry.target);
       }
     });

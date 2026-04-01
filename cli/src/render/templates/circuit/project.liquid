@@ -1,0 +1,65 @@
+<div class="heyiam-project circuit" data-render-version="2" data-template="circuit"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
+
+  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+
+  {% render 'partials/_links', project: project %}
+
+  {% render 'partials/_screenshot', project: project %}
+
+  {% render 'partials/_narrative', narrative: project.narrative %}
+
+  {%- comment -%} Stats grid (without leverage) {%- endcomment -%}
+  <div class="stat-grid" role="list" aria-label="Project statistics">
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Sessions</div>
+      <div class="stat-card__value">{{ project.totalSessions }}</div>
+    </div>
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Lines changed</div>
+      <div class="stat-card__value">{{ project.totalLoc | formatLoc }}</div>
+    </div>
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Files</div>
+      <div class="stat-card__value">{{ project.totalFilesChanged }}</div>
+    </div>
+    {% if project.totalTokens %}
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Tokens</div>
+      <div class="stat-card__value">{{ project.totalTokens | formatTokens }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  {%- comment -%} Leverage: PCB trace layout {%- endcomment -%}
+  {% if efficiencyMultiplier %}
+  <div class="circuit-leverage-trace" role="status" aria-label="Leverage: {{ efficiencyMultiplier }}, you {{ project.totalDurationMinutes | formatDuration }}, agents {{ project.totalAgentDurationMinutes | formatDuration }}">
+    <div class="circuit-leverage-trace__pad circuit-leverage-trace__pad--left">
+      <span style="opacity: 0.5;">{{ project.totalDurationMinutes | formatDuration }}</span>
+    </div>
+    <div class="circuit-leverage-trace__line" aria-hidden="true">
+      <span class="circuit-leverage-trace__multiplier" style="color: var(--accent, #a3e635);">{{ efficiencyMultiplier }}</span>
+    </div>
+    <div class="circuit-leverage-trace__pad circuit-leverage-trace__pad--right">
+      <span style="color: var(--accent, #a3e635);">{{ project.totalAgentDurationMinutes | formatDuration }}</span>
+    </div>
+  </div>
+  {% endif %}
+
+  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
+
+  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
+
+  <div class="two-col">
+    {% render 'partials/_key-decisions', arc: arc %}
+    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+  </div>
+
+  {% render 'partials/_phases', arc: arc %}
+
+  {% render 'partials/_skills', skills: project.skills %}
+
+  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
+
+  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+
+</div>

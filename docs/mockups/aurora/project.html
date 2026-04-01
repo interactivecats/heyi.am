@@ -283,54 +283,45 @@
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
-    .aurora-stat--leverage {
-      grid-column: span 2;
+    /* ── Leverage standalone section ── */
+    .aurora-leverage-section {
+      text-align: center;
+      padding: 1.5rem 1rem;
     }
-    .aurora-leverage-nums {
-      display: flex;
-      align-items: baseline;
-      justify-content: center;
-      gap: 1rem;
-      margin-bottom: 0.5rem;
-    }
-    .aurora-leverage-nums .alev-val {
+    .aurora-leverage-section__multi {
       font-family: var(--aurora-font-display);
-      font-size: 1.375rem;
+      font-size: 2rem;
       font-weight: 700;
-      color: var(--aurora-text);
-    }
-    .aurora-leverage-nums .alev-val--agent {
       color: var(--aurora-accent);
       text-shadow: 0 0 20px rgba(45, 212, 191, 0.3);
+      line-height: 1;
     }
-    .aurora-leverage-nums .alev-val--multi {
-      color: var(--aurora-accent);
-      text-shadow: 0 0 20px rgba(45, 212, 191, 0.3);
-    }
-    .aurora-leverage-nums .alev-lbl {
-      font-size: 0.6875rem;
+    .aurora-leverage-section__context {
+      font-size: 0.875rem;
       color: var(--aurora-text-tertiary);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      margin-block-start: 0.375rem;
     }
-    .aurora-leverage-bar {
-      height: 4px;
-      border-radius: 2px;
+    .aurora-leverage-section__context strong {
+      color: var(--aurora-accent);
+    }
+    .aurora-leverage-section__bar {
+      height: 2px;
+      border-radius: 1px;
       background: rgba(255,255,255,0.06);
       display: flex;
       overflow: hidden;
+      max-width: 300px;
+      margin: 0.75rem auto 0;
     }
-    .aurora-leverage-bar__human {
+    .aurora-leverage-section__bar-human {
       height: 100%;
-      width: 19%;
       background: rgba(255,255,255,0.25);
-      border-radius: 2px 0 0 2px;
+      border-radius: 1px 0 0 1px;
     }
-    .aurora-leverage-bar__agent {
+    .aurora-leverage-section__bar-agent {
       height: 100%;
-      width: 81%;
       background: var(--aurora-accent);
-      border-radius: 0 2px 2px 0;
+      border-radius: 0 1px 1px 0;
     }
 
     /* ── Content ── */
@@ -739,17 +730,6 @@
         <div class="aurora-stat-number" data-target="8">0</div>
         <div class="aurora-stat-label">Sessions</div>
       </div>
-      <div class="aurora-stat aurora-stat--leverage">
-        <div class="aurora-leverage-nums">
-          <span><span class="alev-val">8.1h</span> <span class="alev-lbl">you</span></span>
-          <span><span class="alev-val alev-val--agent">34.4h</span> <span class="alev-lbl">agents</span></span>
-          <span><span class="alev-val alev-val--multi">4.2x</span></span>
-        </div>
-        <div class="aurora-leverage-bar">
-          <div class="aurora-leverage-bar__human"></div>
-          <div class="aurora-leverage-bar__agent"></div>
-        </div>
-      </div>
       <div class="aurora-stat">
         <div class="aurora-stat-number" data-target="4460" data-format="comma">0</div>
         <div class="aurora-stat-label">LOC</div>
@@ -762,6 +742,13 @@
         <div class="aurora-stat-number" data-target="2.1" data-suffix="M">0</div>
         <div class="aurora-stat-label">Tokens</div>
       </div>
+    </section>
+
+    <!-- Leverage -->
+    <section class="aurora-leverage-section fade-up" aria-label="AI leverage" role="figure">
+      <div class="aurora-leverage-section__multi">4.2&times;</div>
+      <div class="aurora-leverage-section__context">8.1h you &middot; <strong>34.4h</strong> agents</div>
+      <div class="aurora-leverage-section__bar"><div class="aurora-leverage-section__bar-human" style="width:19%"></div><div class="aurora-leverage-section__bar-agent" style="width:81%"></div></div>
     </section>
 
     <div class="aurora-content">

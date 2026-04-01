@@ -8,7 +8,7 @@
 import { Liquid } from 'liquidjs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { ProjectRenderData, SessionRenderData } from './types.js';
+import type { PortfolioRenderData, ProjectRenderData, SessionRenderData } from './types.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -181,4 +181,20 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
 export function renderSession(data: SessionRenderData, templateName?: string): string {
   const template = templateName || DEFAULT_TEMPLATE;
   return engine.renderFileSync(`${template}/session`, data);
+}
+
+export function renderPortfolio(data: PortfolioRenderData, templateName?: string): string {
+  const template = templateName || DEFAULT_TEMPLATE;
+
+  const durationLabel = data.totalAgentDurationMinutes ? 'Human / Agents' : 'Time';
+  const efficiencyMultiplier = data.totalAgentDurationMinutes && data.totalDurationMinutes > 0
+    ? (data.totalAgentDurationMinutes / data.totalDurationMinutes)
+    : undefined;
+  const efficiencyStr = efficiencyMultiplier && efficiencyMultiplier > 1 ? `${efficiencyMultiplier.toFixed(1)}x` : undefined;
+
+  return engine.renderFileSync(`${template}/portfolio`, {
+    ...data,
+    durationLabel,
+    efficiencyMultiplier: efficiencyStr,
+  });
 }

@@ -1,0 +1,17 @@
+<div class="heyiam-portfolio kinetic" data-render-version="2" data-template="kinetic" data-username="{{ user.username }}">
+
+  {%- comment -%} Hero row: header + stats side by side {%- endcomment -%}
+  <div class="kinetic-hero">
+    <div class="kinetic-hero__title-block">
+      {% render 'partials/_portfolio-header', user: user %}
+    </div>
+    <div class="kinetic-hero__stats">
+      {% render 'partials/_portfolio-stats', projects: projects, totalSessions: totalSessions, totalDurationMinutes: totalDurationMinutes, totalAgentDurationMinutes: totalAgentDurationMinutes, totalLoc: totalLoc, efficiencyMultiplier: efficiencyMultiplier %}
+    </div>
+  </div>
+
+  {% render 'partials/_portfolio-projects', projects: projects %}
+
+  {% render 'partials/_footer' %}
+
+</div>

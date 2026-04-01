@@ -309,55 +309,53 @@ a:hover { text-decoration: underline; }
   margin-top: 2px;
   display: block;
 }
-.stat-cell--leverage {
-  grid-column: span 2;
+/* ── Leverage standalone section ── */
+.ember-leverage {
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius, 12px);
+  padding: 1.25rem 1.5rem;
+  margin-block: 1.5rem;
 }
-.leverage-header {
+.ember-leverage__main {
   display: flex;
   align-items: baseline;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
+  gap: 1.5rem;
 }
-.leverage-header .lev-val {
+.ember-leverage__multi {
   font-family: var(--font-display);
-  font-size: clamp(1rem, 2.5vw, 1.35rem);
+  font-size: 2rem;
   font-weight: 700;
-  color: var(--text);
-}
-.leverage-header .lev-val--agent {
   color: var(--accent);
-  text-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+  text-shadow: 0 0 24px rgba(249, 115, 22, 0.35);
+  line-height: 1;
 }
-.leverage-header .lev-val--multi {
-  color: var(--accent);
-  text-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
-}
-.leverage-header .lev-lbl {
+.ember-leverage__detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 0.875rem;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
-.ember-leverage-bar {
-  height: 4px;
+.ember-leverage__bar {
+  height: 3px;
   border-radius: 2px;
   background: rgba(255,255,255,0.06);
-  display: flex;
   overflow: hidden;
+  margin-block-start: 0.75rem;
 }
-.ember-leverage-bar__human {
+.ember-leverage__fill {
   height: 100%;
-  width: 19%;
-  background: rgba(255,255,255,0.25);
-  border-radius: 2px 0 0 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary, #ef4444));
 }
-.ember-leverage-bar__agent {
-  height: 100%;
-  width: 81%;
-  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
-  border-radius: 0 2px 2px 0;
+@media (max-width: 480px) {
+  .ember-leverage__main {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
 }
 
 /* ── Section Headers ── */
@@ -768,17 +766,6 @@ a:hover { text-decoration: underline; }
         <span class="stat-value" data-target="8">0</span>
         <span class="stat-label">Sessions</span>
       </div>
-      <div class="stat-cell stat-cell--leverage" role="listitem">
-        <div class="leverage-header">
-          <span><span class="lev-val">8.1h</span> <span class="lev-lbl">you</span></span>
-          <span><span class="lev-val lev-val--agent">34.4h</span> <span class="lev-lbl">agents</span></span>
-          <span><span class="lev-val lev-val--multi">4.2x</span></span>
-        </div>
-        <div class="ember-leverage-bar">
-          <div class="ember-leverage-bar__human"></div>
-          <div class="ember-leverage-bar__agent"></div>
-        </div>
-      </div>
       <div class="stat-cell" role="listitem">
         <span class="stat-value" data-target="4460">0</span>
         <span class="stat-label">LOC</span>
@@ -791,6 +778,20 @@ a:hover { text-decoration: underline; }
         <span class="stat-value">2.1M</span>
         <span class="stat-label">Tokens</span>
       </div>
+    </div>
+  </section>
+
+  <!-- Leverage -->
+  <section class="ember-section" aria-label="AI leverage" role="figure">
+    <div class="ember-leverage">
+      <div class="ember-leverage__main">
+        <span class="ember-leverage__multi">4.2&times;</span>
+        <div class="ember-leverage__detail">
+          <span>8.1h <small>you</small></span>
+          <span style="color:var(--accent)">34.4h <small>agents</small></span>
+        </div>
+      </div>
+      <div class="ember-leverage__bar"><div class="ember-leverage__fill" style="width:81%"></div></div>
     </div>
   </section>
 

@@ -8,10 +8,10 @@
  * These functions run on the Node.js server, never in the browser.
  */
 
-import type { ProjectRenderData, SessionRenderData } from './types.js';
-import { renderProject, renderSession } from './liquid.js';
+import type { PortfolioRenderData, ProjectRenderData, SessionRenderData } from './types.js';
+import { renderPortfolio, renderProject, renderSession } from './liquid.js';
 
-export type { ProjectRenderData, SessionRenderData } from './types.js';
+export type { PortfolioRenderData, ProjectRenderData, SessionRenderData } from './types.js';
 
 /** Errors from the render pipeline carry a machine-readable code. */
 export class RenderError extends Error {
@@ -104,6 +104,35 @@ export function renderProjectHtml(
     throw new RenderError(
       'RENDER_FAILED',
       `Failed to render project page for ${data.project.slug}`,
+      err,
+    );
+  }
+}
+
+/**
+ * Render a portfolio page to a static HTML fragment.
+ *
+ * @throws {RenderError} with code VALIDATION_ERROR if required fields are missing
+ * @throws {RenderError} with code RENDER_FAILED if Liquid rendering fails
+ */
+export function renderPortfolioHtml(data: PortfolioRenderData, templateName?: string): string {
+  const errors: ValidationFailure[] = [];
+  if (!data.user) {
+    errors.push({ field: 'user', message: 'required' });
+  } else {
+    if (!data.user.username) errors.push({ field: 'user.username', message: 'required' });
+  }
+  if (!Array.isArray(data.projects)) {
+    errors.push({ field: 'projects', message: 'must be an array' });
+  }
+  if (errors.length > 0) collectErrors(errors);
+
+  try {
+    return renderPortfolio(data, templateName);
+  } catch (err: unknown) {
+    throw new RenderError(
+      'RENDER_FAILED',
+      `Failed to render portfolio page for ${data.user?.username}`,
       err,
     );
   }

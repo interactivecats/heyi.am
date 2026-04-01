@@ -1,0 +1,60 @@
+<div class="heyiam-portfolio signal" data-render-version="2" data-template="signal" data-username="{{ user.username }}">
+
+  <h1 class="project-title">{{ user.displayName }}</h1>
+  {% if user.bio != blank %}
+  <p class="narrative-text">{{ user.bio }}</p>
+  {% endif %}
+
+  {%- comment -%} Stats grid {%- endcomment -%}
+  <div class="stat-grid" role="list" aria-label="Portfolio statistics">
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Projects</div>
+      <div class="stat-card__value">{{ projects.size }}</div>
+    </div>
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Sessions</div>
+      <div class="stat-card__value">{{ totalSessions }}</div>
+    </div>
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Lines</div>
+      <div class="stat-card__value">{{ totalLoc | formatLoc }}</div>
+    </div>
+  </div>
+
+  {%- comment -%} Leverage: single-line status readout {%- endcomment -%}
+  {% if efficiencyMultiplier %}
+  <div class="signal-leverage-readout" role="status" aria-label="Leverage status">
+    <span class="signal-leverage-readout__label">LEVERAGE</span>
+    <span class="signal-leverage-readout__multiplier" style="color: var(--accent, #ef4444);">{{ efficiencyMultiplier }}</span>
+    <span class="signal-leverage-readout__sep" aria-hidden="true">|</span>
+    <span class="signal-leverage-readout__human" style="opacity: 0.5;">you {{ totalDurationMinutes | formatDuration }}</span>
+    <span class="signal-leverage-readout__sep" aria-hidden="true">|</span>
+    <span class="signal-leverage-readout__agent" style="color: var(--accent, #ef4444);">agents {{ totalAgentDurationMinutes | formatDuration }}</span>
+  </div>
+  {% else %}
+  <div class="signal-leverage-readout" role="status">
+    <span class="signal-leverage-readout__label">TIME</span>
+    <span class="signal-leverage-readout__multiplier">{{ totalDurationMinutes | formatDuration }}</span>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Projects list {%- endcomment -%}
+  {% if projects.size > 0 %}
+  <div class="card">
+    <div class="section-header">
+      <h3 class="section-header__title">Projects</h3>
+    </div>
+    <div class="session-grid">
+      {% for project in projects %}
+      <div class="session-card">
+        <h4 class="session-card__title">{{ project.title }}</h4>
+        <span class="session-card__meta">{{ project.totalSessions }} sessions &middot; {{ project.totalLoc | formatLoc }} lines</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+
+</div>

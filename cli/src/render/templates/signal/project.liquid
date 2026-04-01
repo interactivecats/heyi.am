@@ -1,0 +1,67 @@
+<div class="heyiam-project signal" data-render-version="2" data-template="signal"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
+
+  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+
+  {% render 'partials/_links', project: project %}
+
+  {% render 'partials/_screenshot', project: project %}
+
+  {%- comment -%} Stats grid {%- endcomment -%}
+  <div class="stat-grid" role="list" aria-label="Project statistics">
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Sessions</div>
+      <div class="stat-card__value">{{ project.totalSessions }}</div>
+    </div>
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Lines changed</div>
+      <div class="stat-card__value">{{ project.totalLoc | formatLoc }}</div>
+    </div>
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Files</div>
+      <div class="stat-card__value">{{ project.totalFilesChanged }}</div>
+    </div>
+    {% if project.totalTokens %}
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Tokens</div>
+      <div class="stat-card__value">{{ project.totalTokens | formatTokens }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  {%- comment -%} Leverage: single-line status readout below stats {%- endcomment -%}
+  {% if efficiencyMultiplier %}
+  <div class="signal-leverage-readout" role="status" aria-label="Leverage status">
+    <span class="signal-leverage-readout__label">LEVERAGE</span>
+    <span class="signal-leverage-readout__multiplier" style="color: var(--accent, #ef4444);">{{ efficiencyMultiplier }}</span>
+    <span class="signal-leverage-readout__sep" aria-hidden="true">|</span>
+    <span class="signal-leverage-readout__human" style="opacity: 0.5;">you {{ project.totalDurationMinutes | formatDuration }}</span>
+    <span class="signal-leverage-readout__sep" aria-hidden="true">|</span>
+    <span class="signal-leverage-readout__agent" style="color: var(--accent, #ef4444);">agents {{ project.totalAgentDurationMinutes | formatDuration }}</span>
+  </div>
+  {% else %}
+  <div class="signal-leverage-readout" role="status">
+    <span class="signal-leverage-readout__label">TIME</span>
+    <span class="signal-leverage-readout__multiplier">{{ project.totalDurationMinutes | formatDuration }}</span>
+  </div>
+  {% endif %}
+
+  {% render 'partials/_narrative', narrative: project.narrative %}
+
+  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
+
+  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
+
+  <div class="two-col">
+    {% render 'partials/_key-decisions', arc: arc %}
+    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+  </div>
+
+  {% render 'partials/_phases', arc: arc %}
+
+  {% render 'partials/_skills', skills: project.skills %}
+
+  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
+
+  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+
+</div>

@@ -318,61 +318,46 @@
       margin-top: 0.375rem;
     }
 
-    /* ── Leverage stat — full width below the grid ── */
-    .hero-stat--leverage {
-      grid-column: 1 / -1;
-      text-align: left;
-      padding: 1.25rem 1.5rem;
+    /* ── Leverage standalone section ── */
+    .sc-leverage {
+      text-align: center;
+      padding: 2rem 1rem;
     }
-    .leverage-header {
-      display: flex;
-      align-items: baseline;
-      gap: 1.5rem;
-      margin-bottom: 0.75rem;
-    }
-    .leverage-header .leverage-stat {
-      display: flex;
-      flex-direction: column;
-    }
-    .leverage-header .leverage-val {
+    .sc-leverage__multi {
       font-family: var(--font-display);
-      font-size: 1.5rem;
+      font-size: 3rem;
       font-weight: 700;
-      color: var(--text);
+      color: var(--accent);
       line-height: 1;
     }
-    .leverage-header .leverage-lbl {
+    .sc-leverage__context {
       font-family: var(--font-mono);
-      font-size: 9px;
+      font-size: 0.75rem;
       color: var(--text-3);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-top: 0.25rem;
+      margin-block-start: 0.5rem;
+      letter-spacing: 0.02em;
     }
-    .leverage-header .leverage-agents .leverage-val {
-      color: var(--accent);
-    }
-    .leverage-header .leverage-multiplier .leverage-val {
-      color: var(--accent);
-    }
-    .leverage-bar {
-      height: 6px;
-      border-radius: 3px;
+    .sc-leverage__bar {
+      height: 4px;
+      border-radius: 2px;
       background: rgba(255,255,255,0.06);
-      overflow: hidden;
       display: flex;
+      overflow: hidden;
+      max-width: 300px;
+      margin: 0.75rem auto 0;
     }
-    .leverage-bar__human {
+    .sc-leverage__human {
       height: 100%;
       background: rgba(255,255,255,0.25);
-      border-radius: 3px 0 0 3px;
-      width: 19%;
+      border-radius: 2px 0 0 2px;
     }
-    .leverage-bar__agent {
+    .sc-leverage__agent {
       height: 100%;
       background: var(--accent);
-      border-radius: 0 3px 3px 0;
-      width: 81%;
+      border-radius: 0 2px 2px 0;
+    }
+    @media (max-width: 480px) {
+      .sc-leverage__multi { font-size: 2.25rem; }
     }
 
     /* ── Hero entrance animations ── */
@@ -778,26 +763,6 @@
         <div class="hero-stat__value" data-count-to="18400" data-format="comma">0</div>
         <div class="hero-stat__label">Lines Changed</div>
       </div>
-      <div class="hero-stat hero-stat--leverage">
-        <div class="leverage-header">
-          <div class="leverage-stat">
-            <span class="leverage-val">24h</span>
-            <span class="leverage-lbl">You</span>
-          </div>
-          <div class="leverage-stat leverage-agents">
-            <span class="leverage-val">100h</span>
-            <span class="leverage-lbl">Agents</span>
-          </div>
-          <div class="leverage-stat leverage-multiplier">
-            <span class="leverage-val">4.2x</span>
-            <span class="leverage-lbl">Multiplier</span>
-          </div>
-        </div>
-        <div class="leverage-bar">
-          <div class="leverage-bar__human"></div>
-          <div class="leverage-bar__agent"></div>
-        </div>
-      </div>
     </div>
   </section>
 
@@ -806,6 +771,13 @@
        ══════════════════════════════════════════════════════════ -->
   <div class="page">
     <main id="main-content">
+
+      <!-- Leverage -->
+      <section class="sc-leverage sc-section section-gap" aria-label="AI leverage" role="figure">
+        <div class="sc-leverage__multi">4.2&times;</div>
+        <div class="sc-leverage__context"><span>24h you</span> &middot; <span style="color:var(--accent)">100h agents</span></div>
+        <div class="sc-leverage__bar"><div class="sc-leverage__human" style="width:19%"></div><div class="sc-leverage__agent" style="width:81%"></div></div>
+      </section>
 
       <!-- ══════════════════════════════════════════════════════════
            SECTION: PROJECT CARDS

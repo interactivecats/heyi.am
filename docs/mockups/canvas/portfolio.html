@@ -267,6 +267,33 @@
       padding: 0 1.5rem;
     }
 
+    /* ── Leverage standalone section ── */
+    .canvas-leverage {
+      text-align: center;
+      padding: 2.5rem 1rem;
+    }
+    .canvas-leverage__multi {
+      font-family: var(--canvas-font-display, 'DM Sans', sans-serif);
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--canvas-accent, #f97316);
+      line-height: 1;
+    }
+    .canvas-leverage__context {
+      font-family: var(--canvas-font-mono);
+      font-size: 0.75rem;
+      color: var(--canvas-text-secondary, #78716c);
+      margin-block-start: 0.375rem;
+      letter-spacing: 0.02em;
+    }
+    .canvas-leverage__underline {
+      width: 60px;
+      height: 2px;
+      background: var(--canvas-accent-light, rgba(249, 115, 22, 0.4));
+      margin: 0.75rem auto 0;
+      border-radius: 1px;
+    }
+
     /* ── Section Titles ── */
     .section-title {
       font-family: var(--canvas-font-display);
@@ -713,22 +740,6 @@
             <div class="hero-stat__number">28</div>
             <div class="hero-stat__label">Sessions</div>
           </div>
-          <div class="hero-stat" style="flex-basis: 100%; display: flex; align-items: baseline; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
-            <div style="display: flex; align-items: baseline; gap: 0.25rem;">
-              <span class="hero-stat__number" style="font-size: clamp(1.5rem, 3vw, 2.25rem);">24</span>
-              <span class="hero-stat__label" style="font-size: 0.75rem;">h you</span>
-            </div>
-            <span style="font-family: var(--canvas-font-mono); color: var(--canvas-text-tertiary, #a8a29e); font-size: 0.875rem;">&middot;</span>
-            <div style="display: flex; align-items: baseline; gap: 0.25rem;">
-              <span class="hero-stat__number" style="font-size: clamp(1.5rem, 3vw, 2.25rem); color: var(--canvas-accent, #fb7185);">100</span>
-              <span class="hero-stat__label" style="font-size: 0.75rem;">h agents</span>
-            </div>
-            <span style="font-family: var(--canvas-font-mono); color: var(--canvas-text-tertiary, #a8a29e); font-size: 0.875rem;">&middot;</span>
-            <div style="display: flex; align-items: baseline; gap: 0.25rem;">
-              <span class="hero-stat__number" style="font-size: clamp(1.5rem, 3vw, 2.25rem); color: var(--canvas-accent, #f97316);">4.2</span>
-              <span class="hero-stat__label" style="font-size: 0.75rem;">&times;</span>
-            </div>
-          </div>
           <div class="hero-stat">
             <div class="hero-stat__number">18.4k</div>
             <div class="hero-stat__label">Lines Changed</div>
@@ -739,6 +750,13 @@
 
     <!-- Below the fold: gallery-style content -->
     <div class="page-content">
+      <!-- Leverage -->
+      <section class="canvas-leverage" aria-label="AI leverage" role="figure">
+        <div class="canvas-leverage__multi">4.2&times;</div>
+        <div class="canvas-leverage__context">24h you &middot; <span style="color:var(--canvas-accent, #f97316)">100h agents</span></div>
+        <div class="canvas-leverage__underline"></div>
+      </section>
+
       <!-- Projects -->
       <section class="projects-section" aria-label="Projects">
         <h2 class="section-title fade-in fade-in-d2">Projects</h2>

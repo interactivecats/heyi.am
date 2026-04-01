@@ -1,0 +1,20 @@
+<div class="portfolio-header" data-editable="profile">
+  {% if user.photoUrl %}
+    <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="portfolio-photo">
+  {% endif %}
+  <h1 class="portfolio-name">{{ user.displayName }}</h1>
+  {% if user.bio != blank %}
+    <p class="portfolio-bio">{{ user.bio }}</p>
+  {% endif %}
+  {% if user.location != blank %}
+    <p class="portfolio-location">{{ user.location }}</p>
+  {% endif %}
+  <div class="portfolio-links">
+    {% if user.email != blank %}<a href="mailto:{{ user.email }}" class="portfolio-link">{{ user.email }}</a>{% endif %}
+    {% if user.linkedinUrl != blank %}<a href="{{ user.linkedinUrl }}" class="portfolio-link" target="_blank" rel="noopener">LinkedIn</a>{% endif %}
+    {% if user.githubUrl != blank %}<a href="{{ user.githubUrl }}" class="portfolio-link" target="_blank" rel="noopener">GitHub</a>{% endif %}
+    {% if user.twitterHandle != blank %}<a href="https://x.com/{{ user.twitterHandle }}" class="portfolio-link" target="_blank" rel="noopener">@{{ user.twitterHandle }}</a>{% endif %}
+    {% if user.websiteUrl != blank %}<a href="{{ user.websiteUrl }}" class="portfolio-link" target="_blank" rel="noopener">{{ user.websiteUrl | stripProtocol }}</a>{% endif %}
+    {% if user.resumeUrl != blank %}<a href="{{ user.resumeUrl }}" class="portfolio-link portfolio-link--resume" download>Resume (PDF)</a>{% endif %}
+  </div>
+</div>

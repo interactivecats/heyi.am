@@ -1,0 +1,16 @@
+{% if projects.size > 0 %}
+<div class="portfolio-projects">
+  {% for project in projects %}
+    <a href="{{ project.slug }}" class="project-card">
+      <h3 class="project-card__title">{{ project.title }}</h3>
+      {% if project.narrative != blank %}<p class="project-card__desc">{{ project.narrative | truncate: 120 }}</p>{% endif %}
+      <div class="project-card__meta">{{ project.totalSessions }} sessions &middot; {{ project.totalDurationMinutes | formatDuration }} &middot; {{ project.totalLoc | formatLoc }} lines</div>
+      {% if project.skills.size > 0 %}
+      <div class="project-card__skills">
+        {% for skill in project.skills limit: 5 %}<span class="chip">{{ skill }}</span>{% endfor %}
+      </div>
+      {% endif %}
+    </a>
+  {% endfor %}
+</div>
+{% endif %}

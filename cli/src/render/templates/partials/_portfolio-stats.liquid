@@ -1,0 +1,8 @@
+<div class="portfolio-stats" role="list" aria-label="Portfolio statistics">
+  <div class="stat-card" role="listitem"><div class="stat-card__value">{{ projects.size }}</div><div class="stat-card__label">Projects</div></div>
+  <div class="stat-card" role="listitem"><div class="stat-card__value">{{ totalSessions }}</div><div class="stat-card__label">Sessions</div></div>
+  <div class="stat-card" role="listitem"><div class="stat-card__value">{{ totalLoc | formatLoc }}</div><div class="stat-card__label">Lines Changed</div></div>
+  {% unless hideDuration %}
+  <div class="stat-card" role="listitem"><div class="stat-card__value">{{ totalDurationMinutes | formatDuration }}</div><div class="stat-card__label">Total Time</div></div>
+  {% endunless %}
+</div>

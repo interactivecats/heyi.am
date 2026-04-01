@@ -341,63 +341,53 @@
       line-height: 1;
       white-space: nowrap;
     }
-    .stat-card--leverage {
-      grid-column: span 2;
+    /* ── Leverage standalone section ── */
+    .sc-leverage {
+      text-align: center;
+      padding: 2rem 1rem;
     }
-    .leverage-header {
-      display: flex;
-      align-items: baseline;
-      gap: 1.5rem;
-      margin-bottom: 0.75rem;
-    }
-    .leverage-header .leverage-stat {
-      display: flex;
-      flex-direction: column;
-    }
-    .leverage-header .leverage-val {
+    .sc-leverage__multi {
       font-family: var(--font-display);
-      font-size: 1.5rem;
+      font-size: 3rem;
       font-weight: 700;
-      color: var(--text);
+      color: var(--accent);
       line-height: 1;
     }
-    .leverage-header .leverage-lbl {
+    .sc-leverage__context {
       font-family: var(--font-mono);
-      font-size: 9px;
+      font-size: 0.75rem;
       color: var(--text-3);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-top: 0.25rem;
+      margin-block-start: 0.5rem;
+      letter-spacing: 0.02em;
     }
-    .leverage-header .leverage-agents .leverage-val {
-      color: var(--accent);
-    }
-    .leverage-header .leverage-multiplier .leverage-val {
-      color: var(--accent);
-    }
-    .leverage-bar {
-      height: 6px;
-      border-radius: 3px;
+    .sc-leverage__bar {
+      height: 4px;
+      border-radius: 2px;
       background: rgba(255,255,255,0.06);
-      overflow: hidden;
       display: flex;
+      overflow: hidden;
+      max-width: 300px;
+      margin: 0.75rem auto 0;
     }
-    .leverage-bar__human {
+    .sc-leverage__human {
       height: 100%;
       background: rgba(255,255,255,0.35);
-      border-radius: 3px 0 0 3px;
+      border-radius: 2px 0 0 2px;
       width: 0%;
       transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .leverage-bar__agent {
+    .sc-leverage__agent {
       height: 100%;
       background: var(--accent);
-      border-radius: 0 3px 3px 0;
+      border-radius: 0 2px 2px 0;
       width: 0%;
       transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
     }
-    .sc-section.visible .leverage-bar__human { width: 19%; }
-    .sc-section.visible .leverage-bar__agent { width: 81%; }
+    .sc-section.visible .sc-leverage__human { width: 19%; }
+    .sc-section.visible .sc-leverage__agent { width: 81%; }
+    @media (max-width: 480px) {
+      .sc-leverage__multi { font-size: 2.25rem; }
+    }
 
     /* ── Chart Containers ── */
     .chart-container {
@@ -811,27 +801,6 @@
             <div class="stat-card__label">Sessions</div>
             <div class="stat-card__value" data-count-to="8" data-format="int">0</div>
           </div>
-          <div class="stat-card stat-card--leverage sc-stagger">
-            <div class="stat-card__label">Leverage</div>
-            <div class="leverage-header">
-              <div class="leverage-stat">
-                <span class="leverage-val" data-count-to="8.1" data-format="hours-short">0h</span>
-                <span class="leverage-lbl">You</span>
-              </div>
-              <div class="leverage-stat leverage-agents">
-                <span class="leverage-val" data-count-to="34.4" data-format="hours-short">0h</span>
-                <span class="leverage-lbl">Agents</span>
-              </div>
-              <div class="leverage-stat leverage-multiplier">
-                <span class="leverage-val" data-count-to="4.2" data-format="multiplier">0x</span>
-                <span class="leverage-lbl">Multiplier</span>
-              </div>
-            </div>
-            <div class="leverage-bar">
-              <div class="leverage-bar__human"></div>
-              <div class="leverage-bar__agent"></div>
-            </div>
-          </div>
           <div class="stat-card sc-stagger">
             <div class="stat-card__label">Lines Changed</div>
             <div class="stat-card__value" data-count-to="4460" data-format="comma">0</div>
@@ -858,6 +827,13 @@
           </div>
           <svg id="work-timeline" viewBox="0 0 760 380" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Horizontal bar chart showing 8 work sessions with agent fork curves. Session durations range from 45 to 88 minutes."></svg>
         </div>
+      </section>
+
+      <!-- Leverage -->
+      <section class="sc-leverage sc-section section-gap" aria-label="AI leverage" role="figure">
+        <div class="sc-leverage__multi">4.2&times;</div>
+        <div class="sc-leverage__context"><span>8.1h you</span> &middot; <span style="color:var(--accent)">34.4h agents</span></div>
+        <div class="sc-leverage__bar"><div class="sc-leverage__human" style="width:19%"></div><div class="sc-leverage__agent" style="width:81%"></div></div>
       </section>
 
       <!-- ══════════════════════════════════════════════════════════

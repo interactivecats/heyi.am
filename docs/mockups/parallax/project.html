@@ -308,35 +308,51 @@ body {
   letter-spacing: 0.08em;
   margin-block-start: 0.125rem;
 }
-.stats-bar__item--leverage {
-  flex: 1 1 100%;
+/* ── Leverage standalone section ── */
+.px-leverage {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 2rem;
+  gap: 1rem;
+  width: 100%;
+  background: var(--px-surface, rgba(255,255,255,0.04));
+  border-top: 1px solid var(--px-border);
+  border-bottom: 1px solid var(--px-border);
+  padding: 1.25rem 1.5rem;
+  margin-block: 1.5rem;
 }
-.stats-bar__item--leverage .lev-group {
-  text-align: center;
-}
-.stats-bar__item--leverage .lev-val {
+.px-leverage__multi {
   font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--px-text);
-}
-.stats-bar__item--leverage .lev-val--agent {
-  color: var(--px-accent);
-}
-.stats-bar__item--leverage .lev-val--big {
   font-size: 2.5rem;
+  font-weight: 700;
   color: var(--px-accent-blue);
+  line-height: 1;
+  white-space: nowrap;
 }
-.stats-bar__item--leverage .lev-lbl {
-  font-size: 0.6875rem;
-  color: var(--px-text-tertiary);
+.px-leverage__line {
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.15), var(--px-accent-blue));
+}
+.px-leverage__values {
+  display: flex;
+  gap: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--px-text-secondary);
+}
+.px-leverage__values small {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-block-start: 0.125rem;
+  letter-spacing: 0.06em;
+  font-size: 0.625rem;
+  color: var(--px-text-tertiary);
+}
+@media (max-width: 480px) {
+  .px-leverage {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .px-leverage__line { display: none; }
 }
 
 /* ── Work Timeline Chart — bars grow with stagger ── */
@@ -856,21 +872,7 @@ body {
         <div class="stats-bar__value" data-counter="8">0</div>
         <div class="stats-bar__label">Sessions</div>
       </div>
-      <div class="stats-bar__item stats-bar__item--leverage fly-right">
-        <div class="lev-group">
-          <div class="lev-val" data-counter="8.1" data-suffix="h" data-decimal="true">0h</div>
-          <div class="lev-lbl">You</div>
-        </div>
-        <div class="lev-group">
-          <div class="lev-val lev-val--agent" data-counter="34.4" data-suffix="h" data-decimal="true">0h</div>
-          <div class="lev-lbl">Agents</div>
-        </div>
-        <div class="lev-group">
-          <div class="lev-val lev-val--big" data-counter="4.2" data-suffix="x" data-decimal="true">0x</div>
-          <div class="lev-lbl">Multiplier</div>
-        </div>
-      </div>
-      <div class="stats-bar__item fly-left">
+      <div class="stats-bar__item fly-right">
         <div class="stats-bar__value" data-counter="4460" data-format="compact">0</div>
         <div class="stats-bar__label">LOC</div>
       </div>
@@ -881,6 +883,16 @@ body {
       <div class="stats-bar__item fly-left">
         <div class="stats-bar__value" data-counter="2" data-suffix=".1M">0</div>
         <div class="stats-bar__label">Tokens</div>
+      </div>
+    </div>
+
+    <!-- Leverage -->
+    <div class="px-leverage" role="figure" aria-label="8.1 hours you, 34.4 hours agents, 4.2x leverage">
+      <span class="px-leverage__multi">4.2&times;</span>
+      <div class="px-leverage__line" aria-hidden="true"></div>
+      <div class="px-leverage__values">
+        <span>8.1h <small>you</small></span>
+        <span style="color:var(--px-accent-blue)">34.4h <small>agents</small></span>
       </div>
     </div>
   </section>

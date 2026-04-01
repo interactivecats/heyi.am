@@ -1,0 +1,73 @@
+<div class="heyiam-project grid" data-render-version="2" data-template="grid"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
+
+  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+
+  {% render 'partials/_links', project: project %}
+
+  {% render 'partials/_screenshot', project: project %}
+
+  {% render 'partials/_narrative', narrative: project.narrative %}
+
+  {%- comment -%} Bento stat grid with leverage as span-2 cell {%- endcomment -%}
+  <div class="grid-bento" role="list" aria-label="Project statistics">
+    {% if efficiencyMultiplier %}
+    <div class="grid-leverage-cell" role="listitem" aria-label="Leverage: {{ efficiencyMultiplier }}">
+      <div class="grid-leverage-cell__left">
+        <span class="grid-leverage-cell__multiplier" style="color: var(--accent, #6366f1);">{{ efficiencyMultiplier }}</span>
+      </div>
+      <div class="grid-leverage-cell__right">
+        <div class="grid-leverage-cell__row">
+          <span style="opacity: 0.5;">{{ project.totalDurationMinutes | formatDuration }} you</span>
+        </div>
+        <div class="grid-leverage-cell__row">
+          <span style="color: var(--accent, #6366f1);">{{ project.totalAgentDurationMinutes | formatDuration }} agents</span>
+        </div>
+        <div class="grid-leverage-cell__bar" aria-hidden="true">
+          <div class="grid-leverage-cell__bar-fill" style="background: var(--accent, #6366f1);"></div>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Time</div>
+      <div class="stat-card__value">{{ project.totalDurationMinutes | formatDuration }}</div>
+    </div>
+    {% endif %}
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Sessions</div>
+      <div class="stat-card__value">{{ project.totalSessions }}</div>
+    </div>
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Lines changed</div>
+      <div class="stat-card__value">{{ project.totalLoc | formatLoc }}</div>
+    </div>
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Files</div>
+      <div class="stat-card__value">{{ project.totalFilesChanged }}</div>
+    </div>
+    {% if project.totalTokens %}
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Tokens</div>
+      <div class="stat-card__value">{{ project.totalTokens | formatTokens }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
+
+  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
+
+  <div class="two-col">
+    {% render 'partials/_key-decisions', arc: arc %}
+    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+  </div>
+
+  {% render 'partials/_phases', arc: arc %}
+
+  {% render 'partials/_skills', skills: project.skills %}
+
+  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
+
+  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+
+</div>

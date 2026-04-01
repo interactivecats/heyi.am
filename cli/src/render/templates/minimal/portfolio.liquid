@@ -1,0 +1,46 @@
+<div class="heyiam-portfolio minimal" data-render-version="2" data-template="minimal" data-username="{{ user.username }}">
+
+  {%- comment -%} Big serif title {%- endcomment -%}
+  <h1 class="minimal-title">{{ user.displayName }}</h1>
+
+  {% if user.bio != blank %}
+  <div class="minimal-narrative">
+    <p>{{ user.bio }}</p>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Contact and location as understated inline text {%- endcomment -%}
+  <div class="minimal-stats-inline">
+    {% if user.location != blank %}<span>{{ user.location }}</span><span class="minimal-stats-sep">&middot;</span>{% endif %}
+    {% if user.email != blank %}<span><a href="mailto:{{ user.email }}">{{ user.email }}</a></span><span class="minimal-stats-sep">&middot;</span>{% endif %}
+    {% if user.githubUrl != blank %}<span><a href="{{ user.githubUrl }}" target="_blank" rel="noopener">GitHub</a></span><span class="minimal-stats-sep">&middot;</span>{% endif %}
+    {% if user.linkedinUrl != blank %}<span><a href="{{ user.linkedinUrl }}" target="_blank" rel="noopener">LinkedIn</a></span><span class="minimal-stats-sep">&middot;</span>{% endif %}
+    {% if user.websiteUrl != blank %}<span><a href="{{ user.websiteUrl }}" target="_blank" rel="noopener">{{ user.websiteUrl | stripProtocol }}</a></span><span class="minimal-stats-sep">&middot;</span>{% endif %}
+    <span>{{ totalDurationMinutes | formatDuration }}{% if efficiencyMultiplier %} ({{ efficiencyMultiplier }}){% endif %}</span>
+    <span class="minimal-stats-sep">&middot;</span>
+    <span>{{ totalSessions }} sessions</span>
+    <span class="minimal-stats-sep">&middot;</span>
+    <span>{{ totalLoc | formatLoc }} lines</span>
+  </div>
+
+  <hr class="minimal-rule" />
+
+  {%- comment -%} Projects as simple list {%- endcomment -%}
+  {% if projects.size > 0 %}
+  <div class="minimal-section">
+    <h2 class="minimal-section-heading">Projects <span class="minimal-meta">{{ projects.size }}</span></h2>
+    <ul class="minimal-session-list">
+      {% for project in projects %}
+      <li class="minimal-session-item">
+        <span class="minimal-session-title">{{ project.title }}</span>
+        <span class="minimal-session-meta">{{ project.totalSessions }} sessions &middot; {{ project.totalDurationMinutes | formatDuration }} &middot; {{ project.totalLoc | formatLoc }} lines</span>
+        {% if project.narrative != blank %}<span class="minimal-session-meta">{{ project.narrative | truncate: 120 }}</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% render 'partials/_footer' %}
+
+</div>

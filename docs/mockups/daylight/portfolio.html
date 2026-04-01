@@ -284,6 +284,54 @@
       letter-spacing: 0.05em;
     }
 
+    /* ── Leverage Card ── */
+    .dl-leverage-card {
+      max-width: 280px;
+      margin-inline: auto;
+      margin-block: 1.5rem;
+      background: var(--dl-card);
+      border: 1px solid var(--dl-border);
+      border-radius: var(--dl-radius);
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .dl-leverage-card__title {
+      font-family: var(--dl-font-body);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--dl-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-block-end: 1rem;
+    }
+    .dl-leverage-card svg {
+      display: block;
+      margin-inline: auto;
+    }
+    .dl-leverage-card__values {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-block-start: 1rem;
+    }
+    .dl-leverage-card__num {
+      font-family: var(--dl-font-display);
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--dl-text);
+      display: block;
+    }
+    .dl-leverage-card__lbl {
+      font-family: var(--dl-font-mono);
+      font-size: 0.625rem;
+      color: var(--dl-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      display: block;
+      margin-block-start: 0.125rem;
+    }
+
     /* ── Section Headings ── */
     .dl-section-heading {
       font-family: var(--dl-font-display);
@@ -664,31 +712,26 @@
           <span class="dl-stat-number" data-target="28">0</span>
           <span class="dl-stat-label">Sessions</span>
         </div>
-        <div class="dl-stat-card" style="position: relative;">
-          <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-            <svg viewBox="0 0 80 80" width="80" height="80" role="img" aria-label="Donut chart: 19% human time, 81% agent time">
-              <circle cx="40" cy="40" r="30" fill="none" stroke="var(--dl-border)" stroke-width="10"/>
-              <circle cx="40" cy="40" r="30" fill="none" stroke="var(--dl-accent)" stroke-width="10"
-                stroke-dasharray="152.4 36.1" stroke-dashoffset="47.1" stroke-linecap="round" style="transform: rotate(-90deg); transform-origin: center;"/>
-              <circle cx="40" cy="40" r="30" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="10"
-                stroke-dasharray="36.1 152.4" stroke-dashoffset="83.3" stroke-linecap="round" style="transform: rotate(-90deg); transform-origin: center;"/>
-              <text x="40" y="38" text-anchor="middle" font-family="var(--dl-font-display)" font-size="12" font-weight="700" fill="var(--dl-text)">4.2&times;</text>
-              <text x="40" y="50" text-anchor="middle" font-family="var(--dl-font-mono)" font-size="7" fill="var(--dl-text-muted)">multiplier</text>
-            </svg>
-            <div style="text-align: start;">
-              <div style="font-family: var(--dl-font-display); font-weight: 700; font-size: 1.25rem; color: var(--dl-text);">24<span style="font-size: 0.75rem; font-weight: 500;">h</span></div>
-              <div style="font-family: var(--dl-font-mono); font-size: 0.625rem; color: var(--dl-text-muted); margin-bottom: 0.375rem;">you</div>
-              <div style="font-family: var(--dl-font-display); font-weight: 700; font-size: 1.25rem; color: var(--dl-accent);">100<span style="font-size: 0.75rem; font-weight: 500;">h</span></div>
-              <div style="font-family: var(--dl-font-mono); font-size: 0.625rem; color: var(--dl-text-muted);">agents</div>
-            </div>
-          </div>
-          <span class="dl-stat-label">Time Breakdown</span>
-        </div>
         <div class="dl-stat-card">
           <span class="dl-stat-number" data-target="18400" data-format="comma">0</span>
           <span class="dl-stat-label">Lines Changed</span>
         </div>
       </section>
+
+      <!-- ── Leverage Card ── -->
+      <div class="dl-leverage-card dl-bounce dl-delay-1" role="figure" aria-label="Leverage: 4.2x multiplier, 24 hours human, 100 hours agent">
+        <div class="dl-leverage-card__title">Time Breakdown</div>
+        <svg width="96" height="96" viewBox="0 0 96 96">
+          <circle cx="48" cy="48" r="40" fill="none" stroke="rgba(14,165,233,0.12)" stroke-width="7"/>
+          <circle cx="48" cy="48" r="40" fill="none" stroke="var(--dl-accent)" stroke-width="7" stroke-dasharray="203 251" stroke-dashoffset="-50" stroke-linecap="round"/>
+          <text x="48" y="44" text-anchor="middle" font-family="var(--dl-font-display)" font-size="18" font-weight="700" fill="var(--dl-accent)">4.2&#215;</text>
+          <text x="48" y="58" text-anchor="middle" font-family="var(--dl-font-mono)" font-size="8" fill="var(--dl-text-muted)">LEVERAGE</text>
+        </svg>
+        <div class="dl-leverage-card__values">
+          <div><span class="dl-leverage-card__num">24h</span><span class="dl-leverage-card__lbl">you</span></div>
+          <div><span class="dl-leverage-card__num" style="color:var(--dl-accent)">100h</span><span class="dl-leverage-card__lbl">agents</span></div>
+        </div>
+      </div>
 
       <!-- ── Projects ── -->
       <section aria-label="Projects" class="dl-bounce dl-delay-2">

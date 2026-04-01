@@ -1,0 +1,56 @@
+<div class="heyiam-portfolio terminal" data-render-version="2" data-template="terminal" data-username="{{ user.username }}">
+
+  {%- comment -%} Prompt-style breadcrumb {%- endcomment -%}
+  <div class="term-prompt">
+    <span class="term-prompt__char">&#10095;</span> <span class="term-prompt__path">@{{ user.username }}</span>
+  </div>
+
+  {%- comment -%} # Title {%- endcomment -%}
+  <h1 class="term-heading"># {{ user.displayName }}</h1>
+  {% if user.bio != blank %}
+  <blockquote class="term-blockquote">{{ user.bio }}</blockquote>
+  {% endif %}
+
+  {%- comment -%} Contact links as inline list {%- endcomment -%}
+  <div class="term-section">
+    {% if user.location != blank %}<span class="term-meta">{{ user.location }}</span>{% endif %}
+    {% if user.email != blank %}<span class="term-meta"><a href="mailto:{{ user.email }}">{{ user.email }}</a></span>{% endif %}
+    {% if user.githubUrl != blank %}<span class="term-meta"><a href="{{ user.githubUrl }}" target="_blank" rel="noopener">GitHub</a></span>{% endif %}
+    {% if user.linkedinUrl != blank %}<span class="term-meta"><a href="{{ user.linkedinUrl }}" target="_blank" rel="noopener">LinkedIn</a></span>{% endif %}
+    {% if user.websiteUrl != blank %}<span class="term-meta"><a href="{{ user.websiteUrl }}" target="_blank" rel="noopener">{{ user.websiteUrl | stripProtocol }}</a></span>{% endif %}
+  </div>
+
+  {%- comment -%} Stats as tabular output {%- endcomment -%}
+  <div class="term-section">
+    <div class="term-comment"># stats</div>
+    <table class="term-table">
+      {% if efficiencyMultiplier %}
+      <tr>
+        <td class="term-table__key">Leverage</td>
+        <td class="term-table__val"><span style="color: var(--accent, #4ade80); font-weight: 700;">{{ efficiencyMultiplier }}</span> <span style="opacity: 0.5;">{{ totalDurationMinutes | formatDuration }} you</span> <span style="color: var(--accent, #4ade80);">{{ totalAgentDurationMinutes | formatDuration }} agents</span></td>
+      </tr>
+      {% else %}
+      <tr><td class="term-table__key">Time</td><td class="term-table__val">{{ totalDurationMinutes | formatDuration }}</td></tr>
+      {% endif %}
+      <tr><td class="term-table__key">Sessions</td><td class="term-table__val">{{ totalSessions }}</td></tr>
+      <tr><td class="term-table__key">Lines</td><td class="term-table__val">{{ totalLoc | formatLoc }}</td></tr>
+    </table>
+  </div>
+
+  {%- comment -%} Projects as numbered list entries {%- endcomment -%}
+  {% if projects.size > 0 %}
+  <div class="term-section">
+    <div class="term-comment"># projects ({{ projects.size }})</div>
+    {% for project in projects %}
+    <div class="term-session-entry">
+      <span class="term-session-entry__idx">[{{ forloop.index }}]</span>
+      <span class="term-session-entry__title">{{ project.title }}</span>
+      <span class="term-session-entry__meta">{{ project.totalSessions }} sessions &middot; {{ project.totalDurationMinutes | formatDuration }} &middot; {{ project.totalLoc | formatLoc }} loc</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% render 'partials/_footer' %}
+
+</div>

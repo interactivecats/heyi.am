@@ -237,48 +237,43 @@ a:hover { text-decoration: underline; }
 /* ── Stats Grid ── */
 .noir-stats-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1px;
   background: var(--noir-border);
   border: 1px solid var(--noir-border);
 }
-.noir-leverage-row {
-  grid-column: span 2;
-  background: var(--noir-surface);
-  padding: 1.25rem 1rem;
+/* ── Leverage standalone section ── */
+.noir-leverage {
   display: flex;
-  justify-content: space-evenly;
-  gap: 1rem;
-  position: relative;
-}
-.noir-leverage-row::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 1rem;
-  right: 1rem;
-  height: 1px;
-  background: var(--noir-border-strong);
-}
-.noir-leverage-cell {
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.75rem;
+  padding-block: 1rem;
   text-align: center;
 }
-.noir-leverage-cell__value {
+.noir-leverage__multi {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.5rem;
+  font-size: 2rem;
   color: var(--noir-white);
-  line-height: 1.1;
-  display: block;
+  line-height: 1;
 }
-.noir-leverage-cell__label {
+.noir-leverage__sep {
+  color: rgba(255,255,255,0.15);
+  font-size: 1.25rem;
+}
+.noir-leverage__detail {
   font-family: var(--font-mono);
-  font-size: 0.625rem;
+  font-size: 0.875rem;
   color: var(--noir-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-top: 0.25rem;
-  display: block;
+  letter-spacing: 0.02em;
+}
+@media (max-width: 480px) {
+  .noir-leverage {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .noir-leverage__sep { display: none; }
 }
 
 .noir-stat-cell {
@@ -692,20 +687,6 @@ a:hover { text-decoration: underline; }
           <span class="noir-stat-cell__value" data-target="8">0</span>
           <span class="noir-stat-cell__label">Sessions</span>
         </div>
-        <div class="noir-leverage-row" role="listitem">
-          <div class="noir-leverage-cell">
-            <span class="noir-leverage-cell__value">8.1h</span>
-            <span class="noir-leverage-cell__label">You</span>
-          </div>
-          <div class="noir-leverage-cell">
-            <span class="noir-leverage-cell__value">34.4h</span>
-            <span class="noir-leverage-cell__label">Agents</span>
-          </div>
-          <div class="noir-leverage-cell">
-            <span class="noir-leverage-cell__value">4.2&times;</span>
-            <span class="noir-leverage-cell__label">Multiplier</span>
-          </div>
-        </div>
         <div class="noir-stat-cell" role="listitem">
           <span class="noir-stat-cell__value" data-target="4460">0</span>
           <span class="noir-stat-cell__label">LOC</span>
@@ -721,7 +702,16 @@ a:hover { text-decoration: underline; }
       </div>
     </section>
 
-    <hr class="noir-rule">
+    <!-- Leverage -->
+    <section aria-label="AI leverage" role="figure">
+      <hr class="noir-rule">
+      <div class="noir-leverage">
+        <span class="noir-leverage__multi">4.2&times;</span>
+        <span class="noir-leverage__sep" aria-hidden="true">&mdash;</span>
+        <span class="noir-leverage__detail">8.1h you, 34.4h agents</span>
+      </div>
+      <hr class="noir-rule">
+    </section>
 
     <!-- Narrative -->
     <section class="noir-section" aria-label="Project narrative">

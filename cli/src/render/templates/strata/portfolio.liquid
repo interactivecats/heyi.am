@@ -1,0 +1,51 @@
+<div class="heyiam-portfolio strata" data-render-version="2" data-template="strata" data-username="{{ user.username }}">
+
+  <h1 class="project-title">{{ user.displayName }}</h1>
+  {% if user.bio != blank %}
+  <p class="narrative-text">{{ user.bio }}</p>
+  {% endif %}
+
+  <div class="stat-grid" role="list" aria-label="Portfolio statistics">
+    {% if efficiencyMultiplier %}
+    <div class="strata-leverage-card" role="listitem" aria-label="Leverage: {{ efficiencyMultiplier }}">
+      <div class="strata-leverage-card__value" style="color: var(--accent, #d97706);">{{ efficiencyMultiplier }}</div>
+      <div class="strata-leverage-card__annotation">
+        <span style="opacity: 0.5;">{{ totalDurationMinutes | formatDuration }}</span>
+        <span style="opacity: 0.35;" aria-hidden="true">/</span>
+        <span style="color: var(--accent, #d97706);">{{ totalAgentDurationMinutes | formatDuration }}</span>
+      </div>
+    </div>
+    {% endif %}
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Projects</div>
+      <div class="stat-card__value">{{ projects.size }}</div>
+    </div>
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Sessions</div>
+      <div class="stat-card__value">{{ totalSessions }}</div>
+    </div>
+    <div class="stat-card" role="listitem">
+      <div class="stat-card__label">Lines</div>
+      <div class="stat-card__value">{{ totalLoc | formatLoc }}</div>
+    </div>
+  </div>
+
+  {% if projects.size > 0 %}
+  <div class="card">
+    <div class="section-header">
+      <h3 class="section-header__title">Projects</h3>
+    </div>
+    <div class="session-grid">
+      {% for project in projects %}
+      <div class="session-card">
+        <h4 class="session-card__title">{{ project.title }}</h4>
+        <span class="session-card__meta">{{ project.totalSessions }} sessions &middot; {{ project.totalLoc | formatLoc }} lines</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+
+</div>
