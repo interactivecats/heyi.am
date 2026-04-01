@@ -360,7 +360,7 @@ function TemplateCard({
       <div className="border-b border-ghost relative overflow-hidden" style={{ height: '220px' }}>
         <TemplateWireframe template={t} className="absolute inset-0 w-full h-full" />
         <iframe
-          src={`/preview/template/${t.name}?page=project`}
+          src={`/preview/template/${t.name}?page=portfolio`}
           style={{
             width: '1200px',
             height: '900px',
@@ -424,14 +424,9 @@ function TemplateCard({
               Apply
             </button>
           )}
-          <a
-            href={`/preview/template/${t.name}?page=project`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[11px] text-on-surface-variant hover:text-primary transition-colors font-medium"
-          >
-            Full preview &rarr;
-          </a>
+          <a href={`/preview/template/${t.name}?page=portfolio`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-on-surface-variant hover:text-primary transition-colors font-medium">Portfolio</a>
+          <a href={`/preview/template/${t.name}?page=project`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-on-surface-variant hover:text-primary transition-colors font-medium">Project</a>
+          <a href={`/preview/template/${t.name}?page=session`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-on-surface-variant hover:text-primary transition-colors font-medium">Session</a>
         </div>
       </div>
     </article>
