@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BudgetWise — Project | Grid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Tokens ── */
+  :root {
+    --bg: #fafafa;
+    --fg: #1e293b;
+    --fg-muted: #64748b;
+    --fg-faint: #94a3b8;
+    --accent: #6366f1;
+    --accent-light: #a5b4fc;
+    --accent-bg: #eef2ff;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --radius-sm: 12px;
+    --radius: 16px;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04);
+
+    /* Agent colors */
+    --clr-frontend: #7c3aed;
+    --clr-backend: #0891b2;
+    --clr-qa: #059669;
+    --clr-security: #475569;
+    --clr-reviewer: #e11d48;
+    --clr-ux: #d97706;
+  }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--fg);
+    background-color: var(--bg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Skip link ── */
+  .skip-link {
+    position: absolute;
+    inset-inline-start: -9999px;
+    top: 0;
+    background: var(--accent);
+    color: #fff;
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    z-index: 100;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+  }
+  .skip-link:focus {
+    inset-inline-start: 8px;
+    top: 8px;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 1120px;
+    margin-inline: auto;
+    padding-inline: 24px;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+    background: rgba(250,250,250,0.92);
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-brand {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--fg);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+  .nav-brand span {
+    color: var(--accent);
+  }
+  .nav-links {
+    display: flex;
+    gap: 8px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--fg-muted);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s, background-color 0.15s;
+  }
+  .nav-links a:hover {
+    color: var(--fg);
+    background: var(--border-light);
+  }
+  .nav-links a[aria-current="page"] {
+    color: var(--accent);
+    background: var(--accent-bg);
+  }
+  .nav-links a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Breadcrumb ── */
+  .breadcrumb {
+    padding: 16px 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg-faint);
+  }
+  .breadcrumb a {
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+  .breadcrumb a:hover {
+    color: var(--accent);
+  }
+  .breadcrumb a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  .breadcrumb-sep {
+    margin-inline: 6px;
+    color: var(--fg-faint);
+  }
+
+  /* ── Bento Grid ── */
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding-bottom: 64px;
+  }
+
+  .bento-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    opacity: 0;
+    transform: translateY(12px);
+    animation: cellFadeIn 0.4s ease forwards;
+  }
+
+  @keyframes cellFadeIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bento-cell {
+      opacity: 1;
+      transform: none;
+      animation: none;
+    }
+  }
+
+  .bento-cell:nth-child(1)  { animation-delay: 0s; }
+  .bento-cell:nth-child(2)  { animation-delay: 0.06s; }
+  .bento-cell:nth-child(3)  { animation-delay: 0.12s; }
+  .bento-cell:nth-child(4)  { animation-delay: 0.18s; }
+  .bento-cell:nth-child(5)  { animation-delay: 0.24s; }
+  .bento-cell:nth-child(6)  { animation-delay: 0.30s; }
+  .bento-cell:nth-child(7)  { animation-delay: 0.36s; }
+  .bento-cell:nth-child(8)  { animation-delay: 0.42s; }
+  .bento-cell:nth-child(9)  { animation-delay: 0.48s; }
+  .bento-cell:nth-child(10) { animation-delay: 0.54s; }
+  .bento-cell:nth-child(11) { animation-delay: 0.60s; }
+  .bento-cell:nth-child(12) { animation-delay: 0.66s; }
+
+  /* ── Cell heading utility ── */
+  .cell-heading {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--fg);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cell-heading svg {
+    width: 16px;
+    height: 16px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* ── Title Cell (3-wide) ── */
+  .cell-title {
+    grid-column: span 3;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .cell-title h1 {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .cell-title .project-links {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .cell-title .project-links a {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .cell-title .project-links a:hover {
+    text-decoration: underline;
+  }
+  .cell-title .project-links a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  .cell-title .project-links svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  /* ── Screenshot Cell ── */
+  .cell-screenshot {
+    grid-row: span 2;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+  }
+  .browser-chrome {
+    background: var(--border-light);
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .browser-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+  .browser-dot:first-child { background: #fca5a5; }
+  .browser-dot:nth-child(2) { background: #fde68a; }
+  .browser-dot:nth-child(3) { background: #86efac; }
+  .browser-bar {
+    flex: 1;
+    height: 22px;
+    background: var(--surface);
+    border-radius: 6px;
+    margin-inline-start: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-faint);
+    display: flex;
+    align-items: center;
+    padding-inline-start: 10px;
+  }
+  .browser-viewport {
+    flex: 1;
+    min-height: 160px;
+    background: linear-gradient(135deg, var(--accent-bg) 0%, #e0e7ff 50%, #c7d2fe 100%);
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .browser-viewport-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+    opacity: 0.6;
+  }
+
+  /* ── Stat Cell ── */
+  .cell-stat {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 110px;
+  }
+  .stat-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--accent-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .stat-icon svg {
+    width: 16px;
+    height: 16px;
+    color: var(--accent);
+  }
+  .stat-number {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--fg);
+    line-height: 1;
+  }
+  .stat-number .stat-unit {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--fg-muted);
+    margin-inline-start: 2px;
+  }
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-muted);
+  }
+
+  /* ── Narrative Cell (3-wide) ── */
+  .cell-narrative {
+    grid-column: span 3;
+  }
+  .cell-narrative p {
+    font-size: 15px;
+    color: var(--fg-muted);
+    line-height: 1.7;
+    margin-bottom: 12px;
+  }
+  .cell-narrative p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* ── Phases Cell (2-wide) ── */
+  .cell-phases {
+    grid-column: span 2;
+  }
+  .phase-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .phase-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .phase-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .phase-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .phase-name {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--fg);
+  }
+  .phase-dates {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-faint);
+    margin-top: 2px;
+  }
+  .phase-desc {
+    font-size: 13px;
+    color: var(--fg-muted);
+    margin-top: 4px;
+  }
+
+  /* ── Skills Cell (2-wide) ── */
+  .cell-skills {
+    grid-column: span 2;
+  }
+  .skills-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .skill-chip {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  /* ── Decisions Cell (2-wide) ── */
+  .cell-decisions {
+    grid-column: span 2;
+  }
+  .decision-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    counter-reset: decision;
+  }
+  .decision-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    counter-increment: decision;
+  }
+  .decision-item::before {
+    content: counter(decision);
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .decision-text {
+    font-size: 14px;
+    color: var(--fg-muted);
+    line-height: 1.5;
+  }
+
+  /* ── Source Cell ── */
+  .cell-source {
+    grid-column: span 2;
+  }
+  .source-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .source-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .source-name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    width: 80px;
+    flex-shrink: 0;
+  }
+  .source-bar-track {
+    flex: 1;
+    height: 8px;
+    background: var(--border-light);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .source-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--accent);
+  }
+  .source-bar-fill--secondary {
+    background: var(--accent-light);
+  }
+  .source-pct {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg);
+    font-weight: 500;
+    width: 40px;
+    text-align: end;
+  }
+
+  /* ── Timeline Chart Cell (4-wide) ── */
+  .cell-timeline {
+    grid-column: span 4;
+  }
+  .timeline-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .timeline-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 60px 50px 50px;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 13px;
+  }
+  .timeline-row:last-child {
+    border-bottom: none;
+  }
+  .timeline-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-faint);
+    text-align: center;
+  }
+  .timeline-title {
+    color: var(--fg);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .timeline-date {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-faint);
+    text-align: end;
+  }
+  .timeline-duration {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    text-align: end;
+  }
+  .timeline-loc {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    text-align: end;
+  }
+  .timeline-header {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-faint);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+
+  /* ── Session Card Cell ── */
+  .cell-session {
+    grid-column: span 2;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: box-shadow 0.2s, transform 0.2s;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+  }
+  .cell-session:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  .cell-session:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .session-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .session-title {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--fg);
+    line-height: 1.3;
+  }
+  .session-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .session-meta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+  .session-agents {
+    display: flex;
+    gap: 4px;
+  }
+  .agent-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 0;
+    text-align: center;
+  }
+  .footer p {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-faint);
+  }
+  .footer a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .footer a:hover {
+    text-decoration: underline;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .bento {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .cell-title,
+    .cell-narrative,
+    .cell-phases,
+    .cell-skills,
+    .cell-decisions,
+    .cell-source,
+    .cell-timeline,
+    .cell-session,
+    .cell-screenshot {
+      grid-column: span 1;
+      grid-row: span 1;
+    }
+    .cell-title h1 {
+      font-size: 24px;
+    }
+    .stat-number {
+      font-size: 24px;
+    }
+    .timeline-row {
+      grid-template-columns: 24px 1fr 50px;
+    }
+    .timeline-date,
+    .timeline-loc {
+      display: none;
+    }
+    .nav-links {
+      gap: 4px;
+    }
+    .nav-links a {
+      font-size: 13px;
+      padding: 6px 10px;
+    }
+  }
+
+    /* ── Clickable session cards ── */
+    a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+<a href="#main" class="skip-link">Skip to content</a>
+
+<nav class="nav" aria-label="Main navigation">
+  <div class="container nav-inner">
+    <a href="./portfolio.html" class="nav-brand"><span>@</span>alex</a>
+    <ul class="nav-links">
+      <li><a href="./portfolio.html">Portfolio</a></li>
+      <li><a href="./project.html" aria-current="page">Project</a></li>
+      <li><a href="./session.html">Session</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main" class="container">
+  <div class="breadcrumb" aria-label="Breadcrumb">
+    <a href="./portfolio.html">alex</a>
+    <span class="breadcrumb-sep" aria-hidden="true">/</span>
+    <span aria-current="page">budgetwise</span>
+  </div>
+
+  <div class="bento" aria-label="Project dashboard">
+
+    <!-- Cell 1: Title (3-wide) -->
+    <div class="bento-cell cell-title">
+      <h1>BudgetWise</h1>
+      <div class="project-links">
+        <a href="./session.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          github.com/alex/budgetwise
+        </a>
+        <a href="./session.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          budgetwise.app
+        </a>
+      </div>
+    </div>
+
+    <!-- Cell 2: Screenshot (spans 2 rows) -->
+    <div class="bento-cell cell-screenshot">
+      <div class="browser-chrome">
+        <span class="browser-dot" aria-hidden="true"></span>
+        <span class="browser-dot" aria-hidden="true"></span>
+        <span class="browser-dot" aria-hidden="true"></span>
+        <span class="browser-bar">budgetwise.app</span>
+      </div>
+      <div class="browser-viewport" role="img" aria-label="BudgetWise application screenshot placeholder">
+        <span class="browser-viewport-label">App Preview</span>
+      </div>
+    </div>
+
+    <!-- Cell 3: Stat — Sessions -->
+    <section class="bento-cell cell-stat" aria-label="Sessions count">
+      <div class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div>
+        <div class="stat-number" data-target="8">0</div>
+        <div class="stat-label">Sessions</div>
+      </div>
+    </section>
+
+    <!-- Cell 4: Stat — Human Time -->
+    <section class="bento-cell cell-stat" aria-label="Human time">
+      <div class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div>
+        <div class="stat-number">8.1<span class="stat-unit">h</span></div>
+        <div class="stat-label">You</div>
+      </div>
+    </section>
+
+    <!-- Cell 4b: Stat — Agent Time -->
+    <section class="bento-cell cell-stat" aria-label="Agent time">
+      <div class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="9" x2="9" y2="9.01"/><line x1="15" y1="9" x2="15" y2="9.01"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg>
+      </div>
+      <div>
+        <div class="stat-number">34.4<span class="stat-unit">h</span></div>
+        <div class="stat-label">Agents</div>
+      </div>
+    </section>
+
+    <!-- Cell 4c: Stat — Multiplier -->
+    <section class="bento-cell cell-stat" aria-label="Multiplier">
+      <div class="stat-icon" aria-hidden="true" style="color: var(--accent);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      </div>
+      <div>
+        <div class="stat-number">4.2<span class="stat-unit">&times;</span></div>
+        <div class="stat-label">Multiplier</div>
+      </div>
+    </section>
+
+    <!-- Cell 5: Stat — LOC -->
+    <section class="bento-cell cell-stat" aria-label="Lines of code">
+      <div class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      </div>
+      <div>
+        <div class="stat-number" data-target="4460" data-format="comma">0</div>
+        <div class="stat-label">Lines of Code</div>
+      </div>
+    </section>
+
+    <!-- Cell 6: Stat — Files -->
+    <section class="bento-cell cell-stat" aria-label="Files changed">
+      <div class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div>
+        <div class="stat-number" data-target="156">0</div>
+        <div class="stat-label">Files</div>
+      </div>
+    </section>
+
+    <!-- Cell 7: Stat — Tokens -->
+    <section class="bento-cell cell-stat" aria-label="Tokens used">
+      <div class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      </div>
+      <div>
+        <div class="stat-number">2.1<span class="stat-unit">M</span></div>
+        <div class="stat-label">Tokens</div>
+      </div>
+    </section>
+
+
+    <!-- Cell 9: Narrative (3-wide) -->
+    <section class="bento-cell cell-narrative" aria-label="Project narrative">
+      <h2 class="cell-heading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Narrative
+      </h2>
+      <p>Started with a basic Prisma schema but realized halfway through that I needed polymorphic transaction types. The AI kept suggesting single-table inheritance but I pushed back &mdash; went with a discriminated union pattern instead. Nullable fields for transfer-specific data, hard deletes with an audit log.</p>
+      <p>The recurring transaction detection was the hardest part. Had to figure out the right tolerance windows &mdash; monthly transactions drift by a few days, weekly ones are more precise. Settled on three consecutive interval matches before marking something as recurring. The partial index on merchant_normalized brought the detection query from 2 seconds to 120ms on 10k transactions.</p>
+      <p>Plaid integration went smoother than expected. The token exchange flow is straightforward, but the webhook handling needed careful idempotency &mdash; Plaid sends duplicate webhooks, so I used a processed-events table keyed on webhook ID.</p>
+    </section>
+
+    <!-- Cell 10: Phases (2-wide) -->
+    <section class="bento-cell cell-phases" aria-label="Project phases">
+      <h2 class="cell-heading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Phases
+      </h2>
+      <ol class="phase-list" role="list">
+        <li class="phase-item">
+          <span class="phase-number" aria-hidden="true">1</span>
+          <div class="phase-content">
+            <div class="phase-name">Foundation</div>
+            <div class="phase-dates">Feb 3 &ndash; 14</div>
+            <div class="phase-desc">Schema design, Prisma setup, transaction CRUD</div>
+          </div>
+        </li>
+        <li class="phase-item">
+          <span class="phase-number" aria-hidden="true">2</span>
+          <div class="phase-content">
+            <div class="phase-name">Data Pipeline</div>
+            <div class="phase-dates">Feb 17 &ndash; 26</div>
+            <div class="phase-desc">CSV import, Plaid integration, recurring detection</div>
+          </div>
+        </li>
+        <li class="phase-item">
+          <span class="phase-number" aria-hidden="true">3</span>
+          <div class="phase-content">
+            <div class="phase-name">Intelligence</div>
+            <div class="phase-dates">Mar 1 &ndash; 14</div>
+            <div class="phase-desc">Search, full-text indexing, spending insights</div>
+          </div>
+        </li>
+        <li class="phase-item">
+          <span class="phase-number" aria-hidden="true">4</span>
+          <div class="phase-content">
+            <div class="phase-name">Hardening</div>
+            <div class="phase-dates">Mar 16 &ndash; 26</div>
+            <div class="phase-desc">2FA, mobile responsive, CI/CD, performance</div>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Cell 11: Skills (2-wide) -->
+    <section class="bento-cell cell-skills" aria-label="Skills used">
+      <h2 class="cell-heading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Skills
+      </h2>
+      <div class="skills-grid">
+        <span class="skill-chip">TypeScript</span>
+        <span class="skill-chip">React</span>
+        <span class="skill-chip">Next.js</span>
+        <span class="skill-chip">Prisma</span>
+        <span class="skill-chip">PostgreSQL</span>
+        <span class="skill-chip">Tailwind CSS</span>
+        <span class="skill-chip">Stripe API</span>
+        <span class="skill-chip">Plaid API</span>
+        <span class="skill-chip">Chart.js</span>
+        <span class="skill-chip">Playwright</span>
+      </div>
+    </section>
+
+    <!-- Cell 12: Key Decisions (2-wide) -->
+    <section class="bento-cell cell-decisions" aria-label="Key decisions">
+      <h2 class="cell-heading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        Key Decisions
+      </h2>
+      <ol class="decision-list" role="list">
+        <li class="decision-item">
+          <span class="decision-text">Discriminated union over single-table inheritance for transaction types</span>
+        </li>
+        <li class="decision-item">
+          <span class="decision-text">Partial index on merchant_normalized for 16x query speedup</span>
+        </li>
+        <li class="decision-item">
+          <span class="decision-text">Processed-events table for Plaid webhook idempotency</span>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Cell 13: Source Breakdown (2-wide) -->
+    <section class="bento-cell cell-source" aria-label="Source breakdown">
+      <h2 class="cell-heading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        Source Breakdown
+      </h2>
+      <div class="source-bars">
+        <div class="source-item">
+          <span class="source-name">Claude</span>
+          <div class="source-bar-track">
+            <div class="source-bar-fill" style="width: 62.5%" role="progressbar" aria-valuenow="62" aria-valuemin="0" aria-valuemax="100" aria-label="Claude usage"></div>
+          </div>
+          <span class="source-pct">62.5%</span>
+        </div>
+        <div class="source-item">
+          <span class="source-name">Cursor</span>
+          <div class="source-bar-track">
+            <div class="source-bar-fill source-bar-fill--secondary" style="width: 37.5%" role="progressbar" aria-valuenow="38" aria-valuemin="0" aria-valuemax="100" aria-label="Cursor usage"></div>
+          </div>
+          <span class="source-pct">37.5%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cell 14: Work Timeline (4-wide) -->
+    <section class="bento-cell cell-timeline" aria-label="Work timeline">
+      <h2 class="cell-heading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+        Work Timeline
+      </h2>
+      <div class="timeline-chart" role="table" aria-label="Session timeline">
+        <div class="timeline-row timeline-header" role="row">
+          <span role="columnheader">#</span>
+          <span role="columnheader">Session</span>
+          <span role="columnheader" style="text-align:end">Date</span>
+          <span role="columnheader" style="text-align:end">Time</span>
+          <span role="columnheader" style="text-align:end">LOC</span>
+        </div>
+        <div class="timeline-row" role="row">
+          <span class="timeline-num" role="cell">1</span>
+          <span class="timeline-title" role="cell">Set up Prisma schema</span>
+          <span class="timeline-date" role="cell">Feb 3</span>
+          <span class="timeline-duration" role="cell">72m</span>
+          <span class="timeline-loc" role="cell">680</span>
+        </div>
+        <div class="timeline-row" role="row">
+          <span class="timeline-num" role="cell">2</span>
+          <span class="timeline-title" role="cell">Transaction list + infinite scroll</span>
+          <span class="timeline-date" role="cell">Feb 14</span>
+          <span class="timeline-duration" role="cell">65m</span>
+          <span class="timeline-loc" role="cell">520</span>
+        </div>
+        <div class="timeline-row" role="row">
+          <span class="timeline-num" role="cell">3</span>
+          <span class="timeline-title" role="cell">Recurring transaction detection</span>
+          <span class="timeline-date" role="cell">Mar 1</span>
+          <span class="timeline-duration" role="cell">88m</span>
+          <span class="timeline-loc" role="cell">890</span>
+        </div>
+        <div class="timeline-row" role="row">
+          <span class="timeline-num" role="cell">4</span>
+          <span class="timeline-title" role="cell">Stripe integration</span>
+          <span class="timeline-date" role="cell">Mar 10</span>
+          <span class="timeline-duration" role="cell">55m</span>
+          <span class="timeline-loc" role="cell">420</span>
+        </div>
+        <div class="timeline-row" role="row">
+          <span class="timeline-num" role="cell">5</span>
+          <span class="timeline-title" role="cell">CSV import pipeline</span>
+          <span class="timeline-date" role="cell">Mar 14</span>
+          <span class="timeline-duration" role="cell">45m</span>
+          <span class="timeline-loc" role="cell">380</span>
+        </div>
+        <div class="timeline-row" role="row">
+          <span class="timeline-num" role="cell">6</span>
+          <span class="timeline-title" role="cell">Full-text search tsvector</span>
+          <span class="timeline-date" role="cell">Mar 18</span>
+          <span class="timeline-duration" role="cell">62m</span>
+          <span class="timeline-loc" role="cell">510</span>
+        </div>
+        <div class="timeline-row" role="row">
+          <span class="timeline-num" role="cell">7</span>
+          <span class="timeline-title" role="cell">Spending insights dashboard</span>
+          <span class="timeline-date" role="cell">Mar 22</span>
+          <span class="timeline-duration" role="cell">78m</span>
+          <span class="timeline-loc" role="cell">720</span>
+        </div>
+        <div class="timeline-row" role="row">
+          <span class="timeline-num" role="cell">8</span>
+          <span class="timeline-title" role="cell">Mobile responsive + 2FA</span>
+          <span class="timeline-date" role="cell">Mar 26</span>
+          <span class="timeline-duration" role="cell">50m</span>
+          <span class="timeline-loc" role="cell">340</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cell 15: Featured Session — Prisma schema -->
+    <a href="./session.html" class="bento-cell cell-session" aria-label="View session: Prisma schema">
+      <div class="session-header">
+        <span class="session-title">Prisma schema</span>
+        <span class="session-tag">schema</span>
+      </div>
+      <div class="session-meta">
+        <span>72m</span>
+        <span>680 LOC</span>
+        <span>7 agents</span>
+      </div>
+      <div class="session-agents" aria-label="Agent roles used">
+        <span class="agent-dot" style="background: var(--clr-backend);" title="backend-dev"></span>
+        <span class="agent-dot" style="background: var(--clr-qa);" title="qa-engineer"></span>
+        <span class="agent-dot" style="background: var(--clr-frontend);" title="frontend-dev"></span>
+        <span class="agent-dot" style="background: var(--clr-security);" title="security-engineer"></span>
+        <span class="agent-dot" style="background: var(--clr-reviewer);" title="code-reviewer"></span>
+      </div>
+    </a>
+
+    <!-- Cell 16: Featured Session — Transaction list -->
+    <a href="./session.html" class="bento-cell cell-session" aria-label="View session: Transaction list">
+      <div class="session-header">
+        <span class="session-title">Transaction list + infinite scroll</span>
+        <span class="session-tag">frontend</span>
+      </div>
+      <div class="session-meta">
+        <span>65m</span>
+        <span>520 LOC</span>
+        <span>5 agents</span>
+      </div>
+      <div class="session-agents" aria-label="Agent roles used">
+        <span class="agent-dot" style="background: var(--clr-frontend);" title="frontend-dev"></span>
+        <span class="agent-dot" style="background: var(--clr-backend);" title="backend-dev"></span>
+        <span class="agent-dot" style="background: var(--clr-qa);" title="qa-engineer"></span>
+      </div>
+    </a>
+
+    <!-- Cell 17: Featured Session — Recurring detection -->
+    <a href="./session.html" class="bento-cell cell-session" aria-label="View session: Recurring detection">
+      <div class="session-header">
+        <span class="session-title">Recurring transaction detection</span>
+        <span class="session-tag">algorithm</span>
+      </div>
+      <div class="session-meta">
+        <span>88m</span>
+        <span>890 LOC</span>
+        <span>6 agents</span>
+      </div>
+      <div class="session-agents" aria-label="Agent roles used">
+        <span class="agent-dot" style="background: var(--clr-backend);" title="backend-dev"></span>
+        <span class="agent-dot" style="background: var(--clr-qa);" title="qa-engineer"></span>
+        <span class="agent-dot" style="background: var(--clr-security);" title="security-engineer"></span>
+      </div>
+    </a>
+
+    <!-- Cell 18: Featured Session — CSV import -->
+    <a href="./session.html" class="bento-cell cell-session" aria-label="View session: CSV import">
+      <div class="session-header">
+        <span class="session-title">CSV import pipeline</span>
+        <span class="session-tag">import</span>
+      </div>
+      <div class="session-meta">
+        <span>78m</span>
+        <span>640 LOC</span>
+        <span>5 agents</span>
+      </div>
+      <div class="session-agents" aria-label="Agent roles used">
+        <span class="agent-dot" style="background: var(--clr-backend);" title="backend-dev"></span>
+        <span class="agent-dot" style="background: var(--clr-qa);" title="qa-engineer"></span>
+      </div>
+    </a>
+
+    <!-- Cell 19: Featured Session — Plaid integration -->
+    <a href="./session.html" class="bento-cell cell-session" aria-label="View session: Plaid integration">
+      <div class="session-header">
+        <span class="session-title">Plaid integration</span>
+        <span class="session-tag">integration</span>
+      </div>
+      <div class="session-meta">
+        <span>90m</span>
+        <span>780 LOC</span>
+        <span>8 agents</span>
+      </div>
+      <div class="session-agents" aria-label="Agent roles used">
+        <span class="agent-dot" style="background: var(--clr-backend);" title="backend-dev"></span>
+        <span class="agent-dot" style="background: var(--clr-security);" title="security-engineer"></span>
+        <span class="agent-dot" style="background: var(--clr-frontend);" title="frontend-dev"></span>
+        <span class="agent-dot" style="background: var(--clr-reviewer);" title="code-reviewer"></span>
+      </div>
+    </a>
+
+    <!-- Cell 20: Featured Session — Spending insights -->
+    <a href="./session.html" class="bento-cell cell-session" aria-label="View session: Spending insights">
+      <div class="session-header">
+        <span class="session-title">Spending insights dashboard</span>
+        <span class="session-tag">insights</span>
+      </div>
+      <div class="session-meta">
+        <span>70m</span>
+        <span>620 LOC</span>
+        <span>4 agents</span>
+      </div>
+      <div class="session-agents" aria-label="Agent roles used">
+        <span class="agent-dot" style="background: var(--clr-frontend);" title="frontend-dev"></span>
+        <span class="agent-dot" style="background: var(--clr-ux);" title="ux-designer"></span>
+        <span class="agent-dot" style="background: var(--clr-backend);" title="backend-dev"></span>
+      </div>
+    </a>
+
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <p>Built with <a href="./session.html">heyi.am</a></p>
+  </div>
+</footer>
+
+<script>
+  // Stat counter animation
+  (function() {
+    var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var stats = document.querySelectorAll('.stat-number[data-target]');
+
+    stats.forEach(function(el) {
+      var target = parseInt(el.getAttribute('data-target'), 10);
+      var format = el.getAttribute('data-format');
+      var unit = el.querySelector('.stat-unit');
+
+      if (reducedMotion) {
+        el.textContent = format === 'comma' ? target.toLocaleString() : String(target);
+        if (unit) el.appendChild(unit);
+        return;
+      }
+
+      var duration = 1200;
+      var start = null;
+
+      function step(timestamp) {
+        if (!start) start = timestamp;
+        var progress = Math.min((timestamp - start) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        var current = Math.round(eased * target);
+        el.textContent = format === 'comma' ? current.toLocaleString() : String(current);
+        if (unit) el.appendChild(unit);
+        if (progress < 1) requestAnimationFrame(step);
+      }
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            requestAnimationFrame(step);
+            observer.unobserve(el);
+          }
+        });
+      }, { threshold: 0.5 });
+      observer.observe(el);
+    });
+  })();
+</script>
+
+</body>
+</html>

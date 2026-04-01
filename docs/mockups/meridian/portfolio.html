@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meridian Template — Ryan Smith</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Meridian Design Tokens ── */
+:root {
+  --mer-bg:             #022c22;
+  --mer-surface:        #064e3b;
+  --mer-card:           #053f30;
+  --mer-border:         #0d7357;
+  --mer-border-subtle:  #065f46;
+  --mer-text:           #d1fae5;
+  --mer-text-secondary: #a7f3d0;
+  --mer-text-muted:     #6ee7b7;
+  --mer-accent:         #34d399;
+  --mer-accent-dim:     rgba(52, 211, 153, 0.15);
+  --mer-white:          #ecfdf5;
+  --mer-contour:        rgba(52, 211, 153, 0.06);
+  --mer-contour-strong: rgba(52, 211, 153, 0.1);
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+
+  --radius-sm: 4px;
+  --radius:    8px;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--mer-text);
+  background-color: var(--mer-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  overflow-x: hidden;
+}
+
+a { color: var(--mer-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Topographic Contour Background ── */
+.topo-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.topo-bg svg {
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+}
+
+.topo-contours {
+  animation: topo-drift 30s ease-in-out infinite alternate;
+}
+
+@keyframes topo-drift {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(-12px, 8px) scale(1.02); }
+  100% { transform: translate(6px, -6px) scale(0.99); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topo-contours { animation: none; }
+  .section-reveal { opacity: 1 !important; transform: none !important; }
+  .stat-counter { animation: none !important; }
+}
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--mer-accent);
+  color: var(--mer-bg);
+  padding: 0.5rem 1rem;
+  z-index: 1000;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  border-radius: var(--radius-sm);
+}
+.skip-link:focus {
+  top: 1rem;
+  color: var(--mer-bg);
+  text-decoration: none;
+}
+
+/* ── Page Shell ── */
+.mer-page {
+  position: relative;
+  z-index: 1;
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ── Navigation ── */
+.mer-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block-end: 1.25rem;
+  border-bottom: 1px solid var(--mer-border-subtle);
+  margin-block-end: 3rem;
+}
+
+.mer-nav__brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--mer-accent);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mer-nav__brand-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.mer-nav__links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+
+.mer-nav__links a {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--mer-text-secondary);
+  transition: color 0.2s;
+  letter-spacing: 0.02em;
+}
+
+.mer-nav__links a:hover,
+.mer-nav__links a[aria-current="page"] {
+  color: var(--mer-accent);
+  text-decoration: none;
+}
+
+/* ── Section Headers (coordinate style) ── */
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--mer-text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-block-end: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--mer-border-subtle);
+}
+
+.section-heading {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.75rem;
+  color: var(--mer-white);
+  margin-block-end: 1.5rem;
+  line-height: 1.2;
+}
+
+/* ── Section Fade-In ── */
+.section-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.section-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Hero ── */
+.hero {
+  margin-block-end: 4rem;
+  padding-block: 2rem 0;
+}
+
+.hero__profile {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.hero__photo {
+  width: 120px;
+  height: 150px;
+  border-radius: var(--radius);
+  object-fit: cover;
+  object-position: 55% 10%;
+  border: 2px solid var(--mer-accent);
+  box-shadow: 0 0 24px var(--mer-accent-dim);
+  flex-shrink: 0;
+  filter: grayscale(0.2);
+}
+
+.hero__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.hero__name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.75rem;
+  color: var(--mer-white);
+  line-height: 1.1;
+  margin-block-end: 0.25rem;
+}
+
+.hero__handle {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--mer-accent);
+  margin-block-end: 1rem;
+}
+
+.hero__bio {
+  font-size: 1.0625rem;
+  color: var(--mer-text-secondary);
+  max-width: 600px;
+  line-height: 1.65;
+  margin-block-end: 1rem;
+}
+
+.hero__location {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--mer-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.hero__location svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: var(--mer-text-muted);
+  stroke-width: 2;
+}
+
+.hero__contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-block-start: 1rem;
+  list-style: none;
+}
+
+.hero__contact a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--mer-text-muted);
+  transition: color 0.2s;
+}
+
+.hero__contact a:hover {
+  color: var(--mer-accent);
+  text-decoration: none;
+}
+
+.hero__contact svg {
+  flex-shrink: 0;
+}
+
+.hero__resume-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-block-start: 1rem;
+  padding: 0.5rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--mer-bg);
+  background: var(--mer-accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.hero__resume-btn:hover {
+  opacity: 0.85;
+  text-decoration: none;
+  color: var(--mer-bg);
+}
+
+/* ── Stats Grid (coordinate labels) ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-block-end: 4rem;
+  padding: 1.5rem;
+  background: var(--mer-surface);
+  border: 1px solid var(--mer-border-subtle);
+  border-radius: var(--radius);
+}
+
+.stat-cell {
+  text-align: center;
+}
+
+.stat-cell__coord {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mer-text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-block-end: 0.375rem;
+}
+
+.stat-cell__value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 1.625rem;
+  color: var(--mer-accent);
+}
+
+.stat-cell__label {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  color: var(--mer-text-secondary);
+  margin-block-start: 0.125rem;
+}
+
+/* Counter animation */
+@keyframes stat-glow {
+  0%   { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.stat-counter {
+  animation: stat-glow 0.8s ease forwards;
+}
+
+.stat-counter:nth-child(2) { animation-delay: 0.1s; }
+.stat-counter:nth-child(3) { animation-delay: 0.2s; }
+.stat-counter:nth-child(4) { animation-delay: 0.3s; }
+
+/* ── Leverage ── */
+.stat-cell--leverage {
+  grid-column: span 2;
+}
+.stat-cell--leverage .stat-cell__coord {
+  margin-bottom: 0.5rem;
+}
+.mer-leverage-nums {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.mer-leverage-nums .mlev-val {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 1.375rem;
+  color: var(--mer-accent);
+}
+.mer-leverage-nums .mlev-lbl {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  color: var(--mer-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.mer-leverage-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--mer-border-subtle);
+  display: flex;
+  overflow: hidden;
+}
+.mer-leverage-bar__human {
+  height: 100%;
+  width: 19%;
+  background: var(--mer-text);
+  border-radius: 2px 0 0 2px;
+}
+.mer-leverage-bar__agent {
+  height: 100%;
+  width: 81%;
+  background: var(--mer-accent);
+  border-radius: 0 2px 2px 0;
+}
+
+/* ── Project Cards ── */
+.projects-section {
+  margin-block-end: 4rem;
+}
+
+.project-card {
+  background: var(--mer-surface);
+  border: 1px solid var(--mer-border-subtle);
+  border-radius: var(--radius);
+  padding: 1.75rem;
+  margin-block-end: 1.25rem;
+  transition: border-color 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.project-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--mer-accent);
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.project-card:hover {
+  border-color: var(--mer-accent);
+}
+
+.project-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-block-end: 0.75rem;
+}
+
+.project-card__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: var(--mer-white);
+}
+
+.project-card__title a {
+  color: var(--mer-white);
+}
+
+.project-card__title a:hover {
+  color: var(--mer-accent);
+}
+
+.project-card__source {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mer-text-muted);
+  white-space: nowrap;
+  padding: 0.25rem 0.5rem;
+  background: var(--mer-accent-dim);
+  border-radius: var(--radius-sm);
+}
+
+.project-card__narrative {
+  font-size: 0.9375rem;
+  color: var(--mer-text-secondary);
+  line-height: 1.6;
+  margin-block-end: 1rem;
+}
+
+.project-card__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--mer-text-muted);
+  margin-block-end: 1rem;
+  padding-block-end: 1rem;
+  border-bottom: 1px solid var(--mer-border-subtle);
+}
+
+.project-card__stats span strong {
+  color: var(--mer-accent);
+  font-weight: 500;
+}
+
+.project-card__skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.skill-chip {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  padding: 0.25rem 0.625rem;
+  background: var(--mer-accent-dim);
+  color: var(--mer-accent);
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.02em;
+}
+
+/* ── Footer ── */
+.mer-footer {
+  margin-block-start: 4rem;
+  padding-block-start: 1.5rem;
+  border-top: 1px solid var(--mer-border-subtle);
+  text-align: center;
+}
+
+.mer-footer__text {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--mer-text-muted);
+  letter-spacing: 0.04em;
+}
+
+/* ── Source Bar ── */
+.source-bar {
+  display: flex;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-block-start: 0.75rem;
+}
+
+.source-bar__segment {
+  height: 100%;
+  transition: width 0.6s ease;
+}
+
+.source-bar__segment--claude { background: var(--mer-accent); }
+.source-bar__segment--cursor { background: var(--mer-text-muted); }
+
+.source-bar__legend {
+  display: flex;
+  gap: 1rem;
+  margin-block-start: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mer-text-muted);
+}
+
+.source-bar__legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-inline-end: 0.375rem;
+  vertical-align: middle;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .mer-page { padding: 1.25rem 1rem; }
+
+  .hero__name { font-size: 2rem; }
+  .hero__profile { flex-direction: column; }
+  .hero__photo {
+    width: 80px;
+    height: 100px;
+  }
+  .hero__contact { font-size: 0.75rem; }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .stat-cell__value { font-size: 1.375rem; }
+
+  .project-card { padding: 1.25rem; }
+
+  .project-card__header { flex-direction: column; }
+
+  .project-card__stats {
+    gap: 0.75rem;
+  }
+
+  .mer-nav__links { gap: 1rem; }
+  .mer-footer { flex-direction: column; gap: 0.5rem; }
+}
+
+@media (max-width: 480px) {
+  .hero__name { font-size: 1.625rem; }
+  .section-heading { font-size: 1.375rem; }
+  .mer-nav { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<!-- Topographic contour background -->
+<div class="topo-bg" aria-hidden="true">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid slice">
+    <g class="topo-contours" fill="none" stroke-width="0.75">
+      <!-- Contour cluster 1 -->
+      <ellipse cx="350" cy="300" rx="280" ry="180" stroke="var(--mer-contour)" />
+      <ellipse cx="355" cy="305" rx="240" ry="150" stroke="var(--mer-contour)" />
+      <ellipse cx="360" cy="310" rx="200" ry="120" stroke="var(--mer-contour-strong)" />
+      <ellipse cx="365" cy="315" rx="160" ry="90" stroke="var(--mer-contour)" />
+      <ellipse cx="370" cy="320" rx="120" ry="65" stroke="var(--mer-contour-strong)" />
+      <ellipse cx="375" cy="325" rx="80" ry="40" stroke="var(--mer-contour)" />
+      <!-- Contour cluster 2 -->
+      <ellipse cx="850" cy="550" rx="300" ry="200" stroke="var(--mer-contour)" />
+      <ellipse cx="845" cy="545" rx="250" ry="165" stroke="var(--mer-contour)" />
+      <ellipse cx="840" cy="540" rx="200" ry="130" stroke="var(--mer-contour-strong)" />
+      <ellipse cx="835" cy="535" rx="150" ry="95" stroke="var(--mer-contour)" />
+      <ellipse cx="830" cy="530" rx="100" ry="60" stroke="var(--mer-contour-strong)" />
+      <ellipse cx="825" cy="525" rx="55" ry="30" stroke="var(--mer-contour)" />
+      <!-- Contour cluster 3 (upper right) -->
+      <ellipse cx="950" cy="150" rx="220" ry="140" stroke="var(--mer-contour)" />
+      <ellipse cx="955" cy="155" rx="170" ry="105" stroke="var(--mer-contour)" />
+      <ellipse cx="960" cy="160" rx="120" ry="70" stroke="var(--mer-contour-strong)" />
+      <ellipse cx="965" cy="165" rx="70" ry="38" stroke="var(--mer-contour)" />
+      <!-- Contour cluster 4 (lower left) -->
+      <ellipse cx="150" cy="700" rx="250" ry="160" stroke="var(--mer-contour)" />
+      <ellipse cx="155" cy="695" rx="200" ry="125" stroke="var(--mer-contour-strong)" />
+      <ellipse cx="160" cy="690" rx="150" ry="90" stroke="var(--mer-contour)" />
+      <ellipse cx="165" cy="685" rx="100" ry="55" stroke="var(--mer-contour)" />
+    </g>
+  </svg>
+</div>
+
+<a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="mer-page">
+  <!-- Navigation -->
+  <nav class="mer-nav" aria-label="Primary navigation">
+    <div class="mer-nav__brand">
+      <svg class="mer-nav__brand-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+        <circle cx="10" cy="10" r="4" stroke="currentColor" stroke-width="1"/>
+        <line x1="10" y1="2" x2="10" y2="18" stroke="currentColor" stroke-width="0.75" opacity="0.4"/>
+        <line x1="2" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="0.75" opacity="0.4"/>
+      </svg>
+      meridian
+    </div>
+    <ul class="mer-nav__links">
+      <li><a href="./portfolio.html" aria-current="page">portfolio</a></li>
+      <li><a href="./project.html">project</a></li>
+      <li><a href="./session.html">session</a></li>
+    </ul>
+  </nav>
+
+  <main id="main-content">
+    <!-- Hero -->
+    <section class="hero section-reveal" aria-label="Profile">
+      <div class="section-label">
+        <span>&#167;01 &mdash; survey point</span>
+      </div>
+      <div class="hero__profile">
+        <img src="../assets/headshot-man-3-400.jpg" alt="Ryan Smith" class="hero__photo" width="120" height="120">
+        <div class="hero__info">
+          <h1 class="hero__name">Ryan Smith</h1>
+          <p class="hero__handle">@ryan</p>
+          <p class="hero__bio">Infrastructure engineer who thinks in systems. I build CLIs, data pipelines, and the invisible plumbing that makes products work. TypeScript and Rust, with a soft spot for elegant error handling.</p>
+          <p class="hero__location">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="9" r="2.5"/></svg>
+            Seattle, WA
+          </p>
+          <ul class="hero__contact" aria-label="Contact and social links">
+            <li><a href="mailto:ryan@heyiam.com"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg>ryan@heyiam.com</a></li>
+            <li><a href="https://linkedin.com/in/ryansmith"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>LinkedIn</a></li>
+            <li><a href="https://github.com/interactivecats/heyi.am"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>GitHub</a></li>
+            <li><a href="https://x.com/ryansmithdev"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>@ryansmithdev</a></li>
+            <li><a href="https://ryansmith.dev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>ryansmith.dev</a></li>
+          </ul>
+          <a href="./project.html" class="hero__resume-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>Download Resume</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="section-reveal" aria-label="Aggregate statistics">
+      <div class="section-label">
+        <span>&#167;02 &mdash; elevation data</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-cell stat-counter" role="group" aria-label="Projects count">
+          <div class="stat-cell__coord">lat 37.78</div>
+          <div class="stat-cell__value" data-target="3">3</div>
+          <div class="stat-cell__label">projects</div>
+        </div>
+        <div class="stat-cell stat-counter" role="group" aria-label="Sessions count">
+          <div class="stat-cell__coord">lng -122.42</div>
+          <div class="stat-cell__value" data-target="28">28</div>
+          <div class="stat-cell__label">sessions</div>
+        </div>
+        <div class="stat-cell stat-cell--leverage stat-counter" role="group" aria-label="Leverage: 24h you, 100h agents, 4.2x multiplier">
+          <div class="stat-cell__coord">leverage</div>
+          <div class="mer-leverage-nums">
+            <span><span class="mlev-val">24h</span> <span class="mlev-lbl">you</span></span>
+            <span><span class="mlev-val">100h</span> <span class="mlev-lbl">agents</span></span>
+            <span><span class="mlev-val">4.2x</span></span>
+          </div>
+          <div class="mer-leverage-bar">
+            <div class="mer-leverage-bar__human"></div>
+            <div class="mer-leverage-bar__agent"></div>
+          </div>
+        </div>
+        <div class="stat-cell stat-counter" role="group" aria-label="Lines of code">
+          <div class="stat-cell__coord">datum 18.4k</div>
+          <div class="stat-cell__value" data-target="18400">18,400</div>
+          <div class="stat-cell__label">lines of code</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Projects -->
+    <section class="projects-section section-reveal" aria-label="Projects">
+      <div class="section-label">
+        <span>&#167;03 &mdash; terrain features</span>
+      </div>
+      <h2 class="section-heading">Projects</h2>
+
+      <!-- BudgetWise -->
+      <article class="project-card">
+        <div class="project-card__header">
+          <h3 class="project-card__title">
+            <a href="./project.html">BudgetWise</a>
+          </h3>
+          <span class="project-card__source">Claude 62.5% / Cursor 37.5%</span>
+        </div>
+        <p class="project-card__narrative">Personal finance app with recurring transaction detection, Plaid integration, and spending insights dashboard.</p>
+        <div class="project-card__stats">
+          <span><strong>8</strong> sessions</span>
+          <span><strong>42.5</strong>h</span>
+          <span><strong>4,460</strong> LOC</span>
+        </div>
+        <div class="project-card__skills">
+          <span class="skill-chip">TypeScript</span>
+          <span class="skill-chip">React</span>
+          <span class="skill-chip">Next.js</span>
+          <span class="skill-chip">Prisma</span>
+          <span class="skill-chip">PostgreSQL</span>
+          <span class="skill-chip">Stripe API</span>
+        </div>
+        <div class="source-bar" role="img" aria-label="Source breakdown: Claude 62.5%, Cursor 37.5%">
+          <div class="source-bar__segment source-bar__segment--claude" style="width: 62.5%"></div>
+          <div class="source-bar__segment source-bar__segment--cursor" style="width: 37.5%"></div>
+        </div>
+        <div class="source-bar__legend">
+          <span><span class="source-bar__legend-dot" style="background: var(--mer-accent)"></span>Claude</span>
+          <span><span class="source-bar__legend-dot" style="background: var(--mer-text-muted)"></span>Cursor</span>
+        </div>
+      </article>
+
+      <!-- ShellHook -->
+      <article class="project-card">
+        <div class="project-card__header">
+          <h3 class="project-card__title">ShellHook</h3>
+          <span class="project-card__source">Claude 85% / Cursor 15%</span>
+        </div>
+        <p class="project-card__narrative">Rust CLI tool for managing git hooks with TOML configuration and automatic symlinking.</p>
+        <div class="project-card__stats">
+          <span><strong>7</strong> sessions</span>
+          <span><strong>32</strong>h</span>
+          <span><strong>3,580</strong> LOC</span>
+        </div>
+        <div class="project-card__skills">
+          <span class="skill-chip">Rust</span>
+          <span class="skill-chip">CLI design</span>
+          <span class="skill-chip">TOML parsing</span>
+          <span class="skill-chip">Git internals</span>
+          <span class="skill-chip">Shell scripting</span>
+        </div>
+        <div class="source-bar" role="img" aria-label="Source breakdown: Claude 85%, Cursor 15%">
+          <div class="source-bar__segment source-bar__segment--claude" style="width: 85%"></div>
+          <div class="source-bar__segment source-bar__segment--cursor" style="width: 15%"></div>
+        </div>
+        <div class="source-bar__legend">
+          <span><span class="source-bar__legend-dot" style="background: var(--mer-accent)"></span>Claude</span>
+          <span><span class="source-bar__legend-dot" style="background: var(--mer-text-muted)"></span>Cursor</span>
+        </div>
+      </article>
+
+      <!-- PixelBoard -->
+      <article class="project-card">
+        <div class="project-card__header">
+          <h3 class="project-card__title">PixelBoard</h3>
+          <span class="project-card__source">Claude 60% / Cursor 40%</span>
+        </div>
+        <p class="project-card__narrative">Real-time collaborative drawing canvas with CRDT-based state sync and pressure-sensitive input.</p>
+        <div class="project-card__stats">
+          <span><strong>5</strong> sessions</span>
+          <span><strong>28</strong>h</span>
+          <span><strong>2,940</strong> LOC</span>
+        </div>
+        <div class="project-card__skills">
+          <span class="skill-chip">TypeScript</span>
+          <span class="skill-chip">WebSocket</span>
+          <span class="skill-chip">Canvas API</span>
+          <span class="skill-chip">Redis</span>
+          <span class="skill-chip">Express</span>
+          <span class="skill-chip">CRDT</span>
+        </div>
+        <div class="source-bar" role="img" aria-label="Source breakdown: Claude 60%, Cursor 40%">
+          <div class="source-bar__segment source-bar__segment--claude" style="width: 60%"></div>
+          <div class="source-bar__segment source-bar__segment--cursor" style="width: 40%"></div>
+        </div>
+        <div class="source-bar__legend">
+          <span><span class="source-bar__legend-dot" style="background: var(--mer-accent)"></span>Claude</span>
+          <span><span class="source-bar__legend-dot" style="background: var(--mer-text-muted)"></span>Cursor</span>
+        </div>
+      </article>
+
+      <!-- DevLog -->
+      <article class="project-card">
+        <div class="project-card__header">
+          <h3 class="project-card__title">DevLog</h3>
+          <span class="project-card__source">Claude 80% / Cursor 20%</span>
+        </div>
+        <p class="project-card__narrative">CLI tool for capturing development decisions and context as structured markdown notes.</p>
+        <div class="project-card__stats">
+          <span><strong>5</strong> sessions</span>
+          <span><strong>18</strong>h</span>
+          <span><strong>1,840</strong> LOC</span>
+        </div>
+        <div class="project-card__skills">
+          <span class="skill-chip">TypeScript</span>
+          <span class="skill-chip">Node.js</span>
+          <span class="skill-chip">CLI design</span>
+          <span class="skill-chip">Markdown</span>
+          <span class="skill-chip">SQLite</span>
+</div>
+        <div class="source-bar" role="img" aria-label="Source breakdown: Claude 80%, Cursor 20%">
+          <div class="source-bar__segment source-bar__segment--claude" style="width: 80%"></div>
+          <div class="source-bar__segment source-bar__segment--cursor" style="width: 20%"></div>
+        </div>
+        <div class="source-bar__legend">
+          <span><span class="source-bar__legend-dot" style="background: var(--mer-accent)"></span>Claude</span>
+          <span><span class="source-bar__legend-dot" style="background: var(--mer-text-muted)"></span>Cursor</span>
+        </div>
+      </article>
+
+      <!-- Snapgrid -->
+      <article class="project-card">
+        <div class="project-card__header">
+          <h3 class="project-card__title">Snapgrid</h3>
+          <span class="project-card__source">Claude 50% / Cursor 50%</span>
+        </div>
+        <p class="project-card__narrative">Responsive image gallery with masonry layout, lazy loading, and keyboard navigation.</p>
+        <div class="project-card__stats">
+          <span><strong>4</strong> sessions</span>
+          <span><strong>14</strong>h</span>
+          <span><strong>1,520</strong> LOC</span>
+        </div>
+        <div class="project-card__skills">
+          <span class="skill-chip">TypeScript</span>
+          <span class="skill-chip">React</span>
+          <span class="skill-chip">CSS Grid</span>
+          <span class="skill-chip">IntersectionObserver</span>
+          <span class="skill-chip">Accessibility</span>
+</div>
+        <div class="source-bar" role="img" aria-label="Source breakdown: Claude 50%, Cursor 50%">
+          <div class="source-bar__segment source-bar__segment--claude" style="width: 50%"></div>
+          <div class="source-bar__segment source-bar__segment--cursor" style="width: 50%"></div>
+        </div>
+        <div class="source-bar__legend">
+          <span><span class="source-bar__legend-dot" style="background: var(--mer-accent)"></span>Claude</span>
+          <span><span class="source-bar__legend-dot" style="background: var(--mer-text-muted)"></span>Cursor</span>
+        </div>
+      </article>
+
+      <!-- Terracotta -->
+      <article class="project-card">
+        <div class="project-card__header">
+          <h3 class="project-card__title">Terracotta</h3>
+          <span class="project-card__source">Claude 70% / Cursor 30%</span>
+        </div>
+        <p class="project-card__narrative">Design token pipeline that generates CSS custom properties, Tailwind config, and Figma tokens from a single YAML source.</p>
+        <div class="project-card__stats">
+          <span><strong>6</strong> sessions</span>
+          <span><strong>22</strong>h</span>
+          <span><strong>2,680</strong> LOC</span>
+        </div>
+        <div class="project-card__skills">
+          <span class="skill-chip">TypeScript</span>
+          <span class="skill-chip">Node.js</span>
+          <span class="skill-chip">YAML</span>
+          <span class="skill-chip">CSS</span>
+          <span class="skill-chip">Figma API</span>
+</div>
+        <div class="source-bar" role="img" aria-label="Source breakdown: Claude 70%, Cursor 30%">
+          <div class="source-bar__segment source-bar__segment--claude" style="width: 70%"></div>
+          <div class="source-bar__segment source-bar__segment--cursor" style="width: 30%"></div>
+        </div>
+        <div class="source-bar__legend">
+          <span><span class="source-bar__legend-dot" style="background: var(--mer-accent)"></span>Claude</span>
+          <span><span class="source-bar__legend-dot" style="background: var(--mer-text-muted)"></span>Cursor</span>
+        </div>
+      </article>
+    </section>
+
+    <!-- Skills Overview -->
+    <section class="section-reveal" aria-label="Skills overview" style="margin-block-end: 3rem;">
+      <div class="section-label">
+        <span>&#167;04 &mdash; instrument readings</span>
+      </div>
+      <h2 class="section-heading">Skills Across Projects</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+        <span class="skill-chip">TypeScript</span>
+        <span class="skill-chip">React</span>
+        <span class="skill-chip">Next.js</span>
+        <span class="skill-chip">Rust</span>
+        <span class="skill-chip">Prisma</span>
+        <span class="skill-chip">PostgreSQL</span>
+        <span class="skill-chip">WebSocket</span>
+        <span class="skill-chip">Canvas API</span>
+        <span class="skill-chip">Redis</span>
+        <span class="skill-chip">Express</span>
+        <span class="skill-chip">CRDT</span>
+        <span class="skill-chip">Stripe API</span>
+        <span class="skill-chip">CLI design</span>
+        <span class="skill-chip">TOML parsing</span>
+        <span class="skill-chip">Git internals</span>
+        <span class="skill-chip">Shell scripting</span>
+      </div>
+    </section>
+
+    <!-- Map Legend / Key -->
+    <section class="section-reveal" aria-label="Map legend" style="margin-block-end: 3rem;">
+      <div class="section-label">
+        <span>&#167;05 &mdash; map legend</span>
+      </div>
+      <h2 class="section-heading">Source Overview</h2>
+      <div style="background: var(--mer-surface); border: 1px solid var(--mer-border-subtle); border-radius: var(--radius); padding: 1.5rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <div>
+            <div style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--mer-text-muted); letter-spacing: 0.06em; text-transform: uppercase; margin-block-end: 0.375rem;">Primary Source</div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--mer-accent);"></span>
+              <span style="font-family: var(--font-mono); font-size: 0.875rem; color: var(--mer-white);">Claude Code</span>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 0.8125rem; color: var(--mer-text-muted); margin-block-start: 0.25rem;">17 sessions &middot; 68.5%</div>
+          </div>
+          <div>
+            <div style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--mer-text-muted); letter-spacing: 0.06em; text-transform: uppercase; margin-block-end: 0.375rem;">Secondary Source</div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--mer-text-muted);"></span>
+              <span style="font-family: var(--font-mono); font-size: 0.875rem; color: var(--mer-white);">Cursor</span>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 0.8125rem; color: var(--mer-text-muted); margin-block-start: 0.25rem;">11 sessions &middot; 31.5%</div>
+          </div>
+        </div>
+        <div style="margin-block-start: 1.25rem;">
+          <div style="display: flex; height: 8px; border-radius: 4px; overflow: hidden;">
+            <div style="width: 68.5%; height: 100%; background: var(--mer-accent);"></div>
+            <div style="width: 31.5%; height: 100%; background: var(--mer-text-muted);"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="mer-footer">
+    <p class="mer-footer__text">surveyed with heyi.am &middot; meridian template</p>
+  </footer>
+</div>
+
+<script>
+// Section reveal on scroll
+(function() {
+  var sections = document.querySelectorAll('.section-reveal');
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (prefersReduced) {
+    sections.forEach(function(s) { s.classList.add('visible'); });
+    return;
+  }
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  sections.forEach(function(s) { observer.observe(s); });
+})();
+
+// Stat counter animation
+(function() {
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (prefersReduced) return;
+
+  var counters = document.querySelectorAll('.stat-cell__value[data-target]');
+  var observed = new Set();
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting && !observed.has(entry.target)) {
+        observed.add(entry.target);
+        var el = entry.target;
+        var target = parseInt(el.getAttribute('data-target'), 10);
+        var final = el.textContent;
+        var duration = 1200;
+        var start = performance.now();
+
+        function tick(now) {
+          var progress = Math.min((now - start) / duration, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          var current = Math.round(target * eased);
+          if (target >= 1000) {
+            el.textContent = current.toLocaleString();
+          } else {
+            el.textContent = current;
+          }
+          if (progress < 1) requestAnimationFrame(tick);
+          else el.textContent = final;
+        }
+        requestAnimationFrame(tick);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  counters.forEach(function(c) { observer.observe(c); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Set up Prisma schema -- Showcase Session -- heyi.am</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Design Tokens ── */
+    :root {
+      --bg:             #09090b;
+      --surface:        #111113;
+      --surface-2:      #18181b;
+      --surface-3:      #27272a;
+
+      --border:         rgba(255,255,255,0.06);
+      --border-accent:  rgba(129,140,248,0.2);
+
+      --text:           #fafafa;
+      --text-2:         rgba(255,255,255,0.65);
+      --text-3:         rgba(255,255,255,0.4);
+      --text-muted:     rgba(255,255,255,0.25);
+
+      --accent:         #818cf8;
+      --accent-dim:     rgba(129,140,248,0.1);
+      --accent-mid:     rgba(129,140,248,0.15);
+      --accent-glow:    rgba(129,140,248,0.06);
+
+      --green:          #4ade80;
+      --green-dim:      rgba(74,222,128,0.1);
+
+      --font-display:   'Space Grotesk', sans-serif;
+      --font-body:      'Inter', sans-serif;
+      --font-mono:      'JetBrains Mono', monospace;
+
+      --radius-sm:      4px;
+      --radius-md:      8px;
+      --radius-lg:      12px;
+
+      --ease-out:       cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out:    cubic-bezier(0.65, 0, 0.35, 1);
+      --dur-micro:      150ms;
+      --dur-section:    600ms;
+      --dur-chart:      800ms;
+      --dur-slow:       1200ms;
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ── Skip to content ── */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      z-index: 1000;
+      padding: 0.5rem 1rem;
+      background: var(--accent);
+      color: var(--bg);
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+    }
+    .skip-link:focus { top: 1rem; }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Scroll Animation System ── */
+    .sc-section {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity var(--dur-section) var(--ease-out),
+                  transform var(--dur-section) var(--ease-out);
+    }
+    .sc-section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .sc-stagger {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 400ms var(--ease-out), transform 400ms var(--ease-out);
+    }
+    .sc-section.visible .sc-stagger {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .sc-section.visible .sc-stagger:nth-child(1) { transition-delay: 0ms; }
+    .sc-section.visible .sc-stagger:nth-child(2) { transition-delay: 80ms; }
+    .sc-section.visible .sc-stagger:nth-child(3) { transition-delay: 160ms; }
+    .sc-section.visible .sc-stagger:nth-child(4) { transition-delay: 240ms; }
+    .sc-section.visible .sc-stagger:nth-child(5) { transition-delay: 320ms; }
+
+    /* ── Page Container ── */
+    .page {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 4rem;
+    }
+
+    /* ── Section Spacing ── */
+    .section-gap { margin-bottom: 3rem; }
+    .section-gap-sm { margin-bottom: 2rem; }
+    .section-gap-lg { margin-bottom: 4rem; }
+
+    /* ── Nav ── */
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 3rem;
+    }
+    .nav__brand {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--text-3);
+      letter-spacing: 0.02em;
+    }
+    .nav__links {
+      display: flex;
+      gap: 1rem;
+      margin-inline-start: auto;
+    }
+    .nav__link {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-3);
+      text-decoration: none;
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--radius-sm);
+      transition: color var(--dur-micro) ease, background var(--dur-micro) ease;
+    }
+    .nav__link:hover {
+      color: var(--text);
+      background: var(--surface-2);
+      text-decoration: none;
+    }
+    .nav__link--active { color: var(--accent); }
+
+    /* ── Section Header ── */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 1rem;
+    }
+    .section-header h2,
+    .section-header h3 {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 400;
+      color: var(--text-3);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── Breadcrumb ── */
+    .breadcrumb {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-3);
+      margin-bottom: 1.5rem;
+    }
+    .breadcrumb a {
+      color: var(--text-3);
+      transition: color var(--dur-micro) ease;
+    }
+    .breadcrumb a:hover { color: var(--accent); }
+    .breadcrumb__sep {
+      margin: 0 0.5rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Session Title ── */
+    .session-title {
+      font-family: var(--font-display);
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+
+    /* ── Meta Row ── */
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      align-items: center;
+    }
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .meta-item__label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .meta-item__value {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--text-2);
+    }
+    .meta-pill {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-sm);
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid var(--border-accent);
+    }
+
+    /* ── Dev Take ── */
+    .dev-take {
+      border-inline-start: 3px solid transparent;
+      padding-inline-start: 1rem;
+      transition: border-color 600ms var(--ease-out) 200ms;
+    }
+    .sc-section.visible .dev-take {
+      border-inline-start-color: var(--accent);
+    }
+    .dev-take p {
+      font-family: var(--font-body);
+      font-size: 1.0625rem;
+      color: var(--text-2);
+      line-height: 1.7;
+      font-style: italic;
+    }
+
+    /* ── Two-Column Layout ── */
+    .session-layout {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      position: sticky;
+      top: 2rem;
+    }
+    .sidebar-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .sidebar-card:last-child { margin-bottom: 0; }
+    .sidebar-card h4 {
+      font-family: var(--font-display);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+    }
+
+    /* Tools table */
+    .tools-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .tools-table tr {
+      border-bottom: 1px solid var(--border);
+    }
+    .tools-table tr:last-child { border-bottom: none; }
+    .tools-table td {
+      padding: 0.375rem 0;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+    .tools-table td:first-child {
+      color: var(--text-2);
+    }
+    .tools-table td:last-child {
+      color: var(--text-3);
+      text-align: right;
+    }
+
+    /* Files table */
+    .files-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .files-table tr {
+      border-bottom: 1px solid var(--border);
+    }
+    .files-table tr:last-child { border-bottom: none; }
+    .files-table td {
+      padding: 0.375rem 0;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      vertical-align: top;
+    }
+    .files-table td:first-child {
+      color: var(--text-2);
+      word-break: break-all;
+      padding-inline-end: 0.5rem;
+    }
+    .files-table td:last-child {
+      color: var(--green);
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    /* Sidebar skills */
+    .sidebar-skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+    }
+    .skill-chip {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-sm);
+      padding: 0.2rem 0.5rem;
+      white-space: nowrap;
+    }
+
+    /* ── Beats (execution path) ── */
+    .beats-list {
+      list-style: none;
+    }
+    .beat-item {
+      position: relative;
+      padding-inline-start: 2.5rem;
+      padding-bottom: 1.5rem;
+    }
+    .beat-item:last-child { padding-bottom: 0; }
+    .beat-item::before {
+      content: '';
+      position: absolute;
+      left: 11px;
+      top: 32px;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+    .beat-item:last-child::before { display: none; }
+    .beat-number {
+      position: absolute;
+      left: 0;
+      top: 2px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent-dim);
+      border: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--accent);
+    }
+    .beat-title {
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.375rem;
+      line-height: 1.4;
+    }
+    .beat-desc {
+      font-family: var(--font-body);
+      font-size: 0.8125rem;
+      color: var(--text-2);
+      line-height: 1.5;
+    }
+
+    /* ── Q&A Section ── */
+    .qa-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+    .qa-item:last-child { margin-bottom: 0; }
+    .qa-question {
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .qa-question__marker {
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .qa-answer {
+      font-family: var(--font-body);
+      font-size: 0.8125rem;
+      color: var(--text-2);
+      line-height: 1.6;
+      padding-inline-start: 1.5rem;
+    }
+
+    /* ── Agent Summary ── */
+    .agent-timeline {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+    }
+    .agent-timeline svg { display: block; width: 100%; }
+
+    .agent-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .agent-row:last-child { border-bottom: none; }
+    .agent-row__dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .agent-row__name {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-2);
+      flex: 1;
+    }
+    .agent-row__dur {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-3);
+    }
+    .agent-row__loc {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-3);
+      min-width: 3.5rem;
+      text-align: right;
+    }
+    .agent-bar-track {
+      width: 80px;
+      height: 4px;
+      background: var(--surface-3);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .agent-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform var(--dur-chart) var(--ease-out) 200ms;
+    }
+    .sc-section.visible .agent-bar-fill { transform: scaleX(1); }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding: 2rem 0 1rem;
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+    .footer span {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-3);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .session-layout {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        position: static;
+        order: -1;
+      }
+      .session-title { font-size: 1.75rem; }
+      .meta-row { gap: 0.75rem; }
+    }
+
+    /* ── Reduced Motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      .sc-section,
+      .sc-stagger,
+      .dev-take,
+      .agent-bar-fill {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
+  <div class="page">
+    <!-- ══════════════════════════════════════════════════════════
+         NAV
+         ══════════════════════════════════════════════════════════ -->
+    <nav class="nav" aria-label="Main navigation">
+      <span class="nav__brand">heyi.am</span>
+      <div class="nav__links">
+        <a href="./portfolio.html" class="nav__link">Portfolio</a>
+        <a href="./project.html" class="nav__link">Project</a>
+        <a href="./session.html" class="nav__link nav__link--active" aria-current="page">Session</a>
+      </div>
+    </nav>
+
+    <main id="main-content">
+      <!-- ══════════════════════════════════════════════════════════
+           BREADCRUMB
+           ══════════════════════════════════════════════════════════ -->
+      <div class="breadcrumb" aria-label="Breadcrumb">
+        <a href="./portfolio.html">alex</a>
+        <span class="breadcrumb__sep" aria-hidden="true">/</span>
+        <a href="./project.html">budgetwise</a>
+        <span class="breadcrumb__sep" aria-hidden="true">/</span>
+        <span aria-current="page">Set up Prisma schema</span>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════
+           SECTION 1: TITLE + META (above fold)
+           ══════════════════════════════════════════════════════════ -->
+      <section class="sc-section section-gap" style="transition-delay: 100ms;" aria-label="Session header">
+        <h1 class="session-title">Set up Prisma schema with User, Account, and Transaction models</h1>
+        <div class="meta-row">
+          <div class="meta-item">
+            <span class="meta-item__label">Date</span>
+            <span class="meta-item__value">February 3, 2026</span>
+          </div>
+          <span class="meta-pill">Claude Code</span>
+          <div class="meta-item">
+            <span class="meta-item__label">Duration</span>
+            <span class="meta-item__value">72m</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-item__label">Turns</span>
+            <span class="meta-item__value">45</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-item__label">LOC</span>
+            <span class="meta-item__value">680</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-item__label">Files</span>
+            <span class="meta-item__value">4</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════
+           SECTION 2: DEV TAKE
+           ══════════════════════════════════════════════════════════ -->
+      <section class="sc-section section-gap" aria-label="Developer take">
+        <div class="dev-take">
+          <p>Went with discriminated unions over STI -- nullable columns everywhere felt wrong. The audit log instead of soft deletes was the right call too.</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════
+           SECTION 3: TWO-COLUMN LAYOUT (main + sidebar)
+           ══════════════════════════════════════════════════════════ -->
+      <div class="session-layout section-gap-lg">
+        <!-- ── Main Column ── -->
+        <div>
+          <!-- Execution Path (Beats) -->
+          <section class="sc-section section-gap-lg" aria-label="Execution path">
+            <div class="section-header">
+              <h2>Execution Path</h2>
+              <span class="section-label">4 beats</span>
+            </div>
+            <ol class="beats-list">
+              <li class="beat-item sc-stagger">
+                <span class="beat-number" aria-hidden="true">1</span>
+                <div class="beat-title">Schema design</div>
+                <div class="beat-desc">Sketched out the core models -- User, Account, Transaction. Decided on a discriminated union for transaction types instead of STI.</div>
+              </li>
+              <li class="beat-item sc-stagger">
+                <span class="beat-number" aria-hidden="true">2</span>
+                <div class="beat-title">Prisma setup</div>
+                <div class="beat-desc">Initialized Prisma with PostgreSQL, wrote the schema file with proper relations and indexes.</div>
+              </li>
+              <li class="beat-item sc-stagger">
+                <span class="beat-number" aria-hidden="true">3</span>
+                <div class="beat-title">Migration</div>
+                <div class="beat-desc">Ran the initial migration, fixed a cascade delete issue on Account to Transaction.</div>
+              </li>
+              <li class="beat-item sc-stagger">
+                <span class="beat-number" aria-hidden="true">4</span>
+                <div class="beat-title">Seed data</div>
+                <div class="beat-desc">Created a seed script with realistic test data -- multiple accounts, mixed transaction types.</div>
+              </li>
+            </ol>
+          </section>
+
+          <!-- Q&A Section -->
+          <section class="sc-section section-gap-lg" aria-label="Questions and answers">
+            <div class="section-header">
+              <h2>Q&amp;A</h2>
+              <span class="section-label">2 questions</span>
+            </div>
+            <div class="qa-item sc-stagger">
+              <div class="qa-question">
+                <span class="qa-question__marker" aria-hidden="true">Q</span>
+                <span>Why did you choose a discriminated union over single-table inheritance for transaction types?</span>
+              </div>
+              <div class="qa-answer">STI would have left nullable columns everywhere -- transferTo only makes sense for transfers, recurringSchedule only for recurring. The union pattern keeps each type clean and the TypeScript compiler catches missing fields.</div>
+            </div>
+            <div class="qa-item sc-stagger">
+              <div class="qa-question">
+                <span class="qa-question__marker" aria-hidden="true">Q</span>
+                <span>How does the cascade delete work between Account and Transaction?</span>
+              </div>
+              <div class="qa-answer">Deleting an account cascades to its transactions. Initially had it set to restrict, but that made account cleanup impossible without manual transaction deletion first.</div>
+            </div>
+          </section>
+
+          <!-- Agent Summary -->
+          <section class="sc-section section-gap-lg" aria-label="Agent summary">
+            <div class="section-header">
+              <h2>Agent Activity</h2>
+              <span class="section-label">7 sub-sessions</span>
+            </div>
+            <div class="agent-timeline">
+              <div class="agent-row">
+                <div class="agent-row__dot" style="background: #0891b2;" aria-hidden="true"></div>
+                <span class="agent-row__name">backend-dev</span>
+                <span class="agent-row__dur">25m</span>
+                <div class="agent-bar-track">
+                  <div class="agent-bar-fill" style="width: 100%; background: #0891b2;"></div>
+                </div>
+                <span class="agent-row__loc">280 LOC</span>
+              </div>
+              <div class="agent-row">
+                <div class="agent-row__dot" style="background: #059669;" aria-hidden="true"></div>
+                <span class="agent-row__name">qa-engineer</span>
+                <span class="agent-row__dur">18m</span>
+                <div class="agent-bar-track">
+                  <div class="agent-bar-fill" style="width: 72%; background: #059669;"></div>
+                </div>
+                <span class="agent-row__loc">190 LOC</span>
+              </div>
+              <div class="agent-row">
+                <div class="agent-row__dot" style="background: #7c3aed;" aria-hidden="true"></div>
+                <span class="agent-row__name">frontend-dev</span>
+                <span class="agent-row__dur">15m</span>
+                <div class="agent-bar-track">
+                  <div class="agent-bar-fill" style="width: 60%; background: #7c3aed;"></div>
+                </div>
+                <span class="agent-row__loc">125 LOC</span>
+              </div>
+              <div class="agent-row">
+                <div class="agent-row__dot" style="background: #475569;" aria-hidden="true"></div>
+                <span class="agent-row__name">security-engineer</span>
+                <span class="agent-row__dur">12m</span>
+                <div class="agent-bar-track">
+                  <div class="agent-bar-fill" style="width: 48%; background: #475569;"></div>
+                </div>
+                <span class="agent-row__loc">85 LOC</span>
+              </div>
+              <div class="agent-row">
+                <div class="agent-row__dot" style="background: #e11d48;" aria-hidden="true"></div>
+                <span class="agent-row__name">code-reviewer</span>
+                <span class="agent-row__dur">8m</span>
+                <div class="agent-bar-track">
+                  <div class="agent-bar-fill" style="width: 32%; background: #e11d48;"></div>
+                </div>
+                <span class="agent-row__loc">0 LOC</span>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- ── Sidebar ── -->
+        <aside class="sidebar" aria-label="Session details">
+          <!-- Tools Used -->
+          <div class="sidebar-card">
+            <h4>Tools Used</h4>
+            <table class="tools-table" aria-label="Tool usage counts">
+              <tbody>
+                <tr>
+                  <td>Edit</td>
+                  <td>18</td>
+                </tr>
+                <tr>
+                  <td>Read</td>
+                  <td>12</td>
+                </tr>
+                <tr>
+                  <td>Bash</td>
+                  <td>9</td>
+                </tr>
+                <tr>
+                  <td>Write</td>
+                  <td>4</td>
+                </tr>
+                <tr>
+                  <td>Grep</td>
+                  <td>2</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Files Changed -->
+          <div class="sidebar-card">
+            <h4>Files Changed</h4>
+            <table class="files-table" aria-label="Changed files">
+              <tbody>
+                <tr>
+                  <td>prisma/schema.prisma</td>
+                  <td>+142</td>
+                </tr>
+                <tr>
+                  <td>prisma/seed.ts</td>
+                  <td>+89</td>
+                </tr>
+                <tr>
+                  <td>prisma/migrations/20260203_init/migration.sql</td>
+                  <td>+415</td>
+                </tr>
+                <tr>
+                  <td>src/lib/db.ts</td>
+                  <td>+34</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Skills -->
+          <div class="sidebar-card">
+            <h4>Skills</h4>
+            <div class="sidebar-skills">
+              <span class="skill-chip">TypeScript</span>
+              <span class="skill-chip">Prisma</span>
+              <span class="skill-chip">PostgreSQL</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <!-- ══════════════════════════════════════════════════════════
+         FOOTER
+         ══════════════════════════════════════════════════════════ -->
+    <footer class="footer">
+      <span>built with <a href="#">heyi.am</a></span>
+    </footer>
+  </div>
+
+  <script>
+  (function() {
+    'use strict';
+
+    // ── IntersectionObserver for scroll animations ──
+    var sections = document.querySelectorAll('.sc-section');
+    if (sections.length) {
+      var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReduced) {
+        sections.forEach(function(s) { s.classList.add('visible'); });
+      } else {
+        var observer = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+        sections.forEach(function(s) { observer.observe(s); });
+      }
+    }
+  })();
+  </script>
+</body>
+</html>

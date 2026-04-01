@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BudgetWise -- Strata Template -- heyi.am</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Strata Design Tokens ── */
+    :root {
+      --strata-bg:             #fafaf9;
+      --strata-plane-0:        #f5f5f4;
+      --strata-plane-1:        #ffffff;
+      --strata-plane-2:        #ffffff;
+
+      --strata-shadow-rest:    0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+      --strata-shadow-hover:   0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
+      --strata-shadow-active:  0 12px 40px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+
+      --strata-accent:         #d97706;
+      --strata-accent-hover:   #b45309;
+      --strata-accent-light:   #fef3c7;
+      --strata-accent-faint:   #fffbeb;
+
+      --strata-text:           #1c1917;
+      --strata-text-secondary: #78716c;
+      --strata-text-tertiary:  #a8a29e;
+
+      --strata-border:         #e7e5e4;
+      --strata-border-faint:   #f5f5f4;
+
+      --strata-font-display:   'Space Grotesk', system-ui, sans-serif;
+      --strata-font-body:      'Inter', system-ui, sans-serif;
+      --strata-font-mono:      'IBM Plex Mono', monospace;
+
+      --strata-radius:         0.5rem;
+      --strata-radius-lg:      0.75rem;
+      --strata-radius-sm:      0.25rem;
+
+      --strata-duration-micro: 150ms;
+      --strata-duration-section: 350ms;
+      --strata-duration-parallax: 600ms;
+      --strata-ease:           cubic-bezier(0.16, 1, 0.3, 1);
+      --strata-ease-spring:    cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* ── Skip Link ── */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      background: var(--strata-accent);
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: var(--strata-radius);
+      font-family: var(--strata-font-body);
+      font-size: 0.875rem;
+      font-weight: 600;
+      z-index: 100;
+      text-decoration: none;
+    }
+    .skip-link:focus { top: 1rem; }
+
+    body {
+      font-family: var(--strata-font-body);
+      color: var(--strata-text);
+      background: var(--strata-bg);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    a {
+      color: var(--strata-accent);
+      text-decoration: none;
+      transition: color var(--strata-duration-micro) ease-out;
+    }
+    a:hover {
+      color: var(--strata-accent-hover);
+      text-decoration: underline;
+    }
+    a:focus-visible {
+      outline: 2px solid var(--strata-accent);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+
+    /* ── Nav ── */
+    .strata-nav {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--strata-border-faint);
+    }
+    .strata-nav__brand {
+      font-family: var(--strata-font-display);
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--strata-text);
+      text-decoration: none;
+    }
+    .strata-nav__brand:hover { color: var(--strata-accent); text-decoration: none; }
+    .strata-nav__links {
+      display: flex;
+      gap: 1.25rem;
+      list-style: none;
+    }
+    .strata-nav__link {
+      font-family: var(--strata-font-mono);
+      font-size: 0.75rem;
+      color: var(--strata-text-secondary);
+      text-decoration: none;
+    }
+    .strata-nav__link:hover { color: var(--strata-accent); text-decoration: none; }
+    .strata-nav__link[aria-current="page"] {
+      color: var(--strata-accent);
+      font-weight: 500;
+    }
+
+    /* ── Project Container ── */
+    .strata-project {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+
+    /* ── Title (Section 1) ── */
+    .strata-title {
+      font-family: var(--strata-font-display);
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: var(--strata-text);
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+      opacity: 0;
+      transform: translateY(12px);
+      animation: strata-title-in 450ms var(--strata-ease) forwards;
+    }
+    @keyframes strata-title-in {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Links (Section 2) ── */
+    .strata-links {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+      opacity: 0;
+      animation: strata-fade-in 300ms ease-out 200ms forwards;
+    }
+    @keyframes strata-fade-in {
+      to { opacity: 1; }
+    }
+    .strata-link {
+      font-family: var(--strata-font-mono);
+      font-size: 0.8125rem;
+      color: var(--strata-accent);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+    .strata-link:hover { color: var(--strata-accent-hover); }
+    .strata-link svg {
+      width: 14px;
+      height: 14px;
+      color: var(--strata-text-tertiary);
+      flex-shrink: 0;
+    }
+
+    /* ── Layer System ── */
+    .strata-layer {
+      position: relative;
+      background: var(--strata-plane-1);
+      border-radius: var(--strata-radius-lg);
+      padding: 2rem 2.5rem;
+      margin-top: -1rem;
+      box-shadow: var(--strata-shadow-rest);
+      opacity: 0;
+      transform: translateY(24px);
+      transition:
+        box-shadow var(--strata-duration-section) var(--strata-ease);
+      will-change: transform, box-shadow, opacity;
+    }
+    .strata-layer.strata-visible {
+      opacity: 1;
+      transform: translateY(0);
+      transition:
+        opacity var(--strata-duration-parallax) var(--strata-ease),
+        transform var(--strata-duration-parallax) var(--strata-ease),
+        box-shadow var(--strata-duration-section) var(--strata-ease);
+    }
+    .strata-layer.strata-active {
+      box-shadow: var(--strata-shadow-active);
+    }
+    .strata-layer:hover {
+      box-shadow: var(--strata-shadow-hover);
+    }
+    .strata-layer.strata-active:hover {
+      box-shadow: var(--strata-shadow-active);
+    }
+
+    /* ── Screenshot ── */
+    .strata-layer--screenshot {
+      padding: 0;
+      overflow: hidden;
+      box-shadow: var(--strata-shadow-hover);
+    }
+    .strata-layer--screenshot.strata-active {
+      box-shadow: var(--strata-shadow-active);
+    }
+    .browser-chrome__bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.625rem 0.875rem;
+      background: var(--strata-plane-0);
+      border-bottom: 1px solid var(--strata-border);
+    }
+    .browser-chrome__dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .browser-chrome__dot--red { background: #ff5f57; }
+    .browser-chrome__dot--yellow { background: #febc2e; }
+    .browser-chrome__dot--green { background: #28c840; }
+    .browser-chrome__url {
+      font-family: var(--strata-font-mono);
+      font-size: 11px;
+      color: var(--strata-text-tertiary);
+      margin-left: 0.5rem;
+    }
+    .browser-chrome__viewport {
+      max-height: 28rem;
+      overflow: hidden;
+      background: linear-gradient(180deg, #e8e4df 0%, #d6d0c8 40%, #c8c1b7 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 16rem;
+    }
+    .screenshot-placeholder {
+      text-align: center;
+      padding: 3rem;
+    }
+    .screenshot-placeholder__icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1rem;
+      border-radius: var(--strata-radius);
+      background: rgba(255,255,255,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .screenshot-placeholder__icon svg {
+      width: 32px;
+      height: 32px;
+      color: rgba(255,255,255,0.6);
+    }
+    .screenshot-placeholder__text {
+      font-family: var(--strata-font-display);
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.7);
+    }
+    .screenshot-placeholder__sub {
+      font-family: var(--strata-font-mono);
+      font-size: 0.6875rem;
+      color: rgba(255,255,255,0.4);
+      margin-top: 0.25rem;
+    }
+
+    /* ── Narrative ── */
+    .strata-narrative {
+      border-left: 4px solid var(--strata-accent);
+      padding-left: 1rem;
+    }
+    .strata-narrative p {
+      font-size: 1rem;
+      line-height: 1.75;
+      color: var(--strata-text);
+      margin-bottom: 1rem;
+    }
+    .strata-narrative p:last-child { margin-bottom: 0; }
+
+    /* ── Stats ── */
+    .strata-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem 1.5rem;
+    }
+    .strata-stat {
+      display: flex;
+      flex-direction: column;
+    }
+    .strata-stat__label {
+      font-family: var(--strata-font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--strata-text-tertiary);
+      margin-bottom: 0.25rem;
+    }
+    .strata-stat__value {
+      font-family: var(--strata-font-display);
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--strata-text);
+      white-space: nowrap;
+    }
+    .strata-stat__value--accent {
+      color: var(--strata-accent);
+    }
+
+    /* ── Section Header ── */
+    .strata-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+    .strata-section-header__title {
+      font-family: var(--strata-font-display);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--strata-text);
+    }
+    .strata-section-header__meta {
+      font-family: var(--strata-font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--strata-text-tertiary);
+    }
+
+    /* ── Work Timeline ── */
+    .strata-chart {
+      position: relative;
+      height: 200px;
+    }
+    .strata-chart svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* ── Growth Chart ── */
+    .strata-growth-chart {
+      position: relative;
+      height: 220px;
+    }
+    .strata-growth-chart svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* ── Two Column ── */
+    .strata-two-col {
+      display: grid;
+      grid-template-columns: 1fr 1px 1fr;
+      gap: 0 2.5rem;
+    }
+    .strata-col-divider {
+      background: var(--strata-border);
+      width: 1px;
+    }
+    .strata-col-heading {
+      font-family: var(--strata-font-display);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--strata-text);
+      margin-bottom: 1rem;
+    }
+
+    /* Key Decisions */
+    .strata-decisions { display: flex; flex-direction: column; gap: 0.75rem; }
+    .strata-decision {
+      background: var(--strata-accent-faint);
+      border: 1px solid var(--strata-accent-light);
+      border-radius: var(--strata-radius);
+      padding: 0.875rem 1rem;
+    }
+    .strata-decision__title {
+      font-family: var(--strata-font-body);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--strata-text);
+      margin-bottom: 0.25rem;
+    }
+    .strata-decision__desc {
+      font-family: var(--strata-font-body);
+      font-size: 0.8125rem;
+      color: var(--strata-text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Source Breakdown */
+    .strata-source-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .strata-source-table th {
+      text-align: left;
+      padding: 0 0 0.5rem;
+      font-family: var(--strata-font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--strata-text-tertiary);
+      font-weight: 400;
+    }
+    .strata-source-table th:last-child { text-align: right; }
+    .strata-source-table td {
+      padding: 0.5rem 0;
+      border-top: 1px solid var(--strata-border-faint);
+      font-family: var(--strata-font-mono);
+      font-size: 0.8125rem;
+      position: relative;
+    }
+    .strata-source-table td:first-child { color: var(--strata-text); }
+    .strata-source-table td:nth-child(2) {
+      color: var(--strata-text-secondary);
+      text-align: right;
+      padding-right: 1rem;
+    }
+    .strata-source-table td:last-child {
+      color: var(--strata-text-secondary);
+      text-align: right;
+    }
+    .strata-source-bar {
+      display: block;
+      height: 3px;
+      background: rgba(217, 119, 6, 0.2);
+      border-radius: 1.5px;
+      margin-top: 0.25rem;
+    }
+
+    /* ── Phase Timeline ── */
+    .strata-phases {
+      position: relative;
+      padding-left: 1.5rem;
+    }
+    .strata-phases__line {
+      position: absolute;
+      left: 0.3rem;
+      top: 0.5rem;
+      bottom: 1rem;
+      width: 2px;
+      background: var(--strata-border);
+      border-radius: 1px;
+    }
+    .strata-phase {
+      position: relative;
+      padding-bottom: 1.25rem;
+    }
+    .strata-phase:last-child { padding-bottom: 0; }
+    .strata-phase__dot {
+      position: absolute;
+      left: -1.5rem;
+      top: 0.25rem;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--strata-accent);
+      box-shadow: 0 0 0 4px var(--strata-accent-light);
+      transform: scale(0);
+      transition: transform 300ms var(--strata-ease-spring);
+    }
+    .strata-layer.strata-visible .strata-phase__dot {
+      transform: scale(1);
+    }
+    .strata-phase:nth-child(2) .strata-phase__dot { transition-delay: 100ms; }
+    .strata-phase:nth-child(3) .strata-phase__dot { transition-delay: 200ms; }
+    .strata-phase:nth-child(4) .strata-phase__dot { transition-delay: 300ms; }
+    .strata-phase__dates {
+      font-family: var(--strata-font-mono);
+      font-size: 0.6875rem;
+      color: var(--strata-text-tertiary);
+      margin-bottom: 0.125rem;
+    }
+    .strata-phase__title {
+      font-family: var(--strata-font-display);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--strata-text);
+      margin-bottom: 0.25rem;
+    }
+    .strata-phase__desc {
+      font-family: var(--strata-font-body);
+      font-size: 0.8125rem;
+      color: var(--strata-text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ── Skills ── */
+    .strata-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+    }
+    .strata-chip {
+      font-family: var(--strata-font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 0.25rem 0.625rem;
+      border-radius: var(--strata-radius);
+      background: var(--strata-accent-faint);
+      border: 1px solid var(--strata-accent-light);
+      color: var(--strata-accent);
+      transition: background var(--strata-duration-micro) ease-out,
+                  border-color var(--strata-duration-micro) ease-out;
+      cursor: default;
+    }
+    .strata-chip:hover {
+      background: var(--strata-accent-light);
+      border-color: var(--strata-accent);
+    }
+
+    /* ── Session Cards ── */
+    .strata-session-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+    .strata-session-card {
+      background: var(--strata-bg);
+      border: 1px solid var(--strata-border);
+      border-radius: var(--strata-radius);
+      padding: 0;
+      overflow: hidden;
+      transition:
+        transform var(--strata-duration-micro) var(--strata-ease),
+        box-shadow var(--strata-duration-micro) var(--strata-ease),
+        border-color var(--strata-duration-micro) var(--strata-ease);
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .strata-session-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--strata-shadow-hover);
+      border-color: var(--strata-accent-light);
+      text-decoration: none;
+    }
+    .strata-session-card:focus-visible {
+      outline: 2px solid var(--strata-accent);
+      outline-offset: 2px;
+    }
+    .strata-session-card__bar {
+      height: 3px;
+      width: 100%;
+    }
+    .strata-session-card__body {
+      padding: 1rem 1.25rem;
+    }
+    .strata-session-card__title {
+      font-family: var(--strata-font-display);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--strata-text);
+      margin-bottom: 0.25rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .strata-session-card__meta {
+      font-family: var(--strata-font-mono);
+      font-size: 0.75rem;
+      color: var(--strata-text-secondary);
+    }
+    .strata-session-card__lines {
+      font-family: var(--strata-font-mono);
+      font-size: 0.75rem;
+      color: var(--strata-accent);
+      margin-top: 0.25rem;
+    }
+    .strata-session-card__source {
+      font-family: var(--strata-font-mono);
+      font-size: 0.6875rem;
+      color: var(--strata-text-tertiary);
+      margin-top: 0.125rem;
+    }
+    .strata-session-card__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      margin-top: 0.5rem;
+    }
+    .strata-session-card__chip {
+      font-family: var(--strata-font-mono);
+      font-size: 9px;
+      font-weight: 500;
+      padding: 0.125rem 0.5rem;
+      border-radius: var(--strata-radius);
+      background: var(--strata-accent-faint);
+      border: 1px solid var(--strata-accent-light);
+      color: var(--strata-accent);
+    }
+
+    /* Session card stacking overlap */
+    .strata-session-grid--stacked .strata-session-card:nth-child(n+3) {
+      margin-top: -0.375rem;
+    }
+
+    /* ── Chart Animation Classes ── */
+    .strata-chart-bar {
+      transform: scaleX(0);
+      transform-origin: left center;
+      transition: transform 600ms var(--strata-ease);
+    }
+    .strata-layer.strata-visible .strata-chart-bar {
+      transform: scaleX(1);
+    }
+    .strata-agent-line {
+      opacity: 0;
+      transition: opacity 400ms ease-out;
+    }
+    .strata-layer.strata-visible .strata-agent-line {
+      opacity: 1;
+    }
+    .strata-growth-line {
+      transition: stroke-dashoffset 1200ms var(--strata-ease);
+    }
+    .strata-growth-area {
+      opacity: 0;
+      transition: opacity 800ms ease-out 400ms;
+    }
+    .strata-layer.strata-visible .strata-growth-area {
+      opacity: 1;
+    }
+
+    /* ── Footer ── */
+    .strata-footer {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--strata-border);
+      text-align: center;
+    }
+    .strata-footer__text {
+      font-family: var(--strata-font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--strata-text-tertiary);
+    }
+    .strata-footer__text a {
+      color: var(--strata-accent);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 959px) {
+      .strata-project { padding: 2rem 1.5rem; }
+      .strata-nav { padding: 1rem 1.5rem; }
+      .strata-two-col { gap: 0 1.5rem; }
+    }
+
+    @media (max-width: 767px) {
+      .strata-project { padding: 1.5rem 1rem; }
+      .strata-nav { padding: 1rem 1rem; }
+      .strata-title { font-size: 1.75rem; }
+
+      .strata-layer {
+        margin-top: -0.5rem;
+        padding: 1.5rem;
+        border-radius: var(--strata-radius);
+      }
+
+      .strata-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+
+      .strata-two-col {
+        grid-template-columns: 1fr;
+        gap: 1.5rem 0;
+      }
+      .strata-col-divider { display: none; }
+
+      .strata-session-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── Reduced Motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      .strata-layer {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: box-shadow var(--strata-duration-micro) ease-out !important;
+      }
+      .strata-layer.strata-active {
+        transform: none !important;
+      }
+      .strata-title {
+        opacity: 1;
+        transform: none;
+        animation: none;
+      }
+      .strata-links {
+        opacity: 1;
+        animation: none;
+      }
+      .strata-phase__dot {
+        transform: scale(1) !important;
+        transition: none !important;
+      }
+      .strata-session-card:hover {
+        transform: none;
+      }
+      .strata-chart-bar {
+        transform: scaleX(1) !important;
+        transition: none !important;
+      }
+      .strata-growth-line {
+        stroke-dashoffset: 0 !important;
+        transition: none !important;
+      }
+      .strata-growth-area {
+        opacity: 1 !important;
+        transition: none !important;
+      }
+      .strata-agent-line {
+        opacity: 1 !important;
+        transition: none !important;
+      }
+    }
+  
+    /* ── Clickable session cards ── */
+    a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- ── Navigation ── -->
+  <nav class="strata-nav" aria-label="Site navigation">
+    <a href="./portfolio.html" class="strata-nav__brand">heyi.am</a>
+    <ul class="strata-nav__links">
+      <li><a href="./portfolio.html" class="strata-nav__link">Portfolio</a></li>
+      <li><a href="./project.html" class="strata-nav__link" aria-current="page">Project</a></li>
+      <li><a href="./session.html" class="strata-nav__link">Session</a></li>
+    </ul>
+  </nav>
+
+  <!-- ── Main Content ── -->
+  <main class="strata-project" id="main-content" data-template="strata">
+
+    <!-- Section 1: Title (no card) -->
+    <h1 class="strata-title">BudgetWise</h1>
+
+    <!-- Section 2: Links (no card) -->
+    <nav class="strata-links" aria-label="Project links">
+      <a class="strata-link" href="https://github.com/alex/budgetwise">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        github.com/alex/budgetwise
+      </a>
+      <a class="strata-link" href="https://budgetwise.app">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/><path d="M3.5 8h9M8 1.75c-1.5 1.75-2 3.75-2 6.25s.5 4.5 2 6.25M8 1.75c1.5 1.75 2 3.75 2 6.25s-.5 4.5-2 6.25"/></svg>
+        budgetwise.app
+      </a>
+    </nav>
+
+    <!-- Section 3: Screenshot -->
+    <div class="strata-layer strata-layer--screenshot" style="z-index: 1;">
+      <div class="browser-chrome">
+        <div class="browser-chrome__bar">
+          <span class="browser-chrome__dot browser-chrome__dot--red"></span>
+          <span class="browser-chrome__dot browser-chrome__dot--yellow"></span>
+          <span class="browser-chrome__dot browser-chrome__dot--green"></span>
+          <span class="browser-chrome__url">budgetwise.app</span>
+        </div>
+        <div class="browser-chrome__viewport">
+          <div class="screenshot-placeholder">
+            <div class="screenshot-placeholder__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+            </div>
+            <div class="screenshot-placeholder__text">BudgetWise Dashboard</div>
+            <div class="screenshot-placeholder__sub">screenshot.png</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4: Narrative -->
+    <div class="strata-layer" style="z-index: 2; padding: 2.5rem 3rem;">
+      <div class="strata-narrative">
+        <p>Started with a basic Prisma schema but realized halfway through that I needed polymorphic transaction types. The AI kept suggesting single-table inheritance but I pushed back -- went with a discriminated union pattern instead. Nullable fields for transfer-specific data, hard deletes with an audit log.</p>
+        <p>The recurring transaction detection was the hardest part. Had to figure out the right tolerance windows -- monthly transactions drift by a few days, weekly ones are more precise. Settled on three consecutive interval matches before marking something as recurring. The partial index on merchant_normalized brought the detection query from 2 seconds to 120ms on 10k transactions.</p>
+        <p>Plaid integration went smoother than expected. The token exchange flow is straightforward, but the webhook handling needed careful idempotency -- Plaid sends duplicate webhooks, so I used a processed-events table keyed on webhook ID.</p>
+      </div>
+    </div>
+
+    <!-- Section 5: Stats (animated counters) -->
+    <div class="strata-layer" style="z-index: 3;" id="stats-section">
+      <div class="strata-stats-grid">
+        <div class="strata-stat">
+          <span class="strata-stat__label">Sessions</span>
+          <span class="strata-stat__value" data-count-to="8" data-format="int">0</span>
+        </div>
+        <div class="strata-stat">
+          <span class="strata-stat__label">You</span>
+          <span class="strata-stat__value" data-count-to="8.1" data-format="decimal" data-decimal="true" data-suffix="h">0</span>
+        </div>
+        <div class="strata-stat">
+          <span class="strata-stat__label">Agents</span>
+          <span class="strata-stat__value" data-count-to="34.4" data-format="decimal" data-decimal="true" data-suffix="h">0</span>
+        </div>
+        <div class="strata-stat">
+          <span class="strata-stat__label">Multiplier</span>
+          <span class="strata-stat__value strata-stat__value--accent" data-count-to="4.2" data-format="decimal" data-decimal="true" data-suffix="&times;">0</span>
+        </div>
+        <div class="strata-stat">
+          <span class="strata-stat__label">Lines of Code</span>
+          <span class="strata-stat__value" data-count-to="4460" data-format="comma">0</span>
+        </div>
+        <div class="strata-stat">
+          <span class="strata-stat__label">Files</span>
+          <span class="strata-stat__value" data-count-to="156" data-format="int">0</span>
+        </div>
+        <div class="strata-stat">
+          <span class="strata-stat__label">Tokens</span>
+          <span class="strata-stat__value" data-count-to="2100000" data-format="tokens">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 6: Work Timeline (animated bars + agent forks) -->
+    <div class="strata-layer" style="z-index: 4;" id="timeline-section">
+      <div class="strata-section-header">
+        <h2 class="strata-section-header__title">Work Timeline</h2>
+        <span class="strata-section-header__meta">8 sessions</span>
+      </div>
+      <div class="strata-chart">
+        <svg viewBox="0 0 800 200" preserveAspectRatio="xMidYMid meet" aria-label="Work timeline showing 8 sessions with duration bars and agent fork lines">
+          <!-- Grid lines -->
+          <line x1="40" y1="45" x2="780" y2="45" stroke="#f5f5f4" stroke-width="1" stroke-dasharray="4,4"/>
+          <line x1="40" y1="90" x2="780" y2="90" stroke="#f5f5f4" stroke-width="1" stroke-dasharray="4,4"/>
+          <line x1="40" y1="135" x2="780" y2="135" stroke="#f5f5f4" stroke-width="1" stroke-dasharray="4,4"/>
+          <!-- Baseline -->
+          <line x1="40" y1="180" x2="780" y2="180" stroke="#e7e5e4" stroke-width="1"/>
+
+          <!-- Y-axis labels -->
+          <text x="32" y="48" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="8" fill="#a8a29e">90m</text>
+          <text x="32" y="93" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="8" fill="#a8a29e">60m</text>
+          <text x="32" y="138" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="8" fill="#a8a29e">30m</text>
+
+          <!-- Session bars (height = duration/90 * 135px, from baseline 180 upward) -->
+          <!-- 1: Prisma schema, 72m => h=108 => y=72 -->
+          <rect class="strata-chart-bar" x="55" y="72" width="50" height="108" rx="4" ry="4" fill="#d97706" opacity="0.85" style="transition-delay: 0ms"/>
+          <!-- 2: Transaction list, 65m => h=97.5 => y=82.5 -->
+          <rect class="strata-chart-bar" x="145" y="82" width="50" height="98" rx="4" ry="4" fill="#d97706" opacity="0.85" style="transition-delay: 60ms"/>
+          <!-- 3: Recurring detection, 88m => h=132 => y=48 -->
+          <rect class="strata-chart-bar" x="235" y="48" width="50" height="132" rx="4" ry="4" fill="#d97706" opacity="0.85" style="transition-delay: 120ms"/>
+          <!-- 4: Stripe integration, 55m => h=82.5 => y=97.5 -->
+          <rect class="strata-chart-bar" x="325" y="98" width="50" height="82" rx="4" ry="4" fill="#d97706" opacity="0.85" style="transition-delay: 180ms"/>
+          <!-- 5: CSV import, 45m => h=67.5 => y=112.5 -->
+          <rect class="strata-chart-bar" x="415" y="113" width="50" height="67" rx="4" ry="4" fill="#d97706" opacity="0.85" style="transition-delay: 240ms"/>
+          <!-- 6: tsvector, 62m => h=93 => y=87 -->
+          <rect class="strata-chart-bar" x="505" y="87" width="50" height="93" rx="4" ry="4" fill="#d97706" opacity="0.85" style="transition-delay: 300ms"/>
+          <!-- 7: Insights dashboard, 78m => h=117 => y=63 -->
+          <rect class="strata-chart-bar" x="595" y="63" width="50" height="117" rx="4" ry="4" fill="#d97706" opacity="0.85" style="transition-delay: 360ms"/>
+          <!-- 8: Mobile + 2FA, 50m => h=75 => y=105 -->
+          <rect class="strata-chart-bar" x="685" y="105" width="50" height="75" rx="4" ry="4" fill="#d97706" opacity="0.85" style="transition-delay: 420ms"/>
+
+          <!-- Agent fork lines -->
+          <!-- Session 1: 7 agents -->
+          <g class="strata-agent-line" style="transition-delay: 400ms">
+            <path d="M80,72 C80,62 70,55 60,50" stroke="#b45309" stroke-width="1" fill="none" opacity="0.4"/>
+            <path d="M80,72 C80,60 75,48 68,42" stroke="#b45309" stroke-width="1" fill="none" opacity="0.35"/>
+            <path d="M80,72 C80,58 85,48 92,42" stroke="#92400e" stroke-width="1" fill="none" opacity="0.3"/>
+            <path d="M80,72 C80,60 90,55 100,50" stroke="#92400e" stroke-width="1" fill="none" opacity="0.35"/>
+            <circle cx="60" cy="50" r="2" fill="#b45309" opacity="0.5"/>
+            <circle cx="68" cy="42" r="2" fill="#b45309" opacity="0.45"/>
+            <circle cx="92" cy="42" r="2" fill="#92400e" opacity="0.4"/>
+            <circle cx="100" cy="50" r="2" fill="#92400e" opacity="0.45"/>
+          </g>
+          <!-- Session 2: 5 agents -->
+          <g class="strata-agent-line" style="transition-delay: 500ms">
+            <path d="M170,82 C170,72 160,65 152,60" stroke="#b45309" stroke-width="1" fill="none" opacity="0.4"/>
+            <path d="M170,82 C170,70 165,58 158,52" stroke="#b45309" stroke-width="1" fill="none" opacity="0.35"/>
+            <path d="M170,82 C170,70 180,62 188,58" stroke="#92400e" stroke-width="1" fill="none" opacity="0.3"/>
+            <circle cx="152" cy="60" r="2" fill="#b45309" opacity="0.5"/>
+            <circle cx="158" cy="52" r="2" fill="#b45309" opacity="0.45"/>
+            <circle cx="188" cy="58" r="2" fill="#92400e" opacity="0.4"/>
+          </g>
+          <!-- Session 3: 6 agents -->
+          <g class="strata-agent-line" style="transition-delay: 600ms">
+            <path d="M260,48 C260,38 250,32 242,28" stroke="#b45309" stroke-width="1" fill="none" opacity="0.4"/>
+            <path d="M260,48 C260,36 255,26 248,22" stroke="#b45309" stroke-width="1" fill="none" opacity="0.35"/>
+            <path d="M260,48 C260,36 270,30 278,26" stroke="#92400e" stroke-width="1" fill="none" opacity="0.3"/>
+            <path d="M260,48 C260,38 272,34 280,32" stroke="#92400e" stroke-width="1" fill="none" opacity="0.35"/>
+            <circle cx="242" cy="28" r="2" fill="#b45309" opacity="0.5"/>
+            <circle cx="248" cy="22" r="2" fill="#b45309" opacity="0.45"/>
+            <circle cx="278" cy="26" r="2" fill="#92400e" opacity="0.4"/>
+            <circle cx="280" cy="32" r="2" fill="#92400e" opacity="0.45"/>
+          </g>
+          <!-- Session 5: 4 agents -->
+          <g class="strata-agent-line" style="transition-delay: 700ms">
+            <path d="M440,113 C440,103 430,96 422,92" stroke="#b45309" stroke-width="1" fill="none" opacity="0.4"/>
+            <path d="M440,113 C440,100 435,90 428,86" stroke="#b45309" stroke-width="1" fill="none" opacity="0.35"/>
+            <path d="M440,113 C440,100 450,94 458,90" stroke="#92400e" stroke-width="1" fill="none" opacity="0.3"/>
+            <circle cx="422" cy="92" r="2" fill="#b45309" opacity="0.5"/>
+            <circle cx="428" cy="86" r="2" fill="#b45309" opacity="0.45"/>
+            <circle cx="458" cy="90" r="2" fill="#92400e" opacity="0.4"/>
+          </g>
+          <!-- Session 6: 3 agents -->
+          <g class="strata-agent-line" style="transition-delay: 800ms">
+            <path d="M530,87 C530,77 520,70 512,66" stroke="#b45309" stroke-width="1" fill="none" opacity="0.4"/>
+            <path d="M530,87 C530,75 540,70 548,66" stroke="#92400e" stroke-width="1" fill="none" opacity="0.35"/>
+            <circle cx="512" cy="66" r="2" fill="#b45309" opacity="0.5"/>
+            <circle cx="548" cy="66" r="2" fill="#92400e" opacity="0.45"/>
+          </g>
+          <!-- Session 7: 5 agents -->
+          <g class="strata-agent-line" style="transition-delay: 900ms">
+            <path d="M620,63 C620,53 610,46 602,42" stroke="#b45309" stroke-width="1" fill="none" opacity="0.4"/>
+            <path d="M620,63 C620,50 615,38 608,34" stroke="#b45309" stroke-width="1" fill="none" opacity="0.35"/>
+            <path d="M620,63 C620,50 630,44 638,40" stroke="#92400e" stroke-width="1" fill="none" opacity="0.3"/>
+            <circle cx="602" cy="42" r="2" fill="#b45309" opacity="0.5"/>
+            <circle cx="608" cy="34" r="2" fill="#b45309" opacity="0.45"/>
+            <circle cx="638" cy="40" r="2" fill="#92400e" opacity="0.4"/>
+          </g>
+
+          <!-- X-axis labels (session dates) -->
+          <text x="80" y="196" text-anchor="middle" fill="#a8a29e" font-family="IBM Plex Mono, monospace" font-size="9">Feb 3</text>
+          <text x="170" y="196" text-anchor="middle" fill="#a8a29e" font-family="IBM Plex Mono, monospace" font-size="9">Feb 14</text>
+          <text x="260" y="196" text-anchor="middle" fill="#a8a29e" font-family="IBM Plex Mono, monospace" font-size="9">Mar 1</text>
+          <text x="350" y="196" text-anchor="middle" fill="#a8a29e" font-family="IBM Plex Mono, monospace" font-size="9">Mar 10</text>
+          <text x="440" y="196" text-anchor="middle" fill="#a8a29e" font-family="IBM Plex Mono, monospace" font-size="9">Mar 14</text>
+          <text x="530" y="196" text-anchor="middle" fill="#a8a29e" font-family="IBM Plex Mono, monospace" font-size="9">Mar 18</text>
+          <text x="620" y="196" text-anchor="middle" fill="#a8a29e" font-family="IBM Plex Mono, monospace" font-size="9">Mar 22</text>
+          <text x="710" y="196" text-anchor="middle" fill="#a8a29e" font-family="IBM Plex Mono, monospace" font-size="9">Mar 26</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Section 7: Growth Chart (animated line draw) -->
+    <div class="strata-layer" style="z-index: 5;" id="growth-section">
+      <div class="strata-section-header">
+        <h2 class="strata-section-header__title">Cumulative Growth</h2>
+        <span class="strata-section-header__meta">4,460 lines &middot; 156 files</span>
+      </div>
+      <div class="strata-growth-chart">
+        <svg viewBox="0 0 800 220" preserveAspectRatio="xMidYMid meet" aria-label="Cumulative growth chart showing lines of code and files over time">
+          <defs>
+            <linearGradient id="locAreaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#d97706" stop-opacity="0.12"/>
+              <stop offset="100%" stop-color="#d97706" stop-opacity="0.02"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Grid lines -->
+          <line x1="50" y1="20" x2="770" y2="20" stroke="#f5f5f4" stroke-width="1" stroke-dasharray="4,4"/>
+          <line x1="50" y1="62" x2="770" y2="62" stroke="#f5f5f4" stroke-width="1" stroke-dasharray="4,4"/>
+          <line x1="50" y1="105" x2="770" y2="105" stroke="#f5f5f4" stroke-width="1" stroke-dasharray="4,4"/>
+          <line x1="50" y1="148" x2="770" y2="148" stroke="#f5f5f4" stroke-width="1" stroke-dasharray="4,4"/>
+          <!-- Baseline -->
+          <line x1="50" y1="190" x2="770" y2="190" stroke="#e7e5e4" stroke-width="1"/>
+
+          <!-- Y-axis labels (LOC) -->
+          <text x="42" y="24" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="8" fill="#a8a29e">4.5k</text>
+          <text x="42" y="66" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="8" fill="#a8a29e">3.4k</text>
+          <text x="42" y="109" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="8" fill="#a8a29e">2.2k</text>
+          <text x="42" y="152" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="8" fill="#a8a29e">1.1k</text>
+          <text x="42" y="194" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="8" fill="#78716c" font-weight="600">0</text>
+
+          <!-- Area fill (LOC) -->
+          <path class="strata-growth-area"
+                d="M80,164 L183,144 L286,110 L389,94 L492,80 L595,60 L698,33 L760,20 L760,190 L80,190 Z"
+                fill="url(#locAreaGrad)"/>
+
+          <!-- LOC line (amber, solid) -->
+          <path id="growth-loc-line" class="strata-growth-line"
+                d="M80,164 L183,144 L286,110 L389,94 L492,80 L595,60 L698,33 L760,20"
+                fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+          <!-- Files line (gray, dashed) -->
+          <path id="growth-files-line" class="strata-growth-line"
+                d="M80,176 L183,165 L286,150 L389,138 L492,127 L595,112 L698,89 L760,70"
+                fill="none" stroke="#a8a29e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6,4"/>
+
+          <!-- Data point dots (LOC) -->
+          <circle cx="80" cy="164" r="3" fill="#d97706"/>
+          <circle cx="183" cy="144" r="3" fill="#d97706"/>
+          <circle cx="286" cy="110" r="3" fill="#d97706"/>
+          <circle cx="389" cy="94" r="3" fill="#d97706"/>
+          <circle cx="492" cy="80" r="3" fill="#d97706"/>
+          <circle cx="595" cy="60" r="3" fill="#d97706"/>
+          <circle cx="698" cy="33" r="3" fill="#d97706"/>
+          <circle cx="760" cy="20" r="3" fill="#d97706" stroke="#fff" stroke-width="2"/>
+
+          <!-- Data point dots (Files) -->
+          <circle cx="80" cy="176" r="2.5" fill="#a8a29e"/>
+          <circle cx="760" cy="70" r="2.5" fill="#a8a29e"/>
+
+          <!-- X-axis labels -->
+          <text x="80" y="208" text-anchor="middle" fill="#a8a29e" font-family="IBM Plex Mono, monospace" font-size="9">Feb 3</text>
+          <text x="286" y="208" text-anchor="middle" fill="#a8a29e" font-family="IBM Plex Mono, monospace" font-size="9">Mar 1</text>
+          <text x="492" y="208" text-anchor="middle" fill="#a8a29e" font-family="IBM Plex Mono, monospace" font-size="9">Mar 14</text>
+          <text x="698" y="208" text-anchor="middle" fill="#a8a29e" font-family="IBM Plex Mono, monospace" font-size="9">Mar 22</text>
+
+          <!-- Legend -->
+          <line x1="598" y1="12" x2="618" y2="12" stroke="#d97706" stroke-width="2"/>
+          <text x="622" y="16" fill="#78716c" font-family="IBM Plex Mono, monospace" font-size="9">LOC</text>
+          <line x1="660" y1="12" x2="680" y2="12" stroke="#a8a29e" stroke-width="2" stroke-dasharray="4,3"/>
+          <text x="684" y="16" fill="#78716c" font-family="IBM Plex Mono, monospace" font-size="9">Files</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Section 8: Two-Column -- Key Decisions + Source Breakdown -->
+    <div class="strata-layer" style="z-index: 6;">
+      <div class="strata-two-col">
+        <div>
+          <h2 class="strata-col-heading">Key Decisions</h2>
+          <div class="strata-decisions">
+            <div class="strata-decision">
+              <div class="strata-decision__title">Discriminated union over single-table inheritance</div>
+              <div class="strata-decision__desc">STI would have left nullable columns everywhere. The union pattern keeps each transaction type clean and the TypeScript compiler catches missing fields.</div>
+            </div>
+            <div class="strata-decision">
+              <div class="strata-decision__title">Partial index on merchant_normalized</div>
+              <div class="strata-decision__desc">Brought the recurring transaction detection query from 2 seconds to 120ms on 10k transactions. A 16x speedup for the most common query path.</div>
+            </div>
+            <div class="strata-decision">
+              <div class="strata-decision__title">Processed-events table for Plaid webhooks</div>
+              <div class="strata-decision__desc">Plaid sends duplicate webhooks. A dedupe table keyed on webhook ID ensures idempotent processing without complex distributed locks.</div>
+            </div>
+          </div>
+        </div>
+        <div class="strata-col-divider"></div>
+        <div>
+          <h2 class="strata-col-heading">Source Breakdown</h2>
+          <table class="strata-source-table">
+            <thead>
+              <tr>
+                <th>Source</th>
+                <th>Sessions</th>
+                <th>%</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  Claude Code
+                  <span class="strata-source-bar" style="width: 62.5%;"></span>
+                </td>
+                <td>5</td>
+                <td>62.5%</td>
+              </tr>
+              <tr>
+                <td>
+                  Cursor
+                  <span class="strata-source-bar" style="width: 37.5%;"></span>
+                </td>
+                <td>3</td>
+                <td>37.5%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 9: Phase Timeline -->
+    <div class="strata-layer" style="z-index: 7;">
+      <div class="strata-section-header">
+        <h2 class="strata-section-header__title">Project Phases</h2>
+      </div>
+      <div class="strata-phases">
+        <div class="strata-phases__line"></div>
+        <div class="strata-phase">
+          <div class="strata-phase__dot"></div>
+          <div class="strata-phase__dates">Feb 3 -- Feb 14</div>
+          <div class="strata-phase__title">Phase 1: Foundation</div>
+          <div class="strata-phase__desc">Schema design, Prisma setup, transaction CRUD. Established the core data model with discriminated unions for transaction types.</div>
+        </div>
+        <div class="strata-phase">
+          <div class="strata-phase__dot"></div>
+          <div class="strata-phase__dates">Feb 17 -- Feb 26</div>
+          <div class="strata-phase__title">Phase 2: Data Pipeline</div>
+          <div class="strata-phase__desc">CSV import, Plaid integration, recurring transaction detection. Built the fuzzy matcher with tolerance windows for monthly and weekly patterns.</div>
+        </div>
+        <div class="strata-phase">
+          <div class="strata-phase__dot"></div>
+          <div class="strata-phase__dates">Mar 1 -- Mar 14</div>
+          <div class="strata-phase__title">Phase 3: Intelligence</div>
+          <div class="strata-phase__desc">Full-text search with tsvector, spending insights dashboard. The partial index on merchant_normalized was the key performance win.</div>
+        </div>
+        <div class="strata-phase">
+          <div class="strata-phase__dot"></div>
+          <div class="strata-phase__dates">Mar 16 -- Mar 26</div>
+          <div class="strata-phase__title">Phase 4: Hardening</div>
+          <div class="strata-phase__desc">Two-factor authentication, mobile responsive layout, CI/CD pipeline, and performance optimization across the full stack.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 10: Skills -->
+    <div class="strata-layer" style="z-index: 8;">
+      <div class="strata-section-header">
+        <h2 class="strata-section-header__title">Technologies</h2>
+      </div>
+      <div class="strata-chips">
+        <span class="strata-chip">TypeScript</span>
+        <span class="strata-chip">React</span>
+        <span class="strata-chip">Next.js</span>
+        <span class="strata-chip">Prisma</span>
+        <span class="strata-chip">PostgreSQL</span>
+        <span class="strata-chip">Tailwind CSS</span>
+        <span class="strata-chip">Stripe API</span>
+        <span class="strata-chip">Plaid API</span>
+        <span class="strata-chip">Chart.js</span>
+        <span class="strata-chip">Playwright</span>
+      </div>
+    </div>
+
+    <!-- Section 11: Featured Session Cards -->
+    <div class="strata-layer" style="z-index: 9;">
+      <div class="strata-section-header">
+        <h2 class="strata-section-header__title">Sessions</h2>
+        <span class="strata-section-header__meta">8 total</span>
+      </div>
+      <div class="strata-session-grid strata-session-grid--stacked">
+        <a class="strata-session-card" href="./session.html">
+          <div class="strata-session-card__bar" style="background: var(--strata-accent);"></div>
+          <div class="strata-session-card__body">
+            <div class="strata-session-card__title">Set up Prisma schema</div>
+            <div class="strata-session-card__meta">72m &middot; Feb 3</div>
+            <div class="strata-session-card__lines">+680 lines</div>
+            <div class="strata-session-card__source">Claude &middot; 7 agents</div>
+            <div class="strata-session-card__chips">
+              <span class="strata-session-card__chip">schema</span>
+            </div>
+          </div>
+        </a>
+        <a class="strata-session-card" href="./session.html">
+          <div class="strata-session-card__bar" style="background: var(--strata-text-tertiary);"></div>
+          <div class="strata-session-card__body">
+            <div class="strata-session-card__title">Transaction list + infinite scroll</div>
+            <div class="strata-session-card__meta">65m &middot; Feb 14</div>
+            <div class="strata-session-card__lines">+520 lines</div>
+            <div class="strata-session-card__source">Cursor &middot; 5 agents</div>
+            <div class="strata-session-card__chips">
+              <span class="strata-session-card__chip">frontend</span>
+            </div>
+          </div>
+        </a>
+        <a class="strata-session-card" href="./session.html">
+          <div class="strata-session-card__bar" style="background: #92400e;"></div>
+          <div class="strata-session-card__body">
+            <div class="strata-session-card__title">Recurring transaction detection</div>
+            <div class="strata-session-card__meta">88m &middot; Mar 1</div>
+            <div class="strata-session-card__lines">+890 lines</div>
+            <div class="strata-session-card__source">Claude &middot; 6 agents</div>
+            <div class="strata-session-card__chips">
+              <span class="strata-session-card__chip">algorithm</span>
+            </div>
+          </div>
+        </a>
+        <a class="strata-session-card" href="./session.html">
+          <div class="strata-session-card__bar" style="background: var(--strata-accent);"></div>
+          <div class="strata-session-card__body">
+            <div class="strata-session-card__title">CSV import pipeline</div>
+            <div class="strata-session-card__meta">78m &middot; Mar 14</div>
+            <div class="strata-session-card__lines">+640 lines</div>
+            <div class="strata-session-card__source">Cursor &middot; 5 agents</div>
+            <div class="strata-session-card__chips">
+              <span class="strata-session-card__chip">import</span>
+            </div>
+          </div>
+        </a>
+        <a class="strata-session-card" href="./session.html">
+          <div class="strata-session-card__bar" style="background: var(--strata-text-tertiary);"></div>
+          <div class="strata-session-card__body">
+            <div class="strata-session-card__title">Plaid integration</div>
+            <div class="strata-session-card__meta">90m &middot; Mar 18</div>
+            <div class="strata-session-card__lines">+780 lines</div>
+            <div class="strata-session-card__source">Claude &middot; 8 agents</div>
+            <div class="strata-session-card__chips">
+              <span class="strata-session-card__chip">integration</span>
+            </div>
+          </div>
+        </a>
+        <a class="strata-session-card" href="./session.html">
+          <div class="strata-session-card__bar" style="background: #92400e;"></div>
+          <div class="strata-session-card__body">
+            <div class="strata-session-card__title">Spending insights dashboard</div>
+            <div class="strata-session-card__meta">70m &middot; Mar 22</div>
+            <div class="strata-session-card__lines">+620 lines</div>
+            <div class="strata-session-card__source">Claude &middot; 4 agents</div>
+            <div class="strata-session-card__chips">
+              <span class="strata-session-card__chip">insights</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="strata-footer" style="z-index: 10;">
+      <div class="strata-footer__text">
+        Built with <a href="https://heyi.am">heyi.am</a> &middot; <a href="./session.html">View all sessions</a>
+      </div>
+    </footer>
+
+  </main>
+
+  <script>
+    (function() {
+      'use strict';
+
+      var layers = document.querySelectorAll('.strata-layer');
+
+      // ── Entrance animation ──
+      var entranceObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('strata-visible');
+            entranceObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+
+      layers.forEach(function(layer, i) {
+        layer.style.transitionDelay = (i * 80) + 'ms';
+        entranceObserver.observe(layer);
+      });
+
+      // ── Active section tracking ──
+      var activeObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('strata-active');
+          } else {
+            entry.target.classList.remove('strata-active');
+          }
+        });
+      }, { threshold: 0.4 });
+
+      layers.forEach(function(layer) {
+        activeObserver.observe(layer);
+      });
+
+      // ── Parallax ──
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      if (!prefersReducedMotion.matches) {
+        var ticking = false;
+        window.addEventListener('scroll', function() {
+          if (!ticking) {
+            requestAnimationFrame(function() {
+              var vh = window.innerHeight;
+              layers.forEach(function(layer, i) {
+                var rect = layer.getBoundingClientRect();
+                var offset = (rect.top + rect.height / 2 - vh / 2);
+                var parallax = Math.max(-20, Math.min(20, offset * 0.03 * (i + 1) * 0.5));
+                if (layer.classList.contains('strata-visible')) {
+                  var lift = layer.classList.contains('strata-active') ? -4 : 0;
+                  layer.style.transform = 'translateY(' + (parallax + lift) + 'px)';
+                }
+              });
+              ticking = false;
+            });
+            ticking = true;
+          }
+        });
+      }
+
+      // ── Stat Counter Animation ──
+      var statsSection = document.getElementById('stats-section');
+      if (statsSection) {
+        var statsObserver = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              statsObserver.unobserve(entry.target);
+              setTimeout(function() { animateCounters(entry.target); }, 200);
+            }
+          });
+        }, { threshold: 0.15 });
+        statsObserver.observe(statsSection);
+      }
+
+      function animateCounters(container) {
+        var counters = container.querySelectorAll('[data-count-to]');
+        counters.forEach(function(el) {
+          var target = parseFloat(el.getAttribute('data-count-to'));
+          var format = el.getAttribute('data-format');
+          var duration = 1200;
+          var start = performance.now();
+
+          function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+          function formatValue(val) {
+            switch (format) {
+              case 'int': return Math.round(val).toString();
+              case 'comma': return Math.round(val).toLocaleString();
+              case 'duration':
+                var totalMin = Math.round(val);
+                var h = Math.floor(totalMin / 60);
+                var m = totalMin % 60;
+                return h + 'h ' + m + 'm';
+              case 'tokens':
+                if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+                if (val >= 1000) return (val / 1000).toFixed(0) + 'K';
+                return Math.round(val).toString();
+              case 'multiplier': return val.toFixed(1) + 'x';
+              default: return Math.round(val).toString();
+            }
+          }
+
+          function tick(now) {
+            var elapsed = now - start;
+            var progress = Math.min(elapsed / duration, 1);
+            var easedProgress = easeOut(progress);
+            var current = target * easedProgress;
+            el.textContent = formatValue(current);
+            if (progress < 1) { requestAnimationFrame(tick); }
+          }
+
+          requestAnimationFrame(tick);
+        });
+      }
+
+      // ── Growth Chart Line Draw Animation ──
+      function initLineDrawAnimation(lineId) {
+        var line = document.getElementById(lineId);
+        if (!line) return;
+        var totalLength = line.getTotalLength();
+        line.style.strokeDasharray = totalLength;
+        line.style.strokeDashoffset = totalLength;
+
+        var parentLayer = line.closest('.strata-layer');
+        if (parentLayer) {
+          var mutObs = new MutationObserver(function(mutations) {
+            mutations.forEach(function(m) {
+              if (m.target.classList.contains('strata-visible')) {
+                line.style.strokeDashoffset = '0';
+                mutObs.disconnect();
+              }
+            });
+          });
+          mutObs.observe(parentLayer, { attributes: true, attributeFilter: ['class'] });
+          if (parentLayer.classList.contains('strata-visible')) {
+            line.style.strokeDashoffset = '0';
+          }
+        }
+      }
+
+      initLineDrawAnimation('growth-loc-line');
+      initLineDrawAnimation('growth-files-line');
+
+      // ── Initial scroll check ──
+      window.dispatchEvent(new Event('scroll'));
+
+    })();
+  </script>
+
+</body>
+</html>

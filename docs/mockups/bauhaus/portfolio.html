@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>James Miller — Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ============================
+       BAUHAUS TEMPLATE — PORTFOLIO
+       ============================ */
+
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #fafafa;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --text-secondary: #555555;
+      --red: #dc2626;
+      --blue: #2563eb;
+      --yellow: #eab308;
+      --black: #1a1a1a;
+      --border: 3px solid var(--black);
+      --font-display: 'Space Grotesk', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+      --radius: 0px;
+      --max-width: 1200px;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Skip link */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 16px;
+      z-index: 1000;
+      padding: 12px 24px;
+      background: var(--black);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      text-decoration: none;
+      border-radius: var(--radius);
+    }
+
+    .skip-link:focus {
+      top: 16px;
+    }
+
+    /* Navigation */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--card);
+      border-bottom: var(--border);
+    }
+
+    .nav-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .nav-logo {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 20px;
+      text-decoration: none;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-logo-shape {
+      width: 24px;
+      height: 24px;
+      background: var(--red);
+      display: inline-block;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 8px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      color: var(--text);
+      padding: 8px 16px;
+      border: 2px solid transparent;
+      transition: border-color 0.15s ease;
+    }
+
+    .nav-links a:hover,
+    .nav-links a:focus-visible {
+      border-color: var(--black);
+    }
+
+    .nav-links a[aria-current="page"] {
+      background: var(--black);
+      color: #fff;
+    }
+
+    .nav-links a:focus-visible {
+      outline: 3px solid var(--blue);
+      outline-offset: 2px;
+    }
+
+    /* Main content */
+    main {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Hero section */
+    .hero {
+      padding: 80px 0 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 48px;
+      align-items: start;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(48px, 7vw, 80px);
+      font-weight: 700;
+      line-height: 1.0;
+      letter-spacing: -2px;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 .accent-dot {
+      color: var(--red);
+    }
+
+    .hero-bio {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin-bottom: 12px;
+    }
+
+    .hero-location {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hero-location::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      background: var(--blue);
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* Profile photo */
+    .hero-photo {
+      width: 100px;
+      height: 130px;
+      border-radius: 0px;
+      object-fit: cover;
+      object-position: 55% 10%;
+      border: var(--border);
+      margin-bottom: 20px;
+    }
+
+    /* Profile links */
+    .profile-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+      align-items: center;
+    }
+
+    .profile-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 4px 10px;
+      border: 2px solid transparent;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .profile-links a:hover {
+      border-color: var(--black);
+      color: var(--text);
+    }
+
+    .profile-links a:focus-visible {
+      outline: 3px solid var(--blue);
+      outline-offset: 2px;
+    }
+
+    .profile-links a svg {
+      flex-shrink: 0;
+    }
+
+    /* Geometric shapes — hero */
+    .hero-shapes {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      flex-shrink: 0;
+    }
+
+    .shape-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: var(--red);
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
+
+    .shape-rect-blue {
+      width: 80px;
+      height: 140px;
+      background: var(--blue);
+      position: absolute;
+      bottom: 0;
+      left: 0;
+    }
+
+    .shape-rect-yellow {
+      width: 100px;
+      height: 40px;
+      background: var(--yellow);
+      position: absolute;
+      bottom: 50px;
+      right: 20px;
+    }
+
+    .shape-line {
+      width: 3px;
+      height: 180px;
+      background: var(--black);
+      position: absolute;
+      top: 20px;
+      left: 90px;
+    }
+
+    /* Stats bar */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      border: var(--border);
+      margin-bottom: 64px;
+    }
+
+    .stat-item {
+      padding: 24px;
+      text-align: center;
+      border-right: var(--border);
+      position: relative;
+    }
+
+    .stat-item:last-child {
+      border-right: none;
+    }
+
+    .stat-item:nth-child(1) { background: var(--red); color: #fff; }
+    .stat-item:nth-child(2) { background: var(--blue); color: #fff; }
+    .stat-item:nth-child(3) { background: var(--yellow); color: var(--black); }
+    .stat-item:nth-child(4) { background: var(--card); }
+
+    .stat-number {
+      font-family: var(--font-display);
+      font-size: clamp(36px, 5vw, 56px);
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Section headings */
+    .section-heading {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .section-heading h2 {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 700;
+    }
+
+    .section-heading-shape {
+      flex-shrink: 0;
+    }
+
+    .heading-line {
+      flex: 1;
+      height: 3px;
+      background: var(--black);
+    }
+
+    /* Project cards */
+    .projects-section {
+      padding-bottom: 80px;
+    }
+
+    .projects-grid {
+      display: grid;
+      gap: 32px;
+    }
+
+    .project-card {
+      background: var(--card);
+      border: var(--border);
+      display: grid;
+      grid-template-columns: 1fr;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s ease;
+    }
+
+    .project-card:hover {
+      transform: translate(-4px, -4px);
+      box-shadow: 4px 4px 0 var(--black);
+    }
+
+    .project-card:focus-visible {
+      outline: 3px solid var(--blue);
+      outline-offset: 2px;
+    }
+
+    .project-card-inner {
+      display: grid;
+      grid-template-columns: auto 1fr;
+    }
+
+    .project-accent {
+      width: 12px;
+    }
+
+    .project-card:nth-child(1) .project-accent { background: var(--red); }
+    .project-card:nth-child(2) .project-accent { background: var(--blue); }
+    .project-card:nth-child(3) .project-accent { background: var(--yellow); }
+
+    .project-body {
+      padding: 32px;
+    }
+
+    .project-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .project-title {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .project-source {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border: 2px solid var(--black);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .project-narrative {
+      color: var(--text-secondary);
+      font-size: 15px;
+      margin-bottom: 20px;
+      line-height: 1.7;
+    }
+
+    .project-skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .skill-chip {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 12px;
+      background: var(--bg);
+      border: 2px solid var(--black);
+    }
+
+    .project-stats {
+      display: flex;
+      gap: 24px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .project-stats strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .project-source-bar {
+      margin-top: 16px;
+      height: 8px;
+      display: flex;
+      border: 2px solid var(--black);
+      overflow: hidden;
+    }
+
+    .source-segment-claude {
+      background: var(--blue);
+    }
+
+    .source-segment-cursor {
+      background: var(--yellow);
+    }
+
+    .project-source-legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .legend-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    .legend-dot.claude { background: var(--blue); }
+    .legend-dot.cursor { background: var(--yellow); }
+
+    /* Footer */
+    footer {
+      border-top: var(--border);
+      margin-top: 40px;
+    }
+
+    .footer-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .footer-text {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .footer-shapes {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .footer-shape {
+      display: inline-block;
+    }
+
+    .footer-sq-red {
+      width: 16px;
+      height: 16px;
+      background: var(--red);
+    }
+
+    .footer-circle-blue {
+      width: 16px;
+      height: 16px;
+      background: var(--blue);
+      border-radius: 50%;
+    }
+
+    .footer-sq-yellow {
+      width: 16px;
+      height: 16px;
+      background: var(--yellow);
+    }
+
+    /* Animations */
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-60px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(60px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.6) rotate(-15deg); }
+      to   { opacity: 1; transform: scale(1) rotate(0deg); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .anim-slide-left {
+      opacity: 0;
+      animation: slideInLeft 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .anim-slide-right {
+      opacity: 0;
+      animation: slideInRight 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .anim-scale-in {
+      opacity: 0;
+      animation: scaleIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .anim-fade-up {
+      opacity: 0;
+      animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .anim-delay-1 { animation-delay: 0.1s; }
+    .anim-delay-2 { animation-delay: 0.2s; }
+    .anim-delay-3 { animation-delay: 0.3s; }
+    .anim-delay-4 { animation-delay: 0.4s; }
+    .anim-delay-5 { animation-delay: 0.5s; }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-delay: 0ms !important;
+        transition-duration: 0.01ms !important;
+      }
+
+      .anim-slide-left,
+      .anim-slide-right,
+      .anim-scale-in,
+      .anim-fade-up {
+        opacity: 1;
+        transform: none;
+      }
+
+      .project-card:hover {
+        transform: none;
+        box-shadow: none;
+      }
+    }
+
+    /* Responsive — mobile */
+    @media (max-width: 768px) {
+      .hero {
+        padding: 48px 0 40px;
+      }
+
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+
+      .hero-photo {
+        width: 80px;
+        height: 100px;
+      }
+
+      .profile-links {
+        font-size: 12px;
+      }
+
+      .hero-shapes {
+        width: 160px;
+        height: 160px;
+      }
+
+      .shape-circle {
+        width: 80px;
+        height: 80px;
+      }
+
+      .shape-rect-blue {
+        width: 50px;
+        height: 90px;
+      }
+
+      .shape-rect-yellow {
+        width: 70px;
+        height: 30px;
+      }
+
+      .shape-line {
+        height: 120px;
+        left: 60px;
+      }
+
+      .stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .stat-item:nth-child(2) {
+        border-right: none;
+      }
+
+      .stat-item:nth-child(1),
+      .stat-item:nth-child(2) {
+        border-bottom: var(--border);
+      }
+
+      .nav-links a {
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+
+      .project-card-inner {
+        grid-template-columns: 8px 1fr;
+      }
+
+      .project-accent {
+        width: 8px;
+      }
+
+      .project-body {
+        padding: 20px;
+      }
+
+      .project-header {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .project-stats {
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .footer-inner {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+  
+    /* ── Clickable cards ── */
+    a.project-card, a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.project-card:hover, a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
+  <nav aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="./portfolio.html" class="nav-logo" aria-label="James Miller portfolio home">
+        <span class="nav-logo-shape" aria-hidden="true"></span>
+        james.miller
+      </a>
+      <ul class="nav-links">
+        <li><a href="./portfolio.html" aria-current="page">Portfolio</a></li>
+        <li><a href="./project.html">Project</a></li>
+        <li><a href="./session.html">Session</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main id="main-content">
+    <!-- Hero -->
+    <section class="hero" aria-label="Introduction">
+      <div class="hero-grid">
+        <div class="hero-content anim-slide-left">
+          <img src="../assets/headshot-man-1-400.jpg" alt="James Miller" class="hero-photo" width="120" height="120">
+          <h1>James<br>Miller<span class="accent-dot">.</span></h1>
+          <p class="hero-bio">Software architect focused on systems programming and developer experience. I think deeply about the tools developers use daily — from git hooks to real-time sync. Rust and TypeScript are my primary languages.</p>
+          <p class="hero-location">Austin, TX</p>
+          <div class="profile-links">
+            <a href="mailto:james@heyiam.com" aria-label="Email james@heyiam.com">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg>
+              james@heyiam.com
+            </a>
+            <a href="./project.html" aria-label="Location: Austin, TX">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+              Austin, TX
+            </a>
+            <a href="https://linkedin.com/in/jamesmiller" aria-label="LinkedIn profile">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>
+              LinkedIn
+            </a>
+            <a href="https://github.com/interactivecats/heyi.am" aria-label="GitHub profile">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+              GitHub
+            </a>
+            <a href="https://x.com/jmillerdev" aria-label="Twitter/X profile">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              @jmillerdev
+            </a>
+            <a href="https://jamesmiller.dev" aria-label="Personal website">
+              jamesmiller.dev
+            </a>
+            <a href="./project.html" aria-label="Download resume as PDF">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+              Resume (PDF)
+            </a>
+          </div>
+        </div>
+        <div class="hero-shapes anim-scale-in anim-delay-2" aria-hidden="true">
+          <div class="shape-circle"></div>
+          <div class="shape-rect-blue"></div>
+          <div class="shape-rect-yellow"></div>
+          <div class="shape-line"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats bar -->
+    <section class="stats-bar anim-fade-up anim-delay-2" aria-label="Aggregate statistics">
+      <div class="stat-item">
+        <div class="stat-number">3</div>
+        <div class="stat-label">Projects</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">28</div>
+        <div class="stat-label">Sessions</div>
+      </div>
+      <div class="stat-item" style="background: var(--red); color: #fff; padding: 12px 16px;">
+        <div class="stat-number">24h</div>
+        <div class="stat-label" style="color: rgba(255,255,255,0.8);">You</div>
+      </div>
+      <div class="stat-item" style="background: var(--blue); color: #fff; padding: 12px 16px;">
+        <div class="stat-number">100h</div>
+        <div class="stat-label" style="color: rgba(255,255,255,0.8);">Agents</div>
+      </div>
+      <div class="stat-item" style="background: var(--yellow); color: var(--black); padding: 12px 16px;">
+        <div class="stat-number">4.2&times;</div>
+        <div class="stat-label">Multiplier</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">18.4k</div>
+        <div class="stat-label">Lines Changed</div>
+      </div>
+    </section>
+
+    <!-- Projects -->
+    <section class="projects-section" aria-label="Projects">
+      <div class="section-heading anim-slide-right anim-delay-3">
+        <svg class="section-heading-shape" width="24" height="24" aria-hidden="true">
+          <circle cx="12" cy="12" r="12" fill="var(--red)" />
+        </svg>
+        <h2>Projects</h2>
+        <div class="heading-line" aria-hidden="true"></div>
+      </div>
+
+      <div class="projects-grid">
+        <!-- BudgetWise -->
+        <a href="./project.html" class="project-card anim-slide-left anim-delay-3">
+          <div class="project-card-inner">
+            <div class="project-accent" aria-hidden="true"></div>
+            <div class="project-body">
+              <div class="project-header">
+                <h3 class="project-title">BudgetWise</h3>
+                <span class="project-source">Claude 62.5% / Cursor 37.5%</span>
+              </div>
+              <p class="project-narrative">Personal finance app with recurring transaction detection, Plaid integration, and spending insights dashboard.</p>
+              <div class="project-skills" aria-label="Skills used">
+                <span class="skill-chip">TypeScript</span>
+                <span class="skill-chip">React</span>
+                <span class="skill-chip">Next.js</span>
+                <span class="skill-chip">Prisma</span>
+                <span class="skill-chip">PostgreSQL</span>
+                <span class="skill-chip">Stripe API</span>
+              </div>
+              <div class="project-stats">
+                <span><strong>8</strong> sessions</span>
+                <span><strong>42.5</strong>h</span>
+                <span><strong>4,460</strong> LOC</span>
+              </div>
+              <div class="project-source-bar" aria-label="Source distribution: Claude 62.5%, Cursor 37.5%">
+                <div class="source-segment-claude" style="width: 62.5%"></div>
+                <div class="source-segment-cursor" style="width: 37.5%"></div>
+              </div>
+              <div class="project-source-legend">
+                <span><span class="legend-dot claude" aria-hidden="true"></span>Claude 62.5%</span>
+                <span><span class="legend-dot cursor" aria-hidden="true"></span>Cursor 37.5%</span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- ShellHook -->
+        <a href="./project.html" class="project-card anim-slide-right anim-delay-4">
+          <div class="project-card-inner">
+            <div class="project-accent" aria-hidden="true"></div>
+            <div class="project-body">
+              <div class="project-header">
+                <h3 class="project-title">ShellHook</h3>
+                <span class="project-source">Claude 85% / Cursor 15%</span>
+              </div>
+              <p class="project-narrative">Rust CLI tool for managing git hooks with TOML configuration and automatic symlinking.</p>
+              <div class="project-skills" aria-label="Skills used">
+                <span class="skill-chip">Rust</span>
+                <span class="skill-chip">CLI design</span>
+                <span class="skill-chip">TOML parsing</span>
+                <span class="skill-chip">Git internals</span>
+                <span class="skill-chip">Shell scripting</span>
+              </div>
+              <div class="project-stats">
+                <span><strong>7</strong> sessions</span>
+                <span><strong>32</strong>h</span>
+                <span><strong>3,580</strong> LOC</span>
+              </div>
+              <div class="project-source-bar" aria-label="Source distribution: Claude 85%, Cursor 15%">
+                <div class="source-segment-claude" style="width: 85%"></div>
+                <div class="source-segment-cursor" style="width: 15%"></div>
+              </div>
+              <div class="project-source-legend">
+                <span><span class="legend-dot claude" aria-hidden="true"></span>Claude 85%</span>
+                <span><span class="legend-dot cursor" aria-hidden="true"></span>Cursor 15%</span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- PixelBoard -->
+        <a href="./project.html" class="project-card anim-slide-left anim-delay-5">
+          <div class="project-card-inner">
+            <div class="project-accent" aria-hidden="true"></div>
+            <div class="project-body">
+              <div class="project-header">
+                <h3 class="project-title">PixelBoard</h3>
+                <span class="project-source">Claude 60% / Cursor 40%</span>
+              </div>
+              <p class="project-narrative">Real-time collaborative drawing canvas with CRDT-based state sync and pressure-sensitive input.</p>
+              <div class="project-skills" aria-label="Skills used">
+                <span class="skill-chip">TypeScript</span>
+                <span class="skill-chip">WebSocket</span>
+                <span class="skill-chip">Canvas API</span>
+                <span class="skill-chip">Redis</span>
+                <span class="skill-chip">Express</span>
+                <span class="skill-chip">CRDT</span>
+              </div>
+              <div class="project-stats">
+                <span><strong>5</strong> sessions</span>
+                <span><strong>28</strong>h</span>
+                <span><strong>2,940</strong> LOC</span>
+              </div>
+              <div class="project-source-bar" aria-label="Source distribution: Claude 60%, Cursor 40%">
+                <div class="source-segment-claude" style="width: 60%"></div>
+                <div class="source-segment-cursor" style="width: 40%"></div>
+              </div>
+              <div class="project-source-legend">
+                <span><span class="legend-dot claude" aria-hidden="true"></span>Claude 60%</span>
+                <span><span class="legend-dot cursor" aria-hidden="true"></span>Cursor 40%</span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- DevLog -->
+        <a href="./project.html" class="project-card anim-slide-left anim-delay-6">
+          <div class="project-card-inner">
+            <div class="project-accent" aria-hidden="true"></div>
+            <div class="project-body">
+              <div class="project-header">
+                <h3 class="project-title">DevLog</h3>
+                <span class="project-source">Claude 80% / Cursor 20%</span>
+              </div>
+              <p class="project-narrative">CLI tool for capturing development decisions and context as structured markdown notes.</p>
+              <div class="project-skills" aria-label="Skills used">
+                <span class="skill-chip">TypeScript</span>
+                <span class="skill-chip">Node.js</span>
+                <span class="skill-chip">CLI design</span>
+                <span class="skill-chip">Markdown</span>
+                <span class="skill-chip">SQLite</span>
+</div>
+              <div class="project-stats">
+                <span><strong>5</strong> sessions</span>
+                <span><strong>18</strong>h</span>
+                <span><strong>1,840</strong> LOC</span>
+              </div>
+              <div class="project-source-bar" aria-label="Source distribution: Claude 80%, Cursor 20%">
+                <div class="source-segment-claude" style="width: 80%"></div>
+                <div class="source-segment-cursor" style="width: 20%"></div>
+              </div>
+              <div class="project-source-legend">
+                <span><span class="legend-dot claude" aria-hidden="true"></span>Claude 80%</span>
+                <span><span class="legend-dot cursor" aria-hidden="true"></span>Cursor 20%</span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- Snapgrid -->
+        <a href="./project.html" class="project-card anim-slide-left anim-delay-7">
+          <div class="project-card-inner">
+            <div class="project-accent" aria-hidden="true"></div>
+            <div class="project-body">
+              <div class="project-header">
+                <h3 class="project-title">Snapgrid</h3>
+                <span class="project-source">Claude 50% / Cursor 50%</span>
+              </div>
+              <p class="project-narrative">Responsive image gallery with masonry layout, lazy loading, and keyboard navigation.</p>
+              <div class="project-skills" aria-label="Skills used">
+                <span class="skill-chip">TypeScript</span>
+                <span class="skill-chip">React</span>
+                <span class="skill-chip">CSS Grid</span>
+                <span class="skill-chip">IntersectionObserver</span>
+                <span class="skill-chip">Accessibility</span>
+</div>
+              <div class="project-stats">
+                <span><strong>4</strong> sessions</span>
+                <span><strong>14</strong>h</span>
+                <span><strong>1,520</strong> LOC</span>
+              </div>
+              <div class="project-source-bar" aria-label="Source distribution: Claude 50%, Cursor 50%">
+                <div class="source-segment-claude" style="width: 50%"></div>
+                <div class="source-segment-cursor" style="width: 50%"></div>
+              </div>
+              <div class="project-source-legend">
+                <span><span class="legend-dot claude" aria-hidden="true"></span>Claude 50%</span>
+                <span><span class="legend-dot cursor" aria-hidden="true"></span>Cursor 50%</span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- Terracotta -->
+        <a href="./project.html" class="project-card anim-slide-left anim-delay-8">
+          <div class="project-card-inner">
+            <div class="project-accent" aria-hidden="true"></div>
+            <div class="project-body">
+              <div class="project-header">
+                <h3 class="project-title">Terracotta</h3>
+                <span class="project-source">Claude 70% / Cursor 30%</span>
+              </div>
+              <p class="project-narrative">Design token pipeline that generates CSS custom properties, Tailwind config, and Figma tokens from a single YAML source.</p>
+              <div class="project-skills" aria-label="Skills used">
+                <span class="skill-chip">TypeScript</span>
+                <span class="skill-chip">Node.js</span>
+                <span class="skill-chip">YAML</span>
+                <span class="skill-chip">CSS</span>
+                <span class="skill-chip">Figma API</span>
+</div>
+              <div class="project-stats">
+                <span><strong>6</strong> sessions</span>
+                <span><strong>22</strong>h</span>
+                <span><strong>2,680</strong> LOC</span>
+              </div>
+              <div class="project-source-bar" aria-label="Source distribution: Claude 70%, Cursor 30%">
+                <div class="source-segment-claude" style="width: 70%"></div>
+                <div class="source-segment-cursor" style="width: 30%"></div>
+              </div>
+              <div class="project-source-legend">
+                <span><span class="legend-dot claude" aria-hidden="true"></span>Claude 70%</span>
+                <span><span class="legend-dot cursor" aria-hidden="true"></span>Cursor 30%</span>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <span class="footer-text">Built with heyi.am — Bauhaus template</span>
+      <div class="footer-shapes" aria-hidden="true">
+        <span class="footer-shape footer-sq-red"></span>
+        <span class="footer-shape footer-circle-blue"></span>
+        <span class="footer-shape footer-sq-yellow"></span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /* Intersection Observer for scroll-triggered animations */
+    (function () {
+      var targets = document.querySelectorAll(
+        '.anim-slide-left, .anim-slide-right, .anim-scale-in, .anim-fade-up'
+      );
+
+      /* If IntersectionObserver unsupported, show everything */
+      if (!('IntersectionObserver' in window)) {
+        targets.forEach(function (el) { el.style.opacity = '1'; });
+        return;
+      }
+
+      /* Pause animations until in viewport */
+      targets.forEach(function (el) {
+        el.style.animationPlayState = 'paused';
+      });
+
+      var observer = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.style.animationPlayState = 'running';
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.15 }
+      );
+
+      targets.forEach(function (el) { observer.observe(el); });
+    })();
+  </script>
+</body>
+</html>

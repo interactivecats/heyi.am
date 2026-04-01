@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ryan Smith — heyi.am</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ────────────────────────────────────────────────
+       ZEN TEMPLATE — Portfolio Page
+       Japanese minimalism. Maximum whitespace.
+       The absence of decoration IS the design.
+       ──────────────────────────────────────────────── */
+
+    /* ── Reset ── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ── Zen Design Tokens ── */
+    :root {
+      /* Palette — stone family, intentionally muted */
+      --zen-bg:             #fafaf9;
+      --zen-text:           #1c1917;
+      --zen-text-secondary: #78716c;
+      --zen-text-tertiary:  #a8a29e;
+      --zen-accent:         #78716c;
+      --zen-accent-hover:   #57534e;
+      --zen-rule:           #d6d3d1;
+      --zen-selection-bg:   #d6d3d1;
+      --zen-selection-text: #1c1917;
+
+      /* Typography — elegant serif, clean sans, honest mono */
+      --zen-font-display:   'Cormorant Garamond', 'Noto Serif JP', Georgia, serif;
+      --zen-font-body:      'Inter', system-ui, sans-serif;
+      --zen-font-mono:      'IBM Plex Mono', monospace;
+
+      /* Spacing */
+      --zen-radius:         2px;
+      --zen-max-width:      640px;
+      --zen-section-gap:    6rem;
+      --zen-section-gap-sm: 4rem;
+
+      /* Motion — very slow, meditative */
+      --zen-fade-duration:  1000ms;
+      --zen-fade-ease:      cubic-bezier(0.25, 0.1, 0.25, 1);
+      --zen-stagger:        150ms;
+    }
+
+    /* ── Reduced Motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      :root {
+        --zen-fade-duration: 0ms;
+        --zen-stagger: 0ms;
+      }
+      .zen-fade {
+        opacity: 1 !important;
+        transform: none !important;
+      }
+    }
+
+    /* ── Selection ── */
+    ::selection {
+      background: var(--zen-selection-bg);
+      color: var(--zen-selection-text);
+    }
+    ::-moz-selection {
+      background: var(--zen-selection-bg);
+      color: var(--zen-selection-text);
+    }
+
+    /* ── Skip Link ── */
+    .zen-skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      background: var(--zen-text);
+      color: var(--zen-bg);
+      padding: 0.5rem 1rem;
+      font-family: var(--zen-font-body);
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: var(--zen-radius);
+      z-index: 100;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .zen-skip-link:focus {
+      top: 1rem;
+      outline: 2px solid var(--zen-accent);
+      outline-offset: 2px;
+    }
+
+    /* ── Base ── */
+    html {
+      scroll-behavior: smooth;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+    }
+
+    body {
+      font-family: var(--zen-font-body);
+      color: var(--zen-text);
+      background: var(--zen-bg);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: 100vh;
+    }
+
+    /* ── Links ── */
+    a {
+      color: var(--zen-text);
+      text-decoration: underline;
+      text-decoration-color: var(--zen-rule);
+      text-underline-offset: 3px;
+      text-decoration-thickness: 1px;
+      transition: text-decoration-color 300ms ease;
+    }
+    a:hover {
+      text-decoration-color: var(--zen-text);
+    }
+    a:focus-visible {
+      outline: 2px solid var(--zen-accent);
+      outline-offset: 3px;
+      border-radius: var(--zen-radius);
+    }
+    a:active {
+      color: var(--zen-accent-hover);
+    }
+
+    /* ── Layout ── */
+    .zen-container {
+      max-width: var(--zen-max-width);
+      margin: 0 auto;
+      padding: 3rem 1.25rem 5rem;
+    }
+
+    @media (min-width: 480px) {
+      .zen-container {
+        padding: 4rem 1.5rem 6rem;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .zen-container {
+        padding: 6rem 2rem 8rem;
+      }
+    }
+
+    /* ── Navigation ── */
+    .zen-nav {
+      padding: 1.25rem;
+      max-width: var(--zen-max-width);
+      margin: 0 auto;
+    }
+
+    @media (min-width: 768px) {
+      .zen-nav {
+        padding: 1.5rem 2rem;
+      }
+    }
+
+    .zen-nav-inner {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      font-family: var(--zen-font-mono);
+      font-size: 0.8125rem;
+      color: var(--zen-text-secondary);
+      letter-spacing: 0.01em;
+    }
+
+    .zen-nav a {
+      color: var(--zen-text-secondary);
+      text-decoration: none;
+      padding: 0.125rem 0;
+      transition: color 300ms ease;
+    }
+    .zen-nav a:hover {
+      color: var(--zen-text);
+    }
+    .zen-nav a[aria-current="page"] {
+      color: var(--zen-text);
+    }
+
+    .zen-nav-sep {
+      color: var(--zen-rule);
+      user-select: none;
+    }
+
+    /* ── Sections ── */
+    .zen-section {
+      margin-block-end: var(--zen-section-gap);
+    }
+
+    @media (max-width: 479px) {
+      .zen-section {
+        margin-block-end: var(--zen-section-gap-sm);
+      }
+    }
+
+    /* ── Horizontal Rule ── */
+    .zen-rule {
+      border: none;
+      border-block-start: 1px solid var(--zen-rule);
+      margin-block-end: var(--zen-section-gap);
+    }
+
+    @media (max-width: 479px) {
+      .zen-rule {
+        margin-block-end: var(--zen-section-gap-sm);
+      }
+    }
+
+    /* ── Fade Animation ── */
+    .zen-fade {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    .zen-fade.zen-visible {
+      opacity: 1;
+      transform: translateY(0);
+      transition:
+        opacity var(--zen-fade-duration) var(--zen-fade-ease),
+        transform var(--zen-fade-duration) var(--zen-fade-ease);
+    }
+
+    /* Staggered delays for child elements */
+    .zen-fade.zen-stagger-1 { transition-delay: calc(var(--zen-stagger) * 1); }
+    .zen-fade.zen-stagger-2 { transition-delay: calc(var(--zen-stagger) * 2); }
+    .zen-fade.zen-stagger-3 { transition-delay: calc(var(--zen-stagger) * 3); }
+    .zen-fade.zen-stagger-4 { transition-delay: calc(var(--zen-stagger) * 4); }
+    .zen-fade.zen-stagger-5 { transition-delay: calc(var(--zen-stagger) * 5); }
+    .zen-fade.zen-stagger-6 { transition-delay: calc(var(--zen-stagger) * 6); }
+
+    /* ── Typography ── */
+    .zen-display {
+      font-family: var(--zen-font-display);
+      font-weight: 400;
+      font-size: 2.25rem;
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      color: var(--zen-text);
+      word-break: break-word;
+    }
+
+    @media (min-width: 480px) {
+      .zen-display {
+        font-size: 2.5rem;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .zen-display {
+        font-size: 3rem;
+        line-height: 1.1;
+      }
+    }
+
+    .zen-heading {
+      font-family: var(--zen-font-display);
+      font-weight: 400;
+      font-size: 1.375rem;
+      line-height: 1.3;
+      color: var(--zen-text);
+      margin-block-end: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .zen-heading {
+        font-size: 1.5rem;
+      }
+    }
+
+    .zen-body {
+      font-family: var(--zen-font-body);
+      font-size: 0.9375rem;
+      line-height: 1.7;
+      color: var(--zen-text-secondary);
+    }
+
+    .zen-mono {
+      font-family: var(--zen-font-mono);
+      font-size: 0.8125rem;
+      color: var(--zen-text-tertiary);
+      letter-spacing: 0.01em;
+    }
+
+    /* ── Header Section ── */
+    .zen-header-profile {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+    }
+
+    .zen-header-photo {
+      width: 280px;
+      height: auto;
+      border-radius: var(--zen-radius);
+      object-fit: contain;
+      flex-shrink: 0;
+      border: none;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .zen-header-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .zen-header-name {
+      margin-block-end: 1.5rem;
+    }
+
+    .zen-header-bio {
+      font-family: var(--zen-font-body);
+      font-size: 0.9375rem;
+      line-height: 1.8;
+      color: var(--zen-text-secondary);
+      margin-block-end: 1rem;
+      max-width: 540px;
+    }
+
+    @media (min-width: 768px) {
+      .zen-header-bio {
+        font-size: 1rem;
+        line-height: 1.85;
+      }
+    }
+
+    .zen-header-location {
+      font-family: var(--zen-font-mono);
+      font-size: 0.8125rem;
+      color: var(--zen-text-tertiary);
+      letter-spacing: 0.01em;
+    }
+
+    .zen-header-contact {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      margin-block-start: 1.25rem;
+      list-style: none;
+    }
+
+    .zen-header-contact a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-family: var(--zen-font-mono);
+      font-size: 0.8125rem;
+      color: var(--zen-text-tertiary);
+      text-decoration: none;
+      transition: color 300ms ease;
+    }
+
+    .zen-header-contact a:hover {
+      color: var(--zen-text);
+    }
+
+    .zen-header-contact svg {
+      flex-shrink: 0;
+    }
+
+    .zen-header-resume {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      margin-block-start: 1.25rem;
+      padding: 0.375rem 0.875rem;
+      font-family: var(--zen-font-mono);
+      font-size: 0.8125rem;
+      color: var(--zen-bg);
+      background: var(--zen-text);
+      border: none;
+      border-radius: var(--zen-radius);
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 300ms ease;
+    }
+
+    .zen-header-resume:hover {
+      opacity: 0.8;
+      text-decoration: none;
+      color: var(--zen-bg);
+    }
+
+    @media (max-width: 479px) {
+      .zen-header-profile {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+      .zen-header-photo {
+        width: 160px;
+        height: 120px;
+      }
+      .zen-header-contact {
+        justify-content: center;
+      }
+    }
+
+    /* ── Stats — simple inline text ── */
+    .zen-stats {
+      font-family: var(--zen-font-body);
+      font-size: 0.9375rem;
+      color: var(--zen-text-secondary);
+      line-height: 2;
+    }
+
+    .zen-stat-value {
+      font-family: var(--zen-font-display);
+      font-size: 1.125rem;
+      font-weight: 500;
+      color: var(--zen-text);
+    }
+
+    @media (min-width: 768px) {
+      .zen-stat-value {
+        font-size: 1.25rem;
+      }
+    }
+
+    /* ── Project List ── */
+    .zen-project {
+      margin-block-end: 4rem;
+    }
+
+    @media (max-width: 479px) {
+      .zen-project {
+        margin-block-end: 3rem;
+      }
+    }
+
+    .zen-project:last-child {
+      margin-block-end: 0;
+    }
+
+    .zen-project-title {
+      font-family: var(--zen-font-display);
+      font-weight: 500;
+      font-size: 1.25rem;
+      line-height: 1.3;
+      color: var(--zen-text);
+      margin-block-end: 0.875rem;
+    }
+
+    @media (min-width: 768px) {
+      .zen-project-title {
+        font-size: 1.375rem;
+      }
+    }
+
+    .zen-project-title a {
+      text-decoration: none;
+      transition: color 300ms ease;
+    }
+    .zen-project-title a:hover {
+      text-decoration: underline;
+      text-decoration-color: var(--zen-rule);
+      text-underline-offset: 3px;
+      text-decoration-thickness: 1px;
+    }
+    .zen-project-title a:focus-visible {
+      outline: 2px solid var(--zen-accent);
+      outline-offset: 3px;
+      border-radius: var(--zen-radius);
+    }
+
+    .zen-project-narrative {
+      font-family: var(--zen-font-body);
+      font-size: 0.9375rem;
+      line-height: 1.8;
+      color: var(--zen-text-secondary);
+      margin-block-end: 1.25rem;
+    }
+
+    .zen-project-meta {
+      font-family: var(--zen-font-mono);
+      font-size: 0.75rem;
+      color: var(--zen-text-tertiary);
+      line-height: 1.8;
+      letter-spacing: 0.01em;
+    }
+
+    .zen-project-skills {
+      font-family: var(--zen-font-body);
+      font-size: 0.8125rem;
+      color: var(--zen-text-tertiary);
+      line-height: 1.7;
+      margin-block-start: 0.75rem;
+    }
+
+    .zen-project-source {
+      font-family: var(--zen-font-mono);
+      font-size: 0.75rem;
+      color: var(--zen-text-tertiary);
+      margin-block-start: 0.5rem;
+      letter-spacing: 0.01em;
+    }
+
+    /* ── Project divider — subtle inner rule ── */
+    .zen-project-divider {
+      border: none;
+      border-block-start: 1px solid var(--zen-rule);
+      margin-block-start: 4rem;
+      margin-block-end: 4rem;
+      opacity: 0.5;
+    }
+
+    @media (max-width: 479px) {
+      .zen-project-divider {
+        margin-block-start: 3rem;
+        margin-block-end: 3rem;
+      }
+    }
+
+    /* ── Footer ── */
+    .zen-footer {
+      margin-block-start: var(--zen-section-gap);
+      padding-block-start: 2rem;
+      border-block-start: 1px solid var(--zen-rule);
+    }
+
+    .zen-footer-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .zen-footer-inner {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
+    .zen-footer-text {
+      font-family: var(--zen-font-mono);
+      font-size: 0.75rem;
+      color: var(--zen-text-tertiary);
+      letter-spacing: 0.01em;
+    }
+
+    .zen-footer-nav {
+      display: flex;
+      gap: 1.5rem;
+      font-family: var(--zen-font-mono);
+      font-size: 0.75rem;
+    }
+
+    .zen-footer-nav a {
+      color: var(--zen-text-tertiary);
+      text-decoration: none;
+      transition: color 300ms ease;
+    }
+    .zen-footer-nav a:hover {
+      color: var(--zen-text);
+    }
+
+    /* ── Source Mix Summary ── */
+    .zen-source-summary {
+      font-family: var(--zen-font-mono);
+      font-size: 0.8125rem;
+      color: var(--zen-text-tertiary);
+      line-height: 2.2;
+      letter-spacing: 0.01em;
+    }
+
+    .zen-source-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      max-width: 280px;
+    }
+
+    .zen-source-label {
+      color: var(--zen-text-secondary);
+    }
+
+    .zen-source-value {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Aggregate Skills ── */
+    .zen-all-skills {
+      font-family: var(--zen-font-body);
+      font-size: 0.9375rem;
+      line-height: 1.9;
+      color: var(--zen-text-secondary);
+    }
+
+    /* ── Recent Sessions ── */
+    .zen-recent-session {
+      margin-block-end: 1.5rem;
+    }
+
+    .zen-recent-session:last-child {
+      margin-block-end: 0;
+    }
+
+    .zen-recent-session-title {
+      font-family: var(--zen-font-display);
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--zen-text);
+      margin-block-end: 0.25rem;
+    }
+
+    .zen-recent-session-title a {
+      text-decoration: none;
+      transition: color 300ms ease;
+    }
+    .zen-recent-session-title a:hover {
+      text-decoration: underline;
+      text-decoration-color: var(--zen-rule);
+      text-underline-offset: 3px;
+    }
+
+    .zen-recent-session-meta {
+      font-family: var(--zen-font-mono);
+      font-size: 0.75rem;
+      color: var(--zen-text-tertiary);
+      letter-spacing: 0.01em;
+    }
+
+    .zen-recent-divider {
+      border: none;
+      border-block-start: 1px solid var(--zen-rule);
+      margin-block-start: 1.5rem;
+      margin-block-end: 1.5rem;
+      opacity: 0.35;
+    }
+
+    /* ── Print Styles ── */
+    @media print {
+      body {
+        background: white;
+        color: black;
+        font-size: 11pt;
+      }
+
+      .zen-nav,
+      .zen-skip-link,
+      .zen-footer-nav {
+        display: none;
+      }
+
+      .zen-container {
+        max-width: 100%;
+        padding: 0;
+      }
+
+      .zen-fade {
+        opacity: 1 !important;
+        transform: none !important;
+      }
+
+      .zen-section {
+        margin-block-end: 2rem;
+      }
+
+      .zen-rule {
+        margin-block-end: 2rem;
+      }
+
+      .zen-display {
+        font-size: 24pt;
+      }
+
+      .zen-heading {
+        font-size: 14pt;
+      }
+
+      a {
+        text-decoration: none;
+        color: black;
+      }
+
+      a[href^="http"]::after {
+        content: " (" attr(href) ")";
+        font-size: 0.75em;
+        color: #666;
+      }
+
+      .zen-project {
+        break-inside: avoid;
+      }
+
+      .zen-footer {
+        border-block-start-color: #ccc;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="zen-skip-link">Skip to content</a>
+
+  <!-- ── Navigation ── -->
+  <header>
+    <nav class="zen-nav" aria-label="Portfolio navigation">
+      <div class="zen-nav-inner">
+        <a href="./portfolio.html" aria-current="page">@ryan</a>
+        <span class="zen-nav-sep" aria-hidden="true">/</span>
+        <a href="./project.html">budgetwise</a>
+        <span class="zen-nav-sep" aria-hidden="true">/</span>
+        <a href="./session.html">session</a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ── Main Content ── -->
+  <main id="main-content" class="zen-container">
+
+    <!-- ────────────────────────────────
+         Section 1: Profile Header
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Profile">
+      <div class="zen-header-profile">
+        <img src="../assets/headshot-family-400.jpg" alt="Ryan Smith and family" class="zen-header-photo">
+        <div class="zen-header-info">
+          <h1 class="zen-display zen-header-name">Ryan Smith</h1>
+          <p class="zen-header-bio">
+            Infrastructure engineer who thinks in systems. I build CLIs, data pipelines, and the invisible plumbing that makes products work. TypeScript and Rust, with a soft spot for elegant error handling.
+          </p>
+          <p class="zen-header-location">Seattle, WA</p>
+          <ul class="zen-header-contact" aria-label="Contact and social links">
+            <li><a href="mailto:ryan@heyiam.com"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg>ryan@heyiam.com</a></li>
+            <li><a href="https://linkedin.com/in/ryansmith"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>LinkedIn</a></li>
+            <li><a href="https://github.com/interactivecats/heyi.am"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>GitHub</a></li>
+            <li><a href="https://x.com/ryansmithdev"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>@ryansmithdev</a></li>
+            <li><a href="https://ryansmith.dev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>ryansmith.dev</a></li>
+          </ul>
+          <a href="./project.html" class="zen-header-resume"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>Download Resume</a>
+        </div>
+      </div>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+
+    <!-- ────────────────────────────────
+         Section 2: Aggregate Stats
+         Simple inline text — no grid
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Portfolio statistics">
+      <h2 class="zen-heading">Overview</h2>
+      <p class="zen-stats">
+        <span class="zen-stat-value">3</span> projects,
+        <span class="zen-stat-value">28</span> sessions,
+        <span class="zen-stat-value">24</span> hours of my time,
+        <span class="zen-stat-value">100</span> hours of agent time,
+        <span class="zen-stat-value">18,400</span> lines of code
+      </p>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+
+    <!-- ────────────────────────────────
+         Section 3: Projects
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Projects">
+      <h2 class="zen-heading">Projects</h2>
+
+      <!-- ── BudgetWise ── -->
+      <article class="zen-project zen-fade zen-stagger-1" aria-label="BudgetWise project">
+        <h3 class="zen-project-title">
+          <a href="./project.html">BudgetWise</a>
+        </h3>
+        <p class="zen-project-narrative">
+          Personal finance app with recurring transaction detection, Plaid
+          integration, and spending insights dashboard.
+        </p>
+        <p class="zen-project-meta">
+          8 sessions &middot; 42.5 hours &middot; 4,460 lines of code
+        </p>
+        <p class="zen-project-skills">
+          TypeScript, React, Next.js, Prisma, PostgreSQL, Stripe API
+        </p>
+        <p class="zen-project-source">
+          Claude 62.5%, Cursor 37.5%
+        </p>
+      </article>
+
+      <hr class="zen-project-divider" aria-hidden="true">
+
+      <!-- ── ShellHook ── -->
+      <article class="zen-project zen-fade zen-stagger-2" aria-label="ShellHook project">
+        <h3 class="zen-project-title">
+          <a href="./project.html">ShellHook</a>
+        </h3>
+        <p class="zen-project-narrative">
+          Rust CLI tool for managing git hooks with TOML configuration and
+          automatic symlinking.
+        </p>
+        <p class="zen-project-meta">
+          7 sessions &middot; 32 hours &middot; 3,580 lines of code
+        </p>
+        <p class="zen-project-skills">
+          Rust, CLI design, TOML parsing, Git internals, Shell scripting
+        </p>
+        <p class="zen-project-source">
+          Claude 85%, Cursor 15%
+        </p>
+      </article>
+
+      <hr class="zen-project-divider" aria-hidden="true">
+
+      <!-- ── PixelBoard ── -->
+      <article class="zen-project zen-fade zen-stagger-3" aria-label="PixelBoard project">
+        <h3 class="zen-project-title">
+          <a href="./project.html">PixelBoard</a>
+        </h3>
+        <p class="zen-project-narrative">
+          Real-time collaborative drawing canvas with CRDT-based state sync
+          and pressure-sensitive input.
+        </p>
+        <p class="zen-project-meta">
+          5 sessions &middot; 28 hours &middot; 2,940 lines of code
+        </p>
+        <p class="zen-project-skills">
+          TypeScript, WebSocket, Canvas API, Redis, Express, CRDT
+        </p>
+        <p class="zen-project-source">
+          Claude 60%, Cursor 40%
+        </p>
+      </article>
+
+      <article class="zen-project zen-fade zen-stagger-4" aria-label="DevLog project">
+        <h3 class="zen-project-title">
+          <a href="./project.html">DevLog</a>
+        </h3>
+        <p class="zen-project-narrative">
+          Real-time collaborative drawing canvas with CRDT-based state sync
+          and pressure-sensitive input.
+        </p>
+        <p class="zen-project-meta">
+          5 sessions &middot; 28 hours &middot; 1,840 lines of code
+        </p>
+        <p class="zen-project-skills">
+          TypeScript, WebSocket, Canvas API, Redis, Express, CRDT
+        </p>
+        <p class="zen-project-source">
+          Claude 80%, Cursor 20%
+        </p>
+      </article>
+
+      <article class="zen-project zen-fade zen-stagger-5" aria-label="Snapgrid project">
+        <h3 class="zen-project-title">
+          <a href="./project.html">Snapgrid</a>
+        </h3>
+        <p class="zen-project-narrative">
+          Real-time collaborative drawing canvas with CRDT-based state sync
+          and pressure-sensitive input.
+        </p>
+        <p class="zen-project-meta">
+          5 sessions &middot; 28 hours &middot; 1,520 lines of code
+        </p>
+        <p class="zen-project-skills">
+          TypeScript, WebSocket, Canvas API, Redis, Express, CRDT
+        </p>
+        <p class="zen-project-source">
+          Claude 50%, Cursor 50%
+        </p>
+      </article>
+
+      <article class="zen-project zen-fade zen-stagger-6" aria-label="Terracotta project">
+        <h3 class="zen-project-title">
+          <a href="./project.html">Terracotta</a>
+        </h3>
+        <p class="zen-project-narrative">
+          Real-time collaborative drawing canvas with CRDT-based state sync
+          and pressure-sensitive input.
+        </p>
+        <p class="zen-project-meta">
+          5 sessions &middot; 28 hours &middot; 2,680 lines of code
+        </p>
+        <p class="zen-project-skills">
+          TypeScript, WebSocket, Canvas API, Redis, Express, CRDT
+        </p>
+        <p class="zen-project-source">
+          Claude 70%, Cursor 30%
+        </p>
+      </article>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+
+    <!-- ────────────────────────────────
+         Section 4: Recent Sessions
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Recent sessions">
+      <h2 class="zen-heading">Recent Sessions</h2>
+
+      <div class="zen-recent-session zen-fade">
+        <p class="zen-recent-session-title">
+          <a href="./session.html">Set up Prisma schema</a>
+        </p>
+        <p class="zen-recent-session-meta">
+          BudgetWise &middot; Feb 3 &middot; 72m &middot; 680 LOC
+        </p>
+      </div>
+
+      <hr class="zen-recent-divider" aria-hidden="true">
+
+      <div class="zen-recent-session zen-fade">
+        <p class="zen-recent-session-title">
+          <a href="./session.html">Spending insights dashboard</a>
+        </p>
+        <p class="zen-recent-session-meta">
+          BudgetWise &middot; Mar 22 &middot; 78m &middot; 720 LOC
+        </p>
+      </div>
+
+      <hr class="zen-recent-divider" aria-hidden="true">
+
+      <div class="zen-recent-session zen-fade">
+        <p class="zen-recent-session-title">
+          <a href="./session.html">Mobile responsive + 2FA</a>
+        </p>
+        <p class="zen-recent-session-meta">
+          BudgetWise &middot; Mar 26 &middot; 50m &middot; 340 LOC
+        </p>
+      </div>
+    </section>
+
+    <!-- ── Footer ── -->
+    <footer class="zen-footer zen-fade" role="contentinfo">
+      <div class="zen-footer-inner">
+        <p class="zen-footer-text">heyi.am</p>
+        <nav class="zen-footer-nav" aria-label="Footer navigation">
+          <a href="./portfolio.html">portfolio</a>
+          <a href="./project.html">project</a>
+          <a href="./session.html">session</a>
+        </nav>
+      </div>
+    </footer>
+
+  </main>
+
+  <!-- ── Fade-in Script ── -->
+  <script>
+    /**
+     * Zen template — Intersection Observer fade-in
+     *
+     * Each .zen-fade element starts at opacity:0 with a slight
+     * translateY offset. When it enters the viewport, we add
+     * .zen-visible which triggers a 1000ms CSS transition.
+     *
+     * prefers-reduced-motion: all elements shown immediately.
+     */
+    (function () {
+      'use strict';
+
+      /* Respect user motion preferences */
+      var motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+      var elements = document.querySelectorAll('.zen-fade');
+
+      function showAllImmediately() {
+        for (var i = 0; i < elements.length; i++) {
+          elements[i].classList.add('zen-visible');
+          elements[i].style.transitionDelay = '0ms';
+        }
+      }
+
+      if (motionQuery.matches) {
+        showAllImmediately();
+        return;
+      }
+
+      /* Listen for changes (user toggles setting while page is open) */
+      if (motionQuery.addEventListener) {
+        motionQuery.addEventListener('change', function (e) {
+          if (e.matches) {
+            showAllImmediately();
+          }
+        });
+      }
+
+      /* Stagger index tracking for sequential reveal */
+      var revealIndex = 0;
+
+      var observer = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              /* Apply a progressive delay for elements entering together */
+              var delay = revealIndex * 150;
+              entry.target.style.transitionDelay = delay + 'ms';
+              entry.target.classList.add('zen-visible');
+              observer.unobserve(entry.target);
+              revealIndex++;
+
+              /* Reset stagger after a batch has animated */
+              clearTimeout(observer._resetTimer);
+              observer._resetTimer = setTimeout(function () {
+                revealIndex = 0;
+              }, 200);
+            }
+          });
+        },
+        {
+          threshold: 0.08,
+          rootMargin: '0px 0px -60px 0px'
+        }
+      );
+
+      for (var j = 0; j < elements.length; j++) {
+        observer.observe(elements[j]);
+      }
+    })();
+  </script>
+</body>
+</html>

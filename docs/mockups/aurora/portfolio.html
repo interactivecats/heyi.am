@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aurora Template — Maya Johnson — heyi.am</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Aurora Design Tokens ── */
+    :root {
+      --aurora-bg: #020617;
+      --aurora-surface: #0f172a;
+      --aurora-surface-hover: #1e293b;
+      --aurora-accent: #2dd4bf;
+      --aurora-accent-green: #4ade80;
+      --aurora-accent-purple: #a78bfa;
+      --aurora-accent-dim: rgba(45, 212, 191, 0.15);
+      --aurora-accent-glow: rgba(45, 212, 191, 0.25);
+      --aurora-text: #f1f5f9;
+      --aurora-text-secondary: #94a3b8;
+      --aurora-text-tertiary: #64748b;
+      --aurora-border: #1e293b;
+      --aurora-border-accent: rgba(45, 212, 191, 0.2);
+      --aurora-font-display: 'Space Grotesk', system-ui, sans-serif;
+      --aurora-font-body: 'Inter', system-ui, sans-serif;
+      --aurora-font-mono: 'JetBrains Mono', monospace;
+      --aurora-radius: 8px;
+      --aurora-radius-lg: 12px;
+      --aurora-duration: 300ms;
+      --aurora-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ── Base ── */
+    body {
+      font-family: var(--aurora-font-body);
+      color: var(--aurora-text);
+      background: var(--aurora-bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    a {
+      color: var(--aurora-accent);
+      text-decoration: none;
+      transition: color var(--aurora-duration) ease;
+    }
+    a:hover { color: var(--aurora-accent-green); }
+    a:focus-visible {
+      outline: 2px solid var(--aurora-accent);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+
+    /* ── Skip Link ── */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      background: var(--aurora-accent);
+      color: var(--aurora-bg);
+      padding: 0.5rem 1rem;
+      border-radius: var(--aurora-radius);
+      font-weight: 600;
+      z-index: 100;
+      transition: top 0.2s;
+    }
+    .skip-link:focus {
+      top: 1rem;
+    }
+
+    /* ── Aurora Gradient Header ── */
+    .aurora-header {
+      position: relative;
+      overflow: hidden;
+      padding: 4rem 2rem 3rem;
+    }
+    .aurora-header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(45, 212, 191, 0.08) 0%,
+        rgba(74, 222, 128, 0.06) 30%,
+        rgba(167, 139, 250, 0.05) 60%,
+        rgba(45, 212, 191, 0.04) 100%
+      );
+      background-size: 200% 200%;
+      animation: auroraShift 60s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .aurora-header::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        transparent 60%,
+        var(--aurora-bg) 100%
+      );
+      pointer-events: none;
+    }
+
+    @keyframes auroraShift {
+      0%, 100% {
+        background-position: 0% 50%;
+        opacity: 1;
+      }
+      25% {
+        background-position: 50% 0%;
+        opacity: 0.7;
+      }
+      50% {
+        background-position: 100% 50%;
+        opacity: 1;
+      }
+      75% {
+        background-position: 50% 100%;
+        opacity: 0.8;
+      }
+    }
+
+    @keyframes auroraGlow {
+      0%, 100% { background-position: 0% 50%; }
+      33% { background-position: 100% 0%; }
+      66% { background-position: 50% 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .aurora-header::before { animation: none; }
+      .hero-photo-wrap::before { animation: none; }
+      .fade-up { opacity: 1 !important; transform: none !important; }
+      .stat-number { animation: none !important; }
+    }
+
+    /* ── Nav ── */
+    .aurora-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 960px;
+      margin: 0 auto 3rem;
+      position: relative;
+      z-index: 2;
+    }
+    .aurora-nav-brand {
+      font-family: var(--aurora-font-display);
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--aurora-text);
+      text-shadow: 0 0 20px rgba(45, 212, 191, 0.3);
+    }
+    .aurora-nav-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+    }
+    .aurora-nav-links a {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--aurora-text-secondary);
+      transition: color var(--aurora-duration) ease;
+    }
+    .aurora-nav-links a:hover { color: var(--aurora-accent); text-decoration: none; }
+    .aurora-nav-links a[aria-current="page"] { color: var(--aurora-accent); }
+
+    /* ── Hero (Headshot Layout) ── */
+    .aurora-hero {
+      max-width: 960px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: flex-start;
+      gap: 2.5rem;
+    }
+
+    /* Photo with aurora glow border */
+    .hero-photo-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+    .hero-photo-wrap::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #2dd4bf, #4ade80, #a78bfa, #2dd4bf);
+      background-size: 300% 300%;
+      animation: auroraGlow 8s ease infinite;
+      z-index: 0;
+      opacity: 0.7;
+      filter: blur(8px);
+    }
+    .hero-photo {
+      position: relative;
+      z-index: 1;
+      width: 250px;
+      height: 320px;
+      border-radius: 8px;
+      object-fit: cover;
+      object-position: center 10%;
+      border: 2px solid rgba(45, 212, 191, 0.3);
+      display: block;
+    }
+
+    .aurora-hero-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .aurora-hero h1 {
+      font-family: var(--aurora-font-display);
+      font-size: 3rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--aurora-text);
+      text-shadow: 0 0 40px rgba(45, 212, 191, 0.2);
+      margin-bottom: 0.25rem;
+    }
+    .aurora-hero-location {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+      color: var(--aurora-text-tertiary);
+    }
+    .aurora-hero-location svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+    .aurora-hero-bio {
+      font-size: 1.125rem;
+      color: var(--aurora-text-secondary);
+      line-height: 1.7;
+      margin-bottom: 1.25rem;
+    }
+
+    .aurora-hero-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      list-style: none;
+    }
+    .aurora-hero-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-family: var(--aurora-font-mono);
+      font-size: 0.8125rem;
+      color: var(--aurora-text-secondary);
+      transition: color var(--aurora-duration) ease;
+    }
+    .aurora-hero-links a:hover {
+      color: var(--aurora-accent);
+    }
+    .aurora-hero-links svg {
+      flex-shrink: 0;
+    }
+
+    /* ── Stats Strip (inline below hero) ── */
+    .aurora-hero-stats {
+      max-width: 960px;
+      margin: 2.5rem auto 0;
+      padding: 0 2rem;
+      position: relative;
+      z-index: 2;
+    }
+    .aurora-hero-stats-inner {
+      display: flex;
+      gap: 2rem;
+      font-family: var(--aurora-font-mono);
+      font-size: 0.8125rem;
+      color: var(--aurora-text-tertiary);
+    }
+    .aurora-hero-stats-inner span {
+      white-space: nowrap;
+    }
+    .aurora-hero-stats-inner strong {
+      color: var(--aurora-accent);
+      font-weight: 500;
+    }
+
+    /* ── Stats Grid ── */
+    .aurora-stats {
+      max-width: 960px;
+      margin: 3rem auto;
+      padding: 0 2rem;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    .aurora-stat {
+      background: var(--aurora-surface);
+      border: 1px solid var(--aurora-border);
+      border-radius: var(--aurora-radius-lg);
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(45, 212, 191, 0.05);
+      transition: box-shadow var(--aurora-duration) ease, border-color var(--aurora-duration) ease;
+    }
+    .aurora-stat:hover {
+      border-color: var(--aurora-border-accent);
+      box-shadow: 0 0 30px rgba(45, 212, 191, 0.1);
+    }
+    .aurora-stat-number {
+      font-family: var(--aurora-font-display);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--aurora-accent);
+      text-shadow: 0 0 20px rgba(45, 212, 191, 0.3);
+    }
+    .aurora-stat-label {
+      font-size: 0.8125rem;
+      color: var(--aurora-text-tertiary);
+      margin-top: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Leverage bar ── */
+    .aurora-stat--leverage {
+      grid-column: span 2;
+    }
+    .aurora-leverage-nums {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .aurora-leverage-nums .alev-val {
+      font-family: var(--aurora-font-display);
+      font-size: 1.375rem;
+      font-weight: 700;
+      color: var(--aurora-text);
+    }
+    .aurora-leverage-nums .alev-val--agent {
+      color: var(--aurora-accent);
+      text-shadow: 0 0 20px rgba(45, 212, 191, 0.3);
+    }
+    .aurora-leverage-nums .alev-val--multi {
+      color: var(--aurora-accent);
+      text-shadow: 0 0 20px rgba(45, 212, 191, 0.3);
+    }
+    .aurora-leverage-nums .alev-lbl {
+      font-size: 0.6875rem;
+      color: var(--aurora-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .aurora-leverage-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.06);
+      display: flex;
+      overflow: hidden;
+    }
+    .aurora-leverage-bar__human {
+      height: 100%;
+      width: 19%;
+      background: rgba(255,255,255,0.25);
+      border-radius: 2px 0 0 2px;
+    }
+    .aurora-leverage-bar__agent {
+      height: 100%;
+      width: 81%;
+      background: var(--aurora-accent);
+      border-radius: 0 2px 2px 0;
+    }
+
+    /* ── Section ── */
+    .aurora-section {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 2rem 0;
+    }
+    .aurora-section-title {
+      font-family: var(--aurora-font-display);
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--aurora-text);
+      margin-bottom: 1.5rem;
+      text-shadow: 0 0 20px rgba(45, 212, 191, 0.15);
+    }
+
+    /* ── Project Cards ── */
+    .aurora-projects {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+      gap: 1.5rem;
+    }
+    .aurora-card {
+      background: var(--aurora-surface);
+      border: 1px solid var(--aurora-border);
+      border-radius: var(--aurora-radius-lg);
+      padding: 2rem;
+      transition: border-color var(--aurora-duration) ease, box-shadow var(--aurora-duration) ease, transform var(--aurora-duration) ease;
+    }
+    .aurora-card:hover {
+      border-color: var(--aurora-border-accent);
+      box-shadow: 0 4px 24px rgba(45, 212, 191, 0.08);
+      transform: translateY(-2px);
+    }
+    .aurora-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+    .aurora-card h3 {
+      font-family: var(--aurora-font-display);
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--aurora-text);
+    }
+    .aurora-card h3 a {
+      color: var(--aurora-text);
+      transition: color var(--aurora-duration) ease;
+    }
+    .aurora-card h3 a:hover {
+      color: var(--aurora-accent);
+    }
+    .aurora-card-narrative {
+      font-size: 0.9375rem;
+      color: var(--aurora-text-secondary);
+      line-height: 1.65;
+      margin-bottom: 1.25rem;
+    }
+    .aurora-card-stats {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 1.25rem;
+      font-size: 0.8125rem;
+      color: var(--aurora-text-tertiary);
+      font-family: var(--aurora-font-mono);
+    }
+    .aurora-card-stats span {
+      white-space: nowrap;
+    }
+
+    /* ── Skills / Tags ── */
+    .aurora-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .aurora-tag {
+      font-size: 0.75rem;
+      font-family: var(--aurora-font-mono);
+      color: var(--aurora-accent);
+      background: var(--aurora-accent-dim);
+      border: 1px solid rgba(45, 212, 191, 0.15);
+      padding: 0.25rem 0.625rem;
+      border-radius: 9999px;
+      white-space: nowrap;
+    }
+
+    /* ── Source Bar ── */
+    .aurora-source-bar {
+      margin-top: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .aurora-source-track {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--aurora-border);
+      overflow: hidden;
+      display: flex;
+    }
+    .aurora-source-fill-claude {
+      background: linear-gradient(90deg, var(--aurora-accent), var(--aurora-accent-green));
+      height: 100%;
+      transition: width 1s var(--aurora-ease);
+    }
+    .aurora-source-fill-cursor {
+      background: var(--aurora-accent-purple);
+      height: 100%;
+      transition: width 1s var(--aurora-ease);
+    }
+    .aurora-source-labels {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.75rem;
+      color: var(--aurora-text-tertiary);
+      font-family: var(--aurora-font-mono);
+      white-space: nowrap;
+    }
+    .aurora-source-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-inline-end: 0.25rem;
+      vertical-align: middle;
+    }
+    .aurora-source-dot--claude {
+      background: var(--aurora-accent);
+    }
+    .aurora-source-dot--cursor {
+      background: var(--aurora-accent-purple);
+    }
+
+    /* ── Activity Grid ── */
+    .aurora-activity {
+      max-width: 960px;
+      margin: 3rem auto 0;
+      padding: 0 2rem;
+    }
+    .aurora-activity-grid {
+      background: var(--aurora-surface);
+      border: 1px solid var(--aurora-border);
+      border-radius: var(--aurora-radius-lg);
+      padding: 1.5rem;
+    }
+    .aurora-activity-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .aurora-activity-months {
+      display: flex;
+      gap: 2rem;
+      font-size: 0.75rem;
+      color: var(--aurora-text-tertiary);
+      font-family: var(--aurora-font-mono);
+    }
+    .aurora-activity-rows {
+      display: flex;
+      gap: 3px;
+    }
+    .aurora-activity-week {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .aurora-activity-cell {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      background: var(--aurora-border);
+      transition: background var(--aurora-duration) ease;
+    }
+    .aurora-activity-cell[data-level="1"] {
+      background: rgba(45, 212, 191, 0.2);
+    }
+    .aurora-activity-cell[data-level="2"] {
+      background: rgba(45, 212, 191, 0.4);
+    }
+    .aurora-activity-cell[data-level="3"] {
+      background: rgba(45, 212, 191, 0.6);
+    }
+    .aurora-activity-cell[data-level="4"] {
+      background: rgba(45, 212, 191, 0.9);
+      box-shadow: 0 0 6px rgba(45, 212, 191, 0.3);
+    }
+    .aurora-activity-legend {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      margin-top: 0.75rem;
+      justify-content: flex-end;
+      font-size: 0.6875rem;
+      color: var(--aurora-text-tertiary);
+      font-family: var(--aurora-font-mono);
+    }
+    .aurora-activity-legend-cell {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
+
+    /* ── Skills Summary ── */
+    .aurora-skills-summary {
+      max-width: 960px;
+      margin: 3rem auto 0;
+      padding: 0 2rem;
+    }
+    .aurora-skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+    .aurora-skill-card {
+      background: var(--aurora-surface);
+      border: 1px solid var(--aurora-border);
+      border-radius: var(--aurora-radius);
+      padding: 1rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: border-color var(--aurora-duration) ease;
+    }
+    .aurora-skill-card:hover {
+      border-color: var(--aurora-border-accent);
+    }
+    .aurora-skill-name {
+      font-family: var(--aurora-font-mono);
+      font-size: 0.8125rem;
+      color: var(--aurora-text-secondary);
+    }
+    .aurora-skill-count {
+      font-family: var(--aurora-font-mono);
+      font-size: 0.75rem;
+      color: var(--aurora-accent);
+      background: var(--aurora-accent-dim);
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+    }
+
+    /* ── Recent Sessions ── */
+    .aurora-recent {
+      max-width: 960px;
+      margin: 3rem auto 0;
+      padding: 0 2rem;
+    }
+    .aurora-recent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .aurora-recent-item {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 1rem;
+      align-items: center;
+      padding: 0.875rem 1.25rem;
+      background: var(--aurora-surface);
+      border: 1px solid var(--aurora-border);
+      border-radius: var(--aurora-radius);
+      transition: border-color var(--aurora-duration) ease;
+    }
+    .aurora-recent-item:hover {
+      border-color: var(--aurora-border-accent);
+    }
+    .aurora-recent-title {
+      font-family: var(--aurora-font-display);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--aurora-text);
+    }
+    .aurora-recent-title a {
+      color: var(--aurora-text);
+    }
+    .aurora-recent-title a:hover {
+      color: var(--aurora-accent);
+    }
+    .aurora-recent-project {
+      font-family: var(--aurora-font-mono);
+      font-size: 0.75rem;
+      color: var(--aurora-text-tertiary);
+    }
+    .aurora-recent-date {
+      font-family: var(--aurora-font-mono);
+      font-size: 0.75rem;
+      color: var(--aurora-text-tertiary);
+    }
+
+    /* ── Footer ── */
+    .aurora-footer {
+      max-width: 960px;
+      margin: 4rem auto 0;
+      padding: 2rem;
+      border-top: 1px solid var(--aurora-border);
+      text-align: center;
+      font-size: 0.8125rem;
+      color: var(--aurora-text-tertiary);
+    }
+
+    /* ── Fade-up Animation ── */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.6s var(--aurora-ease), transform 0.6s var(--aurora-ease);
+    }
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .aurora-header { padding: 2.5rem 1.25rem 2rem; }
+      .aurora-hero {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 1.5rem;
+      }
+      .aurora-hero-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .aurora-hero-location { justify-content: center; }
+      .aurora-hero-bio { text-align: center; }
+      .aurora-hero-links { justify-content: center; }
+      .aurora-hero-stats-inner {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem 2rem;
+      }
+      .hero-photo {
+        width: 120px;
+        height: 155px;
+      }
+      .aurora-hero h1 { font-size: 2rem; }
+      .aurora-hero-links { flex-wrap: wrap; font-size: 0.8125rem; }
+      .aurora-stats {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 0 1.25rem;
+      }
+      .aurora-section { padding: 1.5rem 1.25rem 0; }
+      .aurora-card { padding: 1.5rem; }
+      .aurora-card-header { flex-direction: column; gap: 0.5rem; }
+      .aurora-card-stats { flex-wrap: wrap; gap: 0.75rem; }
+      .aurora-source-bar { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+      .aurora-source-track { width: 100%; }
+      .aurora-nav { margin-bottom: 2rem; }
+      .aurora-nav-links { gap: 1rem; }
+      .aurora-footer { padding: 1.5rem 1.25rem; }
+      .aurora-hero-stats { padding: 0 1.25rem; }
+    }
+
+    @media (max-width: 480px) {
+      .aurora-hero h1 { font-size: 1.75rem; }
+      .hero-photo {
+        width: 100px;
+        height: 130px;
+      }
+      .aurora-stats { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+      .aurora-stat { padding: 1rem; }
+      .aurora-stat-number { font-size: 1.5rem; }
+    }
+  
+    /* ── Clickable cards ── */
+    a.project-card, a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.project-card:hover, a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
+  <header class="aurora-header" role="banner">
+    <nav class="aurora-nav" aria-label="Main navigation">
+      <a href="./portfolio.html" class="aurora-nav-brand">heyi.am</a>
+      <ul class="aurora-nav-links">
+        <li><a href="./portfolio.html" aria-current="page">Portfolio</a></li>
+        <li><a href="./project.html">Project</a></li>
+        <li><a href="./session.html">Session</a></li>
+      </ul>
+    </nav>
+
+    <div class="aurora-hero fade-up">
+      <div class="hero-photo-wrap">
+        <img src="../assets/headshot-woman-1-400.jpg" alt="Maya Johnson" class="hero-photo">
+      </div>
+      <div class="aurora-hero-content">
+        <h1>Maya Johnson</h1>
+        <div class="aurora-hero-location">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="9" r="2.5"/></svg>
+          Brooklyn, NY
+        </div>
+        <p class="aurora-hero-bio">Backend engineer passionate about distributed systems and developer tooling. I build things that scale — from real-time collaboration to event-driven architectures. Currently exploring how AI changes the way we write software.</p>
+        <ul class="aurora-hero-links" aria-label="Contact and social links">
+          <li><a href="mailto:maya@heyiam.com"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg>maya@heyiam.com</a></li>
+          <li><a href="https://linkedin.com/in/mayajohnson"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>LinkedIn</a></li>
+          <li><a href="https://github.com/interactivecats/heyi.am"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>GitHub</a></li>
+          <li><a href="https://x.com/mayajdev"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>@mayajdev</a></li>
+          <li><a href="./project.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>Resume (PDF)</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="aurora-hero-stats fade-up">
+      <div class="aurora-hero-stats-inner">
+        <span><strong>3</strong> projects</span>
+        <span><strong>28</strong> sessions</span>
+        <span><strong>24h</strong> you &middot; <strong>100h</strong> agents &middot; <strong>4.2x</strong></span>
+        <span><strong>18.4k</strong> LOC</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="aurora-stats" aria-label="Portfolio statistics">
+      <div class="aurora-stat fade-up">
+        <div class="aurora-stat-number" data-target="3">0</div>
+        <div class="aurora-stat-label">Projects</div>
+      </div>
+      <div class="aurora-stat fade-up">
+        <div class="aurora-stat-number" data-target="28">0</div>
+        <div class="aurora-stat-label">Sessions</div>
+      </div>
+      <div class="aurora-stat aurora-stat--leverage fade-up">
+        <div class="aurora-leverage-nums">
+          <span><span class="alev-val">24h</span> <span class="alev-lbl">you</span></span>
+          <span><span class="alev-val alev-val--agent">100h</span> <span class="alev-lbl">agents</span></span>
+          <span><span class="alev-val alev-val--multi">4.2x</span></span>
+        </div>
+        <div class="aurora-leverage-bar">
+          <div class="aurora-leverage-bar__human"></div>
+          <div class="aurora-leverage-bar__agent"></div>
+        </div>
+      </div>
+      <div class="aurora-stat fade-up">
+        <div class="aurora-stat-number" data-target="18400" data-format="comma">0</div>
+        <div class="aurora-stat-label">Lines Changed</div>
+      </div>
+    </section>
+
+    <section class="aurora-section" aria-label="Projects">
+      <h2 class="aurora-section-title fade-up">Projects</h2>
+      <div class="aurora-projects">
+
+        <!-- BudgetWise -->
+        <article class="aurora-card fade-up">
+          <div class="aurora-card-header">
+            <h3><a href="./project.html">BudgetWise</a></h3>
+          </div>
+          <p class="aurora-card-narrative">Personal finance app with recurring transaction detection, Plaid integration, and spending insights dashboard.</p>
+          <div class="aurora-card-stats">
+            <span>8 sessions</span>
+            <span>42.5h</span>
+            <span>4,460 LOC</span>
+          </div>
+          <div class="aurora-tags">
+            <span class="aurora-tag">TypeScript</span>
+            <span class="aurora-tag">React</span>
+            <span class="aurora-tag">Next.js</span>
+            <span class="aurora-tag">Prisma</span>
+            <span class="aurora-tag">PostgreSQL</span>
+            <span class="aurora-tag">Stripe API</span>
+          </div>
+          <div class="aurora-source-bar">
+            <div class="aurora-source-track" role="img" aria-label="Source breakdown: Claude 62.5%, Cursor 37.5%">
+              <div class="aurora-source-fill-claude" style="width: 62.5%"></div>
+              <div class="aurora-source-fill-cursor" style="width: 37.5%"></div>
+            </div>
+            <div class="aurora-source-labels">
+              <span><span class="aurora-source-dot aurora-source-dot--claude"></span>Claude 62.5%</span>
+              <span><span class="aurora-source-dot aurora-source-dot--cursor"></span>Cursor 37.5%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- ShellHook -->
+        <article class="aurora-card fade-up">
+          <div class="aurora-card-header">
+            <h3><a href="./project.html">ShellHook</a></h3>
+          </div>
+          <p class="aurora-card-narrative">Rust CLI tool for managing git hooks with TOML configuration and automatic symlinking.</p>
+          <div class="aurora-card-stats">
+            <span>7 sessions</span>
+            <span>32h</span>
+            <span>3,580 LOC</span>
+          </div>
+          <div class="aurora-tags">
+            <span class="aurora-tag">Rust</span>
+            <span class="aurora-tag">CLI design</span>
+            <span class="aurora-tag">TOML parsing</span>
+            <span class="aurora-tag">Git internals</span>
+            <span class="aurora-tag">Shell scripting</span>
+          </div>
+          <div class="aurora-source-bar">
+            <div class="aurora-source-track" role="img" aria-label="Source breakdown: Claude 85%, Cursor 15%">
+              <div class="aurora-source-fill-claude" style="width: 85%"></div>
+              <div class="aurora-source-fill-cursor" style="width: 15%"></div>
+            </div>
+            <div class="aurora-source-labels">
+              <span><span class="aurora-source-dot aurora-source-dot--claude"></span>Claude 85%</span>
+              <span><span class="aurora-source-dot aurora-source-dot--cursor"></span>Cursor 15%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- PixelBoard -->
+        <article class="aurora-card fade-up">
+          <div class="aurora-card-header">
+            <h3><a href="./project.html">PixelBoard</a></h3>
+          </div>
+          <p class="aurora-card-narrative">Real-time collaborative drawing canvas with CRDT-based state sync and pressure-sensitive input.</p>
+          <div class="aurora-card-stats">
+            <span>5 sessions</span>
+            <span>28h</span>
+            <span>2,940 LOC</span>
+          </div>
+          <div class="aurora-tags">
+            <span class="aurora-tag">TypeScript</span>
+            <span class="aurora-tag">WebSocket</span>
+            <span class="aurora-tag">Canvas API</span>
+            <span class="aurora-tag">Redis</span>
+            <span class="aurora-tag">Express</span>
+            <span class="aurora-tag">CRDT</span>
+          </div>
+          <div class="aurora-source-bar">
+            <div class="aurora-source-track" role="img" aria-label="Source breakdown: Claude 60%, Cursor 40%">
+              <div class="aurora-source-fill-claude" style="width: 60%"></div>
+              <div class="aurora-source-fill-cursor" style="width: 40%"></div>
+            </div>
+            <div class="aurora-source-labels">
+              <span><span class="aurora-source-dot aurora-source-dot--claude"></span>Claude 60%</span>
+              <span><span class="aurora-source-dot aurora-source-dot--cursor"></span>Cursor 40%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- DevLog -->
+        <article class="aurora-card fade-up">
+          <div class="aurora-card-header">
+            <h3><a href="./project.html">DevLog</a></h3>
+          </div>
+          <p class="aurora-card-narrative">CLI tool for capturing development decisions and context as structured markdown notes.</p>
+          <div class="aurora-card-stats">
+            <span>5 sessions</span>
+            <span>18h</span>
+            <span>1,840 LOC</span>
+          </div>
+          <div class="aurora-tags">
+            <span class="aurora-tag">TypeScript</span>
+            <span class="aurora-tag">Node.js</span>
+            <span class="aurora-tag">CLI design</span>
+            <span class="aurora-tag">Markdown</span>
+            <span class="aurora-tag">SQLite</span>
+</div>
+          <div class="aurora-source-bar">
+            <div class="aurora-source-track" role="img" aria-label="Source breakdown: Claude 80%, Cursor 20%">
+              <div class="aurora-source-fill-claude" style="width: 80%"></div>
+              <div class="aurora-source-fill-cursor" style="width: 20%"></div>
+            </div>
+            <div class="aurora-source-labels">
+              <span><span class="aurora-source-dot aurora-source-dot--claude"></span>Claude 80%</span>
+              <span><span class="aurora-source-dot aurora-source-dot--cursor"></span>Cursor 20%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Snapgrid -->
+        <article class="aurora-card fade-up">
+          <div class="aurora-card-header">
+            <h3><a href="./project.html">Snapgrid</a></h3>
+          </div>
+          <p class="aurora-card-narrative">Responsive image gallery with masonry layout, lazy loading, and keyboard navigation.</p>
+          <div class="aurora-card-stats">
+            <span>4 sessions</span>
+            <span>14h</span>
+            <span>1,520 LOC</span>
+          </div>
+          <div class="aurora-tags">
+            <span class="aurora-tag">TypeScript</span>
+            <span class="aurora-tag">React</span>
+            <span class="aurora-tag">CSS Grid</span>
+            <span class="aurora-tag">IntersectionObserver</span>
+            <span class="aurora-tag">Accessibility</span>
+</div>
+          <div class="aurora-source-bar">
+            <div class="aurora-source-track" role="img" aria-label="Source breakdown: Claude 50%, Cursor 50%">
+              <div class="aurora-source-fill-claude" style="width: 50%"></div>
+              <div class="aurora-source-fill-cursor" style="width: 50%"></div>
+            </div>
+            <div class="aurora-source-labels">
+              <span><span class="aurora-source-dot aurora-source-dot--claude"></span>Claude 50%</span>
+              <span><span class="aurora-source-dot aurora-source-dot--cursor"></span>Cursor 50%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Terracotta -->
+        <article class="aurora-card fade-up">
+          <div class="aurora-card-header">
+            <h3><a href="./project.html">Terracotta</a></h3>
+          </div>
+          <p class="aurora-card-narrative">Design token pipeline that generates CSS custom properties, Tailwind config, and Figma tokens from a single YAML source.</p>
+          <div class="aurora-card-stats">
+            <span>6 sessions</span>
+            <span>22h</span>
+            <span>2,680 LOC</span>
+          </div>
+          <div class="aurora-tags">
+            <span class="aurora-tag">TypeScript</span>
+            <span class="aurora-tag">Node.js</span>
+            <span class="aurora-tag">YAML</span>
+            <span class="aurora-tag">CSS</span>
+            <span class="aurora-tag">Figma API</span>
+</div>
+          <div class="aurora-source-bar">
+            <div class="aurora-source-track" role="img" aria-label="Source breakdown: Claude 70%, Cursor 30%">
+              <div class="aurora-source-fill-claude" style="width: 70%"></div>
+              <div class="aurora-source-fill-cursor" style="width: 30%"></div>
+            </div>
+            <div class="aurora-source-labels">
+              <span><span class="aurora-source-dot aurora-source-dot--claude"></span>Claude 70%</span>
+              <span><span class="aurora-source-dot aurora-source-dot--cursor"></span>Cursor 30%</span>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- Activity Grid -->
+    <section class="aurora-activity fade-up" aria-label="Activity overview">
+      <h2 class="aurora-section-title">Activity</h2>
+      <div class="aurora-activity-grid">
+        <div class="aurora-activity-header">
+          <div class="aurora-activity-months">
+            <span>Feb</span>
+            <span>Mar</span>
+          </div>
+        </div>
+        <div class="aurora-activity-rows" role="img" aria-label="Activity heatmap showing coding sessions over time">
+          <div class="aurora-activity-week">
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="3"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+          </div>
+          <div class="aurora-activity-week">
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="1"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+          </div>
+          <div class="aurora-activity-week">
+            <div class="aurora-activity-cell" data-level="2"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="4"></div>
+          </div>
+          <div class="aurora-activity-week">
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="3"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+          </div>
+          <div class="aurora-activity-week">
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="2"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="1"></div>
+          </div>
+          <div class="aurora-activity-week">
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="4"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+          </div>
+          <div class="aurora-activity-week">
+            <div class="aurora-activity-cell" data-level="3"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="2"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+          </div>
+          <div class="aurora-activity-week">
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="1"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="0"></div>
+            <div class="aurora-activity-cell" data-level="3"></div>
+          </div>
+        </div>
+        <div class="aurora-activity-legend">
+          <span>Less</span>
+          <div class="aurora-activity-legend-cell" style="background: var(--aurora-border)"></div>
+          <div class="aurora-activity-legend-cell" style="background: rgba(45, 212, 191, 0.2)"></div>
+          <div class="aurora-activity-legend-cell" style="background: rgba(45, 212, 191, 0.4)"></div>
+          <div class="aurora-activity-legend-cell" style="background: rgba(45, 212, 191, 0.6)"></div>
+          <div class="aurora-activity-legend-cell" style="background: rgba(45, 212, 191, 0.9)"></div>
+          <span>More</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Skills Summary -->
+    <section class="aurora-skills-summary fade-up" aria-label="Top skills">
+      <h2 class="aurora-section-title">Top Skills</h2>
+      <div class="aurora-skills-grid">
+        <div class="aurora-skill-card">
+          <span class="aurora-skill-name">TypeScript</span>
+          <span class="aurora-skill-count">3 projects</span>
+        </div>
+        <div class="aurora-skill-card">
+          <span class="aurora-skill-name">React</span>
+          <span class="aurora-skill-count">2 projects</span>
+        </div>
+        <div class="aurora-skill-card">
+          <span class="aurora-skill-name">PostgreSQL</span>
+          <span class="aurora-skill-count">1 project</span>
+        </div>
+        <div class="aurora-skill-card">
+          <span class="aurora-skill-name">Rust</span>
+          <span class="aurora-skill-count">1 project</span>
+        </div>
+        <div class="aurora-skill-card">
+          <span class="aurora-skill-name">WebSocket</span>
+          <span class="aurora-skill-count">1 project</span>
+        </div>
+        <div class="aurora-skill-card">
+          <span class="aurora-skill-name">Redis</span>
+          <span class="aurora-skill-count">1 project</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recent Sessions -->
+    <section class="aurora-recent fade-up" aria-label="Recent sessions">
+      <h2 class="aurora-section-title">Recent Sessions</h2>
+      <div class="aurora-recent-list">
+        <div class="aurora-recent-item">
+          <div class="aurora-recent-title"><a href="./session.html">Set up Prisma schema</a></div>
+          <div class="aurora-recent-project">budgetwise</div>
+          <div class="aurora-recent-date">Feb 3</div>
+        </div>
+        <div class="aurora-recent-item">
+          <div class="aurora-recent-title"><a href="./project.html">Transaction list + infinite scroll</a></div>
+          <div class="aurora-recent-project">budgetwise</div>
+          <div class="aurora-recent-date">Feb 14</div>
+        </div>
+        <div class="aurora-recent-item">
+          <div class="aurora-recent-title"><a href="./project.html">Recurring transaction detection</a></div>
+          <div class="aurora-recent-project">budgetwise</div>
+          <div class="aurora-recent-date">Mar 1</div>
+        </div>
+        <div class="aurora-recent-item">
+          <div class="aurora-recent-title"><a href="./project.html">Stripe integration</a></div>
+          <div class="aurora-recent-project">budgetwise</div>
+          <div class="aurora-recent-date">Mar 10</div>
+        </div>
+        <div class="aurora-recent-item">
+          <div class="aurora-recent-title"><a href="./project.html">Spending insights dashboard</a></div>
+          <div class="aurora-recent-project">budgetwise</div>
+          <div class="aurora-recent-date">Mar 22</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="aurora-footer">
+    <p>Built with <a href="./project.html">heyi.am</a> &mdash; how developers explain their thinking</p>
+  </footer>
+
+  <script>
+    /* ── Intersection Observer for fade-up ── */
+    (function() {
+      var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (prefersReduced) {
+        document.querySelectorAll('.fade-up').forEach(function(el) {
+          el.classList.add('visible');
+        });
+        return;
+      }
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+      document.querySelectorAll('.fade-up').forEach(function(el) {
+        observer.observe(el);
+      });
+    })();
+
+    /* ── Stat Counter Animation ── */
+    (function() {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.querySelectorAll('.aurora-stat-number[data-target]').forEach(function(el) {
+          var target = parseInt(el.getAttribute('data-target'), 10);
+          el.textContent = el.getAttribute('data-format') === 'comma'
+            ? target.toLocaleString()
+            : target.toString();
+        });
+        return;
+      }
+
+      function animateCounter(el) {
+        var target = parseInt(el.getAttribute('data-target'), 10);
+        var useComma = el.getAttribute('data-format') === 'comma';
+        var duration = 1200;
+        var startTime = null;
+
+        function step(timestamp) {
+          if (!startTime) startTime = timestamp;
+          var progress = Math.min((timestamp - startTime) / duration, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          var current = Math.round(eased * target);
+          el.textContent = useComma ? current.toLocaleString() : current.toString();
+          if (progress < 1) {
+            requestAnimationFrame(step);
+          }
+        }
+        requestAnimationFrame(step);
+      }
+
+      var statObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            animateCounter(entry.target);
+            statObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.5 });
+
+      document.querySelectorAll('.aurora-stat-number[data-target]').forEach(function(el) {
+        statObserver.observe(el);
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Set up Prisma schema — Session | Chalk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Tokens ── */
+  :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --fg: #1e293b;
+    --fg-muted: #64748b;
+    --accent: #334155;
+    --accent-light: #475569;
+    --border: #cbd5e1;
+    --border-light: #e2e8f0;
+    --sketch-color: #94a3b8;
+    --radius-sm: 4px;
+    --radius: 8px;
+    --font-display: 'Caveat', cursive;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --agent-frontend: #7c3aed;
+    --agent-backend: #0891b2;
+    --agent-qa: #059669;
+    --agent-security: #475569;
+    --agent-reviewer: #e11d48;
+    --agent-ux: #d97706;
+  }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--fg);
+    background-color: var(--bg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── SVG filters ── */
+  .svg-filters {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
+  /* ── Skip link ── */
+  .skip-link {
+    position: absolute;
+    inset-inline-start: -9999px;
+    top: 0;
+    background: var(--accent);
+    color: var(--surface);
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    z-index: 100;
+    border-radius: var(--radius-sm);
+  }
+  .skip-link:focus {
+    inset-inline-start: 8px;
+    top: 8px;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 960px;
+    margin-inline: auto;
+    padding-inline: 24px;
+  }
+  .layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 32px;
+    align-items: start;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    padding: 16px 0;
+    background: var(--surface);
+    border-bottom: 2px solid var(--border-light);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-brand {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .nav-links {
+    display: flex;
+    gap: 24px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--fg-muted);
+    text-decoration: none;
+    position: relative;
+    transition: color 0.15s;
+  }
+  .nav-links a:hover,
+  .nav-links a[aria-current="page"] {
+    color: var(--accent);
+  }
+  .nav-links a[aria-current="page"]::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
+    bottom: -4px;
+    height: 3px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='6'%3E%3Cpath d='M0 3 Q 10 0, 20 3 T 40 3 T 60 3 T 80 3 T 100 3' fill='none' stroke='%23334155' stroke-width='2'/%3E%3C/svg%3E") repeat-x;
+    background-size: 50px 6px;
+  }
+  .nav-links a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Sketch underline ── */
+  .sketch-underline {
+    position: relative;
+    display: inline-block;
+  }
+  .sketch-underline::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: -4px;
+    inset-inline-end: -4px;
+    bottom: -2px;
+    height: 6px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='8'%3E%3Cpath d='M0 4 Q 8 1, 16 4 T 32 4 T 48 4 T 64 4 T 80 4 T 96 4 T 112 4 L 120 4' fill='none' stroke='%23334155' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x;
+    background-size: 60px 8px;
+  }
+
+  /* ── Hand-drawn card ── */
+  .chalk-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    filter: url(#chalk-rough);
+  }
+
+  /* ── Pin-to-board animation ── */
+  @keyframes pin-in {
+    from {
+      opacity: 0;
+      transform: rotate(-2deg) translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: rotate(0deg) translateY(0);
+    }
+  }
+  .fade-in {
+    animation: pin-in 0.5s ease-out both;
+  }
+
+  /* ── Annotation arrow ── */
+  .annotation {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--accent-light);
+  }
+  .annotation-arrow {
+    width: 40px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+  .annotation-arrow path {
+    fill: none;
+    stroke: var(--accent-light);
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  /* ── Breadcrumb ── */
+  .breadcrumb {
+    padding: 16px 0 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg-muted);
+  }
+  .breadcrumb a {
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+  .breadcrumb a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-style: wavy;
+    text-underline-offset: 2px;
+  }
+  .breadcrumb a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  .breadcrumb-sep {
+    margin-inline: 6px;
+    color: var(--border);
+  }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 32px 0 40px;
+  }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(32px, 5vw, 48px);
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    margin-bottom: 12px;
+  }
+  .hero-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .hero-meta-item::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  /* ── Dev take ── */
+  .dev-take {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 32px;
+    font-size: 15px;
+    color: var(--fg);
+    font-style: italic;
+    position: relative;
+    filter: url(#chalk-rough);
+  }
+  .dev-take::before {
+    content: '';
+    position: absolute;
+    top: -12px;
+    inset-inline-start: 24px;
+    width: 24px;
+    height: 24px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dev-take-label {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+    font-style: normal;
+    margin-bottom: 4px;
+  }
+
+  /* ── Section heading ── */
+  .section-heading {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    position: sticky;
+    top: 80px;
+  }
+  .sidebar-section {
+    margin-bottom: 24px;
+  }
+  .sidebar-heading {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  /* ── Tools used table ── */
+  .tools-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+  }
+  .tools-table th {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-muted);
+    text-align: start;
+    padding: 6px 8px;
+    border-bottom: 2px solid var(--border);
+    font-weight: 500;
+  }
+  .tools-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--fg);
+  }
+  .tools-table .tool-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border-light);
+    overflow: hidden;
+    min-width: 60px;
+  }
+  .tools-table .tool-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+  }
+
+  /* ── Files changed ── */
+  .files-list {
+    list-style: none;
+  }
+  .file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 12px;
+  }
+  .file-item:last-child {
+    border-bottom: none;
+  }
+  .file-name {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg);
+    word-break: break-all;
+  }
+  .file-diff {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--agent-qa);
+    white-space: nowrap;
+    margin-inline-start: 8px;
+  }
+
+  /* ── Skills chips ── */
+  .skills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    list-style: none;
+  }
+  .skill-chip {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 3px 10px;
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: var(--sketch-color);
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1.5px;
+  }
+
+  /* ── Execution path / Beats ── */
+  .beats-section {
+    padding: 32px 0;
+  }
+  .beat-list {
+    list-style: none;
+    position: relative;
+    padding-inline-start: 32px;
+  }
+  .beat-list::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 11px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='10'%3E%3Cline x1='1' y1='0' x2='1' y2='6' stroke='%23cbd5e1' stroke-width='2' stroke-dasharray='4 3'/%3E%3C/svg%3E") repeat-y;
+  }
+  .beat-item {
+    position: relative;
+    padding-bottom: 24px;
+  }
+  .beat-item:last-child {
+    padding-bottom: 0;
+  }
+  .beat-circle {
+    position: absolute;
+    inset-inline-start: -32px;
+    top: 2px;
+    width: 24px;
+    height: 24px;
+  }
+  .beat-circle circle {
+    fill: var(--surface);
+    stroke: var(--accent);
+    stroke-width: 2;
+  }
+  .beat-circle text {
+    font-family: var(--font-display);
+    font-size: 12px;
+    fill: var(--accent);
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+  .beat-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .beat-desc {
+    font-size: 14px;
+    color: var(--fg-muted);
+    margin-top: 4px;
+    line-height: 1.6;
+  }
+
+  /* ── Q&A ── */
+  .qa-section {
+    padding: 32px 0;
+  }
+  .qa-item {
+    margin-bottom: 24px;
+  }
+  .qa-item:last-child {
+    margin-bottom: 0;
+  }
+  .qa-question {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .qa-question::before {
+    content: 'Q';
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .qa-answer {
+    font-size: 14px;
+    color: var(--fg);
+    line-height: 1.7;
+    padding-inline-start: 32px;
+  }
+
+  /* ── Agent summary ── */
+  .agents-section {
+    padding: 32px 0;
+  }
+  .agent-bar-chart {
+    width: 100%;
+  }
+  .agent-row {
+    display: grid;
+    grid-template-columns: 120px 1fr 80px;
+    gap: 12px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .agent-row:last-child {
+    border-bottom: none;
+  }
+  .agent-name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg);
+  }
+  .agent-bar {
+    height: 10px;
+    border-radius: 5px;
+    background: var(--border-light);
+    overflow: hidden;
+    filter: url(#chalk-rough);
+  }
+  .agent-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+  }
+  .agent-stats {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+    text-align: end;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    border-top: 2px solid var(--border);
+    margin-top: 48px;
+    padding: 24px 0;
+  }
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+  .footer-brand {
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--accent);
+  }
+
+  /* ── Reduced motion ── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .layout-grid {
+      grid-template-columns: 1fr;
+    }
+    .sidebar {
+      position: static;
+      order: -1;
+    }
+    .nav-inner {
+      flex-direction: column;
+      gap: 12px;
+    }
+    .hero-meta {
+      gap: 8px;
+    }
+    .agent-row {
+      grid-template-columns: 100px 1fr 60px;
+      gap: 8px;
+    }
+    .footer-inner {
+      flex-direction: column;
+      gap: 8px;
+      text-align: center;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- SVG filters -->
+<svg class="svg-filters" aria-hidden="true">
+  <defs>
+    <filter id="chalk-rough">
+      <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" seed="1" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </defs>
+</svg>
+
+<a href="#main" class="skip-link">Skip to content</a>
+
+<!-- Nav -->
+<nav class="nav" aria-label="Main navigation">
+  <div class="container nav-inner">
+    <a href="./portfolio.html" class="nav-brand">alex chen</a>
+    <ul class="nav-links">
+      <li><a href="./portfolio.html">Portfolio</a></li>
+      <li><a href="./project.html">Project</a></li>
+      <li><a href="./session.html" aria-current="page">Session</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Main -->
+<main id="main" class="container">
+
+  <!-- Breadcrumb -->
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="./portfolio.html">alex</a>
+    <span class="breadcrumb-sep" aria-hidden="true">/</span>
+    <a href="./project.html">budgetwise</a>
+    <span class="breadcrumb-sep" aria-hidden="true">/</span>
+    <span aria-current="page">Set up Prisma schema</span>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero" aria-label="Session header">
+    <h1>Set up Prisma schema with User, Account, and Transaction models</h1>
+    <div class="hero-meta">
+      <span class="hero-meta-item">February 3, 2026</span>
+      <span class="hero-meta-item">Claude Code</span>
+      <span class="hero-meta-item">72 min (87m wall)</span>
+      <span class="hero-meta-item">45 turns</span>
+      <span class="hero-meta-item">680 LOC</span>
+      <span class="hero-meta-item">4 files</span>
+    </div>
+    <div class="annotation" aria-hidden="true">
+      <svg class="annotation-arrow" viewBox="0 0 40 24">
+        <path d="M2 20 C 10 20, 20 4, 36 4" />
+        <path d="M30 2 L 37 4 L 31 8" />
+      </svg>
+      <span>72 mins, 680 lines -- solid foundation session</span>
+    </div>
+  </section>
+
+  <!-- Dev take -->
+  <div class="dev-take fade-in">
+    <div class="dev-take-label">Dev Take</div>
+    <p>Went with discriminated unions over STI &mdash; nullable columns everywhere felt wrong. The audit log instead of soft deletes was the right call too.</p>
+  </div>
+
+  <!-- Two-column layout -->
+  <div class="layout-grid">
+    <!-- Main content -->
+    <div>
+
+      <!-- Execution path -->
+      <section class="beats-section" aria-label="Execution path">
+        <h2 class="section-heading"><span class="sketch-underline">Execution Path</span></h2>
+        <ol class="beat-list">
+          <li class="beat-item">
+            <svg class="beat-circle" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <text x="12" y="12">1</text>
+            </svg>
+            <div class="beat-title">Schema design</div>
+            <div class="beat-desc">Sketched out the core models &mdash; User, Account, Transaction. Decided on a discriminated union for transaction types instead of STI.</div>
+          </li>
+          <li class="beat-item">
+            <svg class="beat-circle" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <text x="12" y="12">2</text>
+            </svg>
+            <div class="beat-title">Prisma setup</div>
+            <div class="beat-desc">Initialized Prisma with PostgreSQL, wrote the schema file with proper relations and indexes.</div>
+          </li>
+          <li class="beat-item">
+            <svg class="beat-circle" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <text x="12" y="12">3</text>
+            </svg>
+            <div class="beat-title">Migration</div>
+            <div class="beat-desc">Ran the initial migration, fixed a cascade delete issue on Account &rarr; Transaction.</div>
+          </li>
+          <li class="beat-item">
+            <svg class="beat-circle" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <text x="12" y="12">4</text>
+            </svg>
+            <div class="beat-title">Seed data</div>
+            <div class="beat-desc">Created a seed script with realistic test data &mdash; multiple accounts, mixed transaction types.</div>
+          </li>
+        </ol>
+      </section>
+
+      <!-- Q&A -->
+      <section class="qa-section" aria-label="Questions and answers">
+        <h2 class="section-heading"><span class="sketch-underline">Q&A</span></h2>
+
+        <div class="qa-item">
+          <h3 class="qa-question">Why did you choose a discriminated union over single-table inheritance for transaction types?</h3>
+          <p class="qa-answer">STI would have left nullable columns everywhere &mdash; transferTo only makes sense for transfers, recurringSchedule only for recurring. The union pattern keeps each type clean and the TypeScript compiler catches missing fields.</p>
+        </div>
+
+        <div class="qa-item">
+          <h3 class="qa-question">How does the cascade delete work between Account and Transaction?</h3>
+          <p class="qa-answer">Deleting an account cascades to its transactions. Initially had it set to restrict, but that made account cleanup impossible without manual transaction deletion first.</p>
+        </div>
+      </section>
+
+      <!-- Agent summary -->
+      <section class="agents-section" aria-label="Agent summary">
+        <h2 class="section-heading"><span class="sketch-underline">Agents</span></h2>
+        <p style="font-family: var(--font-display); font-size: 18px; color: var(--accent-light); margin-bottom: 16px;">7 sub-sessions across 5 roles</p>
+
+        <div class="agent-bar-chart" role="list" aria-label="Agent contribution breakdown">
+          <div class="agent-row" role="listitem">
+            <span class="agent-name">backend-dev</span>
+            <div class="agent-bar">
+              <div class="agent-bar-fill" style="width: 100%; background: var(--agent-backend);"></div>
+            </div>
+            <span class="agent-stats">25m / 280 LOC</span>
+          </div>
+          <div class="agent-row" role="listitem">
+            <span class="agent-name">qa-engineer</span>
+            <div class="agent-bar">
+              <div class="agent-bar-fill" style="width: 72%; background: var(--agent-qa);"></div>
+            </div>
+            <span class="agent-stats">18m / 190 LOC</span>
+          </div>
+          <div class="agent-row" role="listitem">
+            <span class="agent-name">frontend-dev</span>
+            <div class="agent-bar">
+              <div class="agent-bar-fill" style="width: 60%; background: var(--agent-frontend);"></div>
+            </div>
+            <span class="agent-stats">15m / 125 LOC</span>
+          </div>
+          <div class="agent-row" role="listitem">
+            <span class="agent-name">security-eng</span>
+            <div class="agent-bar">
+              <div class="agent-bar-fill" style="width: 48%; background: var(--agent-security);"></div>
+            </div>
+            <span class="agent-stats">12m / 85 LOC</span>
+          </div>
+          <div class="agent-row" role="listitem">
+            <span class="agent-name">code-reviewer</span>
+            <div class="agent-bar">
+              <div class="agent-bar-fill" style="width: 32%; background: var(--agent-reviewer);"></div>
+            </div>
+            <span class="agent-stats">8m / 0 LOC</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" aria-label="Session details">
+
+      <!-- Tools used -->
+      <section class="sidebar-section chalk-card">
+        <h2 class="sidebar-heading">Tools Used</h2>
+        <table class="tools-table" aria-label="Tool usage counts">
+          <thead>
+            <tr>
+              <th scope="col">Tool</th>
+              <th scope="col">Count</th>
+              <th scope="col" aria-label="Relative usage">Usage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Edit</td>
+              <td>18</td>
+              <td><div class="tool-bar"><div class="tool-bar-fill" style="width: 100%"></div></div></td>
+            </tr>
+            <tr>
+              <td>Read</td>
+              <td>12</td>
+              <td><div class="tool-bar"><div class="tool-bar-fill" style="width: 67%"></div></div></td>
+            </tr>
+            <tr>
+              <td>Bash</td>
+              <td>9</td>
+              <td><div class="tool-bar"><div class="tool-bar-fill" style="width: 50%"></div></div></td>
+            </tr>
+            <tr>
+              <td>Write</td>
+              <td>4</td>
+              <td><div class="tool-bar"><div class="tool-bar-fill" style="width: 22%"></div></div></td>
+            </tr>
+            <tr>
+              <td>Grep</td>
+              <td>2</td>
+              <td><div class="tool-bar"><div class="tool-bar-fill" style="width: 11%"></div></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Files changed -->
+      <section class="sidebar-section chalk-card">
+        <h2 class="sidebar-heading">Files Changed</h2>
+        <ul class="files-list" aria-label="Modified files">
+          <li class="file-item">
+            <span class="file-name">prisma/schema.prisma</span>
+            <span class="file-diff">+142</span>
+          </li>
+          <li class="file-item">
+            <span class="file-name">prisma/seed.ts</span>
+            <span class="file-diff">+89</span>
+          </li>
+          <li class="file-item">
+            <span class="file-name">prisma/migrations/20260203_init/migration.sql</span>
+            <span class="file-diff">+415</span>
+          </li>
+          <li class="file-item">
+            <span class="file-name">src/lib/db.ts</span>
+            <span class="file-diff">+34</span>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Skills -->
+      <section class="sidebar-section chalk-card">
+        <h2 class="sidebar-heading">Skills</h2>
+        <ul class="skills-list" aria-label="Skills used in session">
+          <li class="skill-chip">TypeScript</li>
+          <li class="skill-chip">Prisma</li>
+          <li class="skill-chip">PostgreSQL</li>
+        </ul>
+      </section>
+
+    </aside>
+  </div>
+
+</main>
+
+<!-- Footer -->
+<footer class="footer" role="contentinfo">
+  <div class="container footer-inner">
+    <span class="footer-brand">Chalk Template</span>
+    <span>heyi.am</span>
+  </div>
+</footer>
+
+<script>
+(function() {
+  'use strict';
+
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── Scroll-triggered fade-in ── */
+  function setupFadeIn() {
+    var items = document.querySelectorAll('.beat-item, .qa-item, .chalk-card, .agent-row');
+    if (prefersReducedMotion || !items.length) return;
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0) rotate(0deg)';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    items.forEach(function(el, i) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(12px) rotate(-0.5deg)';
+      el.style.transition = 'opacity 0.4s ease-out ' + (i * 0.05) + 's, transform 0.4s ease-out ' + (i * 0.05) + 's';
+      observer.observe(el);
+    });
+  }
+
+  /* ── Agent bar animation ── */
+  function setupBarAnimation() {
+    var bars = document.querySelectorAll('.agent-bar-fill');
+    if (prefersReducedMotion || !bars.length) return;
+
+    bars.forEach(function(bar) {
+      bar.dataset.width = bar.style.width;
+      bar.style.width = '0';
+    });
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          bars.forEach(function(bar, i) {
+            setTimeout(function() {
+              bar.style.transition = 'width 0.6s ease-out';
+              bar.style.width = bar.dataset.width;
+            }, i * 100);
+          });
+          observer.disconnect();
+        }
+      });
+    }, { threshold: 0.2 });
+
+    var chart = document.querySelector('.agent-bar-chart');
+    if (chart) observer.observe(chart);
+  }
+
+  /* ── Tool bar animation ── */
+  function setupToolBarAnimation() {
+    var bars = document.querySelectorAll('.tool-bar-fill');
+    if (prefersReducedMotion || !bars.length) return;
+
+    bars.forEach(function(bar) {
+      bar.dataset.width = bar.style.width;
+      bar.style.width = '0';
+    });
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var fills = entry.target.querySelectorAll('.tool-bar-fill');
+          fills.forEach(function(bar, i) {
+            setTimeout(function() {
+              bar.style.transition = 'width 0.5s ease-out';
+              bar.style.width = bar.dataset.width;
+            }, i * 80);
+          });
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.2 });
+
+    var table = document.querySelector('.tools-table');
+    if (table) observer.observe(table);
+  }
+
+  setupFadeIn();
+  setupBarAnimation();
+  setupToolBarAnimation();
+})();
+</script>
+</body>
+</html>

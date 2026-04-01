@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ryan Smith — Portfolio | Ember</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Ember Design Tokens ── */
+:root {
+  --bg: #1c1210;
+  --surface: #231916;
+  --surface-raised: #2a1f1b;
+  --surface-high: #332620;
+
+  --accent: #f97316;
+  --accent-secondary: #ef4444;
+  --accent-dim: rgba(249, 115, 22, 0.1);
+  --accent-mid: rgba(249, 115, 22, 0.15);
+  --accent-glow: rgba(249, 115, 22, 0.06);
+  --accent-border: rgba(249, 115, 22, 0.1);
+
+  --text: #faf5f0;
+  --text-secondary: rgba(250, 245, 240, 0.65);
+  --text-muted: rgba(250, 245, 240, 0.4);
+  --text-faint: rgba(250, 245, 240, 0.25);
+
+  --border: rgba(249, 115, 22, 0.1);
+  --border-subtle: rgba(250, 245, 240, 0.06);
+
+  --green: #4ade80;
+  --green-dim: rgba(74, 222, 128, 0.1);
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-section: 600ms;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--text);
+  background-color: var(--bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  inset-inline-start: -9999px;
+  top: 0;
+  background: var(--accent);
+  color: var(--bg);
+  padding: 8px 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  z-index: 100;
+  border-radius: var(--radius-sm);
+}
+.skip-link:focus {
+  inset-inline-start: 8px;
+  top: 8px;
+}
+
+/* ── Layout ── */
+.container {
+  max-width: 960px;
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
+/* ── Nav ── */
+.nav {
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+  background: rgba(28, 18, 16, 0.92);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nav-brand {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+.nav-brand .ember-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  margin-inline-end: 8px;
+  vertical-align: middle;
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.4);
+}
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+.nav-links a {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.nav-links a:hover,
+.nav-links a[aria-current="page"] {
+  color: var(--accent);
+}
+.nav-links a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+/* ── Section Entrance Animation ── */
+.ember-section {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity var(--dur-section) var(--ease-out),
+              transform var(--dur-section) var(--ease-out);
+}
+.ember-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Hero: Asymmetric Split ── */
+.hero {
+  padding: 3.5rem 0 2.5rem;
+}
+.hero-split {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 3rem;
+  align-items: center;
+}
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.hero-name {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.25rem;
+  position: relative;
+  display: inline-block;
+}
+.hero-name::after {
+  content: '';
+  display: block;
+  height: 3px;
+  margin-top: 8px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.3);
+}
+.hero-location {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 0.75rem;
+}
+.hero-bio {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  max-width: 480px;
+  margin-top: 1rem;
+  line-height: 1.7;
+}
+.hero-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  list-style: none;
+}
+.hero-contact a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+  transition: color 0.15s;
+}
+.hero-contact a:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+.hero-contact svg {
+  flex-shrink: 0;
+}
+.hero-resume-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 1.25rem;
+  padding: 0.5rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--bg);
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.hero-resume-btn:hover {
+  opacity: 0.85;
+  text-decoration: none;
+  color: var(--bg);
+}
+
+/* ── Hero Photo ── */
+.hero-photo-wrapper {
+  position: relative;
+}
+.hero-photo-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-secondary));
+  border-radius: 2px 0 0 2px;
+  z-index: 1;
+}
+.hero-photo {
+  width: 100%;
+  display: block;
+  border-radius: var(--radius);
+  object-fit: cover;
+  object-position: center 15%;
+  box-shadow: -20px 0 60px rgba(249, 115, 22, 0.1);
+}
+
+/* ── Stats Bar ── */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 2.5rem 0 3rem;
+}
+.stat-cell {
+  background: var(--surface);
+  padding: 1.25rem 1rem;
+  text-align: center;
+  position: relative;
+}
+.stat-cell::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.stat-cell:hover::before {
+  opacity: 1;
+}
+.stat-value {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  font-weight: 700;
+  color: var(--text);
+  display: block;
+}
+.stat-value.ember-glow {
+  text-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+}
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+  display: block;
+}
+
+/* ── Leverage bar ── */
+.stat-cell--leverage {
+  grid-column: span 2;
+}
+.leverage-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+.leverage-header .lev-val {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 2.5vw, 1.35rem);
+  font-weight: 700;
+  color: var(--text);
+}
+.leverage-header .lev-val--agent {
+  color: var(--accent);
+  text-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+}
+.leverage-header .lev-val--multi {
+  color: var(--accent);
+  text-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+}
+.leverage-header .lev-lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.ember-leverage-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.06);
+  display: flex;
+  overflow: hidden;
+}
+.ember-leverage-bar__human {
+  height: 100%;
+  width: 19%;
+  background: rgba(255,255,255,0.25);
+  border-radius: 2px 0 0 2px;
+}
+.ember-leverage-bar__agent {
+  height: 100%;
+  width: 81%;
+  background: var(--accent);
+  border-radius: 0 2px 2px 0;
+}
+
+/* ── Section Headers ── */
+.section-header {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-header .ember-icon {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  box-shadow: 0 0 6px rgba(249, 115, 22, 0.4);
+  flex-shrink: 0;
+}
+
+/* ── Project Cards ── */
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+  gap: 1.25rem;
+}
+.project-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.project-card:hover {
+  border-color: rgba(249, 115, 22, 0.25);
+  box-shadow: 0 4px 24px rgba(249, 115, 22, 0.08);
+  text-decoration: none;
+}
+.project-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.project-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.project-card-title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.project-card-arrow {
+  color: var(--text-muted);
+  font-size: 18px;
+  transition: color 0.2s, transform 0.2s;
+}
+.project-card:hover .project-card-arrow {
+  color: var(--accent);
+  transform: translateX(2px);
+}
+.project-card-narrative {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+.project-card-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 1rem;
+}
+.skill-chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+}
+.project-card-stats {
+  display: flex;
+  gap: 1rem;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.project-card-stats span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Source Mix Bar ── */
+.source-bar {
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  display: flex;
+  margin-top: 1rem;
+  background: var(--surface-high);
+}
+.source-bar-segment {
+  height: 100%;
+  transition: width 0.6s var(--ease-out);
+}
+.source-bar-segment.claude {
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+}
+.source-bar-segment.cursor {
+  background: var(--text-muted);
+}
+.source-legend {
+  display: flex;
+  gap: 1rem;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.source-legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-inline-end: 4px;
+  vertical-align: middle;
+}
+.source-legend-dot.claude {
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+}
+.source-legend-dot.cursor {
+  background: var(--text-muted);
+}
+
+/* ── Activity Chart ── */
+.activity-section {
+  margin-top: 3rem;
+}
+.activity-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 120px;
+  padding: 1rem 0;
+}
+.activity-bar {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, var(--accent), var(--accent-secondary));
+  opacity: 0.7;
+  transition: opacity 0.2s, height 0.6s var(--ease-out);
+  min-height: 4px;
+  position: relative;
+}
+.activity-bar:hover {
+  opacity: 1;
+}
+.activity-bar::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.activity-labels {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* ── Footer ── */
+.footer {
+  margin-top: 4rem;
+  padding: 2rem 0;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.footer a { color: var(--accent); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .hero-split {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .hero-photo-order {
+    order: -1;
+  }
+  .hero-photo {
+    width: 100%;
+    max-height: 280px;
+  }
+  .hero-content {
+    align-items: flex-start;
+  }
+  .hero-contact { font-size: 12px; }
+  .stats-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .project-card-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .project-stats {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .nav-links {
+    gap: 16px;
+  }
+  .hero {
+    padding: 2rem 0 1.5rem;
+  }
+  .footer {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .ember-section {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .activity-bar {
+    transition: opacity 0.2s;
+  }
+  .stat-value,
+  .source-bar-segment {
+    transition: none;
+  }
+}
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- Nav -->
+<nav class="nav" aria-label="Main navigation">
+  <div class="container nav-inner">
+    <a href="./portfolio.html" class="nav-brand"><span class="ember-dot" aria-hidden="true"></span>ryan.heyi.am</a>
+    <ul class="nav-links">
+      <li><a href="./portfolio.html" aria-current="page">Portfolio</a></li>
+      <li><a href="./project.html">Project</a></li>
+      <li><a href="./session.html">Session</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main" class="container">
+  <!-- Hero: Asymmetric Split -->
+  <section class="hero ember-section" aria-label="Profile">
+    <div class="hero-split">
+      <div class="hero-content">
+        <h1 class="hero-name">Ryan Smith</h1>
+        <p class="hero-location">Seattle, WA</p>
+        <p class="hero-bio">Infrastructure engineer who thinks in systems. I build CLIs, data pipelines, and the invisible plumbing that makes products work. TypeScript and Rust, with a soft spot for elegant error handling.</p>
+        <ul class="hero-contact" aria-label="Contact and social links">
+          <li><a href="mailto:ryan@heyiam.com"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg>ryan@heyiam.com</a></li>
+          <li><a href="https://linkedin.com/in/ryansmith"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>LinkedIn</a></li>
+          <li><a href="https://github.com/interactivecats/heyi.am"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>GitHub</a></li>
+        </ul>
+        <a href="./project.html" class="hero-resume-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>Download Resume</a>
+      </div>
+      <div class="hero-photo-order hero-photo-wrapper">
+        <img src="../assets/headshot-couple-400.jpg" alt="Ryan Smith and partner smiling together" class="hero-photo" width="350" height="440" loading="eager">
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="ember-section" aria-label="Aggregate statistics">
+    <div class="stats-bar" role="list">
+      <div class="stat-cell" role="listitem">
+        <span class="stat-value ember-glow" data-target="3">0</span>
+        <span class="stat-label">Projects</span>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <span class="stat-value ember-glow" data-target="28">0</span>
+        <span class="stat-label">Sessions</span>
+      </div>
+      <div class="stat-cell stat-cell--leverage" role="listitem">
+        <div class="leverage-header">
+          <span><span class="lev-val">24h</span> <span class="lev-lbl">you</span></span>
+          <span><span class="lev-val lev-val--agent">100h</span> <span class="lev-lbl">agents</span></span>
+          <span><span class="lev-val lev-val--multi">4.2x</span></span>
+        </div>
+        <div class="ember-leverage-bar">
+          <div class="ember-leverage-bar__human"></div>
+          <div class="ember-leverage-bar__agent"></div>
+        </div>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <span class="stat-value ember-glow" data-target="18400">0</span>
+        <span class="stat-label">Lines Changed</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Projects -->
+  <section class="ember-section" aria-label="Projects">
+    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Projects</h2>
+    <div class="projects-grid">
+
+      <!-- BudgetWise -->
+      <a href="./project.html" class="project-card" aria-label="BudgetWise project">
+        <div class="project-card-header">
+          <h3 class="project-card-title">BudgetWise</h3>
+          <span class="project-card-arrow" aria-hidden="true">&rarr;</span>
+        </div>
+        <p class="project-card-narrative">Personal finance app with recurring transaction detection, Plaid integration, and spending insights dashboard.</p>
+        <div class="project-card-skills">
+          <span class="skill-chip">TypeScript</span>
+          <span class="skill-chip">React</span>
+          <span class="skill-chip">Next.js</span>
+          <span class="skill-chip">Prisma</span>
+          <span class="skill-chip">PostgreSQL</span>
+          <span class="skill-chip">Stripe API</span>
+        </div>
+        <div class="project-card-stats">
+          <span>8 sessions</span>
+          <span>42.5h</span>
+          <span>4,460 LOC</span>
+        </div>
+        <div class="source-bar" role="img" aria-label="Source: Claude 62.5%, Cursor 37.5%">
+          <div class="source-bar-segment claude" style="width: 62.5%"></div>
+          <div class="source-bar-segment cursor" style="width: 37.5%"></div>
+        </div>
+        <div class="source-legend">
+          <span><span class="source-legend-dot claude" aria-hidden="true"></span>Claude 62.5%</span>
+          <span><span class="source-legend-dot cursor" aria-hidden="true"></span>Cursor 37.5%</span>
+        </div>
+      </a>
+
+      <!-- ShellHook -->
+      <a href="./project.html" class="project-card" aria-label="ShellHook project">
+        <div class="project-card-header">
+          <h3 class="project-card-title">ShellHook</h3>
+          <span class="project-card-arrow" aria-hidden="true">&rarr;</span>
+        </div>
+        <p class="project-card-narrative">Rust CLI tool for managing git hooks with TOML configuration and automatic symlinking.</p>
+        <div class="project-card-skills">
+          <span class="skill-chip">Rust</span>
+          <span class="skill-chip">CLI design</span>
+          <span class="skill-chip">TOML parsing</span>
+          <span class="skill-chip">Git internals</span>
+          <span class="skill-chip">Shell scripting</span>
+        </div>
+        <div class="project-card-stats">
+          <span>7 sessions</span>
+          <span>32h</span>
+          <span>3,580 LOC</span>
+        </div>
+        <div class="source-bar" role="img" aria-label="Source: Claude 85%, Cursor 15%">
+          <div class="source-bar-segment claude" style="width: 85%"></div>
+          <div class="source-bar-segment cursor" style="width: 15%"></div>
+        </div>
+        <div class="source-legend">
+          <span><span class="source-legend-dot claude" aria-hidden="true"></span>Claude 85%</span>
+          <span><span class="source-legend-dot cursor" aria-hidden="true"></span>Cursor 15%</span>
+        </div>
+      </a>
+
+      <!-- PixelBoard -->
+      <a href="./project.html" class="project-card" aria-label="PixelBoard project">
+        <div class="project-card-header">
+          <h3 class="project-card-title">PixelBoard</h3>
+          <span class="project-card-arrow" aria-hidden="true">&rarr;</span>
+        </div>
+        <p class="project-card-narrative">Real-time collaborative drawing canvas with CRDT-based state sync and pressure-sensitive input.</p>
+        <div class="project-card-skills">
+          <span class="skill-chip">TypeScript</span>
+          <span class="skill-chip">WebSocket</span>
+          <span class="skill-chip">Canvas API</span>
+          <span class="skill-chip">Redis</span>
+          <span class="skill-chip">Express</span>
+          <span class="skill-chip">CRDT</span>
+        </div>
+        <div class="project-card-stats">
+          <span>5 sessions</span>
+          <span>28h</span>
+          <span>2,940 LOC</span>
+        </div>
+        <div class="source-bar" role="img" aria-label="Source: Claude 60%, Cursor 40%">
+          <div class="source-bar-segment claude" style="width: 60%"></div>
+          <div class="source-bar-segment cursor" style="width: 40%"></div>
+        </div>
+        <div class="source-legend">
+          <span><span class="source-legend-dot claude" aria-hidden="true"></span>Claude 60%</span>
+          <span><span class="source-legend-dot cursor" aria-hidden="true"></span>Cursor 40%</span>
+        </div>
+      </a>
+
+      <!-- DevLog -->
+      <a href="./project.html" class="project-card" aria-label="DevLog project">
+        <div class="project-card-header">
+          <h3 class="project-card-title">DevLog</h3>
+          <span class="project-card-arrow" aria-hidden="true">&rarr;</span>
+        </div>
+        <p class="project-card-narrative">CLI tool for capturing development decisions and context as structured markdown notes.</p>
+        <div class="project-card-skills">
+          <span class="skill-chip">TypeScript</span>
+          <span class="skill-chip">Node.js</span>
+          <span class="skill-chip">CLI design</span>
+          <span class="skill-chip">Markdown</span>
+          <span class="skill-chip">SQLite</span>
+</div>
+        <div class="project-card-stats">
+          <span>5 sessions</span>
+          <span>18h</span>
+          <span>1,840 LOC</span>
+        </div>
+        <div class="source-bar" role="img" aria-label="Source: Claude 80%, Cursor 20%">
+          <div class="source-bar-segment claude" style="width: 80%"></div>
+          <div class="source-bar-segment cursor" style="width: 20%"></div>
+        </div>
+        <div class="source-legend">
+          <span><span class="source-legend-dot claude" aria-hidden="true"></span>Claude 80%</span>
+          <span><span class="source-legend-dot cursor" aria-hidden="true"></span>Cursor 20%</span>
+        </div>
+      </a>
+
+      <!-- Snapgrid -->
+      <a href="./project.html" class="project-card" aria-label="Snapgrid project">
+        <div class="project-card-header">
+          <h3 class="project-card-title">Snapgrid</h3>
+          <span class="project-card-arrow" aria-hidden="true">&rarr;</span>
+        </div>
+        <p class="project-card-narrative">Responsive image gallery with masonry layout, lazy loading, and keyboard navigation.</p>
+        <div class="project-card-skills">
+          <span class="skill-chip">TypeScript</span>
+          <span class="skill-chip">React</span>
+          <span class="skill-chip">CSS Grid</span>
+          <span class="skill-chip">IntersectionObserver</span>
+          <span class="skill-chip">Accessibility</span>
+</div>
+        <div class="project-card-stats">
+          <span>4 sessions</span>
+          <span>14h</span>
+          <span>1,520 LOC</span>
+        </div>
+        <div class="source-bar" role="img" aria-label="Source: Claude 50%, Cursor 50%">
+          <div class="source-bar-segment claude" style="width: 50%"></div>
+          <div class="source-bar-segment cursor" style="width: 50%"></div>
+        </div>
+        <div class="source-legend">
+          <span><span class="source-legend-dot claude" aria-hidden="true"></span>Claude 50%</span>
+          <span><span class="source-legend-dot cursor" aria-hidden="true"></span>Cursor 50%</span>
+        </div>
+      </a>
+
+      <!-- Terracotta -->
+      <a href="./project.html" class="project-card" aria-label="Terracotta project">
+        <div class="project-card-header">
+          <h3 class="project-card-title">Terracotta</h3>
+          <span class="project-card-arrow" aria-hidden="true">&rarr;</span>
+        </div>
+        <p class="project-card-narrative">Design token pipeline that generates CSS custom properties, Tailwind config, and Figma tokens from a single YAML source.</p>
+        <div class="project-card-skills">
+          <span class="skill-chip">TypeScript</span>
+          <span class="skill-chip">Node.js</span>
+          <span class="skill-chip">YAML</span>
+          <span class="skill-chip">CSS</span>
+          <span class="skill-chip">Figma API</span>
+</div>
+        <div class="project-card-stats">
+          <span>6 sessions</span>
+          <span>22h</span>
+          <span>2,680 LOC</span>
+        </div>
+        <div class="source-bar" role="img" aria-label="Source: Claude 70%, Cursor 30%">
+          <div class="source-bar-segment claude" style="width: 70%"></div>
+          <div class="source-bar-segment cursor" style="width: 30%"></div>
+        </div>
+        <div class="source-legend">
+          <span><span class="source-legend-dot claude" aria-hidden="true"></span>Claude 70%</span>
+          <span><span class="source-legend-dot cursor" aria-hidden="true"></span>Cursor 30%</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- Activity -->
+  <section class="activity-section ember-section" aria-label="Session activity">
+    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Session Activity</h2>
+    <div class="activity-chart" role="img" aria-label="Activity chart showing session durations across 8 sessions">
+      <div class="activity-bar" style="height: 60%" data-label="S1"></div>
+      <div class="activity-bar" style="height: 54%" data-label="S2"></div>
+      <div class="activity-bar" style="height: 73%" data-label="S3"></div>
+      <div class="activity-bar" style="height: 46%" data-label="S4"></div>
+      <div class="activity-bar" style="height: 38%" data-label="S5"></div>
+      <div class="activity-bar" style="height: 52%" data-label="S6"></div>
+      <div class="activity-bar" style="height: 65%" data-label="S7"></div>
+      <div class="activity-bar" style="height: 42%" data-label="S8"></div>
+    </div>
+    <div class="activity-labels">
+      <span>Feb 3</span>
+      <span>Feb 14</span>
+      <span>Mar 1</span>
+      <span>Mar 10</span>
+      <span>Mar 14</span>
+      <span>Mar 18</span>
+      <span>Mar 22</span>
+      <span>Mar 26</span>
+    </div>
+  </section>
+
+  <!-- Growth Line Chart (SVG) -->
+  <section class="ember-section" aria-label="Cumulative lines of code" style="margin-top: 2.5rem;">
+    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Growth</h2>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
+      <svg viewBox="0 0 500 180" width="100%" height="180" role="img" aria-label="Cumulative LOC growth line chart">
+        <!-- Grid lines -->
+        <line x1="40" y1="20" x2="40" y2="150" stroke="rgba(250,245,240,0.06)" stroke-width="1"/>
+        <line x1="40" y1="150" x2="480" y2="150" stroke="rgba(250,245,240,0.06)" stroke-width="1"/>
+        <line x1="40" y1="117.5" x2="480" y2="117.5" stroke="rgba(250,245,240,0.04)" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="40" y1="85" x2="480" y2="85" stroke="rgba(250,245,240,0.04)" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="40" y1="52.5" x2="480" y2="52.5" stroke="rgba(250,245,240,0.04)" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="40" y1="20" x2="480" y2="20" stroke="rgba(250,245,240,0.04)" stroke-width="1" stroke-dasharray="4,4"/>
+
+        <!-- Y-axis labels -->
+        <text x="35" y="154" fill="rgba(250,245,240,0.4)" font-family="JetBrains Mono, monospace" font-size="10" text-anchor="end">0</text>
+        <text x="35" y="121" fill="rgba(250,245,240,0.4)" font-family="JetBrains Mono, monospace" font-size="10" text-anchor="end">1.1k</text>
+        <text x="35" y="88" fill="rgba(250,245,240,0.4)" font-family="JetBrains Mono, monospace" font-size="10" text-anchor="end">2.2k</text>
+        <text x="35" y="56" fill="rgba(250,245,240,0.4)" font-family="JetBrains Mono, monospace" font-size="10" text-anchor="end">3.3k</text>
+        <text x="35" y="24" fill="rgba(250,245,240,0.4)" font-family="JetBrains Mono, monospace" font-size="10" text-anchor="end">4.5k</text>
+
+        <!-- Gradient fill area -->
+        <defs>
+          <linearGradient id="emberGradFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f97316" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#f97316" stop-opacity="0.01"/>
+          </linearGradient>
+          <linearGradient id="emberGradLine" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#f97316"/>
+            <stop offset="100%" stop-color="#ef4444"/>
+          </linearGradient>
+        </defs>
+        <path d="M 40 150 L 103 130 L 166 118 L 228 90 L 290 80 L 353 68 L 415 42 L 480 25 L 480 150 Z" fill="url(#emberGradFill)"/>
+        <polyline points="40,150 103,130 166,118 228,90 290,80 353,68 415,42 480,25" fill="none" stroke="url(#emberGradLine)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+        <!-- Data points -->
+        <circle cx="40" cy="150" r="4" fill="var(--bg)" stroke="#f97316" stroke-width="2"/>
+        <circle cx="103" cy="130" r="4" fill="var(--bg)" stroke="#f97316" stroke-width="2"/>
+        <circle cx="166" cy="118" r="4" fill="var(--bg)" stroke="#f97316" stroke-width="2"/>
+        <circle cx="228" cy="90" r="4" fill="var(--bg)" stroke="#f97316" stroke-width="2"/>
+        <circle cx="290" cy="80" r="4" fill="var(--bg)" stroke="#f97316" stroke-width="2"/>
+        <circle cx="353" cy="68" r="4" fill="var(--bg)" stroke="#f97316" stroke-width="2"/>
+        <circle cx="415" cy="42" r="4" fill="var(--bg)" stroke="#f97316" stroke-width="2"/>
+        <circle cx="480" cy="25" r="4" fill="var(--bg)" stroke="#f97316" stroke-width="2"/>
+
+        <!-- X-axis labels -->
+        <text x="40" y="168" fill="rgba(250,245,240,0.4)" font-family="JetBrains Mono, monospace" font-size="9" text-anchor="middle">S1</text>
+        <text x="103" y="168" fill="rgba(250,245,240,0.4)" font-family="JetBrains Mono, monospace" font-size="9" text-anchor="middle">S2</text>
+        <text x="166" y="168" fill="rgba(250,245,240,0.4)" font-family="JetBrains Mono, monospace" font-size="9" text-anchor="middle">S3</text>
+        <text x="228" y="168" fill="rgba(250,245,240,0.4)" font-family="JetBrains Mono, monospace" font-size="9" text-anchor="middle">S4</text>
+        <text x="290" y="168" fill="rgba(250,245,240,0.4)" font-family="JetBrains Mono, monospace" font-size="9" text-anchor="middle">S5</text>
+        <text x="353" y="168" fill="rgba(250,245,240,0.4)" font-family="JetBrains Mono, monospace" font-size="9" text-anchor="middle">S6</text>
+        <text x="415" y="168" fill="rgba(250,245,240,0.4)" font-family="JetBrains Mono, monospace" font-size="9" text-anchor="middle">S7</text>
+        <text x="480" y="168" fill="rgba(250,245,240,0.4)" font-family="JetBrains Mono, monospace" font-size="9" text-anchor="middle">S8</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Skills Overview -->
+  <section class="ember-section" aria-label="Skills overview" style="margin-top: 2.5rem;">
+    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Skills</h2>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <span class="skill-chip">TypeScript</span>
+        <span class="skill-chip">React</span>
+        <span class="skill-chip">Next.js</span>
+        <span class="skill-chip">Prisma</span>
+        <span class="skill-chip">PostgreSQL</span>
+        <span class="skill-chip">Rust</span>
+        <span class="skill-chip">CLI design</span>
+        <span class="skill-chip">WebSocket</span>
+        <span class="skill-chip">Canvas API</span>
+        <span class="skill-chip">Redis</span>
+        <span class="skill-chip">Express</span>
+        <span class="skill-chip">CRDT</span>
+        <span class="skill-chip">Stripe API</span>
+        <span class="skill-chip">TOML parsing</span>
+        <span class="skill-chip">Git internals</span>
+        <span class="skill-chip">Shell scripting</span>
+      </div>
+      <div style="margin-top: 1.25rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">TypeScript</div>
+          <div style="height: 6px; background: var(--surface-high); border-radius: 3px; overflow: hidden;">
+            <div style="width: 85%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-secondary)); border-radius: 3px;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">React</div>
+          <div style="height: 6px; background: var(--surface-high); border-radius: 3px; overflow: hidden;">
+            <div style="width: 70%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-secondary)); border-radius: 3px;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">Rust</div>
+          <div style="height: 6px; background: var(--surface-high); border-radius: 3px; overflow: hidden;">
+            <div style="width: 55%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-secondary)); border-radius: 3px;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">PostgreSQL</div>
+          <div style="height: 6px; background: var(--surface-high); border-radius: 3px; overflow: hidden;">
+            <div style="width: 60%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-secondary)); border-radius: 3px;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">WebSocket</div>
+          <div style="height: 6px; background: var(--surface-high); border-radius: 3px; overflow: hidden;">
+            <div style="width: 40%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-secondary)); border-radius: 3px;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">Redis</div>
+          <div style="height: 6px; background: var(--surface-high); border-radius: 3px; overflow: hidden;">
+            <div style="width: 35%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-secondary)); border-radius: 3px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Source Overview -->
+  <section class="ember-section" aria-label="Overall source breakdown" style="margin-top: 2.5rem;">
+    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Source Breakdown</h2>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <div style="text-align: center; padding: 1rem; background: var(--accent-glow); border-radius: var(--radius-sm); border: 1px solid var(--accent-border);">
+          <div style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--accent); text-shadow: 0 0 16px rgba(249,115,22,0.3);">68%</div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-top: 4px;">Claude Code</div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); margin-top: 2px;">20 sessions</div>
+        </div>
+        <div style="text-align: center; padding: 1rem; background: var(--border-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+          <div style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-secondary);">32%</div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-top: 4px;">Cursor</div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); margin-top: 2px;">8 sessions</div>
+        </div>
+      </div>
+      <div style="margin-top: 1rem; height: 8px; background: var(--surface-high); border-radius: 4px; overflow: hidden; display: flex;">
+        <div style="width: 68%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-secondary));"></div>
+        <div style="width: 32%; height: 100%; background: var(--text-muted);"></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <p>Built with <a href="./project.html">heyi.am</a></p>
+  </div>
+</footer>
+
+<script>
+/* ── Intersection Observer for section fade-in ── */
+(function() {
+  var sections = document.querySelectorAll('.ember-section');
+  if (!window.IntersectionObserver) {
+    sections.forEach(function(s) { s.classList.add('visible'); });
+    return;
+  }
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  sections.forEach(function(s) { observer.observe(s); });
+})();
+
+/* ── Stat Counter Animation ── */
+(function() {
+  var counters = document.querySelectorAll('[data-target]');
+  if (!window.IntersectionObserver) {
+    counters.forEach(function(el) { el.textContent = Number(el.dataset.target).toLocaleString(); });
+    return;
+  }
+  function animateCounter(el) {
+    var target = parseInt(el.dataset.target, 10);
+    var duration = 1200;
+    var startTime = null;
+    function step(timestamp) {
+      if (!startTime) startTime = timestamp;
+      var progress = Math.min((timestamp - startTime) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(eased * target).toLocaleString();
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        animateCounter(entry.target);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  counters.forEach(function(el) { observer.observe(el); });
+
+  /* Respect reduced motion */
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    counters.forEach(function(el) { el.textContent = Number(el.dataset.target).toLocaleString(); });
+  }
+})();
+</script>
+
+</body>
+</html>

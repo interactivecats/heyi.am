@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Set up Prisma schema — Session | Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Tokens ── */
+  :root {
+    --bg: #ffffff;
+    --fg: #1e293b;
+    --fg-muted: #64748b;
+    --accent: #64748b;
+    --accent-dark: #475569;
+    --border: #cbd5e1;
+    --border-light: #e2e8f0;
+    --surface: #f8fafc;
+    --radius-sm: 2px;
+    --radius: 4px;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --grid-minor: rgba(100, 116, 139, 0.10);
+    --grid-major: rgba(100, 116, 139, 0.18);
+    --color-frontend: #7c3aed;
+    --color-backend: #0891b2;
+    --color-qa: #059669;
+    --color-security: #475569;
+    --color-reviewer: #e11d48;
+  }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--fg);
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(var(--grid-minor) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px),
+      linear-gradient(var(--grid-major) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-major) 1px, transparent 1px);
+    background-size: 24px 24px, 24px 24px, 120px 120px, 120px 120px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .skip-link {
+    position: absolute;
+    inset-inline-start: -9999px;
+    top: 0;
+    background: var(--fg);
+    color: var(--bg);
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    z-index: 100;
+    border-radius: var(--radius);
+  }
+  .skip-link:focus { inset-inline-start: 8px; top: 8px; }
+
+  .container { max-width: 960px; margin-inline: auto; padding-inline: 24px; }
+
+  /* ── Nav ── */
+  .nav {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(4px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; }
+  .nav-brand {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .nav-brand::before { content: '> '; color: var(--accent); }
+  .nav-links { display: flex; gap: 24px; list-style: none; }
+  .nav-links a {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg-muted);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .nav-links a:hover, .nav-links a[aria-current="page"] { color: var(--fg); }
+  .nav-links a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Shared ── */
+  .section-ref { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .ref-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    border: 1.5px solid var(--accent);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--fg-muted);
+  }
+
+  .node-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .node-dot--hollow {
+    background: transparent;
+    border: 1.5px solid var(--accent);
+  }
+
+  .dim-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+  }
+  .dim-line::before, .dim-line::after {
+    content: '';
+    flex: 1;
+    height: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Breadcrumb ── */
+  .breadcrumb {
+    padding: 16px 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+  .breadcrumb a {
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  .breadcrumb-sep { margin: 0 6px; opacity: 0.5; }
+
+  /* ── Layout: main + sidebar ── */
+  .page-layout {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 40px;
+    padding: 32px 0 48px;
+    align-items: start;
+  }
+
+  /* ── Hero ── */
+  .hero { padding-bottom: 32px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .session-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+  .session-meta-row .meta-item::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-inline-end: 6px;
+    vertical-align: middle;
+  }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 24px 0;
+  }
+  .stat-cell {
+    background: var(--bg);
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .stat-value {
+    font-family: var(--font-mono);
+    font-size: clamp(18px, 2.5vw, 24px);
+    font-weight: 600;
+    color: var(--fg);
+    line-height: 1.2;
+  }
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-muted);
+    margin-top: 2px;
+  }
+
+  /* ── Dev take ── */
+  .dev-take {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 32px;
+    background: var(--surface);
+    position: relative;
+  }
+  .dev-take::before {
+    content: '//';
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    position: absolute;
+    top: 12px;
+    inset-inline-start: 12px;
+  }
+  .dev-take-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-muted);
+    margin-bottom: 6px;
+  }
+  .dev-take blockquote {
+    font-size: 14px;
+    color: var(--fg);
+    font-style: italic;
+    line-height: 1.6;
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* ── Execution path (beats) ── */
+  .beats-section { margin-bottom: 40px; }
+  .beats-list {
+    list-style: none;
+    position: relative;
+    padding-inline-start: 28px;
+  }
+  /* Vertical connector line */
+  .beats-list::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 11px;
+    top: 8px;
+    bottom: 8px;
+    width: 1.5px;
+    background: var(--border);
+  }
+  .beat-item {
+    position: relative;
+    padding: 12px 0;
+  }
+  .beat-item::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: -21px;
+    top: 18px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background: var(--bg);
+    z-index: 1;
+  }
+  .beat-title {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--fg);
+    margin-bottom: 4px;
+  }
+  .beat-desc {
+    font-size: 14px;
+    color: var(--fg-muted);
+    line-height: 1.6;
+  }
+
+  /* ── Q&A ── */
+  .qa-section { margin-bottom: 40px; }
+  .qa-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    background: var(--bg);
+  }
+  .qa-question {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--fg);
+    margin-bottom: 8px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .qa-prefix {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+  .qa-answer {
+    font-size: 14px;
+    color: var(--fg-muted);
+    line-height: 1.6;
+    padding-inline-start: 28px;
+  }
+
+  /* ── Agent summary ── */
+  .agents-section { margin-bottom: 40px; }
+  .agent-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .agent-table th {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-muted);
+    padding: 8px 12px;
+    text-align: start;
+    border-bottom: 2px solid var(--fg);
+    font-weight: 500;
+  }
+  .agent-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: middle;
+  }
+  .agent-role {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+  }
+  .agent-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .agent-table .mono-val {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+
+  /* ── Agent bar chart ── */
+  .agent-bar-chart {
+    margin-top: 16px;
+  }
+  .agent-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .agent-bar-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+    min-width: 120px;
+    text-align: end;
+  }
+  .agent-bar-track {
+    flex: 1;
+    height: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    position: relative;
+  }
+  .agent-bar-fill {
+    height: 100%;
+    border-radius: var(--radius-sm);
+  }
+  .agent-bar-value {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+    min-width: 40px;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar { position: sticky; top: 80px; }
+  .sidebar-section {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    background: var(--bg);
+  }
+  .sidebar-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--fg-muted);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  /* ── Tools table ── */
+  .tools-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .tools-table td {
+    padding: 4px 0;
+    vertical-align: middle;
+  }
+  .tools-table td:first-child {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg);
+  }
+  .tools-table td:last-child {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    text-align: end;
+  }
+
+  /* ── Files table ── */
+  .files-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .files-table td {
+    padding: 4px 0;
+    vertical-align: top;
+  }
+  .files-table .file-path {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg);
+    word-break: break-all;
+  }
+  .files-table .file-diff {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-backend);
+    text-align: end;
+    white-space: nowrap;
+    padding-inline-start: 8px;
+  }
+
+  /* ── Sidebar skills ── */
+  .sidebar-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    list-style: none;
+  }
+  .sidebar-skill-chip {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--fg-muted);
+  }
+
+  /* ── SVG connector for beats ── */
+  .connector-vertical {
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    width: 24px;
+    height: 100%;
+    pointer-events: none;
+  }
+  .connector-vertical line {
+    stroke: var(--border);
+    stroke-width: 1.5;
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+  }
+  .connector-vertical.animated line {
+    animation: draw-vert 1s ease-out forwards;
+  }
+
+  @keyframes draw-vert {
+    to { stroke-dashoffset: 0; }
+  }
+
+  /* ── Footer ── */
+  .footer {
+    border-top: 2px solid var(--fg);
+    margin-top: 48px;
+  }
+  .title-block {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border-bottom: 1px solid var(--fg);
+  }
+  .title-block-cell {
+    padding: 12px 16px;
+    border-inline-end: 1px solid var(--fg);
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+  .title-block-cell:last-child { border-inline-end: none; }
+  .title-block-label {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-muted);
+    font-size: 9px;
+    margin-bottom: 2px;
+  }
+  .title-block-value { color: var(--fg); font-weight: 500; }
+  .footer-bottom {
+    padding: 12px 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* ── Reduced motion ── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+    .connector-vertical line {
+      stroke-dasharray: none;
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .page-layout {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    .sidebar {
+      position: static;
+      order: -1;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .sidebar-section { margin-bottom: 0; }
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .title-block { grid-template-columns: 1fr; }
+    .title-block-cell {
+      border-inline-end: none;
+      border-bottom: 1px solid var(--fg);
+    }
+    .title-block-cell:last-child { border-bottom: none; }
+    .nav-inner { flex-direction: column; gap: 12px; }
+    .footer-bottom { flex-direction: column; gap: 4px; }
+    .agent-bar-label { min-width: 90px; font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<a href="#main" class="skip-link">Skip to content</a>
+
+<nav class="nav" aria-label="Main navigation">
+  <div class="container nav-inner">
+    <a href="./portfolio.html" class="nav-brand">alex.portfolio</a>
+    <ul class="nav-links">
+      <li><a href="./portfolio.html">Portfolio</a></li>
+      <li><a href="./project.html">Project</a></li>
+      <li><a href="./session.html" aria-current="page">Session</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- Breadcrumb -->
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="./portfolio.html">alex</a>
+    <span class="breadcrumb-sep" aria-hidden="true">/</span>
+    <a href="./project.html">budgetwise</a>
+    <span class="breadcrumb-sep" aria-hidden="true">/</span>
+    <span aria-current="page">Set up Prisma schema</span>
+  </nav>
+
+  <main id="main">
+    <div class="page-layout">
+
+      <!-- Main content column -->
+      <div class="main-col">
+
+        <!-- Hero -->
+        <section class="hero" aria-label="Session overview">
+          <div class="section-ref">
+            <span class="ref-badge" aria-hidden="true">01</span>
+            <span class="section-label">Session Record</span>
+          </div>
+          <h1>Set up Prisma schema with User, Account, and Transaction models</h1>
+          <div class="session-meta-row">
+            <span class="meta-item">February 3, 2026</span>
+            <span class="meta-item">Claude Code</span>
+            <span class="meta-item">72 min (87m wall)</span>
+            <span class="meta-item">45 turns</span>
+          </div>
+
+          <!-- Stats -->
+          <div class="stats-bar" role="list" aria-label="Session statistics">
+            <div class="stat-cell" role="listitem">
+              <div class="stat-value" data-target="72" data-suffix="m">0</div>
+              <div class="stat-label">Duration</div>
+            </div>
+            <div class="stat-cell" role="listitem">
+              <div class="stat-value" data-target="680">0</div>
+              <div class="stat-label">LOC</div>
+            </div>
+            <div class="stat-cell" role="listitem">
+              <div class="stat-value" data-target="4">0</div>
+              <div class="stat-label">Files</div>
+            </div>
+            <div class="stat-cell" role="listitem">
+              <div class="stat-value" data-target="45">0</div>
+              <div class="stat-label">Turns</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Dev take -->
+        <div class="dev-take">
+          <div class="dev-take-label">Dev Take</div>
+          <blockquote>Went with discriminated unions over STI &mdash; nullable columns everywhere felt wrong. The audit log instead of soft deletes was the right call too.</blockquote>
+        </div>
+
+        <!-- Execution Path -->
+        <section class="beats-section" aria-label="Execution path">
+          <div class="section-ref">
+            <span class="ref-badge" aria-hidden="true">02</span>
+            <span class="section-label">Execution Path</span>
+          </div>
+          <ol class="beats-list">
+            <li class="beat-item">
+              <div class="beat-title">Schema design</div>
+              <div class="beat-desc">Sketched out the core models &mdash; User, Account, Transaction. Decided on a discriminated union for transaction types instead of STI.</div>
+            </li>
+            <li class="beat-item">
+              <div class="beat-title">Prisma setup</div>
+              <div class="beat-desc">Initialized Prisma with PostgreSQL, wrote the schema file with proper relations and indexes.</div>
+            </li>
+            <li class="beat-item">
+              <div class="beat-title">Migration</div>
+              <div class="beat-desc">Ran the initial migration, fixed a cascade delete issue on Account &rarr; Transaction.</div>
+            </li>
+            <li class="beat-item">
+              <div class="beat-title">Seed data</div>
+              <div class="beat-desc">Created a seed script with realistic test data &mdash; multiple accounts, mixed transaction types.</div>
+            </li>
+          </ol>
+        </section>
+
+        <!-- Q&A -->
+        <section class="qa-section" aria-label="Questions and answers">
+          <div class="section-ref">
+            <span class="ref-badge" aria-hidden="true">03</span>
+            <span class="section-label">Q&amp;A</span>
+          </div>
+          <div class="qa-item">
+            <div class="qa-question">
+              <span class="qa-prefix">Q:</span>
+              <span>Why did you choose a discriminated union over single-table inheritance for transaction types?</span>
+            </div>
+            <p class="qa-answer">STI would have left nullable columns everywhere &mdash; transferTo only makes sense for transfers, recurringSchedule only for recurring. The union pattern keeps each type clean and the TypeScript compiler catches missing fields.</p>
+          </div>
+          <div class="qa-item">
+            <div class="qa-question">
+              <span class="qa-prefix">Q:</span>
+              <span>How does the cascade delete work between Account and Transaction?</span>
+            </div>
+            <p class="qa-answer">Deleting an account cascades to its transactions. Initially had it set to restrict, but that made account cleanup impossible without manual transaction deletion first.</p>
+          </div>
+        </section>
+
+        <!-- Agent Summary -->
+        <section class="agents-section" aria-label="Agent summary">
+          <div class="section-ref">
+            <span class="ref-badge" aria-hidden="true">04</span>
+            <span class="section-label">Agent Breakdown</span>
+          </div>
+
+          <table class="agent-table">
+            <thead>
+              <tr>
+                <th scope="col">Role</th>
+                <th scope="col">Duration</th>
+                <th scope="col">LOC</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <span class="agent-role">
+                    <span class="agent-dot" style="background: var(--color-backend);" aria-hidden="true"></span>
+                    backend-dev
+                  </span>
+                </td>
+                <td class="mono-val">25m</td>
+                <td class="mono-val">280</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="agent-role">
+                    <span class="agent-dot" style="background: var(--color-qa);" aria-hidden="true"></span>
+                    qa-engineer
+                  </span>
+                </td>
+                <td class="mono-val">18m</td>
+                <td class="mono-val">190</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="agent-role">
+                    <span class="agent-dot" style="background: var(--color-frontend);" aria-hidden="true"></span>
+                    frontend-dev
+                  </span>
+                </td>
+                <td class="mono-val">15m</td>
+                <td class="mono-val">125</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="agent-role">
+                    <span class="agent-dot" style="background: var(--color-security);" aria-hidden="true"></span>
+                    security-engineer
+                  </span>
+                </td>
+                <td class="mono-val">12m</td>
+                <td class="mono-val">85</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="agent-role">
+                    <span class="agent-dot" style="background: var(--color-reviewer);" aria-hidden="true"></span>
+                    code-reviewer
+                  </span>
+                </td>
+                <td class="mono-val">8m</td>
+                <td class="mono-val">0</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Agent bar chart with crosshatch -->
+          <div class="agent-bar-chart" aria-hidden="true">
+            <svg style="position:absolute;width:0;height:0;overflow:hidden">
+              <defs>
+                <pattern id="hatch-backend" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <line x1="0" y1="0" x2="0" y2="6" stroke="#0891b2" stroke-width="1.2" stroke-opacity="0.5"/>
+                </pattern>
+                <pattern id="hatch-qa" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <line x1="0" y1="0" x2="0" y2="6" stroke="#059669" stroke-width="1.2" stroke-opacity="0.5"/>
+                </pattern>
+                <pattern id="hatch-frontend" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <line x1="0" y1="0" x2="0" y2="6" stroke="#7c3aed" stroke-width="1.2" stroke-opacity="0.5"/>
+                </pattern>
+                <pattern id="hatch-security" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <line x1="0" y1="0" x2="0" y2="6" stroke="#475569" stroke-width="1.2" stroke-opacity="0.5"/>
+                </pattern>
+                <pattern id="hatch-reviewer" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <line x1="0" y1="0" x2="0" y2="6" stroke="#e11d48" stroke-width="1.2" stroke-opacity="0.5"/>
+                </pattern>
+              </defs>
+            </svg>
+            <div class="agent-bar-row">
+              <span class="agent-bar-label">backend-dev</span>
+              <div class="agent-bar-track">
+                <svg width="100%" height="16"><rect x="0" y="0" width="100%" height="16" fill="url(#hatch-backend)" rx="2"/></svg>
+              </div>
+              <span class="agent-bar-value">25m</span>
+            </div>
+            <div class="agent-bar-row">
+              <span class="agent-bar-label">qa-engineer</span>
+              <div class="agent-bar-track">
+                <svg width="72%" height="16"><rect x="0" y="0" width="100%" height="16" fill="url(#hatch-qa)" rx="2"/></svg>
+              </div>
+              <span class="agent-bar-value">18m</span>
+            </div>
+            <div class="agent-bar-row">
+              <span class="agent-bar-label">frontend-dev</span>
+              <div class="agent-bar-track">
+                <svg width="60%" height="16"><rect x="0" y="0" width="100%" height="16" fill="url(#hatch-frontend)" rx="2"/></svg>
+              </div>
+              <span class="agent-bar-value">15m</span>
+            </div>
+            <div class="agent-bar-row">
+              <span class="agent-bar-label">security-eng</span>
+              <div class="agent-bar-track">
+                <svg width="48%" height="16"><rect x="0" y="0" width="100%" height="16" fill="url(#hatch-security)" rx="2"/></svg>
+              </div>
+              <span class="agent-bar-value">12m</span>
+            </div>
+            <div class="agent-bar-row">
+              <span class="agent-bar-label">code-reviewer</span>
+              <div class="agent-bar-track">
+                <svg width="32%" height="16"><rect x="0" y="0" width="100%" height="16" fill="url(#hatch-reviewer)" rx="2"/></svg>
+              </div>
+              <span class="agent-bar-value">8m</span>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="sidebar" aria-label="Session details">
+
+        <div class="sidebar-section">
+          <h2 class="sidebar-title">Tools Used</h2>
+          <table class="tools-table" aria-label="Tool usage counts">
+            <tbody>
+              <tr><td>Edit</td><td>18</td></tr>
+              <tr><td>Read</td><td>12</td></tr>
+              <tr><td>Bash</td><td>9</td></tr>
+              <tr><td>Write</td><td>4</td></tr>
+              <tr><td>Grep</td><td>2</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="sidebar-section">
+          <h2 class="sidebar-title">Files Changed</h2>
+          <table class="files-table" aria-label="Files modified in this session">
+            <tbody>
+              <tr>
+                <td class="file-path">prisma/schema.prisma</td>
+                <td class="file-diff">+142</td>
+              </tr>
+              <tr>
+                <td class="file-path">prisma/seed.ts</td>
+                <td class="file-diff">+89</td>
+              </tr>
+              <tr>
+                <td class="file-path">prisma/migrations/20260203_init/migration.sql</td>
+                <td class="file-diff">+415</td>
+              </tr>
+              <tr>
+                <td class="file-path">src/lib/db.ts</td>
+                <td class="file-diff">+34</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="sidebar-section">
+          <h2 class="sidebar-title">Skills</h2>
+          <ul class="sidebar-skills">
+            <li class="sidebar-skill-chip">TypeScript</li>
+            <li class="sidebar-skill-chip">Prisma</li>
+            <li class="sidebar-skill-chip">PostgreSQL</li>
+          </ul>
+        </div>
+
+      </aside>
+    </div>
+  </main>
+</div>
+
+<!-- Footer title block -->
+<footer class="footer" role="contentinfo">
+  <div class="container">
+    <div class="title-block">
+      <div class="title-block-cell">
+        <div class="title-block-label">DWG NO.</div>
+        <div class="title-block-value">SESSION-BW-001</div>
+      </div>
+      <div class="title-block-cell">
+        <div class="title-block-label">REV</div>
+        <div class="title-block-value">A</div>
+      </div>
+      <div class="title-block-cell">
+        <div class="title-block-label">Date</div>
+        <div class="title-block-value">2026-02-03</div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Blueprint Template</span>
+      <span>heyi.am</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function() {
+  'use strict';
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function formatNumber(n) {
+    if (n >= 1000) return n.toLocaleString();
+    return String(n);
+  }
+
+  function animateCounters() {
+    var stats = document.querySelectorAll('.stat-value[data-target]');
+    stats.forEach(function(el) {
+      var raw = el.getAttribute('data-target');
+      var suffix = el.getAttribute('data-suffix') || '';
+      var target = parseInt(raw, 10);
+
+      if (prefersReducedMotion) {
+        el.textContent = formatNumber(target) + suffix;
+        return;
+      }
+
+      var duration = 1000;
+      var start = null;
+      function step(ts) {
+        if (!start) start = ts;
+        var progress = Math.min((ts - start) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = formatNumber(Math.round(target * eased)) + suffix;
+        if (progress < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  }
+
+  var statsTriggered = false;
+  var statsBar = document.querySelector('.stats-bar');
+  if (statsBar) {
+    if (prefersReducedMotion) {
+      animateCounters();
+    } else {
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && !statsTriggered) {
+            statsTriggered = true;
+            animateCounters();
+            observer.disconnect();
+          }
+        });
+      }, { threshold: 0.3 });
+      observer.observe(statsBar);
+    }
+  }
+
+  /* ── Scroll-draw the beat connector line ── */
+  if (!prefersReducedMotion) {
+    var beatsList = document.querySelector('.beats-list');
+    if (beatsList) {
+      var vertSvg = document.querySelector('.connector-vertical');
+      if (vertSvg) {
+        var vertObserver = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              vertSvg.classList.add('animated');
+              vertObserver.disconnect();
+            }
+          });
+        }, { threshold: 0.2 });
+        vertObserver.observe(beatsList);
+      }
+    }
+  }
+})();
+</script>
+</body>
+</html>

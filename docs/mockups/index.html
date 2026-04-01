@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>heyi.am Template Gallery — 25 Templates</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #09090b;
+      --surface: #18181b;
+      --surface-2: #27272a;
+      --border: rgba(255,255,255,0.08);
+      --text: #fafafa;
+      --text-2: rgba(255,255,255,0.6);
+      --text-3: rgba(255,255,255,0.35);
+      --font-display: 'Space Grotesk', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .header {
+      text-align: center;
+      padding: 4rem 2rem 3rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .header h1 {
+      font-family: var(--font-display);
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+    .header p {
+      color: var(--text-2);
+      font-size: 1rem;
+      max-width: 540px;
+      margin: 0 auto;
+    }
+    .header .count {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-3);
+      margin-top: 1rem;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+
+    .filters {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 1.5rem 2rem;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 150ms;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.25rem;
+      padding: 1.5rem 2rem 4rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 200ms, transform 200ms;
+    }
+    .card:hover {
+      border-color: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+    }
+
+    .card-preview {
+      height: 180px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .card-preview .swatch {
+      position: absolute;
+      inset: 0;
+    }
+    .card-preview .accent-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+    .card-preview .label {
+      position: relative;
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      z-index: 1;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    .card-preview .mode-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.4);
+      color: rgba(255,255,255,0.7);
+      z-index: 2;
+    }
+
+    .card-body {
+      padding: 1rem 1.25rem;
+      background: var(--surface);
+    }
+    .card-name {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .card-desc {
+      font-size: 0.8125rem;
+      color: var(--text-2);
+      line-height: 1.4;
+      margin-bottom: 0.75rem;
+    }
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      color: var(--text-3);
+    }
+    .card-meta .accent-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .card-links {
+      display: flex;
+      gap: 0;
+      border-top: 1px solid var(--border);
+    }
+    .card-links a {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      color: var(--text-3);
+      transition: background 150ms, color 150ms;
+      border-right: 1px solid var(--border);
+    }
+    .card-links a:last-child { border-right: none; }
+    .card-links a:hover {
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      border-top: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      color: var(--text-3);
+    }
+
+    @media (max-width: 640px) {
+      .header h1 { font-size: 1.75rem; }
+      .grid { grid-template-columns: 1fr; padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <h1>heyi.am Templates</h1>
+  <p>25 unique templates for developer portfolios. Each includes portfolio, project, and session pages.</p>
+  <span class="count">26 templates &middot; 78 pages &middot; all responsive &middot; WCAG AA</span>
+</header>
+
+<nav class="filters" aria-label="Filter templates">
+  <button class="filter-btn active" data-filter="all">All (25)</button>
+  <button class="filter-btn" data-filter="dark">Dark (14)</button>
+  <button class="filter-btn" data-filter="light">Light (11)</button>
+  <button class="filter-btn" data-filter="animated">Animated</button>
+  <button class="filter-btn" data-filter="minimal">Minimal</button>
+  <button class="filter-btn" data-filter="data-dense">Data-dense</button>
+</nav>
+
+<main class="grid" id="grid">
+
+  <!-- 0a. Parallax (floating headshot) -->
+  <article class="card" data-mode="dark" data-tags="animated">
+    <div class="card-preview">
+      <div class="swatch" style="background:#0a0a0f"></div>
+      <div class="accent-bar" style="background:linear-gradient(90deg,#fff,#60a5fa)"></div>
+      <span class="label" style="color:#f1f5f9">Parallax</span>
+      <span class="mode-badge">dark</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Parallax</div>
+      <div class="card-desc">Fixed floating headshot (no bg), content scrolls around it. Everything has depth — cards, stats, timeline all move at different speeds.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#60a5fa"></span> White + Blue &middot; Full parallax</div>
+    </div>
+    <div class="card-links">
+      <a href="parallax/portfolio.html">Portfolio</a>
+      <a href="parallax/project.html">Project</a>
+      <a href="parallax/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 0b. Kinetic (matches landing page) -->
+  <article class="card" data-mode="dark" data-tags="animated">
+    <div class="card-preview">
+      <div class="swatch" style="background:#09090b"></div>
+      <div class="accent-bar" style="background:#f97316"></div>
+      <span class="label" style="color:#f97316">Kinetic</span>
+      <span class="mode-badge">dark</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Kinetic</div>
+      <div class="card-desc">Matches the heyi.am landing page. Orange accent, section tags with line prefix, narrative cards, split panels.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#f97316"></span> Orange &middot; Landing style</div>
+    </div>
+    <div class="card-links">
+      <a href="kinetic/portfolio.html">Portfolio</a>
+      <a href="kinetic/project.html">Project</a>
+      <a href="kinetic/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 1. Showcase -->
+  <article class="card" data-mode="dark" data-tags="animated">
+    <div class="card-preview">
+      <div class="swatch" style="background:#09090b"></div>
+      <div class="accent-bar" style="background:#818cf8"></div>
+      <span class="label" style="color:#818cf8">Showcase</span>
+      <span class="mode-badge">dark</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Showcase</div>
+      <div class="card-desc">Cinematic scroll animations, animated charts, stat counters. Vercel/Linear dark mode aesthetic.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#818cf8"></span> Violet &middot; Scroll animations</div>
+    </div>
+    <div class="card-links">
+      <a href="showcase/portfolio.html">Portfolio</a>
+      <a href="showcase/project.html">Project</a>
+      <a href="showcase/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 2. Blueprint -->
+  <article class="card" data-mode="light" data-tags="animated">
+    <div class="card-preview">
+      <div class="swatch" style="background:#ffffff; background-image: linear-gradient(rgba(148,163,184,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.2) 1px, transparent 1px); background-size: 24px 24px;"></div>
+      <div class="accent-bar" style="background:#64748b"></div>
+      <span class="label" style="color:#334155">Blueprint</span>
+      <span class="mode-badge" style="background:rgba(255,255,255,0.8);color:#334155">light</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Blueprint</div>
+      <div class="card-desc">Engineering schematic with SVG connector lines, grid background, dimension annotations, crosshatch fills.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#64748b"></span> Blue-grey &middot; SVG connectors</div>
+    </div>
+    <div class="card-links">
+      <a href="blueprint/portfolio.html">Portfolio</a>
+      <a href="blueprint/project.html">Project</a>
+      <a href="blueprint/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 3. Radar -->
+  <article class="card" data-mode="dark" data-tags="animated data-dense">
+    <div class="card-preview">
+      <div class="swatch" style="background:#0f172a"></div>
+      <div class="accent-bar" style="background:#22d3ee"></div>
+      <span class="label" style="color:#22d3ee">Radar</span>
+      <span class="mode-badge">dark</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Radar</div>
+      <div class="card-desc">HUD cockpit with radar nav widget, cyan-tinted borders, coordinate grid, luminous chart lines.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#22d3ee"></span> Cyan &middot; HUD navigation</div>
+    </div>
+    <div class="card-links">
+      <a href="radar/portfolio.html">Portfolio</a>
+      <a href="radar/project.html">Project</a>
+      <a href="radar/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 4. Strata -->
+  <article class="card" data-mode="light" data-tags="animated">
+    <div class="card-preview">
+      <div class="swatch" style="background:#fafaf9"></div>
+      <div class="accent-bar" style="background:#d97706"></div>
+      <span class="label" style="color:#92400e">Strata</span>
+      <span class="mode-badge" style="background:rgba(255,255,255,0.8);color:#334155">light</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Strata</div>
+      <div class="card-desc">Depth-based parallax with overlapping card layers, shadow elevation, warm stone palette.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#d97706"></span> Amber &middot; Parallax depth</div>
+    </div>
+    <div class="card-links">
+      <a href="strata/portfolio.html">Portfolio</a>
+      <a href="strata/project.html">Project</a>
+      <a href="strata/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 5. Noir -->
+  <article class="card" data-mode="dark" data-tags="minimal">
+    <div class="card-preview">
+      <div class="swatch" style="background:#000000"></div>
+      <div class="accent-bar" style="background:#e5e5e5"></div>
+      <span class="label" style="color:#e5e5e5">Noir</span>
+      <span class="mode-badge">dark</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Noir</div>
+      <div class="card-desc">Pure monochrome. Black, white, gray only. Bold typography, horizontal rules, film noir drama.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#e5e5e5"></span> White &middot; Monochrome</div>
+    </div>
+    <div class="card-links">
+      <a href="noir/portfolio.html">Portfolio</a>
+      <a href="noir/project.html">Project</a>
+      <a href="noir/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 6. Verdant -->
+  <article class="card" data-mode="light" data-tags="animated">
+    <div class="card-preview">
+      <div class="swatch" style="background:#fefdfb"></div>
+      <div class="accent-bar" style="background:#15803d"></div>
+      <span class="label" style="color:#15803d">Verdant</span>
+      <span class="mode-badge" style="background:rgba(255,255,255,0.8);color:#334155">light</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Verdant</div>
+      <div class="card-desc">Nature/organic aesthetic. Warm earthy palette, leaf motifs, vine-style phase timeline, rounded shapes.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#15803d"></span> Forest &middot; Organic</div>
+    </div>
+    <div class="card-links">
+      <a href="verdant/portfolio.html">Portfolio</a>
+      <a href="verdant/project.html">Project</a>
+      <a href="verdant/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 7. Neon -->
+  <article class="card" data-mode="dark" data-tags="animated">
+    <div class="card-preview">
+      <div class="swatch" style="background:#0c0014"></div>
+      <div class="accent-bar" style="background:linear-gradient(90deg,#f472b6,#22d3ee)"></div>
+      <span class="label" style="background:linear-gradient(90deg,#f472b6,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Neon</span>
+      <span class="mode-badge">dark</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Neon</div>
+      <div class="card-desc">Synthwave aesthetic. Pink + cyan dual accent, neon glow effects, perspective grid, gradient text.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#f472b6"></span> Pink + Cyan &middot; Glow</div>
+    </div>
+    <div class="card-links">
+      <a href="neon/portfolio.html">Portfolio</a>
+      <a href="neon/project.html">Project</a>
+      <a href="neon/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 8. Paper -->
+  <article class="card" data-mode="light" data-tags="minimal">
+    <div class="card-preview">
+      <div class="swatch" style="background:#fffff8"></div>
+      <div class="accent-bar" style="background:#1a1a1a"></div>
+      <span class="label" style="color:#1a1a1a;font-family:serif">Paper</span>
+      <span class="mode-badge" style="background:rgba(255,255,255,0.8);color:#334155">light</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Paper</div>
+      <div class="card-desc">Newspaper print aesthetic. Multi-column layout, drop caps, serif typography, data tables, thin rules.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#1a1a1a"></span> Ink &middot; Print layout</div>
+    </div>
+    <div class="card-links">
+      <a href="paper/portfolio.html">Portfolio</a>
+      <a href="paper/project.html">Project</a>
+      <a href="paper/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 9. Cosmos -->
+  <article class="card" data-mode="dark" data-tags="animated">
+    <div class="card-preview">
+      <div class="swatch" style="background:#030712"></div>
+      <div class="accent-bar" style="background:#fbbf24"></div>
+      <span class="label" style="color:#fbbf24">Cosmos</span>
+      <span class="mode-badge">dark</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Cosmos</div>
+      <div class="card-desc">Starfield background, gold accent, constellation SVG lines connecting elements, orbital timeline.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#fbbf24"></span> Gold &middot; Constellations</div>
+    </div>
+    <div class="card-links">
+      <a href="cosmos/portfolio.html">Portfolio</a>
+      <a href="cosmos/project.html">Project</a>
+      <a href="cosmos/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 10. Bauhaus -->
+  <article class="card" data-mode="light" data-tags="animated">
+    <div class="card-preview">
+      <div class="swatch" style="background:#fafafa"></div>
+      <div class="accent-bar" style="background:linear-gradient(90deg,#dc2626,#2563eb,#eab308)"></div>
+      <span class="label" style="color:#1a1a1a">Bauhaus</span>
+      <span class="mode-badge" style="background:rgba(255,255,255,0.8);color:#334155">light</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Bauhaus</div>
+      <div class="card-desc">De Stijl geometric shapes in red/blue/yellow. Thick borders, asymmetric grids, bold oversized stats.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#dc2626"></span> Primary colors &middot; Geometric</div>
+    </div>
+    <div class="card-links">
+      <a href="bauhaus/portfolio.html">Portfolio</a>
+      <a href="bauhaus/project.html">Project</a>
+      <a href="bauhaus/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 11. Mono -->
+  <article class="card" data-mode="dark" data-tags="minimal data-dense">
+    <div class="card-preview">
+      <div class="swatch" style="background:#0a0a0a"></div>
+      <div class="accent-bar" style="background:#4ade80"></div>
+      <span class="label" style="color:#4ade80;font-family:'IBM Plex Mono',monospace;font-size:1.25rem">$ mono_</span>
+      <span class="mode-badge">dark</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Mono</div>
+      <div class="card-desc">100% monospace. Green on black, ASCII bar charts, git-log phases, terminal chrome, typing animation.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#4ade80"></span> Green &middot; Terminal</div>
+    </div>
+    <div class="card-links">
+      <a href="mono/portfolio.html">Portfolio</a>
+      <a href="mono/project.html">Project</a>
+      <a href="mono/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 12. Glacier -->
+  <article class="card" data-mode="light" data-tags="animated">
+    <div class="card-preview">
+      <div class="swatch" style="background:linear-gradient(180deg,#e0f2fe,#f0f9ff)"></div>
+      <div class="accent-bar" style="background:#38bdf8"></div>
+      <span class="label" style="color:#0284c7">Glacier</span>
+      <span class="mode-badge" style="background:rgba(255,255,255,0.8);color:#334155">light</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Glacier</div>
+      <div class="card-desc">Frosted glassmorphism. Backdrop blur cards, cool blue palette, soft shadows, visionOS-inspired.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#38bdf8"></span> Ice blue &middot; Glass</div>
+    </div>
+    <div class="card-links">
+      <a href="glacier/portfolio.html">Portfolio</a>
+      <a href="glacier/project.html">Project</a>
+      <a href="glacier/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 13. Ember -->
+  <article class="card" data-mode="dark" data-tags="animated">
+    <div class="card-preview">
+      <div class="swatch" style="background:#1c1210"></div>
+      <div class="accent-bar" style="background:linear-gradient(90deg,#f97316,#ef4444)"></div>
+      <span class="label" style="color:#f97316">Ember</span>
+      <span class="mode-badge">dark</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Ember</div>
+      <div class="card-desc">Warm dark theme. Orange-to-red fire gradients, warm-tinted borders, ember glow on stats.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#f97316"></span> Orange &middot; Warm dark</div>
+    </div>
+    <div class="card-links">
+      <a href="ember/portfolio.html">Portfolio</a>
+      <a href="ember/project.html">Project</a>
+      <a href="ember/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 14. Zen -->
+  <article class="card" data-mode="light" data-tags="minimal">
+    <div class="card-preview">
+      <div class="swatch" style="background:#fafaf9"></div>
+      <div class="accent-bar" style="background:#78716c"></div>
+      <span class="label" style="color:#57534e;font-family:serif;font-style:italic">Zen</span>
+      <span class="mode-badge" style="background:rgba(255,255,255,0.8);color:#334155">light</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Zen</div>
+      <div class="card-desc">Japanese minimalism. Maximum whitespace, no cards, thin horizontal rules, serif display, 640px column.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#78716c"></span> Stone &middot; Minimal</div>
+    </div>
+    <div class="card-links">
+      <a href="zen/portfolio.html">Portfolio</a>
+      <a href="zen/project.html">Project</a>
+      <a href="zen/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 15. Circuit -->
+  <article class="card" data-mode="dark" data-tags="animated">
+    <div class="card-preview">
+      <div class="swatch" style="background:#0a0f0a"></div>
+      <div class="accent-bar" style="background:#a3e635"></div>
+      <span class="label" style="color:#a3e635">Circuit</span>
+      <span class="mode-badge">dark</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Circuit</div>
+      <div class="card-desc">PCB aesthetic. Circuit trace patterns, component pads, IC pin labels, bus-line phase timeline.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#a3e635"></span> Lime &middot; PCB traces</div>
+    </div>
+    <div class="card-links">
+      <a href="circuit/portfolio.html">Portfolio</a>
+      <a href="circuit/project.html">Project</a>
+      <a href="circuit/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 16. Parchment -->
+  <article class="card" data-mode="light" data-tags="minimal">
+    <div class="card-preview">
+      <div class="swatch" style="background:#fdf6e3"></div>
+      <div class="accent-bar" style="background:#92400e"></div>
+      <span class="label" style="color:#92400e;font-family:serif">Parchment</span>
+      <span class="mode-badge" style="background:rgba(255,255,255,0.8);color:#334155">light</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Parchment</div>
+      <div class="card-desc">Old book aesthetic. All-serif typography, drop caps, sepia palette, chapter headings, colophon footer.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#92400e"></span> Sepia &middot; Manuscript</div>
+    </div>
+    <div class="card-links">
+      <a href="parchment/portfolio.html">Portfolio</a>
+      <a href="parchment/project.html">Project</a>
+      <a href="parchment/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 17. Aurora -->
+  <article class="card" data-mode="dark" data-tags="animated">
+    <div class="card-preview">
+      <div class="swatch" style="background:#020617"></div>
+      <div class="accent-bar" style="background:linear-gradient(90deg,#2dd4bf,#4ade80,#a78bfa)"></div>
+      <span class="label" style="color:#2dd4bf">Aurora</span>
+      <span class="mode-badge">dark</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Aurora</div>
+      <div class="card-desc">Northern lights gradient header that slowly shifts. Restrained dark with teal-to-green magic touch.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#2dd4bf"></span> Teal &middot; Gradient header</div>
+    </div>
+    <div class="card-links">
+      <a href="aurora/portfolio.html">Portfolio</a>
+      <a href="aurora/project.html">Project</a>
+      <a href="aurora/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 18. Grid -->
+  <article class="card" data-mode="light" data-tags="animated data-dense">
+    <div class="card-preview">
+      <div class="swatch" style="background:#fafafa"></div>
+      <div class="accent-bar" style="background:#6366f1"></div>
+      <span class="label" style="color:#4338ca">Grid</span>
+      <span class="mode-badge" style="background:rgba(255,255,255,0.8);color:#334155">light</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Grid</div>
+      <div class="card-desc">Bento dashboard layout. Mixed-size CSS grid cells like iOS widgets. Dense but organized.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#6366f1"></span> Indigo &middot; Bento grid</div>
+    </div>
+    <div class="card-links">
+      <a href="grid/portfolio.html">Portfolio</a>
+      <a href="grid/project.html">Project</a>
+      <a href="grid/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 19. Obsidian -->
+  <article class="card" data-mode="dark" data-tags="animated">
+    <div class="card-preview">
+      <div class="swatch" style="background:#09090b"></div>
+      <div class="accent-bar" style="background:#a855f7"></div>
+      <span class="label" style="color:#a855f7">Obsidian</span>
+      <span class="mode-badge">dark</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Obsidian</div>
+      <div class="card-desc">Deep black with purple gem accent. Hover shimmer like light on gemstone, premium dark feel.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#a855f7"></span> Purple &middot; Gem shimmer</div>
+    </div>
+    <div class="card-links">
+      <a href="obsidian/portfolio.html">Portfolio</a>
+      <a href="obsidian/project.html">Project</a>
+      <a href="obsidian/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 20. Chalk -->
+  <article class="card" data-mode="light" data-tags="animated">
+    <div class="card-preview">
+      <div class="swatch" style="background:#f8fafc"></div>
+      <div class="accent-bar" style="background:#334155"></div>
+      <span class="label" style="color:#334155;font-family:'Caveat',cursive">Chalk</span>
+      <span class="mode-badge" style="background:rgba(255,255,255,0.8);color:#334155">light</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Chalk</div>
+      <div class="card-desc">Whiteboard aesthetic. Handwritten display font, sketch-style borders, annotation arrows, pin-to-board animation.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#334155"></span> Slate &middot; Hand-drawn</div>
+    </div>
+    <div class="card-links">
+      <a href="chalk/portfolio.html">Portfolio</a>
+      <a href="chalk/project.html">Project</a>
+      <a href="chalk/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 21. Signal -->
+  <article class="card" data-mode="dark" data-tags="data-dense">
+    <div class="card-preview">
+      <div class="swatch" style="background:#0c0a09"></div>
+      <div class="accent-bar" style="background:linear-gradient(90deg,#ef4444,#22c55e)"></div>
+      <span class="label" style="color:#ef4444">Signal</span>
+      <span class="mode-badge">dark</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Signal</div>
+      <div class="card-desc">Mission control / Grafana aesthetic. Dense data tables, status badges, header dashboard strip, fast counters.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#ef4444"></span> Red + Green &middot; Dense data</div>
+    </div>
+    <div class="card-links">
+      <a href="signal/portfolio.html">Portfolio</a>
+      <a href="signal/project.html">Project</a>
+      <a href="signal/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 22. Canvas -->
+  <article class="card" data-mode="light" data-tags="minimal">
+    <div class="card-preview">
+      <div class="swatch" style="background:#ffffff"></div>
+      <div class="accent-bar" style="background:#fb7185"></div>
+      <span class="label" style="color:#e11d48">Canvas</span>
+      <span class="mode-badge" style="background:rgba(255,255,255,0.8);color:#334155">light</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Canvas</div>
+      <div class="card-desc">Art gallery aesthetic. Extreme whitespace, full-bleed images, large airy numbers, horizontal phase scroll.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#fb7185"></span> Coral &middot; Gallery</div>
+    </div>
+    <div class="card-links">
+      <a href="canvas/portfolio.html">Portfolio</a>
+      <a href="canvas/project.html">Project</a>
+      <a href="canvas/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 23. Meridian -->
+  <article class="card" data-mode="dark" data-tags="animated">
+    <div class="card-preview">
+      <div class="swatch" style="background:#022c22"></div>
+      <div class="accent-bar" style="background:#34d399"></div>
+      <span class="label" style="color:#34d399">Meridian</span>
+      <span class="mode-badge">dark</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Meridian</div>
+      <div class="card-desc">Topographic map aesthetic. Contour line patterns, coordinate section headers, elevation-style growth chart.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#34d399"></span> Emerald &middot; Topographic</div>
+    </div>
+    <div class="card-links">
+      <a href="meridian/portfolio.html">Portfolio</a>
+      <a href="meridian/project.html">Project</a>
+      <a href="meridian/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 24. Carbon -->
+  <article class="card" data-mode="dark" data-tags="minimal">
+    <div class="card-preview">
+      <div class="swatch" style="background:#171717"></div>
+      <div class="accent-bar" style="background:#94a3b8"></div>
+      <span class="label" style="color:#94a3b8">Carbon</span>
+      <span class="mode-badge">dark</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Carbon</div>
+      <div class="card-desc">Brushed metal industrial. Diagonal stripe texture, silver/chrome palette, embossed stats, no color.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#94a3b8"></span> Silver &middot; Industrial</div>
+    </div>
+    <div class="card-links">
+      <a href="carbon/portfolio.html">Portfolio</a>
+      <a href="carbon/project.html">Project</a>
+      <a href="carbon/session.html">Session</a>
+    </div>
+  </article>
+
+  <!-- 25. Daylight -->
+  <article class="card" data-mode="light" data-tags="animated">
+    <div class="card-preview">
+      <div class="swatch" style="background:linear-gradient(180deg,#e0f2fe,#ffffff)"></div>
+      <div class="accent-bar" style="background:#0ea5e9"></div>
+      <span class="label" style="color:#0369a1">Daylight</span>
+      <span class="mode-badge" style="background:rgba(255,255,255,0.8);color:#334155">light</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">Daylight</div>
+      <div class="card-desc">Bright, airy, optimistic. Soft blue shadows, sky blue accent, friendly rounded shapes, welcoming feel.</div>
+      <div class="card-meta"><span class="accent-dot" style="background:#0ea5e9"></span> Sky &middot; Bright</div>
+    </div>
+    <div class="card-links">
+      <a href="daylight/portfolio.html">Portfolio</a>
+      <a href="daylight/project.html">Project</a>
+      <a href="daylight/session.html">Session</a>
+    </div>
+  </article>
+
+</main>
+
+<footer class="footer">
+  26 templates &middot; 78 pages &middot; built with heyi.am
+</footer>
+
+<script>
+(function() {
+  var buttons = document.querySelectorAll('.filter-btn');
+  var cards = document.querySelectorAll('.card');
+
+  buttons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      buttons.forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+
+      var filter = btn.getAttribute('data-filter');
+
+      cards.forEach(function(card) {
+        var mode = card.getAttribute('data-mode');
+        var tags = card.getAttribute('data-tags') || '';
+        var show = false;
+
+        if (filter === 'all') show = true;
+        else if (filter === 'dark' || filter === 'light') show = (mode === filter);
+        else show = tags.indexOf(filter) !== -1;
+
+        card.style.display = show ? '' : 'none';
+      });
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

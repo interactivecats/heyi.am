@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Set up Prisma schema — BudgetWise — heyi.am</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ────────────────────────────────────────────────
+       ZEN TEMPLATE — Session Page
+       Japanese minimalism. Maximum whitespace.
+       No cards, no borders, no backgrounds.
+       Just typography and horizontal rules.
+       ──────────────────────────────────────────────── */
+
+    /* ── Reset ── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ── Zen Design Tokens ── */
+    :root {
+      /* Palette — stone family, intentionally muted */
+      --zen-bg:             #fafaf9;
+      --zen-text:           #1c1917;
+      --zen-text-secondary: #78716c;
+      --zen-text-tertiary:  #a8a29e;
+      --zen-accent:         #78716c;
+      --zen-accent-hover:   #57534e;
+      --zen-rule:           #d6d3d1;
+      --zen-selection-bg:   #d6d3d1;
+      --zen-selection-text: #1c1917;
+
+      /* Typography */
+      --zen-font-display:   'Cormorant Garamond', 'Noto Serif JP', Georgia, serif;
+      --zen-font-body:      'Inter', system-ui, sans-serif;
+      --zen-font-mono:      'IBM Plex Mono', monospace;
+
+      /* Spacing */
+      --zen-radius:         2px;
+      --zen-max-width:      640px;
+      --zen-section-gap:    6rem;
+      --zen-section-gap-sm: 4rem;
+
+      /* Motion */
+      --zen-fade-duration:  1000ms;
+      --zen-fade-ease:      cubic-bezier(0.25, 0.1, 0.25, 1);
+      --zen-stagger:        150ms;
+    }
+
+    /* ── Reduced Motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      :root {
+        --zen-fade-duration: 0ms;
+        --zen-stagger: 0ms;
+      }
+      .zen-fade {
+        opacity: 1 !important;
+        transform: none !important;
+      }
+    }
+
+    /* ── Selection ── */
+    ::selection {
+      background: var(--zen-selection-bg);
+      color: var(--zen-selection-text);
+    }
+    ::-moz-selection {
+      background: var(--zen-selection-bg);
+      color: var(--zen-selection-text);
+    }
+
+    /* ── Skip Link ── */
+    .zen-skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      background: var(--zen-text);
+      color: var(--zen-bg);
+      padding: 0.5rem 1rem;
+      font-family: var(--zen-font-body);
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: var(--zen-radius);
+      z-index: 100;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .zen-skip-link:focus {
+      top: 1rem;
+      outline: 2px solid var(--zen-accent);
+      outline-offset: 2px;
+    }
+
+    /* ── Base ── */
+    html {
+      scroll-behavior: smooth;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+    }
+
+    body {
+      font-family: var(--zen-font-body);
+      color: var(--zen-text);
+      background: var(--zen-bg);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: 100vh;
+    }
+
+    /* ── Links ── */
+    a {
+      color: var(--zen-text);
+      text-decoration: underline;
+      text-decoration-color: var(--zen-rule);
+      text-underline-offset: 3px;
+      text-decoration-thickness: 1px;
+      transition: text-decoration-color 300ms ease;
+    }
+    a:hover {
+      text-decoration-color: var(--zen-text);
+    }
+    a:focus-visible {
+      outline: 2px solid var(--zen-accent);
+      outline-offset: 3px;
+      border-radius: var(--zen-radius);
+    }
+    a:active {
+      color: var(--zen-accent-hover);
+    }
+
+    /* ── Layout ── */
+    .zen-container {
+      max-width: var(--zen-max-width);
+      margin: 0 auto;
+      padding: 3rem 1.25rem 5rem;
+    }
+
+    @media (min-width: 480px) {
+      .zen-container {
+        padding: 4rem 1.5rem 6rem;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .zen-container {
+        padding: 6rem 2rem 8rem;
+      }
+    }
+
+    /* ── Navigation ── */
+    .zen-nav {
+      padding: 1.25rem;
+      max-width: var(--zen-max-width);
+      margin: 0 auto;
+    }
+
+    @media (min-width: 768px) {
+      .zen-nav {
+        padding: 1.5rem 2rem;
+      }
+    }
+
+    .zen-nav-inner {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      font-family: var(--zen-font-mono);
+      font-size: 0.8125rem;
+      color: var(--zen-text-secondary);
+      letter-spacing: 0.01em;
+    }
+
+    .zen-nav a {
+      color: var(--zen-text-secondary);
+      text-decoration: none;
+      padding: 0.125rem 0;
+      transition: color 300ms ease;
+    }
+    .zen-nav a:hover {
+      color: var(--zen-text);
+    }
+    .zen-nav a[aria-current="page"] {
+      color: var(--zen-text);
+    }
+
+    .zen-nav-sep {
+      color: var(--zen-rule);
+      user-select: none;
+    }
+
+    /* ── Sections ── */
+    .zen-section {
+      margin-block-end: var(--zen-section-gap);
+    }
+
+    @media (max-width: 479px) {
+      .zen-section {
+        margin-block-end: var(--zen-section-gap-sm);
+      }
+    }
+
+    /* ── Horizontal Rule ── */
+    .zen-rule {
+      border: none;
+      border-block-start: 1px solid var(--zen-rule);
+      margin-block-end: var(--zen-section-gap);
+    }
+
+    @media (max-width: 479px) {
+      .zen-rule {
+        margin-block-end: var(--zen-section-gap-sm);
+      }
+    }
+
+    /* ── Fade Animation ── */
+    .zen-fade {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    .zen-fade.zen-visible {
+      opacity: 1;
+      transform: translateY(0);
+      transition:
+        opacity var(--zen-fade-duration) var(--zen-fade-ease),
+        transform var(--zen-fade-duration) var(--zen-fade-ease);
+    }
+
+    /* ── Typography ── */
+    .zen-display {
+      font-family: var(--zen-font-display);
+      font-weight: 400;
+      font-size: 1.875rem;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      color: var(--zen-text);
+      word-break: break-word;
+    }
+
+    @media (min-width: 480px) {
+      .zen-display {
+        font-size: 2rem;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .zen-display {
+        font-size: 2.5rem;
+        line-height: 1.2;
+      }
+    }
+
+    .zen-heading {
+      font-family: var(--zen-font-display);
+      font-weight: 400;
+      font-size: 1.375rem;
+      line-height: 1.3;
+      color: var(--zen-text);
+      margin-block-end: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .zen-heading {
+        font-size: 1.5rem;
+      }
+    }
+
+    .zen-subheading {
+      font-family: var(--zen-font-display);
+      font-weight: 400;
+      font-size: 1.125rem;
+      line-height: 1.4;
+      color: var(--zen-text);
+      margin-block-end: 0.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .zen-subheading {
+        font-size: 1.1875rem;
+      }
+    }
+
+    .zen-body {
+      font-family: var(--zen-font-body);
+      font-size: 0.9375rem;
+      line-height: 1.8;
+      color: var(--zen-text-secondary);
+    }
+
+    .zen-mono {
+      font-family: var(--zen-font-mono);
+      font-size: 0.8125rem;
+      color: var(--zen-text-tertiary);
+      letter-spacing: 0.01em;
+    }
+
+    /* ── Breadcrumb ── */
+    .zen-breadcrumb {
+      font-family: var(--zen-font-mono);
+      font-size: 0.8125rem;
+      color: var(--zen-text-tertiary);
+      margin-block-end: 2rem;
+      letter-spacing: 0.01em;
+      line-height: 1.6;
+    }
+
+    .zen-breadcrumb a {
+      color: var(--zen-text-tertiary);
+      transition: color 300ms ease;
+    }
+    .zen-breadcrumb a:hover {
+      color: var(--zen-text);
+    }
+
+    .zen-breadcrumb-sep {
+      margin-inline: 0.25rem;
+      user-select: none;
+    }
+
+    /* ── Session Meta ── */
+    .zen-session-meta {
+      font-family: var(--zen-font-mono);
+      font-size: 0.8125rem;
+      color: var(--zen-text-tertiary);
+      line-height: 2.2;
+      margin-block-start: 1.5rem;
+      letter-spacing: 0.01em;
+    }
+
+    .zen-session-meta-row {
+      display: block;
+    }
+
+    @media (min-width: 480px) {
+      .zen-session-meta-row {
+        display: inline;
+      }
+    }
+
+    /* ── Dev Take — italic quote ── */
+    .zen-dev-take {
+      font-family: var(--zen-font-display);
+      font-style: italic;
+      font-size: 1.125rem;
+      line-height: 1.75;
+      color: var(--zen-text-secondary);
+    }
+
+    @media (min-width: 768px) {
+      .zen-dev-take {
+        font-size: 1.1875rem;
+        line-height: 1.8;
+      }
+    }
+
+    /* ── Execution Path / Beats ── */
+    .zen-beat {
+      margin-block-end: 3rem;
+    }
+
+    .zen-beat:last-child {
+      margin-block-end: 0;
+    }
+
+    .zen-beat-number {
+      font-family: var(--zen-font-mono);
+      font-size: 0.6875rem;
+      color: var(--zen-text-tertiary);
+      margin-block-end: 0.5rem;
+      letter-spacing: 0.05em;
+    }
+
+    .zen-beat-title {
+      font-family: var(--zen-font-display);
+      font-weight: 500;
+      font-size: 1.0625rem;
+      color: var(--zen-text);
+      margin-block-end: 0.625rem;
+    }
+
+    @media (min-width: 768px) {
+      .zen-beat-title {
+        font-size: 1.125rem;
+      }
+    }
+
+    .zen-beat-desc {
+      font-family: var(--zen-font-body);
+      font-size: 0.9375rem;
+      line-height: 1.85;
+      color: var(--zen-text-secondary);
+    }
+
+    .zen-beat-divider {
+      border: none;
+      border-block-start: 1px solid var(--zen-rule);
+      margin-block-start: 3rem;
+      margin-block-end: 3rem;
+      opacity: 0.35;
+    }
+
+    /* ── Q&A ── */
+    .zen-qa-item {
+      margin-block-end: 3rem;
+    }
+
+    .zen-qa-item:last-child {
+      margin-block-end: 0;
+    }
+
+    .zen-question {
+      font-family: var(--zen-font-body);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      line-height: 1.7;
+      color: var(--zen-text);
+      margin-block-end: 0.875rem;
+    }
+
+    .zen-answer {
+      font-family: var(--zen-font-body);
+      font-size: 0.9375rem;
+      line-height: 1.85;
+      color: var(--zen-text-secondary);
+    }
+
+    .zen-qa-divider {
+      border: none;
+      border-block-start: 1px solid var(--zen-rule);
+      margin-block-start: 3rem;
+      margin-block-end: 3rem;
+      opacity: 0.35;
+    }
+
+    /* ── Details Section (sidebar data rendered inline) ── */
+    .zen-details-group {
+      margin-block-end: 3rem;
+    }
+
+    .zen-details-group:last-child {
+      margin-block-end: 0;
+    }
+
+    .zen-details-label {
+      font-family: var(--zen-font-mono);
+      font-size: 0.6875rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--zen-text-tertiary);
+      margin-block-end: 1rem;
+    }
+
+    /* ── Tools Used ── */
+    .zen-tools {
+      font-family: var(--zen-font-mono);
+      font-size: 0.8125rem;
+      color: var(--zen-text-secondary);
+      line-height: 2.2;
+      letter-spacing: 0.01em;
+    }
+
+    .zen-tool-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      max-width: 200px;
+    }
+
+    .zen-tool-name {
+      color: var(--zen-text-secondary);
+    }
+
+    .zen-tool-count {
+      color: var(--zen-text-tertiary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Files Changed ── */
+    .zen-files {
+      list-style: none;
+    }
+
+    .zen-file-item {
+      font-family: var(--zen-font-mono);
+      font-size: 0.75rem;
+      color: var(--zen-text-secondary);
+      line-height: 2.2;
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      letter-spacing: 0.01em;
+    }
+
+    .zen-file-path {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    .zen-file-diff {
+      color: var(--zen-text-tertiary);
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Skills text ── */
+    .zen-skills-text {
+      font-family: var(--zen-font-body);
+      font-size: 0.9375rem;
+      line-height: 1.8;
+      color: var(--zen-text-secondary);
+    }
+
+    /* ── Agent Summary ── */
+    .zen-agents-count {
+      font-family: var(--zen-font-mono);
+      font-size: 0.8125rem;
+      color: var(--zen-text-tertiary);
+      margin-block-end: 1rem;
+      letter-spacing: 0.01em;
+    }
+
+    .zen-agent-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-family: var(--zen-font-mono);
+      font-size: 0.8125rem;
+      line-height: 2.2;
+      letter-spacing: 0.01em;
+      max-width: 320px;
+    }
+
+    .zen-agent-role {
+      color: var(--zen-text);
+    }
+
+    .zen-agent-meta {
+      color: var(--zen-text-tertiary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Stats inline ── */
+    .zen-stats {
+      font-family: var(--zen-font-body);
+      font-size: 0.9375rem;
+      color: var(--zen-text-secondary);
+      line-height: 2;
+    }
+
+    .zen-stat-value {
+      font-family: var(--zen-font-display);
+      font-size: 1.125rem;
+      font-weight: 500;
+      color: var(--zen-text);
+    }
+
+    /* ── Footer ── */
+    .zen-footer {
+      margin-block-start: var(--zen-section-gap);
+      padding-block-start: 2rem;
+      border-block-start: 1px solid var(--zen-rule);
+    }
+
+    .zen-footer-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .zen-footer-inner {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
+    .zen-footer-text {
+      font-family: var(--zen-font-mono);
+      font-size: 0.75rem;
+      color: var(--zen-text-tertiary);
+      letter-spacing: 0.01em;
+    }
+
+    .zen-footer-nav {
+      display: flex;
+      gap: 1.5rem;
+      font-family: var(--zen-font-mono);
+      font-size: 0.75rem;
+    }
+
+    .zen-footer-nav a {
+      color: var(--zen-text-tertiary);
+      text-decoration: none;
+      transition: color 300ms ease;
+    }
+    .zen-footer-nav a:hover {
+      color: var(--zen-text);
+    }
+
+    /* ── Print Styles ── */
+    @media print {
+      body {
+        background: white;
+        color: black;
+        font-size: 11pt;
+      }
+
+      .zen-nav,
+      .zen-skip-link,
+      .zen-footer-nav {
+        display: none;
+      }
+
+      .zen-container {
+        max-width: 100%;
+        padding: 0;
+      }
+
+      .zen-fade {
+        opacity: 1 !important;
+        transform: none !important;
+      }
+
+      .zen-section {
+        margin-block-end: 2rem;
+        break-inside: avoid;
+      }
+
+      .zen-rule {
+        margin-block-end: 2rem;
+      }
+
+      .zen-display {
+        font-size: 20pt;
+      }
+
+      .zen-heading {
+        font-size: 14pt;
+      }
+
+      a {
+        text-decoration: none;
+        color: black;
+      }
+
+      a[href^="http"]::after {
+        content: " (" attr(href) ")";
+        font-size: 0.75em;
+        color: #666;
+      }
+
+      .zen-beat {
+        break-inside: avoid;
+      }
+
+      .zen-qa-item {
+        break-inside: avoid;
+      }
+
+      .zen-footer {
+        border-block-start-color: #ccc;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="zen-skip-link">Skip to content</a>
+
+  <!-- ── Navigation ── -->
+  <header>
+    <nav class="zen-nav" aria-label="Portfolio navigation">
+      <div class="zen-nav-inner">
+        <a href="./portfolio.html">@alex</a>
+        <span class="zen-nav-sep" aria-hidden="true">/</span>
+        <a href="./project.html">budgetwise</a>
+        <span class="zen-nav-sep" aria-hidden="true">/</span>
+        <a href="./session.html" aria-current="page">session</a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ── Main Content ── -->
+  <main id="main-content" class="zen-container">
+
+    <!-- ────────────────────────────────
+         Breadcrumb
+         ──────────────────────────────── -->
+    <nav class="zen-breadcrumb zen-fade" aria-label="Breadcrumb">
+      <a href="./portfolio.html">alex</a>
+      <span class="zen-breadcrumb-sep" aria-hidden="true">/</span>
+      <a href="./project.html">budgetwise</a>
+      <span class="zen-breadcrumb-sep" aria-hidden="true">/</span>
+      <span aria-current="page">Set up Prisma schema</span>
+    </nav>
+
+    <!-- ────────────────────────────────
+         Section 1: Session Header
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Session header">
+      <h1 class="zen-display">
+        Set up Prisma schema with User, Account, and Transaction models
+      </h1>
+      <div class="zen-session-meta">
+        <span class="zen-session-meta-row">February 3, 2026</span>
+        <span class="zen-session-meta-row"> &middot; Claude Code</span>
+        <span class="zen-session-meta-row"> &middot; 72 minutes</span>
+        <span class="zen-session-meta-row"> (87m wall clock)</span><br>
+        <span class="zen-session-meta-row">45 turns</span>
+        <span class="zen-session-meta-row"> &middot; 680 LOC</span>
+        <span class="zen-session-meta-row"> &middot; 4 files changed</span>
+      </div>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+
+    <!-- ────────────────────────────────
+         Section 2: Dev Take
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Developer commentary">
+      <h2 class="zen-heading">Dev Take</h2>
+      <p class="zen-dev-take">
+        &ldquo;Went with discriminated unions over STI &mdash; nullable columns
+        everywhere felt wrong. The audit log instead of soft deletes was the
+        right call too.&rdquo;
+      </p>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+
+    <!-- ────────────────────────────────
+         Section 3: Execution Path
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Execution path">
+      <h2 class="zen-heading">Execution Path</h2>
+
+      <div class="zen-beat zen-fade">
+        <p class="zen-beat-number">01</p>
+        <p class="zen-beat-title">Schema design</p>
+        <p class="zen-beat-desc">
+          Sketched out the core models &mdash; User, Account, Transaction.
+          Decided on a discriminated union for transaction types instead of
+          single-table inheritance.
+        </p>
+      </div>
+
+      <hr class="zen-beat-divider" aria-hidden="true">
+
+      <div class="zen-beat zen-fade">
+        <p class="zen-beat-number">02</p>
+        <p class="zen-beat-title">Prisma setup</p>
+        <p class="zen-beat-desc">
+          Initialized Prisma with PostgreSQL, wrote the schema file with
+          proper relations and indexes. Set up the database connection
+          configuration for local development.
+        </p>
+      </div>
+
+      <hr class="zen-beat-divider" aria-hidden="true">
+
+      <div class="zen-beat zen-fade">
+        <p class="zen-beat-number">03</p>
+        <p class="zen-beat-title">Migration</p>
+        <p class="zen-beat-desc">
+          Ran the initial migration, fixed a cascade delete issue on
+          Account &rarr; Transaction. The default restrict behavior
+          made cleanup impossible.
+        </p>
+      </div>
+
+      <hr class="zen-beat-divider" aria-hidden="true">
+
+      <div class="zen-beat zen-fade">
+        <p class="zen-beat-number">04</p>
+        <p class="zen-beat-title">Seed data</p>
+        <p class="zen-beat-desc">
+          Created a seed script with realistic test data &mdash; multiple
+          accounts, mixed transaction types. Covered edge cases like
+          zero-amount adjustments and cross-account transfers.
+        </p>
+      </div>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+
+    <!-- ────────────────────────────────
+         Section 4: Q&A
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Questions and answers">
+      <h2 class="zen-heading">Questions</h2>
+
+      <div class="zen-qa-item zen-fade">
+        <p class="zen-question">
+          Why did you choose a discriminated union over single-table inheritance
+          for transaction types?
+        </p>
+        <p class="zen-answer">
+          STI would have left nullable columns everywhere &mdash; transferTo
+          only makes sense for transfers, recurringSchedule only for recurring.
+          The union pattern keeps each type clean and the TypeScript compiler
+          catches missing fields.
+        </p>
+      </div>
+
+      <hr class="zen-qa-divider" aria-hidden="true">
+
+      <div class="zen-qa-item zen-fade">
+        <p class="zen-question">
+          How does the cascade delete work between Account and Transaction?
+        </p>
+        <p class="zen-answer">
+          Deleting an account cascades to its transactions. Initially had it set
+          to restrict, but that made account cleanup impossible without manual
+          transaction deletion first. The cascade is documented in the schema
+          comments so future contributors understand the behavior.
+        </p>
+      </div>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+
+    <!-- ────────────────────────────────
+         Section 5: Details
+         (sidebar data rendered inline)
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Session details">
+      <h2 class="zen-heading">Details</h2>
+
+      <!-- Tools Used -->
+      <div class="zen-details-group">
+        <p class="zen-details-label" id="tools-heading">Tools Used</p>
+        <div class="zen-tools" role="list" aria-labelledby="tools-heading">
+          <div class="zen-tool-row" role="listitem">
+            <span class="zen-tool-name">Edit</span>
+            <span class="zen-tool-count">18</span>
+          </div>
+          <div class="zen-tool-row" role="listitem">
+            <span class="zen-tool-name">Read</span>
+            <span class="zen-tool-count">12</span>
+          </div>
+          <div class="zen-tool-row" role="listitem">
+            <span class="zen-tool-name">Bash</span>
+            <span class="zen-tool-count">9</span>
+          </div>
+          <div class="zen-tool-row" role="listitem">
+            <span class="zen-tool-name">Write</span>
+            <span class="zen-tool-count">4</span>
+          </div>
+          <div class="zen-tool-row" role="listitem">
+            <span class="zen-tool-name">Grep</span>
+            <span class="zen-tool-count">2</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Files Changed -->
+      <div class="zen-details-group">
+        <p class="zen-details-label" id="files-heading">Files Changed</p>
+        <ul class="zen-files" role="list" aria-labelledby="files-heading">
+          <li class="zen-file-item">
+            <span class="zen-file-path">prisma/schema.prisma</span>
+            <span class="zen-file-diff">+142</span>
+          </li>
+          <li class="zen-file-item">
+            <span class="zen-file-path">prisma/seed.ts</span>
+            <span class="zen-file-diff">+89</span>
+          </li>
+          <li class="zen-file-item">
+            <span class="zen-file-path">prisma/migrations/20260203_init/migration.sql</span>
+            <span class="zen-file-diff">+415</span>
+          </li>
+          <li class="zen-file-item">
+            <span class="zen-file-path">src/lib/db.ts</span>
+            <span class="zen-file-diff">+34</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Skills -->
+      <div class="zen-details-group">
+        <p class="zen-details-label">Skills</p>
+        <p class="zen-skills-text">TypeScript, Prisma, PostgreSQL</p>
+      </div>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+
+    <!-- ────────────────────────────────
+         Section 6: Agent Summary
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Agent summary">
+      <h2 class="zen-heading">Agents</h2>
+      <p class="zen-agents-count">7 sub-sessions</p>
+
+      <div role="list" aria-label="Agent roles and contributions">
+        <div class="zen-agent-row" role="listitem">
+          <span class="zen-agent-role">backend-dev</span>
+          <span class="zen-agent-meta">25m &middot; 280 LOC</span>
+        </div>
+        <div class="zen-agent-row" role="listitem">
+          <span class="zen-agent-role">qa-engineer</span>
+          <span class="zen-agent-meta">18m &middot; 190 LOC</span>
+        </div>
+        <div class="zen-agent-row" role="listitem">
+          <span class="zen-agent-role">frontend-dev</span>
+          <span class="zen-agent-meta">15m &middot; 125 LOC</span>
+        </div>
+        <div class="zen-agent-row" role="listitem">
+          <span class="zen-agent-role">security-engineer</span>
+          <span class="zen-agent-meta">12m &middot; 85 LOC</span>
+        </div>
+        <div class="zen-agent-row" role="listitem">
+          <span class="zen-agent-role">code-reviewer</span>
+          <span class="zen-agent-meta">8m &middot; 0 LOC</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Footer ── -->
+    <footer class="zen-footer zen-fade" role="contentinfo">
+      <div class="zen-footer-inner">
+        <p class="zen-footer-text">heyi.am</p>
+        <nav class="zen-footer-nav" aria-label="Footer navigation">
+          <a href="./portfolio.html">portfolio</a>
+          <a href="./project.html">project</a>
+          <a href="./session.html">session</a>
+        </nav>
+      </div>
+    </footer>
+
+  </main>
+
+  <!-- ── Fade-in Script ── -->
+  <script>
+    /**
+     * Zen template — Intersection Observer fade-in
+     *
+     * Each .zen-fade element starts at opacity:0 with a slight
+     * translateY offset. When it enters the viewport, we add
+     * .zen-visible which triggers a 1000ms CSS transition.
+     *
+     * prefers-reduced-motion: all elements shown immediately.
+     */
+    (function () {
+      'use strict';
+
+      /* Respect user motion preferences */
+      var motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+      var elements = document.querySelectorAll('.zen-fade');
+
+      function showAllImmediately() {
+        for (var i = 0; i < elements.length; i++) {
+          elements[i].classList.add('zen-visible');
+          elements[i].style.transitionDelay = '0ms';
+        }
+      }
+
+      if (motionQuery.matches) {
+        showAllImmediately();
+        return;
+      }
+
+      /* Listen for changes (user toggles setting while page is open) */
+      if (motionQuery.addEventListener) {
+        motionQuery.addEventListener('change', function (e) {
+          if (e.matches) {
+            showAllImmediately();
+          }
+        });
+      }
+
+      /* Stagger index tracking for sequential reveal */
+      var revealIndex = 0;
+
+      var observer = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              var delay = revealIndex * 150;
+              entry.target.style.transitionDelay = delay + 'ms';
+              entry.target.classList.add('zen-visible');
+              observer.unobserve(entry.target);
+              revealIndex++;
+
+              /* Reset stagger after a batch has animated */
+              clearTimeout(observer._resetTimer);
+              observer._resetTimer = setTimeout(function () {
+                revealIndex = 0;
+              }, 200);
+            }
+          });
+        },
+        {
+          threshold: 0.08,
+          rootMargin: '0px 0px -60px 0px'
+        }
+      );
+
+      for (var j = 0; j < elements.length; j++) {
+        observer.observe(elements[j]);
+      }
+    })();
+  </script>
+</body>
+</html>

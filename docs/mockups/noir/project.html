@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noir Template — BudgetWise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Noir Design Tokens ── */
+:root {
+  --noir-bg:              #000000;
+  --noir-surface:         #0a0a0a;
+  --noir-card:            #141414;
+  --noir-border:          #2a2a2a;
+  --noir-border-strong:   #404040;
+  --noir-text:            #e5e5e5;
+  --noir-text-secondary:  #a3a3a3;
+  --noir-text-muted:      #737373;
+  --noir-white:           #ffffff;
+  --noir-highlight:       #e5e5e5;
+  --noir-rule:            #333333;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+
+  --radius: 0px;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--noir-text);
+  background-color: var(--noir-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--noir-text); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--noir-white);
+  color: var(--noir-bg);
+  padding: 0.5rem 1rem;
+  z-index: 1000;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+.skip-link:focus { top: 1rem; }
+
+/* ── Page Shell ── */
+.noir-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ── Navigation ── */
+.noir-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block-end: 1.5rem;
+  border-bottom: 1px solid var(--noir-rule);
+  margin-block-end: 3rem;
+}
+
+.noir-nav__brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--noir-white);
+  letter-spacing: -0.02em;
+}
+
+.noir-nav__links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+
+.noir-nav__links a {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--noir-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: color 0.2s;
+}
+.noir-nav__links a:hover,
+.noir-nav__links a[aria-current="page"] {
+  color: var(--noir-white);
+  text-decoration: none;
+}
+
+/* ── Section Fade-in ── */
+.noir-section {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-block-end: 3rem;
+}
+.noir-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Horizontal Rule Divider ── */
+.noir-rule {
+  border: none;
+  height: 1px;
+  background: var(--noir-rule);
+  margin-block: 3rem;
+}
+
+/* ── Section Headers ── */
+.noir-heading {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--noir-white);
+  letter-spacing: -0.02em;
+  margin-block-end: 1.5rem;
+}
+
+/* ── Breadcrumb ── */
+.noir-breadcrumb {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--noir-text-muted);
+  margin-block-end: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.noir-breadcrumb a {
+  color: var(--noir-text-secondary);
+}
+.noir-breadcrumb a:hover { color: var(--noir-white); }
+
+.noir-breadcrumb__sep { color: var(--noir-border-strong); }
+
+/* ── Project Header ── */
+.noir-project-header {
+  margin-block-end: 2rem;
+}
+
+.noir-project-header__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  color: var(--noir-white);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-block-end: 1rem;
+}
+
+.noir-project-header__links {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--noir-text-muted);
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.noir-project-header__links a {
+  color: var(--noir-text-secondary);
+  border-bottom: 1px solid var(--noir-border-strong);
+  padding-block-end: 2px;
+}
+.noir-project-header__links a:hover {
+  color: var(--noir-white);
+  text-decoration: none;
+  border-color: var(--noir-white);
+}
+
+/* ── Screenshot Placeholder ── */
+.noir-screenshot {
+  background: var(--noir-surface);
+  border: 1px solid var(--noir-border);
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.noir-screenshot__chrome {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: var(--noir-card);
+  border-bottom: 1px solid var(--noir-border);
+  display: flex;
+  align-items: center;
+  padding-inline-start: 12px;
+  gap: 6px;
+}
+
+.noir-screenshot__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--noir-border-strong);
+}
+
+.noir-screenshot__gradient {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 50%, #1a1a1a 100%);
+}
+
+.noir-screenshot__label {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text-muted);
+}
+
+/* ── Stats Grid ── */
+.noir-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
+  background: var(--noir-border);
+  border: 1px solid var(--noir-border);
+}
+.noir-leverage-row {
+  grid-column: span 2;
+  background: var(--noir-surface);
+  padding: 1.25rem 1rem;
+  display: flex;
+  justify-content: space-evenly;
+  gap: 1rem;
+  position: relative;
+}
+.noir-leverage-row::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 1rem;
+  right: 1rem;
+  height: 1px;
+  background: var(--noir-border-strong);
+}
+.noir-leverage-cell {
+  text-align: center;
+}
+.noir-leverage-cell__value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--noir-white);
+  line-height: 1.1;
+  display: block;
+}
+.noir-leverage-cell__label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--noir-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.noir-stat-cell {
+  background: var(--noir-surface);
+  padding: 1.25rem 1rem;
+  text-align: center;
+}
+
+.noir-stat-cell__value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--noir-white);
+  line-height: 1.1;
+  display: block;
+}
+
+.noir-stat-cell__label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--noir-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-block-start: 0.375rem;
+  display: block;
+}
+
+/* ── Narrative ── */
+.noir-narrative {
+}
+
+.noir-narrative p {
+  font-size: 1rem;
+  color: var(--noir-text-secondary);
+  line-height: 1.8;
+  margin-block-end: 1.25rem;
+}
+
+.noir-narrative p:last-child { margin-block-end: 0; }
+
+/* ── Work Timeline (white bars on black) ── */
+.noir-session-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.noir-session-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 220px 80px;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--noir-border);
+  transition: background 0.15s;
+}
+.noir-session-row:first-child { border-top: 1px solid var(--noir-border); }
+.noir-session-row:hover { background: var(--noir-card); }
+
+.noir-session-row__num {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text-muted);
+  text-align: center;
+}
+
+.noir-session-row__title {
+  font-size: 0.9375rem;
+  color: var(--noir-text);
+  font-weight: 500;
+}
+
+.noir-session-row__bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.noir-session-row__bar-track {
+  flex: 1;
+  height: 12px;
+  background: var(--noir-surface);
+  position: relative;
+}
+
+.noir-session-row__bar {
+  height: 100%;
+  background: var(--noir-white);
+  position: absolute;
+  left: 0;
+  top: 0;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.noir-session-row__loc {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text-muted);
+  white-space: nowrap;
+}
+
+.noir-session-row__date {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text-muted);
+  text-align: right;
+}
+
+/* ── Phases (Arc) ── */
+.noir-phases {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  counter-reset: phase;
+}
+
+.noir-phase {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--noir-border);
+  counter-increment: phase;
+}
+.noir-phase:first-child { border-top: 1px solid var(--noir-border); }
+
+.noir-phase__number {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2rem;
+  color: var(--noir-white);
+  line-height: 1;
+  text-align: center;
+}
+
+.noir-phase__name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: var(--noir-white);
+  margin-block-end: 0.375rem;
+}
+
+.noir-phase__dates {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text-muted);
+  margin-block-end: 0.375rem;
+}
+
+.noir-phase__desc {
+  font-size: 0.9375rem;
+  color: var(--noir-text-secondary);
+}
+
+/* ── Skills ── */
+.noir-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.noir-chip {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text);
+  border: 1px solid var(--noir-border-strong);
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius);
+  white-space: nowrap;
+}
+
+/* ── Key Decisions ── */
+.noir-decisions {
+  list-style: none;
+  counter-reset: decision;
+}
+
+.noir-decision {
+  counter-increment: decision;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--noir-border);
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 1rem;
+}
+.noir-decision:first-child { border-top: 1px solid var(--noir-border); }
+
+.noir-decision__num {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--noir-white);
+  text-align: center;
+}
+
+.noir-decision__text {
+  font-size: 0.9375rem;
+  color: var(--noir-text-secondary);
+  line-height: 1.7;
+}
+
+/* ── Source Breakdown ── */
+.noir-source-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.noir-source-bar-large {
+  display: flex;
+  height: 8px;
+  background: var(--noir-surface);
+  border: 1px solid var(--noir-border);
+  overflow: hidden;
+}
+
+.noir-source-bar-large__fill {
+  height: 100%;
+  background: var(--noir-white);
+}
+.noir-source-bar-large__fill--secondary {
+  height: 100%;
+  background: var(--noir-text-muted);
+}
+
+.noir-source-legend {
+  display: flex;
+  gap: 2rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.noir-source-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--noir-text-secondary);
+}
+
+.noir-source-legend__swatch {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+}
+.noir-source-legend__swatch--primary { background: var(--noir-white); }
+.noir-source-legend__swatch--secondary { background: var(--noir-text-muted); }
+
+/* ── Featured Sessions ── */
+.noir-featured-sessions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1px;
+  background: var(--noir-border);
+  border: 1px solid var(--noir-border);
+}
+
+.noir-featured-card {
+  background: var(--noir-card);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: background 0.15s;
+  text-decoration: none;
+  color: inherit;
+}
+.noir-featured-card:hover {
+  background: #1a1a1a;
+  text-decoration: none;
+}
+
+.noir-featured-card__tag {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--noir-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.noir-featured-card__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--noir-white);
+}
+
+.noir-featured-card__meta {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text-muted);
+}
+
+.noir-featured-card__agents {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--noir-text-muted);
+}
+
+/* ── Footer ── */
+.noir-footer {
+  border-top: 1px solid var(--noir-rule);
+  padding-block-start: 2rem;
+  margin-block-start: 3rem;
+  text-align: center;
+}
+
+.noir-footer__text {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text-muted);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .noir-page { padding: 1.25rem 1rem; }
+  .noir-stats-grid { grid-template-columns: repeat(3, 1fr); }
+  .noir-session-row {
+    grid-template-columns: 30px 1fr 60px;
+  }
+  .noir-session-row__bar-wrap { display: none; }
+  .noir-phase { grid-template-columns: 40px 1fr; }
+  .noir-featured-sessions { grid-template-columns: 1fr; }
+  .noir-nav__links { gap: 1rem; }
+}
+
+@media (max-width: 480px) {
+  .noir-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .noir-project-header__title { font-size: 1.375rem; }
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .noir-section {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .noir-session-row__bar { transition: none; }
+}
+
+/* ── Focus Styles ── */
+:focus-visible {
+  outline: 2px solid var(--noir-white);
+  outline-offset: 2px;
+}
+
+    /* ── Clickable session cards ── */
+    a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<div class="noir-page">
+
+  <!-- Navigation -->
+  <nav class="noir-nav" aria-label="Main navigation">
+    <a href="./portfolio.html" class="noir-nav__brand">heyi.am/alex</a>
+    <ul class="noir-nav__links" role="list">
+      <li><a href="./portfolio.html">Portfolio</a></li>
+      <li><a href="./project.html" aria-current="page">Project</a></li>
+      <li><a href="./session.html">Session</a></li>
+    </ul>
+  </nav>
+
+  <main id="main-content">
+
+    <!-- Breadcrumb -->
+    <nav class="noir-breadcrumb" aria-label="Breadcrumb">
+      <a href="./portfolio.html">alex</a>
+      <span class="noir-breadcrumb__sep">/</span>
+      <span>budgetwise</span>
+    </nav>
+
+    <!-- Project Header -->
+    <section class="noir-section noir-project-header" aria-label="Project header">
+      <h1 class="noir-project-header__title">BudgetWise</h1>
+      <div class="noir-project-header__links">
+        <a href="https://github.com/alex/budgetwise" aria-label="GitHub repository">github.com/alex/budgetwise</a>
+        <a href="https://budgetwise.app" aria-label="Live site">budgetwise.app</a>
+      </div>
+    </section>
+
+    <!-- Screenshot -->
+    <section class="noir-section" aria-label="Project screenshot">
+      <div class="noir-screenshot" role="img" aria-label="BudgetWise application screenshot placeholder">
+        <div class="noir-screenshot__chrome">
+          <span class="noir-screenshot__dot"></span>
+          <span class="noir-screenshot__dot"></span>
+          <span class="noir-screenshot__dot"></span>
+        </div>
+        <div class="noir-screenshot__gradient"></div>
+      </div>
+    </section>
+
+    <hr class="noir-rule">
+
+    <!-- Stats -->
+    <section class="noir-section" aria-label="Project statistics">
+      <div class="noir-stats-grid" role="list">
+        <div class="noir-stat-cell" role="listitem">
+          <span class="noir-stat-cell__value" data-target="8">0</span>
+          <span class="noir-stat-cell__label">Sessions</span>
+        </div>
+        <div class="noir-leverage-row" role="listitem">
+          <div class="noir-leverage-cell">
+            <span class="noir-leverage-cell__value">8.1h</span>
+            <span class="noir-leverage-cell__label">You</span>
+          </div>
+          <div class="noir-leverage-cell">
+            <span class="noir-leverage-cell__value">34.4h</span>
+            <span class="noir-leverage-cell__label">Agents</span>
+          </div>
+          <div class="noir-leverage-cell">
+            <span class="noir-leverage-cell__value">4.2&times;</span>
+            <span class="noir-leverage-cell__label">Multiplier</span>
+          </div>
+        </div>
+        <div class="noir-stat-cell" role="listitem">
+          <span class="noir-stat-cell__value" data-target="4460">0</span>
+          <span class="noir-stat-cell__label">LOC</span>
+        </div>
+        <div class="noir-stat-cell" role="listitem">
+          <span class="noir-stat-cell__value" data-target="156">0</span>
+          <span class="noir-stat-cell__label">Files</span>
+        </div>
+        <div class="noir-stat-cell" role="listitem">
+          <span class="noir-stat-cell__value" data-target-text="2.1M">--</span>
+          <span class="noir-stat-cell__label">Tokens</span>
+        </div>
+      </div>
+    </section>
+
+    <hr class="noir-rule">
+
+    <!-- Narrative -->
+    <section class="noir-section" aria-label="Project narrative">
+      <h2 class="noir-heading">Narrative</h2>
+      <div class="noir-narrative">
+        <p>Started with a basic Prisma schema but realized halfway through that I needed polymorphic transaction types. The AI kept suggesting single-table inheritance but I pushed back &mdash; went with a discriminated union pattern instead. Nullable fields for transfer-specific data, hard deletes with an audit log.</p>
+        <p>The recurring transaction detection was the hardest part. Had to figure out the right tolerance windows &mdash; monthly transactions drift by a few days, weekly ones are more precise. Settled on three consecutive interval matches before marking something as recurring. The partial index on merchant_normalized brought the detection query from 2 seconds to 120ms on 10k transactions.</p>
+        <p>Plaid integration went smoother than expected. The token exchange flow is straightforward, but the webhook handling needed careful idempotency &mdash; Plaid sends duplicate webhooks, so I used a processed-events table keyed on webhook ID.</p>
+      </div>
+    </section>
+
+    <hr class="noir-rule">
+
+    <!-- Sessions Timeline -->
+    <section class="noir-section" aria-label="Sessions timeline">
+      <h2 class="noir-heading">Sessions</h2>
+      <div class="noir-session-timeline" role="list">
+
+        <div class="noir-session-row" role="listitem">
+          <span class="noir-session-row__num">01</span>
+          <a href="./session.html" class="noir-session-row__title">Set up Prisma schema</a>
+          <div class="noir-session-row__bar-wrap">
+            <div class="noir-session-row__bar-track" role="progressbar" aria-valuenow="680" aria-valuemin="0" aria-valuemax="890" aria-label="680 lines of code">
+              <div class="noir-session-row__bar" style="width: 0%;" data-width="76%"></div>
+            </div>
+            <span class="noir-session-row__loc">680 LOC</span>
+          </div>
+          <span class="noir-session-row__date">Feb 3</span>
+        </div>
+
+        <div class="noir-session-row" role="listitem">
+          <span class="noir-session-row__num">02</span>
+          <span class="noir-session-row__title">Transaction list + infinite scroll</span>
+          <div class="noir-session-row__bar-wrap">
+            <div class="noir-session-row__bar-track" role="progressbar" aria-valuenow="520" aria-valuemin="0" aria-valuemax="890" aria-label="520 lines of code">
+              <div class="noir-session-row__bar" style="width: 0%;" data-width="58%"></div>
+            </div>
+            <span class="noir-session-row__loc">520 LOC</span>
+          </div>
+          <span class="noir-session-row__date">Feb 14</span>
+        </div>
+
+        <div class="noir-session-row" role="listitem">
+          <span class="noir-session-row__num">03</span>
+          <span class="noir-session-row__title">Recurring transaction detection</span>
+          <div class="noir-session-row__bar-wrap">
+            <div class="noir-session-row__bar-track" role="progressbar" aria-valuenow="890" aria-valuemin="0" aria-valuemax="890" aria-label="890 lines of code">
+              <div class="noir-session-row__bar" style="width: 0%;" data-width="100%"></div>
+            </div>
+            <span class="noir-session-row__loc">890 LOC</span>
+          </div>
+          <span class="noir-session-row__date">Mar 1</span>
+        </div>
+
+        <div class="noir-session-row" role="listitem">
+          <span class="noir-session-row__num">04</span>
+          <span class="noir-session-row__title">Stripe integration</span>
+          <div class="noir-session-row__bar-wrap">
+            <div class="noir-session-row__bar-track" role="progressbar" aria-valuenow="420" aria-valuemin="0" aria-valuemax="890" aria-label="420 lines of code">
+              <div class="noir-session-row__bar" style="width: 0%;" data-width="47%"></div>
+            </div>
+            <span class="noir-session-row__loc">420 LOC</span>
+          </div>
+          <span class="noir-session-row__date">Mar 10</span>
+        </div>
+
+        <div class="noir-session-row" role="listitem">
+          <span class="noir-session-row__num">05</span>
+          <span class="noir-session-row__title">CSV import pipeline</span>
+          <div class="noir-session-row__bar-wrap">
+            <div class="noir-session-row__bar-track" role="progressbar" aria-valuenow="380" aria-valuemin="0" aria-valuemax="890" aria-label="380 lines of code">
+              <div class="noir-session-row__bar" style="width: 0%;" data-width="43%"></div>
+            </div>
+            <span class="noir-session-row__loc">380 LOC</span>
+          </div>
+          <span class="noir-session-row__date">Mar 14</span>
+        </div>
+
+        <div class="noir-session-row" role="listitem">
+          <span class="noir-session-row__num">06</span>
+          <span class="noir-session-row__title">Full-text search tsvector</span>
+          <div class="noir-session-row__bar-wrap">
+            <div class="noir-session-row__bar-track" role="progressbar" aria-valuenow="510" aria-valuemin="0" aria-valuemax="890" aria-label="510 lines of code">
+              <div class="noir-session-row__bar" style="width: 0%;" data-width="57%"></div>
+            </div>
+            <span class="noir-session-row__loc">510 LOC</span>
+          </div>
+          <span class="noir-session-row__date">Mar 18</span>
+        </div>
+
+        <div class="noir-session-row" role="listitem">
+          <span class="noir-session-row__num">07</span>
+          <span class="noir-session-row__title">Spending insights dashboard</span>
+          <div class="noir-session-row__bar-wrap">
+            <div class="noir-session-row__bar-track" role="progressbar" aria-valuenow="720" aria-valuemin="0" aria-valuemax="890" aria-label="720 lines of code">
+              <div class="noir-session-row__bar" style="width: 0%;" data-width="81%"></div>
+            </div>
+            <span class="noir-session-row__loc">720 LOC</span>
+          </div>
+          <span class="noir-session-row__date">Mar 22</span>
+        </div>
+
+        <div class="noir-session-row" role="listitem">
+          <span class="noir-session-row__num">08</span>
+          <span class="noir-session-row__title">Mobile responsive + 2FA</span>
+          <div class="noir-session-row__bar-wrap">
+            <div class="noir-session-row__bar-track" role="progressbar" aria-valuenow="340" aria-valuemin="0" aria-valuemax="890" aria-label="340 lines of code">
+              <div class="noir-session-row__bar" style="width: 0%;" data-width="38%"></div>
+            </div>
+            <span class="noir-session-row__loc">340 LOC</span>
+          </div>
+          <span class="noir-session-row__date">Mar 26</span>
+        </div>
+
+      </div>
+    </section>
+
+    <hr class="noir-rule">
+
+    <!-- Phases -->
+    <section class="noir-section" aria-label="Project phases">
+      <h2 class="noir-heading">Phases</h2>
+      <div class="noir-phases">
+        <article class="noir-phase">
+          <span class="noir-phase__number">01</span>
+          <div>
+            <h3 class="noir-phase__name">Foundation</h3>
+            <p class="noir-phase__dates">Feb 3 &ndash; 14</p>
+            <p class="noir-phase__desc">Schema design, Prisma setup, transaction CRUD</p>
+          </div>
+        </article>
+        <article class="noir-phase">
+          <span class="noir-phase__number">02</span>
+          <div>
+            <h3 class="noir-phase__name">Data Pipeline</h3>
+            <p class="noir-phase__dates">Feb 17 &ndash; 26</p>
+            <p class="noir-phase__desc">CSV import, Plaid integration, recurring detection</p>
+          </div>
+        </article>
+        <article class="noir-phase">
+          <span class="noir-phase__number">03</span>
+          <div>
+            <h3 class="noir-phase__name">Intelligence</h3>
+            <p class="noir-phase__dates">Mar 1 &ndash; 14</p>
+            <p class="noir-phase__desc">Search, full-text indexing, spending insights</p>
+          </div>
+        </article>
+        <article class="noir-phase">
+          <span class="noir-phase__number">04</span>
+          <div>
+            <h3 class="noir-phase__name">Hardening</h3>
+            <p class="noir-phase__dates">Mar 16 &ndash; 26</p>
+            <p class="noir-phase__desc">2FA, mobile responsive, CI/CD, performance</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <hr class="noir-rule">
+
+    <!-- Skills -->
+    <section class="noir-section" aria-label="Technologies used">
+      <h2 class="noir-heading">Skills</h2>
+      <div class="noir-chips">
+        <span class="noir-chip">TypeScript</span>
+        <span class="noir-chip">React</span>
+        <span class="noir-chip">Next.js</span>
+        <span class="noir-chip">Prisma</span>
+        <span class="noir-chip">PostgreSQL</span>
+        <span class="noir-chip">Tailwind CSS</span>
+        <span class="noir-chip">Stripe API</span>
+        <span class="noir-chip">Plaid API</span>
+        <span class="noir-chip">Chart.js</span>
+        <span class="noir-chip">Playwright</span>
+      </div>
+    </section>
+
+    <hr class="noir-rule">
+
+    <!-- Key Decisions -->
+    <section class="noir-section" aria-label="Key decisions">
+      <h2 class="noir-heading">Key Decisions</h2>
+      <ol class="noir-decisions">
+        <li class="noir-decision">
+          <span class="noir-decision__num">1</span>
+          <p class="noir-decision__text">Discriminated union over single-table inheritance for transaction types</p>
+        </li>
+        <li class="noir-decision">
+          <span class="noir-decision__num">2</span>
+          <p class="noir-decision__text">Partial index on merchant_normalized for 16x query speedup</p>
+        </li>
+        <li class="noir-decision">
+          <span class="noir-decision__num">3</span>
+          <p class="noir-decision__text">Processed-events table for Plaid webhook idempotency</p>
+        </li>
+      </ol>
+    </section>
+
+    <hr class="noir-rule">
+
+    <!-- Source Breakdown -->
+    <section class="noir-section" aria-label="Source breakdown">
+      <h2 class="noir-heading">Source Breakdown</h2>
+      <div class="noir-source-breakdown">
+        <div class="noir-source-bar-large" aria-label="Claude Code 62.5%, Cursor 37.5%">
+          <div class="noir-source-bar-large__fill" style="width: 62.5%;"></div>
+          <div class="noir-source-bar-large__fill--secondary" style="width: 37.5%;"></div>
+        </div>
+        <div class="noir-source-legend">
+          <span class="noir-source-legend__item">
+            <span class="noir-source-legend__swatch noir-source-legend__swatch--primary"></span>
+            Claude Code &mdash; 62.5% (5 sessions)
+          </span>
+          <span class="noir-source-legend__item">
+            <span class="noir-source-legend__swatch noir-source-legend__swatch--secondary"></span>
+            Cursor &mdash; 37.5% (3 sessions)
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <hr class="noir-rule">
+
+    <!-- Featured Sessions -->
+    <section class="noir-section" aria-label="Featured sessions">
+      <h2 class="noir-heading">Featured Sessions</h2>
+      <div class="noir-featured-sessions">
+        <a href="./session.html" class="noir-featured-card">
+          <span class="noir-featured-card__tag">schema</span>
+          <h3 class="noir-featured-card__title">Prisma schema</h3>
+          <span class="noir-featured-card__meta">72m &middot; 680 LOC</span>
+          <span class="noir-featured-card__agents">7 agents</span>
+        </a>
+        <a href="./session.html" class="noir-featured-card">
+          <span class="noir-featured-card__tag">frontend</span>
+          <h3 class="noir-featured-card__title">Transaction list</h3>
+          <span class="noir-featured-card__meta">65m &middot; 520 LOC</span>
+          <span class="noir-featured-card__agents">5 agents</span>
+        </a>
+        <a href="./session.html" class="noir-featured-card">
+          <span class="noir-featured-card__tag">algorithm</span>
+          <h3 class="noir-featured-card__title">Recurring detection</h3>
+          <span class="noir-featured-card__meta">88m &middot; 890 LOC</span>
+          <span class="noir-featured-card__agents">6 agents</span>
+        </a>
+        <a href="./session.html" class="noir-featured-card">
+          <span class="noir-featured-card__tag">import</span>
+          <h3 class="noir-featured-card__title">CSV import</h3>
+          <span class="noir-featured-card__meta">78m &middot; 640 LOC</span>
+          <span class="noir-featured-card__agents">5 agents</span>
+        </a>
+        <a href="./session.html" class="noir-featured-card">
+          <span class="noir-featured-card__tag">integration</span>
+          <h3 class="noir-featured-card__title">Plaid integration</h3>
+          <span class="noir-featured-card__meta">90m &middot; 780 LOC</span>
+          <span class="noir-featured-card__agents">8 agents</span>
+        </a>
+        <a href="./session.html" class="noir-featured-card">
+          <span class="noir-featured-card__tag">insights</span>
+          <h3 class="noir-featured-card__title">Spending insights</h3>
+          <span class="noir-featured-card__meta">70m &middot; 620 LOC</span>
+          <span class="noir-featured-card__agents">4 agents</span>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="noir-footer">
+    <p class="noir-footer__text">Built with heyi.am</p>
+  </footer>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Section fade-in on scroll
+  var sections = document.querySelectorAll('.noir-section');
+
+  if (prefersReducedMotion) {
+    sections.forEach(function(s) { s.classList.add('visible'); });
+  } else {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    sections.forEach(function(s) { observer.observe(s); });
+  }
+
+  // Stat counter animation
+  function animateCounters() {
+    var counters = document.querySelectorAll('[data-target]');
+    counters.forEach(function(counter) {
+      var target = parseInt(counter.getAttribute('data-target'), 10);
+      if (prefersReducedMotion) {
+        counter.textContent = target.toLocaleString();
+        return;
+      }
+      var duration = 1000;
+      var startTime = null;
+
+      function step(timestamp) {
+        if (!startTime) startTime = timestamp;
+        var progress = Math.min((timestamp - startTime) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        var current = Math.floor(eased * target);
+        counter.textContent = current.toLocaleString();
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        } else {
+          counter.textContent = target.toLocaleString();
+        }
+      }
+      requestAnimationFrame(step);
+    });
+
+    // Text-based stat values (no animation, just reveal)
+    var textCounters = document.querySelectorAll('[data-target-text]');
+    textCounters.forEach(function(counter) {
+      counter.textContent = counter.getAttribute('data-target-text');
+    });
+  }
+
+  // Trigger counters when stats become visible
+  var statsSection = document.querySelector('[aria-label="Project statistics"]');
+  if (statsSection) {
+    if (prefersReducedMotion) {
+      animateCounters();
+    } else {
+      var statsObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            animateCounters();
+            statsObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.3 });
+      statsObserver.observe(statsSection);
+    }
+  }
+
+  // Animate session bars on scroll
+  var sessionSection = document.querySelector('[aria-label="Sessions timeline"]');
+  if (sessionSection) {
+    var bars = sessionSection.querySelectorAll('.noir-session-row__bar');
+    if (prefersReducedMotion) {
+      bars.forEach(function(bar) {
+        bar.style.width = bar.getAttribute('data-width');
+      });
+    } else {
+      var barObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            bars.forEach(function(bar, i) {
+              setTimeout(function() {
+                bar.style.width = bar.getAttribute('data-width');
+              }, i * 80);
+            });
+            barObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.2 });
+      barObserver.observe(sessionSection);
+    }
+  }
+})();
+</script>
+
+</body>
+</html>

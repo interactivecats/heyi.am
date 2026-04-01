@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alex Chen — Portfolio | Signal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Signal Design Tokens ── */
+  :root {
+    --bg: #0c0a09;
+    --surface: #1c1917;
+    --surface-raised: #292524;
+    --border: #44403c;
+    --border-subtle: #292524;
+    --fg: #e7e5e4;
+    --fg-muted: #a8a29e;
+    --fg-dim: #78716c;
+    --accent: #ef4444;
+    --accent-dim: rgba(239, 68, 68, 0.15);
+    --green: #22c55e;
+    --green-dim: rgba(34, 197, 94, 0.15);
+    --yellow: #eab308;
+    --yellow-dim: rgba(234, 179, 8, 0.15);
+    --radius: 2px;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  /* ── Base ── */
+  body {
+    font-family: var(--font-body);
+    color: var(--fg);
+    background: var(--bg);
+    line-height: 1.5;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  a:hover { color: #f87171; }
+  a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius);
+  }
+
+  /* ── Skip Link ── */
+  .skip-link {
+    position: absolute;
+    inset-inline-start: -9999px;
+    top: 0;
+    background: var(--accent);
+    color: #fff;
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    z-index: 1000;
+    border-radius: var(--radius);
+  }
+  .skip-link:focus {
+    inset-inline-start: 8px;
+    top: 8px;
+    color: #fff;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 1120px;
+    margin-inline: auto;
+    padding-inline: 20px;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 12px 0;
+    background: rgba(12, 10, 9, 0.95);
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-brand {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .nav-brand .dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .nav-links {
+    display: flex;
+    gap: 4px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    text-decoration: none;
+    padding: 4px 10px;
+    border-radius: var(--radius);
+    transition: background 0.15s, color 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .nav-links a:hover {
+    background: var(--surface);
+    color: var(--fg);
+  }
+  .nav-links a[aria-current="page"] {
+    background: var(--accent-dim);
+    color: var(--accent);
+  }
+
+  /* ── Dashboard Strip ── */
+  .dashboard-strip {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 20px 0;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .stat-cell {
+    background: var(--surface);
+    padding: 16px 20px;
+    text-align: center;
+  }
+  .stat-value {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--fg);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-value[data-animate] {
+    opacity: 0;
+  }
+  .stat-value.counted {
+    opacity: 1;
+  }
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--fg-dim);
+  }
+
+  .stat-value.green { color: var(--green); }
+  .stat-value.red { color: var(--accent); }
+  .stat-cell--leverage-group {
+    grid-column: span 3;
+    display: flex;
+    gap: 1px;
+    background: var(--border-subtle);
+  }
+  .stat-cell--leverage-group .stat-cell {
+    flex: 1;
+    background: var(--surface);
+  }
+
+  /* ── Header / Identity ── */
+  .identity {
+    padding: 32px 0 24px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .identity-profile {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+  .identity-photo {
+    width: 100px;
+    height: 100px;
+    border-radius: var(--radius);
+    object-fit: cover;
+    object-position: 55% 10%;
+    border: 2px solid var(--accent);
+    flex-shrink: 0;
+  }
+  .identity-details {
+    flex: 1;
+    min-width: 0;
+  }
+  .identity-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .identity h1 {
+    font-family: var(--font-display);
+    font-size: clamp(24px, 4vw, 32px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .identity-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--green);
+    background: var(--green-dim);
+    padding: 4px 10px;
+    border-radius: var(--radius);
+    white-space: nowrap;
+  }
+  .identity-status .status-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+  }
+  .identity-bio {
+    margin-top: 12px;
+    color: var(--fg-muted);
+    font-size: 14px;
+    max-width: 640px;
+    line-height: 1.6;
+  }
+  .identity-location {
+    margin-top: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .identity-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+    list-style: none;
+  }
+  .identity-contact a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    transition: color 0.15s;
+  }
+  .identity-contact a:hover {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .identity-contact svg {
+    flex-shrink: 0;
+  }
+  .identity-resume {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 4px 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #fff;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+  .identity-resume:hover {
+    opacity: 0.85;
+    text-decoration: none;
+    color: #fff;
+  }
+
+  /* ── Section headers ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-top: 32px;
+  }
+  .section-header h2 {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .section-header .section-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 2px 8px;
+    border-radius: var(--radius);
+  }
+  .section-header .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border-subtle);
+  }
+
+  /* ── Project Table ── */
+  .project-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+  }
+  .project-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 700px;
+  }
+  .project-table thead {
+    background: var(--surface);
+  }
+  .project-table th {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--fg-dim);
+    padding: 10px 16px;
+    text-align: start;
+    border-bottom: 1px solid var(--border-subtle);
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  .project-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: top;
+  }
+  .project-table tbody tr {
+    transition: background 0.1s;
+  }
+  .project-table tbody tr:hover {
+    background: var(--surface);
+  }
+  .project-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+  .project-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--fg);
+  }
+  .project-name a {
+    color: var(--fg);
+  }
+  .project-name a:hover {
+    color: var(--accent);
+  }
+  .project-narrative {
+    color: var(--fg-muted);
+    font-size: 12px;
+    margin-top: 2px;
+    line-height: 1.5;
+    max-width: 360px;
+  }
+  .stat-mono {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    white-space: nowrap;
+  }
+  .stat-green {
+    color: var(--green);
+  }
+
+  /* ── Source bar ── */
+  .source-bar-wrap {
+    min-width: 120px;
+  }
+  .source-bar {
+    display: flex;
+    height: 6px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface-raised);
+    margin-bottom: 4px;
+  }
+  .source-bar .segment-claude {
+    background: var(--accent);
+  }
+  .source-bar .segment-cursor {
+    background: var(--yellow);
+  }
+  .source-legend {
+    display: flex;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--fg-dim);
+  }
+  .source-legend .dot-claude {
+    color: var(--accent);
+  }
+  .source-legend .dot-cursor {
+    color: var(--yellow);
+  }
+
+  /* ── Skill badges ── */
+  .skill-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .skill-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: var(--radius);
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .skill-badge.strong {
+    color: var(--green);
+    background: var(--green-dim);
+  }
+  .skill-badge.learning {
+    color: var(--yellow);
+    background: var(--yellow-dim);
+  }
+  .skill-badge.alert {
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  /* ── Overall Source Breakdown ── */
+  .source-breakdown {
+    margin-top: 32px;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+  }
+  .source-breakdown h3 {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--fg-dim);
+    margin-bottom: 12px;
+  }
+  .source-stacked-bar {
+    display: flex;
+    height: 24px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface-raised);
+    margin-bottom: 12px;
+  }
+  .source-stacked-bar .seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: #fff;
+    font-weight: 600;
+    transition: flex-basis 0.6s ease-out;
+  }
+  .source-stacked-bar .seg-claude {
+    background: var(--accent);
+  }
+  .source-stacked-bar .seg-cursor {
+    background: var(--yellow);
+    color: #000;
+  }
+  .source-breakdown-legend {
+    display: flex;
+    gap: 24px;
+  }
+  .source-breakdown-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+  }
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius);
+  }
+  .legend-dot.claude { background: var(--accent); }
+  .legend-dot.cursor { background: var(--yellow); }
+
+  /* ── Skills Summary ── */
+  .skills-summary {
+    margin-top: 32px;
+  }
+  .skills-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    margin-top: 48px;
+    padding: 16px 0;
+    border-top: 1px solid var(--border-subtle);
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-dim);
+  }
+
+  /* ── Animations ── */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+  }
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    .fade-in { opacity: 1; transform: none; }
+    .stat-value[data-animate] { opacity: 1; }
+    .nav-brand .dot { animation: none; }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .identity-profile {
+      flex-direction: column;
+    }
+    .identity-photo {
+      width: 80px;
+      height: 80px;
+    }
+    .identity-top {
+      flex-direction: column;
+    }
+    .identity-contact { font-size: 10px; }
+    .project-table-wrap {
+      margin-inline: -20px;
+      border-radius: 0;
+      border-inline: none;
+    }
+    .source-breakdown-legend {
+      flex-direction: column;
+      gap: 8px;
+    }
+  }
+</style>
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <!-- ── Nav ── -->
+  <nav class="nav" aria-label="Main navigation">
+    <div class="container nav-inner">
+      <a href="./portfolio.html" class="nav-brand" aria-label="Signal home">
+        <span class="dot" aria-hidden="true"></span>
+        signal
+      </a>
+      <ul class="nav-links">
+        <li><a href="./portfolio.html" aria-current="page">Portfolio</a></li>
+        <li><a href="./project.html">Project</a></li>
+        <li><a href="./session.html">Session</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── Dashboard Strip ── -->
+  <section class="dashboard-strip" aria-label="Portfolio statistics">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat-cell">
+          <div class="stat-value" data-animate data-target="3">0</div>
+          <div class="stat-label">Projects</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value" data-animate data-target="28">0</div>
+          <div class="stat-label">Sessions</div>
+        </div>
+        <div class="stat-cell--leverage-group">
+          <div class="stat-cell">
+            <div class="stat-value">24h</div>
+            <div class="stat-label">You</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-value green">100h</div>
+            <div class="stat-label">Agents</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-value green">4.2x</div>
+            <div class="stat-label">Multi</div>
+          </div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value" data-animate data-target="18400">0</div>
+          <div class="stat-label">Lines Changed</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Main Content ── -->
+  <main id="main" class="container">
+
+    <!-- ── Identity ── -->
+    <section class="identity fade-in" aria-label="Developer identity">
+      <div class="identity-profile">
+        <img src="../assets/headshot-man-2-400.jpg" alt="Alex Chen" class="identity-photo" width="80" height="80">
+        <div class="identity-details">
+          <div class="identity-top">
+            <div>
+              <h1>Alex Chen</h1>
+              <p class="identity-bio">Full-stack engineer building tools for personal finance and real-time collaboration. I care about schema design, performance, and building things that feel right. Previously at Stripe and a YC startup.</p>
+              <p class="identity-location">San Francisco, CA</p>
+            </div>
+            <div class="identity-status" aria-label="Status: active">
+              <span class="status-dot" aria-hidden="true"></span>
+              Active
+            </div>
+          </div>
+          <ul class="identity-contact" aria-label="Contact and social links">
+            <li><a href="mailto:alex@heyiam.com"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg>alex@heyiam.com</a></li>
+            <li><a href="https://linkedin.com/in/alexchen"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>LinkedIn</a></li>
+            <li><a href="https://github.com/interactivecats/heyi.am"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>GitHub</a></li>
+            <li><a href="https://x.com/alexchendev"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>@alexchendev</a></li>
+            <li><a href="https://alexchen.dev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>alexchen.dev</a></li>
+          </ul>
+          <a href="./project.html" class="identity-resume"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>Download Resume</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Projects Table ── -->
+    <section class="fade-in" aria-label="Projects">
+      <div class="section-header">
+        <h2>Projects</h2>
+        <span class="section-tag">3 total</span>
+        <div class="section-line" aria-hidden="true"></div>
+      </div>
+      <div class="project-table-wrap" role="region" aria-label="Projects table" tabindex="0">
+        <table class="project-table">
+          <thead>
+            <tr>
+              <th scope="col">Project</th>
+              <th scope="col">Sessions</th>
+              <th scope="col">Hours</th>
+              <th scope="col">LOC</th>
+              <th scope="col">Source Mix</th>
+              <th scope="col">Skills</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="project-name"><a href="./project.html">BudgetWise</a></div>
+                <div class="project-narrative">Personal finance app with recurring transaction detection, Plaid integration, and spending insights dashboard.</div>
+              </td>
+              <td class="stat-mono">8</td>
+              <td class="stat-mono">42.5h</td>
+              <td class="stat-mono stat-green">4,460</td>
+              <td class="source-bar-wrap">
+                <div class="source-bar">
+                  <div class="segment-claude" style="width: 62.5%;" aria-label="Claude 62.5%"></div>
+                  <div class="segment-cursor" style="width: 37.5%;" aria-label="Cursor 37.5%"></div>
+                </div>
+                <div class="source-legend">
+                  <span><span class="dot-claude" aria-hidden="true">&#9632;</span> 62.5%</span>
+                  <span><span class="dot-cursor" aria-hidden="true">&#9632;</span> 37.5%</span>
+                </div>
+              </td>
+              <td>
+                <div class="skill-badges">
+                  <span class="skill-badge strong">TypeScript</span>
+                  <span class="skill-badge strong">React</span>
+                  <span class="skill-badge strong">Next.js</span>
+                  <span class="skill-badge learning">Prisma</span>
+                  <span class="skill-badge strong">PostgreSQL</span>
+                  <span class="skill-badge learning">Stripe API</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="project-name"><a href="./project.html">ShellHook</a></div>
+                <div class="project-narrative">Rust CLI tool for managing git hooks with TOML configuration and automatic symlinking.</div>
+              </td>
+              <td class="stat-mono">7</td>
+              <td class="stat-mono">32h</td>
+              <td class="stat-mono stat-green">3,580</td>
+              <td class="source-bar-wrap">
+                <div class="source-bar">
+                  <div class="segment-claude" style="width: 85%;" aria-label="Claude 85%"></div>
+                  <div class="segment-cursor" style="width: 15%;" aria-label="Cursor 15%"></div>
+                </div>
+                <div class="source-legend">
+                  <span><span class="dot-claude" aria-hidden="true">&#9632;</span> 85%</span>
+                  <span><span class="dot-cursor" aria-hidden="true">&#9632;</span> 15%</span>
+                </div>
+              </td>
+              <td>
+                <div class="skill-badges">
+                  <span class="skill-badge alert">Rust</span>
+                  <span class="skill-badge strong">CLI design</span>
+                  <span class="skill-badge learning">TOML parsing</span>
+                  <span class="skill-badge learning">Git internals</span>
+                  <span class="skill-badge strong">Shell scripting</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="project-name"><a href="./project.html">PixelBoard</a></div>
+                <div class="project-narrative">Real-time collaborative drawing canvas with CRDT-based state sync and pressure-sensitive input.</div>
+              </td>
+              <td class="stat-mono">5</td>
+              <td class="stat-mono">28h</td>
+              <td class="stat-mono stat-green">2,940</td>
+              <td class="source-bar-wrap">
+                <div class="source-bar">
+                  <div class="segment-claude" style="width: 60%;" aria-label="Claude 60%"></div>
+                  <div class="segment-cursor" style="width: 40%;" aria-label="Cursor 40%"></div>
+                </div>
+                <div class="source-legend">
+                  <span><span class="dot-claude" aria-hidden="true">&#9632;</span> 60%</span>
+                  <span><span class="dot-cursor" aria-hidden="true">&#9632;</span> 40%</span>
+                </div>
+              </td>
+              <td>
+                <div class="skill-badges">
+                  <span class="skill-badge strong">TypeScript</span>
+                  <span class="skill-badge learning">WebSocket</span>
+                  <span class="skill-badge learning">Canvas API</span>
+                  <span class="skill-badge strong">Redis</span>
+                  <span class="skill-badge strong">Express</span>
+                  <span class="skill-badge alert">CRDT</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="project-name"><a href="./project.html">DevLog</a></div>
+                <div class="project-narrative">CLI tool for capturing development decisions and context as structured markdown notes.</div>
+              </td>
+              <td class="stat-mono">5</td>
+              <td class="stat-mono">18h</td>
+              <td class="stat-mono stat-green">1,840</td>
+              <td class="source-bar-wrap">
+                <div class="source-bar">
+                  <div class="segment-claude" style="width: 80%;" aria-label="Claude 80%"></div>
+                  <div class="segment-cursor" style="width: 20%;" aria-label="Cursor 20%"></div>
+                </div>
+                <div class="source-legend">
+                  <span><span class="dot-claude" aria-hidden="true">&#9632;</span> 80%</span>
+                  <span><span class="dot-cursor" aria-hidden="true">&#9632;</span> 20%</span>
+                </div>
+              </td>
+              <td>
+                <div class="skill-badges">
+                  <span class="skill-badge strong">TypeScript</span>
+                  <span class="skill-badge strong">Node.js</span>
+                  <span class="skill-badge learning">CLI design</span>
+                  <span class="skill-badge learning">Markdown</span>
+                  <span class="skill-badge alert">SQLite</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="project-name"><a href="./project.html">Snapgrid</a></div>
+                <div class="project-narrative">Responsive image gallery with masonry layout, lazy loading, and keyboard navigation.</div>
+              </td>
+              <td class="stat-mono">4</td>
+              <td class="stat-mono">14h</td>
+              <td class="stat-mono stat-green">1,520</td>
+              <td class="source-bar-wrap">
+                <div class="source-bar">
+                  <div class="segment-claude" style="width: 50%;" aria-label="Claude 50%"></div>
+                  <div class="segment-cursor" style="width: 50%;" aria-label="Cursor 50%"></div>
+                </div>
+                <div class="source-legend">
+                  <span><span class="dot-claude" aria-hidden="true">&#9632;</span> 50%</span>
+                  <span><span class="dot-cursor" aria-hidden="true">&#9632;</span> 50%</span>
+                </div>
+              </td>
+              <td>
+                <div class="skill-badges">
+                  <span class="skill-badge strong">TypeScript</span>
+                  <span class="skill-badge strong">React</span>
+                  <span class="skill-badge learning">CSS Grid</span>
+                  <span class="skill-badge learning">IntersectionObserver</span>
+                  <span class="skill-badge alert">Accessibility</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="project-name"><a href="./project.html">Terracotta</a></div>
+                <div class="project-narrative">Design token pipeline that generates CSS custom properties, Tailwind config, and Figma tokens from a single YAML source.</div>
+              </td>
+              <td class="stat-mono">6</td>
+              <td class="stat-mono">22h</td>
+              <td class="stat-mono stat-green">2,680</td>
+              <td class="source-bar-wrap">
+                <div class="source-bar">
+                  <div class="segment-claude" style="width: 70%;" aria-label="Claude 70%"></div>
+                  <div class="segment-cursor" style="width: 30%;" aria-label="Cursor 30%"></div>
+                </div>
+                <div class="source-legend">
+                  <span><span class="dot-claude" aria-hidden="true">&#9632;</span> 70%</span>
+                  <span><span class="dot-cursor" aria-hidden="true">&#9632;</span> 30%</span>
+                </div>
+              </td>
+              <td>
+                <div class="skill-badges">
+                  <span class="skill-badge strong">TypeScript</span>
+                  <span class="skill-badge strong">Node.js</span>
+                  <span class="skill-badge learning">YAML</span>
+                  <span class="skill-badge learning">CSS</span>
+                  <span class="skill-badge alert">Figma API</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── Overall Source Breakdown ── -->
+    <section class="source-breakdown fade-in" aria-label="Source breakdown">
+      <h3>Source Breakdown — All Projects</h3>
+      <div class="source-stacked-bar" role="img" aria-label="Claude 69%, Cursor 31%">
+        <div class="seg seg-claude" style="flex-basis: 69%;">69%</div>
+        <div class="seg seg-cursor" style="flex-basis: 31%;">31%</div>
+      </div>
+      <div class="source-breakdown-legend">
+        <div class="legend-item">
+          <div class="legend-dot claude" aria-hidden="true"></div>
+          <span>Claude Code — 20 sessions</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot cursor" aria-hidden="true"></div>
+          <span>Cursor — 8 sessions</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Skills Summary ── -->
+    <section class="skills-summary fade-in" aria-label="Skills overview">
+      <div class="section-header">
+        <h2>Skills</h2>
+        <span class="section-tag">Status Board</span>
+        <div class="section-line" aria-hidden="true"></div>
+      </div>
+      <div class="skills-grid">
+        <span class="skill-badge strong">TypeScript</span>
+        <span class="skill-badge strong">React</span>
+        <span class="skill-badge strong">Next.js</span>
+        <span class="skill-badge strong">PostgreSQL</span>
+        <span class="skill-badge strong">CLI design</span>
+        <span class="skill-badge strong">Shell scripting</span>
+        <span class="skill-badge strong">Redis</span>
+        <span class="skill-badge strong">Express</span>
+        <span class="skill-badge alert">Rust</span>
+        <span class="skill-badge alert">CRDT</span>
+        <span class="skill-badge learning">Prisma</span>
+        <span class="skill-badge learning">Stripe API</span>
+        <span class="skill-badge learning">TOML parsing</span>
+        <span class="skill-badge learning">Git internals</span>
+        <span class="skill-badge learning">WebSocket</span>
+        <span class="skill-badge learning">Canvas API</span>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer class="footer">
+    <div class="container">
+      signal template &middot; heyi.am
+    </div>
+  </footer>
+
+  <script>
+    /* ── Stat counter animation (600ms) ── */
+    (function() {
+      var DURATION = 600;
+      var counters = document.querySelectorAll('.stat-value[data-animate]');
+
+      function formatNumber(n) {
+        return n >= 1000 ? n.toLocaleString() : String(n);
+      }
+
+      function animateCounter(el) {
+        var target = parseInt(el.getAttribute('data-target'), 10);
+        if (isNaN(target)) return;
+        var start = performance.now();
+        el.classList.add('counted');
+
+        function tick(now) {
+          var elapsed = now - start;
+          var progress = Math.min(elapsed / DURATION, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          var current = Math.round(eased * target);
+          el.textContent = formatNumber(current);
+          if (progress < 1) {
+            requestAnimationFrame(tick);
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+
+      /* Use IntersectionObserver for triggering */
+      if ('IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              animateCounter(entry.target);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.5 });
+
+        counters.forEach(function(el) { observer.observe(el); });
+      } else {
+        counters.forEach(function(el) { animateCounter(el); });
+      }
+
+      /* ── Fade-in sections ── */
+      var fadeEls = document.querySelectorAll('.fade-in');
+      if ('IntersectionObserver' in window) {
+        var fadeObserver = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              fadeObserver.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.1 });
+        fadeEls.forEach(function(el) { fadeObserver.observe(el); });
+      } else {
+        fadeEls.forEach(function(el) { el.classList.add('visible'); });
+      }
+    })();
+  </script>
+</body>
+</html>

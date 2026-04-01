@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alex Chen — Portfolio | Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Tokens ── */
+  :root {
+    --bg: #ffffff;
+    --fg: #1e293b;
+    --fg-muted: #64748b;
+    --accent: #64748b;
+    --accent-dark: #475569;
+    --border: #cbd5e1;
+    --border-light: #e2e8f0;
+    --surface: #f8fafc;
+    --radius-sm: 2px;
+    --radius: 4px;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --grid-minor: rgba(100, 116, 139, 0.10);
+    --grid-major: rgba(100, 116, 139, 0.18);
+  }
+
+  /* ── Engineering grid background ── */
+  body {
+    font-family: var(--font-body);
+    color: var(--fg);
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(var(--grid-minor) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px),
+      linear-gradient(var(--grid-major) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-major) 1px, transparent 1px);
+    background-size:
+      24px 24px,
+      24px 24px,
+      120px 120px,
+      120px 120px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Skip link ── */
+  .skip-link {
+    position: absolute;
+    inset-inline-start: -9999px;
+    top: 0;
+    background: var(--fg);
+    color: var(--bg);
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    z-index: 100;
+    border-radius: var(--radius);
+  }
+  .skip-link:focus {
+    inset-inline-start: 8px;
+    top: 8px;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 960px;
+    margin-inline: auto;
+    padding-inline: 24px;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(4px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-brand {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--fg);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+  .nav-brand::before {
+    content: '> ';
+    color: var(--accent);
+  }
+  .nav-links {
+    display: flex;
+    gap: 24px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg-muted);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .nav-links a:hover,
+  .nav-links a[aria-current="page"] {
+    color: var(--fg);
+  }
+  .nav-links a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Section headers ── */
+  .section-ref {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .ref-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid var(--accent);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--fg-muted);
+  }
+
+  /* ── Node dot ── */
+  .node-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .node-dot--hollow {
+    background: transparent;
+    border: 1.5px solid var(--accent);
+  }
+
+  /* ── Dimension line ── */
+  .dim-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+  }
+  .dim-line::before,
+  .dim-line::after {
+    content: '';
+    flex: 1;
+    height: 0;
+    border-top: 1px solid var(--border);
+  }
+  .dim-line::before {
+    border-inline-start: 1px solid var(--border);
+    padding-inline-start: 4px;
+  }
+  .dim-line::after {
+    border-inline-end: 1px solid var(--border);
+    padding-inline-end: 4px;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 64px 0 48px;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 5vw, 40px);
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 8px;
+    color: var(--fg);
+  }
+  .hero-bio {
+    font-size: 15px;
+    color: var(--fg-muted);
+    max-width: 600px;
+    margin-bottom: 4px;
+  }
+  .hero-location {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+  .hero-location::before {
+    content: '// ';
+    color: var(--border);
+  }
+
+  /* ── Profile photo ── */
+  .profile-photo {
+    width: 100px;
+    height: 130px;
+    border-radius: 4px;
+    object-fit: cover;
+    object-position: 55% 10%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+  }
+  .hero-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 28px;
+    margin-bottom: 16px;
+  }
+
+  /* ── Contact links ── */
+  .contact-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    margin-top: 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+  .contact-row a,
+  .contact-row span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--fg-muted);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .contact-row a:hover {
+    color: var(--fg);
+  }
+  .contact-row a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  .contact-row svg {
+    flex-shrink: 0;
+  }
+  .resume-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    text-decoration: none;
+    transition: border-color 0.15s, color 0.15s;
+    background: transparent;
+  }
+  .resume-btn:hover {
+    border-color: var(--accent);
+    color: var(--fg);
+  }
+
+  @media (max-width: 768px) {
+    .profile-photo {
+      width: 80px;
+      height: 100px;
+    }
+    .hero-top {
+      flex-direction: column;
+      gap: 16px;
+    }
+  }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin: 40px 0;
+    overflow: hidden;
+  }
+  .stat-cell {
+    background: var(--bg);
+    padding: 20px 16px;
+    text-align: center;
+  }
+  .stat-value {
+    font-family: var(--font-mono);
+    font-size: clamp(22px, 3vw, 30px);
+    font-weight: 600;
+    color: var(--fg);
+    line-height: 1.2;
+  }
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-muted);
+    margin-top: 4px;
+  }
+
+  /* ── Projects section ── */
+  .projects-section {
+    padding: 48px 0;
+  }
+
+  /* ── SVG connector area ── */
+  .projects-connected {
+    position: relative;
+  }
+  .connector-svg {
+    position: absolute;
+    top: 0;
+    inset-inline-start: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .connector-svg path {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 1.5;
+    stroke-dasharray: 800;
+    stroke-dashoffset: 800;
+  }
+
+  /* ── Project card ── */
+  .project-card {
+    position: relative;
+    z-index: 2;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 32px;
+    transition: border-color 0.15s;
+  }
+  .project-card:hover {
+    border-color: var(--accent);
+  }
+  .project-card:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .project-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+  .project-name {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--fg);
+  }
+  .project-name a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .project-name a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .project-name a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  .project-ref {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+    white-space: nowrap;
+  }
+  .project-narrative {
+    font-size: 14px;
+    color: var(--fg-muted);
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  .project-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+  .project-meta span::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-inline-end: 6px;
+    vertical-align: middle;
+  }
+
+  /* ── Source mix bar ── */
+  .source-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border-light);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .source-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+  }
+  .source-legend {
+    display: flex;
+    gap: 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+  }
+  .source-legend span::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-sm);
+    margin-inline-end: 4px;
+    vertical-align: middle;
+  }
+  .source-legend .claude::before { background: var(--accent); }
+  .source-legend .cursor::before { background: var(--border); }
+
+  /* ── Skills chips ── */
+  .skills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    list-style: none;
+  }
+  .skill-chip {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--fg-muted);
+    background: transparent;
+  }
+
+  /* ── Crosshatch pattern def ── */
+  .crosshatch-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
+  /* ── Footer title block ── */
+  .footer {
+    border-top: 2px solid var(--fg);
+    margin-top: 48px;
+    padding: 0;
+  }
+  .title-block {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border-bottom: 1px solid var(--fg);
+  }
+  .title-block-cell {
+    padding: 12px 16px;
+    border-inline-end: 1px solid var(--fg);
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+  .title-block-cell:last-child {
+    border-inline-end: none;
+  }
+  .title-block-label {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-muted);
+    font-size: 9px;
+    margin-bottom: 2px;
+  }
+  .title-block-value {
+    color: var(--fg);
+    font-weight: 500;
+  }
+  .footer-bottom {
+    padding: 12px 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* ── Animations ── */
+  @keyframes count-up {
+    from { opacity: 0.4; }
+    to { opacity: 1; }
+  }
+  @keyframes draw-line {
+    to { stroke-dashoffset: 0; }
+  }
+
+  .stat-value[data-animate] {
+    animation: count-up 0.3s ease-out forwards;
+  }
+
+  .connector-svg.animated path {
+    animation: draw-line 1.2s ease-out forwards;
+  }
+
+  /* ── Reduced motion ── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+    .connector-svg path {
+      stroke-dasharray: none;
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .stats-bar {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .project-card-header {
+      flex-direction: column;
+    }
+    .title-block {
+      grid-template-columns: 1fr;
+    }
+    .title-block-cell {
+      border-inline-end: none;
+      border-bottom: 1px solid var(--fg);
+    }
+    .title-block-cell:last-child {
+      border-bottom: none;
+    }
+    .nav-inner {
+      flex-direction: column;
+      gap: 12px;
+    }
+    .footer-bottom {
+      flex-direction: column;
+      gap: 4px;
+    }
+    .contact-row {
+      flex-wrap: wrap;
+      font-size: 12px;
+    }
+  }
+
+    /* ── Clickable cards ── */
+    a.project-card, a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.project-card:hover, a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+<!-- Crosshatch SVG pattern defs -->
+<svg class="crosshatch-defs" aria-hidden="true">
+  <defs>
+    <pattern id="crosshatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="8" stroke="var(--accent)" stroke-width="0.8" stroke-opacity="0.35"/>
+    </pattern>
+  </defs>
+</svg>
+
+<a href="#main" class="skip-link">Skip to content</a>
+
+<!-- Nav -->
+<nav class="nav" aria-label="Main navigation">
+  <div class="container nav-inner">
+    <a href="./portfolio.html" class="nav-brand" aria-current="page">alex.portfolio</a>
+    <ul class="nav-links">
+      <li><a href="./portfolio.html" aria-current="page">Portfolio</a></li>
+      <li><a href="./project.html">Project</a></li>
+      <li><a href="./session.html">Session</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Main -->
+<main id="main" class="container">
+
+  <!-- Hero -->
+  <section class="hero" aria-label="Profile">
+    <div class="section-ref">
+      <span class="ref-badge" aria-hidden="true">01</span>
+      <span class="section-label">Identification</span>
+    </div>
+    <div class="hero-top">
+      <img src="../assets/headshot-man-2-400.jpg" alt="Alex Chen" class="profile-photo">
+      <div>
+        <h1>Alex Chen</h1>
+        <p class="hero-bio">Full-stack engineer building tools for personal finance and real-time collaboration. I care about schema design, performance, and building things that feel right. Previously at Stripe and a YC startup.</p>
+        <p class="hero-location">San Francisco, CA</p>
+      </div>
+    </div>
+    <div class="contact-row">
+      <a href="mailto:alex@heyiam.com"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg> alex@heyiam.com</a>
+      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg> San Francisco, CA</span>
+      <a href="https://linkedin.com/in/alexchen" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg> LinkedIn</a>
+      <a href="https://github.com/interactivecats/heyi.am" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg> GitHub</a>
+      <a href="https://x.com/alexchendev" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> @alexchendev</a>
+      <a href="https://alexchen.dev" target="_blank" rel="noopener">alexchen.dev</a>
+      <a href="./project.html" class="resume-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg> Resume (PDF)</a>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section aria-label="Aggregate statistics">
+    <div class="stats-bar" role="list">
+      <div class="stat-cell" role="listitem">
+        <div class="stat-value" data-target="3" data-animate>0</div>
+        <div class="stat-label">Projects</div>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <div class="stat-value" data-target="28" data-animate>0</div>
+        <div class="stat-label">Sessions</div>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <div class="stat-value" style="font-size: 16px; letter-spacing: 0.05em;">24<span style="font-size: 11px; opacity: 0.6;">h</span></div>
+        <div class="stat-label">You</div>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <div class="stat-value" style="font-size: 16px; letter-spacing: 0.05em;">100<span style="font-size: 11px; opacity: 0.6;">h</span></div>
+        <div class="stat-label">Agents</div>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <div class="stat-value" style="font-size: 16px; letter-spacing: 0.05em;">4.2<span style="font-size: 11px; opacity: 0.6;">&times;</span></div>
+        <div class="stat-label">Multiplier</div>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <div class="stat-value" data-target="18400" data-animate>0</div>
+        <div class="stat-label">Lines of Code</div>
+      </div>
+    </div>
+    <div class="dim-line" aria-hidden="true">cumulative metrics</div>
+  </section>
+
+  <!-- Projects -->
+  <section class="projects-section" aria-label="Projects">
+    <div class="section-ref">
+      <span class="ref-badge" aria-hidden="true">02</span>
+      <span class="section-label">Project Index</span>
+    </div>
+
+    <div class="projects-connected">
+      <!-- SVG connector lines between cards -->
+      <svg class="connector-svg" aria-hidden="true" preserveAspectRatio="none">
+        <path class="connector-path" d="" />
+        <path class="connector-path" d="" />
+      </svg>
+
+      <!-- BudgetWise -->
+      <article class="project-card" id="project-budgetwise">
+        <div class="project-card-header">
+          <h2 class="project-name">
+            <span class="node-dot" aria-hidden="true"></span>
+            <a href="./project.html">BudgetWise</a>
+          </h2>
+          <span class="project-ref">REF-001</span>
+        </div>
+        <p class="project-narrative">Personal finance app with recurring transaction detection, Plaid integration, and spending insights dashboard.</p>
+        <div class="project-meta" aria-label="Project statistics">
+          <span>8 sessions</span>
+          <span>42.5h</span>
+          <span>4,460 LOC</span>
+        </div>
+        <div class="source-bar" role="img" aria-label="Claude 62.5%, Cursor 37.5%">
+          <div class="source-fill" style="width: 62.5%"></div>
+        </div>
+        <div class="source-legend" aria-hidden="true">
+          <span class="claude">Claude 62.5%</span>
+          <span class="cursor">Cursor 37.5%</span>
+        </div>
+        <ul class="skills-list" aria-label="Skills">
+          <li class="skill-chip">TypeScript</li>
+          <li class="skill-chip">React</li>
+          <li class="skill-chip">Next.js</li>
+          <li class="skill-chip">Prisma</li>
+          <li class="skill-chip">PostgreSQL</li>
+          <li class="skill-chip">Stripe API</li>
+        </ul>
+      </article>
+
+      <!-- ShellHook -->
+      <article class="project-card" id="project-shellhook">
+        <div class="project-card-header">
+          <h2 class="project-name">
+            <span class="node-dot" aria-hidden="true"></span>
+            <a href="./project.html">ShellHook</a>
+          </h2>
+          <span class="project-ref">REF-002</span>
+        </div>
+        <p class="project-narrative">Rust CLI tool for managing git hooks with TOML configuration and automatic symlinking.</p>
+        <div class="project-meta" aria-label="Project statistics">
+          <span>7 sessions</span>
+          <span>32h</span>
+          <span>3,580 LOC</span>
+        </div>
+        <div class="source-bar" role="img" aria-label="Claude 85%, Cursor 15%">
+          <div class="source-fill" style="width: 85%"></div>
+        </div>
+        <div class="source-legend" aria-hidden="true">
+          <span class="claude">Claude 85%</span>
+          <span class="cursor">Cursor 15%</span>
+        </div>
+        <ul class="skills-list" aria-label="Skills">
+          <li class="skill-chip">Rust</li>
+          <li class="skill-chip">CLI design</li>
+          <li class="skill-chip">TOML parsing</li>
+          <li class="skill-chip">Git internals</li>
+          <li class="skill-chip">Shell scripting</li>
+        </ul>
+      </article>
+
+      <!-- PixelBoard -->
+      <article class="project-card" id="project-pixelboard">
+        <div class="project-card-header">
+          <h2 class="project-name">
+            <span class="node-dot" aria-hidden="true"></span>
+            <a href="./project.html">PixelBoard</a>
+          </h2>
+          <span class="project-ref">REF-003</span>
+        </div>
+        <p class="project-narrative">Real-time collaborative drawing canvas with CRDT-based state sync and pressure-sensitive input.</p>
+        <div class="project-meta" aria-label="Project statistics">
+          <span>5 sessions</span>
+          <span>28h</span>
+          <span>2,940 LOC</span>
+        </div>
+        <div class="source-bar" role="img" aria-label="Claude 60%, Cursor 40%">
+          <div class="source-fill" style="width: 60%"></div>
+        </div>
+        <div class="source-legend" aria-hidden="true">
+          <span class="claude">Claude 60%</span>
+          <span class="cursor">Cursor 40%</span>
+        </div>
+        <ul class="skills-list" aria-label="Skills">
+          <li class="skill-chip">TypeScript</li>
+          <li class="skill-chip">WebSocket</li>
+          <li class="skill-chip">Canvas API</li>
+          <li class="skill-chip">Redis</li>
+          <li class="skill-chip">Express</li>
+          <li class="skill-chip">CRDT</li>
+        </ul>
+      </article>
+
+      <!-- DevLog -->
+      <article class="project-card" id="project-devlog">
+        <div class="project-card-header">
+          <h2 class="project-name">
+            <span class="node-dot" aria-hidden="true"></span>
+            <a href="./project.html">DevLog</a>
+          </h2>
+          <span class="project-ref">REF-004</span>
+        </div>
+        <p class="project-narrative">CLI tool for capturing development decisions and context as structured markdown notes.</p>
+        <div class="project-meta" aria-label="Project statistics">
+          <span>5 sessions</span>
+          <span>18h</span>
+          <span>1,840 LOC</span>
+        </div>
+        <div class="source-bar" role="img" aria-label="Claude 80%, Cursor 20%">
+          <div class="source-fill" style="width: 80%"></div>
+        </div>
+        <div class="source-legend" aria-hidden="true">
+          <span class="claude">Claude 80%</span>
+          <span class="cursor">Cursor 20%</span>
+        </div>
+        <ul class="skills-list" aria-label="Skills">
+          <li class="skill-chip">TypeScript</li>
+          <li class="skill-chip">Node.js</li>
+          <li class="skill-chip">CLI design</li>
+          <li class="skill-chip">Markdown</li>
+          <li class="skill-chip">SQLite</li>
+</ul>
+      </article>
+
+      <!-- Snapgrid -->
+      <article class="project-card" id="project-snapgrid">
+        <div class="project-card-header">
+          <h2 class="project-name">
+            <span class="node-dot" aria-hidden="true"></span>
+            <a href="./project.html">Snapgrid</a>
+          </h2>
+          <span class="project-ref">REF-005</span>
+        </div>
+        <p class="project-narrative">Responsive image gallery with masonry layout, lazy loading, and keyboard navigation.</p>
+        <div class="project-meta" aria-label="Project statistics">
+          <span>4 sessions</span>
+          <span>14h</span>
+          <span>1,520 LOC</span>
+        </div>
+        <div class="source-bar" role="img" aria-label="Claude 50%, Cursor 50%">
+          <div class="source-fill" style="width: 50%"></div>
+        </div>
+        <div class="source-legend" aria-hidden="true">
+          <span class="claude">Claude 50%</span>
+          <span class="cursor">Cursor 50%</span>
+        </div>
+        <ul class="skills-list" aria-label="Skills">
+          <li class="skill-chip">TypeScript</li>
+          <li class="skill-chip">React</li>
+          <li class="skill-chip">CSS Grid</li>
+          <li class="skill-chip">IntersectionObserver</li>
+          <li class="skill-chip">Accessibility</li>
+</ul>
+      </article>
+
+      <!-- Terracotta -->
+      <article class="project-card" id="project-terracotta">
+        <div class="project-card-header">
+          <h2 class="project-name">
+            <span class="node-dot" aria-hidden="true"></span>
+            <a href="./project.html">Terracotta</a>
+          </h2>
+          <span class="project-ref">REF-006</span>
+        </div>
+        <p class="project-narrative">Design token pipeline that generates CSS custom properties, Tailwind config, and Figma tokens from a single YAML source.</p>
+        <div class="project-meta" aria-label="Project statistics">
+          <span>6 sessions</span>
+          <span>22h</span>
+          <span>2,680 LOC</span>
+        </div>
+        <div class="source-bar" role="img" aria-label="Claude 70%, Cursor 30%">
+          <div class="source-fill" style="width: 70%"></div>
+        </div>
+        <div class="source-legend" aria-hidden="true">
+          <span class="claude">Claude 70%</span>
+          <span class="cursor">Cursor 30%</span>
+        </div>
+        <ul class="skills-list" aria-label="Skills">
+          <li class="skill-chip">TypeScript</li>
+          <li class="skill-chip">Node.js</li>
+          <li class="skill-chip">YAML</li>
+          <li class="skill-chip">CSS</li>
+          <li class="skill-chip">Figma API</li>
+</ul>
+      </article>
+    </div>
+  </section>
+
+</main>
+
+<!-- Footer title block -->
+<footer class="footer" role="contentinfo">
+  <div class="container">
+    <div class="title-block">
+      <div class="title-block-cell">
+        <div class="title-block-label">DWG NO.</div>
+        <div class="title-block-value">PORTFOLIO-AC-001</div>
+      </div>
+      <div class="title-block-cell">
+        <div class="title-block-label">REV</div>
+        <div class="title-block-value">A</div>
+      </div>
+      <div class="title-block-cell">
+        <div class="title-block-label">Date</div>
+        <div class="title-block-value">2026-04-01</div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Blueprint Template</span>
+      <span>heyi.am</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function() {
+  'use strict';
+
+  /* ── Stat counter animation ── */
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function formatNumber(n) {
+    return n.toLocaleString();
+  }
+
+  function animateCounters() {
+    var stats = document.querySelectorAll('.stat-value[data-target]');
+    stats.forEach(function(el) {
+      var target = parseInt(el.getAttribute('data-target'), 10);
+      if (prefersReducedMotion) {
+        el.textContent = formatNumber(target);
+        return;
+      }
+      var duration = 1200;
+      var start = null;
+      function step(ts) {
+        if (!start) start = ts;
+        var progress = Math.min((ts - start) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = formatNumber(Math.round(target * eased));
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        }
+      }
+      requestAnimationFrame(step);
+    });
+  }
+
+  /* ── SVG connector lines ── */
+  function updateConnectors() {
+    var svg = document.querySelector('.connector-svg');
+    if (!svg) return;
+    var cards = document.querySelectorAll('.project-card');
+    if (cards.length < 2) return;
+
+    var container = svg.parentElement;
+    var rect = container.getBoundingClientRect();
+    svg.setAttribute('viewBox', '0 0 ' + rect.width + ' ' + rect.height);
+    svg.style.width = rect.width + 'px';
+    svg.style.height = rect.height + 'px';
+
+    var paths = svg.querySelectorAll('.connector-path');
+    for (var i = 0; i < Math.min(paths.length, cards.length - 1); i++) {
+      var from = cards[i];
+      var to = cards[i + 1];
+      var fromRect = from.getBoundingClientRect();
+      var toRect = to.getBoundingClientRect();
+
+      var x1 = fromRect.left - rect.left + fromRect.width * 0.15;
+      var y1 = fromRect.bottom - rect.top;
+      var x2 = toRect.left - rect.left + toRect.width * 0.15;
+      var y2 = toRect.top - rect.top;
+      var cy = (y1 + y2) / 2;
+
+      paths[i].setAttribute('d',
+        'M ' + x1 + ' ' + y1 +
+        ' C ' + x1 + ' ' + cy + ', ' + x2 + ' ' + cy + ', ' + x2 + ' ' + y2
+      );
+    }
+  }
+
+  /* ── Scroll-triggered connector draw ── */
+  function setupScrollDraw() {
+    var svg = document.querySelector('.connector-svg');
+    if (!svg || prefersReducedMotion) {
+      if (svg) svg.classList.add('animated');
+      return;
+    }
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          svg.classList.add('animated');
+          observer.disconnect();
+        }
+      });
+    }, { threshold: 0.2 });
+    observer.observe(svg.parentElement);
+  }
+
+  /* ── Stat counter trigger on scroll ── */
+  var statsTriggered = false;
+  function setupStatObserver() {
+    var statsBar = document.querySelector('.stats-bar');
+    if (!statsBar) return;
+    if (prefersReducedMotion) {
+      animateCounters();
+      return;
+    }
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting && !statsTriggered) {
+          statsTriggered = true;
+          animateCounters();
+          observer.disconnect();
+        }
+      });
+    }, { threshold: 0.3 });
+    observer.observe(statsBar);
+  }
+
+  /* ── Init ── */
+  updateConnectors();
+  setupScrollDraw();
+  setupStatObserver();
+  window.addEventListener('resize', updateConnectors);
+})();
+</script>
+</body>
+</html>

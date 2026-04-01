@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Set up Prisma schema — Session | Grid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Tokens ── */
+  :root {
+    --bg: #fafafa;
+    --fg: #1e293b;
+    --fg-muted: #64748b;
+    --fg-faint: #94a3b8;
+    --accent: #6366f1;
+    --accent-light: #a5b4fc;
+    --accent-bg: #eef2ff;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --radius-sm: 12px;
+    --radius: 16px;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04);
+
+    /* Agent colors */
+    --clr-frontend: #7c3aed;
+    --clr-backend: #0891b2;
+    --clr-qa: #059669;
+    --clr-security: #475569;
+    --clr-reviewer: #e11d48;
+    --clr-ux: #d97706;
+  }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--fg);
+    background-color: var(--bg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Skip link ── */
+  .skip-link {
+    position: absolute;
+    inset-inline-start: -9999px;
+    top: 0;
+    background: var(--accent);
+    color: #fff;
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    z-index: 100;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+  }
+  .skip-link:focus {
+    inset-inline-start: 8px;
+    top: 8px;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 1120px;
+    margin-inline: auto;
+    padding-inline: 24px;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+    background: rgba(250,250,250,0.92);
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-brand {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--fg);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+  .nav-brand span {
+    color: var(--accent);
+  }
+  .nav-links {
+    display: flex;
+    gap: 8px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--fg-muted);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s, background-color 0.15s;
+  }
+  .nav-links a:hover {
+    color: var(--fg);
+    background: var(--border-light);
+  }
+  .nav-links a[aria-current="page"] {
+    color: var(--accent);
+    background: var(--accent-bg);
+  }
+  .nav-links a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Breadcrumb ── */
+  .breadcrumb {
+    padding: 16px 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg-faint);
+  }
+  .breadcrumb a {
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+  .breadcrumb a:hover {
+    color: var(--accent);
+  }
+  .breadcrumb a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  .breadcrumb-sep {
+    margin-inline: 6px;
+    color: var(--fg-faint);
+  }
+
+  /* ── Bento Grid ── */
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding-bottom: 64px;
+  }
+
+  .bento-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    opacity: 0;
+    transform: translateY(12px);
+    animation: cellFadeIn 0.4s ease forwards;
+  }
+
+  @keyframes cellFadeIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bento-cell {
+      opacity: 1;
+      transform: none;
+      animation: none;
+    }
+  }
+
+  .bento-cell:nth-child(1)  { animation-delay: 0s; }
+  .bento-cell:nth-child(2)  { animation-delay: 0.06s; }
+  .bento-cell:nth-child(3)  { animation-delay: 0.06s; }
+  .bento-cell:nth-child(4)  { animation-delay: 0.12s; }
+  .bento-cell:nth-child(5)  { animation-delay: 0.18s; }
+  .bento-cell:nth-child(6)  { animation-delay: 0.24s; }
+  .bento-cell:nth-child(7)  { animation-delay: 0.30s; }
+  .bento-cell:nth-child(8)  { animation-delay: 0.36s; }
+  .bento-cell:nth-child(9)  { animation-delay: 0.42s; }
+  .bento-cell:nth-child(10) { animation-delay: 0.48s; }
+  .bento-cell:nth-child(11) { animation-delay: 0.54s; }
+
+  /* ── Cell heading utility ── */
+  .cell-heading {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--fg);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cell-heading svg {
+    width: 16px;
+    height: 16px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* ── Title Cell (3-wide) ── */
+  .cell-title {
+    grid-column: span 3;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .cell-title h1 {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+  }
+  .session-subtitle {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg-muted);
+  }
+  .session-subtitle .source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    font-weight: 500;
+    font-size: 12px;
+  }
+  .session-subtitle .source-badge svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* ── Dev Take Cell ── */
+  .cell-devtake {
+    grid-column: span 4;
+    background: var(--accent-bg);
+    border-color: var(--accent-light);
+    position: relative;
+    padding-inline-start: 48px;
+  }
+  .cell-devtake::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 24px;
+    top: 24px;
+    bottom: 24px;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+  .cell-devtake blockquote {
+    font-size: 15px;
+    font-style: italic;
+    color: var(--fg);
+    line-height: 1.7;
+  }
+  .cell-devtake .devtake-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  /* ── Stat Cell ── */
+  .cell-stat {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100px;
+  }
+  .stat-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--accent-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .stat-icon svg {
+    width: 16px;
+    height: 16px;
+    color: var(--accent);
+  }
+  .stat-number {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--fg);
+    line-height: 1;
+  }
+  .stat-number .stat-unit {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--fg-muted);
+    margin-inline-start: 2px;
+  }
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-muted);
+  }
+
+  /* ── Tools Cell ── */
+  .cell-tools {
+    grid-column: span 2;
+  }
+  .tools-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .tool-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .tool-name {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg);
+    font-weight: 500;
+  }
+  .tool-bar-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tool-bar-track {
+    flex: 1;
+    height: 6px;
+    background: var(--border-light);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .tool-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--accent);
+  }
+  .tool-count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    width: 24px;
+    text-align: end;
+  }
+
+  /* ── Files Cell ── */
+  .cell-files {
+    grid-column: span 2;
+  }
+  .files-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .file-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .file-name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    flex: 1;
+  }
+  .file-diff {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--clr-qa);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  /* ── Skills Cell ── */
+  .cell-skills {
+    grid-column: span 1;
+  }
+  .skills-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .skill-chip {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  /* ── Beats Cell (execution path) ── */
+  .cell-beats {
+    grid-column: span 3;
+  }
+  .beats-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .beat-item {
+    display: flex;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .beat-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .beat-item:first-child {
+    padding-top: 0;
+  }
+  .beat-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    flex-shrink: 0;
+    width: 28px;
+  }
+  .beat-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .beat-line {
+    width: 2px;
+    flex: 1;
+    background: var(--border);
+    margin-top: 4px;
+  }
+  .beat-item:last-child .beat-line {
+    display: none;
+  }
+  .beat-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .beat-title {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--fg);
+    margin-bottom: 4px;
+  }
+  .beat-desc {
+    font-size: 14px;
+    color: var(--fg-muted);
+    line-height: 1.6;
+  }
+
+  /* ── Q&A Cell ── */
+  .cell-qa {
+    grid-column: span 4;
+  }
+  .qa-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .qa-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .qa-question {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--fg);
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .qa-q-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .qa-answer {
+    font-size: 14px;
+    color: var(--fg-muted);
+    line-height: 1.7;
+    padding-inline-start: 30px;
+  }
+
+  /* ── Agents Cell ── */
+  .cell-agents {
+    grid-column: span 4;
+  }
+  .agents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .agent-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    background: var(--border-light);
+  }
+  .agent-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .agent-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .agent-role {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--fg);
+  }
+  .agent-meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+  }
+
+  /* ── Footer ── */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 0;
+    text-align: center;
+  }
+  .footer p {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-faint);
+  }
+  .footer a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .footer a:hover {
+    text-decoration: underline;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .bento {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .cell-title,
+    .cell-devtake,
+    .cell-tools,
+    .cell-files,
+    .cell-beats,
+    .cell-qa,
+    .cell-agents,
+    .cell-skills {
+      grid-column: span 1;
+    }
+    .cell-title h1 {
+      font-size: 20px;
+    }
+    .stat-number {
+      font-size: 24px;
+    }
+    .agents-grid {
+      grid-template-columns: 1fr;
+    }
+    .nav-links {
+      gap: 4px;
+    }
+    .nav-links a {
+      font-size: 13px;
+      padding: 6px 10px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<a href="#main" class="skip-link">Skip to content</a>
+
+<nav class="nav" aria-label="Main navigation">
+  <div class="container nav-inner">
+    <a href="./portfolio.html" class="nav-brand"><span>@</span>alex</a>
+    <ul class="nav-links">
+      <li><a href="./portfolio.html">Portfolio</a></li>
+      <li><a href="./project.html">Project</a></li>
+      <li><a href="./session.html" aria-current="page">Session</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main" class="container">
+  <div class="breadcrumb" aria-label="Breadcrumb">
+    <a href="./portfolio.html">alex</a>
+    <span class="breadcrumb-sep" aria-hidden="true">/</span>
+    <a href="./project.html">budgetwise</a>
+    <span class="breadcrumb-sep" aria-hidden="true">/</span>
+    <span aria-current="page">Set up Prisma schema</span>
+  </div>
+
+  <div class="bento" aria-label="Session dashboard">
+
+    <!-- Cell 1: Title (3-wide) -->
+    <div class="bento-cell cell-title">
+      <h1>Set up Prisma schema with User, Account, and Transaction models</h1>
+      <div class="session-subtitle">
+        <span>February 3, 2026</span>
+        <span class="source-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          Claude Code
+        </span>
+      </div>
+    </div>
+
+    <!-- Cell 2: Stat — Duration -->
+    <section class="bento-cell cell-stat" aria-label="Duration">
+      <div class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div>
+        <div class="stat-number">72<span class="stat-unit">m</span></div>
+        <div class="stat-label">Duration</div>
+      </div>
+    </section>
+
+    <!-- Cell 3: Dev Take (4-wide) -->
+    <div class="bento-cell cell-devtake">
+      <div class="devtake-label">Dev Take</div>
+      <blockquote>Went with discriminated unions over STI &mdash; nullable columns everywhere felt wrong. The audit log instead of soft deletes was the right call too.</blockquote>
+    </div>
+
+    <!-- Cell 4: Stat — Turns -->
+    <section class="bento-cell cell-stat" aria-label="Conversation turns">
+      <div class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div>
+        <div class="stat-number" data-target="45">0</div>
+        <div class="stat-label">Turns</div>
+      </div>
+    </section>
+
+    <!-- Cell 5: Stat — LOC -->
+    <section class="bento-cell cell-stat" aria-label="Lines of code">
+      <div class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      </div>
+      <div>
+        <div class="stat-number" data-target="680">0</div>
+        <div class="stat-label">Lines of Code</div>
+      </div>
+    </section>
+
+    <!-- Cell 6: Stat — Files -->
+    <section class="bento-cell cell-stat" aria-label="Files changed">
+      <div class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div>
+        <div class="stat-number" data-target="4">0</div>
+        <div class="stat-label">Files Changed</div>
+      </div>
+    </section>
+
+    <!-- Cell 7: Stat — Wall Clock -->
+    <section class="bento-cell cell-stat" aria-label="Wall clock time">
+      <div class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </div>
+      <div>
+        <div class="stat-number">87<span class="stat-unit">m</span></div>
+        <div class="stat-label">Wall Clock</div>
+      </div>
+    </section>
+
+    <!-- Cell 8: Tools Used (2-wide) -->
+    <section class="bento-cell cell-tools" aria-label="Tools used">
+      <h2 class="cell-heading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        Tools Used
+      </h2>
+      <div class="tools-list">
+        <div class="tool-row">
+          <span class="tool-name">Edit</span>
+          <div class="tool-bar-wrap">
+            <div class="tool-bar-track">
+              <div class="tool-bar-fill" style="width: 100%"></div>
+            </div>
+            <span class="tool-count">18</span>
+          </div>
+        </div>
+        <div class="tool-row">
+          <span class="tool-name">Read</span>
+          <div class="tool-bar-wrap">
+            <div class="tool-bar-track">
+              <div class="tool-bar-fill" style="width: 67%"></div>
+            </div>
+            <span class="tool-count">12</span>
+          </div>
+        </div>
+        <div class="tool-row">
+          <span class="tool-name">Bash</span>
+          <div class="tool-bar-wrap">
+            <div class="tool-bar-track">
+              <div class="tool-bar-fill" style="width: 50%"></div>
+            </div>
+            <span class="tool-count">9</span>
+          </div>
+        </div>
+        <div class="tool-row">
+          <span class="tool-name">Write</span>
+          <div class="tool-bar-wrap">
+            <div class="tool-bar-track">
+              <div class="tool-bar-fill" style="width: 22%"></div>
+            </div>
+            <span class="tool-count">4</span>
+          </div>
+        </div>
+        <div class="tool-row">
+          <span class="tool-name">Grep</span>
+          <div class="tool-bar-wrap">
+            <div class="tool-bar-track">
+              <div class="tool-bar-fill" style="width: 11%"></div>
+            </div>
+            <span class="tool-count">2</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cell 9: Files Changed (2-wide) -->
+    <section class="bento-cell cell-files" aria-label="Files changed">
+      <h2 class="cell-heading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Files Changed
+      </h2>
+      <div class="files-list">
+        <div class="file-row">
+          <span class="file-name">prisma/schema.prisma</span>
+          <span class="file-diff">+142</span>
+        </div>
+        <div class="file-row">
+          <span class="file-name">prisma/seed.ts</span>
+          <span class="file-diff">+89</span>
+        </div>
+        <div class="file-row">
+          <span class="file-name">prisma/migrations/20260203_init/migration.sql</span>
+          <span class="file-diff">+415</span>
+        </div>
+        <div class="file-row">
+          <span class="file-name">src/lib/db.ts</span>
+          <span class="file-diff">+34</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cell 10: Execution Path (3-wide) -->
+    <section class="bento-cell cell-beats" aria-label="Execution path">
+      <h2 class="cell-heading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Execution Path
+      </h2>
+      <ol class="beats-list" role="list">
+        <li class="beat-item">
+          <div class="beat-indicator" aria-hidden="true">
+            <span class="beat-dot"></span>
+            <span class="beat-line"></span>
+          </div>
+          <div class="beat-content">
+            <div class="beat-title">Schema design</div>
+            <div class="beat-desc">Sketched out the core models &mdash; User, Account, Transaction. Decided on a discriminated union for transaction types instead of STI.</div>
+          </div>
+        </li>
+        <li class="beat-item">
+          <div class="beat-indicator" aria-hidden="true">
+            <span class="beat-dot"></span>
+            <span class="beat-line"></span>
+          </div>
+          <div class="beat-content">
+            <div class="beat-title">Prisma setup</div>
+            <div class="beat-desc">Initialized Prisma with PostgreSQL, wrote the schema file with proper relations and indexes.</div>
+          </div>
+        </li>
+        <li class="beat-item">
+          <div class="beat-indicator" aria-hidden="true">
+            <span class="beat-dot"></span>
+            <span class="beat-line"></span>
+          </div>
+          <div class="beat-content">
+            <div class="beat-title">Migration</div>
+            <div class="beat-desc">Ran the initial migration, fixed a cascade delete issue on Account &rarr; Transaction.</div>
+          </div>
+        </li>
+        <li class="beat-item">
+          <div class="beat-indicator" aria-hidden="true">
+            <span class="beat-dot"></span>
+          </div>
+          <div class="beat-content">
+            <div class="beat-title">Seed data</div>
+            <div class="beat-desc">Created a seed script with realistic test data &mdash; multiple accounts, mixed transaction types.</div>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Cell 11: Skills -->
+    <section class="bento-cell cell-skills" aria-label="Skills">
+      <h2 class="cell-heading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Skills
+      </h2>
+      <div class="skills-grid">
+        <span class="skill-chip">TypeScript</span>
+        <span class="skill-chip">Prisma</span>
+        <span class="skill-chip">PostgreSQL</span>
+      </div>
+    </section>
+
+    <!-- Cell 12: Q&A (4-wide) -->
+    <section class="bento-cell cell-qa" aria-label="Questions and answers">
+      <h2 class="cell-heading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Q&amp;A
+      </h2>
+      <div class="qa-list">
+        <div class="qa-item">
+          <div class="qa-question">
+            <span class="qa-q-badge" aria-hidden="true">Q</span>
+            <span>Why did you choose a discriminated union over single-table inheritance for transaction types?</span>
+          </div>
+          <p class="qa-answer">STI would have left nullable columns everywhere &mdash; transferTo only makes sense for transfers, recurringSchedule only for recurring. The union pattern keeps each type clean and the TypeScript compiler catches missing fields.</p>
+        </div>
+        <div class="qa-item">
+          <div class="qa-question">
+            <span class="qa-q-badge" aria-hidden="true">Q</span>
+            <span>How does the cascade delete work between Account and Transaction?</span>
+          </div>
+          <p class="qa-answer">Deleting an account cascades to its transactions. Initially had it set to restrict, but that made account cleanup impossible without manual transaction deletion first.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cell 13: Agent Summary (4-wide) -->
+    <section class="bento-cell cell-agents" aria-label="Agent summary">
+      <h2 class="cell-heading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Agent Summary
+        <span style="font-family: var(--font-mono); font-size: 11px; color: var(--fg-faint); font-weight: 400; margin-inline-start: auto;">7 sub-sessions</span>
+      </h2>
+      <div class="agents-grid">
+        <div class="agent-card">
+          <span class="agent-color" style="background: var(--clr-backend);" aria-hidden="true"></span>
+          <div class="agent-info">
+            <div class="agent-role">backend-dev</div>
+            <div class="agent-meta">25m &middot; 280 LOC</div>
+          </div>
+        </div>
+        <div class="agent-card">
+          <span class="agent-color" style="background: var(--clr-qa);" aria-hidden="true"></span>
+          <div class="agent-info">
+            <div class="agent-role">qa-engineer</div>
+            <div class="agent-meta">18m &middot; 190 LOC</div>
+          </div>
+        </div>
+        <div class="agent-card">
+          <span class="agent-color" style="background: var(--clr-frontend);" aria-hidden="true"></span>
+          <div class="agent-info">
+            <div class="agent-role">frontend-dev</div>
+            <div class="agent-meta">15m &middot; 125 LOC</div>
+          </div>
+        </div>
+        <div class="agent-card">
+          <span class="agent-color" style="background: var(--clr-security);" aria-hidden="true"></span>
+          <div class="agent-info">
+            <div class="agent-role">security-engineer</div>
+            <div class="agent-meta">12m &middot; 85 LOC</div>
+          </div>
+        </div>
+        <div class="agent-card">
+          <span class="agent-color" style="background: var(--clr-reviewer);" aria-hidden="true"></span>
+          <div class="agent-info">
+            <div class="agent-role">code-reviewer</div>
+            <div class="agent-meta">8m &middot; 0 LOC</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <p>Built with <a href="#">heyi.am</a></p>
+  </div>
+</footer>
+
+<script>
+  // Stat counter animation
+  (function() {
+    var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var stats = document.querySelectorAll('.stat-number[data-target]');
+
+    stats.forEach(function(el) {
+      var target = parseInt(el.getAttribute('data-target'), 10);
+      var format = el.getAttribute('data-format');
+      var unit = el.querySelector('.stat-unit');
+
+      if (reducedMotion) {
+        el.textContent = format === 'comma' ? target.toLocaleString() : String(target);
+        if (unit) el.appendChild(unit);
+        return;
+      }
+
+      var duration = 1200;
+      var start = null;
+
+      function step(timestamp) {
+        if (!start) start = timestamp;
+        var progress = Math.min((timestamp - start) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        var current = Math.round(eased * target);
+        el.textContent = format === 'comma' ? current.toLocaleString() : String(current);
+        if (unit) el.appendChild(unit);
+        if (progress < 1) requestAnimationFrame(step);
+      }
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            requestAnimationFrame(step);
+            observer.unobserve(el);
+          }
+        });
+      }, { threshold: 0.5 });
+      observer.observe(el);
+    });
+  })();
+</script>
+
+</body>
+</html>

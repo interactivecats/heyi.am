@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maya Johnson — Portfolio | Canvas Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Canvas Design Tokens ── */
+    :root {
+      --canvas-bg:             #ffffff;
+      --canvas-surface:        #fafafa;
+      --canvas-accent:         #fb7185;
+      --canvas-accent-light:   #fecdd3;
+      --canvas-accent-dark:    #e11d48;
+      --canvas-text:           #18181b;
+      --canvas-text-secondary: #71717a;
+      --canvas-text-tertiary:  #a1a1aa;
+      --canvas-border:         #e4e4e7;
+      --canvas-border-light:   #f4f4f5;
+      --canvas-font-display:   'DM Sans', system-ui, sans-serif;
+      --canvas-font-body:      'Inter', system-ui, sans-serif;
+      --canvas-font-mono:      'IBM Plex Mono', monospace;
+      --canvas-radius:         20px;
+      --canvas-radius-lg:      24px;
+      --canvas-radius-sm:      12px;
+      --canvas-radius-pill:    9999px;
+      --canvas-duration:       800ms;
+      --canvas-ease:           cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      opacity: 0;
+      animation: fadeIn var(--canvas-duration) var(--canvas-ease) forwards;
+    }
+    .fade-in-d1 { animation-delay: 100ms; }
+    .fade-in-d2 { animation-delay: 200ms; }
+    .fade-in-d3 { animation-delay: 300ms; }
+    .fade-in-d4 { animation-delay: 400ms; }
+    .fade-in-d5 { animation-delay: 500ms; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fade-in {
+        animation: none;
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    /* ── Base ── */
+    body {
+      font-family: var(--canvas-font-body);
+      color: var(--canvas-text);
+      background: var(--canvas-bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-size: 16px;
+    }
+
+    a {
+      color: var(--canvas-accent-dark);
+      text-decoration: none;
+      transition: color 200ms ease;
+    }
+    a:hover {
+      color: var(--canvas-accent);
+    }
+    a:focus-visible {
+      outline: 2px solid var(--canvas-accent);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    /* ── Skip Link ── */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      background: var(--canvas-accent);
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: var(--canvas-radius-sm);
+      z-index: 1000;
+      font-family: var(--canvas-font-mono);
+      font-size: 0.8125rem;
+      text-decoration: none;
+    }
+    .skip-link:focus {
+      top: 0.5rem;
+      color: #fff;
+    }
+
+    /* ── Navigation (overlays the hero) ── */
+    .nav {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.5rem 2rem;
+      z-index: 10;
+    }
+    .nav__logo {
+      font-family: var(--canvas-font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      text-decoration: none;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+    .nav__links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+    .nav__links a {
+      font-family: var(--canvas-font-body);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      transition: color 200ms ease;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+    .nav__links a:hover,
+    .nav__links a[aria-current="page"] {
+      color: #fff;
+    }
+
+    /* ── Hero Split (Magazine Spread) ── */
+    .hero-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    .hero-photo-container {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 10%;
+      display: block;
+      /* NO border-radius — full bleed */
+    }
+
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 6rem 3.5rem 4rem;
+    }
+
+    .hero__name {
+      font-family: var(--canvas-font-display);
+      font-size: clamp(2.5rem, 4vw, 3.5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      margin-block-end: 0.5rem;
+    }
+
+    .hero__location {
+      font-family: var(--canvas-font-mono);
+      font-size: 0.8125rem;
+      color: var(--canvas-text-tertiary);
+      letter-spacing: 0.02em;
+      margin-block-end: 2rem;
+    }
+
+    .hero__bio {
+      font-size: 1.125rem;
+      color: var(--canvas-text-secondary);
+      line-height: 1.7;
+      max-width: 480px;
+      margin-block-end: 2.5rem;
+    }
+
+    /* ── Contact Links (vertical editorial stack) ── */
+    .hero__links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.875rem;
+      list-style: none;
+      margin-block-end: 3rem;
+    }
+    .hero__links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.625rem;
+      font-family: var(--canvas-font-mono);
+      font-size: 0.8125rem;
+      color: var(--canvas-text-secondary);
+      transition: color 200ms ease;
+    }
+    .hero__links a:hover {
+      color: var(--canvas-accent-dark);
+    }
+    .hero__links svg {
+      flex-shrink: 0;
+      color: var(--canvas-text-tertiary);
+    }
+    .hero__links a:hover svg {
+      color: var(--canvas-accent);
+    }
+
+    /* ── Hero Stats (big airy numbers) ── */
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem 2.5rem;
+      max-width: 360px;
+    }
+    .hero-stat {
+      display: flex;
+      flex-direction: column;
+    }
+    .hero-stat__number {
+      font-family: var(--canvas-font-display);
+      font-size: clamp(1.75rem, 3vw, 2.5rem);
+      font-weight: 700;
+      line-height: 1;
+      color: var(--canvas-text);
+      letter-spacing: -0.03em;
+    }
+    .hero-stat__label {
+      font-family: var(--canvas-font-mono);
+      font-size: 0.6875rem;
+      color: var(--canvas-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-block-start: 0.375rem;
+    }
+
+    /* ── Divider ── */
+    .hero-divider {
+      width: 40px;
+      height: 2px;
+      background: var(--canvas-accent);
+      border: none;
+      margin-block-end: 1.5rem;
+    }
+
+    /* ── Page Content Below Fold ── */
+    .page-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* ── Section Titles ── */
+    .section-title {
+      font-family: var(--canvas-font-display);
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-block-end: 2.5rem;
+    }
+
+    /* ── Project Cards ── */
+    .projects-section {
+      padding: 100px 0;
+    }
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+      gap: 2rem;
+    }
+
+    .project-card {
+      background: var(--canvas-surface);
+      border-radius: var(--canvas-radius-lg);
+      padding: 2.5rem;
+      transition: transform 300ms var(--canvas-ease), box-shadow 300ms var(--canvas-ease);
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .project-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.06);
+      color: inherit;
+    }
+    .project-card:focus-visible {
+      outline: 2px solid var(--canvas-accent);
+      outline-offset: 3px;
+    }
+    .project-card__header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-block-end: 1rem;
+      gap: 1rem;
+    }
+    .project-card__title {
+      font-family: var(--canvas-font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .project-card__stats {
+      font-family: var(--canvas-font-mono);
+      font-size: 0.75rem;
+      color: var(--canvas-text-tertiary);
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-block-start: 0.25rem;
+    }
+    .project-card__narrative {
+      font-size: 1rem;
+      color: var(--canvas-text-secondary);
+      line-height: 1.7;
+      margin-block-end: 1.5rem;
+      max-width: 640px;
+    }
+    .project-card__footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .project-card__skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .skill-pill {
+      display: inline-block;
+      background: var(--canvas-accent);
+      color: #fff;
+      font-family: var(--canvas-font-mono);
+      font-size: 0.6875rem;
+      font-weight: 500;
+      padding: 0.375rem 0.875rem;
+      border-radius: var(--canvas-radius-pill);
+      letter-spacing: 0.02em;
+    }
+    .skill-pill--lg {
+      font-size: 0.8125rem;
+      padding: 0.5rem 1.25rem;
+    }
+    .skill-pill--secondary {
+      background: var(--canvas-accent-light);
+      color: var(--canvas-accent-dark);
+    }
+    .source-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-family: var(--canvas-font-mono);
+      font-size: 0.6875rem;
+      color: var(--canvas-text-tertiary);
+    }
+    .source-bar__track {
+      width: 80px;
+      height: 4px;
+      background: var(--canvas-border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .source-bar__fill {
+      height: 100%;
+      background: var(--canvas-accent);
+      border-radius: 2px;
+    }
+
+    /* ── Skills Overview ── */
+    .skills-overview {
+      padding-block-end: 100px;
+    }
+    .skills-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* ── Source Breakdown ── */
+    .source-overview {
+      padding-block-end: 100px;
+    }
+    .source-overview__visual {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3rem;
+      flex-wrap: wrap;
+    }
+    .source-donut {
+      width: 180px;
+      height: 180px;
+      flex-shrink: 0;
+    }
+    .source-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .source-legend__item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .source-legend__dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .source-legend__label {
+      font-family: var(--canvas-font-body);
+      font-size: 0.9375rem;
+      color: var(--canvas-text-secondary);
+    }
+    .source-legend__value {
+      font-family: var(--canvas-font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--canvas-text);
+      letter-spacing: -0.02em;
+    }
+
+    /* ── Activity Chart ── */
+    .activity-section {
+      padding-block-end: 100px;
+    }
+    .activity-chart {
+      background: var(--canvas-surface);
+      border-radius: var(--canvas-radius-lg);
+      padding: 2.5rem;
+      overflow-x: auto;
+    }
+    .activity-chart svg {
+      display: block;
+      width: 100%;
+      min-width: 500px;
+    }
+
+    /* ── Recent Sessions ── */
+    .recent-sessions {
+      padding-block-end: 100px;
+    }
+    .sessions-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      background: var(--canvas-border-light);
+      border-radius: var(--canvas-radius);
+      overflow: hidden;
+    }
+    .session-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 1.5rem;
+      align-items: center;
+      padding: 1.25rem 1.75rem;
+      background: var(--canvas-surface);
+      text-decoration: none;
+      color: inherit;
+      transition: background 200ms ease;
+    }
+    .session-row:hover {
+      background: #f5f5f5;
+      color: inherit;
+    }
+    .session-row:focus-visible {
+      outline: 2px solid var(--canvas-accent);
+      outline-offset: -2px;
+    }
+    .session-row__title {
+      font-family: var(--canvas-font-display);
+      font-size: 0.9375rem;
+      font-weight: 600;
+    }
+    .session-row__project {
+      font-family: var(--canvas-font-mono);
+      font-size: 0.6875rem;
+      color: var(--canvas-text-tertiary);
+      margin-block-start: 0.125rem;
+    }
+    .session-row__date {
+      font-family: var(--canvas-font-mono);
+      font-size: 0.75rem;
+      color: var(--canvas-text-tertiary);
+      white-space: nowrap;
+    }
+    .session-row__duration {
+      font-family: var(--canvas-font-mono);
+      font-size: 0.75rem;
+      color: var(--canvas-text-secondary);
+      white-space: nowrap;
+    }
+    .session-row__loc {
+      font-family: var(--canvas-font-mono);
+      font-size: 0.75rem;
+      color: var(--canvas-text-tertiary);
+      white-space: nowrap;
+    }
+
+    /* ── Footer ── */
+    .page-footer {
+      padding: 3rem 0;
+      text-align: center;
+      font-family: var(--canvas-font-mono);
+      font-size: 0.75rem;
+      color: var(--canvas-text-tertiary);
+      border-top: 1px solid var(--canvas-border-light);
+    }
+    .page-footer a {
+      color: var(--canvas-text-tertiary);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .page-footer a:hover {
+      color: var(--canvas-accent);
+    }
+
+    /* ── Responsive: Desktop ── */
+    @media (min-width: 768px) {
+      .project-card {
+        padding: 3rem;
+      }
+    }
+
+    /* ── Responsive: Mobile ── */
+    @media (max-width: 767px) {
+      /* Hero becomes stacked: photo banner on top, content below */
+      .hero-split {
+        grid-template-columns: 1fr;
+        min-height: auto;
+      }
+
+      .hero-photo-container {
+        height: 50vh;
+        min-height: 320px;
+      }
+
+      .hero-content {
+        padding: 2.5rem 1.5rem 3rem;
+      }
+
+      .hero__name {
+        font-size: 2.25rem;
+      }
+
+      .hero-stats {
+        gap: 1.25rem 2rem;
+      }
+
+      /* Nav adjusts for mobile */
+      .nav {
+        padding: 1rem 1.25rem;
+      }
+      .nav__links {
+        gap: 1.25rem;
+      }
+      .nav__links a {
+        font-size: 0.8125rem;
+      }
+
+      .projects-section {
+        padding: 60px 0;
+      }
+      .project-card {
+        padding: 1.5rem;
+      }
+      .project-card__header {
+        flex-direction: column;
+      }
+      .project-card__footer {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .source-bar {
+        margin-block-start: 0.25rem;
+      }
+      .skills-overview,
+      .source-overview,
+      .activity-section,
+      .recent-sessions {
+        padding-block-end: 60px;
+      }
+      .activity-chart {
+        padding: 1.25rem;
+      }
+      .session-row {
+        grid-template-columns: 1fr auto;
+        gap: 0.75rem;
+        padding: 1rem 1.25rem;
+      }
+      .session-row__date,
+      .session-row__loc {
+        display: none;
+      }
+      .source-donut {
+        width: 140px;
+        height: 140px;
+      }
+    }
+  
+    /* ── Clickable cards ── */
+    a.project-card, a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.project-card:hover, a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
+  <!-- Navigation (overlays the hero photo) -->
+  <nav class="nav" aria-label="Main navigation">
+    <a href="./portfolio.html" class="nav__logo">maya johnson</a>
+    <ul class="nav__links">
+      <li><a href="./portfolio.html" aria-current="page">Portfolio</a></li>
+      <li><a href="./project.html">Project</a></li>
+      <li><a href="./session.html">Session</a></li>
+    </ul>
+  </nav>
+
+  <main id="main-content">
+    <!-- Hero Split: Magazine Spread -->
+    <section class="hero-split fade-in" aria-label="Introduction">
+      <div class="hero-photo-container">
+        <img
+          src="../assets/headshot-woman-1-400.jpg"
+          alt="Maya Johnson"
+          class="hero-photo"
+          loading="eager"
+        >
+      </div>
+
+      <div class="hero-content">
+        <h1 class="hero__name">Maya Johnson</h1>
+        <p class="hero__location">Brooklyn, NY</p>
+
+        <p class="hero__bio">Backend engineer passionate about distributed systems and developer tooling. I build things that scale — from real-time collaboration to event-driven architectures. Currently exploring how AI changes the way we write software.</p>
+
+        <ul class="hero__links" aria-label="Contact and social links">
+          <li>
+            <a href="mailto:maya@heyiam.com">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg>
+              maya@heyiam.com
+            </a>
+          </li>
+          <li>
+            <a href="https://linkedin.com/in/mayajohnson">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>
+              LinkedIn
+            </a>
+          </li>
+          <li>
+            <a href="https://github.com/interactivecats/heyi.am">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+              GitHub
+            </a>
+          </li>
+          <li>
+            <a href="https://x.com/mayajdev">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              @mayajdev
+            </a>
+          </li>
+          <li>
+            <a href="https://mayajohnson.dev">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              mayajohnson.dev
+            </a>
+          </li>
+          <li>
+            <a href="./project.html">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+              Resume (PDF)
+            </a>
+          </li>
+        </ul>
+
+        <hr class="hero-divider" aria-hidden="true">
+
+        <div class="hero-stats" aria-label="Portfolio statistics">
+          <div class="hero-stat">
+            <div class="hero-stat__number">3</div>
+            <div class="hero-stat__label">Projects</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat__number">28</div>
+            <div class="hero-stat__label">Sessions</div>
+          </div>
+          <div class="hero-stat" style="flex-basis: 100%; display: flex; align-items: baseline; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: baseline; gap: 0.25rem;">
+              <span class="hero-stat__number" style="font-size: clamp(1.5rem, 3vw, 2.25rem);">24</span>
+              <span class="hero-stat__label" style="font-size: 0.75rem;">h you</span>
+            </div>
+            <span style="font-family: var(--canvas-font-mono); color: var(--canvas-text-tertiary, #a8a29e); font-size: 0.875rem;">&middot;</span>
+            <div style="display: flex; align-items: baseline; gap: 0.25rem;">
+              <span class="hero-stat__number" style="font-size: clamp(1.5rem, 3vw, 2.25rem);">100</span>
+              <span class="hero-stat__label" style="font-size: 0.75rem;">h agents</span>
+            </div>
+            <span style="font-family: var(--canvas-font-mono); color: var(--canvas-text-tertiary, #a8a29e); font-size: 0.875rem;">&middot;</span>
+            <div style="display: flex; align-items: baseline; gap: 0.25rem;">
+              <span class="hero-stat__number" style="font-size: clamp(1.5rem, 3vw, 2.25rem); color: var(--canvas-accent, #f97316);">4.2</span>
+              <span class="hero-stat__label" style="font-size: 0.75rem;">&times;</span>
+            </div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat__number">18.4k</div>
+            <div class="hero-stat__label">Lines of code</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Below the fold: gallery-style content -->
+    <div class="page-content">
+      <!-- Projects -->
+      <section class="projects-section" aria-label="Projects">
+        <h2 class="section-title fade-in fade-in-d2">Projects</h2>
+
+        <div class="projects-grid">
+          <!-- BudgetWise -->
+          <a href="./project.html" class="project-card fade-in fade-in-d3">
+            <div class="project-card__header">
+              <h3 class="project-card__title">BudgetWise</h3>
+              <span class="project-card__stats">8 sessions &middot; 42.5h &middot; 4,460 LOC</span>
+            </div>
+            <p class="project-card__narrative">Personal finance app with recurring transaction detection, Plaid integration, and spending insights dashboard.</p>
+            <div class="project-card__footer">
+              <div class="project-card__skills">
+                <span class="skill-pill">TypeScript</span>
+                <span class="skill-pill">React</span>
+                <span class="skill-pill">Next.js</span>
+                <span class="skill-pill">Prisma</span>
+                <span class="skill-pill">PostgreSQL</span>
+                <span class="skill-pill">Stripe API</span>
+              </div>
+              <div class="source-bar">
+                <div class="source-bar__track">
+                  <div class="source-bar__fill" style="width: 62.5%"></div>
+                </div>
+                <span>Claude 62.5%</span>
+              </div>
+            </div>
+          </a>
+
+          <!-- ShellHook -->
+          <article class="project-card fade-in fade-in-d4">
+            <div class="project-card__header">
+              <h3 class="project-card__title">ShellHook</h3>
+              <span class="project-card__stats">7 sessions &middot; 32h &middot; 3,580 LOC</span>
+            </div>
+            <p class="project-card__narrative">Rust CLI tool for managing git hooks with TOML configuration and automatic symlinking.</p>
+            <div class="project-card__footer">
+              <div class="project-card__skills">
+                <span class="skill-pill">Rust</span>
+                <span class="skill-pill">CLI design</span>
+                <span class="skill-pill">TOML parsing</span>
+                <span class="skill-pill">Git internals</span>
+                <span class="skill-pill">Shell scripting</span>
+              </div>
+              <div class="source-bar">
+                <div class="source-bar__track">
+                  <div class="source-bar__fill" style="width: 85%"></div>
+                </div>
+                <span>Claude 85%</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- PixelBoard -->
+          <article class="project-card fade-in fade-in-d5">
+            <div class="project-card__header">
+              <h3 class="project-card__title">PixelBoard</h3>
+              <span class="project-card__stats">5 sessions &middot; 28h &middot; 2,940 LOC</span>
+            </div>
+            <p class="project-card__narrative">Real-time collaborative drawing canvas with CRDT-based state sync and pressure-sensitive input.</p>
+            <div class="project-card__footer">
+              <div class="project-card__skills">
+                <span class="skill-pill">TypeScript</span>
+                <span class="skill-pill">WebSocket</span>
+                <span class="skill-pill">Canvas API</span>
+                <span class="skill-pill">Redis</span>
+                <span class="skill-pill">Express</span>
+                <span class="skill-pill">CRDT</span>
+              </div>
+              <div class="source-bar">
+                <div class="source-bar__track">
+                  <div class="source-bar__fill" style="width: 60%"></div>
+                </div>
+                <span>Claude 60%</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- DevLog -->
+          <article class="project-card fade-in fade-in-d6">
+            <div class="project-card__header">
+              <h3 class="project-card__title">DevLog</h3>
+              <span class="project-card__stats">5 sessions &middot; 18h &middot; 1,840 LOC</span>
+            </div>
+            <p class="project-card__narrative">CLI tool for capturing development decisions and context as structured markdown notes.</p>
+            <div class="project-card__footer">
+              <div class="project-card__skills">
+                <span class="skill-pill">TypeScript</span>
+                <span class="skill-pill">Node.js</span>
+                <span class="skill-pill">CLI design</span>
+                <span class="skill-pill">Markdown</span>
+                <span class="skill-pill">SQLite</span>
+</div>
+              <div class="source-bar">
+                <div class="source-bar__track">
+                  <div class="source-bar__fill" style="width: 80%"></div>
+                </div>
+                <span>Claude 80%</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Snapgrid -->
+          <article class="project-card fade-in fade-in-d7">
+            <div class="project-card__header">
+              <h3 class="project-card__title">Snapgrid</h3>
+              <span class="project-card__stats">4 sessions &middot; 14h &middot; 1,520 LOC</span>
+            </div>
+            <p class="project-card__narrative">Responsive image gallery with masonry layout, lazy loading, and keyboard navigation.</p>
+            <div class="project-card__footer">
+              <div class="project-card__skills">
+                <span class="skill-pill">TypeScript</span>
+                <span class="skill-pill">React</span>
+                <span class="skill-pill">CSS Grid</span>
+                <span class="skill-pill">IntersectionObserver</span>
+                <span class="skill-pill">Accessibility</span>
+</div>
+              <div class="source-bar">
+                <div class="source-bar__track">
+                  <div class="source-bar__fill" style="width: 50%"></div>
+                </div>
+                <span>Claude 50%</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Terracotta -->
+          <article class="project-card fade-in fade-in-d8">
+            <div class="project-card__header">
+              <h3 class="project-card__title">Terracotta</h3>
+              <span class="project-card__stats">6 sessions &middot; 22h &middot; 2,680 LOC</span>
+            </div>
+            <p class="project-card__narrative">Design token pipeline that generates CSS custom properties, Tailwind config, and Figma tokens from a single YAML source.</p>
+            <div class="project-card__footer">
+              <div class="project-card__skills">
+                <span class="skill-pill">TypeScript</span>
+                <span class="skill-pill">Node.js</span>
+                <span class="skill-pill">YAML</span>
+                <span class="skill-pill">CSS</span>
+                <span class="skill-pill">Figma API</span>
+</div>
+              <div class="source-bar">
+                <div class="source-bar__track">
+                  <div class="source-bar__fill" style="width: 70%"></div>
+                </div>
+                <span>Claude 70%</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Skills Overview -->
+      <section class="skills-overview fade-in fade-in-d3" aria-label="All skills">
+        <h2 class="section-title" style="text-align: center;">Skills</h2>
+        <div class="skills-cloud">
+          <span class="skill-pill skill-pill--lg">TypeScript</span>
+          <span class="skill-pill skill-pill--lg">React</span>
+          <span class="skill-pill skill-pill--lg">Next.js</span>
+          <span class="skill-pill skill-pill--lg">Rust</span>
+          <span class="skill-pill skill-pill--lg">PostgreSQL</span>
+          <span class="skill-pill skill-pill--lg">Prisma</span>
+          <span class="skill-pill skill-pill--lg">WebSocket</span>
+          <span class="skill-pill skill-pill--lg">Canvas API</span>
+          <span class="skill-pill skill-pill--lg skill-pill--secondary">Redis</span>
+          <span class="skill-pill skill-pill--lg skill-pill--secondary">Express</span>
+          <span class="skill-pill skill-pill--lg skill-pill--secondary">CRDT</span>
+          <span class="skill-pill skill-pill--lg skill-pill--secondary">Stripe API</span>
+          <span class="skill-pill skill-pill--lg skill-pill--secondary">CLI design</span>
+          <span class="skill-pill skill-pill--lg skill-pill--secondary">TOML parsing</span>
+          <span class="skill-pill skill-pill--lg skill-pill--secondary">Git internals</span>
+          <span class="skill-pill skill-pill--lg skill-pill--secondary">Shell scripting</span>
+        </div>
+      </section>
+
+      <!-- Source Breakdown -->
+      <section class="source-overview fade-in fade-in-d4" aria-label="Source tool breakdown">
+        <h2 class="section-title" style="text-align: center;">Source Breakdown</h2>
+        <div class="source-overview__visual">
+          <svg class="source-donut" viewBox="0 0 180 180" aria-label="Donut chart: Claude 68%, Cursor 32%">
+            <title>Source breakdown: Claude 68%, Cursor 32%</title>
+            <!-- Background ring -->
+            <circle cx="90" cy="90" r="70" fill="none" stroke="#e4e4e7" stroke-width="20"/>
+            <!-- Claude segment (68% = 439.6 of 439.8 circumference at r=70) -->
+            <circle cx="90" cy="90" r="70" fill="none"
+                    stroke="#fb7185" stroke-width="20"
+                    stroke-dasharray="299.1 140.7"
+                    stroke-dashoffset="110"
+                    stroke-linecap="round"
+                    transform="rotate(-90 90 90)"/>
+            <!-- Cursor segment (32%) fills the rest via the background -->
+            <circle cx="90" cy="90" r="70" fill="none"
+                    stroke="#d4d4d8" stroke-width="20"
+                    stroke-dasharray="140.7 299.1"
+                    stroke-dashoffset="-189.1"
+                    stroke-linecap="round"
+                    transform="rotate(-90 90 90)"/>
+            <!-- Center text -->
+            <text x="90" y="84" font-family="DM Sans, sans-serif" font-size="28" font-weight="700" fill="#18181b" text-anchor="middle">20</text>
+            <text x="90" y="104" font-family="IBM Plex Mono, monospace" font-size="10" fill="#a1a1aa" text-anchor="middle">sessions</text>
+          </svg>
+          <div class="source-legend">
+            <div class="source-legend__item">
+              <span class="source-legend__dot" style="background: var(--canvas-accent)"></span>
+              <div>
+                <div class="source-legend__value">68%</div>
+                <div class="source-legend__label">Claude Code</div>
+              </div>
+            </div>
+            <div class="source-legend__item">
+              <span class="source-legend__dot" style="background: var(--canvas-gray, #d4d4d8)"></span>
+              <div>
+                <div class="source-legend__value">32%</div>
+                <div class="source-legend__label">Cursor</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Activity Chart -->
+      <section class="activity-section fade-in fade-in-d4" aria-label="Monthly activity">
+        <h2 class="section-title" style="text-align: center;">Activity</h2>
+        <div class="activity-chart">
+          <svg viewBox="0 0 600 200" aria-label="Bar chart showing sessions per week">
+            <title>Weekly session activity over the past two months</title>
+            <!-- Y axis -->
+            <text x="24" y="20" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="end">5</text>
+            <text x="24" y="60" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="end">4</text>
+            <text x="24" y="100" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="end">3</text>
+            <text x="24" y="140" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="end">2</text>
+            <text x="24" y="180" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="end">1</text>
+            <!-- Grid lines -->
+            <line x1="32" y1="17" x2="580" y2="17" stroke="#f4f4f5" stroke-width="1"/>
+            <line x1="32" y1="57" x2="580" y2="57" stroke="#f4f4f5" stroke-width="1"/>
+            <line x1="32" y1="97" x2="580" y2="97" stroke="#f4f4f5" stroke-width="1"/>
+            <line x1="32" y1="137" x2="580" y2="137" stroke="#f4f4f5" stroke-width="1"/>
+            <line x1="32" y1="177" x2="580" y2="177" stroke="#e4e4e7" stroke-width="1"/>
+            <!-- Bars: 8 weeks -->
+            <rect x="52" y="137" width="48" height="40" rx="8" fill="#fb7185"/>
+            <rect x="118" y="97" width="48" height="80" rx="8" fill="#fb7185"/>
+            <rect x="184" y="177" width="48" height="0" rx="8" fill="#d4d4d8"/>
+            <rect x="184" y="137" width="48" height="40" rx="8" fill="#d4d4d8"/>
+            <rect x="250" y="57" width="48" height="120" rx="8" fill="#fb7185"/>
+            <rect x="316" y="17" width="48" height="160" rx="8" fill="#fb7185"/>
+            <rect x="382" y="97" width="48" height="80" rx="8" fill="#d4d4d8"/>
+            <rect x="448" y="57" width="48" height="120" rx="8" fill="#fb7185"/>
+            <rect x="514" y="137" width="48" height="40" rx="8" fill="#d4d4d8"/>
+            <!-- X labels -->
+            <text x="76" y="197" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="middle">Feb 3</text>
+            <text x="142" y="197" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="middle">Feb 10</text>
+            <text x="208" y="197" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="middle">Feb 17</text>
+            <text x="274" y="197" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="middle">Feb 24</text>
+            <text x="340" y="197" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="middle">Mar 3</text>
+            <text x="406" y="197" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="middle">Mar 10</text>
+            <text x="472" y="197" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="middle">Mar 17</text>
+            <text x="538" y="197" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="middle">Mar 24</text>
+          </svg>
+        </div>
+      </section>
+
+      <!-- Recent Sessions -->
+      <section class="recent-sessions fade-in fade-in-d5" aria-label="Recent sessions">
+        <h2 class="section-title">Recent Sessions</h2>
+        <div class="sessions-list">
+          <a href="./session.html" class="session-row">
+            <div>
+              <div class="session-row__title">Set up Prisma schema</div>
+              <div class="session-row__project">BudgetWise</div>
+            </div>
+            <span class="session-row__date">Feb 3</span>
+            <span class="session-row__duration">72m</span>
+            <span class="session-row__loc">680 LOC</span>
+          </a>
+          <div class="session-row">
+            <div>
+              <div class="session-row__title">Transaction list + infinite scroll</div>
+              <div class="session-row__project">BudgetWise</div>
+            </div>
+            <span class="session-row__date">Feb 14</span>
+            <span class="session-row__duration">65m</span>
+            <span class="session-row__loc">520 LOC</span>
+          </div>
+          <div class="session-row">
+            <div>
+              <div class="session-row__title">Recurring transaction detection</div>
+              <div class="session-row__project">BudgetWise</div>
+            </div>
+            <span class="session-row__date">Mar 1</span>
+            <span class="session-row__duration">88m</span>
+            <span class="session-row__loc">890 LOC</span>
+          </div>
+          <div class="session-row">
+            <div>
+              <div class="session-row__title">Stripe integration</div>
+              <div class="session-row__project">BudgetWise</div>
+            </div>
+            <span class="session-row__date">Mar 10</span>
+            <span class="session-row__duration">55m</span>
+            <span class="session-row__loc">420 LOC</span>
+          </div>
+          <div class="session-row">
+            <div>
+              <div class="session-row__title">CSV import pipeline</div>
+              <div class="session-row__project">BudgetWise</div>
+            </div>
+            <span class="session-row__date">Mar 14</span>
+            <span class="session-row__duration">45m</span>
+            <span class="session-row__loc">380 LOC</span>
+          </div>
+          <div class="session-row">
+            <div>
+              <div class="session-row__title">Full-text search tsvector</div>
+              <div class="session-row__project">BudgetWise</div>
+            </div>
+            <span class="session-row__date">Mar 18</span>
+            <span class="session-row__duration">62m</span>
+            <span class="session-row__loc">510 LOC</span>
+          </div>
+          <div class="session-row">
+            <div>
+              <div class="session-row__title">Spending insights dashboard</div>
+              <div class="session-row__project">BudgetWise</div>
+            </div>
+            <span class="session-row__date">Mar 22</span>
+            <span class="session-row__duration">78m</span>
+            <span class="session-row__loc">720 LOC</span>
+          </div>
+          <div class="session-row">
+            <div>
+              <div class="session-row__title">Mobile responsive + 2FA</div>
+              <div class="session-row__project">BudgetWise</div>
+            </div>
+            <span class="session-row__date">Mar 26</span>
+            <span class="session-row__duration">50m</span>
+            <span class="session-row__loc">340 LOC</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="page-footer">
+    <div class="page-content">
+      <p>Built with <a href="https://heyi.am">heyi.am</a></p>
+    </div>
+  </footer>
+</body>
+</html>

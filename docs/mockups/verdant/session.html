@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verdant Template — Set up Prisma schema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Verdant Design Tokens ── */
+:root {
+  --vd-bg:              #fefdfb;
+  --vd-surface:         #f5f3ef;
+  --vd-surface-warm:    #f0ece4;
+  --vd-on-surface:      #1a1a17;
+  --vd-on-surface-2:    #4a4a40;
+  --vd-on-surface-3:    #7a7a6e;
+  --vd-accent:          #15803d;
+  --vd-accent-light:    #22c55e;
+  --vd-accent-bg:       rgba(21,128,61,0.08);
+  --vd-accent-border:   rgba(21,128,61,0.2);
+  --vd-border:          #e5e0d5;
+  --vd-border-light:    #ece8df;
+  --vd-brown:           #92400e;
+  --vd-brown-light:     #b45309;
+  --vd-cream:           #faf7f0;
+
+  /* Agent role colors */
+  --color-frontend:   #7c3aed;
+  --color-backend:    #0891b2;
+  --color-qa:         #059669;
+  --color-security:   #475569;
+  --color-reviewer:   #e11d48;
+  --color-ux:         #d97706;
+
+  --font-display: 'Fraunces', serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  16px;
+  --radius-xl:  24px;
+
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-section: 600ms;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--vd-on-surface);
+  background-color: var(--vd-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--vd-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--vd-accent);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  z-index: 1000;
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: 1rem;
+  text-decoration: none;
+}
+
+/* ── Section Fade-Up ── */
+.vd-section {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity var(--dur-section) var(--ease-out),
+              transform var(--dur-section) var(--ease-out);
+}
+.vd-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .vd-section {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .vd-agent-bar-fill,
+  .vd-beat-connector {
+    transition: none !important;
+  }
+}
+
+/* ── Page Layout ── */
+.vd-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* ── Nav ── */
+.vd-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--vd-border-light);
+}
+.vd-nav__brand {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--vd-accent);
+  text-decoration: none;
+}
+.vd-nav__brand:hover { text-decoration: none; opacity: 0.8; }
+.vd-nav__links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+.vd-nav__link {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--vd-on-surface-2);
+  text-decoration: none;
+  transition: color 150ms;
+}
+.vd-nav__link:hover { color: var(--vd-accent); text-decoration: none; }
+.vd-nav__link--active { color: var(--vd-accent); }
+
+/* ── Breadcrumb ── */
+.vd-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--vd-on-surface-3);
+  margin-bottom: 1.5rem;
+  font-family: var(--font-mono);
+}
+.vd-breadcrumb a { color: var(--vd-accent); }
+.vd-breadcrumb__sep { color: var(--vd-on-surface-3); opacity: 0.5; }
+
+/* ── Leaf Divider ── */
+.vd-leaf-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2.5rem 0;
+  gap: 1rem;
+}
+.vd-leaf-divider__line {
+  flex: 1;
+  height: 1px;
+  background: var(--vd-border);
+}
+.vd-leaf-divider__icon {
+  color: var(--vd-accent);
+  opacity: 0.4;
+  flex-shrink: 0;
+}
+
+/* ── Session Header ── */
+.vd-session-header {
+  margin-bottom: 1rem;
+}
+.vd-session-header h1 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--vd-on-surface);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+
+/* ── Meta Row ── */
+.vd-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  font-size: 0.8125rem;
+  color: var(--vd-on-surface-3);
+  margin-bottom: 1rem;
+}
+.vd-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+.vd-meta-item svg { flex-shrink: 0; }
+.vd-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  background: var(--vd-accent-bg);
+  color: var(--vd-accent);
+  padding: 0.1875rem 0.625rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--vd-accent-border);
+}
+
+/* ── Dev Take (quote) ── */
+.vd-dev-take {
+  background: var(--vd-surface);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  border-left: 3px solid var(--vd-accent);
+  margin: 1.5rem 0;
+}
+.vd-dev-take__label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vd-accent);
+  margin-bottom: 0.375rem;
+}
+.vd-dev-take blockquote {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--vd-on-surface-2);
+  line-height: 1.7;
+}
+
+/* ── Two Column Layout (Content + Sidebar) ── */
+.vd-two-col {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* ── Section Headers ── */
+.vd-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.vd-section-header__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--vd-accent-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vd-accent);
+  flex-shrink: 0;
+}
+.vd-section-header h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--vd-on-surface);
+}
+.vd-section-header h3 {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--vd-on-surface);
+}
+
+/* ── Execution Path (Beats) — Vine Style ── */
+.vd-beats {
+  position: relative;
+  padding-left: 2.5rem;
+}
+.vd-beats::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--vd-accent), var(--vd-accent-light), #a3e635);
+  border-radius: 1px;
+}
+.vd-beat {
+  position: relative;
+  padding-bottom: 1.5rem;
+}
+.vd-beat:last-child { padding-bottom: 0; }
+.vd-beat__node {
+  position: absolute;
+  left: -2.5rem;
+  top: 0.125rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--vd-bg);
+  border: 2px solid var(--vd-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.vd-beat__node-num {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 500;
+  color: var(--vd-accent);
+}
+/* Leaf decorations on beat vine */
+.vd-beat:nth-child(odd) .vd-beat__node::after {
+  content: '';
+  position: absolute;
+  left: -9px;
+  top: 5px;
+  width: 7px;
+  height: 10px;
+  border-radius: 0 80% 0 80%;
+  background: var(--vd-accent);
+  opacity: 0.2;
+  transform: rotate(-30deg);
+}
+.vd-beat:nth-child(even) .vd-beat__node::after {
+  content: '';
+  position: absolute;
+  right: -9px;
+  top: 5px;
+  width: 7px;
+  height: 10px;
+  border-radius: 80% 0 80% 0;
+  background: var(--vd-accent-light);
+  opacity: 0.2;
+  transform: rotate(30deg);
+}
+.vd-beat__title {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--vd-on-surface);
+  margin-bottom: 0.25rem;
+}
+.vd-beat__desc {
+  font-size: 0.8125rem;
+  color: var(--vd-on-surface-2);
+  line-height: 1.6;
+}
+
+/* ── Q&A ── */
+.vd-qa-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.vd-qa-item {
+  background: var(--vd-surface);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  border: 1px solid var(--vd-border-light);
+}
+.vd-qa-item__q {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--vd-on-surface);
+  margin-bottom: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+}
+.vd-qa-item__q-marker {
+  color: var(--vd-accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.vd-qa-item__a {
+  font-size: 0.8125rem;
+  color: var(--vd-on-surface-2);
+  line-height: 1.7;
+  padding-left: 1.375rem;
+}
+
+/* ── Sidebar ── */
+.vd-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.vd-sidebar-card {
+  background: var(--vd-surface);
+  border: 1px solid var(--vd-border-light);
+  border-radius: var(--radius-lg);
+  padding: 1.125rem;
+}
+.vd-sidebar-card__title {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vd-on-surface-3);
+  margin-bottom: 0.75rem;
+}
+
+/* ── Tools Table ── */
+.vd-tools-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.vd-tools-table tr {
+  border-bottom: 1px solid var(--vd-border-light);
+}
+.vd-tools-table tr:last-child { border-bottom: none; }
+.vd-tools-table td {
+  padding: 0.375rem 0;
+  font-size: 0.8125rem;
+}
+.vd-tools-table td:first-child {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--vd-on-surface);
+  font-weight: 500;
+}
+.vd-tools-table td:last-child {
+  text-align: right;
+  color: var(--vd-on-surface-3);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+/* ── Files Changed ── */
+.vd-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+.vd-file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  padding: 0.25rem 0;
+}
+.vd-file-item__name {
+  font-family: var(--font-mono);
+  color: var(--vd-on-surface);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 170px;
+}
+.vd-file-item__diff {
+  font-family: var(--font-mono);
+  color: var(--vd-accent);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+/* ── Sidebar Skills ── */
+.vd-sidebar-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.vd-skill-chip {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--vd-accent);
+  background: var(--vd-accent-bg);
+  border: 1px solid var(--vd-accent-border);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px 16px 9999px 4px;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+/* ── Agent Summary ── */
+.vd-agents {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.vd-agent-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+.vd-agent-row__info {
+  display: flex;
+  flex-direction: column;
+}
+.vd-agent-row__name {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--vd-on-surface);
+}
+.vd-agent-row__meta {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--vd-on-surface-3);
+}
+.vd-agent-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--vd-border);
+  overflow: hidden;
+  grid-column: 1 / -1;
+}
+.vd-agent-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s var(--ease-out);
+  width: 0;
+}
+
+/* ── Footer ── */
+.vd-footer {
+  text-align: center;
+  padding: 2rem 0 1rem;
+  font-size: 0.75rem;
+  color: var(--vd-on-surface-3);
+  border-top: 1px solid var(--vd-border-light);
+  margin-top: 3rem;
+}
+.vd-footer a { color: var(--vd-accent); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .vd-page { padding: 1.25rem 1rem 3rem; }
+  .vd-session-header h1 { font-size: 1.5rem; }
+  .vd-two-col {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .vd-sidebar {
+    order: -1;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  .vd-sidebar-card:first-child {
+    grid-column: 1 / -1;
+  }
+  .vd-nav__links { gap: 1rem; }
+  .vd-section-header h2 { font-size: 1.25rem; }
+  .vd-beats { padding-left: 2rem; }
+  .vd-file-item__name { max-width: 120px; }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<div class="vd-page">
+
+  <!-- ── Navigation ── -->
+  <nav class="vd-nav" aria-label="Main navigation">
+    <a href="./portfolio.html" class="vd-nav__brand" aria-label="Home">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;">
+        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c1.5-3 2-6.5 2-10S13.5 2 12 2z"/>
+        <path d="M12 2c3 2 5 6 5 10s-2 8-5 10"/>
+      </svg>
+      heyi.am
+    </a>
+    <ul class="vd-nav__links">
+      <li><a href="./portfolio.html" class="vd-nav__link">Portfolio</a></li>
+      <li><a href="./project.html" class="vd-nav__link">Project</a></li>
+      <li><a href="./session.html" class="vd-nav__link vd-nav__link--active">Session</a></li>
+    </ul>
+  </nav>
+
+  <main id="main-content">
+
+    <!-- ── Breadcrumb ── -->
+    <nav class="vd-breadcrumb" aria-label="Breadcrumb">
+      <a href="./portfolio.html">alex</a>
+      <span class="vd-breadcrumb__sep" aria-hidden="true">/</span>
+      <a href="./project.html">budgetwise</a>
+      <span class="vd-breadcrumb__sep" aria-hidden="true">/</span>
+      <span>Set up Prisma schema</span>
+    </nav>
+
+    <!-- ── Session Header ── -->
+    <section class="vd-section vd-session-header" aria-label="Session header">
+      <h1>Set up Prisma schema with User, Account, and Transaction models</h1>
+      <div class="vd-meta-row">
+        <div class="vd-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>February 3, 2026</span>
+        </div>
+        <div class="vd-meta-item">
+          <span class="vd-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>
+            Claude Code
+          </span>
+        </div>
+        <div class="vd-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>72 min (87m wall)</span>
+        </div>
+        <div class="vd-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <span>45 turns</span>
+        </div>
+        <div class="vd-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          <span>680 LOC</span>
+        </div>
+        <div class="vd-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span>4 files</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Dev Take ── -->
+    <section class="vd-section" aria-label="Developer's take">
+      <div class="vd-dev-take">
+        <div class="vd-dev-take__label">Dev Take</div>
+        <blockquote>Went with discriminated unions over STI -- nullable columns everywhere felt wrong. The audit log instead of soft deletes was the right call too.</blockquote>
+      </div>
+    </section>
+
+    <!-- ── Leaf Divider ── -->
+    <div class="vd-leaf-divider" role="separator">
+      <div class="vd-leaf-divider__line"></div>
+      <svg class="vd-leaf-divider__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75"/>
+      </svg>
+      <div class="vd-leaf-divider__line"></div>
+    </div>
+
+    <!-- ── Two Column Layout ── -->
+    <div class="vd-two-col">
+
+      <!-- ── Main Content ── -->
+      <div>
+
+        <!-- ── Execution Path ── -->
+        <section class="vd-section" aria-label="Execution path">
+          <div class="vd-section-header">
+            <div class="vd-section-header__icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <h2>Execution Path</h2>
+          </div>
+          <div class="vd-beats" role="list" aria-label="Execution steps">
+            <div class="vd-beat" role="listitem">
+              <div class="vd-beat__node" aria-hidden="true"><span class="vd-beat__node-num">1</span></div>
+              <div class="vd-beat__title">Schema design</div>
+              <div class="vd-beat__desc">Sketched out the core models -- User, Account, Transaction. Decided on a discriminated union for transaction types instead of STI.</div>
+            </div>
+            <div class="vd-beat" role="listitem">
+              <div class="vd-beat__node" aria-hidden="true"><span class="vd-beat__node-num">2</span></div>
+              <div class="vd-beat__title">Prisma setup</div>
+              <div class="vd-beat__desc">Initialized Prisma with PostgreSQL, wrote the schema file with proper relations and indexes.</div>
+            </div>
+            <div class="vd-beat" role="listitem">
+              <div class="vd-beat__node" aria-hidden="true"><span class="vd-beat__node-num">3</span></div>
+              <div class="vd-beat__title">Migration</div>
+              <div class="vd-beat__desc">Ran the initial migration, fixed a cascade delete issue on Account to Transaction.</div>
+            </div>
+            <div class="vd-beat" role="listitem">
+              <div class="vd-beat__node" aria-hidden="true"><span class="vd-beat__node-num">4</span></div>
+              <div class="vd-beat__title">Seed data</div>
+              <div class="vd-beat__desc">Created a seed script with realistic test data -- multiple accounts, mixed transaction types.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Leaf Divider ── -->
+        <div class="vd-leaf-divider" role="separator">
+          <div class="vd-leaf-divider__line"></div>
+          <svg class="vd-leaf-divider__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6.5 21.5s2-3 2-6c0-4-3-6-3-6s3 1 6 1 7-2 7-2-1 4-1 7-1.5 6-1.5 6"/>
+            <path d="M8 14s-1.5-2-1.5-4 2-4.5 2-4.5"/>
+          </svg>
+          <div class="vd-leaf-divider__line"></div>
+        </div>
+
+        <!-- ── Q&A ── -->
+        <section class="vd-section" aria-label="Questions and answers">
+          <div class="vd-section-header">
+            <div class="vd-section-header__icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <h2>Q&amp;A</h2>
+          </div>
+          <div class="vd-qa-list">
+            <article class="vd-qa-item">
+              <div class="vd-qa-item__q">
+                <span class="vd-qa-item__q-marker" aria-hidden="true">Q</span>
+                <span>Why did you choose a discriminated union over single-table inheritance for transaction types?</span>
+              </div>
+              <p class="vd-qa-item__a">STI would have left nullable columns everywhere -- transferTo only makes sense for transfers, recurringSchedule only for recurring. The union pattern keeps each type clean and the TypeScript compiler catches missing fields.</p>
+            </article>
+            <article class="vd-qa-item">
+              <div class="vd-qa-item__q">
+                <span class="vd-qa-item__q-marker" aria-hidden="true">Q</span>
+                <span>How does the cascade delete work between Account and Transaction?</span>
+              </div>
+              <p class="vd-qa-item__a">Deleting an account cascades to its transactions. Initially had it set to restrict, but that made account cleanup impossible without manual transaction deletion first.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- ── Agent Summary ── -->
+        <section class="vd-section" aria-label="Agent summary" style="margin-top: 2.5rem;">
+          <div class="vd-section-header">
+            <div class="vd-section-header__icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            </div>
+            <h2>Agent Contributions</h2>
+          </div>
+          <div class="vd-agents">
+            <div class="vd-agent-row">
+              <div class="vd-agent-row__info">
+                <span class="vd-agent-row__name">backend-dev</span>
+                <span class="vd-agent-row__meta">25m &middot; 280 LOC</span>
+              </div>
+              <div class="vd-agent-bar">
+                <div class="vd-agent-bar-fill" data-width="100" style="background: var(--color-backend);" aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="vd-agent-row">
+              <div class="vd-agent-row__info">
+                <span class="vd-agent-row__name">qa-engineer</span>
+                <span class="vd-agent-row__meta">18m &middot; 190 LOC</span>
+              </div>
+              <div class="vd-agent-bar">
+                <div class="vd-agent-bar-fill" data-width="68" style="background: var(--color-qa);" aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="vd-agent-row">
+              <div class="vd-agent-row__info">
+                <span class="vd-agent-row__name">frontend-dev</span>
+                <span class="vd-agent-row__meta">15m &middot; 125 LOC</span>
+              </div>
+              <div class="vd-agent-bar">
+                <div class="vd-agent-bar-fill" data-width="45" style="background: var(--color-frontend);" aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="vd-agent-row">
+              <div class="vd-agent-row__info">
+                <span class="vd-agent-row__name">security-engineer</span>
+                <span class="vd-agent-row__meta">12m &middot; 85 LOC</span>
+              </div>
+              <div class="vd-agent-bar">
+                <div class="vd-agent-bar-fill" data-width="30" style="background: var(--color-security);" aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="vd-agent-row">
+              <div class="vd-agent-row__info">
+                <span class="vd-agent-row__name">code-reviewer</span>
+                <span class="vd-agent-row__meta">8m &middot; 0 LOC</span>
+              </div>
+              <div class="vd-agent-bar">
+                <div class="vd-agent-bar-fill" data-width="10" style="background: var(--color-reviewer);" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ── Sidebar ── -->
+      <aside class="vd-sidebar" aria-label="Session details">
+
+        <!-- Tools Used -->
+        <div class="vd-sidebar-card">
+          <div class="vd-sidebar-card__title">Tools Used</div>
+          <table class="vd-tools-table" aria-label="Tool usage counts">
+            <tbody>
+              <tr>
+                <td>Edit</td>
+                <td>18</td>
+              </tr>
+              <tr>
+                <td>Read</td>
+                <td>12</td>
+              </tr>
+              <tr>
+                <td>Bash</td>
+                <td>9</td>
+              </tr>
+              <tr>
+                <td>Write</td>
+                <td>4</td>
+              </tr>
+              <tr>
+                <td>Grep</td>
+                <td>2</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Files Changed -->
+        <div class="vd-sidebar-card">
+          <div class="vd-sidebar-card__title">Files Changed</div>
+          <div class="vd-files-list" aria-label="Changed files">
+            <div class="vd-file-item">
+              <span class="vd-file-item__name" title="prisma/schema.prisma">schema.prisma</span>
+              <span class="vd-file-item__diff">+142</span>
+            </div>
+            <div class="vd-file-item">
+              <span class="vd-file-item__name" title="prisma/seed.ts">seed.ts</span>
+              <span class="vd-file-item__diff">+89</span>
+            </div>
+            <div class="vd-file-item">
+              <span class="vd-file-item__name" title="prisma/migrations/20260203_init/migration.sql">migration.sql</span>
+              <span class="vd-file-item__diff">+415</span>
+            </div>
+            <div class="vd-file-item">
+              <span class="vd-file-item__name" title="src/lib/db.ts">db.ts</span>
+              <span class="vd-file-item__diff">+34</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Skills -->
+        <div class="vd-sidebar-card">
+          <div class="vd-sidebar-card__title">Skills</div>
+          <div class="vd-sidebar-skills">
+            <span class="vd-skill-chip">TypeScript</span>
+            <span class="vd-skill-chip">Prisma</span>
+            <span class="vd-skill-chip">PostgreSQL</span>
+          </div>
+        </div>
+
+      </aside>
+
+    </div>
+
+  </main>
+
+  <footer class="vd-footer">
+    <p>Built with <a href="#">heyi.am</a> &mdash; the signal-first portfolio</p>
+  </footer>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── Intersection Observer for fade-up sections ──
+  if (prefersReduced) {
+    var allSections = document.querySelectorAll('.vd-section');
+    for (var i = 0; i < allSections.length; i++) {
+      allSections[i].classList.add('visible');
+    }
+  }
+
+  var sectionObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        sectionObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  var sections = document.querySelectorAll('.vd-section');
+  sections.forEach(function(s) {
+    if (!prefersReduced) {
+      sectionObserver.observe(s);
+    }
+  });
+
+  // ── Agent Bar Animation ──
+  var agentObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        var fills = entry.target.querySelectorAll('.vd-agent-bar-fill');
+        fills.forEach(function(fill, index) {
+          var w = fill.getAttribute('data-width');
+          if (prefersReduced) {
+            fill.style.width = w + '%';
+          } else {
+            setTimeout(function() {
+              fill.style.width = w + '%';
+            }, index * 100);
+          }
+        });
+        agentObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+
+  var agentSection = document.querySelector('.vd-agents');
+  if (agentSection) {
+    agentObserver.observe(agentSection);
+  }
+
+})();
+</script>
+
+</body>
+</html>

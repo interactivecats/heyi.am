@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BudgetWise — Meridian Template</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Meridian Design Tokens ── */
+:root {
+  --mer-bg:             #022c22;
+  --mer-surface:        #064e3b;
+  --mer-card:           #053f30;
+  --mer-border:         #0d7357;
+  --mer-border-subtle:  #065f46;
+  --mer-text:           #d1fae5;
+  --mer-text-secondary: #a7f3d0;
+  --mer-text-muted:     #6ee7b7;
+  --mer-accent:         #34d399;
+  --mer-accent-dim:     rgba(52, 211, 153, 0.15);
+  --mer-white:          #ecfdf5;
+  --mer-contour:        rgba(52, 211, 153, 0.06);
+  --mer-contour-strong: rgba(52, 211, 153, 0.1);
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+
+  --radius-sm: 4px;
+  --radius:    8px;
+
+  /* Agent colors */
+  --agent-frontend:  #7c3aed;
+  --agent-backend:   #0891b2;
+  --agent-qa:        #059669;
+  --agent-security:  #475569;
+  --agent-reviewer:  #e11d48;
+  --agent-ux:        #d97706;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--mer-text);
+  background-color: var(--mer-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  overflow-x: hidden;
+}
+
+a { color: var(--mer-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Topographic Contour Background ── */
+.topo-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.topo-bg svg { width: 100%; height: 100%; }
+
+.topo-contours {
+  animation: topo-drift 30s ease-in-out infinite alternate;
+}
+
+@keyframes topo-drift {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(-12px, 8px) scale(1.02); }
+  100% { transform: translate(6px, -6px) scale(0.99); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topo-contours { animation: none; }
+  .section-reveal { opacity: 1 !important; transform: none !important; }
+  .stat-counter { animation: none !important; }
+  .route-waypoint { animation: none !important; }
+  .elevation-path { animation: none !important; }
+}
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--mer-accent);
+  color: var(--mer-bg);
+  padding: 0.5rem 1rem;
+  z-index: 1000;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  border-radius: var(--radius-sm);
+}
+.skip-link:focus { top: 1rem; color: var(--mer-bg); text-decoration: none; }
+
+/* ── Page Shell ── */
+.mer-page {
+  position: relative;
+  z-index: 1;
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ── Navigation ── */
+.mer-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block-end: 1.25rem;
+  border-bottom: 1px solid var(--mer-border-subtle);
+  margin-block-end: 3rem;
+}
+
+.mer-nav__brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--mer-accent);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mer-nav__brand-icon { width: 20px; height: 20px; }
+
+.mer-nav__links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+
+.mer-nav__links a {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--mer-text-secondary);
+  transition: color 0.2s;
+  letter-spacing: 0.02em;
+}
+
+.mer-nav__links a:hover,
+.mer-nav__links a[aria-current="page"] {
+  color: var(--mer-accent);
+  text-decoration: none;
+}
+
+/* ── Section Headers ── */
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--mer-text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-block-end: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--mer-border-subtle);
+}
+
+.section-heading {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--mer-white);
+  margin-block-end: 1.25rem;
+  line-height: 1.2;
+}
+
+/* ── Section Fade-In ── */
+.section-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.section-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Breadcrumb ── */
+.breadcrumb {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--mer-text-muted);
+  margin-block-end: 1.5rem;
+}
+
+.breadcrumb a { color: var(--mer-text-muted); }
+.breadcrumb a:hover { color: var(--mer-accent); }
+.breadcrumb__sep { margin-inline: 0.375rem; opacity: 0.4; }
+
+/* ── Project Hero ── */
+.project-hero {
+  margin-block-end: 3rem;
+}
+
+.project-hero__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.25rem;
+  color: var(--mer-white);
+  line-height: 1.1;
+  margin-block-end: 0.75rem;
+}
+
+.project-hero__links {
+  display: flex;
+  gap: 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  margin-block-end: 1.5rem;
+}
+
+.project-hero__links a {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.project-hero__links svg {
+  width: 14px;
+  height: 14px;
+  stroke: var(--mer-accent);
+  fill: none;
+  stroke-width: 2;
+}
+
+/* ── Screenshot placeholder ── */
+.screenshot {
+  background: var(--mer-surface);
+  border: 1px solid var(--mer-border-subtle);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-block-end: 3rem;
+}
+
+.screenshot__chrome {
+  background: var(--mer-card);
+  padding: 0.625rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--mer-border-subtle);
+}
+
+.screenshot__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--mer-border);
+}
+
+.screenshot__url {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--mer-text-muted);
+  margin-inline-start: 0.5rem;
+}
+
+.screenshot__body {
+  height: 240px;
+  background: linear-gradient(135deg, var(--mer-surface), var(--mer-card));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.screenshot__placeholder {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--mer-text-muted);
+  opacity: 0.5;
+}
+
+/* ── Stats Row ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin-block-end: 3rem;
+  padding: 1.25rem;
+  background: var(--mer-surface);
+  border: 1px solid var(--mer-border-subtle);
+  border-radius: var(--radius);
+}
+
+.stat-cell { text-align: center; }
+
+.stat-cell__coord {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mer-text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-block-end: 0.25rem;
+}
+
+.stat-cell__value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 1.375rem;
+  color: var(--mer-accent);
+}
+
+.stat-cell--leverage {
+  grid-column: span 2;
+}
+.mer-leverage-nums {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.mer-leverage-nums .mlev-val {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 1.375rem;
+  color: var(--mer-accent);
+}
+.mer-leverage-nums .mlev-lbl {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  color: var(--mer-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.mer-leverage-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--mer-border-subtle);
+  display: flex;
+  overflow: hidden;
+}
+.mer-leverage-bar__human {
+  height: 100%;
+  width: 19%;
+  background: var(--mer-text);
+  border-radius: 2px 0 0 2px;
+}
+.mer-leverage-bar__agent {
+  height: 100%;
+  width: 81%;
+  background: var(--mer-accent);
+  border-radius: 0 2px 2px 0;
+}
+.stat-cell__label {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--mer-text-secondary);
+}
+
+/* ── Narrative ── */
+.narrative {
+  margin-block-end: 3rem;
+}
+
+.narrative p {
+  font-size: 1rem;
+  color: var(--mer-text-secondary);
+  line-height: 1.7;
+  margin-block-end: 1.25rem;
+}
+
+.narrative p:last-child { margin-block-end: 0; }
+
+/* ── Phase Route / Timeline ── */
+.route-section {
+  margin-block-end: 3rem;
+}
+
+.route {
+  position: relative;
+  padding-inline-start: 2.5rem;
+}
+
+.route::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--mer-accent), var(--mer-border-subtle));
+  border-radius: 1px;
+}
+
+.route-waypoint {
+  position: relative;
+  margin-block-end: 1.75rem;
+  padding-block-end: 0.5rem;
+}
+
+.route-waypoint:last-child { margin-block-end: 0; }
+
+.route-waypoint__marker {
+  position: absolute;
+  left: -2.5rem;
+  top: 0.125rem;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.route-waypoint__marker-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--mer-accent);
+  border: 2px solid var(--mer-bg);
+  box-shadow: 0 0 0 2px var(--mer-accent);
+}
+
+.route-waypoint__phase {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mer-accent);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-block-end: 0.25rem;
+}
+
+.route-waypoint__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  color: var(--mer-white);
+  margin-block-end: 0.375rem;
+}
+
+.route-waypoint__desc {
+  font-size: 0.875rem;
+  color: var(--mer-text-secondary);
+  line-height: 1.55;
+}
+
+.route-waypoint__dates {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--mer-text-muted);
+  margin-block-start: 0.375rem;
+}
+
+/* ── Elevation Profile Chart ── */
+.elevation-section {
+  margin-block-end: 3rem;
+}
+
+.elevation-chart {
+  background: var(--mer-surface);
+  border: 1px solid var(--mer-border-subtle);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  overflow: hidden;
+}
+
+.elevation-chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.elevation-chart__x-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-block-start: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mer-text-muted);
+}
+
+/* ── Session Table ── */
+.sessions-section {
+  margin-block-end: 3rem;
+}
+
+.session-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.session-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.session-table th {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mer-text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--mer-border-subtle);
+  white-space: nowrap;
+}
+
+.session-table td {
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid rgba(6, 95, 70, 0.3);
+  color: var(--mer-text-secondary);
+  white-space: nowrap;
+}
+
+.session-table tbody tr:hover {
+  background: var(--mer-accent-dim);
+}
+
+.session-table td:first-child {
+  font-family: var(--font-mono);
+  color: var(--mer-text-muted);
+  font-size: 0.8125rem;
+}
+
+.session-table__title-cell {
+  white-space: normal !important;
+  min-width: 200px;
+}
+
+.session-table__title-cell a {
+  color: var(--mer-white);
+  font-weight: 500;
+}
+
+.session-table__title-cell a:hover { color: var(--mer-accent); }
+
+.session-table .mono-val {
+  font-family: var(--font-mono);
+  color: var(--mer-accent);
+  font-size: 0.8125rem;
+}
+
+/* Agent dots in table */
+.agent-dots {
+  display: flex;
+  gap: 3px;
+}
+
+.agent-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* ── Key Decisions ── */
+.decisions-section {
+  margin-block-end: 3rem;
+}
+
+.decision-list {
+  list-style: none;
+  counter-reset: decision-counter;
+}
+
+.decision-item {
+  counter-increment: decision-counter;
+  position: relative;
+  padding-inline-start: 2.5rem;
+  margin-block-end: 1rem;
+  font-size: 0.9375rem;
+  color: var(--mer-text-secondary);
+  line-height: 1.55;
+}
+
+.decision-item::before {
+  content: counter(decision-counter, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--mer-accent);
+  font-weight: 600;
+}
+
+/* ── Skills Grid ── */
+.skills-section {
+  margin-block-end: 3rem;
+}
+
+.skills-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.skill-chip {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 0.3125rem 0.75rem;
+  background: var(--mer-accent-dim);
+  color: var(--mer-accent);
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.02em;
+}
+
+/* ── Source Breakdown ── */
+.source-section {
+  margin-block-end: 3rem;
+}
+
+.source-bar-large {
+  display: flex;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-block-end: 0.75rem;
+}
+
+.source-bar-large__segment { height: 100%; }
+.source-bar-large__segment--claude { background: var(--mer-accent); }
+.source-bar-large__segment--cursor { background: var(--mer-text-muted); }
+
+.source-legend {
+  display: flex;
+  gap: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--mer-text-secondary);
+}
+
+.source-legend__dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-inline-end: 0.375rem;
+  vertical-align: middle;
+}
+
+/* ── Featured Sessions ── */
+.featured-section {
+  margin-block-end: 3rem;
+}
+
+.featured-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.featured-card {
+  background: var(--mer-surface);
+  border: 1px solid var(--mer-border-subtle);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  transition: border-color 0.2s;
+}
+
+.featured-card:hover { border-color: var(--mer-accent); }
+
+.featured-card__tag {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mer-accent);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-block-end: 0.375rem;
+}
+
+.featured-card__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--mer-white);
+  margin-block-end: 0.5rem;
+}
+
+.featured-card__meta {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--mer-text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.featured-card__meta strong {
+  color: var(--mer-accent);
+  font-weight: 500;
+}
+
+/* ── Footer ── */
+.mer-footer {
+  margin-block-start: 4rem;
+  padding-block-start: 1.5rem;
+  border-top: 1px solid var(--mer-border-subtle);
+  text-align: center;
+}
+
+.mer-footer__text {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--mer-text-muted);
+  letter-spacing: 0.04em;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .mer-page { padding: 1.25rem 1rem; }
+  .project-hero__title { font-size: 1.75rem; }
+  .stats-row { grid-template-columns: repeat(3, 1fr); }
+  .featured-grid { grid-template-columns: 1fr; }
+  .session-table { font-size: 0.8125rem; }
+  .mer-nav__links { gap: 1rem; }
+}
+
+@media (max-width: 480px) {
+  .project-hero__title { font-size: 1.375rem; }
+  .section-heading { font-size: 1.25rem; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .mer-nav { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+}
+
+    /* ── Clickable session cards ── */
+    a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+<!-- Topographic contour background -->
+<div class="topo-bg" aria-hidden="true">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid slice">
+    <g class="topo-contours" fill="none" stroke-width="0.75">
+      <ellipse cx="350" cy="300" rx="280" ry="180" stroke="var(--mer-contour)" />
+      <ellipse cx="355" cy="305" rx="240" ry="150" stroke="var(--mer-contour)" />
+      <ellipse cx="360" cy="310" rx="200" ry="120" stroke="var(--mer-contour-strong)" />
+      <ellipse cx="365" cy="315" rx="160" ry="90" stroke="var(--mer-contour)" />
+      <ellipse cx="370" cy="320" rx="120" ry="65" stroke="var(--mer-contour-strong)" />
+      <ellipse cx="850" cy="550" rx="300" ry="200" stroke="var(--mer-contour)" />
+      <ellipse cx="845" cy="545" rx="250" ry="165" stroke="var(--mer-contour)" />
+      <ellipse cx="840" cy="540" rx="200" ry="130" stroke="var(--mer-contour-strong)" />
+      <ellipse cx="835" cy="535" rx="150" ry="95" stroke="var(--mer-contour)" />
+      <ellipse cx="950" cy="150" rx="220" ry="140" stroke="var(--mer-contour)" />
+      <ellipse cx="955" cy="155" rx="170" ry="105" stroke="var(--mer-contour-strong)" />
+      <ellipse cx="960" cy="160" rx="120" ry="70" stroke="var(--mer-contour)" />
+      <ellipse cx="150" cy="700" rx="250" ry="160" stroke="var(--mer-contour)" />
+      <ellipse cx="155" cy="695" rx="200" ry="125" stroke="var(--mer-contour-strong)" />
+      <ellipse cx="160" cy="690" rx="150" ry="90" stroke="var(--mer-contour)" />
+    </g>
+  </svg>
+</div>
+
+<a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="mer-page">
+  <!-- Navigation -->
+  <nav class="mer-nav" aria-label="Primary navigation">
+    <div class="mer-nav__brand">
+      <svg class="mer-nav__brand-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+        <circle cx="10" cy="10" r="4" stroke="currentColor" stroke-width="1"/>
+        <line x1="10" y1="2" x2="10" y2="18" stroke="currentColor" stroke-width="0.75" opacity="0.4"/>
+        <line x1="2" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="0.75" opacity="0.4"/>
+      </svg>
+      meridian
+    </div>
+    <ul class="mer-nav__links">
+      <li><a href="./portfolio.html">portfolio</a></li>
+      <li><a href="./project.html" aria-current="page">project</a></li>
+      <li><a href="./session.html">session</a></li>
+    </ul>
+  </nav>
+
+  <main id="main-content">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="./portfolio.html">alex</a>
+      <span class="breadcrumb__sep">/</span>
+      <span aria-current="page">budgetwise</span>
+    </nav>
+
+    <!-- Hero -->
+    <section class="project-hero section-reveal" aria-label="Project overview">
+      <div class="section-label">
+        <span>&#167;01 &mdash; base camp</span>
+      </div>
+      <h1 class="project-hero__title">BudgetWise</h1>
+      <div class="project-hero__links">
+        <a href="./session.html">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          github.com/alex/budgetwise
+        </a>
+        <a href="./session.html">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          budgetwise.app
+        </a>
+      </div>
+    </section>
+
+    <!-- Screenshot -->
+    <div class="screenshot section-reveal" role="img" aria-label="BudgetWise application screenshot">
+      <div class="screenshot__chrome">
+        <span class="screenshot__dot"></span>
+        <span class="screenshot__dot"></span>
+        <span class="screenshot__dot"></span>
+        <span class="screenshot__url">budgetwise.app</span>
+      </div>
+      <div class="screenshot__body">
+        <span class="screenshot__placeholder">[ application screenshot ]</span>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <section class="section-reveal" aria-label="Project statistics">
+      <div class="section-label">
+        <span>&#167;02 &mdash; survey data</span>
+      </div>
+      <div class="stats-row">
+        <div class="stat-cell" role="group" aria-label="Sessions">
+          <div class="stat-cell__coord">waypts</div>
+          <div class="stat-cell__value">8</div>
+          <div class="stat-cell__label">sessions</div>
+        </div>
+        <div class="stat-cell stat-cell--leverage" role="group" aria-label="Leverage: 8.1h you, 34.4h agents, 4.2x multiplier">
+          <div class="stat-cell__coord">leverage</div>
+          <div class="mer-leverage-nums">
+            <span><span class="mlev-val">8.1h</span> <span class="mlev-lbl">you</span></span>
+            <span><span class="mlev-val">34.4h</span> <span class="mlev-lbl">agents</span></span>
+            <span><span class="mlev-val">4.2x</span></span>
+          </div>
+          <div class="mer-leverage-bar">
+            <div class="mer-leverage-bar__human"></div>
+            <div class="mer-leverage-bar__agent"></div>
+          </div>
+        </div>
+        <div class="stat-cell" role="group" aria-label="Lines of code">
+          <div class="stat-cell__coord">datum</div>
+          <div class="stat-cell__value">4,460</div>
+          <div class="stat-cell__label">LOC</div>
+        </div>
+        <div class="stat-cell" role="group" aria-label="Files changed">
+          <div class="stat-cell__coord">feat</div>
+          <div class="stat-cell__value">156</div>
+          <div class="stat-cell__label">files</div>
+        </div>
+        <div class="stat-cell" role="group" aria-label="Tokens used">
+          <div class="stat-cell__coord">flux</div>
+          <div class="stat-cell__value">2.1M</div>
+          <div class="stat-cell__label">tokens</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Narrative -->
+    <section class="narrative section-reveal" aria-label="Project narrative">
+      <div class="section-label">
+        <span>&#167;03 &mdash; field notes</span>
+      </div>
+      <h2 class="section-heading">Narrative</h2>
+      <p>Started with a basic Prisma schema but realized halfway through that I needed polymorphic transaction types. The AI kept suggesting single-table inheritance but I pushed back &mdash; went with a discriminated union pattern instead. Nullable fields for transfer-specific data, hard deletes with an audit log.</p>
+      <p>The recurring transaction detection was the hardest part. Had to figure out the right tolerance windows &mdash; monthly transactions drift by a few days, weekly ones are more precise. Settled on three consecutive interval matches before marking something as recurring. The partial index on merchant_normalized brought the detection query from 2 seconds to 120ms on 10k transactions.</p>
+      <p>Plaid integration went smoother than expected. The token exchange flow is straightforward, but the webhook handling needed careful idempotency &mdash; Plaid sends duplicate webhooks, so I used a processed-events table keyed on webhook ID.</p>
+    </section>
+
+    <!-- Phases (Route / Path with waypoints) -->
+    <section class="route-section section-reveal" aria-label="Project phases">
+      <div class="section-label">
+        <span>&#167;04 &mdash; route map</span>
+      </div>
+      <h2 class="section-heading">Phases</h2>
+      <div class="route" role="list">
+        <div class="route-waypoint" role="listitem">
+          <div class="route-waypoint__marker"><div class="route-waypoint__marker-dot"></div></div>
+          <div class="route-waypoint__phase">Phase 1 &mdash; Foundation</div>
+          <div class="route-waypoint__title">Schema design, Prisma setup, transaction CRUD</div>
+          <div class="route-waypoint__desc">Built the core data model with discriminated unions for transaction types, set up database migrations, and implemented basic CRUD operations.</div>
+          <div class="route-waypoint__dates">Feb 3 &ndash; Feb 14</div>
+        </div>
+        <div class="route-waypoint" role="listitem">
+          <div class="route-waypoint__marker"><div class="route-waypoint__marker-dot"></div></div>
+          <div class="route-waypoint__phase">Phase 2 &mdash; Data Pipeline</div>
+          <div class="route-waypoint__title">CSV import, Plaid integration, recurring detection</div>
+          <div class="route-waypoint__desc">Connected external data sources and built the recurring transaction detection algorithm with tolerance windows.</div>
+          <div class="route-waypoint__dates">Feb 17 &ndash; Feb 26</div>
+        </div>
+        <div class="route-waypoint" role="listitem">
+          <div class="route-waypoint__marker"><div class="route-waypoint__marker-dot"></div></div>
+          <div class="route-waypoint__phase">Phase 3 &mdash; Intelligence</div>
+          <div class="route-waypoint__title">Search, full-text indexing, spending insights</div>
+          <div class="route-waypoint__desc">Added tsvector-based full-text search and built the spending insights dashboard with category breakdowns.</div>
+          <div class="route-waypoint__dates">Mar 1 &ndash; Mar 14</div>
+        </div>
+        <div class="route-waypoint" role="listitem">
+          <div class="route-waypoint__marker"><div class="route-waypoint__marker-dot"></div></div>
+          <div class="route-waypoint__phase">Phase 4 &mdash; Hardening</div>
+          <div class="route-waypoint__title">2FA, mobile responsive, CI/CD, performance</div>
+          <div class="route-waypoint__desc">Security hardening with two-factor auth, responsive layouts for mobile, and performance optimization.</div>
+          <div class="route-waypoint__dates">Mar 16 &ndash; Mar 26</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Elevation Profile (Growth Chart) -->
+    <section class="elevation-section section-reveal" aria-label="Work timeline chart">
+      <div class="section-label">
+        <span>&#167;05 &mdash; elevation profile</span>
+      </div>
+      <h2 class="section-heading">Work Timeline</h2>
+      <div class="elevation-chart">
+        <svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Elevation-style chart showing lines of code per session. Session 3 (Recurring detection) peaks at 890 lines.">
+          <!-- Grid lines -->
+          <line x1="60" y1="20" x2="60" y2="170" stroke="var(--mer-border-subtle)" stroke-width="0.5"/>
+          <line x1="60" y1="170" x2="760" y2="170" stroke="var(--mer-border-subtle)" stroke-width="0.5"/>
+          <line x1="60" y1="120" x2="760" y2="120" stroke="var(--mer-border-subtle)" stroke-width="0.5" stroke-dasharray="4,4"/>
+          <line x1="60" y1="70" x2="760" y2="70" stroke="var(--mer-border-subtle)" stroke-width="0.5" stroke-dasharray="4,4"/>
+          <line x1="60" y1="20" x2="760" y2="20" stroke="var(--mer-border-subtle)" stroke-width="0.5" stroke-dasharray="4,4"/>
+
+          <!-- Y-axis labels -->
+          <text x="50" y="174" text-anchor="end" fill="var(--mer-text-muted)" font-family="IBM Plex Mono" font-size="9">0</text>
+          <text x="50" y="124" text-anchor="end" fill="var(--mer-text-muted)" font-family="IBM Plex Mono" font-size="9">300</text>
+          <text x="50" y="74" text-anchor="end" fill="var(--mer-text-muted)" font-family="IBM Plex Mono" font-size="9">600</text>
+          <text x="50" y="24" text-anchor="end" fill="var(--mer-text-muted)" font-family="IBM Plex Mono" font-size="9">900</text>
+
+          <!-- Filled area under curve -->
+          <path d="M 147 56 L 247 83 L 347 20 L 447 91 L 547 106 L 647 72 L 697 62 L 760 114 L 760 170 L 147 170 Z"
+                fill="url(#elevGradient)" opacity="0.3"/>
+
+          <!-- Elevation line -->
+          <polyline
+            points="147,56 247,83 347,20 447,91 547,106 647,72 697,62 760,114"
+            fill="none"
+            stroke="var(--mer-accent)"
+            stroke-width="2.5"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          />
+
+          <!-- Waypoint dots -->
+          <circle cx="147" cy="56" r="4" fill="var(--mer-accent)" />
+          <circle cx="247" cy="83" r="4" fill="var(--mer-accent)" />
+          <circle cx="347" cy="20" r="5" fill="var(--mer-accent)" stroke="var(--mer-bg)" stroke-width="2"/>
+          <circle cx="447" cy="91" r="4" fill="var(--mer-accent)" />
+          <circle cx="547" cy="106" r="4" fill="var(--mer-accent)" />
+          <circle cx="647" cy="72" r="4" fill="var(--mer-accent)" />
+          <circle cx="697" cy="62" r="4" fill="var(--mer-accent)" />
+          <circle cx="760" cy="114" r="4" fill="var(--mer-accent)" />
+
+          <!-- Peak label -->
+          <text x="347" y="12" text-anchor="middle" fill="var(--mer-accent)" font-family="IBM Plex Mono" font-size="9" font-weight="600">890 LOC</text>
+
+          <!-- Gradient def -->
+          <defs>
+            <linearGradient id="elevGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--mer-accent)" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="var(--mer-accent)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="elevation-chart__x-labels">
+          <span>S1 Feb 3</span>
+          <span>S2 Feb 14</span>
+          <span>S3 Mar 1</span>
+          <span>S4 Mar 10</span>
+          <span>S5 Mar 14</span>
+          <span>S6 Mar 18</span>
+          <span>S7 Mar 22</span>
+          <span>S8 Mar 26</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sessions Table -->
+    <section class="sessions-section section-reveal" aria-label="All sessions">
+      <div class="section-label">
+        <span>&#167;06 &mdash; waypoint log</span>
+      </div>
+      <h2 class="section-heading">Sessions</h2>
+      <div class="session-table-wrap">
+        <table class="session-table">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Title</th>
+              <th scope="col">Date</th>
+              <th scope="col">Duration</th>
+              <th scope="col">LOC</th>
+              <th scope="col">Source</th>
+              <th scope="col">Agents</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>01</td>
+              <td class="session-table__title-cell"><a href="./session.html">Set up Prisma schema</a></td>
+              <td>Feb 3</td>
+              <td class="mono-val">72m</td>
+              <td class="mono-val">680</td>
+              <td>Claude</td>
+              <td>
+                <div class="agent-dots" aria-label="7 agents">
+                  <span class="agent-dot" style="background: var(--agent-backend)" title="backend-dev"></span>
+                  <span class="agent-dot" style="background: var(--agent-qa)" title="qa-engineer"></span>
+                  <span class="agent-dot" style="background: var(--agent-frontend)" title="frontend-dev"></span>
+                  <span class="agent-dot" style="background: var(--agent-security)" title="security-engineer"></span>
+                  <span class="agent-dot" style="background: var(--agent-reviewer)" title="code-reviewer"></span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>02</td>
+              <td class="session-table__title-cell">Transaction list + infinite scroll</td>
+              <td>Feb 14</td>
+              <td class="mono-val">65m</td>
+              <td class="mono-val">520</td>
+              <td>Cursor</td>
+              <td>
+                <div class="agent-dots" aria-label="5 agents">
+                  <span class="agent-dot" style="background: var(--agent-frontend)" title="frontend-dev"></span>
+                  <span class="agent-dot" style="background: var(--agent-backend)" title="backend-dev"></span>
+                  <span class="agent-dot" style="background: var(--agent-qa)" title="qa-engineer"></span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>03</td>
+              <td class="session-table__title-cell">Recurring transaction detection</td>
+              <td>Mar 1</td>
+              <td class="mono-val">88m</td>
+              <td class="mono-val">890</td>
+              <td>Claude</td>
+              <td>
+                <div class="agent-dots" aria-label="6 agents">
+                  <span class="agent-dot" style="background: var(--agent-backend)" title="backend-dev"></span>
+                  <span class="agent-dot" style="background: var(--agent-qa)" title="qa-engineer"></span>
+                  <span class="agent-dot" style="background: var(--agent-frontend)" title="frontend-dev"></span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>04</td>
+              <td class="session-table__title-cell">Stripe integration</td>
+              <td>Mar 10</td>
+              <td class="mono-val">55m</td>
+              <td class="mono-val">420</td>
+              <td>Claude</td>
+              <td>
+                <div class="agent-dots" aria-label="0 agents">
+                  <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--mer-text-muted);">&mdash;</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>05</td>
+              <td class="session-table__title-cell">CSV import pipeline</td>
+              <td>Mar 14</td>
+              <td class="mono-val">45m</td>
+              <td class="mono-val">380</td>
+              <td>Cursor</td>
+              <td>
+                <div class="agent-dots" aria-label="4 agents">
+                  <span class="agent-dot" style="background: var(--agent-backend)" title="backend-dev"></span>
+                  <span class="agent-dot" style="background: var(--agent-qa)" title="qa-engineer"></span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>06</td>
+              <td class="session-table__title-cell">Full-text search tsvector</td>
+              <td>Mar 18</td>
+              <td class="mono-val">62m</td>
+              <td class="mono-val">510</td>
+              <td>Claude</td>
+              <td>
+                <div class="agent-dots" aria-label="3 agents">
+                  <span class="agent-dot" style="background: var(--agent-backend)" title="backend-dev"></span>
+                  <span class="agent-dot" style="background: var(--agent-qa)" title="qa-engineer"></span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>07</td>
+              <td class="session-table__title-cell">Spending insights dashboard</td>
+              <td>Mar 22</td>
+              <td class="mono-val">78m</td>
+              <td class="mono-val">720</td>
+              <td>Claude</td>
+              <td>
+                <div class="agent-dots" aria-label="5 agents">
+                  <span class="agent-dot" style="background: var(--agent-frontend)" title="frontend-dev"></span>
+                  <span class="agent-dot" style="background: var(--agent-backend)" title="backend-dev"></span>
+                  <span class="agent-dot" style="background: var(--agent-qa)" title="qa-engineer"></span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>08</td>
+              <td class="session-table__title-cell">Mobile responsive + 2FA</td>
+              <td>Mar 26</td>
+              <td class="mono-val">50m</td>
+              <td class="mono-val">340</td>
+              <td>Cursor</td>
+              <td>
+                <div class="agent-dots" aria-label="0 agents">
+                  <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--mer-text-muted);">&mdash;</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Key Decisions -->
+    <section class="decisions-section section-reveal" aria-label="Key decisions">
+      <div class="section-label">
+        <span>&#167;07 &mdash; bearing marks</span>
+      </div>
+      <h2 class="section-heading">Key Decisions</h2>
+      <ol class="decision-list">
+        <li class="decision-item">Discriminated union over single-table inheritance for transaction types</li>
+        <li class="decision-item">Partial index on merchant_normalized for 16x query speedup</li>
+        <li class="decision-item">Processed-events table for Plaid webhook idempotency</li>
+      </ol>
+    </section>
+
+    <!-- Skills -->
+    <section class="skills-section section-reveal" aria-label="Skills used">
+      <div class="section-label">
+        <span>&#167;08 &mdash; instrument readings</span>
+      </div>
+      <h2 class="section-heading">Skills</h2>
+      <div class="skills-grid">
+        <span class="skill-chip">TypeScript</span>
+        <span class="skill-chip">React</span>
+        <span class="skill-chip">Next.js</span>
+        <span class="skill-chip">Prisma</span>
+        <span class="skill-chip">PostgreSQL</span>
+        <span class="skill-chip">Tailwind CSS</span>
+        <span class="skill-chip">Stripe API</span>
+        <span class="skill-chip">Plaid API</span>
+        <span class="skill-chip">Chart.js</span>
+        <span class="skill-chip">Playwright</span>
+      </div>
+    </section>
+
+    <!-- Source Breakdown -->
+    <section class="source-section section-reveal" aria-label="Source breakdown">
+      <div class="section-label">
+        <span>&#167;09 &mdash; signal source</span>
+      </div>
+      <h2 class="section-heading">Source Breakdown</h2>
+      <div class="source-bar-large" role="img" aria-label="Claude Code 62.5%, Cursor 37.5%">
+        <div class="source-bar-large__segment source-bar-large__segment--claude" style="width: 62.5%"></div>
+        <div class="source-bar-large__segment source-bar-large__segment--cursor" style="width: 37.5%"></div>
+      </div>
+      <div class="source-legend">
+        <span><span class="source-legend__dot" style="background: var(--mer-accent)"></span>Claude Code &mdash; 62.5% (5 sessions)</span>
+        <span><span class="source-legend__dot" style="background: var(--mer-text-muted)"></span>Cursor &mdash; 37.5% (3 sessions)</span>
+      </div>
+    </section>
+
+    <!-- Featured Sessions -->
+    <section class="featured-section section-reveal" aria-label="Featured sessions">
+      <div class="section-label">
+        <span>&#167;10 &mdash; peak waypoints</span>
+      </div>
+      <h2 class="section-heading">Featured Sessions</h2>
+      <div class="featured-grid">
+        <article class="featured-card">
+          <div class="featured-card__tag">schema</div>
+          <h3 class="featured-card__title">Prisma schema</h3>
+          <div class="featured-card__meta">
+            <span><strong>72</strong>m</span>
+            <span><strong>680</strong> LOC</span>
+            <span><strong>7</strong> agents</span>
+          </div>
+        </article>
+        <article class="featured-card">
+          <div class="featured-card__tag">frontend</div>
+          <h3 class="featured-card__title">Transaction list</h3>
+          <div class="featured-card__meta">
+            <span><strong>65</strong>m</span>
+            <span><strong>520</strong> LOC</span>
+            <span><strong>5</strong> agents</span>
+          </div>
+        </article>
+        <article class="featured-card">
+          <div class="featured-card__tag">algorithm</div>
+          <h3 class="featured-card__title">Recurring detection</h3>
+          <div class="featured-card__meta">
+            <span><strong>88</strong>m</span>
+            <span><strong>890</strong> LOC</span>
+            <span><strong>6</strong> agents</span>
+          </div>
+        </article>
+        <article class="featured-card">
+          <div class="featured-card__tag">import</div>
+          <h3 class="featured-card__title">CSV import</h3>
+          <div class="featured-card__meta">
+            <span><strong>78</strong>m</span>
+            <span><strong>640</strong> LOC</span>
+            <span><strong>5</strong> agents</span>
+          </div>
+        </article>
+        <article class="featured-card">
+          <div class="featured-card__tag">integration</div>
+          <h3 class="featured-card__title">Plaid integration</h3>
+          <div class="featured-card__meta">
+            <span><strong>90</strong>m</span>
+            <span><strong>780</strong> LOC</span>
+            <span><strong>8</strong> agents</span>
+          </div>
+        </article>
+        <article class="featured-card">
+          <div class="featured-card__tag">insights</div>
+          <h3 class="featured-card__title">Spending insights</h3>
+          <div class="featured-card__meta">
+            <span><strong>70</strong>m</span>
+            <span><strong>620</strong> LOC</span>
+            <span><strong>4</strong> agents</span>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="mer-footer">
+    <p class="mer-footer__text">surveyed with heyi.am &middot; meridian template</p>
+  </footer>
+</div>
+
+<script>
+// Section reveal on scroll
+(function() {
+  var sections = document.querySelectorAll('.section-reveal');
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (prefersReduced) {
+    sections.forEach(function(s) { s.classList.add('visible'); });
+    return;
+  }
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  sections.forEach(function(s) { observer.observe(s); });
+})();
+</script>
+</body>
+</html>

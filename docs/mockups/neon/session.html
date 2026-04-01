@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Set up Prisma schema — BudgetWise — heyi.am</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Neon Design Tokens ── */
+    :root {
+      --neon-bg: #0c0014;
+      --neon-surface: #1a0a2e;
+      --neon-surface-raised: #22103a;
+      --neon-pink: #f472b6;
+      --neon-pink-dim: rgba(244, 114, 182, 0.15);
+      --neon-pink-glow: rgba(244, 114, 182, 0.3);
+      --neon-cyan: #22d3ee;
+      --neon-cyan-dim: rgba(34, 211, 238, 0.15);
+      --neon-cyan-glow: rgba(34, 211, 238, 0.3);
+      --neon-text: #f0e6ff;
+      --neon-text-secondary: #a78bbd;
+      --neon-text-tertiary: #6b5280;
+      --neon-border: rgba(244, 114, 182, 0.2);
+      --neon-border-cyan: rgba(34, 211, 238, 0.2);
+      --neon-font-display: 'Space Grotesk', system-ui, sans-serif;
+      --neon-font-body: 'Inter', system-ui, sans-serif;
+      --neon-font-mono: 'JetBrains Mono', monospace;
+      --neon-radius: 4px;
+      --neon-radius-lg: 8px;
+      --neon-duration: 300ms;
+      --neon-duration-slow: 600ms;
+      --neon-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+      /* Agent role colors */
+      --agent-frontend: #7c3aed;
+      --agent-backend: #0891b2;
+      --agent-qa: #059669;
+      --agent-security: #475569;
+      --agent-reviewer: #e11d48;
+      --agent-ux: #d97706;
+    }
+
+    body {
+      font-family: var(--neon-font-body);
+      color: var(--neon-text);
+      background: var(--neon-bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    /* ── Skip Link ── */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--neon-pink);
+      color: var(--neon-bg);
+      font-weight: 600;
+      border-radius: var(--neon-radius);
+      z-index: 1000;
+      text-decoration: none;
+    }
+    .skip-link:focus { top: 1rem; }
+
+    a {
+      color: var(--neon-cyan);
+      text-decoration: none;
+      transition: color var(--neon-duration) ease-out;
+    }
+    a:hover { color: var(--neon-pink); }
+    a:focus-visible {
+      outline: 2px solid var(--neon-cyan);
+      outline-offset: 2px;
+      border-radius: var(--neon-radius);
+    }
+
+    /* ── Grid Background ── */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .grid-bg::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%) perspective(500px) rotateX(60deg);
+      width: 200%;
+      height: 60vh;
+      background-image:
+        linear-gradient(rgba(244, 114, 182, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34, 211, 238, 0.08) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 80%);
+      -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 80%);
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 960px;
+      margin-inline: auto;
+      padding-inline: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    /* ── Nav ── */
+    nav {
+      padding-block: 1.25rem;
+      border-bottom: 1px solid var(--neon-border);
+      position: sticky;
+      top: 0;
+      background: rgba(12, 0, 20, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 960px;
+      margin-inline: auto;
+      padding-inline: 1.5rem;
+    }
+    .nav-logo {
+      font-family: var(--neon-font-display);
+      font-weight: 700;
+      font-size: 1.125rem;
+      background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--neon-text-secondary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color var(--neon-duration) ease;
+    }
+    .nav-links a:hover,
+    .nav-links a[aria-current="page"] { color: var(--neon-text); }
+
+    /* ── Breadcrumb ── */
+    .breadcrumb {
+      padding-top: 2rem;
+      font-size: 0.8125rem;
+      font-family: var(--neon-font-mono);
+      color: var(--neon-text-tertiary);
+      margin-bottom: 0.5rem;
+    }
+    .breadcrumb a { color: var(--neon-text-tertiary); }
+    .breadcrumb a:hover { color: var(--neon-cyan); }
+    .breadcrumb span { color: var(--neon-text-secondary); }
+
+    /* ── Session Header ── */
+    .session-header {
+      padding-block: 1.5rem 2rem;
+    }
+    .session-header h1 {
+      font-family: var(--neon-font-display);
+      font-size: clamp(1.5rem, 3.5vw, 2.25rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+    .session-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      font-size: 0.8125rem;
+      font-family: var(--neon-font-mono);
+      color: var(--neon-text-tertiary);
+    }
+    .session-meta-row .source-badge {
+      color: var(--neon-pink);
+      border: 1px solid var(--neon-pink);
+      border-radius: var(--neon-radius);
+      padding: 0.1rem 0.5rem;
+      background: var(--neon-pink-dim);
+      font-size: 0.75rem;
+    }
+
+    /* ── Scroll Animations ── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity var(--neon-duration-slow) var(--neon-ease),
+                  transform var(--neon-duration-slow) var(--neon-ease);
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Dev Take ── */
+    .dev-take {
+      background: var(--neon-surface);
+      border-left: 3px solid var(--neon-pink);
+      border-radius: 0 var(--neon-radius-lg) var(--neon-radius-lg) 0;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 0 20px var(--neon-pink-dim);
+    }
+    .dev-take-label {
+      font-family: var(--neon-font-display);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--neon-pink);
+      margin-bottom: 0.5rem;
+    }
+    .dev-take p {
+      color: var(--neon-text-secondary);
+      font-size: 0.9375rem;
+      font-style: italic;
+      line-height: 1.65;
+    }
+
+    /* ── Section Heading ── */
+    .section-heading {
+      font-family: var(--neon-font-display);
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.65rem;
+      border-bottom: 1px solid var(--neon-border);
+    }
+
+    /* ── Execution Path / Beats ── */
+    .beats-section {
+      margin-bottom: 2.5rem;
+    }
+    .beat-list {
+      list-style: none;
+      position: relative;
+    }
+    .beat-list::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--neon-pink), var(--neon-cyan));
+      opacity: 0.4;
+    }
+    .beat-item {
+      position: relative;
+      padding-left: 3rem;
+      padding-bottom: 1.5rem;
+    }
+    .beat-item:last-child { padding-bottom: 0; }
+    .beat-item::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 6px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--neon-bg);
+      border: 2px solid var(--neon-pink);
+      box-shadow: 0 0 8px var(--neon-pink-glow);
+      z-index: 1;
+    }
+    .beat-item:nth-child(even)::before {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 8px var(--neon-cyan-glow);
+    }
+    .beat-title {
+      font-family: var(--neon-font-display);
+      font-weight: 600;
+      font-size: 0.9375rem;
+      margin-bottom: 0.25rem;
+    }
+    .beat-desc {
+      font-size: 0.875rem;
+      color: var(--neon-text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ── Q&A ── */
+    .qa-section {
+      margin-bottom: 2.5rem;
+    }
+    .qa-item {
+      background: var(--neon-surface);
+      border: 1px solid var(--neon-border);
+      border-radius: var(--neon-radius-lg);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .qa-question {
+      font-family: var(--neon-font-display);
+      font-weight: 600;
+      font-size: 0.9375rem;
+      color: var(--neon-cyan);
+      margin-bottom: 0.5rem;
+      line-height: 1.4;
+    }
+    .qa-answer {
+      font-size: 0.875rem;
+      color: var(--neon-text-secondary);
+      line-height: 1.65;
+    }
+
+    /* ── Agent Summary (bar chart) ── */
+    .agents-section {
+      margin-bottom: 2.5rem;
+    }
+    .agent-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .agent-row {
+      display: grid;
+      grid-template-columns: 140px 1fr 60px;
+      gap: 0.75rem;
+      align-items: center;
+      font-size: 0.8125rem;
+    }
+    .agent-name {
+      font-family: var(--neon-font-mono);
+      color: var(--neon-text-secondary);
+      text-align: right;
+      white-space: nowrap;
+    }
+    .agent-bar-track {
+      height: 24px;
+      background: var(--neon-surface);
+      border-radius: var(--neon-radius);
+      overflow: hidden;
+    }
+    .agent-bar {
+      height: 100%;
+      border-radius: var(--neon-radius);
+      transition: width 0.8s var(--neon-ease);
+      width: 0%;
+    }
+    .agent-bar.backend { background: var(--agent-backend); box-shadow: 0 0 10px rgba(8, 145, 178, 0.4); }
+    .agent-bar.qa { background: var(--agent-qa); box-shadow: 0 0 10px rgba(5, 150, 105, 0.4); }
+    .agent-bar.frontend { background: var(--agent-frontend); box-shadow: 0 0 10px rgba(124, 58, 237, 0.4); }
+    .agent-bar.security { background: var(--agent-security); box-shadow: 0 0 10px rgba(71, 85, 105, 0.4); }
+    .agent-bar.reviewer { background: var(--agent-reviewer); box-shadow: 0 0 10px rgba(225, 29, 72, 0.4); }
+    .agent-duration {
+      font-family: var(--neon-font-mono);
+      font-size: 0.75rem;
+      color: var(--neon-text-tertiary);
+      text-align: right;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      position: sticky;
+      top: 5rem;
+    }
+    .sidebar-card {
+      background: var(--neon-surface);
+      border: 1px solid var(--neon-border);
+      border-radius: var(--neon-radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .sidebar-heading {
+      font-family: var(--neon-font-display);
+      font-weight: 600;
+      font-size: 0.8125rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--neon-text-tertiary);
+      margin-bottom: 0.75rem;
+    }
+
+    /* ── Tools Used Table ── */
+    .tools-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .tools-table tr {
+      border-bottom: 1px solid rgba(244, 114, 182, 0.08);
+    }
+    .tools-table tr:last-child { border-bottom: none; }
+    .tools-table td {
+      padding: 0.4rem 0;
+      font-size: 0.8125rem;
+    }
+    .tools-table td:first-child {
+      font-family: var(--neon-font-mono);
+      color: var(--neon-text-secondary);
+    }
+    .tools-table td:last-child {
+      text-align: right;
+      color: var(--neon-cyan);
+      font-family: var(--neon-font-mono);
+      font-weight: 500;
+    }
+
+    /* ── Files Changed ── */
+    .files-list {
+      list-style: none;
+    }
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid rgba(244, 114, 182, 0.08);
+      font-size: 0.75rem;
+    }
+    .file-item:last-child { border-bottom: none; }
+    .file-name {
+      font-family: var(--neon-font-mono);
+      color: var(--neon-text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 180px;
+    }
+    .file-diff {
+      font-family: var(--neon-font-mono);
+      color: #22c55e;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    /* ── Sidebar Skills ── */
+    .sidebar-skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      list-style: none;
+    }
+    .sidebar-skill {
+      font-family: var(--neon-font-mono);
+      font-size: 0.6875rem;
+      padding: 0.2rem 0.5rem;
+      border: 1px solid var(--neon-border-cyan);
+      border-radius: var(--neon-radius);
+      color: var(--neon-cyan);
+      background: var(--neon-cyan-dim);
+    }
+
+    /* ── Stats mini-grid in header ── */
+    .session-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+    .session-stat {
+      background: var(--neon-surface);
+      border: 1px solid var(--neon-border);
+      border-radius: var(--neon-radius);
+      padding: 0.75rem;
+      text-align: center;
+    }
+    .session-stat .value {
+      font-family: var(--neon-font-display);
+      font-size: 1.125rem;
+      font-weight: 700;
+    }
+    .session-stat:nth-child(odd) .value { color: var(--neon-pink); }
+    .session-stat:nth-child(even) .value { color: var(--neon-cyan); }
+    .session-stat .label {
+      font-size: 0.6875rem;
+      color: var(--neon-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Pulsing Stats ── */
+    @keyframes pulse-pink {
+      0%, 100% { box-shadow: 0 0 12px var(--neon-pink-dim); }
+      50% { box-shadow: 0 0 22px var(--neon-pink-glow); }
+    }
+    @keyframes pulse-cyan {
+      0%, 100% { box-shadow: 0 0 12px var(--neon-cyan-dim); }
+      50% { box-shadow: 0 0 22px var(--neon-cyan-glow); }
+    }
+    .session-stat.pulsing:nth-child(odd) {
+      animation: pulse-pink 3s ease-in-out infinite;
+    }
+    .session-stat.pulsing:nth-child(even) {
+      animation: pulse-cyan 3s ease-in-out infinite;
+    }
+
+    /* ── Footer ── */
+    footer {
+      padding-block: 3rem;
+      text-align: center;
+      color: var(--neon-text-tertiary);
+      font-size: 0.8125rem;
+      border-top: 1px solid var(--neon-border);
+      margin-top: 2rem;
+    }
+    footer a { color: var(--neon-pink); }
+
+    /* ── Reduced Motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .fade-in { opacity: 1; transform: none; }
+      .grid-bg::before { display: none; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        position: static;
+        order: -1;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+      .session-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .agent-row {
+        grid-template-columns: 100px 1fr 50px;
+      }
+    }
+    @media (max-width: 480px) {
+      .sidebar {
+        grid-template-columns: 1fr;
+      }
+      .session-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .nav-inner {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .agent-row {
+        grid-template-columns: 80px 1fr 40px;
+        font-size: 0.75rem;
+      }
+      .session-meta-row {
+        gap: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="grid-bg" aria-hidden="true"></div>
+
+  <!-- Nav -->
+  <nav aria-label="Main navigation">
+    <div class="nav-inner">
+      <span class="nav-logo">heyi.am</span>
+      <ul class="nav-links">
+        <li><a href="./portfolio.html">Portfolio</a></li>
+        <li><a href="./project.html">Project</a></li>
+        <li><a href="./session.html" aria-current="page">Session</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main id="main-content">
+    <div class="container">
+
+      <!-- Breadcrumb -->
+      <div class="breadcrumb" aria-label="Breadcrumb">
+        <a href="./portfolio.html">alex</a> /
+        <a href="./project.html">budgetwise</a> /
+        <span>Set up Prisma schema</span>
+      </div>
+
+      <!-- Session Header -->
+      <header class="session-header fade-in">
+        <h1>Set up Prisma schema with User, Account, and Transaction models</h1>
+        <div class="session-meta-row">
+          <span>February 3, 2026</span>
+          <span class="source-badge">Claude Code</span>
+          <span>72 min (87m wall)</span>
+          <span>45 turns</span>
+        </div>
+        <div class="session-stats-grid">
+          <div class="session-stat" role="figure" aria-label="72 minutes duration">
+            <div class="value" data-target="72">0</div>
+            <div class="label">Minutes</div>
+          </div>
+          <div class="session-stat" role="figure" aria-label="680 lines of code">
+            <div class="value" data-target="680">0</div>
+            <div class="label">LOC</div>
+          </div>
+          <div class="session-stat" role="figure" aria-label="45 turns">
+            <div class="value" data-target="45">0</div>
+            <div class="label">Turns</div>
+          </div>
+          <div class="session-stat" role="figure" aria-label="4 files changed">
+            <div class="value" data-target="4">0</div>
+            <div class="label">Files</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Dev Take -->
+      <div class="dev-take fade-in">
+        <div class="dev-take-label">Dev Take</div>
+        <p>Went with discriminated unions over STI &mdash; nullable columns everywhere felt wrong. The audit log instead of soft deletes was the right call too.</p>
+      </div>
+
+      <!-- Main Content + Sidebar -->
+      <div class="content-grid">
+
+        <!-- Main Column -->
+        <div>
+
+          <!-- Execution Path -->
+          <section class="beats-section fade-in" aria-label="Execution path">
+            <h2 class="section-heading">Execution Path</h2>
+            <ol class="beat-list">
+              <li class="beat-item">
+                <div class="beat-title">Schema design</div>
+                <div class="beat-desc">Sketched out the core models &mdash; User, Account, Transaction. Decided on a discriminated union for transaction types instead of STI.</div>
+              </li>
+              <li class="beat-item">
+                <div class="beat-title">Prisma setup</div>
+                <div class="beat-desc">Initialized Prisma with PostgreSQL, wrote the schema file with proper relations and indexes.</div>
+              </li>
+              <li class="beat-item">
+                <div class="beat-title">Migration</div>
+                <div class="beat-desc">Ran the initial migration, fixed a cascade delete issue on Account &rarr; Transaction.</div>
+              </li>
+              <li class="beat-item">
+                <div class="beat-title">Seed data</div>
+                <div class="beat-desc">Created a seed script with realistic test data &mdash; multiple accounts, mixed transaction types.</div>
+              </li>
+            </ol>
+          </section>
+
+          <!-- Q&A -->
+          <section class="qa-section fade-in" aria-label="Questions and answers">
+            <h2 class="section-heading">Q&amp;A</h2>
+            <article class="qa-item">
+              <div class="qa-question">Why did you choose a discriminated union over single-table inheritance for transaction types?</div>
+              <div class="qa-answer">STI would have left nullable columns everywhere &mdash; transferTo only makes sense for transfers, recurringSchedule only for recurring. The union pattern keeps each type clean and the TypeScript compiler catches missing fields.</div>
+            </article>
+            <article class="qa-item">
+              <div class="qa-question">How does the cascade delete work between Account and Transaction?</div>
+              <div class="qa-answer">Deleting an account cascades to its transactions. Initially had it set to restrict, but that made account cleanup impossible without manual transaction deletion first.</div>
+            </article>
+          </section>
+
+          <!-- Agent Summary -->
+          <section class="agents-section fade-in" aria-label="Agent summary">
+            <h2 class="section-heading">Agent Summary</h2>
+            <div class="agent-chart" role="img" aria-label="Agent contributions chart">
+              <div class="agent-row">
+                <span class="agent-name">backend-dev</span>
+                <div class="agent-bar-track">
+                  <div class="agent-bar backend" data-width="100" title="25 min, 280 LOC"></div>
+                </div>
+                <span class="agent-duration">25m</span>
+              </div>
+              <div class="agent-row">
+                <span class="agent-name">qa-engineer</span>
+                <div class="agent-bar-track">
+                  <div class="agent-bar qa" data-width="72" title="18 min, 190 LOC"></div>
+                </div>
+                <span class="agent-duration">18m</span>
+              </div>
+              <div class="agent-row">
+                <span class="agent-name">frontend-dev</span>
+                <div class="agent-bar-track">
+                  <div class="agent-bar frontend" data-width="60" title="15 min, 125 LOC"></div>
+                </div>
+                <span class="agent-duration">15m</span>
+              </div>
+              <div class="agent-row">
+                <span class="agent-name">security-eng</span>
+                <div class="agent-bar-track">
+                  <div class="agent-bar security" data-width="48" title="12 min, 85 LOC"></div>
+                </div>
+                <span class="agent-duration">12m</span>
+              </div>
+              <div class="agent-row">
+                <span class="agent-name">code-reviewer</span>
+                <div class="agent-bar-track">
+                  <div class="agent-bar reviewer" data-width="32" title="8 min, 0 LOC"></div>
+                </div>
+                <span class="agent-duration">8m</span>
+              </div>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar" aria-label="Session details">
+
+          <!-- Tools Used -->
+          <div class="sidebar-card">
+            <h3 class="sidebar-heading">Tools Used</h3>
+            <table class="tools-table" aria-label="Tool usage counts">
+              <tbody>
+                <tr><td>Edit</td><td>18</td></tr>
+                <tr><td>Read</td><td>12</td></tr>
+                <tr><td>Bash</td><td>9</td></tr>
+                <tr><td>Write</td><td>4</td></tr>
+                <tr><td>Grep</td><td>2</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Files Changed -->
+          <div class="sidebar-card">
+            <h3 class="sidebar-heading">Files Changed</h3>
+            <ul class="files-list" aria-label="Files modified in this session">
+              <li class="file-item">
+                <span class="file-name" title="prisma/schema.prisma">prisma/schema.prisma</span>
+                <span class="file-diff">+142</span>
+              </li>
+              <li class="file-item">
+                <span class="file-name" title="prisma/seed.ts">prisma/seed.ts</span>
+                <span class="file-diff">+89</span>
+              </li>
+              <li class="file-item">
+                <span class="file-name" title="prisma/migrations/20260203_init/migration.sql">migrations/.../migration.sql</span>
+                <span class="file-diff">+415</span>
+              </li>
+              <li class="file-item">
+                <span class="file-name" title="src/lib/db.ts">src/lib/db.ts</span>
+                <span class="file-diff">+34</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Skills -->
+          <div class="sidebar-card">
+            <h3 class="sidebar-heading">Skills</h3>
+            <ul class="sidebar-skills" aria-label="Technologies used in this session">
+              <li class="sidebar-skill">TypeScript</li>
+              <li class="sidebar-skill">Prisma</li>
+              <li class="sidebar-skill">PostgreSQL</li>
+            </ul>
+          </div>
+
+        </aside>
+
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>Built with <a href="https://heyi.am">heyi.am</a></p>
+    </div>
+  </footer>
+
+  <script>
+    /* ── Scroll-triggered fade-in ── */
+    (function () {
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (prefersReducedMotion) {
+        document.querySelectorAll('.fade-in').forEach(function (el) {
+          el.classList.add('visible');
+        });
+        return;
+      }
+
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.fade-in').forEach(function (el) {
+        observer.observe(el);
+      });
+    })();
+
+    /* ── Stat Counter Animation ── */
+    (function () {
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var counters = document.querySelectorAll('.value[data-target]');
+
+      function animateCounter(el) {
+        var target = parseInt(el.getAttribute('data-target'), 10);
+        var duration = 900;
+        var startTime = null;
+
+        if (prefersReducedMotion) {
+          el.textContent = String(target);
+          return;
+        }
+
+        function step(timestamp) {
+          if (!startTime) startTime = timestamp;
+          var progress = Math.min((timestamp - startTime) / duration, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          el.textContent = String(Math.round(eased * target));
+          if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            animateCounter(entry.target);
+            var card = entry.target.closest('.session-stat');
+            if (card) {
+              setTimeout(function () { card.classList.add('pulsing'); }, 1100);
+            }
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.5 });
+
+      counters.forEach(function (c) { observer.observe(c); });
+    })();
+
+    /* ── Agent Bar Animation ── */
+    (function () {
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var bars = document.querySelectorAll('.agent-bar[data-width]');
+
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            var w = entry.target.getAttribute('data-width');
+            if (prefersReducedMotion) {
+              entry.target.style.width = w + '%';
+            } else {
+              requestAnimationFrame(function () {
+                entry.target.style.width = w + '%';
+              });
+            }
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.2 });
+
+      bars.forEach(function (b) { observer.observe(b); });
+    })();
+  </script>
+</body>
+</html>

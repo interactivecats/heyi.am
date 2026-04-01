@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mono Template — Set up Prisma schema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Mono Design Tokens ── */
+:root {
+  --mono-bg:              #0a0a0a;
+  --mono-surface:         #111111;
+  --mono-surface-raised:  #1a1a1a;
+  --mono-border:          #2a2a2a;
+  --mono-border-accent:   #4ade80;
+  --mono-text:            #e0e0e0;
+  --mono-text-dim:        #666666;
+  --mono-text-muted:      #444444;
+  --mono-accent:          #4ade80;
+  --mono-accent-dim:      rgba(74, 222, 128, 0.15);
+  --mono-accent-glow:     rgba(74, 222, 128, 0.3);
+  --mono-error:           #ef4444;
+  --mono-warn:            #f59e0b;
+  --mono-cyan:            #22d3ee;
+  --mono-purple:          #a78bfa;
+
+  --font: 'JetBrains Mono', monospace;
+  --radius: 0px;
+}
+
+body {
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--mono-text);
+  background-color: var(--mono-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--mono-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible {
+  outline: 2px solid var(--mono-accent);
+  outline-offset: 2px;
+}
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--mono-accent);
+  color: var(--mono-bg);
+  padding: 0.5rem 1rem;
+  z-index: 1000;
+  font-family: var(--font);
+  font-weight: 600;
+  border-radius: var(--radius);
+}
+.skip-link:focus { top: 1rem; }
+
+/* ── Nav ── */
+.mono-nav {
+  border-bottom: 1px solid var(--mono-border);
+  background: var(--mono-surface);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.mono-nav-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.mono-nav-prompt {
+  color: var(--mono-accent);
+  font-weight: 600;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+.mono-nav-links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+.mono-nav-links a {
+  color: var(--mono-text-dim);
+  font-size: 0.8125rem;
+  transition: color 0.15s;
+}
+.mono-nav-links a:hover,
+.mono-nav-links a[aria-current="page"] {
+  color: var(--mono-accent);
+}
+
+/* ── Page Container ── */
+.mono-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+}
+
+/* ── Layout: Main + Sidebar ── */
+.session-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* ── Section ── */
+.mono-section {
+  margin-bottom: 2.5rem;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.mono-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Section Heading ── */
+.mono-heading {
+  color: var(--mono-accent);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--mono-border);
+}
+
+/* ── Terminal Block ── */
+.terminal-block {
+  background: var(--mono-surface);
+  border: 1px solid var(--mono-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  background: var(--mono-surface-raised);
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--mono-border);
+  font-size: 0.75rem;
+  color: var(--mono-text-dim);
+}
+.terminal-dots {
+  display: flex;
+  gap: 6px;
+}
+.terminal-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: block;
+}
+.terminal-dots .dot-red { background: #ef4444; }
+.terminal-dots .dot-yellow { background: #f59e0b; }
+.terminal-dots .dot-green { background: #4ade80; }
+.terminal-body {
+  padding: 1.25rem;
+}
+
+/* ── Breadcrumb ── */
+.breadcrumb {
+  font-size: 0.8125rem;
+  color: var(--mono-text-dim);
+  margin-bottom: 1.5rem;
+}
+.breadcrumb a { color: var(--mono-text-dim); }
+.breadcrumb a:hover { color: var(--mono-accent); }
+.breadcrumb .sep {
+  margin: 0 0.25rem;
+  color: var(--mono-text-muted);
+}
+
+/* ── Hero ── */
+.hero-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--mono-accent);
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+.hero-meta {
+  font-size: 0.8125rem;
+  color: var(--mono-text-dim);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+}
+.hero-meta-item {
+  display: flex;
+  gap: 0.375rem;
+}
+.hero-meta-key { color: var(--mono-text-muted); }
+.hero-meta-value { color: var(--mono-text); }
+
+/* ── Cursor blink on active heading ── */
+.cursor-blink::after {
+  content: '_';
+  color: var(--mono-accent);
+  animation: blink 0.7s step-end infinite;
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* ── Dev Take ── */
+.dev-take {
+  background: var(--mono-accent-dim);
+  border-left: 3px solid var(--mono-accent);
+  padding: 1rem 1.25rem;
+  font-size: 0.875rem;
+  color: var(--mono-text);
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+.dev-take::before {
+  content: '// dev_take: ';
+  color: var(--mono-accent);
+  font-weight: 600;
+}
+
+/* ── Stats Row ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 1px;
+  background: var(--mono-border);
+  border: 1px solid var(--mono-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.stat-cell {
+  background: var(--mono-surface);
+  padding: 0.75rem 1rem;
+}
+.stat-key {
+  font-size: 0.6875rem;
+  color: var(--mono-text-dim);
+}
+.stat-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--mono-accent);
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  position: sticky;
+  top: 4rem;
+}
+.sidebar-block {
+  background: var(--mono-surface);
+  border: 1px solid var(--mono-border);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.sidebar-block-header {
+  background: var(--mono-surface-raised);
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--mono-border);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--mono-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.sidebar-block-body {
+  padding: 0.75rem;
+}
+
+/* ── Sidebar: Tool List ── */
+.tool-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+  font-size: 0.75rem;
+  border-bottom: 1px solid var(--mono-border);
+}
+.tool-row:last-child { border-bottom: none; }
+.tool-name { color: var(--mono-text); }
+.tool-count {
+  color: var(--mono-accent);
+  font-weight: 600;
+}
+
+/* ── Sidebar: Files ── */
+.file-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+  font-size: 0.6875rem;
+  border-bottom: 1px solid var(--mono-border);
+  gap: 0.5rem;
+}
+.file-row:last-child { border-bottom: none; }
+.file-name {
+  color: var(--mono-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.file-diff {
+  color: var(--mono-accent);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Sidebar: Skills ── */
+.sidebar-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.tag {
+  display: inline-block;
+  padding: 0.0625rem 0.375rem;
+  border: 1px solid var(--mono-border);
+  border-radius: var(--radius);
+  font-size: 0.6875rem;
+  color: var(--mono-accent);
+  background: var(--mono-accent-dim);
+}
+
+/* ── Execution Path (Beats) ── */
+.beat-list {
+  list-style: none;
+}
+.beat-item {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--mono-border);
+  position: relative;
+  padding-inline-start: 2rem;
+}
+.beat-item:last-child { border-bottom: none; }
+.beat-num {
+  position: absolute;
+  left: 0;
+  top: 1rem;
+  color: var(--mono-accent);
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+.beat-title {
+  font-weight: 600;
+  color: var(--mono-text);
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+.beat-desc {
+  font-size: 0.8125rem;
+  color: var(--mono-text-dim);
+  line-height: 1.7;
+}
+
+/* ── Beat step connector (vertical line) ── */
+.beat-item::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 2rem;
+  bottom: 0;
+  width: 2px;
+  background: var(--mono-border);
+}
+.beat-item:last-child::before {
+  display: none;
+}
+
+/* ── Q&A ── */
+.qa-block {
+  padding: 1.25rem;
+  font-size: 0.875rem;
+  line-height: 1.8;
+}
+.qa-item {
+  margin-bottom: 1.5rem;
+}
+.qa-item:last-child { margin-bottom: 0; }
+.qa-question {
+  color: var(--mono-accent);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+.qa-question::before {
+  content: 'Q: ';
+  color: var(--mono-text-muted);
+}
+.qa-answer {
+  color: var(--mono-text);
+  padding-inline-start: 1rem;
+  border-inline-start: 2px solid var(--mono-border);
+}
+.qa-answer::before {
+  content: 'A: ';
+  color: var(--mono-text-muted);
+  font-weight: 600;
+}
+
+/* ── Agent Summary ── */
+.agent-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.agent-table th,
+.agent-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: start;
+  border-bottom: 1px solid var(--mono-border);
+}
+.agent-table th {
+  color: var(--mono-text-dim);
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.agent-table td {
+  color: var(--mono-text);
+}
+.agent-role {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.agent-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.agent-table .value-accent {
+  color: var(--mono-accent);
+  font-weight: 600;
+}
+
+/* ── Footer ── */
+.mono-footer {
+  border-top: 1px solid var(--mono-border);
+  padding: 2rem 0;
+  margin-top: 2rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--mono-text-dim);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .mono-page { padding: 1.5rem 1rem; }
+  .session-layout {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: static;
+    order: -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  .sidebar-block { margin-bottom: 0; }
+  .hero-title { font-size: 1.25rem; }
+  .hero-meta { gap: 0.75rem; }
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .agent-table { font-size: 0.75rem; }
+  .agent-table th,
+  .agent-table td { padding: 0.375rem 0.5rem; }
+  .mono-nav-inner { padding: 0.75rem 1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor-blink::after {
+    animation: none;
+    opacity: 1;
+  }
+  .mono-section {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<nav class="mono-nav" aria-label="Main navigation">
+  <div class="mono-nav-inner">
+    <span class="mono-nav-prompt" aria-hidden="true">~/alex/budgetwise/s1 $</span>
+    <ul class="mono-nav-links">
+      <li><a href="./portfolio.html">portfolio</a></li>
+      <li><a href="./project.html">project</a></li>
+      <li><a href="./session.html" aria-current="page">session</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main-content" class="mono-page">
+
+  <!-- ── Breadcrumb ── -->
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="./portfolio.html">alex</a>
+    <span class="sep">/</span>
+    <a href="./project.html">budgetwise</a>
+    <span class="sep">/</span>
+    <span>Set up Prisma schema</span>
+  </nav>
+
+  <!-- ── Hero ── -->
+  <section class="mono-section" aria-label="Session header">
+    <h1 class="hero-title cursor-blink">Set up Prisma schema with User, Account, and Transaction models</h1>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <span class="hero-meta-key">date:</span>
+        <span class="hero-meta-value">February 3, 2026</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="hero-meta-key">source:</span>
+        <span class="hero-meta-value">Claude Code</span>
+      </div>
+    </div>
+
+    <!-- Dev Take -->
+    <div class="dev-take">Went with discriminated unions over STI &mdash; nullable columns everywhere felt wrong. The audit log instead of soft deletes was the right call too.</div>
+
+    <!-- Stats -->
+    <div class="stats-row" role="list">
+      <div class="stat-cell" role="listitem">
+        <div class="stat-key">duration:</div>
+        <div class="stat-value">72m</div>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <div class="stat-key">wall_clock:</div>
+        <div class="stat-value">87m</div>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <div class="stat-key">turns:</div>
+        <div class="stat-value">45</div>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <div class="stat-key">loc:</div>
+        <div class="stat-value">680</div>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <div class="stat-key">files:</div>
+        <div class="stat-value">4</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Main + Sidebar Layout ── -->
+  <div class="session-layout">
+
+    <!-- ── Main Content ── -->
+    <div class="main-content">
+
+      <!-- ── Execution Path ── -->
+      <section class="mono-section" aria-label="Execution path">
+        <h2 class="mono-heading"># execution_path</h2>
+        <div class="terminal-block">
+          <div class="terminal-header">
+            <div class="terminal-dots">
+              <span class="dot-red" aria-hidden="true"></span>
+              <span class="dot-yellow" aria-hidden="true"></span>
+              <span class="dot-green" aria-hidden="true"></span>
+            </div>
+            <span>cat execution.log</span>
+          </div>
+          <div class="terminal-body">
+            <ol class="beat-list">
+              <li class="beat-item">
+                <span class="beat-num" aria-hidden="true">01</span>
+                <div class="beat-title">Schema design</div>
+                <div class="beat-desc">Sketched out the core models &mdash; User, Account, Transaction. Decided on a discriminated union for transaction types instead of STI.</div>
+              </li>
+              <li class="beat-item">
+                <span class="beat-num" aria-hidden="true">02</span>
+                <div class="beat-title">Prisma setup</div>
+                <div class="beat-desc">Initialized Prisma with PostgreSQL, wrote the schema file with proper relations and indexes.</div>
+              </li>
+              <li class="beat-item">
+                <span class="beat-num" aria-hidden="true">03</span>
+                <div class="beat-title">Migration</div>
+                <div class="beat-desc">Ran the initial migration, fixed a cascade delete issue on Account to Transaction.</div>
+              </li>
+              <li class="beat-item">
+                <span class="beat-num" aria-hidden="true">04</span>
+                <div class="beat-title">Seed data</div>
+                <div class="beat-desc">Created a seed script with realistic test data &mdash; multiple accounts, mixed transaction types.</div>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Q&A ── -->
+      <section class="mono-section" aria-label="Questions and answers">
+        <h2 class="mono-heading"># q_and_a</h2>
+        <div class="terminal-block">
+          <div class="terminal-header">
+            <div class="terminal-dots">
+              <span class="dot-red" aria-hidden="true"></span>
+              <span class="dot-yellow" aria-hidden="true"></span>
+              <span class="dot-green" aria-hidden="true"></span>
+            </div>
+            <span>cat qa.md</span>
+          </div>
+          <div class="qa-block">
+            <div class="qa-item">
+              <div class="qa-question">Why did you choose a discriminated union over single-table inheritance for transaction types?</div>
+              <div class="qa-answer">STI would have left nullable columns everywhere &mdash; transferTo only makes sense for transfers, recurringSchedule only for recurring. The union pattern keeps each type clean and the TypeScript compiler catches missing fields.</div>
+            </div>
+            <div class="qa-item">
+              <div class="qa-question">How does the cascade delete work between Account and Transaction?</div>
+              <div class="qa-answer">Deleting an account cascades to its transactions. Initially had it set to restrict, but that made account cleanup impossible without manual transaction deletion first.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Agent Summary ── -->
+      <section class="mono-section" aria-label="Agent summary">
+        <h2 class="mono-heading"># agent_summary</h2>
+        <div class="terminal-block">
+          <div class="terminal-header">
+            <div class="terminal-dots">
+              <span class="dot-red" aria-hidden="true"></span>
+              <span class="dot-yellow" aria-hidden="true"></span>
+              <span class="dot-green" aria-hidden="true"></span>
+            </div>
+            <span>agents --stats</span>
+          </div>
+          <div class="terminal-body" style="padding: 0;">
+            <table class="agent-table">
+              <thead>
+                <tr>
+                  <th scope="col">role</th>
+                  <th scope="col">duration</th>
+                  <th scope="col">loc</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="agent-role">
+                      <span class="agent-dot" style="background: #0891b2;" aria-hidden="true"></span>
+                      backend-dev
+                    </div>
+                  </td>
+                  <td class="value-accent">25m</td>
+                  <td>280</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="agent-role">
+                      <span class="agent-dot" style="background: #059669;" aria-hidden="true"></span>
+                      qa-engineer
+                    </div>
+                  </td>
+                  <td class="value-accent">18m</td>
+                  <td>190</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="agent-role">
+                      <span class="agent-dot" style="background: #7c3aed;" aria-hidden="true"></span>
+                      frontend-dev
+                    </div>
+                  </td>
+                  <td class="value-accent">15m</td>
+                  <td>125</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="agent-role">
+                      <span class="agent-dot" style="background: #475569;" aria-hidden="true"></span>
+                      security-engineer
+                    </div>
+                  </td>
+                  <td class="value-accent">12m</td>
+                  <td>85</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="agent-role">
+                      <span class="agent-dot" style="background: #e11d48;" aria-hidden="true"></span>
+                      code-reviewer
+                    </div>
+                  </td>
+                  <td class="value-accent">8m</td>
+                  <td>0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar" aria-label="Session details">
+
+      <!-- Tools Used -->
+      <div class="sidebar-block">
+        <div class="sidebar-block-header">// tools_used</div>
+        <div class="sidebar-block-body">
+          <div class="tool-row">
+            <span class="tool-name">Edit</span>
+            <span class="tool-count">18</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">Read</span>
+            <span class="tool-count">12</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">Bash</span>
+            <span class="tool-count">9</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">Write</span>
+            <span class="tool-count">4</span>
+          </div>
+          <div class="tool-row">
+            <span class="tool-name">Grep</span>
+            <span class="tool-count">2</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Files Changed -->
+      <div class="sidebar-block">
+        <div class="sidebar-block-header">// files_changed</div>
+        <div class="sidebar-block-body">
+          <div class="file-row">
+            <span class="file-name" title="prisma/schema.prisma">prisma/schema.prisma</span>
+            <span class="file-diff">+142</span>
+          </div>
+          <div class="file-row">
+            <span class="file-name" title="prisma/seed.ts">prisma/seed.ts</span>
+            <span class="file-diff">+89</span>
+          </div>
+          <div class="file-row">
+            <span class="file-name" title="prisma/migrations/20260203_init/migration.sql">migrations/.../migration.sql</span>
+            <span class="file-diff">+415</span>
+          </div>
+          <div class="file-row">
+            <span class="file-name" title="src/lib/db.ts">src/lib/db.ts</span>
+            <span class="file-diff">+34</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Skills -->
+      <div class="sidebar-block">
+        <div class="sidebar-block-header">// skills</div>
+        <div class="sidebar-block-body">
+          <div class="sidebar-tags">
+            <span class="tag">[TypeScript]</span>
+            <span class="tag">[Prisma]</span>
+            <span class="tag">[PostgreSQL]</span>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+  </div>
+
+</main>
+
+<footer class="mono-footer">
+  <p>// generated by heyi.am &middot; mono template &middot; 2026</p>
+</footer>
+
+<script>
+(function() {
+  'use strict';
+
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var sections = document.querySelectorAll('.mono-section');
+
+  if (prefersReducedMotion) {
+    sections.forEach(function(s) { s.classList.add('visible'); });
+  } else {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    sections.forEach(function(s) { observer.observe(s); });
+  }
+})();
+</script>
+
+</body>
+</html>

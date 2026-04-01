@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Radar Template -- heyi.am Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Design Tokens ── */
+:root {
+  /* Surfaces */
+  --surface:          #0f172a;
+  --surface-low:      #131c31;
+  --surface-lowest:   #1a2540;
+  --surface-high:     #0b1120;
+  --on-surface:       #e2e8f0;
+  --on-surface-variant: #64748b;
+
+  /* Accent */
+  --accent:           #22d3ee;
+  --accent-dim:       rgba(34, 211, 238, 0.15);
+  --accent-faint:     rgba(34, 211, 238, 0.06);
+
+  /* Structural */
+  --outline:          #1e293b;
+  --ghost:            rgba(34, 211, 238, 0.08);
+  --grid-line:        rgba(34, 211, 238, 0.04);
+
+  /* Semantic */
+  --primary:          #22d3ee;
+  --green:            #34d399;
+  --green-bg:         rgba(52, 211, 153, 0.1);
+  --violet:           #a78bfa;
+  --violet-bg:        rgba(167, 139, 250, 0.1);
+  --error:            #f87171;
+
+  /* Typography */
+  --font-display:     'Space Grotesk', sans-serif;
+  --font-body:        'Inter', sans-serif;
+  --font-mono:        'IBM Plex Mono', monospace;
+
+  /* Radii */
+  --radius-sm:        2px;
+  --radius-md:        4px;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--on-surface);
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 40px 40px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; text-decoration-color: var(--accent-dim); }
+
+/* ── Section Fade-In Animation ── */
+
+.radar-section {
+  margin-bottom: 2.5rem;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.radar-section.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-section {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ── Radar Container ── */
+
+.radar-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+/* ── Section Labels ── */
+
+.radar-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.radar-label::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 1px;
+}
+
+/* ── Title ── */
+
+.radar-title {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--on-surface);
+  letter-spacing: -0.03em;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Links ── */
+
+.radar-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.radar-link {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.radar-link:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--accent-dim);
+}
+
+.radar-link svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
+/* ── Screenshot ── */
+
+.browser-chrome {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--ghost);
+  overflow: hidden;
+}
+
+.browser-chrome__bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-high);
+  border-bottom: 1px solid var(--ghost);
+}
+
+.browser-chrome__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.browser-chrome__dot--red { background: #ff5f57; }
+.browser-chrome__dot--yellow { background: #febc2e; }
+.browser-chrome__dot--green { background: #28c840; }
+
+.browser-chrome__viewport {
+  height: 24rem;
+  background: var(--surface-low);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--on-surface-variant);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+/* ── Narrative ── */
+
+.radar-narrative {
+  border-left: 2px solid var(--accent);
+  padding-left: 1rem;
+  max-width: 65ch;
+}
+
+.radar-narrative p {
+  font-size: 1rem;
+  color: var(--on-surface);
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+.radar-narrative p:last-child { margin-bottom: 0; }
+
+/* ── Stats Grid ── */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.stat-card {
+  background: var(--surface-lowest);
+  border: 1px solid var(--ghost);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+}
+
+.stat-card__label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface-variant);
+  margin-bottom: 0.25rem;
+}
+
+.stat-card__value {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+/* ── Chart Cards ── */
+
+.chart-card {
+  background: var(--surface-lowest);
+  border: 1px solid var(--ghost);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.chart-card svg {
+  width: 100%;
+  display: block;
+}
+
+/* ── Work Timeline Bars (animate) ── */
+
+.wt-bar {
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.wt-bar.is-animated { transform: scaleX(1); }
+
+.wt-agent-line {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  transition: stroke-dashoffset 0.8s ease-out;
+}
+
+.wt-agent-line.is-animated { stroke-dashoffset: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wt-bar { transform: scaleX(1); transition: none; }
+  .wt-agent-line { stroke-dashoffset: 0; transition: none; }
+}
+
+/* ── Growth Chart Lines (animate via stroke-dashoffset) ── */
+
+.growth-line {
+  stroke-dasharray: var(--line-length, 2000);
+  stroke-dashoffset: var(--line-length, 2000);
+  transition: stroke-dashoffset 1.2s ease-out;
+}
+
+.growth-line.is-animated { stroke-dashoffset: 0; }
+
+.growth-area {
+  opacity: 0;
+  transition: opacity 0.8s ease-out 0.4s;
+}
+
+.growth-area.is-animated { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .growth-line { stroke-dashoffset: 0; transition: none; }
+  .growth-area { opacity: 1; transition: none; }
+}
+
+/* ── Two Column ── */
+
+.two-col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+/* ── Key Decisions ── */
+
+.decision-list {
+  list-style: none;
+}
+
+.decision-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--ghost);
+}
+.decision-item:last-child { border-bottom: none; }
+
+.decision-bullet {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+}
+
+.decision-bullet::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 1px;
+  margin-top: 0.375rem;
+  flex-shrink: 0;
+}
+
+.decision-title {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  margin-bottom: 0.25rem;
+}
+
+.decision-desc {
+  font-size: 0.8125rem;
+  color: var(--on-surface-variant);
+  line-height: 1.6;
+}
+
+/* ── Source Table ── */
+
+.source-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.source-table th {
+  text-align: left;
+  padding: 0.5rem 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  border-bottom: 1px solid var(--ghost);
+  font-weight: 400;
+}
+
+.source-table td {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--ghost);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--on-surface);
+}
+
+.source-table td:last-child {
+  text-align: right;
+  color: var(--on-surface-variant);
+}
+
+/* ── Phase Timeline ── */
+
+.phase-timeline {
+  position: relative;
+  padding-left: 1.25rem;
+}
+
+.phase-timeline__line {
+  position: absolute;
+  left: 0.25rem;
+  top: 0.375rem;
+  bottom: 0.375rem;
+  width: 2px;
+  background: var(--ghost);
+  border-radius: 1px;
+}
+
+.phase-timeline__item {
+  position: relative;
+  padding-bottom: 1.25rem;
+}
+.phase-timeline__item:last-child { padding-bottom: 0; }
+
+.phase-timeline__dot {
+  position: absolute;
+  left: -1.25rem;
+  top: 0.25rem;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.phase-timeline__title {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  margin-bottom: 0.25rem;
+}
+
+.phase-timeline__desc {
+  font-size: 0.8125rem;
+  color: var(--on-surface-variant);
+  line-height: 1.6;
+}
+
+/* ── Skills / Chips ── */
+
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.2;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent-faint);
+  color: var(--accent);
+  border: 1px solid var(--ghost);
+}
+
+/* ── Session Cards ── */
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.section-header__meta {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface-variant);
+}
+
+.session-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.session-card {
+  background: var(--surface-lowest);
+  border: 1px solid var(--ghost);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  transition: border-color 150ms ease;
+  cursor: pointer;
+}
+.session-card:hover { border-color: var(--accent-dim); }
+
+.session-card__bar {
+  height: 2px;
+  border-radius: 1px;
+  margin-bottom: 0.75rem;
+}
+.session-card__bar--cyan { background: var(--accent); }
+.session-card__bar--green { background: var(--green); }
+.session-card__bar--violet { background: var(--violet); }
+
+.session-card__title {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  margin-bottom: 0.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.session-card__meta {
+  color: var(--on-surface-variant);
+  font-size: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.session-card__skills { margin-top: 0.5rem; }
+
+/* ── Footer ── */
+
+.radar-footer {
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--ghost);
+  text-align: center;
+}
+
+.radar-footer__text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Radar Nav ── */
+
+.radar-nav {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  z-index: 100;
+  box-shadow: 0 0 20px var(--accent-faint);
+}
+
+.radar-nav__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  background: radial-gradient(
+    circle at center,
+    var(--accent-faint) 0%,
+    transparent 70%
+  );
+}
+
+.radar-nav__sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(34, 211, 238, 0.25) 0%,
+    transparent 12%
+  );
+  opacity: 0.08;
+  animation: radar-spin 12s linear infinite;
+}
+
+.radar-nav__center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.radar-nav__dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--outline);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background-color 200ms ease-out, box-shadow 200ms ease-out;
+}
+
+.radar-nav__dot--active {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-dim);
+}
+
+.radar-nav__dot:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@keyframes radar-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-nav__sweep { animation: none; }
+}
+
+/* ── Portfolio Section ── */
+
+.portfolio-section {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 0;
+}
+
+.portfolio-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.portfolio-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--surface-lowest);
+  border: 1px solid var(--ghost);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.portfolio-info { flex: 1; min-width: 0; }
+
+.portfolio-name {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--on-surface);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.125rem;
+}
+
+.portfolio-handle {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.portfolio-bio {
+  font-size: 0.875rem;
+  color: var(--on-surface-variant);
+  line-height: 1.6;
+  max-width: 50ch;
+}
+
+.portfolio-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.portfolio-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  background: var(--surface-lowest);
+  border: 1px solid var(--ghost);
+  border-radius: var(--radius-sm);
+}
+
+.portfolio-stat__value {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.portfolio-stat__label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface-variant);
+}
+
+.portfolio-projects {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.portfolio-card {
+  background: var(--surface-lowest);
+  border: 1px solid var(--ghost);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  transition: border-color 150ms ease;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.portfolio-card:hover {
+  border-color: var(--accent-dim);
+  text-decoration: none;
+}
+
+.portfolio-card__bar {
+  height: 2px;
+  border-radius: 1px;
+  margin-bottom: 0.75rem;
+}
+.portfolio-card__bar--cyan { background: var(--accent); }
+.portfolio-card__bar--green { background: var(--green); }
+.portfolio-card__bar--violet { background: var(--violet); }
+
+.portfolio-card__title {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  margin-bottom: 0.25rem;
+}
+
+.portfolio-card__desc {
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.portfolio-card__meta {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--on-surface-variant);
+}
+
+.portfolio-divider {
+  border: none;
+  border-top: 1px solid var(--ghost);
+  margin: 0 0 0;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 768px) {
+  .radar-container { padding: 1.5rem 1rem; }
+  .portfolio-section { padding: 1.5rem 1rem 0; }
+  .portfolio-projects { grid-template-columns: 1fr; }
+  .portfolio-header { flex-direction: column; gap: 1rem; }
+  .portfolio-stats { flex-wrap: wrap; gap: 0.75rem; }
+  .two-col { grid-template-columns: 1fr; }
+  .session-grid { grid-template-columns: 1fr; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .radar-nav { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     PORTFOLIO SECTION — @alex portfolio page
+     ════════════════════════════════════════════════════════════════════ -->
+
+<div class="portfolio-section">
+
+  <div class="portfolio-header">
+    <div class="portfolio-avatar">A</div>
+    <div class="portfolio-info">
+      <div class="portfolio-name">Alex Chen</div>
+      <div class="portfolio-handle">@alex</div>
+      <div class="portfolio-bio">Full-stack engineer focused on fintech, developer tools, and making data-heavy applications feel lightweight.</div>
+    </div>
+  </div>
+
+  <div class="portfolio-stats">
+    <div class="portfolio-stat">
+      <div class="portfolio-stat__value">5</div>
+      <div class="portfolio-stat__label">Projects</div>
+    </div>
+    <div class="portfolio-stat">
+      <div class="portfolio-stat__value">42</div>
+      <div class="portfolio-stat__label">Sessions</div>
+    </div>
+    <div class="portfolio-stat">
+      <div class="portfolio-stat__value">128h</div>
+      <div class="portfolio-stat__label">Total Time</div>
+    </div>
+    <div class="portfolio-stat">
+      <div class="portfolio-stat__value">18k</div>
+      <div class="portfolio-stat__label">LOC</div>
+    </div>
+  </div>
+
+  <div class="radar-label">Projects</div>
+
+  <div class="portfolio-projects">
+    <a class="portfolio-card" href="#">
+      <div class="portfolio-card__bar portfolio-card__bar--cyan"></div>
+      <div class="portfolio-card__title">BudgetWise</div>
+      <div class="portfolio-card__desc">Personal finance app with AI-powered categorization and spending insights dashboard.</div>
+      <div class="portfolio-card__meta">8 sessions &middot; 42.5h &middot; 4.5k LOC</div>
+    </a>
+    <a class="portfolio-card" href="#">
+      <div class="portfolio-card__bar portfolio-card__bar--green"></div>
+      <div class="portfolio-card__title">logpipe</div>
+      <div class="portfolio-card__desc">Structured log aggregator with real-time tailing and regex-based alert routing.</div>
+      <div class="portfolio-card__meta">12 sessions &middot; 38h &middot; 6.1k LOC</div>
+    </a>
+    <a class="portfolio-card" href="#">
+      <div class="portfolio-card__bar portfolio-card__bar--violet"></div>
+      <div class="portfolio-card__title">schemadiff</div>
+      <div class="portfolio-card__desc">Database migration diffing tool that generates safe ALTER statements from schema snapshots.</div>
+      <div class="portfolio-card__meta">6 sessions &middot; 14h &middot; 2.8k LOC</div>
+    </a>
+  </div>
+
+  <hr class="portfolio-divider">
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     PROJECT PAGE — BudgetWise (all 12 sections)
+     ════════════════════════════════════════════════════════════════════ -->
+
+<div class="radar-container">
+
+  <!-- Section 1: Title -->
+  <div class="radar-section" data-radar-section="0">
+    <h1 class="radar-title">BudgetWise</h1>
+  </div>
+
+  <!-- Section 2: Links -->
+  <div class="radar-section" data-radar-section="1" style="margin-bottom: 2rem;">
+    <div class="radar-links">
+      <a class="radar-link" href="#">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        github.com/alex/budgetwise
+      </a>
+      <a class="radar-link" href="#">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        budgetwise.app
+      </a>
+    </div>
+  </div>
+
+  <!-- Section 3: Screenshot -->
+  <div class="radar-section" data-radar-section="2">
+    <div class="browser-chrome">
+      <div class="browser-chrome__bar">
+        <div class="browser-chrome__dot browser-chrome__dot--red"></div>
+        <div class="browser-chrome__dot browser-chrome__dot--yellow"></div>
+        <div class="browser-chrome__dot browser-chrome__dot--green"></div>
+      </div>
+      <div class="browser-chrome__viewport">
+        <span>Screenshot placeholder &mdash; 900 &times; 384</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Narrative -->
+  <div class="radar-section" data-radar-section="3">
+    <div class="radar-narrative">
+      <p>BudgetWise started as a weekend experiment to replace a spreadsheet that had grown unwieldy over three years of manual transaction categorization. The core insight was that most personal finance apps either do too much (full accounting suite) or too little (simple expense tracker with no analysis).</p>
+      <p>I wanted something in between: automatic categorization using a lightweight ML model trained on my own spending patterns, paired with a dashboard that surfaces trends instead of burying them in drill-down menus. The AI categorizer runs locally using ONNX Runtime, so no transaction data ever leaves the device.</p>
+      <p>The most challenging piece was building the reconciliation engine that handles duplicate detection across multiple bank imports. After three iterations, I landed on a fuzzy-matching approach using Levenshtein distance on normalized merchant names combined with amount-date proximity scoring.</p>
+    </div>
+  </div>
+
+  <!-- Section 5: Stats (ANIMATED COUNTERS) -->
+  <div class="radar-section" data-radar-section="4" id="stats-section">
+    <div class="radar-label">Metrics</div>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-card__label">Sessions</div>
+        <div class="stat-card__value" data-count-to="8" data-format="int">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Duration</div>
+        <div class="stat-card__value" data-count-to="42.5" data-format="hours">0h</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Lines of Code</div>
+        <div class="stat-card__value" data-count-to="4460" data-format="comma">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Files Changed</div>
+        <div class="stat-card__value" data-count-to="156" data-format="int">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Tokens</div>
+        <div class="stat-card__value" data-count-to="2100000" data-format="tokens">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Efficiency</div>
+        <div class="stat-card__value" data-count-to="4.2" data-format="multiplier">0x</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: Work Timeline (ANIMATED, HUD style) -->
+  <div class="radar-section" data-radar-section="5" id="work-timeline-section">
+    <div class="radar-label">Work Timeline</div>
+    <div class="chart-card">
+      <svg viewBox="0 0 820 220" xmlns="http://www.w3.org/2000/svg" id="work-timeline-svg">
+        <!-- Coordinate grid lines -->
+        <line x1="48" y1="20" x2="48" y2="180" stroke="rgba(34,211,238,0.08)" stroke-width="1"/>
+        <line x1="48" y1="180" x2="800" y2="180" stroke="rgba(34,211,238,0.08)" stroke-width="1"/>
+        <line x1="48" y1="140" x2="800" y2="140" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="48" y1="100" x2="800" y2="100" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="48" y1="60" x2="800" y2="60" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+
+        <!-- Y-axis labels -->
+        <text x="42" y="183" text-anchor="end" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">0m</text>
+        <text x="42" y="143" text-anchor="end" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">30m</text>
+        <text x="42" y="103" text-anchor="end" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">60m</text>
+        <text x="42" y="63" text-anchor="end" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">90m</text>
+
+        <!-- Session bars — thin instrument-style (3px height), horizontal -->
+        <!-- Each bar represents a session, height = duration proportional -->
+        <!-- Set up Prisma schema: 72m, Feb 3, Claude, 7 agents -->
+        <rect class="wt-bar" x="70" y="76" width="86" height="3" rx="1" fill="#22d3ee" filter="url(#barGlow)"/>
+        <!-- Agent fork lines for session 1 (7 agents) -->
+        <line class="wt-agent-line" x1="80" y1="79" x2="80" y2="94" stroke="#22d3ee" stroke-width="0.75" opacity="0.4"/>
+        <line class="wt-agent-line" x1="90" y1="79" x2="90" y2="90" stroke="#22d3ee" stroke-width="0.75" opacity="0.3"/>
+        <line class="wt-agent-line" x1="100" y1="79" x2="100" y2="92" stroke="#22d3ee" stroke-width="0.75" opacity="0.5"/>
+        <line class="wt-agent-line" x1="110" y1="79" x2="110" y2="88" stroke="#22d3ee" stroke-width="0.75" opacity="0.35"/>
+        <line class="wt-agent-line" x1="120" y1="79" x2="120" y2="91" stroke="#22d3ee" stroke-width="0.75" opacity="0.45"/>
+        <line class="wt-agent-line" x1="130" y1="79" x2="130" y2="87" stroke="#22d3ee" stroke-width="0.75" opacity="0.3"/>
+        <line class="wt-agent-line" x1="140" y1="79" x2="140" y2="93" stroke="#22d3ee" stroke-width="0.75" opacity="0.4"/>
+
+        <!-- Build transaction list: 65m, Feb 14, Cursor, 5 agents -->
+        <rect class="wt-bar" x="175" y="82" width="78" height="3" rx="1" fill="#22d3ee" filter="url(#barGlow)"/>
+        <line class="wt-agent-line" x1="185" y1="85" x2="185" y2="98" stroke="#22d3ee" stroke-width="0.75" opacity="0.35"/>
+        <line class="wt-agent-line" x1="200" y1="85" x2="200" y2="95" stroke="#22d3ee" stroke-width="0.75" opacity="0.45"/>
+        <line class="wt-agent-line" x1="215" y1="85" x2="215" y2="100" stroke="#22d3ee" stroke-width="0.75" opacity="0.3"/>
+        <line class="wt-agent-line" x1="230" y1="85" x2="230" y2="96" stroke="#22d3ee" stroke-width="0.75" opacity="0.4"/>
+        <line class="wt-agent-line" x1="240" y1="85" x2="240" y2="93" stroke="#22d3ee" stroke-width="0.75" opacity="0.35"/>
+
+        <!-- Recurring transaction detection: 88m, Mar 1, Claude, 6 agents -->
+        <rect class="wt-bar" x="280" y="56" width="106" height="3" rx="1" fill="#22d3ee" filter="url(#barGlow)"/>
+        <line class="wt-agent-line" x1="295" y1="59" x2="295" y2="76" stroke="#22d3ee" stroke-width="0.75" opacity="0.5"/>
+        <line class="wt-agent-line" x1="310" y1="59" x2="310" y2="72" stroke="#22d3ee" stroke-width="0.75" opacity="0.35"/>
+        <line class="wt-agent-line" x1="325" y1="59" x2="325" y2="78" stroke="#22d3ee" stroke-width="0.75" opacity="0.4"/>
+        <line class="wt-agent-line" x1="340" y1="59" x2="340" y2="74" stroke="#22d3ee" stroke-width="0.75" opacity="0.45"/>
+        <line class="wt-agent-line" x1="355" y1="59" x2="355" y2="70" stroke="#22d3ee" stroke-width="0.75" opacity="0.3"/>
+        <line class="wt-agent-line" x1="370" y1="59" x2="370" y2="75" stroke="#22d3ee" stroke-width="0.75" opacity="0.4"/>
+
+        <!-- Stripe integration: 55m, Mar 10, Claude, 0 agents -->
+        <rect class="wt-bar" x="405" y="93" width="66" height="3" rx="1" fill="#22d3ee" filter="url(#barGlow)"/>
+
+        <!-- CSV import pipeline: 45m, Mar 14, Cursor, 4 agents -->
+        <rect class="wt-bar" x="490" y="108" width="54" height="3" rx="1" fill="#22d3ee" filter="url(#barGlow)"/>
+        <line class="wt-agent-line" x1="500" y1="111" x2="500" y2="122" stroke="#22d3ee" stroke-width="0.75" opacity="0.4"/>
+        <line class="wt-agent-line" x1="512" y1="111" x2="512" y2="126" stroke="#22d3ee" stroke-width="0.75" opacity="0.35"/>
+        <line class="wt-agent-line" x1="524" y1="111" x2="524" y2="120" stroke="#22d3ee" stroke-width="0.75" opacity="0.45"/>
+        <line class="wt-agent-line" x1="536" y1="111" x2="536" y2="124" stroke="#22d3ee" stroke-width="0.75" opacity="0.3"/>
+
+        <!-- Full-text search tsvector: 62m, Mar 18, Claude, 3 agents -->
+        <rect class="wt-bar" x="565" y="86" width="74" height="3" rx="1" fill="#22d3ee" filter="url(#barGlow)"/>
+        <line class="wt-agent-line" x1="580" y1="89" x2="580" y2="102" stroke="#22d3ee" stroke-width="0.75" opacity="0.4"/>
+        <line class="wt-agent-line" x1="600" y1="89" x2="600" y2="98" stroke="#22d3ee" stroke-width="0.75" opacity="0.35"/>
+        <line class="wt-agent-line" x1="620" y1="89" x2="620" y2="104" stroke="#22d3ee" stroke-width="0.75" opacity="0.45"/>
+
+        <!-- Spending insights dashboard: 78m, Mar 22, Claude, 5 agents -->
+        <rect class="wt-bar" x="660" y="68" width="94" height="3" rx="1" fill="#22d3ee" filter="url(#barGlow)"/>
+        <line class="wt-agent-line" x1="672" y1="71" x2="672" y2="86" stroke="#22d3ee" stroke-width="0.75" opacity="0.45"/>
+        <line class="wt-agent-line" x1="688" y1="71" x2="688" y2="82" stroke="#22d3ee" stroke-width="0.75" opacity="0.35"/>
+        <line class="wt-agent-line" x1="704" y1="71" x2="704" y2="88" stroke="#22d3ee" stroke-width="0.75" opacity="0.4"/>
+        <line class="wt-agent-line" x1="720" y1="71" x2="720" y2="84" stroke="#22d3ee" stroke-width="0.75" opacity="0.3"/>
+        <line class="wt-agent-line" x1="736" y1="71" x2="736" y2="90" stroke="#22d3ee" stroke-width="0.75" opacity="0.45"/>
+
+        <!-- Mobile responsive + 2FA: 50m, Mar 26, Cursor, 0 agents -->
+        <rect class="wt-bar" x="772" y="100" width="20" height="3" rx="1" fill="#22d3ee" filter="url(#barGlow)"/>
+
+        <!-- Session labels (tiny mono text above bars) -->
+        <text x="113" y="70" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="7">Prisma schema</text>
+        <text x="214" y="76" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="7">Transaction list</text>
+        <text x="333" y="50" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="7">Recurring detect</text>
+        <text x="438" y="87" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="7">Stripe</text>
+        <text x="517" y="102" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="7">CSV import</text>
+        <text x="602" y="80" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="7">tsvector search</text>
+        <text x="707" y="62" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="7">Insights dashboard</text>
+        <text x="782" y="94" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="7">Mobile+2FA</text>
+
+        <!-- X-axis date labels -->
+        <text x="113" y="196" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Feb 3</text>
+        <text x="214" y="196" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Feb 14</text>
+        <text x="333" y="196" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Mar 1</text>
+        <text x="438" y="196" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Mar 10</text>
+        <text x="517" y="196" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Mar 14</text>
+        <text x="602" y="196" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Mar 18</text>
+        <text x="707" y="196" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Mar 22</text>
+        <text x="782" y="196" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Mar 26</text>
+
+        <!-- Subtle glow filter for bars -->
+        <defs>
+          <filter id="barGlow" x="-20%" y="-200%" width="140%" height="600%">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+          </filter>
+        </defs>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Section 7: Growth Chart (ANIMATED, data-viz style) -->
+  <div class="radar-section" data-radar-section="6" id="growth-chart-section">
+    <div class="radar-label">Growth</div>
+    <div class="chart-card">
+      <svg viewBox="0 0 820 220" xmlns="http://www.w3.org/2000/svg" id="growth-chart-svg">
+        <!-- Coordinate grid -->
+        <line x1="48" y1="20" x2="48" y2="190" stroke="rgba(34,211,238,0.08)" stroke-width="1"/>
+        <line x1="48" y1="190" x2="800" y2="190" stroke="rgba(34,211,238,0.08)" stroke-width="1"/>
+        <line x1="48" y1="150" x2="800" y2="150" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="48" y1="110" x2="800" y2="110" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="48" y1="70" x2="800" y2="70" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="48" y1="30" x2="800" y2="30" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+
+        <!-- Vertical grid lines -->
+        <line x1="152" y1="20" x2="152" y2="190" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="258" y1="20" x2="258" y2="190" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="364" y1="20" x2="364" y2="190" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="470" y1="20" x2="470" y2="190" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="576" y1="20" x2="576" y2="190" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="682" y1="20" x2="682" y2="190" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="788" y1="20" x2="788" y2="190" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+
+        <!-- Y-axis labels (LOC scale, left) -->
+        <text x="42" y="193" text-anchor="end" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">0</text>
+        <text x="42" y="153" text-anchor="end" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">1.1k</text>
+        <text x="42" y="113" text-anchor="end" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">2.2k</text>
+        <text x="42" y="73" text-anchor="end" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">3.3k</text>
+        <text x="42" y="33" text-anchor="end" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">4.5k</text>
+
+        <!-- LOC cumulative data points:
+             680, 1200, 2090, 2510, 2890, 3400, 4120, 4460
+             Mapped: 190 -> 30 over 4460 range
+             y = 190 - (val / 4460) * 160
+        -->
+
+        <!-- LOC area fill (5% opacity) -->
+        <path class="growth-area"
+          d="M90,165.6 L194,146.9 L364,115 L470,99.9 L530,86.2 L602,68 L716,42.1 L788,30.1 L788,190 L90,190 Z"
+          fill="rgba(34,211,238,0.05)"/>
+
+        <!-- Files area fill (5% opacity) — files scale: 0 to 156, mapped differently -->
+        <!-- Files cumulative: 20, 38, 62, 78, 94, 112, 138, 156 -->
+        <!-- y = 190 - (val / 156) * 100 (shorter range to separate from LOC) -->
+        <path class="growth-area"
+          d="M90,177.2 L194,165.6 L364,150.3 L470,140 L530,129.7 L602,118.2 L716,101.5 L788,90 L788,190 L90,190 Z"
+          fill="rgba(52,211,153,0.05)"/>
+
+        <!-- LOC line (thin luminous cyan) -->
+        <polyline class="growth-line" id="loc-line"
+          points="90,165.6 194,146.9 364,115 470,99.9 530,86.2 602,68 716,42.1 788,30.1"
+          fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+          style="--line-length: 1200;"/>
+
+        <!-- Files line (thin green) -->
+        <polyline class="growth-line" id="files-line"
+          points="90,177.2 194,165.6 364,150.3 470,140 530,129.7 602,118.2 716,101.5 788,90"
+          fill="none" stroke="#34d399" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+          style="--line-length: 1100;"/>
+
+        <!-- LOC data dots -->
+        <circle cx="90" cy="165.6" r="2.5" fill="#22d3ee"/>
+        <circle cx="194" cy="146.9" r="2.5" fill="#22d3ee"/>
+        <circle cx="364" cy="115" r="2.5" fill="#22d3ee"/>
+        <circle cx="470" cy="99.9" r="2.5" fill="#22d3ee"/>
+        <circle cx="530" cy="86.2" r="2.5" fill="#22d3ee"/>
+        <circle cx="602" cy="68" r="2.5" fill="#22d3ee"/>
+        <circle cx="716" cy="42.1" r="2.5" fill="#22d3ee"/>
+        <circle cx="788" cy="30.1" r="2.5" fill="#22d3ee"/>
+
+        <!-- Files data dots -->
+        <circle cx="90" cy="177.2" r="2.5" fill="#34d399"/>
+        <circle cx="194" cy="165.6" r="2.5" fill="#34d399"/>
+        <circle cx="364" cy="150.3" r="2.5" fill="#34d399"/>
+        <circle cx="470" cy="140" r="2.5" fill="#34d399"/>
+        <circle cx="530" cy="129.7" r="2.5" fill="#34d399"/>
+        <circle cx="602" cy="118.2" r="2.5" fill="#34d399"/>
+        <circle cx="716" cy="101.5" r="2.5" fill="#34d399"/>
+        <circle cx="788" cy="90" r="2.5" fill="#34d399"/>
+
+        <!-- X-axis date labels -->
+        <text x="90" y="206" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Feb 3</text>
+        <text x="194" y="206" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Feb 14</text>
+        <text x="364" y="206" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Mar 1</text>
+        <text x="470" y="206" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Mar 10</text>
+        <text x="530" y="206" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Mar 14</text>
+        <text x="602" y="206" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Mar 18</text>
+        <text x="716" y="206" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Mar 22</text>
+        <text x="788" y="206" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Mar 26</text>
+
+        <!-- Legend -->
+        <line x1="620" y1="15" x2="640" y2="15" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="645" y="18" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">LOC</text>
+        <line x1="690" y1="15" x2="710" y2="15" stroke="#34d399" stroke-width="1.5"/>
+        <text x="715" y="18" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">FILES</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Section 8: Two-Column (Key Decisions + Source Breakdown) -->
+  <div class="radar-section" data-radar-section="7">
+    <div class="two-col">
+      <div>
+        <div class="radar-label">Key Decisions</div>
+        <ul class="decision-list">
+          <li class="decision-item">
+            <div class="decision-bullet">
+              <div>
+                <div class="decision-title">Prisma over Drizzle for schema management</div>
+                <div class="decision-desc">Prisma's migration tooling and type generation made schema iteration faster during rapid prototyping. Trade-off: heavier runtime dependency.</div>
+              </div>
+            </div>
+          </li>
+          <li class="decision-item">
+            <div class="decision-bullet">
+              <div>
+                <div class="decision-title">Stripe Connect for payment processing</div>
+                <div class="decision-desc">Chose Stripe over building custom payment handling to avoid PCI compliance burden. Connect enables multi-account support out of the box.</div>
+              </div>
+            </div>
+          </li>
+          <li class="decision-item">
+            <div class="decision-bullet">
+              <div>
+                <div class="decision-title">PostgreSQL tsvector for search</div>
+                <div class="decision-desc">Full-text search via tsvector beats external search service for this scale. Built custom ranking with ts_rank_cd and trigram similarity fallback.</div>
+              </div>
+            </div>
+          </li>
+          <li class="decision-item">
+            <div class="decision-bullet">
+              <div>
+                <div class="decision-title">CSV import with streaming parser</div>
+                <div class="decision-desc">Papa Parse streaming mode handles 100k+ row imports without memory pressure. Progress callback drives the upload UI bar.</div>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div>
+        <div class="radar-label">Source Breakdown</div>
+        <table class="source-table">
+          <thead>
+            <tr>
+              <th>Tool</th>
+              <th style="text-align: right;">Sessions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Claude</td><td>5</td></tr>
+            <tr><td>Cursor</td><td>3</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 9: Phase Timeline -->
+  <div class="radar-section" data-radar-section="8">
+    <div class="radar-label">Phases</div>
+    <div class="phase-timeline">
+      <div class="phase-timeline__line"></div>
+      <div class="phase-timeline__item">
+        <div class="phase-timeline__dot"></div>
+        <div class="phase-timeline__title">Phase 1: Foundation</div>
+        <div class="phase-timeline__desc">Set up Prisma schema, bootstrapped Next.js app with auth, and built the initial transaction data model with recurring detection stubs.</div>
+      </div>
+      <div class="phase-timeline__item">
+        <div class="phase-timeline__dot"></div>
+        <div class="phase-timeline__title">Phase 2: Core Transaction Engine</div>
+        <div class="phase-timeline__desc">Built the transaction list UI, CSV import pipeline, and recurring transaction detection algorithm using frequency analysis.</div>
+      </div>
+      <div class="phase-timeline__item">
+        <div class="phase-timeline__dot"></div>
+        <div class="phase-timeline__title">Phase 3: Payments and Search</div>
+        <div class="phase-timeline__desc">Integrated Stripe Connect for payment tracking. Added full-text search via PostgreSQL tsvector with trigram similarity fallback.</div>
+      </div>
+      <div class="phase-timeline__item">
+        <div class="phase-timeline__dot"></div>
+        <div class="phase-timeline__title">Phase 4: Insights and Polish</div>
+        <div class="phase-timeline__desc">Built the spending insights dashboard with category breakdowns. Added mobile responsive layout and two-factor authentication.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 10: Skills -->
+  <div class="radar-section" data-radar-section="9">
+    <div class="radar-label">Technologies</div>
+    <div class="chip-list">
+      <span class="chip">TypeScript</span>
+      <span class="chip">React</span>
+      <span class="chip">Next.js</span>
+      <span class="chip">Prisma</span>
+      <span class="chip">PostgreSQL</span>
+      <span class="chip">Stripe</span>
+      <span class="chip">tsvector</span>
+      <span class="chip">Papa Parse</span>
+      <span class="chip">Tailwind CSS</span>
+      <span class="chip">Vitest</span>
+      <span class="chip">2FA / TOTP</span>
+    </div>
+  </div>
+
+  <!-- Section 11: Session Cards -->
+  <div class="radar-section" data-radar-section="10">
+    <div class="section-header">
+      <div class="radar-label" style="margin-bottom: 0;">Sessions</div>
+      <div class="section-header__meta">8 total</div>
+    </div>
+    <div class="session-grid">
+      <div class="session-card">
+        <div class="session-card__bar session-card__bar--cyan"></div>
+        <div class="session-card__title">Set up Prisma schema</div>
+        <div class="session-card__meta">72m &middot; 680 LOC &middot; Claude &middot; 7 agents</div>
+        <div class="session-card__skills">
+          <div class="chip-list">
+            <span class="chip">Prisma</span>
+            <span class="chip">TypeScript</span>
+          </div>
+        </div>
+      </div>
+      <div class="session-card">
+        <div class="session-card__bar session-card__bar--green"></div>
+        <div class="session-card__title">Build transaction list</div>
+        <div class="session-card__meta">65m &middot; 520 LOC &middot; Cursor &middot; 5 agents</div>
+        <div class="session-card__skills">
+          <div class="chip-list">
+            <span class="chip">React</span>
+            <span class="chip">Next.js</span>
+          </div>
+        </div>
+      </div>
+      <div class="session-card">
+        <div class="session-card__bar session-card__bar--violet"></div>
+        <div class="session-card__title">Recurring transaction detection</div>
+        <div class="session-card__meta">88m &middot; 890 LOC &middot; Claude &middot; 6 agents</div>
+        <div class="session-card__skills">
+          <div class="chip-list">
+            <span class="chip">TypeScript</span>
+            <span class="chip">Vitest</span>
+          </div>
+        </div>
+      </div>
+      <div class="session-card">
+        <div class="session-card__bar session-card__bar--cyan"></div>
+        <div class="session-card__title">Stripe integration</div>
+        <div class="session-card__meta">55m &middot; 420 LOC &middot; Claude &middot; solo</div>
+        <div class="session-card__skills">
+          <div class="chip-list">
+            <span class="chip">Stripe</span>
+          </div>
+        </div>
+      </div>
+      <div class="session-card">
+        <div class="session-card__bar session-card__bar--green"></div>
+        <div class="session-card__title">CSV import pipeline</div>
+        <div class="session-card__meta">45m &middot; 380 LOC &middot; Cursor &middot; 4 agents</div>
+        <div class="session-card__skills">
+          <div class="chip-list">
+            <span class="chip">Papa Parse</span>
+          </div>
+        </div>
+      </div>
+      <div class="session-card">
+        <div class="session-card__bar session-card__bar--violet"></div>
+        <div class="session-card__title">Full-text search tsvector</div>
+        <div class="session-card__meta">62m &middot; 510 LOC &middot; Claude &middot; 3 agents</div>
+        <div class="session-card__skills">
+          <div class="chip-list">
+            <span class="chip">PostgreSQL</span>
+            <span class="chip">tsvector</span>
+          </div>
+        </div>
+      </div>
+      <div class="session-card">
+        <div class="session-card__bar session-card__bar--cyan"></div>
+        <div class="session-card__title">Spending insights dashboard</div>
+        <div class="session-card__meta">78m &middot; 720 LOC &middot; Claude &middot; 5 agents</div>
+        <div class="session-card__skills">
+          <div class="chip-list">
+            <span class="chip">React</span>
+            <span class="chip">Tailwind CSS</span>
+          </div>
+        </div>
+      </div>
+      <div class="session-card">
+        <div class="session-card__bar session-card__bar--green"></div>
+        <div class="session-card__title">Mobile responsive + 2FA</div>
+        <div class="session-card__meta">50m &middot; 340 LOC &middot; Cursor &middot; solo</div>
+        <div class="session-card__skills">
+          <div class="chip-list">
+            <span class="chip">2FA / TOTP</span>
+            <span class="chip">Tailwind CSS</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 12: Footer -->
+  <div class="radar-section" data-radar-section="11">
+    <div class="radar-footer">
+      <div class="radar-footer__text">Built with heyi.am</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Radar Navigation Element -->
+<nav class="radar-nav" aria-label="Section navigation">
+  <div class="radar-nav__ring"></div>
+  <div class="radar-nav__sweep"></div>
+  <div class="radar-nav__center"></div>
+  <button class="radar-nav__dot" data-radar-dot="0" aria-label="Navigate to Title"></button>
+  <button class="radar-nav__dot" data-radar-dot="1" aria-label="Navigate to Links"></button>
+  <button class="radar-nav__dot" data-radar-dot="2" aria-label="Navigate to Screenshot"></button>
+  <button class="radar-nav__dot" data-radar-dot="3" aria-label="Navigate to Narrative"></button>
+  <button class="radar-nav__dot" data-radar-dot="4" aria-label="Navigate to Stats"></button>
+  <button class="radar-nav__dot" data-radar-dot="5" aria-label="Navigate to Work Timeline"></button>
+  <button class="radar-nav__dot" data-radar-dot="6" aria-label="Navigate to Growth Chart"></button>
+  <button class="radar-nav__dot" data-radar-dot="7" aria-label="Navigate to Decisions and Sources"></button>
+  <button class="radar-nav__dot" data-radar-dot="8" aria-label="Navigate to Phase Timeline"></button>
+  <button class="radar-nav__dot" data-radar-dot="9" aria-label="Navigate to Technologies"></button>
+  <button class="radar-nav__dot" data-radar-dot="10" aria-label="Navigate to Sessions"></button>
+  <button class="radar-nav__dot" data-radar-dot="11" aria-label="Navigate to Footer"></button>
+</nav>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── Reduced motion check ──────────────────────────────────────
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── Radar HUD Navigation ──────────────────────────────────────
+  var nav = document.querySelector('.radar-nav');
+  if (nav) {
+    var sections = document.querySelectorAll('[data-radar-section]');
+    var dots = document.querySelectorAll('[data-radar-dot]');
+
+    // Position dots around the circle (12 o'clock start, clockwise)
+    dots.forEach(function(dot, i) {
+      var angle = (i / 12) * 2 * Math.PI - Math.PI / 2;
+      var r = 54;
+      dot.style.left = (60 + r * Math.cos(angle) - 3) + 'px';
+      dot.style.top  = (60 + r * Math.sin(angle) - 3) + 'px';
+    });
+
+    // IntersectionObserver for dot activation
+    var dotObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        var idx = entry.target.getAttribute('data-radar-section');
+        var dot = nav.querySelector('[data-radar-dot="' + idx + '"]');
+        if (dot) {
+          dot.classList.toggle('radar-nav__dot--active', entry.isIntersecting);
+        }
+      });
+    }, { threshold: 0.3 });
+
+    sections.forEach(function(s) { dotObserver.observe(s); });
+
+    // Click dots to scroll
+    dots.forEach(function(dot) {
+      dot.addEventListener('click', function() {
+        var idx = this.getAttribute('data-radar-dot');
+        var target = document.querySelector('[data-radar-section="' + idx + '"]');
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  }
+
+  // ── Section Fade-In on Scroll ─────────────────────────────────
+  var allSections = document.querySelectorAll('.radar-section');
+  if (!prefersReducedMotion) {
+    var fadeObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          fadeObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    allSections.forEach(function(s) { fadeObserver.observe(s); });
+  } else {
+    // Immediately show all sections
+    allSections.forEach(function(s) { s.classList.add('is-visible'); });
+  }
+
+  // ── Stat Counter Animation ────────────────────────────────────
+  var statsSection = document.getElementById('stats-section');
+  if (statsSection) {
+    if (prefersReducedMotion) {
+      // Show final values immediately
+      showFinalCounterValues(statsSection);
+    } else {
+      var statsObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            statsObserver.unobserve(entry.target);
+            setTimeout(function() { animateCounters(entry.target); }, 200);
+          }
+        });
+      }, { threshold: 0.15 });
+      statsObserver.observe(statsSection);
+    }
+  }
+
+  function showFinalCounterValues(container) {
+    var counters = container.querySelectorAll('[data-count-to]');
+    counters.forEach(function(el) {
+      var target = parseFloat(el.getAttribute('data-count-to'));
+      var format = el.getAttribute('data-format');
+      el.textContent = formatCounterValue(target, format);
+    });
+  }
+
+  function animateCounters(container) {
+    var counters = container.querySelectorAll('[data-count-to]');
+    counters.forEach(function(el) {
+      var target = parseFloat(el.getAttribute('data-count-to'));
+      var format = el.getAttribute('data-format');
+      var duration = 1200;
+      var start = performance.now();
+
+      function easeOut(t) {
+        return 1 - Math.pow(1 - t, 3);
+      }
+
+      function tick(now) {
+        var elapsed = now - start;
+        var progress = Math.min(elapsed / duration, 1);
+        var easedProgress = easeOut(progress);
+        var current = target * easedProgress;
+        el.textContent = formatCounterValue(current, format);
+        if (progress < 1) {
+          requestAnimationFrame(tick);
+        }
+      }
+
+      requestAnimationFrame(tick);
+    });
+  }
+
+  function formatCounterValue(val, format) {
+    switch (format) {
+      case 'int':
+        return Math.round(val).toString();
+      case 'comma':
+        return Math.round(val).toLocaleString();
+      case 'hours':
+        return val.toFixed(1) + 'h';
+      case 'tokens':
+        if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+        if (val >= 1000) return (val / 1000).toFixed(0) + 'K';
+        return Math.round(val).toString();
+      case 'multiplier':
+        return val.toFixed(1) + 'x';
+      default:
+        return Math.round(val).toString();
+    }
+  }
+
+  // ── Work Timeline Bar Animation ───────────────────────────────
+  var wtSection = document.getElementById('work-timeline-section');
+  if (wtSection) {
+    if (prefersReducedMotion) {
+      wtSection.querySelectorAll('.wt-bar').forEach(function(b) { b.classList.add('is-animated'); });
+      wtSection.querySelectorAll('.wt-agent-line').forEach(function(l) { l.classList.add('is-animated'); });
+    } else {
+      var wtObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            wtObserver.unobserve(entry.target);
+            animateWorkTimeline(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+      wtObserver.observe(wtSection);
+    }
+  }
+
+  function animateWorkTimeline(container) {
+    var bars = container.querySelectorAll('.wt-bar');
+    var agentLines = container.querySelectorAll('.wt-agent-line');
+
+    // Stagger bar animations
+    bars.forEach(function(bar, i) {
+      setTimeout(function() {
+        bar.classList.add('is-animated');
+      }, i * 80);
+    });
+
+    // Agent lines animate after bars, staggered
+    agentLines.forEach(function(line, i) {
+      setTimeout(function() {
+        line.classList.add('is-animated');
+      }, 400 + i * 30);
+    });
+  }
+
+  // ── Growth Chart Line Draw Animation ──────────────────────────
+  var gcSection = document.getElementById('growth-chart-section');
+  if (gcSection) {
+    if (prefersReducedMotion) {
+      gcSection.querySelectorAll('.growth-line').forEach(function(l) { l.classList.add('is-animated'); });
+      gcSection.querySelectorAll('.growth-area').forEach(function(a) { a.classList.add('is-animated'); });
+    } else {
+      // Compute actual line lengths for stroke-dasharray
+      var locLine = document.getElementById('loc-line');
+      var filesLine = document.getElementById('files-line');
+      if (locLine) {
+        var locLen = locLine.getTotalLength();
+        locLine.style.setProperty('--line-length', locLen);
+        locLine.style.strokeDasharray = locLen;
+        locLine.style.strokeDashoffset = locLen;
+      }
+      if (filesLine) {
+        var filesLen = filesLine.getTotalLength();
+        filesLine.style.setProperty('--line-length', filesLen);
+        filesLine.style.strokeDasharray = filesLen;
+        filesLine.style.strokeDashoffset = filesLen;
+      }
+
+      var gcObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            gcObserver.unobserve(entry.target);
+            animateGrowthChart(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+      gcObserver.observe(gcSection);
+    }
+  }
+
+  function animateGrowthChart(container) {
+    var lines = container.querySelectorAll('.growth-line');
+    var areas = container.querySelectorAll('.growth-area');
+
+    lines.forEach(function(line, i) {
+      setTimeout(function() {
+        line.classList.add('is-animated');
+      }, i * 200);
+    });
+
+    areas.forEach(function(area, i) {
+      setTimeout(function() {
+        area.classList.add('is-animated');
+      }, 200 + i * 200);
+    });
+  }
+
+})();
+</script>
+
+</body>
+</html>

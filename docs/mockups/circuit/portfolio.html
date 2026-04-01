@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alex Chen — Portfolio | Circuit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Tokens ── */
+  :root {
+    --bg: #0a0f0a;
+    --bg-surface: #111a11;
+    --fg: #d4e6d4;
+    --fg-muted: #7a937a;
+    --accent: #a3e635;
+    --accent-dim: rgba(163, 230, 53, 0.15);
+    --accent-glow: rgba(163, 230, 53, 0.25);
+    --border: #1e2e1e;
+    --border-accent: rgba(163, 230, 53, 0.3);
+    --radius-sm: 2px;
+    --radius: 4px;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --trace: rgba(163, 230, 53, 0.08);
+    --trace-bright: rgba(163, 230, 53, 0.18);
+    --pad-size: 6px;
+  }
+
+  /* ── Circuit board background ── */
+  body {
+    font-family: var(--font-body);
+    color: var(--fg);
+    background-color: var(--bg);
+    background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 0v40h30v-20h40v60h-20v40h60v-30h20v50h-40v20h70v-40h30v-20' fill='none' stroke='rgba(163,230,53,0.06)' stroke-width='1'/%3E%3Cpath d='M0 120h30v40h20v-20h40v30h-10v30' fill='none' stroke='rgba(163,230,53,0.06)' stroke-width='1'/%3E%3Cpath d='M120 0v20h40v30h-20v20h60v40h-30v20h30v20h-50v30h-20' fill='none' stroke='rgba(163,230,53,0.06)' stroke-width='1'/%3E%3Ccircle cx='10' cy='40' r='2' fill='rgba(163,230,53,0.1)'/%3E%3Ccircle cx='80' cy='80' r='2' fill='rgba(163,230,53,0.1)'/%3E%3Ccircle cx='160' cy='50' r='2' fill='rgba(163,230,53,0.1)'/%3E%3Ccircle cx='40' cy='160' r='2' fill='rgba(163,230,53,0.1)'/%3E%3Ccircle cx='130' cy='150' r='2' fill='rgba(163,230,53,0.1)'/%3E%3C/svg%3E");
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Skip link ── */
+  .skip-link {
+    position: absolute;
+    inset-inline-start: -9999px;
+    top: 0;
+    background: var(--accent);
+    color: var(--bg);
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    z-index: 100;
+    border-radius: var(--radius);
+  }
+  .skip-link:focus {
+    inset-inline-start: 8px;
+    top: 8px;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 960px;
+    margin-inline: auto;
+    padding-inline: 24px;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+    background: rgba(10, 15, 10, 0.94);
+    backdrop-filter: blur(6px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-brand {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+  .nav-brand span {
+    color: var(--fg-muted);
+  }
+  .nav-links {
+    display: flex;
+    gap: 24px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg-muted);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .nav-links a:hover,
+  .nav-links a[aria-current="page"] {
+    color: var(--accent);
+  }
+  .nav-links a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Component pad decorators ── */
+  .pad-corner {
+    position: relative;
+  }
+  .pad-corner::before,
+  .pad-corner::after {
+    content: '';
+    position: absolute;
+    width: var(--pad-size);
+    height: var(--pad-size);
+    background: var(--accent-dim);
+    border-radius: 50%;
+  }
+  .pad-corner::before { top: -3px; inset-inline-start: -3px; }
+  .pad-corner::after { top: -3px; inset-inline-end: -3px; }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 80px 0 48px;
+    position: relative;
+  }
+  .hero-profile {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+  .hero-photo-wrap {
+    position: relative;
+    width: 120px;
+    height: 150px;
+    flex-shrink: 0;
+  }
+  .hero-photo {
+    width: 120px;
+    height: 150px;
+    border-radius: var(--radius);
+    object-fit: cover;
+    object-position: 55% 10%;
+    border: 1px solid var(--accent);
+    display: block;
+    filter: grayscale(0.7) brightness(0.9);
+  }
+  .hero-photo-wrap::before,
+  .hero-photo-wrap::after,
+  .hero-photo-wrap .pad-bl,
+  .hero-photo-wrap .pad-br {
+    content: '';
+    position: absolute;
+    width: var(--pad-size);
+    height: var(--pad-size);
+    background: var(--accent);
+    border-radius: 1px;
+    opacity: 0.6;
+  }
+  .hero-photo-wrap::before { top: -3px; inset-inline-start: -3px; }
+  .hero-photo-wrap::after { top: -3px; inset-inline-end: -3px; }
+  .hero-photo-wrap .pad-bl { bottom: -3px; left: -3px; position: absolute; width: var(--pad-size); height: var(--pad-size); background: var(--accent); border-radius: 1px; opacity: 0.6; }
+  .hero-photo-wrap .pad-br { bottom: -3px; right: -3px; position: absolute; width: var(--pad-size); height: var(--pad-size); background: var(--accent); border-radius: 1px; opacity: 0.6; }
+  .hero-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(32px, 5vw, 48px);
+    font-weight: 700;
+    color: var(--fg);
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    margin-bottom: 16px;
+  }
+  .hero h1 .accent {
+    color: var(--accent);
+  }
+  .hero-bio {
+    font-size: 16px;
+    color: var(--fg-muted);
+    max-width: 560px;
+    line-height: 1.7;
+    margin-bottom: 8px;
+  }
+  .hero-location {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg-muted);
+    opacity: 0.7;
+  }
+  .hero-location::before {
+    content: '// ';
+    color: var(--accent);
+    opacity: 0.5;
+  }
+  .hero-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+    list-style: none;
+  }
+  .hero-contact a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg-muted);
+    transition: color 0.15s;
+  }
+  .hero-contact a:hover {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .hero-contact svg {
+    flex-shrink: 0;
+  }
+  .hero-resume {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 16px;
+    padding: 6px 14px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--bg);
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+  .hero-resume:hover {
+    opacity: 0.85;
+    text-decoration: none;
+    color: var(--bg);
+  }
+
+  /* ── Stat Chips ── */
+  .stat-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 40px 0;
+  }
+  .stat-chip {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 24px;
+    position: relative;
+    min-width: 140px;
+  }
+  /* Chip notch */
+  .stat-chip::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    inset-inline-start: 12px;
+    width: 16px;
+    height: 4px;
+    background: var(--bg);
+    border-bottom-left-radius: 2px;
+    border-bottom-right-radius: 2px;
+  }
+  /* Pin dot */
+  .stat-chip::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    inset-inline-end: 8px;
+    width: 4px;
+    height: 4px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+  .stat-chip-value {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--accent);
+    display: block;
+    line-height: 1.1;
+  }
+  .stat-chip-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+    display: block;
+  }
+
+  .stat-chip--leverage {
+    flex: 2 1 220px;
+  }
+  .leverage-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .leverage-row .lev-val {
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--fg);
+    line-height: 1.1;
+  }
+  .leverage-row .lev-val--agent,
+  .leverage-row .lev-val--multi {
+    color: var(--accent);
+  }
+  .leverage-row .lev-lbl {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .circuit-leverage-bar {
+    height: 3px;
+    border-radius: 1px;
+    background: rgba(255,255,255,0.06);
+    display: flex;
+    overflow: hidden;
+  }
+  .circuit-leverage-bar__human {
+    height: 100%;
+    width: 19%;
+    background: rgba(255,255,255,0.25);
+    border-radius: 1px 0 0 1px;
+  }
+  .circuit-leverage-bar__agent {
+    height: 100%;
+    width: 81%;
+    background: var(--accent);
+    border-radius: 0 1px 1px 0;
+  }
+
+  /* ── Section headers ── */
+  .section-header {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--fg);
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .section-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    inset-inline-start: 0;
+    width: 48px;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  /* ── Trace connector between sections ── */
+  .trace-connector {
+    width: 2px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--trace-bright), var(--trace));
+    margin-inline-start: 48px;
+    position: relative;
+  }
+  .trace-connector::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    inset-inline-start: -2px;
+    width: var(--pad-size);
+    height: var(--pad-size);
+    background: var(--accent-dim);
+    border-radius: 50%;
+  }
+  .trace-connector::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    inset-inline-start: -2px;
+    width: var(--pad-size);
+    height: var(--pad-size);
+    background: var(--accent-dim);
+    border-radius: 50%;
+  }
+
+  /* ── Project Cards ── */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+    gap: 24px;
+  }
+  .project-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .project-card:hover {
+    border-color: var(--border-accent);
+  }
+  /* Corner pads on project cards */
+  .project-card::before,
+  .project-card::after {
+    content: '';
+    position: absolute;
+    width: var(--pad-size);
+    height: var(--pad-size);
+    background: var(--accent-dim);
+    border-radius: 50%;
+  }
+  .project-card::before { bottom: -3px; inset-inline-start: -3px; }
+  .project-card::after { bottom: -3px; inset-inline-end: -3px; }
+  .project-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .project-card h3 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+  }
+  .project-card h3 a {
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .project-card h3 a:hover {
+    color: var(--accent);
+  }
+  .project-card h3 a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: var(--radius-sm);
+  }
+  .project-card-narrative {
+    font-size: 14px;
+    color: var(--fg-muted);
+    line-height: 1.65;
+    margin-bottom: 16px;
+  }
+  .project-card-stats {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    margin-bottom: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+  }
+  .project-card-stats .val {
+    color: var(--accent);
+  }
+
+  /* ── Skills as IC pin labels ── */
+  .skill-pins {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .skill-pin {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(163, 230, 53, 0.15);
+    border-radius: var(--radius-sm);
+    padding: 3px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+  }
+  /* Pin number dot */
+  .skill-pin::before {
+    content: '';
+    width: 3px;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── Source mix bar ── */
+  .source-bar-container {
+    margin-top: 16px;
+  }
+  .source-bar-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .source-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    display: flex;
+  }
+  .source-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.6s ease;
+  }
+  .source-bar-fill.cursor {
+    background: var(--fg-muted);
+  }
+
+  /* ── Hero trace decoration ── */
+  .hero-trace {
+    position: absolute;
+    top: 0;
+    inset-inline-end: 0;
+    width: 200px;
+    height: 200px;
+    pointer-events: none;
+    opacity: 0.4;
+  }
+  .hero-trace path {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.5;
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+    transition: stroke-dashoffset 1.5s ease;
+  }
+  .hero.visible .hero-trace path {
+    stroke-dashoffset: 0;
+  }
+  .hero-trace circle {
+    fill: var(--accent);
+    opacity: 0;
+    transition: opacity 0.3s ease 1.2s;
+  }
+  .hero.visible .hero-trace circle {
+    opacity: 1;
+  }
+
+  /* ── Aggregate skills section ── */
+  .all-skills-section {
+    padding-bottom: 40px;
+  }
+  .all-skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+  }
+  .skill-ic {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg);
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .skill-ic:hover {
+    border-color: var(--border-accent);
+  }
+  /* IC notch */
+  .skill-ic::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    inset-inline-start: -1px;
+    width: 3px;
+    height: 10px;
+    transform: translateY(-50%);
+    background: var(--accent-dim);
+    border-radius: 0 2px 2px 0;
+  }
+  .skill-ic::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    inset-inline-end: -1px;
+    width: 3px;
+    height: 10px;
+    transform: translateY(-50%);
+    background: var(--accent-dim);
+    border-radius: 2px 0 0 2px;
+  }
+  .skill-ic-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .skill-ic-count {
+    margin-inline-start: auto;
+    color: var(--accent);
+    font-size: 11px;
+  }
+
+  /* ── Trace drawing on scroll ── */
+  .trace-svg-connector {
+    width: 100%;
+    height: 60px;
+    overflow: visible;
+    display: block;
+    margin: 8px 0;
+  }
+  .trace-svg-connector path {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.5;
+    opacity: 0.2;
+    stroke-dasharray: 300;
+    stroke-dashoffset: 300;
+    transition: stroke-dashoffset 0.8s ease;
+  }
+  .trace-svg-connector.drawn path {
+    stroke-dashoffset: 0;
+  }
+  .trace-svg-connector circle {
+    fill: var(--accent);
+    opacity: 0;
+    transition: opacity 0.3s ease 0.6s;
+  }
+  .trace-svg-connector.drawn circle {
+    opacity: 0.5;
+  }
+
+  /* ── Source overview summary ── */
+  .source-overview {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 40px;
+    position: relative;
+  }
+  .source-overview::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    inset-inline-start: 16px;
+    width: 20px;
+    height: 4px;
+    background: var(--bg);
+    border-bottom-left-radius: 2px;
+    border-bottom-right-radius: 2px;
+  }
+  .source-overview h3 {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+  }
+  .source-overview-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .source-overview-row:last-child { margin-bottom: 0; }
+  .source-overview-name {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg);
+    min-width: 80px;
+  }
+  .source-overview-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .source-overview-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s ease;
+  }
+  .source-overview-fill.claude { background: var(--accent); }
+  .source-overview-fill.cursor-fill { background: var(--fg-muted); }
+  .source-overview-pct {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+    min-width: 36px;
+    text-align: end;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0;
+    margin-top: 64px;
+    text-align: center;
+  }
+  .footer p {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+
+  /* ── Animations ── */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── Counter animation ── */
+  .counter {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Reduced motion ── */
+  @media (prefers-reduced-motion: reduce) {
+    .fade-in { opacity: 1; transform: none; transition: none; }
+    .stat-chip-value { transition: none; }
+    .source-bar-fill { transition: none; }
+    .trace-connector { background: var(--trace-bright); }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .hero { padding: 48px 0 32px; }
+    .hero-profile { flex-direction: column; }
+    .hero-photo { width: 80px; height: 80px; }
+    .hero-contact { font-size: 12px; }
+    .stat-chips { gap: 12px; }
+    .stat-chip { min-width: 120px; padding: 12px 16px; flex: 1 1 calc(50% - 12px); }
+    .stat-chip-value { font-size: 22px; }
+    .project-card { padding: 20px; }
+    .project-card-header { flex-direction: column; gap: 8px; }
+    .project-stats { flex-wrap: wrap; gap: 0.75rem; }
+    .nav-links { gap: 16px; }
+    .trace-connector { margin-inline-start: 24px; }
+    .footer { margin-top: 40px; }
+  }
+
+  @media (max-width: 480px) {
+    .stat-chip { flex: 1 1 100%; }
+    .nav-inner { flex-direction: column; gap: 12px; }
+  }
+</style>
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to content</a>
+
+<nav class="nav" aria-label="Main navigation">
+  <div class="container nav-inner">
+    <a href="./portfolio.html" class="nav-brand"><span>circuit://</span>alex</a>
+    <ul class="nav-links">
+      <li><a href="./portfolio.html" aria-current="page">Portfolio</a></li>
+      <li><a href="./project.html">Project</a></li>
+      <li><a href="./session.html">Session</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main" class="container">
+  <section class="hero fade-in" aria-label="Profile">
+    <!-- Circuit trace decoration -->
+    <svg class="hero-trace" viewBox="0 0 200 200" aria-hidden="true">
+      <path d="M200 20 H160 V60 H120 V100 H80 V140 H40 V180"/>
+      <path d="M180 0 V40 H140 V80 H100"/>
+      <circle cx="200" cy="20" r="3"/>
+      <circle cx="120" cy="100" r="3"/>
+      <circle cx="40" cy="180" r="3"/>
+      <circle cx="100" cy="80" r="3"/>
+    </svg>
+    <div class="hero-profile">
+      <div class="hero-photo-wrap">
+        <img src="../assets/headshot-man-2-400.jpg" alt="Alex Chen" class="hero-photo" width="120" height="120">
+        <span class="pad-bl" aria-hidden="true"></span>
+        <span class="pad-br" aria-hidden="true"></span>
+      </div>
+      <div class="hero-info">
+        <h1>Alex <span class="accent">Chen</span></h1>
+        <p class="hero-bio">Full-stack engineer building tools for personal finance and real-time collaboration. I care about schema design, performance, and building things that feel right. Previously at Stripe and a YC startup.</p>
+        <p class="hero-location">San Francisco, CA</p>
+        <ul class="hero-contact" aria-label="Contact and social links">
+          <li><a href="mailto:alex@heyiam.com"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg>alex@heyiam.com</a></li>
+          <li><a href="https://linkedin.com/in/alexchen"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>LinkedIn</a></li>
+          <li><a href="https://github.com/interactivecats/heyi.am"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>GitHub</a></li>
+          <li><a href="https://x.com/alexchendev"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>@alexchendev</a></li>
+          <li><a href="https://alexchen.dev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>alexchen.dev</a></li>
+        </ul>
+        <a href="./project.html" class="hero-resume"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>Download Resume</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="stat-chips fade-in" aria-label="Aggregate statistics">
+    <div class="stat-chip" role="group" aria-label="Projects">
+      <span class="stat-chip-value counter" data-target="3">0</span>
+      <span class="stat-chip-label">Projects</span>
+    </div>
+    <div class="stat-chip" role="group" aria-label="Sessions">
+      <span class="stat-chip-value counter" data-target="28">0</span>
+      <span class="stat-chip-label">Sessions</span>
+    </div>
+    <div class="stat-chip stat-chip--leverage" role="group" aria-label="24 hours you, 100 hours agents, 4.2x leverage">
+      <div class="leverage-row">
+        <span><span class="lev-val">24h</span> <span class="lev-lbl">you</span></span>
+        <span><span class="lev-val lev-val--agent">100h</span> <span class="lev-lbl">agents</span></span>
+        <span><span class="lev-val lev-val--multi">4.2x</span></span>
+      </div>
+      <div class="circuit-leverage-bar">
+        <div class="circuit-leverage-bar__human"></div>
+        <div class="circuit-leverage-bar__agent"></div>
+      </div>
+    </div>
+    <div class="stat-chip" role="group" aria-label="Lines of code">
+      <span class="stat-chip-value counter" data-target="18400" data-format="k">0</span>
+      <span class="stat-chip-label">Lines Changed</span>
+    </div>
+  </section>
+
+  <!-- Trace SVG connector (draw on scroll) -->
+  <svg class="trace-svg-connector" viewBox="0 0 960 60" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M48 0 V20 H200 V40 H48 V60"/>
+    <circle cx="48" cy="0" r="3"/>
+    <circle cx="200" cy="20" r="3"/>
+    <circle cx="48" cy="60" r="3"/>
+  </svg>
+
+  <!-- Source overview -->
+  <section class="fade-in" aria-label="Source overview" style="margin-bottom: 24px;">
+    <div class="source-overview">
+      <h3>Source Overview</h3>
+      <div class="source-overview-row">
+        <span class="source-overview-name">Claude</span>
+        <div class="source-overview-bar">
+          <div class="source-overview-fill claude" style="width: 69%"></div>
+        </div>
+        <span class="source-overview-pct">69%</span>
+      </div>
+      <div class="source-overview-row">
+        <span class="source-overview-name">Cursor</span>
+        <div class="source-overview-bar">
+          <div class="source-overview-fill cursor-fill" style="width: 31%"></div>
+        </div>
+        <span class="source-overview-pct">31%</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Aggregate skills -->
+  <section class="all-skills-section fade-in" aria-label="All skills">
+    <h2 class="section-header">Skills</h2>
+    <div class="all-skills-grid">
+      <div class="skill-ic"><span class="skill-ic-dot"></span> TypeScript <span class="skill-ic-count">3</span></div>
+      <div class="skill-ic"><span class="skill-ic-dot"></span> React <span class="skill-ic-count">2</span></div>
+      <div class="skill-ic"><span class="skill-ic-dot"></span> Next.js <span class="skill-ic-count">1</span></div>
+      <div class="skill-ic"><span class="skill-ic-dot"></span> Prisma <span class="skill-ic-count">1</span></div>
+      <div class="skill-ic"><span class="skill-ic-dot"></span> PostgreSQL <span class="skill-ic-count">1</span></div>
+      <div class="skill-ic"><span class="skill-ic-dot"></span> Stripe API <span class="skill-ic-count">1</span></div>
+      <div class="skill-ic"><span class="skill-ic-dot"></span> Rust <span class="skill-ic-count">1</span></div>
+      <div class="skill-ic"><span class="skill-ic-dot"></span> CLI design <span class="skill-ic-count">1</span></div>
+      <div class="skill-ic"><span class="skill-ic-dot"></span> TOML parsing <span class="skill-ic-count">1</span></div>
+      <div class="skill-ic"><span class="skill-ic-dot"></span> Git internals <span class="skill-ic-count">1</span></div>
+      <div class="skill-ic"><span class="skill-ic-dot"></span> Shell scripting <span class="skill-ic-count">1</span></div>
+      <div class="skill-ic"><span class="skill-ic-dot"></span> WebSocket <span class="skill-ic-count">1</span></div>
+      <div class="skill-ic"><span class="skill-ic-dot"></span> Canvas API <span class="skill-ic-count">1</span></div>
+      <div class="skill-ic"><span class="skill-ic-dot"></span> Redis <span class="skill-ic-count">1</span></div>
+      <div class="skill-ic"><span class="skill-ic-dot"></span> Express <span class="skill-ic-count">1</span></div>
+      <div class="skill-ic"><span class="skill-ic-dot"></span> CRDT <span class="skill-ic-count">1</span></div>
+    </div>
+  </section>
+
+  <!-- Trace SVG connector before projects -->
+  <svg class="trace-svg-connector" viewBox="0 0 960 60" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M48 0 V30 H120 V60"/>
+    <circle cx="48" cy="0" r="3"/>
+    <circle cx="120" cy="60" r="3"/>
+  </svg>
+
+  <section aria-label="Projects" class="fade-in" style="padding-bottom: 64px;">
+    <h2 class="section-header">Projects</h2>
+    <div class="projects-grid">
+
+      <!-- BudgetWise -->
+      <article class="project-card pad-corner">
+        <div class="project-card-header">
+          <h3><a href="./project.html">BudgetWise</a></h3>
+        </div>
+        <p class="project-card-narrative">Personal finance app with recurring transaction detection, Plaid integration, and spending insights dashboard.</p>
+        <div class="project-card-stats">
+          <span><span class="val">8</span> sessions</span>
+          <span><span class="val">42.5</span>h</span>
+          <span><span class="val">4,460</span> LOC</span>
+        </div>
+        <div class="skill-pins">
+          <span class="skill-pin">TypeScript</span>
+          <span class="skill-pin">React</span>
+          <span class="skill-pin">Next.js</span>
+          <span class="skill-pin">Prisma</span>
+          <span class="skill-pin">PostgreSQL</span>
+          <span class="skill-pin">Stripe API</span>
+        </div>
+        <div class="source-bar-container">
+          <div class="source-bar-label">
+            <span>Claude 62.5%</span>
+            <span>Cursor 37.5%</span>
+          </div>
+          <div class="source-bar" role="img" aria-label="Source breakdown: Claude 62.5%, Cursor 37.5%">
+            <div class="source-bar-fill" style="width: 62.5%"></div>
+            <div class="source-bar-fill cursor" style="width: 37.5%"></div>
+          </div>
+        </div>
+      </article>
+
+      <!-- ShellHook -->
+      <article class="project-card pad-corner">
+        <div class="project-card-header">
+          <h3><a href="./project.html">ShellHook</a></h3>
+        </div>
+        <p class="project-card-narrative">Rust CLI tool for managing git hooks with TOML configuration and automatic symlinking.</p>
+        <div class="project-card-stats">
+          <span><span class="val">7</span> sessions</span>
+          <span><span class="val">32</span>h</span>
+          <span><span class="val">3,580</span> LOC</span>
+        </div>
+        <div class="skill-pins">
+          <span class="skill-pin">Rust</span>
+          <span class="skill-pin">CLI design</span>
+          <span class="skill-pin">TOML parsing</span>
+          <span class="skill-pin">Git internals</span>
+          <span class="skill-pin">Shell scripting</span>
+        </div>
+        <div class="source-bar-container">
+          <div class="source-bar-label">
+            <span>Claude 85%</span>
+            <span>Cursor 15%</span>
+          </div>
+          <div class="source-bar" role="img" aria-label="Source breakdown: Claude 85%, Cursor 15%">
+            <div class="source-bar-fill" style="width: 85%"></div>
+            <div class="source-bar-fill cursor" style="width: 15%"></div>
+          </div>
+        </div>
+      </article>
+
+      <!-- PixelBoard -->
+      <article class="project-card pad-corner">
+        <div class="project-card-header">
+          <h3><a href="./project.html">PixelBoard</a></h3>
+        </div>
+        <p class="project-card-narrative">Real-time collaborative drawing canvas with CRDT-based state sync and pressure-sensitive input.</p>
+        <div class="project-card-stats">
+          <span><span class="val">5</span> sessions</span>
+          <span><span class="val">28</span>h</span>
+          <span><span class="val">2,940</span> LOC</span>
+        </div>
+        <div class="skill-pins">
+          <span class="skill-pin">TypeScript</span>
+          <span class="skill-pin">WebSocket</span>
+          <span class="skill-pin">Canvas API</span>
+          <span class="skill-pin">Redis</span>
+          <span class="skill-pin">Express</span>
+          <span class="skill-pin">CRDT</span>
+        </div>
+        <div class="source-bar-container">
+          <div class="source-bar-label">
+            <span>Claude 60%</span>
+            <span>Cursor 40%</span>
+          </div>
+          <div class="source-bar" role="img" aria-label="Source breakdown: Claude 60%, Cursor 40%">
+            <div class="source-bar-fill" style="width: 60%"></div>
+            <div class="source-bar-fill cursor" style="width: 40%"></div>
+          </div>
+        </div>
+      </article>
+
+      <!-- DevLog -->
+      <article class="project-card pad-corner">
+        <div class="project-card-header">
+          <h3><a href="./project.html">DevLog</a></h3>
+        </div>
+        <p class="project-card-narrative">CLI tool for capturing development decisions and context as structured markdown notes.</p>
+        <div class="project-card-stats">
+          <span><span class="val">5</span> sessions</span>
+          <span><span class="val">18</span>h</span>
+          <span><span class="val">1,840</span> LOC</span>
+        </div>
+        <div class="skill-pins">
+          <span class="skill-pin">TypeScript</span>
+          <span class="skill-pin">Node.js</span>
+          <span class="skill-pin">CLI design</span>
+          <span class="skill-pin">Markdown</span>
+          <span class="skill-pin">SQLite</span>
+</div>
+        <div class="source-bar-container">
+          <div class="source-bar-label">
+            <span>Claude 80%</span>
+            <span>Cursor 20%</span>
+          </div>
+          <div class="source-bar" role="img" aria-label="Source breakdown: Claude 80%, Cursor 20%">
+            <div class="source-bar-fill" style="width: 80%"></div>
+            <div class="source-bar-fill cursor" style="width: 20%"></div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Snapgrid -->
+      <article class="project-card pad-corner">
+        <div class="project-card-header">
+          <h3><a href="./project.html">Snapgrid</a></h3>
+        </div>
+        <p class="project-card-narrative">Responsive image gallery with masonry layout, lazy loading, and keyboard navigation.</p>
+        <div class="project-card-stats">
+          <span><span class="val">4</span> sessions</span>
+          <span><span class="val">14</span>h</span>
+          <span><span class="val">1,520</span> LOC</span>
+        </div>
+        <div class="skill-pins">
+          <span class="skill-pin">TypeScript</span>
+          <span class="skill-pin">React</span>
+          <span class="skill-pin">CSS Grid</span>
+          <span class="skill-pin">IntersectionObserver</span>
+          <span class="skill-pin">Accessibility</span>
+</div>
+        <div class="source-bar-container">
+          <div class="source-bar-label">
+            <span>Claude 50%</span>
+            <span>Cursor 50%</span>
+          </div>
+          <div class="source-bar" role="img" aria-label="Source breakdown: Claude 50%, Cursor 50%">
+            <div class="source-bar-fill" style="width: 50%"></div>
+            <div class="source-bar-fill cursor" style="width: 50%"></div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Terracotta -->
+      <article class="project-card pad-corner">
+        <div class="project-card-header">
+          <h3><a href="./project.html">Terracotta</a></h3>
+        </div>
+        <p class="project-card-narrative">Design token pipeline that generates CSS custom properties, Tailwind config, and Figma tokens from a single YAML source.</p>
+        <div class="project-card-stats">
+          <span><span class="val">6</span> sessions</span>
+          <span><span class="val">22</span>h</span>
+          <span><span class="val">2,680</span> LOC</span>
+        </div>
+        <div class="skill-pins">
+          <span class="skill-pin">TypeScript</span>
+          <span class="skill-pin">Node.js</span>
+          <span class="skill-pin">YAML</span>
+          <span class="skill-pin">CSS</span>
+          <span class="skill-pin">Figma API</span>
+</div>
+        <div class="source-bar-container">
+          <div class="source-bar-label">
+            <span>Claude 70%</span>
+            <span>Cursor 30%</span>
+          </div>
+          <div class="source-bar" role="img" aria-label="Source breakdown: Claude 70%, Cursor 30%">
+            <div class="source-bar-fill" style="width: 70%"></div>
+            <div class="source-bar-fill cursor" style="width: 30%"></div>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <p>circuit://alex &mdash; built with heyi.am</p>
+  </div>
+</footer>
+
+<script>
+  // Intersection Observer for fade-in sections
+  (function() {
+    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReduced) {
+      document.querySelectorAll('.fade-in').forEach(function(el) {
+        el.classList.add('visible');
+      });
+      document.querySelectorAll('.counter').forEach(function(el) {
+        var target = parseInt(el.getAttribute('data-target'), 10);
+        var format = el.getAttribute('data-format');
+        el.textContent = format === 'k' ? (target / 1000).toFixed(1) + 'k' : target.toLocaleString();
+      });
+      return;
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+
+    document.querySelectorAll('.fade-in').forEach(function(el) {
+      observer.observe(el);
+    });
+
+    // Animate counters
+    function animateCounter(el) {
+      var target = parseInt(el.getAttribute('data-target'), 10);
+      var format = el.getAttribute('data-format');
+      var duration = 1200;
+      var start = null;
+
+      function step(timestamp) {
+        if (!start) start = timestamp;
+        var progress = Math.min((timestamp - start) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        var current = Math.round(eased * target);
+
+        if (format === 'k') {
+          el.textContent = (current / 1000).toFixed(current >= target ? 1 : 1) + 'k';
+        } else {
+          el.textContent = current.toLocaleString();
+        }
+
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    var counterObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          animateCounter(entry.target);
+          counterObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.5 });
+
+    document.querySelectorAll('.counter').forEach(function(el) {
+      counterObserver.observe(el);
+    });
+
+    // Trace SVG draw-on-scroll
+    var traceObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('drawn');
+          traceObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+
+    document.querySelectorAll('.trace-svg-connector').forEach(function(el) {
+      traceObserver.observe(el);
+    });
+  })();
+</script>
+</body>
+</html>

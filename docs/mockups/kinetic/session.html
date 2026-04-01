@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Set up Prisma schema - Session Detail | heyi.am</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    a { color: inherit; text-decoration: none; }
+    ul, ol { list-style: none; }
+
+    /* ── Tokens ── */
+    :root {
+      --bg: #09090b;
+      --surface: #111113;
+      --surface-2: #18181b;
+      --border: rgba(255,255,255,0.06);
+      --text: #fafafa;
+      --text-2: rgba(255,255,255,0.65);
+      --text-3: rgba(255,255,255,0.4);
+      --orange: #f97316;
+      --orange-dim: rgba(249,115,22,0.1);
+      --orange-glow: rgba(249,115,22,0.2);
+      --blue: #3b82f6;
+      --font-display: 'Space Grotesk', sans-serif;
+      --font-body: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* ── Skip link ── */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      padding: 0.5rem 1rem;
+      background: var(--orange);
+      color: #fff;
+      border-radius: 0 0 8px 8px;
+      font-size: 0.875rem;
+      z-index: 200;
+      font-family: var(--font-mono);
+    }
+    .skip-link:focus { top: 0; outline: 2px solid var(--orange); outline-offset: 2px; }
+
+    :focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+    /* ── Nav ── */
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2.5rem;
+      background: rgba(9,9,11,0.8);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; }
+    .nav-logo span { color: var(--orange); }
+    .nav-links { display: flex; gap: 2rem; align-items: center; }
+    .nav-links a { font-size: 0.8125rem; color: var(--text-3); transition: color 0.2s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a[aria-current="page"] { color: var(--orange); }
+    .breadcrumb {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      color: var(--text-3);
+      padding: 0.5rem 0;
+    }
+    .breadcrumb a:hover { color: var(--orange); }
+    .breadcrumb-sep { margin: 0 0.5rem; opacity: 0.4; }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 8rem 2.5rem 3rem;
+      position: relative;
+      overflow: hidden;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .hero-content { position: relative; z-index: 1; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--orange);
+      margin-bottom: 2rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before { content: ''; width: 40px; height: 1px; background: var(--orange); }
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 1.5rem;
+      max-width: 700px;
+    }
+    .hero-meta {
+      display: flex; gap: 1.5rem; flex-wrap: wrap;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-3);
+    }
+    .hero-meta-value { color: var(--text-2); }
+    .hero-meta-sep { opacity: 0.3; }
+
+    /* ── Narrative card ── */
+    .narrative-card {
+      font-size: 0.875rem;
+      color: var(--text-2);
+      line-height: 1.75;
+      padding: 1.25rem 1.5rem;
+      border-left: 3px solid var(--orange);
+      background: rgba(249,115,22,0.03);
+      border-radius: 0 6px 6px 0;
+    }
+
+    /* ── Main + Sidebar layout ── */
+    .content-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 2.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 2.5rem 6rem;
+    }
+
+    /* ── Sections ── */
+    .section-tag {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--orange);
+      margin-bottom: 1rem;
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .section-tag::before { content: ''; width: 24px; height: 1px; background: var(--orange); }
+    .section-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+      line-height: 1.1;
+    }
+
+    /* ── Execution path ── */
+    .execution-path {
+      margin-bottom: 3rem;
+    }
+    .beat {
+      display: flex; gap: 1.25rem;
+      padding: 1.25rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .beat:last-child { border-bottom: none; }
+    .beat-number {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--orange-dim);
+      border: 1px solid rgba(249,115,22,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--orange);
+      flex-shrink: 0;
+    }
+    .beat-content { flex: 1; }
+    .beat-title {
+      font-family: var(--font-display);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      margin-bottom: 0.375rem;
+    }
+    .beat-desc {
+      font-size: 0.8125rem;
+      color: var(--text-2);
+      line-height: 1.6;
+    }
+
+    /* ── Q&A ── */
+    .qa-section {
+      margin-bottom: 3rem;
+    }
+    .qa-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .qa-panel {
+      padding: 1.5rem;
+      background: var(--surface);
+    }
+    .qa-panel:first-child { border-right: 1px solid var(--border); }
+    .qa-label {
+      font-family: var(--font-mono);
+      font-size: 0.5625rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--orange);
+      margin-bottom: 0.75rem;
+    }
+    .qa-text {
+      font-size: 0.8125rem;
+      color: var(--text-2);
+      line-height: 1.7;
+    }
+
+    /* ── Agent summary ── */
+    .agent-section { margin-bottom: 3rem; }
+    .agent-bar-row {
+      display: flex; align-items: center; gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    .agent-bar-label {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-2);
+      width: 120px;
+      flex-shrink: 0;
+    }
+    .agent-bar-track {
+      flex: 1;
+      height: 8px;
+      background: var(--surface-2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .agent-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.6s ease-out;
+    }
+    .agent-bar-meta {
+      font-family: var(--font-mono);
+      font-size: 0.625rem;
+      color: var(--text-3);
+      width: 80px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    .sidebar-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+    .sidebar-card-title {
+      font-family: var(--font-mono);
+      font-size: 0.5625rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-3);
+      margin-bottom: 1rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .sidebar-card-title::before {
+      content: '';
+      width: 12px; height: 1px;
+      background: var(--orange);
+    }
+
+    /* Tools table */
+    .tools-table {
+      width: 100%;
+    }
+    .tools-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .tools-row:last-child { border-bottom: none; }
+    .tools-name {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--text-2);
+    }
+    .tools-count {
+      font-family: var(--font-display);
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--orange);
+    }
+
+    /* Files table */
+    .files-row {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      gap: 0.75rem;
+    }
+    .files-row:last-child { border-bottom: none; }
+    .files-name {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      color: var(--text-2);
+      word-break: break-all;
+      flex: 1;
+    }
+    .files-diff {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #4ade80;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Chips */
+    .chips { display: flex; gap: 0.375rem; flex-wrap: wrap; }
+    .chips span {
+      font-family: var(--font-mono);
+      font-size: 0.5625rem;
+      padding: 0.25rem 0.625rem;
+      background: rgba(249,115,22,0.06);
+      border: 1px solid rgba(249,115,22,0.12);
+      border-radius: 4px;
+      color: var(--orange);
+    }
+
+    /* ── Dev take section (between hero and content) ── */
+    .dev-take-section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 2.5rem 3rem;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 3rem 2.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between;
+      font-size: 0.75rem; color: var(--text-3);
+      max-width: 1100px; margin: 0 auto;
+    }
+    .footer a { color: var(--text-3); }
+    .footer a:hover { color: var(--orange); }
+    .footer-links { display: flex; gap: 1.5rem; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .nav { padding: 0.75rem 1.25rem; }
+      .nav-links a:not(:last-child) { display: none; }
+      .hero { padding: 6rem 1.25rem 2rem; }
+      .dev-take-section { padding: 0 1.25rem 2rem; }
+      .content-layout {
+        grid-template-columns: 1fr;
+        padding: 0 1.25rem 4rem;
+      }
+      .sidebar { order: -1; }
+      .qa-split { grid-template-columns: 1fr; }
+      .qa-panel:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+      .hero-meta { gap: 0.75rem; font-size: 0.625rem; }
+      .footer { flex-direction: column; gap: 1rem; padding: 2rem 1.25rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to main content</a>
+
+  <!-- Nav -->
+  <nav class="nav" aria-label="Main navigation">
+    <a href="./portfolio.html" class="nav-logo">heyi<span>.</span>am</a>
+    <div class="nav-links">
+      <a href="./portfolio.html">Portfolio</a>
+      <a href="./project.html">Project</a>
+      <a href="./session.html" aria-current="page">Session</a>
+    </div>
+  </nav>
+
+  <main id="main">
+    <!-- Hero -->
+    <header class="hero" aria-label="Session header">
+      <div class="hero-content">
+        <div class="breadcrumb" aria-label="Breadcrumb">
+          <a href="./portfolio.html">alex</a>
+          <span class="breadcrumb-sep">/</span>
+          <a href="./project.html">budgetwise</a>
+          <span class="breadcrumb-sep">/</span>
+          <span>Set up Prisma schema</span>
+        </div>
+        <div class="eyebrow">Session Detail</div>
+        <h1>Set up Prisma schema with User, Account, and Transaction models</h1>
+        <div class="hero-meta">
+          <span><span class="hero-meta-value">February 3, 2026</span></span>
+          <span class="hero-meta-sep" aria-hidden="true">&middot;</span>
+          <span><span class="hero-meta-value">Claude Code</span></span>
+          <span class="hero-meta-sep" aria-hidden="true">&middot;</span>
+          <span><span class="hero-meta-value">72m</span></span>
+          <span class="hero-meta-sep" aria-hidden="true">&middot;</span>
+          <span><span class="hero-meta-value">45</span> turns</span>
+          <span class="hero-meta-sep" aria-hidden="true">&middot;</span>
+          <span><span class="hero-meta-value">680</span> LOC</span>
+          <span class="hero-meta-sep" aria-hidden="true">&middot;</span>
+          <span><span class="hero-meta-value">4</span> files</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Dev Take -->
+    <div class="dev-take-section">
+      <div class="section-tag">Dev take</div>
+      <div class="narrative-card">
+        Went with discriminated unions over STI -- nullable columns everywhere felt wrong. The audit log instead of soft deletes was the right call too.
+      </div>
+    </div>
+
+    <!-- Main + Sidebar -->
+    <div class="content-layout">
+      <!-- Main content -->
+      <div>
+        <!-- Execution Path -->
+        <section class="execution-path" aria-label="Execution path">
+          <div class="section-tag">Execution path</div>
+          <h2 class="section-title">4 beats</h2>
+
+          <div class="beat">
+            <div class="beat-number" aria-hidden="true">1</div>
+            <div class="beat-content">
+              <div class="beat-title">Schema design</div>
+              <div class="beat-desc">Sketched out the core models -- User, Account, Transaction. Decided on a discriminated union for transaction types instead of STI.</div>
+            </div>
+          </div>
+
+          <div class="beat">
+            <div class="beat-number" aria-hidden="true">2</div>
+            <div class="beat-content">
+              <div class="beat-title">Prisma setup</div>
+              <div class="beat-desc">Initialized Prisma with PostgreSQL, wrote the schema file with proper relations and indexes.</div>
+            </div>
+          </div>
+
+          <div class="beat">
+            <div class="beat-number" aria-hidden="true">3</div>
+            <div class="beat-content">
+              <div class="beat-title">Migration</div>
+              <div class="beat-desc">Ran the initial migration, fixed a cascade delete issue on Account to Transaction.</div>
+            </div>
+          </div>
+
+          <div class="beat">
+            <div class="beat-number" aria-hidden="true">4</div>
+            <div class="beat-content">
+              <div class="beat-title">Seed data</div>
+              <div class="beat-desc">Created a seed script with realistic test data -- multiple accounts, mixed transaction types.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Q&A -->
+        <section class="qa-section" aria-label="Questions and answers">
+          <div class="section-tag">Decisions</div>
+          <h2 class="section-title">Q&amp;A</h2>
+
+          <div class="qa-split">
+            <div class="qa-panel">
+              <div class="qa-label">Question</div>
+              <div class="qa-text">Why did you choose a discriminated union over single-table inheritance for transaction types?</div>
+            </div>
+            <div class="qa-panel">
+              <div class="qa-label">Answer</div>
+              <div class="qa-text">STI would have left nullable columns everywhere -- transferTo only makes sense for transfers, recurringSchedule only for recurring. The union pattern keeps each type clean and the TypeScript compiler catches missing fields.</div>
+            </div>
+          </div>
+
+          <div class="qa-split">
+            <div class="qa-panel">
+              <div class="qa-label">Question</div>
+              <div class="qa-text">How does the cascade delete work between Account and Transaction?</div>
+            </div>
+            <div class="qa-panel">
+              <div class="qa-label">Answer</div>
+              <div class="qa-text">Deleting an account cascades to its transactions. Initially had it set to restrict, but that made account cleanup impossible without manual transaction deletion first.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Agent Summary -->
+        <section class="agent-section" aria-label="Agent summary">
+          <div class="section-tag">Agents</div>
+          <h2 class="section-title">7 sub-sessions</h2>
+
+          <div class="agent-bar-row">
+            <span class="agent-bar-label">backend-dev</span>
+            <div class="agent-bar-track">
+              <div class="agent-bar-fill" style="width: 89%; background: #0891b2;"></div>
+            </div>
+            <span class="agent-bar-meta">25m / 280 LOC</span>
+          </div>
+
+          <div class="agent-bar-row">
+            <span class="agent-bar-label">qa-engineer</span>
+            <div class="agent-bar-track">
+              <div class="agent-bar-fill" style="width: 64%; background: #059669;"></div>
+            </div>
+            <span class="agent-bar-meta">18m / 190 LOC</span>
+          </div>
+
+          <div class="agent-bar-row">
+            <span class="agent-bar-label">frontend-dev</span>
+            <div class="agent-bar-track">
+              <div class="agent-bar-fill" style="width: 54%; background: #7c3aed;"></div>
+            </div>
+            <span class="agent-bar-meta">15m / 125 LOC</span>
+          </div>
+
+          <div class="agent-bar-row">
+            <span class="agent-bar-label">security-eng</span>
+            <div class="agent-bar-track">
+              <div class="agent-bar-fill" style="width: 43%; background: #475569;"></div>
+            </div>
+            <span class="agent-bar-meta">12m / 85 LOC</span>
+          </div>
+
+          <div class="agent-bar-row">
+            <span class="agent-bar-label">code-reviewer</span>
+            <div class="agent-bar-track">
+              <div class="agent-bar-fill" style="width: 29%; background: #e11d48;"></div>
+            </div>
+            <span class="agent-bar-meta">8m / 0 LOC</span>
+          </div>
+        </section>
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="sidebar" aria-label="Session details">
+        <!-- Tools Used -->
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">Tools Used</div>
+          <div class="tools-table" role="table" aria-label="Tool usage counts">
+            <div class="tools-row" role="row">
+              <span class="tools-name" role="cell">Edit</span>
+              <span class="tools-count" role="cell">18</span>
+            </div>
+            <div class="tools-row" role="row">
+              <span class="tools-name" role="cell">Read</span>
+              <span class="tools-count" role="cell">12</span>
+            </div>
+            <div class="tools-row" role="row">
+              <span class="tools-name" role="cell">Bash</span>
+              <span class="tools-count" role="cell">9</span>
+            </div>
+            <div class="tools-row" role="row">
+              <span class="tools-name" role="cell">Write</span>
+              <span class="tools-count" role="cell">4</span>
+            </div>
+            <div class="tools-row" role="row">
+              <span class="tools-name" role="cell">Grep</span>
+              <span class="tools-count" role="cell">2</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Files Changed -->
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">Files Changed</div>
+          <div class="files-row">
+            <span class="files-name">prisma/schema.prisma</span>
+            <span class="files-diff">+142</span>
+          </div>
+          <div class="files-row">
+            <span class="files-name">prisma/seed.ts</span>
+            <span class="files-diff">+89</span>
+          </div>
+          <div class="files-row">
+            <span class="files-name">prisma/migrations/20260203_init/migration.sql</span>
+            <span class="files-diff">+415</span>
+          </div>
+          <div class="files-row">
+            <span class="files-name">src/lib/db.ts</span>
+            <span class="files-diff">+34</span>
+          </div>
+        </div>
+
+        <!-- Skills -->
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">Skills</div>
+          <div class="chips">
+            <span>TypeScript</span>
+            <span>Prisma</span>
+            <span>PostgreSQL</span>
+          </div>
+        </div>
+
+        <!-- Session Stats -->
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">Stats</div>
+          <div class="tools-table">
+            <div class="tools-row">
+              <span class="tools-name">Duration</span>
+              <span class="tools-count" style="color: var(--text);">72m</span>
+            </div>
+            <div class="tools-row">
+              <span class="tools-name">Wall clock</span>
+              <span class="tools-count" style="color: var(--text);">87m</span>
+            </div>
+            <div class="tools-row">
+              <span class="tools-name">Turns</span>
+              <span class="tools-count" style="color: var(--text);">45</span>
+            </div>
+            <div class="tools-row">
+              <span class="tools-name">LOC</span>
+              <span class="tools-count" style="color: var(--text);">680</span>
+            </div>
+            <div class="tools-row">
+              <span class="tools-name">Files</span>
+              <span class="tools-count" style="color: var(--text);">4</span>
+            </div>
+            <div class="tools-row">
+              <span class="tools-name">Source</span>
+              <span class="tools-count">Claude Code</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <span>Alex Chen &middot; BudgetWise &middot; Session 1</span>
+    <div class="footer-links">
+      <a href="./portfolio.html">Portfolio</a>
+      <a href="./project.html">Project</a>
+      <a href="./session.html">Session</a>
+    </div>
+  </footer>
+
+  <script>
+    // Animate agent bars on scroll
+    (function() {
+      var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reducedMotion) return;
+
+      var bars = document.querySelectorAll('.agent-bar-fill');
+      bars.forEach(function(bar) {
+        var target = bar.style.width;
+        bar.style.width = '0%';
+        bar.setAttribute('data-target-width', target);
+      });
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            var bar = entry.target;
+            bar.style.width = bar.getAttribute('data-target-width');
+            observer.unobserve(bar);
+          }
+        });
+      }, { threshold: 0.3 });
+
+      bars.forEach(function(bar) { observer.observe(bar); });
+    })();
+  </script>
+</body>
+</html>

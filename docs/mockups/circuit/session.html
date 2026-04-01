@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Set up Prisma schema — Session | Circuit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Tokens ── */
+  :root {
+    --bg: #0a0f0a;
+    --bg-surface: #111a11;
+    --fg: #d4e6d4;
+    --fg-muted: #7a937a;
+    --accent: #a3e635;
+    --accent-dim: rgba(163, 230, 53, 0.15);
+    --accent-glow: rgba(163, 230, 53, 0.25);
+    --border: #1e2e1e;
+    --border-accent: rgba(163, 230, 53, 0.3);
+    --radius-sm: 2px;
+    --radius: 4px;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --trace: rgba(163, 230, 53, 0.08);
+    --trace-bright: rgba(163, 230, 53, 0.18);
+    --pad-size: 6px;
+  }
+
+  /* ── Circuit board background ── */
+  body {
+    font-family: var(--font-body);
+    color: var(--fg);
+    background-color: var(--bg);
+    background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 0v40h30v-20h40v60h-20v40h60v-30h20v50h-40v20h70v-40h30v-20' fill='none' stroke='rgba(163,230,53,0.06)' stroke-width='1'/%3E%3Cpath d='M0 120h30v40h20v-20h40v30h-10v30' fill='none' stroke='rgba(163,230,53,0.06)' stroke-width='1'/%3E%3Cpath d='M120 0v20h40v30h-20v20h60v40h-30v20h30v20h-50v30h-20' fill='none' stroke='rgba(163,230,53,0.06)' stroke-width='1'/%3E%3Ccircle cx='10' cy='40' r='2' fill='rgba(163,230,53,0.1)'/%3E%3Ccircle cx='80' cy='80' r='2' fill='rgba(163,230,53,0.1)'/%3E%3Ccircle cx='160' cy='50' r='2' fill='rgba(163,230,53,0.1)'/%3E%3Ccircle cx='40' cy='160' r='2' fill='rgba(163,230,53,0.1)'/%3E%3Ccircle cx='130' cy='150' r='2' fill='rgba(163,230,53,0.1)'/%3E%3C/svg%3E");
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Skip link ── */
+  .skip-link {
+    position: absolute;
+    inset-inline-start: -9999px;
+    top: 0;
+    background: var(--accent);
+    color: var(--bg);
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    z-index: 100;
+    border-radius: var(--radius);
+  }
+  .skip-link:focus {
+    inset-inline-start: 8px;
+    top: 8px;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 960px;
+    margin-inline: auto;
+    padding-inline: 24px;
+  }
+  .layout-two-col {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 40px;
+    align-items: start;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+    background: rgba(10, 15, 10, 0.94);
+    backdrop-filter: blur(6px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-brand {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+  .nav-brand span { color: var(--fg-muted); }
+  .nav-links {
+    display: flex;
+    gap: 24px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg-muted);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .nav-links a:hover,
+  .nav-links a[aria-current="page"] { color: var(--accent); }
+  .nav-links a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Breadcrumb ── */
+  .breadcrumb {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    padding: 16px 0 0;
+  }
+  .breadcrumb a {
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+  .breadcrumb a:hover { color: var(--accent); }
+  .breadcrumb a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  .breadcrumb .sep { color: var(--accent); opacity: 0.5; margin: 0 6px; }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 48px 0 40px;
+  }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(24px, 4vw, 36px);
+    font-weight: 700;
+    color: var(--fg);
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    margin-bottom: 16px;
+    max-width: 640px;
+  }
+  .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+  .hero-meta .val { color: var(--accent); }
+
+  /* ── Dev Take ── */
+  .dev-take {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-inline-start: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 40px;
+    position: relative;
+  }
+  .dev-take::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    inset-inline-end: 8px;
+    width: 4px;
+    height: 4px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+  .dev-take-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .dev-take p {
+    font-size: 15px;
+    color: var(--fg);
+    line-height: 1.7;
+    font-style: italic;
+  }
+
+  /* ── Section headers ── */
+  .section-header {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--fg);
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .section-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    inset-inline-start: 0;
+    width: 48px;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  /* ── Trace connector ── */
+  .trace-connector {
+    width: 2px;
+    height: 32px;
+    background: linear-gradient(to bottom, var(--trace-bright), var(--trace));
+    margin-inline-start: 48px;
+    position: relative;
+  }
+  .trace-connector::before,
+  .trace-connector::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: -2px;
+    width: var(--pad-size);
+    height: var(--pad-size);
+    background: var(--accent-dim);
+    border-radius: 50%;
+  }
+  .trace-connector::before { top: 0; }
+  .trace-connector::after { bottom: 0; }
+
+  /* ── Stat Chips (compact) ── */
+  .stat-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+  .stat-chip {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    position: relative;
+    min-width: 80px;
+  }
+  .stat-chip::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    inset-inline-start: 8px;
+    width: 12px;
+    height: 3px;
+    background: var(--bg);
+    border-bottom-left-radius: 2px;
+    border-bottom-right-radius: 2px;
+  }
+  .stat-chip::after {
+    content: '';
+    position: absolute;
+    top: 5px;
+    inset-inline-end: 5px;
+    width: 3px;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+  .stat-chip-value {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent);
+    display: block;
+    line-height: 1.1;
+  }
+  .stat-chip-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 2px;
+    display: block;
+  }
+
+  /* ── Execution Path (beats) ── */
+  .beats {
+    margin-bottom: 40px;
+  }
+  .beat-list {
+    position: relative;
+    padding-inline-start: 28px;
+  }
+  .beat-list::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--trace-bright);
+  }
+  .beat-item {
+    position: relative;
+    padding-bottom: 24px;
+  }
+  .beat-item:last-child { padding-bottom: 0; }
+  .beat-item::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: -20px;
+    top: 8px;
+    width: 16px;
+    height: 2px;
+    background: var(--accent);
+  }
+  .beat-item::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: -24px;
+    top: 5px;
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    border: 2px solid var(--bg);
+  }
+  .beat-title {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--fg);
+    margin-bottom: 4px;
+  }
+  .beat-title .beat-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    margin-inline-end: 8px;
+  }
+  .beat-desc {
+    font-size: 14px;
+    color: var(--fg-muted);
+    line-height: 1.6;
+  }
+
+  /* ── Q&A ── */
+  .qa-section {
+    margin-bottom: 40px;
+  }
+  .qa-item {
+    margin-bottom: 24px;
+  }
+  .qa-item:last-child { margin-bottom: 0; }
+  .qa-question {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--fg);
+    margin-bottom: 8px;
+    padding-inline-start: 20px;
+    position: relative;
+  }
+  .qa-question::before {
+    content: 'Q';
+    position: absolute;
+    inset-inline-start: 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .qa-answer {
+    font-size: 14px;
+    color: var(--fg-muted);
+    line-height: 1.7;
+    padding-inline-start: 20px;
+    position: relative;
+  }
+  .qa-answer::before {
+    content: 'A';
+    position: absolute;
+    inset-inline-start: 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    font-weight: 600;
+  }
+
+  /* ── Agent Summary ── */
+  .agent-table-wrapper {
+    margin-bottom: 40px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .agent-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .agent-table th {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-align: start;
+    padding: 8px 12px;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  .agent-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .agent-table tr:hover td {
+    background: var(--accent-dim);
+  }
+  .agent-table .role-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .agent-table .role-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .agent-table .mono {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    position: sticky;
+    top: 80px;
+  }
+  .sidebar-section {
+    margin-bottom: 32px;
+  }
+  .sidebar-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Sidebar: Tools ── */
+  .tool-list {
+    list-style: none;
+  }
+  .tool-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 13px;
+  }
+  .tool-item + .tool-item {
+    border-top: 1px solid var(--border);
+  }
+  .tool-name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg);
+  }
+  .tool-count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+    min-width: 24px;
+    text-align: end;
+  }
+
+  /* ── Sidebar: Files ── */
+  .file-list {
+    list-style: none;
+  }
+  .file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 6px 0;
+    gap: 8px;
+  }
+  .file-item + .file-item {
+    border-top: 1px solid var(--border);
+  }
+  .file-name {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .file-diff {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ── Sidebar: Skills pins ── */
+  .sidebar-pins {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .sidebar-pin {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(163, 230, 53, 0.15);
+    border-radius: var(--radius-sm);
+    padding: 2px 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .sidebar-pin::before {
+    content: '';
+    width: 2px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0;
+    margin-top: 64px;
+    text-align: center;
+  }
+  .footer p {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+
+  /* ── Animations ── */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fade-in { opacity: 1; transform: none; transition: none; }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .layout-two-col {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+    .sidebar {
+      position: static;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+      margin-top: 40px;
+    }
+    .sidebar-section:last-child {
+      grid-column: 1 / -1;
+    }
+    .hero { padding: 32px 0 24px; }
+    .stat-chips { gap: 8px; }
+    .stat-chip { min-width: 70px; padding: 8px 12px; flex: 1 1 calc(33% - 8px); }
+    .stat-chip-value { font-size: 15px; }
+    .nav-links { gap: 16px; }
+  }
+
+  @media (max-width: 480px) {
+    .stat-chip { flex: 1 1 calc(50% - 8px); }
+    .nav-inner { flex-direction: column; gap: 12px; }
+    .sidebar {
+      grid-template-columns: 1fr;
+    }
+    .hero-meta { flex-direction: column; gap: 4px; }
+  }
+</style>
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to content</a>
+
+<nav class="nav" aria-label="Main navigation">
+  <div class="container nav-inner">
+    <a href="./portfolio.html" class="nav-brand"><span>circuit://</span>alex</a>
+    <ul class="nav-links">
+      <li><a href="./portfolio.html">Portfolio</a></li>
+      <li><a href="./project.html">Project</a></li>
+      <li><a href="./session.html" aria-current="page">Session</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main" class="container">
+
+  <div class="breadcrumb" aria-label="Breadcrumb">
+    <a href="./portfolio.html">alex</a>
+    <span class="sep">/</span>
+    <a href="./project.html">budgetwise</a>
+    <span class="sep">/</span>
+    <span aria-current="page">Set up Prisma schema</span>
+  </div>
+
+  <section class="hero fade-in" aria-label="Session header">
+    <h1>Set up Prisma schema with User, Account, and Transaction models</h1>
+    <div class="hero-meta">
+      <span>Date: <span class="val">February 3, 2026</span></span>
+      <span>Source: <span class="val">Claude Code</span></span>
+      <span>Duration: <span class="val">72m</span> (87m wall)</span>
+      <span>Turns: <span class="val">45</span></span>
+      <span>LOC: <span class="val">680</span></span>
+      <span>Files: <span class="val">4</span></span>
+    </div>
+  </section>
+
+  <!-- Dev Take -->
+  <div class="dev-take fade-in">
+    <span class="dev-take-label">Dev Take</span>
+    <p>Went with discriminated unions over STI &mdash; nullable columns everywhere felt wrong. The audit log instead of soft deletes was the right call too.</p>
+  </div>
+
+  <!-- Stats -->
+  <section class="stat-chips fade-in" aria-label="Session statistics">
+    <div class="stat-chip" role="group" aria-label="Duration">
+      <span class="stat-chip-value">72m</span>
+      <span class="stat-chip-label">Duration</span>
+    </div>
+    <div class="stat-chip" role="group" aria-label="Wall clock">
+      <span class="stat-chip-value">87m</span>
+      <span class="stat-chip-label">Wall Clock</span>
+    </div>
+    <div class="stat-chip" role="group" aria-label="Turns">
+      <span class="stat-chip-value">45</span>
+      <span class="stat-chip-label">Turns</span>
+    </div>
+    <div class="stat-chip" role="group" aria-label="Lines of code">
+      <span class="stat-chip-value">680</span>
+      <span class="stat-chip-label">LOC</span>
+    </div>
+    <div class="stat-chip" role="group" aria-label="Files changed">
+      <span class="stat-chip-value">4</span>
+      <span class="stat-chip-label">Files</span>
+    </div>
+  </section>
+
+  <div class="trace-connector" aria-hidden="true"></div>
+
+  <div class="layout-two-col">
+    <div>
+      <!-- Execution Path -->
+      <section class="beats fade-in" aria-label="Execution path">
+        <h2 class="section-header">Execution Path</h2>
+        <div class="beat-list" role="list">
+          <div class="beat-item" role="listitem">
+            <div class="beat-title"><span class="beat-num">01</span> Schema design</div>
+            <p class="beat-desc">Sketched out the core models &mdash; User, Account, Transaction. Decided on a discriminated union for transaction types instead of STI.</p>
+          </div>
+          <div class="beat-item" role="listitem">
+            <div class="beat-title"><span class="beat-num">02</span> Prisma setup</div>
+            <p class="beat-desc">Initialized Prisma with PostgreSQL, wrote the schema file with proper relations and indexes.</p>
+          </div>
+          <div class="beat-item" role="listitem">
+            <div class="beat-title"><span class="beat-num">03</span> Migration</div>
+            <p class="beat-desc">Ran the initial migration, fixed a cascade delete issue on Account &rarr; Transaction.</p>
+          </div>
+          <div class="beat-item" role="listitem">
+            <div class="beat-title"><span class="beat-num">04</span> Seed data</div>
+            <p class="beat-desc">Created a seed script with realistic test data &mdash; multiple accounts, mixed transaction types.</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="trace-connector" aria-hidden="true"></div>
+
+      <!-- Q&A -->
+      <section class="qa-section fade-in" aria-label="Questions and answers">
+        <h2 class="section-header">Q&amp;A</h2>
+        <div class="qa-item">
+          <p class="qa-question">Why did you choose a discriminated union over single-table inheritance for transaction types?</p>
+          <p class="qa-answer">STI would have left nullable columns everywhere &mdash; transferTo only makes sense for transfers, recurringSchedule only for recurring. The union pattern keeps each type clean and the TypeScript compiler catches missing fields.</p>
+        </div>
+        <div class="qa-item">
+          <p class="qa-question">How does the cascade delete work between Account and Transaction?</p>
+          <p class="qa-answer">Deleting an account cascades to its transactions. Initially had it set to restrict, but that made account cleanup impossible without manual transaction deletion first.</p>
+        </div>
+      </section>
+
+      <div class="trace-connector" aria-hidden="true"></div>
+
+      <!-- Agent Summary -->
+      <section class="fade-in" aria-label="Agent summary">
+        <h2 class="section-header">Agent Summary</h2>
+        <div class="agent-table-wrapper">
+          <table class="agent-table">
+            <thead>
+              <tr>
+                <th scope="col">Role</th>
+                <th scope="col">Duration</th>
+                <th scope="col">LOC</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <span class="role-cell">
+                    <span class="role-dot" style="background:#0891b2"></span>
+                    backend-dev
+                  </span>
+                </td>
+                <td class="mono">25m</td>
+                <td class="mono">280</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="role-cell">
+                    <span class="role-dot" style="background:#059669"></span>
+                    qa-engineer
+                  </span>
+                </td>
+                <td class="mono">18m</td>
+                <td class="mono">190</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="role-cell">
+                    <span class="role-dot" style="background:#7c3aed"></span>
+                    frontend-dev
+                  </span>
+                </td>
+                <td class="mono">15m</td>
+                <td class="mono">125</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="role-cell">
+                    <span class="role-dot" style="background:#475569"></span>
+                    security-engineer
+                  </span>
+                </td>
+                <td class="mono">12m</td>
+                <td class="mono">85</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="role-cell">
+                    <span class="role-dot" style="background:#e11d48"></span>
+                    code-reviewer
+                  </span>
+                </td>
+                <td class="mono">8m</td>
+                <td class="mono">0</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" aria-label="Session details">
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">Tools Used</h3>
+        <ul class="tool-list">
+          <li class="tool-item">
+            <span class="tool-name">Edit</span>
+            <span class="tool-count">18</span>
+          </li>
+          <li class="tool-item">
+            <span class="tool-name">Read</span>
+            <span class="tool-count">12</span>
+          </li>
+          <li class="tool-item">
+            <span class="tool-name">Bash</span>
+            <span class="tool-count">9</span>
+          </li>
+          <li class="tool-item">
+            <span class="tool-name">Write</span>
+            <span class="tool-count">4</span>
+          </li>
+          <li class="tool-item">
+            <span class="tool-name">Grep</span>
+            <span class="tool-count">2</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">Files Changed</h3>
+        <ul class="file-list">
+          <li class="file-item">
+            <span class="file-name" title="prisma/schema.prisma">prisma/schema.prisma</span>
+            <span class="file-diff">+142</span>
+          </li>
+          <li class="file-item">
+            <span class="file-name" title="prisma/seed.ts">prisma/seed.ts</span>
+            <span class="file-diff">+89</span>
+          </li>
+          <li class="file-item">
+            <span class="file-name" title="prisma/migrations/20260203_init/migration.sql">migrations/.../migration.sql</span>
+            <span class="file-diff">+415</span>
+          </li>
+          <li class="file-item">
+            <span class="file-name" title="src/lib/db.ts">src/lib/db.ts</span>
+            <span class="file-diff">+34</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">Skills</h3>
+        <div class="sidebar-pins">
+          <span class="sidebar-pin">TypeScript</span>
+          <span class="sidebar-pin">Prisma</span>
+          <span class="sidebar-pin">PostgreSQL</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <p>circuit://alex/budgetwise/prisma-schema &mdash; built with heyi.am</p>
+  </div>
+</footer>
+
+<script>
+  (function() {
+    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReduced) {
+      document.querySelectorAll('.fade-in').forEach(function(el) {
+        el.classList.add('visible');
+      });
+      return;
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-in').forEach(function(el) {
+      observer.observe(el);
+    });
+  })();
+</script>
+</body>
+</html>

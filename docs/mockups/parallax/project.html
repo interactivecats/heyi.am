@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BudgetWise — Parallax Template</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Parallax Design Tokens ── */
+:root {
+  --px-bg:             #0a0a0f;
+  --px-surface:        rgba(255, 255, 255, 0.04);
+  --px-surface-hover:  rgba(255, 255, 255, 0.08);
+  --px-accent:         #ffffff;
+  --px-accent-blue:    #60a5fa;
+  --px-accent-dim:     rgba(96, 165, 250, 0.15);
+  --px-text:           #f1f5f9;
+  --px-text-secondary: rgba(255, 255, 255, 0.5);
+  --px-text-tertiary:  rgba(255, 255, 255, 0.3);
+  --px-border:         rgba(255, 255, 255, 0.08);
+
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
+  --radius:    8px;
+  --radius-lg: 12px;
+
+  /* Agent role colors */
+  --clr-frontend:  #7c3aed;
+  --clr-backend:   #0891b2;
+  --clr-qa:        #059669;
+  --clr-security:  #475569;
+  --clr-reviewer:  #e11d48;
+  --clr-ux:        #d97706;
+}
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--px-accent);
+  color: var(--px-bg);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  z-index: 1000;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 1rem;
+  outline: 2px solid var(--px-accent-blue);
+  outline-offset: 2px;
+}
+
+/* ── Base ── */
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--px-bg);
+  color: var(--px-text);
+  line-height: 1.6;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+:focus-visible {
+  outline: 2px solid var(--px-accent-blue);
+  outline-offset: 2px;
+}
+
+/* ── Background Shapes with CSS drift + rotate ── */
+.bg-shapes {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.bg-shape {
+  position: absolute;
+  opacity: 0.03;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  will-change: transform;
+  animation: shapeDrift 20s ease-in-out infinite alternate;
+}
+.bg-shape--1 { width: 500px; height: 500px; top: 5%; left: -10%; animation-duration: 25s; }
+.bg-shape--2 { width: 250px; height: 250px; top: 25%; right: 5%; animation-duration: 18s; animation-delay: -4s; }
+.bg-shape--3 { width: 700px; height: 700px; top: 55%; left: 40%; animation-duration: 30s; animation-delay: -8s; }
+.bg-shape--4 { width: 120px; height: 120px; top: 70%; left: 10%; border-radius: 0; animation-name: shapeDriftRotate; animation-duration: 22s; animation-delay: -3s; }
+.bg-shape--5 { width: 1px; height: 250px; top: 35%; right: 25%; border-radius: 0; opacity: 0.05; animation-duration: 20s; }
+.bg-shape--6 { width: 180px; height: 180px; top: 90%; right: 15%; animation-duration: 24s; animation-delay: -6s; }
+
+@keyframes shapeDrift {
+  0%   { transform: translate(0, 0); }
+  100% { transform: translate(20px, -15px); }
+}
+@keyframes shapeDriftRotate {
+  0%   { transform: translate(0, 0) rotate(45deg); }
+  100% { transform: translate(15px, -20px) rotate(75deg); }
+}
+
+/* ── Navigation ── */
+.site-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 1.25rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(to bottom, rgba(10, 10, 15, 0.9), transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.site-nav__brand {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--px-text);
+  text-decoration: none;
+}
+.site-nav__links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+.site-nav__link {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  color: var(--px-text-secondary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.site-nav__link:hover,
+.site-nav__link[aria-current="page"] {
+  color: var(--px-accent);
+}
+
+/* ── Hero ── */
+.project-hero {
+  position: relative;
+  z-index: 1;
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8rem 2rem 4rem;
+  text-align: center;
+}
+
+/* ── Screenshot with dramatic entrance ── */
+.project-hero__screenshot {
+  width: 100%;
+  max-width: 700px;
+  aspect-ratio: 16 / 10;
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.15), rgba(96, 165, 250, 0.05));
+  border: 1px solid var(--px-border);
+  border-radius: var(--radius-lg);
+  position: relative;
+  overflow: hidden;
+  will-change: transform;
+  margin-block-end: 3rem;
+  opacity: 0;
+  transform: scale(0.9) rotate(-1deg);
+  animation: screenshotEntrance 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+}
+@keyframes screenshotEntrance {
+  0%   { opacity: 0; transform: scale(0.9) rotate(-1deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+.project-hero__screenshot::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--px-border);
+  display: flex;
+  align-items: center;
+}
+.project-hero__screenshot::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 18px 0 0 rgba(255, 255, 255, 0.1), 36px 0 0 rgba(255, 255, 255, 0.1);
+}
+
+/* ── Hero text entrances ── */
+.project-hero__title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 700;
+  color: var(--px-accent);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  opacity: 0;
+  transform: translateY(40px);
+  animation: flyUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards;
+}
+.project-hero__links {
+  display: flex;
+  gap: 1rem;
+  margin-block-start: 1rem;
+  opacity: 0;
+  transform: translateY(30px);
+  animation: flyUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.8s forwards;
+}
+.project-hero__link {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--px-accent-blue);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.project-hero__link:hover { color: var(--px-accent); }
+
+@keyframes flyUp {
+  0%   { opacity: 0; transform: translateY(40px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Section Shared ── */
+.section {
+  position: relative;
+  z-index: 1;
+  max-width: 1000px;
+  margin-inline: auto;
+  padding: 4rem 2rem;
+}
+.section__label {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--px-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-block-end: 1.5rem;
+}
+
+/* ── Narrative — full width, no narrower constraint ── */
+.narrative p {
+  font-size: 1.0625rem;
+  color: var(--px-text-secondary);
+  line-height: 1.8;
+  margin-block-end: 1.5rem;
+}
+.narrative p:last-child {
+  margin-block-end: 0;
+}
+
+/* ── Stats Bar — fly in from alternating sides ── */
+.stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+  padding: 2rem;
+  background: var(--px-surface);
+  border: 1px solid var(--px-border);
+  border-radius: var(--radius-lg);
+}
+.stats-bar__item {
+  text-align: center;
+  min-width: 80px;
+  opacity: 0;
+}
+.stats-bar__item.fly-left {
+  transform: translateX(-60px);
+}
+.stats-bar__item.fly-right {
+  transform: translateX(60px);
+}
+.stats-bar__item.fly-visible {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.stats-bar__value {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--px-accent);
+}
+.stats-bar__label {
+  font-size: 0.6875rem;
+  color: var(--px-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-block-start: 0.125rem;
+}
+.stats-bar__item--leverage {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+}
+.stats-bar__item--leverage .lev-group {
+  text-align: center;
+}
+.stats-bar__item--leverage .lev-val {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--px-accent);
+}
+.stats-bar__item--leverage .lev-val--big {
+  font-size: 2.5rem;
+  color: var(--px-accent-blue);
+}
+.stats-bar__item--leverage .lev-lbl {
+  font-size: 0.6875rem;
+  color: var(--px-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-block-start: 0.125rem;
+}
+
+/* ── Work Timeline Chart — bars grow with stagger ── */
+.timeline-chart__row {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr 5rem;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--px-border);
+}
+.timeline-chart__row:last-child {
+  border-bottom: none;
+}
+.timeline-chart__num {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--px-text-tertiary);
+  text-align: center;
+}
+.timeline-chart__bar-wrap {
+  position: relative;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.timeline-chart__bar {
+  height: 100%;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding-inline-start: 0.75rem;
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+.timeline-chart__bar-label {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--px-text);
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
+}
+.timeline-chart__loc {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--px-text-tertiary);
+  text-align: right;
+}
+
+/* Source colors for bars */
+.bar--claude { background: rgba(96, 165, 250, 0.3); }
+.bar--cursor { background: rgba(168, 85, 247, 0.3); }
+
+/* ── Growth Chart (SVG) ── */
+.growth-chart {
+  background: var(--px-surface);
+  border: 1px solid var(--px-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+}
+.growth-chart svg {
+  width: 100%;
+  height: auto;
+}
+.growth-line {
+  fill: none;
+  stroke: var(--px-accent-blue);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  transition: stroke-dashoffset 2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.growth-line--visible {
+  stroke-dashoffset: 0;
+}
+.growth-area {
+  fill: url(#blueGradient);
+  opacity: 0;
+  transition: opacity 1.5s ease 0.5s;
+}
+.growth-area--visible {
+  opacity: 1;
+}
+.growth-dot {
+  fill: var(--px-accent-blue);
+  r: 3;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.growth-dot--visible {
+  opacity: 1;
+}
+.growth-chart__labels {
+  display: flex;
+  justify-content: space-between;
+  margin-block-start: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--px-text-tertiary);
+}
+
+/* ── Phase Timeline — slide in from left with stagger ── */
+.phase-timeline {
+  position: relative;
+  padding-inline-start: 2rem;
+}
+.phase-timeline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 7px;
+  width: 1px;
+  background: var(--px-border);
+}
+.phase-item {
+  position: relative;
+  padding-block-end: 2.5rem;
+  opacity: 0;
+  transform: translateX(-50px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.phase-item:last-child {
+  padding-block-end: 0;
+}
+.phase-item.phase-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+.phase-item__dot {
+  position: absolute;
+  left: -2rem;
+  top: 0.25rem;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid var(--px-accent-blue);
+  background: var(--px-bg);
+}
+.phase-item__num {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--px-accent-blue);
+  margin-block-end: 0.25rem;
+}
+.phase-item__title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--px-accent);
+  margin-block-end: 0.25rem;
+}
+.phase-item__dates {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--px-text-tertiary);
+  margin-block-end: 0.5rem;
+}
+.phase-item__desc {
+  font-size: 0.9375rem;
+  color: var(--px-text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Skills Section ── */
+.skills-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+.skill-tag {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--px-accent-blue);
+  background: var(--px-accent-dim);
+  padding: 0.375rem 0.875rem;
+  border-radius: 9999px;
+}
+
+/* ── Key Decisions ── */
+.decisions-list {
+  list-style: none;
+  counter-reset: decisions;
+}
+.decisions-list li {
+  counter-increment: decisions;
+  position: relative;
+  padding-inline-start: 2.5rem;
+  padding-block-end: 1.25rem;
+  font-size: 0.9375rem;
+  color: var(--px-text-secondary);
+  line-height: 1.6;
+}
+.decisions-list li::before {
+  content: counter(decisions);
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--px-accent-blue);
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--px-accent-dim);
+}
+
+/* ── Source Breakdown ── */
+.source-breakdown {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+.source-ring {
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+.source-ring circle {
+  fill: none;
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+.source-ring__bg {
+  stroke: rgba(255, 255, 255, 0.06);
+}
+.source-ring__claude {
+  stroke: var(--px-accent-blue);
+  stroke-dasharray: 197;
+  stroke-dashoffset: 197;
+  transition: stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+.source-ring__claude--visible {
+  stroke-dashoffset: 74; /* 197 * (1 - 0.625) */
+}
+.source-ring__cursor {
+  stroke: #a855f7;
+  stroke-dasharray: 197;
+  stroke-dashoffset: 197;
+  transition: stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1) 0.3s;
+  transform: rotate(135deg); /* start where claude ends */
+  transform-origin: center;
+}
+.source-ring__cursor--visible {
+  stroke-dashoffset: 123; /* 197 * (1 - 0.375) */
+}
+.source-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.source-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 0.875rem;
+  color: var(--px-text-secondary);
+}
+.source-legend__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.source-legend__dot--claude { background: var(--px-accent-blue); }
+.source-legend__dot--cursor { background: #a855f7; }
+
+/* ── Session Cards — pop up with scale + fade, staggered ── */
+.session-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.session-card {
+  background: var(--px-surface);
+  border: 1px solid var(--px-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: transform 0.3s, border-color 0.3s, background 0.3s;
+  opacity: 0;
+  transform: scale(0.85) translateY(20px);
+}
+.session-card.card-visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s, background 0.3s;
+}
+.session-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(96, 165, 250, 0.25);
+  background: var(--px-surface-hover);
+}
+.session-card__num {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--px-accent-blue);
+  margin-block-end: 0.5rem;
+}
+.session-card__title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--px-accent);
+  margin-block-end: 0.5rem;
+  line-height: 1.3;
+}
+.session-card__meta {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--px-text-tertiary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.session-card__tag {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--px-accent-blue);
+  background: var(--px-accent-dim);
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  margin-block-start: 0.75rem;
+  display: inline-block;
+}
+
+/* ── Reveal Animation ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Footer ── */
+.site-footer {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 3rem 2rem;
+  font-size: 0.75rem;
+  color: var(--px-text-tertiary);
+  border-top: 1px solid var(--px-border);
+  max-width: 1000px;
+  margin-inline: auto;
+}
+.site-footer a {
+  color: var(--px-accent-blue);
+  text-decoration: none;
+}
+
+/* ── Reduced Motion — disables ALL animations ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-fill-mode: forwards !important;
+  }
+  .project-hero__screenshot,
+  .project-hero__title,
+  .project-hero__links {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+  .stats-bar__item {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .phase-item {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .session-card {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  [data-parallax] { transform: none !important; }
+  .reveal { opacity: 1; transform: none; }
+  .bg-shapes { display: none; }
+  .bg-shape { animation: none !important; }
+  html { scroll-behavior: auto; }
+  .growth-line { stroke-dashoffset: 0 !important; }
+  .growth-area { opacity: 1 !important; }
+  .growth-dot { opacity: 1 !important; }
+  .source-ring__claude { stroke-dashoffset: 74 !important; }
+  .source-ring__cursor { stroke-dashoffset: 123 !important; }
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .project-hero {
+    min-height: auto;
+    padding: 6rem 1.5rem 3rem;
+  }
+  .project-hero__title { font-size: 1.75rem; }
+  .stats-bar { gap: 1rem; padding: 1.25rem; }
+  .stats-bar__value { font-size: 1.125rem; }
+  .timeline-chart__row { grid-template-columns: 1.5rem 1fr 3.5rem; gap: 0.5rem; }
+  .session-grid { grid-template-columns: 1fr; }
+  .source-breakdown { flex-direction: column; align-items: flex-start; }
+  .site-nav { padding: 1rem; }
+  .site-nav__links { gap: 1rem; }
+  [data-parallax] { transform: none !important; }
+  .bg-shapes { display: none; }
+  /* On mobile, disable parallax-driven entrance animations and show content */
+  .stats-bar__item,
+  .phase-item,
+  .session-card {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+    /* ── Clickable session cards ── */
+    a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<!-- ── Background Shapes ── -->
+<div class="bg-shapes" aria-hidden="true">
+  <div class="bg-shape bg-shape--1"></div>
+  <div class="bg-shape bg-shape--2"></div>
+  <div class="bg-shape bg-shape--3"></div>
+  <div class="bg-shape bg-shape--4"></div>
+  <div class="bg-shape bg-shape--5"></div>
+  <div class="bg-shape bg-shape--6"></div>
+</div>
+
+<!-- ── Navigation ── -->
+<nav class="site-nav" aria-label="Main navigation">
+  <a href="./portfolio.html" class="site-nav__brand">@alex</a>
+  <ul class="site-nav__links">
+    <li><a href="./portfolio.html" class="site-nav__link">Portfolio</a></li>
+    <li><a href="./project.html" class="site-nav__link" aria-current="page">Project</a></li>
+    <li><a href="./session.html" class="site-nav__link">Session</a></li>
+  </ul>
+</nav>
+
+<!-- ── Main Content ── -->
+<main id="main-content">
+
+  <!-- ── Project Hero ── -->
+  <section class="project-hero" aria-label="Project overview">
+    <div class="project-hero__screenshot" data-parallax="0.06" role="img" aria-label="BudgetWise application screenshot placeholder"></div>
+    <h1 class="project-hero__title">BudgetWise</h1>
+    <div class="project-hero__links">
+      <a href="https://github.com/alex/budgetwise" class="project-hero__link" rel="noopener noreferrer" target="_blank">github.com/alex/budgetwise</a>
+      <span style="color: var(--px-text-tertiary);" aria-hidden="true">&middot;</span>
+      <a href="https://budgetwise.app" class="project-hero__link" rel="noopener noreferrer" target="_blank">budgetwise.app</a>
+    </div>
+  </section>
+
+  <!-- ── Narrative — full width ── -->
+  <section class="section" aria-label="Project narrative">
+    <h2 class="section__label reveal">Narrative</h2>
+    <div class="narrative reveal">
+      <p>
+        Started with a basic Prisma schema but realized halfway through that I
+        needed polymorphic transaction types. The AI kept suggesting single-table
+        inheritance but I pushed back &mdash; went with a discriminated union
+        pattern instead. Nullable fields for transfer-specific data, hard deletes
+        with an audit log.
+      </p>
+      <p>
+        The recurring transaction detection was the hardest part. Had to figure
+        out the right tolerance windows &mdash; monthly transactions drift by a
+        few days, weekly ones are more precise. Settled on three consecutive
+        interval matches before marking something as recurring. The partial index
+        on merchant_normalized brought the detection query from 2 seconds to
+        120ms on 10k transactions.
+      </p>
+      <p>
+        Plaid integration went smoother than expected. The token exchange flow is
+        straightforward, but the webhook handling needed careful idempotency
+        &mdash; Plaid sends duplicate webhooks, so I used a processed-events
+        table keyed on webhook ID.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── Stats — fly in from alternating sides ── -->
+  <section class="section" aria-label="Project statistics">
+    <div class="stats-bar" data-stats-fly>
+      <div class="stats-bar__item fly-left">
+        <div class="stats-bar__value" data-counter="8">0</div>
+        <div class="stats-bar__label">Sessions</div>
+      </div>
+      <div class="stats-bar__item stats-bar__item--leverage fly-right">
+        <div class="lev-group">
+          <div class="lev-val" data-counter="8.1" data-suffix="h" data-decimal="true">0h</div>
+          <div class="lev-lbl">You</div>
+        </div>
+        <div class="lev-group">
+          <div class="lev-val" data-counter="34.4" data-suffix="h" data-decimal="true">0h</div>
+          <div class="lev-lbl">Agents</div>
+        </div>
+        <div class="lev-group">
+          <div class="lev-val lev-val--big" data-counter="4.2" data-suffix="x" data-decimal="true">0x</div>
+          <div class="lev-lbl">Multiplier</div>
+        </div>
+      </div>
+      <div class="stats-bar__item fly-left">
+        <div class="stats-bar__value" data-counter="4460" data-format="compact">0</div>
+        <div class="stats-bar__label">LOC</div>
+      </div>
+      <div class="stats-bar__item fly-right">
+        <div class="stats-bar__value" data-counter="156">0</div>
+        <div class="stats-bar__label">Files</div>
+      </div>
+      <div class="stats-bar__item fly-left">
+        <div class="stats-bar__value" data-counter="2" data-suffix=".1M">0</div>
+        <div class="stats-bar__label">Tokens</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Work Timeline ── -->
+  <section class="section" aria-label="Work timeline">
+    <h2 class="section__label reveal">Work Timeline</h2>
+    <div class="timeline-chart reveal" role="table" aria-label="Session work timeline">
+      <div class="timeline-chart__row" role="row">
+        <span class="timeline-chart__num" role="cell">1</span>
+        <div class="timeline-chart__bar-wrap" role="cell">
+          <div class="timeline-chart__bar bar--claude" data-bar-width="76" style="width: 0%;">
+            <span class="timeline-chart__bar-label">Prisma schema</span>
+          </div>
+        </div>
+        <span class="timeline-chart__loc" role="cell">680 LOC</span>
+      </div>
+      <div class="timeline-chart__row" role="row">
+        <span class="timeline-chart__num" role="cell">2</span>
+        <div class="timeline-chart__bar-wrap" role="cell">
+          <div class="timeline-chart__bar bar--cursor" data-bar-width="73" style="width: 0%;">
+            <span class="timeline-chart__bar-label">Transaction list</span>
+          </div>
+        </div>
+        <span class="timeline-chart__loc" role="cell">520 LOC</span>
+      </div>
+      <div class="timeline-chart__row" role="row">
+        <span class="timeline-chart__num" role="cell">3</span>
+        <div class="timeline-chart__bar-wrap" role="cell">
+          <div class="timeline-chart__bar bar--claude" data-bar-width="99" style="width: 0%;">
+            <span class="timeline-chart__bar-label">Recurring detection</span>
+          </div>
+        </div>
+        <span class="timeline-chart__loc" role="cell">890 LOC</span>
+      </div>
+      <div class="timeline-chart__row" role="row">
+        <span class="timeline-chart__num" role="cell">4</span>
+        <div class="timeline-chart__bar-wrap" role="cell">
+          <div class="timeline-chart__bar bar--claude" data-bar-width="62" style="width: 0%;">
+            <span class="timeline-chart__bar-label">Stripe integration</span>
+          </div>
+        </div>
+        <span class="timeline-chart__loc" role="cell">420 LOC</span>
+      </div>
+      <div class="timeline-chart__row" role="row">
+        <span class="timeline-chart__num" role="cell">5</span>
+        <div class="timeline-chart__bar-wrap" role="cell">
+          <div class="timeline-chart__bar bar--cursor" data-bar-width="51" style="width: 0%;">
+            <span class="timeline-chart__bar-label">CSV import</span>
+          </div>
+        </div>
+        <span class="timeline-chart__loc" role="cell">380 LOC</span>
+      </div>
+      <div class="timeline-chart__row" role="row">
+        <span class="timeline-chart__num" role="cell">6</span>
+        <div class="timeline-chart__bar-wrap" role="cell">
+          <div class="timeline-chart__bar bar--claude" data-bar-width="70" style="width: 0%;">
+            <span class="timeline-chart__bar-label">Full-text search</span>
+          </div>
+        </div>
+        <span class="timeline-chart__loc" role="cell">510 LOC</span>
+      </div>
+      <div class="timeline-chart__row" role="row">
+        <span class="timeline-chart__num" role="cell">7</span>
+        <div class="timeline-chart__bar-wrap" role="cell">
+          <div class="timeline-chart__bar bar--claude" data-bar-width="88" style="width: 0%;">
+            <span class="timeline-chart__bar-label">Spending insights</span>
+          </div>
+        </div>
+        <span class="timeline-chart__loc" role="cell">720 LOC</span>
+      </div>
+      <div class="timeline-chart__row" role="row">
+        <span class="timeline-chart__num" role="cell">8</span>
+        <div class="timeline-chart__bar-wrap" role="cell">
+          <div class="timeline-chart__bar bar--cursor" data-bar-width="56" style="width: 0%;">
+            <span class="timeline-chart__bar-label">Mobile + 2FA</span>
+          </div>
+        </div>
+        <span class="timeline-chart__loc" role="cell">340 LOC</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Cumulative Growth Chart ── -->
+  <section class="section" aria-label="Cumulative LOC growth">
+    <h2 class="section__label reveal">Growth</h2>
+    <div class="growth-chart reveal" aria-label="Line chart showing cumulative lines of code over 8 sessions, reaching 4460 LOC">
+      <svg viewBox="0 0 600 200" preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true">
+        <defs>
+          <linearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="rgba(96, 165, 250, 0.2)" />
+            <stop offset="100%" stop-color="rgba(96, 165, 250, 0)" />
+          </linearGradient>
+        </defs>
+        <!-- Grid lines -->
+        <line x1="60" y1="170" x2="570" y2="170" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+        <line x1="60" y1="127" x2="570" y2="127" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+        <line x1="60" y1="85" x2="570" y2="85" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+        <line x1="60" y1="42" x2="570" y2="42" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+        <!-- Y-axis labels -->
+        <text x="50" y="173" fill="rgba(255,255,255,0.3)" font-size="9" font-family="JetBrains Mono, monospace" text-anchor="end">0</text>
+        <text x="50" y="130" fill="rgba(255,255,255,0.3)" font-size="9" font-family="JetBrains Mono, monospace" text-anchor="end">1.5k</text>
+        <text x="50" y="88" fill="rgba(255,255,255,0.3)" font-size="9" font-family="JetBrains Mono, monospace" text-anchor="end">3k</text>
+        <text x="50" y="45" fill="rgba(255,255,255,0.3)" font-size="9" font-family="JetBrains Mono, monospace" text-anchor="end">4.5k</text>
+        <!-- Area -->
+        <polygon class="growth-area" points="60,170 133,150 206,135 279,109 352,97 425,82 498,61 570,42 570,170" />
+        <!-- Line -->
+        <polyline class="growth-line" points="60,170 133,150 206,135 279,109 352,97 425,82 498,61 570,42" />
+        <!-- Dots -->
+        <circle class="growth-dot" cx="60" cy="170" />
+        <circle class="growth-dot" cx="133" cy="150" />
+        <circle class="growth-dot" cx="206" cy="135" />
+        <circle class="growth-dot" cx="279" cy="109" />
+        <circle class="growth-dot" cx="352" cy="97" />
+        <circle class="growth-dot" cx="425" cy="82" />
+        <circle class="growth-dot" cx="498" cy="61" />
+        <circle class="growth-dot" cx="570" cy="42" />
+      </svg>
+      <div class="growth-chart__labels">
+        <span>S1</span><span>S2</span><span>S3</span><span>S4</span><span>S5</span><span>S6</span><span>S7</span><span>S8</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Phase Timeline — slide in from left ── -->
+  <section class="section" aria-label="Project phases">
+    <h2 class="section__label reveal">Phases</h2>
+    <div class="phase-timeline">
+
+      <article class="phase-item" data-phase-index="0">
+        <div class="phase-item__dot" aria-hidden="true"></div>
+        <div class="phase-item__num">Phase 1</div>
+        <h3 class="phase-item__title">Foundation</h3>
+        <div class="phase-item__dates">Feb 3 &ndash; 14</div>
+        <p class="phase-item__desc">Schema design, Prisma setup, transaction CRUD</p>
+      </article>
+
+      <article class="phase-item" data-phase-index="1">
+        <div class="phase-item__dot" aria-hidden="true"></div>
+        <div class="phase-item__num">Phase 2</div>
+        <h3 class="phase-item__title">Data Pipeline</h3>
+        <div class="phase-item__dates">Feb 17 &ndash; 26</div>
+        <p class="phase-item__desc">CSV import, Plaid integration, recurring detection</p>
+      </article>
+
+      <article class="phase-item" data-phase-index="2">
+        <div class="phase-item__dot" aria-hidden="true"></div>
+        <div class="phase-item__num">Phase 3</div>
+        <h3 class="phase-item__title">Intelligence</h3>
+        <div class="phase-item__dates">Mar 1 &ndash; 14</div>
+        <p class="phase-item__desc">Search, full-text indexing, spending insights</p>
+      </article>
+
+      <article class="phase-item" data-phase-index="3">
+        <div class="phase-item__dot" aria-hidden="true"></div>
+        <div class="phase-item__num">Phase 4</div>
+        <h3 class="phase-item__title">Hardening</h3>
+        <div class="phase-item__dates">Mar 16 &ndash; 26</div>
+        <p class="phase-item__desc">2FA, mobile responsive, CI/CD, performance</p>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ── Skills ── -->
+  <section class="section" aria-label="Skills used">
+    <h2 class="section__label reveal">Skills</h2>
+    <div class="skills-wrap reveal">
+      <span class="skill-tag">TypeScript</span>
+      <span class="skill-tag">React</span>
+      <span class="skill-tag">Next.js</span>
+      <span class="skill-tag">Prisma</span>
+      <span class="skill-tag">PostgreSQL</span>
+      <span class="skill-tag">Tailwind CSS</span>
+      <span class="skill-tag">Stripe API</span>
+      <span class="skill-tag">Plaid API</span>
+      <span class="skill-tag">Chart.js</span>
+      <span class="skill-tag">Playwright</span>
+    </div>
+  </section>
+
+  <!-- ── Key Decisions ── -->
+  <section class="section" aria-label="Key decisions">
+    <h2 class="section__label reveal">Key Decisions</h2>
+    <ol class="decisions-list reveal">
+      <li>Discriminated union over single-table inheritance for transaction types</li>
+      <li>Partial index on merchant_normalized for 16x query speedup</li>
+      <li>Processed-events table for Plaid webhook idempotency</li>
+    </ol>
+  </section>
+
+  <!-- ── Source Breakdown ── -->
+  <section class="section" aria-label="Source breakdown">
+    <h2 class="section__label reveal">Source Breakdown</h2>
+    <div class="source-breakdown reveal">
+      <svg class="source-ring" viewBox="0 0 80 80" aria-hidden="true">
+        <circle class="source-ring__bg" cx="40" cy="40" r="31.4" />
+        <circle class="source-ring__claude" cx="40" cy="40" r="31.4" />
+        <circle class="source-ring__cursor" cx="40" cy="40" r="31.4" />
+      </svg>
+      <div class="source-legend">
+        <div class="source-legend__item">
+          <div class="source-legend__dot source-legend__dot--claude"></div>
+          <span>Claude Code &mdash; 62.5% (5 sessions)</span>
+        </div>
+        <div class="source-legend__item">
+          <div class="source-legend__dot source-legend__dot--cursor"></div>
+          <span>Cursor &mdash; 37.5% (3 sessions)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Sessions — pop up with scale + fade ── -->
+  <section class="section" aria-label="Featured sessions">
+    <h2 class="section__label reveal">Sessions</h2>
+    <div class="session-grid" data-session-grid>
+
+      <a href="./session.html" class="session-card">
+        <div class="session-card__num">Session 1</div>
+        <h3 class="session-card__title">Prisma schema</h3>
+        <div class="session-card__meta">
+          <span>72m</span><span>680 LOC</span><span>7 agents</span>
+        </div>
+        <span class="session-card__tag">schema</span>
+      </a>
+
+      <a href="./session.html" class="session-card">
+        <div class="session-card__num">Session 2</div>
+        <h3 class="session-card__title">Transaction list</h3>
+        <div class="session-card__meta">
+          <span>65m</span><span>520 LOC</span><span>5 agents</span>
+        </div>
+        <span class="session-card__tag">frontend</span>
+      </a>
+
+      <a href="./session.html" class="session-card">
+        <div class="session-card__num">Session 3</div>
+        <h3 class="session-card__title">Recurring detection</h3>
+        <div class="session-card__meta">
+          <span>88m</span><span>890 LOC</span><span>6 agents</span>
+        </div>
+        <span class="session-card__tag">algorithm</span>
+      </a>
+
+      <a href="./session.html" class="session-card">
+        <div class="session-card__num">Session 4</div>
+        <h3 class="session-card__title">CSV import</h3>
+        <div class="session-card__meta">
+          <span>78m</span><span>640 LOC</span><span>5 agents</span>
+        </div>
+        <span class="session-card__tag">import</span>
+      </a>
+
+      <a href="./session.html" class="session-card">
+        <div class="session-card__num">Session 5</div>
+        <h3 class="session-card__title">Plaid integration</h3>
+        <div class="session-card__meta">
+          <span>90m</span><span>780 LOC</span><span>8 agents</span>
+        </div>
+        <span class="session-card__tag">integration</span>
+      </a>
+
+      <a href="./session.html" class="session-card">
+        <div class="session-card__num">Session 6</div>
+        <h3 class="session-card__title">Spending insights</h3>
+        <div class="session-card__meta">
+          <span>70m</span><span>620 LOC</span><span>4 agents</span>
+        </div>
+        <span class="session-card__tag">insights</span>
+      </a>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- ── Footer ── -->
+<footer class="site-footer">
+  <p>Built with <a href="./session.html">heyi.am</a> &mdash; signal over noise.</p>
+</footer>
+
+<!-- ── JavaScript — Element-relative parallax, entrance animations ── -->
+<script>
+(function() {
+  'use strict';
+
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var isMobile = window.innerWidth < 769;
+  var ticking = false;
+
+  /* ══════════════════════════════════════════════════════
+     ELEMENT-RELATIVE PARALLAX
+     Small offsets (max +/-30px) based on element position
+     relative to viewport center. No broken scrollY * speed.
+     ══════════════════════════════════════════════════════ */
+  var parallaxElements = [];
+
+  function cacheParallaxElements() {
+    parallaxElements = [];
+    var els = document.querySelectorAll('[data-parallax]');
+    for (var i = 0; i < els.length; i++) {
+      parallaxElements.push({
+        el: els[i],
+        speed: parseFloat(els[i].dataset.parallax)
+      });
+    }
+  }
+
+  function updateParallax() {
+    if (prefersReducedMotion.matches || isMobile) {
+      ticking = false;
+      return;
+    }
+    var vh = window.innerHeight;
+    for (var i = 0; i < parallaxElements.length; i++) {
+      var item = parallaxElements[i];
+      var rect = item.el.getBoundingClientRect();
+      var elementCenter = rect.top + rect.height * 0.5;
+      var viewportCenter = vh * 0.5;
+      var centerOffset = (elementCenter - viewportCenter) / vh;
+      var offset = centerOffset * item.speed * 100;
+      /* Clamp to +/-30px */
+      if (offset > 30) offset = 30;
+      if (offset < -30) offset = -30;
+      item.el.style.transform = 'translateY(' + offset + 'px)';
+    }
+    ticking = false;
+  }
+
+  function onScroll() {
+    if (!ticking) {
+      requestAnimationFrame(updateParallax);
+      ticking = true;
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════
+     SCROLL REVEAL
+     ══════════════════════════════════════════════════════ */
+  function initReveal() {
+    var reveals = document.querySelectorAll('.reveal');
+    if (!reveals.length) return;
+
+    if (prefersReducedMotion.matches) {
+      for (var i = 0; i < reveals.length; i++) {
+        reveals[i].classList.add('reveal--visible');
+      }
+      return;
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('reveal--visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+
+    for (var j = 0; j < reveals.length; j++) {
+      observer.observe(reveals[j]);
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════
+     STATS FLY-IN — alternating left/right
+     ══════════════════════════════════════════════════════ */
+  function initStatsFly() {
+    var container = document.querySelector('[data-stats-fly]');
+    if (!container) return;
+
+    if (prefersReducedMotion.matches || isMobile) {
+      var items = container.querySelectorAll('.stats-bar__item');
+      for (var i = 0; i < items.length; i++) {
+        items[i].classList.add('fly-visible');
+      }
+      return;
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var items = entry.target.querySelectorAll('.stats-bar__item');
+          for (var i = 0; i < items.length; i++) {
+            (function(idx) {
+              setTimeout(function() {
+                items[idx].classList.add('fly-visible');
+              }, idx * 120);
+            })(i);
+          }
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.2 });
+
+    observer.observe(container);
+  }
+
+  /* ══════════════════════════════════════════════════════
+     PHASE TIMELINE — slide in from left, staggered
+     ══════════════════════════════════════════════════════ */
+  function initPhaseTimeline() {
+    var phases = document.querySelectorAll('.phase-item');
+    if (!phases.length) return;
+
+    if (prefersReducedMotion.matches || isMobile) {
+      for (var i = 0; i < phases.length; i++) {
+        phases[i].classList.add('phase-visible');
+      }
+      return;
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var idx = parseInt(entry.target.dataset.phaseIndex, 10);
+          setTimeout(function() {
+            entry.target.classList.add('phase-visible');
+          }, idx * 150);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+    for (var j = 0; j < phases.length; j++) {
+      observer.observe(phases[j]);
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════
+     SESSION CARDS — pop up with scale + fade, staggered
+     ══════════════════════════════════════════════════════ */
+  function initSessionCards() {
+    var grid = document.querySelector('[data-session-grid]');
+    if (!grid) return;
+    var cards = grid.querySelectorAll('.session-card');
+
+    if (prefersReducedMotion.matches || isMobile) {
+      for (var i = 0; i < cards.length; i++) {
+        cards[i].classList.add('card-visible');
+      }
+      return;
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          /* Stagger all cards when grid enters viewport */
+          for (var i = 0; i < cards.length; i++) {
+            (function(idx) {
+              setTimeout(function() {
+                cards[idx].classList.add('card-visible');
+              }, idx * 100);
+            })(i);
+          }
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    observer.observe(grid);
+  }
+
+  /* ══════════════════════════════════════════════════════
+     ANIMATED COUNTERS
+     ══════════════════════════════════════════════════════ */
+  function initCounters() {
+    var counters = document.querySelectorAll('[data-counter]');
+    if (!counters.length) return;
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          animateCounter(entry.target);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.5 });
+
+    for (var i = 0; i < counters.length; i++) {
+      observer.observe(counters[i]);
+    }
+  }
+
+  function animateCounter(el) {
+    var isDecimal = el.dataset.decimal === 'true';
+    var target = isDecimal ? parseFloat(el.dataset.counter) : parseInt(el.dataset.counter, 10);
+    var suffix = el.dataset.suffix || '';
+    var format = el.dataset.format || '';
+    var duration = 1500;
+    var startTime = null;
+
+    function formatValue(val) {
+      if (format === 'compact') {
+        if (val >= 1000) {
+          return (val / 1000).toFixed(val >= 10000 ? 0 : 1) + 'k';
+        }
+      }
+      if (isDecimal) return val.toFixed(1);
+      return val.toLocaleString();
+    }
+
+    function step(timestamp) {
+      if (!startTime) startTime = timestamp;
+      var progress = Math.min((timestamp - startTime) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      var current = isDecimal ? (eased * target) : Math.round(eased * target);
+      el.textContent = formatValue(current) + suffix;
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      }
+    }
+
+    if (prefersReducedMotion.matches) {
+      el.textContent = formatValue(target) + suffix;
+      return;
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  /* ══════════════════════════════════════════════════════
+     BAR GROWTH ANIMATION
+     ══════════════════════════════════════════════════════ */
+  function initBars() {
+    var bars = document.querySelectorAll('[data-bar-width]');
+    if (!bars.length) return;
+
+    if (prefersReducedMotion.matches) {
+      for (var i = 0; i < bars.length; i++) {
+        bars[i].style.width = bars[i].dataset.barWidth + '%';
+      }
+      return;
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var bar = entry.target;
+          var width = bar.dataset.barWidth;
+          bar.style.width = width + '%';
+          observer.unobserve(bar);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    for (var i = 0; i < bars.length; i++) {
+      observer.observe(bars[i]);
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════
+     GROWTH CHART LINE DRAW
+     ══════════════════════════════════════════════════════ */
+  function initGrowthChart() {
+    var line = document.querySelector('.growth-line');
+    var area = document.querySelector('.growth-area');
+    var dots = document.querySelectorAll('.growth-dot');
+    if (!line) return;
+
+    if (prefersReducedMotion.matches) {
+      line.classList.add('growth-line--visible');
+      if (area) area.classList.add('growth-area--visible');
+      for (var i = 0; i < dots.length; i++) {
+        dots[i].classList.add('growth-dot--visible');
+      }
+      return;
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          line.classList.add('growth-line--visible');
+          if (area) area.classList.add('growth-area--visible');
+          for (var i = 0; i < dots.length; i++) {
+            dots[i].classList.add('growth-dot--visible');
+          }
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.2 });
+
+    observer.observe(line.closest('.growth-chart'));
+  }
+
+  /* ══════════════════════════════════════════════════════
+     SOURCE RING ANIMATION
+     ══════════════════════════════════════════════════════ */
+  function initSourceRing() {
+    var claude = document.querySelector('.source-ring__claude');
+    var cursor = document.querySelector('.source-ring__cursor');
+    if (!claude) return;
+
+    if (prefersReducedMotion.matches) {
+      claude.classList.add('source-ring__claude--visible');
+      if (cursor) cursor.classList.add('source-ring__cursor--visible');
+      return;
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          claude.classList.add('source-ring__claude--visible');
+          if (cursor) cursor.classList.add('source-ring__cursor--visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+
+    observer.observe(claude.closest('.source-breakdown'));
+  }
+
+  /* ══════════════════════════════════════════════════════
+     RESIZE
+     ══════════════════════════════════════════════════════ */
+  function onResize() {
+    isMobile = window.innerWidth < 769;
+    if (isMobile) {
+      for (var i = 0; i < parallaxElements.length; i++) {
+        parallaxElements[i].el.style.transform = '';
+      }
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════
+     INIT
+     ══════════════════════════════════════════════════════ */
+  function init() {
+    cacheParallaxElements();
+    initReveal();
+    initStatsFly();
+    initPhaseTimeline();
+    initSessionCards();
+    initCounters();
+    initBars();
+    initGrowthChart();
+    initSourceRing();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
+    prefersReducedMotion.addEventListener('change', function() {
+      if (prefersReducedMotion.matches) {
+        for (var i = 0; i < parallaxElements.length; i++) {
+          parallaxElements[i].el.style.transform = '';
+        }
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>

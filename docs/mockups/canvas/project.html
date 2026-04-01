@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BudgetWise — Project | Canvas Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Canvas Design Tokens ── */
+    :root {
+      --canvas-bg:             #ffffff;
+      --canvas-surface:        #fafafa;
+      --canvas-accent:         #fb7185;
+      --canvas-accent-light:   #fecdd3;
+      --canvas-accent-dark:    #e11d48;
+      --canvas-text:           #18181b;
+      --canvas-text-secondary: #71717a;
+      --canvas-text-tertiary:  #a1a1aa;
+      --canvas-border:         #e4e4e7;
+      --canvas-border-light:   #f4f4f5;
+      --canvas-gray:           #d4d4d8;
+      --canvas-font-display:   'DM Sans', system-ui, sans-serif;
+      --canvas-font-body:      'Inter', system-ui, sans-serif;
+      --canvas-font-mono:      'IBM Plex Mono', monospace;
+      --canvas-radius:         20px;
+      --canvas-radius-lg:      24px;
+      --canvas-radius-sm:      12px;
+      --canvas-radius-pill:    9999px;
+      --canvas-duration:       800ms;
+      --canvas-ease:           cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      opacity: 0;
+      animation: fadeIn var(--canvas-duration) var(--canvas-ease) forwards;
+    }
+    .fade-in-d1 { animation-delay: 100ms; }
+    .fade-in-d2 { animation-delay: 200ms; }
+    .fade-in-d3 { animation-delay: 300ms; }
+    .fade-in-d4 { animation-delay: 400ms; }
+    .fade-in-d5 { animation-delay: 500ms; }
+    .fade-in-d6 { animation-delay: 600ms; }
+    .fade-in-d7 { animation-delay: 700ms; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fade-in {
+        animation: none;
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    /* ── Base ── */
+    body {
+      font-family: var(--canvas-font-body);
+      color: var(--canvas-text);
+      background: var(--canvas-bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-size: 16px;
+    }
+
+    a {
+      color: var(--canvas-accent-dark);
+      text-decoration: none;
+      transition: color 200ms ease;
+    }
+    a:hover {
+      color: var(--canvas-accent);
+    }
+    a:focus-visible {
+      outline: 2px solid var(--canvas-accent);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    /* ── Skip Link ── */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      background: var(--canvas-accent);
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: var(--canvas-radius-sm);
+      z-index: 1000;
+      font-family: var(--canvas-font-mono);
+      font-size: 0.8125rem;
+      text-decoration: none;
+    }
+    .skip-link:focus {
+      top: 0.5rem;
+      color: #fff;
+    }
+
+    /* ── Layout ── */
+    .page-wrapper {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* ── Navigation ── */
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.5rem 0;
+      margin-block-end: 40px;
+    }
+    .nav__logo {
+      font-family: var(--canvas-font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--canvas-text);
+      text-decoration: none;
+    }
+    .nav__links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+    .nav__links a {
+      font-family: var(--canvas-font-body);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--canvas-text-secondary);
+      text-decoration: none;
+      transition: color 200ms ease;
+    }
+    .nav__links a:hover,
+    .nav__links a[aria-current="page"] {
+      color: var(--canvas-text);
+    }
+
+    /* ── Breadcrumb ── */
+    .breadcrumb {
+      font-family: var(--canvas-font-mono);
+      font-size: 0.8125rem;
+      color: var(--canvas-text-tertiary);
+      margin-block-end: 2rem;
+    }
+    .breadcrumb a {
+      color: var(--canvas-text-tertiary);
+      text-decoration: none;
+    }
+    .breadcrumb a:hover {
+      color: var(--canvas-accent);
+    }
+    .breadcrumb__sep {
+      margin-inline: 0.375rem;
+      color: var(--canvas-border);
+    }
+
+    /* ── Project Hero ── */
+    .project-hero {
+      padding-block-end: 80px;
+    }
+    .project-hero__title {
+      font-family: var(--canvas-font-display);
+      font-size: clamp(2.25rem, 5vw, 3.5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-block-end: 1rem;
+    }
+    .project-hero__links {
+      font-family: var(--canvas-font-mono);
+      font-size: 0.8125rem;
+      display: flex;
+      gap: 1.5rem;
+      margin-block-end: 0;
+    }
+    .project-hero__links a {
+      color: var(--canvas-text-secondary);
+      text-decoration: underline;
+      text-decoration-color: var(--canvas-border);
+      text-underline-offset: 3px;
+    }
+    .project-hero__links a:hover {
+      color: var(--canvas-accent);
+      text-decoration-color: var(--canvas-accent);
+    }
+
+    /* ── Screenshot (full-bleed) ── */
+    .screenshot {
+      margin-block-end: 100px;
+    }
+    .screenshot__image {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: linear-gradient(135deg, #fecdd3 0%, #fb7185 40%, #e11d48 100%);
+      border-radius: var(--canvas-radius-lg);
+      display: block;
+    }
+
+    /* ── Narrative ── */
+    .narrative {
+      padding-block-end: 100px;
+    }
+    .narrative p {
+      font-size: 1.125rem;
+      line-height: 1.8;
+      color: var(--canvas-text-secondary);
+      margin-block-end: 1.75rem;
+    }
+    .narrative p:last-child {
+      margin-block-end: 0;
+    }
+
+    /* ── Project Stats ── */
+    .project-stats {
+      display: flex;
+      justify-content: center;
+      gap: clamp(2rem, 5vw, 4rem);
+      padding-block-end: 100px;
+      flex-wrap: wrap;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat__number {
+      font-family: var(--canvas-font-display);
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 700;
+      line-height: 1;
+      color: var(--canvas-text);
+      letter-spacing: -0.03em;
+    }
+    .stat__label {
+      font-family: var(--canvas-font-mono);
+      font-size: 0.6875rem;
+      color: var(--canvas-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-block-start: 0.5rem;
+    }
+
+    /* ── Section Titles ── */
+    .section-title {
+      font-family: var(--canvas-font-display);
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-block-end: 2.5rem;
+    }
+
+    /* ── Phase Timeline (horizontal scroll) ── */
+    .phases-section {
+      padding-block-end: 100px;
+    }
+    .phases-scroll {
+      display: flex;
+      gap: 1.5rem;
+      overflow-x: auto;
+      padding-block-end: 1rem;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .phases-scroll::-webkit-scrollbar {
+      height: 4px;
+    }
+    .phases-scroll::-webkit-scrollbar-track {
+      background: var(--canvas-border-light);
+      border-radius: 2px;
+    }
+    .phases-scroll::-webkit-scrollbar-thumb {
+      background: var(--canvas-border);
+      border-radius: 2px;
+    }
+    .phase-card {
+      flex: 0 0 280px;
+      background: var(--canvas-surface);
+      border-radius: var(--canvas-radius);
+      padding: 2rem;
+      scroll-snap-align: start;
+    }
+    .phase-card__number {
+      font-family: var(--canvas-font-display);
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--canvas-accent);
+      line-height: 1;
+      margin-block-end: 0.75rem;
+    }
+    .phase-card__name {
+      font-family: var(--canvas-font-display);
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-block-end: 0.375rem;
+    }
+    .phase-card__dates {
+      font-family: var(--canvas-font-mono);
+      font-size: 0.6875rem;
+      color: var(--canvas-text-tertiary);
+      margin-block-end: 0.75rem;
+      letter-spacing: 0.02em;
+    }
+    .phase-card__desc {
+      font-size: 0.9375rem;
+      color: var(--canvas-text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ── Work Timeline Chart ── */
+    .timeline-section {
+      padding-block-end: 100px;
+    }
+    .chart-container {
+      background: var(--canvas-surface);
+      border-radius: var(--canvas-radius-lg);
+      padding: 2rem;
+      overflow-x: auto;
+    }
+    .chart-container svg {
+      display: block;
+      width: 100%;
+      min-width: 600px;
+    }
+
+    /* ── Skills ── */
+    .skills-section {
+      padding-block-end: 100px;
+    }
+    .skills-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .skill-pill {
+      display: inline-block;
+      background: var(--canvas-accent);
+      color: #fff;
+      font-family: var(--canvas-font-mono);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      padding: 0.5rem 1.25rem;
+      border-radius: var(--canvas-radius-pill);
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Key Decisions ── */
+    .decisions-section {
+      padding-block-end: 100px;
+    }
+    .decisions-list {
+      list-style: none;
+      max-width: 720px;
+    }
+    .decisions-list li {
+      padding: 1.25rem 0;
+      border-bottom: 1px solid var(--canvas-border-light);
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    .decisions-list li:last-child {
+      border-bottom: none;
+    }
+    .decision-num {
+      font-family: var(--canvas-font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--canvas-accent);
+      flex-shrink: 0;
+      width: 2rem;
+      line-height: 1.4;
+    }
+    .decision-text {
+      font-size: 1rem;
+      color: var(--canvas-text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ── Source Breakdown ── */
+    .source-section {
+      padding-block-end: 100px;
+    }
+    .source-visual {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+    .source-bar-large {
+      flex: 1;
+      min-width: 200px;
+      height: 12px;
+      background: var(--canvas-gray);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .source-bar-large__fill {
+      height: 100%;
+      background: var(--canvas-accent);
+      border-radius: 6px;
+    }
+    .source-legend {
+      display: flex;
+      gap: 1.5rem;
+      font-family: var(--canvas-font-mono);
+      font-size: 0.8125rem;
+      color: var(--canvas-text-secondary);
+    }
+    .source-legend__item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .source-legend__dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Session Cards ── */
+    .sessions-section {
+      padding-block-end: 100px;
+    }
+    .sessions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+    .session-card {
+      background: var(--canvas-surface);
+      border-radius: var(--canvas-radius);
+      padding: 1.75rem;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 300ms var(--canvas-ease), box-shadow 300ms var(--canvas-ease);
+    }
+    .session-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.06);
+      color: inherit;
+    }
+    .session-card:focus-visible {
+      outline: 2px solid var(--canvas-accent);
+      outline-offset: 3px;
+    }
+    .session-card__tag {
+      display: inline-block;
+      font-family: var(--canvas-font-mono);
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: var(--canvas-accent);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-block-end: 0.75rem;
+    }
+    .session-card__title {
+      font-family: var(--canvas-font-display);
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-block-end: 0.75rem;
+      line-height: 1.3;
+    }
+    .session-card__meta {
+      font-family: var(--canvas-font-mono);
+      font-size: 0.75rem;
+      color: var(--canvas-text-tertiary);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .session-card__preview {
+      width: 100%;
+      height: 6px;
+      background: var(--canvas-border-light);
+      border-radius: 3px;
+      margin-block-start: 1rem;
+      overflow: hidden;
+    }
+    .session-card__preview-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    /* ── Footer ── */
+    .page-footer {
+      padding: 3rem 0;
+      text-align: center;
+      font-family: var(--canvas-font-mono);
+      font-size: 0.75rem;
+      color: var(--canvas-text-tertiary);
+    }
+    .page-footer a {
+      color: var(--canvas-text-tertiary);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .page-footer a:hover {
+      color: var(--canvas-accent);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 767px) {
+      .nav {
+        flex-direction: column;
+        gap: 1rem;
+        margin-block-end: 20px;
+      }
+      .project-hero {
+        padding-block-end: 40px;
+      }
+      .screenshot {
+        margin-inline: -1.5rem;
+        margin-block-end: 60px;
+      }
+      .screenshot__image {
+        border-radius: 0;
+      }
+      .narrative {
+        padding-block-end: 60px;
+      }
+      .project-stats {
+        gap: 1.25rem;
+        padding-block-end: 60px;
+      }
+      .phases-section,
+      .timeline-section,
+      .skills-section,
+      .decisions-section,
+      .source-section,
+      .sessions-section {
+        padding-block-end: 60px;
+      }
+      .phase-card {
+        flex: 0 0 240px;
+        padding: 1.5rem;
+      }
+      .sessions-grid {
+        grid-template-columns: 1fr;
+      }
+      .chart-container {
+        padding: 1.25rem;
+      }
+    }
+  
+    /* ── Clickable session cards ── */
+    a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
+  <div class="page-wrapper">
+    <!-- Navigation -->
+    <nav class="nav" aria-label="Main navigation">
+      <a href="./portfolio.html" class="nav__logo">alex chen</a>
+      <ul class="nav__links">
+        <li><a href="./portfolio.html">Portfolio</a></li>
+        <li><a href="./project.html" aria-current="page">Project</a></li>
+        <li><a href="./session.html">Session</a></li>
+      </ul>
+    </nav>
+
+    <main id="main-content">
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb fade-in" aria-label="Breadcrumb">
+        <a href="./portfolio.html">alex</a>
+        <span class="breadcrumb__sep">/</span>
+        <span>budgetwise</span>
+      </nav>
+
+      <!-- Project Hero -->
+      <section class="project-hero fade-in fade-in-d1" aria-label="Project overview">
+        <h1 class="project-hero__title">BudgetWise</h1>
+        <div class="project-hero__links">
+          <a href="https://github.com/alex/budgetwise">github.com/alex/budgetwise</a>
+          <a href="https://budgetwise.app">budgetwise.app</a>
+        </div>
+      </section>
+
+      <!-- Full-bleed Screenshot -->
+      <div class="screenshot fade-in fade-in-d2">
+        <div class="screenshot__image" role="img" aria-label="BudgetWise application screenshot"></div>
+      </div>
+
+      <!-- Narrative -->
+      <section class="narrative fade-in fade-in-d3" aria-label="Project narrative">
+        <h2 class="section-title">The Story</h2>
+        <p>Started with a basic Prisma schema but realized halfway through that I needed polymorphic transaction types. The AI kept suggesting single-table inheritance but I pushed back -- went with a discriminated union pattern instead. Nullable fields for transfer-specific data, hard deletes with an audit log.</p>
+        <p>The recurring transaction detection was the hardest part. Had to figure out the right tolerance windows -- monthly transactions drift by a few days, weekly ones are more precise. Settled on three consecutive interval matches before marking something as recurring. The partial index on merchant_normalized brought the detection query from 2 seconds to 120ms on 10k transactions.</p>
+        <p>Plaid integration went smoother than expected. The token exchange flow is straightforward, but the webhook handling needed careful idempotency -- Plaid sends duplicate webhooks, so I used a processed-events table keyed on webhook ID.</p>
+      </section>
+
+      <!-- Stats -->
+      <section class="project-stats fade-in fade-in-d4" aria-label="Project statistics">
+        <div class="stat">
+          <div class="stat__number">8</div>
+          <div class="stat__label">Sessions</div>
+        </div>
+        <div class="stat" style="flex-basis: 100%; display: flex; align-items: baseline; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
+          <div style="display: flex; align-items: baseline; gap: 0.25rem;">
+            <span class="stat__number" style="font-size: clamp(1.5rem, 3vw, 2.25rem);">8.1</span>
+            <span class="stat__label" style="font-size: 0.75rem;">h you</span>
+          </div>
+          <span style="font-family: var(--canvas-font-mono); color: var(--canvas-fg-muted, #a8a29e); font-size: 0.875rem;">&middot;</span>
+          <div style="display: flex; align-items: baseline; gap: 0.25rem;">
+            <span class="stat__number" style="font-size: clamp(1.5rem, 3vw, 2.25rem);">34.4</span>
+            <span class="stat__label" style="font-size: 0.75rem;">h agents</span>
+          </div>
+          <span style="font-family: var(--canvas-font-mono); color: var(--canvas-fg-muted, #a8a29e); font-size: 0.875rem;">&middot;</span>
+          <div style="display: flex; align-items: baseline; gap: 0.25rem;">
+            <span class="stat__number" style="font-size: clamp(1.5rem, 3vw, 2.25rem); color: var(--canvas-accent, #f97316);">4.2</span>
+            <span class="stat__label" style="font-size: 0.75rem;">&times;</span>
+          </div>
+        </div>
+        <div class="stat">
+          <div class="stat__number">4,460</div>
+          <div class="stat__label">Lines of code</div>
+        </div>
+        <div class="stat">
+          <div class="stat__number">156</div>
+          <div class="stat__label">Files</div>
+        </div>
+        <div class="stat">
+          <div class="stat__number">2.1M</div>
+          <div class="stat__label">Tokens</div>
+        </div>
+      </section>
+
+      <!-- Phase Timeline -->
+      <section class="phases-section fade-in fade-in-d5" aria-label="Project phases">
+        <h2 class="section-title">Phases</h2>
+        <div class="phases-scroll" role="list">
+          <div class="phase-card" role="listitem">
+            <div class="phase-card__number">01</div>
+            <div class="phase-card__name">Foundation</div>
+            <div class="phase-card__dates">Feb 3 -- 14</div>
+            <div class="phase-card__desc">Schema design, Prisma setup, transaction CRUD</div>
+          </div>
+          <div class="phase-card" role="listitem">
+            <div class="phase-card__number">02</div>
+            <div class="phase-card__name">Data Pipeline</div>
+            <div class="phase-card__dates">Feb 17 -- 26</div>
+            <div class="phase-card__desc">CSV import, Plaid integration, recurring detection</div>
+          </div>
+          <div class="phase-card" role="listitem">
+            <div class="phase-card__number">03</div>
+            <div class="phase-card__name">Intelligence</div>
+            <div class="phase-card__dates">Mar 1 -- 14</div>
+            <div class="phase-card__desc">Search, full-text indexing, spending insights</div>
+          </div>
+          <div class="phase-card" role="listitem">
+            <div class="phase-card__number">04</div>
+            <div class="phase-card__name">Hardening</div>
+            <div class="phase-card__dates">Mar 16 -- 26</div>
+            <div class="phase-card__desc">2FA, mobile responsive, CI/CD, performance</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Work Timeline Chart -->
+      <section class="timeline-section fade-in fade-in-d5" aria-label="Work timeline">
+        <h2 class="section-title">Work Timeline</h2>
+        <div class="chart-container">
+          <svg viewBox="0 0 700 260" aria-label="Bar chart showing lines of code per session">
+            <title>Work timeline chart showing LOC per session</title>
+            <!-- Y axis labels -->
+            <text x="30" y="28" font-family="IBM Plex Mono, monospace" font-size="10" fill="#a1a1aa" text-anchor="end">900</text>
+            <text x="30" y="78" font-family="IBM Plex Mono, monospace" font-size="10" fill="#a1a1aa" text-anchor="end">675</text>
+            <text x="30" y="128" font-family="IBM Plex Mono, monospace" font-size="10" fill="#a1a1aa" text-anchor="end">450</text>
+            <text x="30" y="178" font-family="IBM Plex Mono, monospace" font-size="10" fill="#a1a1aa" text-anchor="end">225</text>
+            <text x="30" y="225" font-family="IBM Plex Mono, monospace" font-size="10" fill="#a1a1aa" text-anchor="end">0</text>
+            <!-- Grid lines -->
+            <line x1="40" y1="25" x2="680" y2="25" stroke="#f4f4f5" stroke-width="1"/>
+            <line x1="40" y1="75" x2="680" y2="75" stroke="#f4f4f5" stroke-width="1"/>
+            <line x1="40" y1="125" x2="680" y2="125" stroke="#f4f4f5" stroke-width="1"/>
+            <line x1="40" y1="175" x2="680" y2="175" stroke="#f4f4f5" stroke-width="1"/>
+            <line x1="40" y1="225" x2="680" y2="225" stroke="#e4e4e7" stroke-width="1"/>
+            <!-- Bars (max 890 LOC = ~200px height) -->
+            <!-- Session 1: 680 LOC, Claude -->
+            <rect x="65" y="72" width="56" height="153" rx="8" fill="#fb7185"/>
+            <!-- Session 2: 520 LOC, Cursor -->
+            <rect x="145" y="108" width="56" height="117" rx="8" fill="#d4d4d8"/>
+            <!-- Session 3: 890 LOC, Claude -->
+            <rect x="225" y="25" width="56" height="200" rx="8" fill="#fb7185"/>
+            <!-- Session 4: 420 LOC, Claude -->
+            <rect x="305" y="131" width="56" height="94" rx="8" fill="#fb7185"/>
+            <!-- Session 5: 380 LOC, Cursor -->
+            <rect x="385" y="140" width="56" height="85" rx="8" fill="#d4d4d8"/>
+            <!-- Session 6: 510 LOC, Claude -->
+            <rect x="465" y="110" width="56" height="115" rx="8" fill="#fb7185"/>
+            <!-- Session 7: 720 LOC, Claude -->
+            <rect x="545" y="63" width="56" height="162" rx="8" fill="#fb7185"/>
+            <!-- Session 8: 340 LOC, Cursor -->
+            <rect x="625" y="149" width="56" height="76" rx="8" fill="#d4d4d8"/>
+            <!-- X axis labels -->
+            <text x="93" y="245" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="middle">S1</text>
+            <text x="173" y="245" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="middle">S2</text>
+            <text x="253" y="245" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="middle">S3</text>
+            <text x="333" y="245" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="middle">S4</text>
+            <text x="413" y="245" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="middle">S5</text>
+            <text x="493" y="245" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="middle">S6</text>
+            <text x="573" y="245" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="middle">S7</text>
+            <text x="653" y="245" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="middle">S8</text>
+          </svg>
+        </div>
+      </section>
+
+      <!-- Skills -->
+      <section class="skills-section fade-in fade-in-d6" aria-label="Technologies used">
+        <h2 class="section-title">Skills</h2>
+        <div class="skills-list">
+          <span class="skill-pill">TypeScript</span>
+          <span class="skill-pill">React</span>
+          <span class="skill-pill">Next.js</span>
+          <span class="skill-pill">Prisma</span>
+          <span class="skill-pill">PostgreSQL</span>
+          <span class="skill-pill">Tailwind CSS</span>
+          <span class="skill-pill">Stripe API</span>
+          <span class="skill-pill">Plaid API</span>
+          <span class="skill-pill">Chart.js</span>
+          <span class="skill-pill">Playwright</span>
+        </div>
+      </section>
+
+      <!-- Key Decisions -->
+      <section class="decisions-section fade-in fade-in-d6" aria-label="Key decisions">
+        <h2 class="section-title">Key Decisions</h2>
+        <ol class="decisions-list">
+          <li>
+            <span class="decision-num">1</span>
+            <span class="decision-text">Discriminated union over single-table inheritance for transaction types</span>
+          </li>
+          <li>
+            <span class="decision-num">2</span>
+            <span class="decision-text">Partial index on merchant_normalized for 16x query speedup</span>
+          </li>
+          <li>
+            <span class="decision-num">3</span>
+            <span class="decision-text">Processed-events table for Plaid webhook idempotency</span>
+          </li>
+        </ol>
+      </section>
+
+      <!-- Source Breakdown -->
+      <section class="source-section fade-in fade-in-d7" aria-label="Source breakdown">
+        <h2 class="section-title">Source Breakdown</h2>
+        <div class="source-visual">
+          <div class="source-bar-large">
+            <div class="source-bar-large__fill" style="width: 62.5%"></div>
+          </div>
+          <div class="source-legend">
+            <div class="source-legend__item">
+              <span class="source-legend__dot" style="background: var(--canvas-accent)"></span>
+              Claude Code 62.5%
+            </div>
+            <div class="source-legend__item">
+              <span class="source-legend__dot" style="background: var(--canvas-gray)"></span>
+              Cursor 37.5%
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Featured Sessions -->
+      <section class="sessions-section fade-in fade-in-d7" aria-label="Featured sessions">
+        <h2 class="section-title">Sessions</h2>
+        <div class="sessions-grid">
+          <a href="./session.html" class="session-card">
+            <span class="session-card__tag">schema</span>
+            <h3 class="session-card__title">Prisma schema</h3>
+            <div class="session-card__meta">
+              <span>72m</span>
+              <span>680 LOC</span>
+              <span>7 agents</span>
+            </div>
+            <div class="session-card__preview">
+              <div class="session-card__preview-fill" style="width: 76%; background: var(--canvas-accent)"></div>
+            </div>
+          </a>
+
+          <article class="session-card">
+            <span class="session-card__tag">frontend</span>
+            <h3 class="session-card__title">Transaction list</h3>
+            <div class="session-card__meta">
+              <span>65m</span>
+              <span>520 LOC</span>
+              <span>5 agents</span>
+            </div>
+            <div class="session-card__preview">
+              <div class="session-card__preview-fill" style="width: 58%; background: var(--canvas-gray)"></div>
+            </div>
+          </article>
+
+          <article class="session-card">
+            <span class="session-card__tag">algorithm</span>
+            <h3 class="session-card__title">Recurring detection</h3>
+            <div class="session-card__meta">
+              <span>88m</span>
+              <span>890 LOC</span>
+              <span>6 agents</span>
+            </div>
+            <div class="session-card__preview">
+              <div class="session-card__preview-fill" style="width: 100%; background: var(--canvas-accent)"></div>
+            </div>
+          </article>
+
+          <article class="session-card">
+            <span class="session-card__tag">import</span>
+            <h3 class="session-card__title">CSV import</h3>
+            <div class="session-card__meta">
+              <span>78m</span>
+              <span>640 LOC</span>
+              <span>5 agents</span>
+            </div>
+            <div class="session-card__preview">
+              <div class="session-card__preview-fill" style="width: 72%; background: var(--canvas-gray)"></div>
+            </div>
+          </article>
+
+          <article class="session-card">
+            <span class="session-card__tag">integration</span>
+            <h3 class="session-card__title">Plaid integration</h3>
+            <div class="session-card__meta">
+              <span>90m</span>
+              <span>780 LOC</span>
+              <span>8 agents</span>
+            </div>
+            <div class="session-card__preview">
+              <div class="session-card__preview-fill" style="width: 88%; background: var(--canvas-accent)"></div>
+            </div>
+          </article>
+
+          <article class="session-card">
+            <span class="session-card__tag">insights</span>
+            <h3 class="session-card__title">Spending insights</h3>
+            <div class="session-card__meta">
+              <span>70m</span>
+              <span>620 LOC</span>
+              <span>4 agents</span>
+            </div>
+            <div class="session-card__preview">
+              <div class="session-card__preview-fill" style="width: 70%; background: var(--canvas-accent)"></div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="page-footer">
+      <p>Built with <a href="https://heyi.am">heyi.am</a></p>
+    </footer>
+  </div>
+</body>
+</html>

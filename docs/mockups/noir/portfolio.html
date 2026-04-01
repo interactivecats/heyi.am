@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noir Template — Maya Johnson</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Noir Design Tokens ── */
+:root {
+  --noir-bg:              #000000;
+  --noir-surface:         #0a0a0a;
+  --noir-card:            #141414;
+  --noir-border:          #2a2a2a;
+  --noir-border-strong:   #404040;
+  --noir-text:            #e5e5e5;
+  --noir-text-secondary:  #a3a3a3;
+  --noir-text-muted:      #737373;
+  --noir-white:           #ffffff;
+  --noir-highlight:       #e5e5e5;
+  --noir-rule:            #333333;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+
+  --radius: 0px;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--noir-text);
+  background-color: var(--noir-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--noir-text); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--noir-white);
+  color: var(--noir-bg);
+  padding: 0.5rem 1rem;
+  z-index: 1000;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* ── Page Shell ── */
+.noir-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ── Navigation ── */
+.noir-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block-end: 1.5rem;
+  border-bottom: 1px solid var(--noir-rule);
+  margin-block-end: 3rem;
+}
+
+.noir-nav__brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--noir-white);
+  letter-spacing: -0.02em;
+}
+
+.noir-nav__links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+
+.noir-nav__links a {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--noir-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: color 0.2s;
+}
+.noir-nav__links a:hover,
+.noir-nav__links a[aria-current="page"] {
+  color: var(--noir-white);
+  text-decoration: none;
+}
+
+/* ── Section Fade-in ── */
+.noir-section {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-block-end: 3rem;
+}
+.noir-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Horizontal Rule Divider ── */
+.noir-rule {
+  border: none;
+  height: 1px;
+  background: var(--noir-rule);
+  margin-block: 3rem;
+}
+
+/* ── Hero Profile ── */
+.noir-hero {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 3rem;
+  align-items: start;
+  padding-block-end: 2rem;
+}
+
+.noir-hero__photo {
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: grayscale(1) contrast(1.2);
+  border-radius: 0px;
+}
+
+.noir-hero__content {
+  padding-block-start: 0.5rem;
+}
+
+.noir-hero__name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(3rem, 7vw, 5rem);
+  color: var(--noir-white);
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  text-transform: uppercase;
+  margin-block-end: 1.5rem;
+}
+
+.noir-hero__bio {
+  font-size: 1.0625rem;
+  color: var(--noir-text-secondary);
+  max-width: 420px;
+  line-height: 1.7;
+  margin-block-end: 1.5rem;
+}
+
+.noir-hero__location {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--noir-text-muted);
+  margin-block-end: 0.75rem;
+}
+
+.noir-hero__contact {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--noir-text-secondary);
+  line-height: 1.8;
+}
+
+.noir-hero__contact a {
+  color: var(--noir-text-secondary);
+  transition: color 0.2s;
+}
+.noir-hero__contact a:hover {
+  color: var(--noir-white);
+  text-decoration: none;
+}
+
+.noir-hero__contact .noir-middot {
+  color: var(--noir-text-muted);
+  margin-inline: 0.5rem;
+}
+
+.noir-hero__resume {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--noir-text-secondary);
+  margin-block-start: 0.5rem;
+  transition: color 0.2s;
+}
+.noir-hero__resume:hover {
+  color: var(--noir-white);
+  text-decoration: none;
+}
+
+/* ── Stats Row (no card, just numbers + rules) ── */
+.noir-stats-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+}
+
+.noir-stats-row__item {
+  flex: 1;
+  text-align: center;
+  padding-block: 1rem;
+}
+
+.noir-stats-row__item + .noir-stats-row__item {
+  border-inline-start: 1px solid var(--noir-rule);
+}
+
+.noir-stats-row__value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  color: var(--noir-white);
+  line-height: 1.1;
+  display: block;
+}
+
+.noir-stats-row__label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--noir-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-block-start: 0.375rem;
+  display: block;
+}
+
+/* ── Leverage row ── */
+.noir-leverage-row {
+  grid-column: span 2;
+  display: flex;
+  justify-content: space-evenly;
+  gap: 1rem;
+  padding-block: 1rem;
+  position: relative;
+}
+.noir-leverage-row::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: var(--noir-rule);
+}
+.noir-leverage-cell {
+  text-align: center;
+}
+.noir-leverage-cell__value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--noir-white);
+  line-height: 1.1;
+  display: block;
+}
+.noir-leverage-cell__label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--noir-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-block-start: 0.25rem;
+  display: block;
+}
+
+/* ── Section Headers ── */
+.noir-heading {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--noir-white);
+  letter-spacing: -0.02em;
+  margin-block-end: 1.5rem;
+}
+
+/* ── Project Cards ── */
+.noir-projects {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--noir-border);
+  border: 1px solid var(--noir-border);
+}
+
+.noir-project {
+  background: var(--noir-card);
+  padding: 2rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.5rem;
+  transition: background 0.2s;
+}
+.noir-project:hover {
+  background: #1a1a1a;
+}
+
+.noir-project__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--noir-white);
+  margin-block-end: 0.5rem;
+}
+
+.noir-project__narrative {
+  font-size: 0.9375rem;
+  color: var(--noir-text-secondary);
+  line-height: 1.7;
+  margin-block-end: 1rem;
+}
+
+.noir-project__skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block-end: 1rem;
+}
+
+.noir-chip {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text);
+  border: 1px solid var(--noir-border-strong);
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius);
+  white-space: nowrap;
+}
+
+.noir-project__meta {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--noir-text-muted);
+}
+
+.noir-project__sidebar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1rem;
+  min-width: 140px;
+}
+
+.noir-project__stat-num {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.75rem;
+  color: var(--noir-white);
+  line-height: 1;
+}
+
+.noir-project__stat-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--noir-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.noir-source-bar {
+  display: flex;
+  width: 100%;
+  height: 4px;
+  background: var(--noir-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.noir-source-bar__fill {
+  height: 100%;
+  background: var(--noir-white);
+}
+.noir-source-bar__fill--secondary {
+  background: var(--noir-text-muted);
+}
+
+/* ── Work Timeline (white bars on black) ── */
+.noir-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.noir-timeline__row {
+  display: grid;
+  grid-template-columns: 120px 1fr 60px;
+  align-items: center;
+  gap: 1rem;
+}
+
+.noir-timeline__label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text-muted);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.noir-timeline__bar-track {
+  height: 20px;
+  background: var(--noir-surface);
+  position: relative;
+}
+
+.noir-timeline__bar {
+  height: 100%;
+  background: var(--noir-white);
+  position: absolute;
+  left: 0;
+  top: 0;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.noir-timeline__value {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text-secondary);
+  text-align: right;
+}
+
+/* ── Growth Chart (white line on black) ── */
+.noir-chart {
+  background: var(--noir-surface);
+  border: 1px solid var(--noir-border);
+  padding: 1.5rem;
+  position: relative;
+}
+
+.noir-chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.noir-chart__axis-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--noir-text-muted);
+}
+
+/* ── Source Breakdown ── */
+.noir-source-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.noir-source-bar-overall__track {
+  display: flex;
+  height: 8px;
+  background: var(--noir-surface);
+  border: 1px solid var(--noir-border);
+  overflow: hidden;
+}
+
+.noir-source-bar-overall__fill {
+  height: 100%;
+  background: var(--noir-white);
+}
+.noir-source-bar-overall__fill--secondary {
+  height: 100%;
+  background: var(--noir-text-muted);
+}
+
+.noir-source-legend {
+  display: flex;
+  gap: 2rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.noir-source-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--noir-text-secondary);
+}
+
+.noir-source-legend__swatch {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+}
+.noir-source-legend__swatch--primary { background: var(--noir-white); }
+.noir-source-legend__swatch--secondary { background: var(--noir-text-muted); }
+
+.noir-source-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-block-start: 0.5rem;
+}
+
+.noir-source-detail__row {
+  display: grid;
+  grid-template-columns: 120px 1fr 50px;
+  align-items: center;
+  gap: 1rem;
+}
+
+.noir-source-detail__project {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text-muted);
+  text-align: right;
+}
+
+.noir-source-detail__bar-track {
+  height: 12px;
+  background: var(--noir-surface);
+  position: relative;
+}
+
+.noir-source-detail__bar {
+  height: 100%;
+  background: var(--noir-white);
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.noir-source-detail__pct {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text-secondary);
+  text-align: right;
+}
+
+/* ── Footer ── */
+.noir-footer {
+  border-top: 1px solid var(--noir-rule);
+  padding-block-start: 2rem;
+  margin-block-start: 3rem;
+  text-align: center;
+}
+
+.noir-footer__text {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text-muted);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .noir-page { padding: 1.25rem 1rem; }
+
+  .noir-hero {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .noir-hero__photo {
+    width: 100%;
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+  }
+
+  .noir-hero__name {
+    font-size: clamp(2.5rem, 10vw, 4rem);
+  }
+
+  .noir-hero__bio {
+    max-width: none;
+  }
+
+  .noir-stats-row {
+    flex-wrap: wrap;
+  }
+
+  .noir-stats-row__item {
+    flex: 1 1 45%;
+    min-width: 0;
+  }
+
+  .noir-stats-row__item:nth-child(n+3) {
+    border-block-start: 1px solid var(--noir-rule);
+  }
+
+  .noir-stats-row__item:nth-child(odd) {
+    border-inline-start: none;
+  }
+
+  .noir-project {
+    grid-template-columns: 1fr;
+  }
+  .noir-project__sidebar {
+    flex-direction: row;
+    align-items: center;
+    min-width: auto;
+  }
+  .noir-timeline__row {
+    grid-template-columns: 80px 1fr 50px;
+  }
+  .noir-nav__links { gap: 1rem; }
+  .noir-hero__contact {
+    font-size: 0.75rem;
+    line-height: 2;
+  }
+  .noir-hero__contact .noir-middot {
+    display: none;
+  }
+  .noir-hero__contact a {
+    display: block;
+  }
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .noir-section {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .noir-timeline__bar { transition: none; }
+  .noir-source-bar__fill { transition: none; }
+}
+
+/* ── Focus Styles ── */
+:focus-visible {
+  outline: 2px solid var(--noir-white);
+  outline-offset: 2px;
+}
+
+    /* ── Clickable cards ── */
+    a.project-card, a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.project-card:hover, a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<div class="noir-page">
+
+  <!-- Navigation -->
+  <nav class="noir-nav" aria-label="Main navigation">
+    <span class="noir-nav__brand">heyi.am/maya</span>
+    <ul class="noir-nav__links" role="list">
+      <li><a href="./portfolio.html" aria-current="page">Portfolio</a></li>
+      <li><a href="./project.html">Project</a></li>
+      <li><a href="./session.html">Session</a></li>
+    </ul>
+  </nav>
+
+  <main id="main-content">
+
+    <!-- Hero Profile -->
+    <section class="noir-section noir-hero" aria-label="Profile">
+      <img
+        src="../assets/headshot-woman-1-400.jpg"
+        alt="Maya Johnson, black and white portrait"
+        class="noir-hero__photo"
+        width="400"
+        height="500"
+      >
+      <div class="noir-hero__content">
+        <h1 class="noir-hero__name">Maya<br>Johnson</h1>
+        <p class="noir-hero__bio">Backend engineer passionate about distributed systems and developer tooling. I build things that scale — from real-time collaboration to event-driven architectures.</p>
+        <p class="noir-hero__location">Brooklyn, NY</p>
+        <p class="noir-hero__contact">
+          <a href="mailto:maya@heyiam.com">maya@heyiam.com</a><span class="noir-middot">&middot;</span><a href="https://linkedin.com/in/mayajohnson">LinkedIn</a><span class="noir-middot">&middot;</span><a href="https://github.com/interactivecats/heyi.am">GitHub</a>
+        </p>
+        <a href="./project.html" class="noir-hero__resume">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+          Resume (PDF)
+        </a>
+      </div>
+    </section>
+
+    <hr class="noir-rule">
+
+    <!-- Aggregate Stats -->
+    <section class="noir-section" aria-label="Portfolio statistics">
+      <div class="noir-stats-row" role="list">
+        <div class="noir-stats-row__item" role="listitem">
+          <span class="noir-stats-row__value" data-target="3">0</span>
+          <span class="noir-stats-row__label">Projects</span>
+        </div>
+        <div class="noir-stats-row__item" role="listitem">
+          <span class="noir-stats-row__value" data-target="28">0</span>
+          <span class="noir-stats-row__label">Sessions</span>
+        </div>
+        <div class="noir-leverage-row" role="listitem">
+          <div class="noir-leverage-cell">
+            <span class="noir-leverage-cell__value">24h</span>
+            <span class="noir-leverage-cell__label">You</span>
+          </div>
+          <div class="noir-leverage-cell">
+            <span class="noir-leverage-cell__value">100h</span>
+            <span class="noir-leverage-cell__label">Agents</span>
+          </div>
+          <div class="noir-leverage-cell">
+            <span class="noir-leverage-cell__value">4.2&times;</span>
+            <span class="noir-leverage-cell__label">Multiplier</span>
+          </div>
+        </div>
+        <div class="noir-stats-row__item" role="listitem">
+          <span class="noir-stats-row__value" data-target="18400">0</span>
+          <span class="noir-stats-row__label">Lines Changed</span>
+        </div>
+      </div>
+    </section>
+
+    <hr class="noir-rule">
+
+    <!-- Work Timeline -->
+    <section class="noir-section" aria-label="Work timeline">
+      <h2 class="noir-heading">Work Timeline</h2>
+      <div class="noir-timeline" role="list">
+        <div class="noir-timeline__row" role="listitem">
+          <span class="noir-timeline__label">BudgetWise</span>
+          <div class="noir-timeline__bar-track" role="progressbar" aria-valuenow="42" aria-valuemin="0" aria-valuemax="42" aria-label="BudgetWise: 42.5 hours">
+            <div class="noir-timeline__bar" style="width: 0%;" data-width="100%"></div>
+          </div>
+          <span class="noir-timeline__value">42.5h</span>
+        </div>
+        <div class="noir-timeline__row" role="listitem">
+          <span class="noir-timeline__label">ShellHook</span>
+          <div class="noir-timeline__bar-track" role="progressbar" aria-valuenow="32" aria-valuemin="0" aria-valuemax="42" aria-label="ShellHook: 32 hours">
+            <div class="noir-timeline__bar" style="width: 0%;" data-width="75%"></div>
+          </div>
+          <span class="noir-timeline__value">32h</span>
+        </div>
+        <div class="noir-timeline__row" role="listitem">
+          <span class="noir-timeline__label">PixelBoard</span>
+          <div class="noir-timeline__bar-track" role="progressbar" aria-valuenow="28" aria-valuemin="0" aria-valuemax="42" aria-label="PixelBoard: 28 hours">
+            <div class="noir-timeline__bar" style="width: 0%;" data-width="66%"></div>
+          </div>
+          <span class="noir-timeline__value">28h</span>
+        </div>
+      </div>
+    </section>
+
+    <hr class="noir-rule">
+
+    <!-- Projects -->
+    <section class="noir-section" aria-label="Projects">
+      <h2 class="noir-heading">Projects</h2>
+      <div class="noir-projects">
+
+        <!-- BudgetWise -->
+        <a href="./project.html" class="noir-project" aria-label="BudgetWise project">
+          <div>
+            <h3 class="noir-project__title">BudgetWise</h3>
+            <p class="noir-project__narrative">Personal finance app with recurring transaction detection, Plaid integration, and spending insights dashboard.</p>
+            <div class="noir-project__skills" aria-label="Skills">
+              <span class="noir-chip">TypeScript</span>
+              <span class="noir-chip">React</span>
+              <span class="noir-chip">Next.js</span>
+              <span class="noir-chip">Prisma</span>
+              <span class="noir-chip">PostgreSQL</span>
+              <span class="noir-chip">Stripe API</span>
+            </div>
+            <p class="noir-project__meta">8 sessions &middot; 42.5h &middot; 4,460 LOC</p>
+          </div>
+          <div class="noir-project__sidebar">
+            <div>
+              <span class="noir-project__stat-num">4,460</span>
+              <span class="noir-project__stat-label">LOC</span>
+            </div>
+            <div class="noir-source-bar" aria-label="Source mix: Claude 62.5%, Cursor 37.5%">
+              <div class="noir-source-bar__fill" style="width: 62.5%;"></div>
+              <div class="noir-source-bar__fill--secondary" style="width: 37.5%;"></div>
+            </div>
+          </div>
+        </a>
+
+        <!-- ShellHook -->
+        <article class="noir-project">
+          <div>
+            <h3 class="noir-project__title">ShellHook</h3>
+            <p class="noir-project__narrative">Rust CLI tool for managing git hooks with TOML configuration and automatic symlinking.</p>
+            <div class="noir-project__skills" aria-label="Skills">
+              <span class="noir-chip">Rust</span>
+              <span class="noir-chip">CLI design</span>
+              <span class="noir-chip">TOML parsing</span>
+              <span class="noir-chip">Git internals</span>
+              <span class="noir-chip">Shell scripting</span>
+            </div>
+            <p class="noir-project__meta">7 sessions &middot; 32h &middot; 3,580 LOC</p>
+          </div>
+          <div class="noir-project__sidebar">
+            <div>
+              <span class="noir-project__stat-num">3,580</span>
+              <span class="noir-project__stat-label">LOC</span>
+            </div>
+            <div class="noir-source-bar" aria-label="Source mix: Claude 85%, Cursor 15%">
+              <div class="noir-source-bar__fill" style="width: 85%;"></div>
+              <div class="noir-source-bar__fill--secondary" style="width: 15%;"></div>
+            </div>
+          </div>
+        </article>
+
+        <!-- PixelBoard -->
+        <article class="noir-project">
+          <div>
+            <h3 class="noir-project__title">PixelBoard</h3>
+            <p class="noir-project__narrative">Real-time collaborative drawing canvas with CRDT-based state sync and pressure-sensitive input.</p>
+            <div class="noir-project__skills" aria-label="Skills">
+              <span class="noir-chip">TypeScript</span>
+              <span class="noir-chip">WebSocket</span>
+              <span class="noir-chip">Canvas API</span>
+              <span class="noir-chip">Redis</span>
+              <span class="noir-chip">Express</span>
+              <span class="noir-chip">CRDT</span>
+            </div>
+            <p class="noir-project__meta">5 sessions &middot; 28h &middot; 2,940 LOC</p>
+          </div>
+          <div class="noir-project__sidebar">
+            <div>
+              <span class="noir-project__stat-num">2,940</span>
+              <span class="noir-project__stat-label">LOC</span>
+            </div>
+            <div class="noir-source-bar" aria-label="Source mix: Claude 60%, Cursor 40%">
+              <div class="noir-source-bar__fill" style="width: 60%;"></div>
+              <div class="noir-source-bar__fill--secondary" style="width: 40%;"></div>
+            </div>
+          </div>
+        </article>
+
+        <!-- DevLog -->
+        <a href="./project.html" class="noir-project" aria-label="DevLog project">
+          <div>
+            <h3 class="noir-project__title">DevLog</h3>
+            <p class="noir-project__narrative">CLI tool for capturing development decisions and context as structured markdown notes.</p>
+            <div class="noir-project__skills" aria-label="Skills">
+              <span class="noir-chip">TypeScript</span>
+              <span class="noir-chip">Node.js</span>
+              <span class="noir-chip">CLI design</span>
+              <span class="noir-chip">Markdown</span>
+              <span class="noir-chip">SQLite</span>
+            </div>
+            <p class="noir-project__meta">5 sessions &middot; 18h &middot; 1,840 LOC</p>
+          </div>
+          <div class="noir-project__sidebar">
+            <div>
+              <span class="noir-project__stat-num">1,840</span>
+              <span class="noir-project__stat-label">LOC</span>
+            </div>
+            <div class="noir-source-bar" aria-label="Source mix: Claude 80%, Cursor 20%">
+              <div class="noir-source-bar__fill" style="width: 80%;"></div>
+              <div class="noir-source-bar__fill--secondary" style="width: 20%;"></div>
+            </div>
+          </div>
+        </a>
+
+        <!-- Snapgrid -->
+        <a href="./project.html" class="noir-project" aria-label="Snapgrid project">
+          <div>
+            <h3 class="noir-project__title">Snapgrid</h3>
+            <p class="noir-project__narrative">Responsive image gallery with masonry layout, lazy loading, and keyboard navigation.</p>
+            <div class="noir-project__skills" aria-label="Skills">
+              <span class="noir-chip">TypeScript</span>
+              <span class="noir-chip">React</span>
+              <span class="noir-chip">CSS Grid</span>
+              <span class="noir-chip">IntersectionObserver</span>
+              <span class="noir-chip">Accessibility</span>
+            </div>
+            <p class="noir-project__meta">4 sessions &middot; 14h &middot; 1,520 LOC</p>
+          </div>
+          <div class="noir-project__sidebar">
+            <div>
+              <span class="noir-project__stat-num">1,520</span>
+              <span class="noir-project__stat-label">LOC</span>
+            </div>
+            <div class="noir-source-bar" aria-label="Source mix: Claude 50%, Cursor 50%">
+              <div class="noir-source-bar__fill" style="width: 50%;"></div>
+              <div class="noir-source-bar__fill--secondary" style="width: 50%;"></div>
+            </div>
+          </div>
+        </a>
+
+        <!-- Terracotta -->
+        <a href="./project.html" class="noir-project" aria-label="Terracotta project">
+          <div>
+            <h3 class="noir-project__title">Terracotta</h3>
+            <p class="noir-project__narrative">Design token pipeline that generates CSS custom properties, Tailwind config, and Figma tokens from a single YAML source.</p>
+            <div class="noir-project__skills" aria-label="Skills">
+              <span class="noir-chip">TypeScript</span>
+              <span class="noir-chip">Node.js</span>
+              <span class="noir-chip">YAML</span>
+              <span class="noir-chip">CSS</span>
+              <span class="noir-chip">Figma API</span>
+            </div>
+            <p class="noir-project__meta">6 sessions &middot; 22h &middot; 2,680 LOC</p>
+          </div>
+          <div class="noir-project__sidebar">
+            <div>
+              <span class="noir-project__stat-num">2,680</span>
+              <span class="noir-project__stat-label">LOC</span>
+            </div>
+            <div class="noir-source-bar" aria-label="Source mix: Claude 70%, Cursor 30%">
+              <div class="noir-source-bar__fill" style="width: 70%;"></div>
+              <div class="noir-source-bar__fill--secondary" style="width: 30%;"></div>
+            </div>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <hr class="noir-rule">
+
+    <!-- Growth Chart -->
+    <section class="noir-section" aria-label="Cumulative growth">
+      <h2 class="noir-heading">Growth</h2>
+      <div class="noir-chart">
+        <svg viewBox="0 0 800 300" aria-label="Cumulative lines of code over time" role="img">
+          <title>Lines of code growth from February to March 2026</title>
+          <!-- Grid lines -->
+          <line x1="60" y1="20" x2="60" y2="260" stroke="#2a2a2a" stroke-width="1"/>
+          <line x1="60" y1="260" x2="780" y2="260" stroke="#2a2a2a" stroke-width="1"/>
+          <line x1="60" y1="200" x2="780" y2="200" stroke="#1a1a1a" stroke-width="1" stroke-dasharray="4"/>
+          <line x1="60" y1="140" x2="780" y2="140" stroke="#1a1a1a" stroke-width="1" stroke-dasharray="4"/>
+          <line x1="60" y1="80" x2="780" y2="80" stroke="#1a1a1a" stroke-width="1" stroke-dasharray="4"/>
+
+          <!-- Y-axis labels -->
+          <text x="55" y="264" text-anchor="end" class="noir-chart__axis-label" fill="#737373" font-family="IBM Plex Mono" font-size="10">0</text>
+          <text x="55" y="204" text-anchor="end" class="noir-chart__axis-label" fill="#737373" font-family="IBM Plex Mono" font-size="10">1.5k</text>
+          <text x="55" y="144" text-anchor="end" class="noir-chart__axis-label" fill="#737373" font-family="IBM Plex Mono" font-size="10">3k</text>
+          <text x="55" y="84" text-anchor="end" class="noir-chart__axis-label" fill="#737373" font-family="IBM Plex Mono" font-size="10">4.5k</text>
+
+          <!-- X-axis labels -->
+          <text x="150" y="280" text-anchor="middle" fill="#737373" font-family="IBM Plex Mono" font-size="10">Feb 3</text>
+          <text x="330" y="280" text-anchor="middle" fill="#737373" font-family="IBM Plex Mono" font-size="10">Feb 14</text>
+          <text x="470" y="280" text-anchor="middle" fill="#737373" font-family="IBM Plex Mono" font-size="10">Mar 1</text>
+          <text x="620" y="280" text-anchor="middle" fill="#737373" font-family="IBM Plex Mono" font-size="10">Mar 14</text>
+          <text x="750" y="280" text-anchor="middle" fill="#737373" font-family="IBM Plex Mono" font-size="10">Mar 26</text>
+
+          <!-- Growth line (cumulative LOC for BudgetWise) -->
+          <polyline
+            fill="none"
+            stroke="#e5e5e5"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            points="150,224 330,200 470,160 530,150 570,141 620,117 680,84 750,68"
+            class="noir-growth-line"
+          />
+          <!-- Data points -->
+          <circle cx="150" cy="224" r="4" fill="#e5e5e5"/>
+          <circle cx="330" cy="200" r="4" fill="#e5e5e5"/>
+          <circle cx="470" cy="160" r="4" fill="#e5e5e5"/>
+          <circle cx="530" cy="150" r="4" fill="#e5e5e5"/>
+          <circle cx="570" cy="141" r="4" fill="#e5e5e5"/>
+          <circle cx="620" cy="117" r="4" fill="#e5e5e5"/>
+          <circle cx="680" cy="84" r="4" fill="#e5e5e5"/>
+          <circle cx="750" cy="68" r="4" fill="#e5e5e5"/>
+        </svg>
+      </div>
+    </section>
+
+    <hr class="noir-rule">
+
+    <!-- Skills Overview -->
+    <section class="noir-section" aria-label="Skills">
+      <h2 class="noir-heading">Skills</h2>
+      <div class="noir-project__skills" style="gap: 0.625rem;">
+        <span class="noir-chip">TypeScript</span>
+        <span class="noir-chip">React</span>
+        <span class="noir-chip">Next.js</span>
+        <span class="noir-chip">Rust</span>
+        <span class="noir-chip">Prisma</span>
+        <span class="noir-chip">PostgreSQL</span>
+        <span class="noir-chip">WebSocket</span>
+        <span class="noir-chip">Canvas API</span>
+        <span class="noir-chip">Redis</span>
+        <span class="noir-chip">Express</span>
+        <span class="noir-chip">CRDT</span>
+        <span class="noir-chip">CLI design</span>
+        <span class="noir-chip">TOML parsing</span>
+        <span class="noir-chip">Git internals</span>
+        <span class="noir-chip">Shell scripting</span>
+        <span class="noir-chip">Stripe API</span>
+        <span class="noir-chip">Tailwind CSS</span>
+        <span class="noir-chip">Plaid API</span>
+        <span class="noir-chip">Chart.js</span>
+        <span class="noir-chip">Playwright</span>
+      </div>
+    </section>
+
+    <hr class="noir-rule">
+
+    <!-- Source Breakdown -->
+    <section class="noir-section" aria-label="Source breakdown">
+      <h2 class="noir-heading">Source Breakdown</h2>
+      <div class="noir-source-breakdown">
+        <!-- Overall bar -->
+        <div class="noir-source-bar-overall" aria-label="Overall source mix across all projects">
+          <div class="noir-source-bar-overall__track">
+            <div class="noir-source-bar-overall__fill" style="width: 69%;"></div>
+            <div class="noir-source-bar-overall__fill--secondary" style="width: 31%;"></div>
+          </div>
+        </div>
+        <!-- Legend -->
+        <div class="noir-source-legend">
+          <span class="noir-source-legend__item">
+            <span class="noir-source-legend__swatch noir-source-legend__swatch--primary"></span>
+            Claude Code &mdash; 69%
+          </span>
+          <span class="noir-source-legend__item">
+            <span class="noir-source-legend__swatch noir-source-legend__swatch--secondary"></span>
+            Cursor &mdash; 31%
+          </span>
+        </div>
+        <!-- Per-project breakdown -->
+        <div class="noir-source-detail" role="list">
+          <div class="noir-source-detail__row" role="listitem">
+            <span class="noir-source-detail__project">BudgetWise</span>
+            <div class="noir-source-detail__bar-track">
+              <div class="noir-source-detail__bar" style="width: 62.5%;"></div>
+            </div>
+            <span class="noir-source-detail__pct">62.5%</span>
+          </div>
+          <div class="noir-source-detail__row" role="listitem">
+            <span class="noir-source-detail__project">ShellHook</span>
+            <div class="noir-source-detail__bar-track">
+              <div class="noir-source-detail__bar" style="width: 85%;"></div>
+            </div>
+            <span class="noir-source-detail__pct">85%</span>
+          </div>
+          <div class="noir-source-detail__row" role="listitem">
+            <span class="noir-source-detail__project">PixelBoard</span>
+            <div class="noir-source-detail__bar-track">
+              <div class="noir-source-detail__bar" style="width: 60%;"></div>
+            </div>
+            <span class="noir-source-detail__pct">60%</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="noir-footer">
+    <p class="noir-footer__text">Built with heyi.am</p>
+  </footer>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // Respect reduced motion
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Section fade-in on scroll
+  var sections = document.querySelectorAll('.noir-section');
+
+  if (prefersReducedMotion) {
+    sections.forEach(function(s) { s.classList.add('visible'); });
+  } else {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    sections.forEach(function(s) { observer.observe(s); });
+  }
+
+  // Stat counter animation
+  function animateCounters() {
+    var counters = document.querySelectorAll('[data-target]');
+    counters.forEach(function(counter) {
+      var target = parseInt(counter.getAttribute('data-target'), 10);
+      if (prefersReducedMotion) {
+        counter.textContent = target.toLocaleString();
+        return;
+      }
+      var duration = 1200;
+      var startTime = null;
+
+      function step(timestamp) {
+        if (!startTime) startTime = timestamp;
+        var progress = Math.min((timestamp - startTime) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        var current = Math.floor(eased * target);
+        counter.textContent = current.toLocaleString();
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        } else {
+          counter.textContent = target.toLocaleString();
+        }
+      }
+      requestAnimationFrame(step);
+    });
+  }
+
+  // Trigger counters when stats become visible
+  var statsSection = document.querySelector('[aria-label="Portfolio statistics"]');
+  if (statsSection) {
+    if (prefersReducedMotion) {
+      animateCounters();
+    } else {
+      var statsObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            animateCounters();
+            statsObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.3 });
+      statsObserver.observe(statsSection);
+    }
+  }
+
+  // Animate timeline bars on scroll
+  var timelineSection = document.querySelector('[aria-label="Work timeline"]');
+  if (timelineSection) {
+    var bars = timelineSection.querySelectorAll('.noir-timeline__bar');
+    if (prefersReducedMotion) {
+      bars.forEach(function(bar) {
+        bar.style.width = bar.getAttribute('data-width');
+      });
+    } else {
+      var timelineObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            bars.forEach(function(bar, i) {
+              setTimeout(function() {
+                bar.style.width = bar.getAttribute('data-width');
+              }, i * 150);
+            });
+            timelineObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.3 });
+      timelineObserver.observe(timelineSection);
+    }
+  }
+})();
+</script>
+
+</body>
+</html>

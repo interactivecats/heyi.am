@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BudgetWise — Alex Chen — heyi.am</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Neon Design Tokens ── */
+    :root {
+      --neon-bg: #0c0014;
+      --neon-surface: #1a0a2e;
+      --neon-surface-raised: #22103a;
+      --neon-pink: #f472b6;
+      --neon-pink-dim: rgba(244, 114, 182, 0.15);
+      --neon-pink-glow: rgba(244, 114, 182, 0.3);
+      --neon-cyan: #22d3ee;
+      --neon-cyan-dim: rgba(34, 211, 238, 0.15);
+      --neon-cyan-glow: rgba(34, 211, 238, 0.3);
+      --neon-text: #f0e6ff;
+      --neon-text-secondary: #a78bbd;
+      --neon-text-tertiary: #6b5280;
+      --neon-border: rgba(244, 114, 182, 0.2);
+      --neon-border-cyan: rgba(34, 211, 238, 0.2);
+      --neon-font-display: 'Space Grotesk', system-ui, sans-serif;
+      --neon-font-body: 'Inter', system-ui, sans-serif;
+      --neon-font-mono: 'JetBrains Mono', monospace;
+      --neon-radius: 4px;
+      --neon-radius-lg: 8px;
+      --neon-duration: 300ms;
+      --neon-duration-slow: 600ms;
+      --neon-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    body {
+      font-family: var(--neon-font-body);
+      color: var(--neon-text);
+      background: var(--neon-bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    /* ── Skip Link ── */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--neon-pink);
+      color: var(--neon-bg);
+      font-weight: 600;
+      border-radius: var(--neon-radius);
+      z-index: 1000;
+      text-decoration: none;
+    }
+    .skip-link:focus { top: 1rem; }
+
+    a {
+      color: var(--neon-cyan);
+      text-decoration: none;
+      transition: color var(--neon-duration) ease-out;
+    }
+    a:hover { color: var(--neon-pink); }
+    a:focus-visible {
+      outline: 2px solid var(--neon-cyan);
+      outline-offset: 2px;
+      border-radius: var(--neon-radius);
+    }
+
+    /* ── Grid Background ── */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .grid-bg::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%) perspective(500px) rotateX(60deg);
+      width: 200%;
+      height: 60vh;
+      background-image:
+        linear-gradient(rgba(244, 114, 182, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34, 211, 238, 0.08) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 80%);
+      -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 80%);
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 960px;
+      margin-inline: auto;
+      padding-inline: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Nav ── */
+    nav {
+      padding-block: 1.25rem;
+      border-bottom: 1px solid var(--neon-border);
+      position: sticky;
+      top: 0;
+      background: rgba(12, 0, 20, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 960px;
+      margin-inline: auto;
+      padding-inline: 1.5rem;
+    }
+    .nav-logo {
+      font-family: var(--neon-font-display);
+      font-weight: 700;
+      font-size: 1.125rem;
+      background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--neon-text-secondary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color var(--neon-duration) ease;
+    }
+    .nav-links a:hover,
+    .nav-links a[aria-current="page"] { color: var(--neon-text); }
+
+    /* ── Breadcrumb ── */
+    .breadcrumb {
+      padding-top: 2rem;
+      font-size: 0.8125rem;
+      font-family: var(--neon-font-mono);
+      color: var(--neon-text-tertiary);
+    }
+    .breadcrumb a { color: var(--neon-text-tertiary); }
+    .breadcrumb a:hover { color: var(--neon-cyan); }
+    .breadcrumb span { color: var(--neon-text-secondary); }
+
+    /* ── Project Header ── */
+    .project-header {
+      padding-block: 2.5rem 2rem;
+    }
+    .project-header h1 {
+      font-family: var(--neon-font-display);
+      font-size: clamp(2rem, 4.5vw, 3rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.15;
+      margin-bottom: 0.75rem;
+    }
+    .project-links {
+      display: flex;
+      gap: 1.5rem;
+      font-family: var(--neon-font-mono);
+      font-size: 0.8125rem;
+    }
+
+    /* ── Screenshot Placeholder ── */
+    .screenshot {
+      background: var(--neon-surface);
+      border: 1px solid var(--neon-border);
+      border-radius: var(--neon-radius-lg);
+      overflow: hidden;
+      margin-bottom: 2.5rem;
+    }
+    .screenshot-chrome {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--neon-surface-raised);
+      border-bottom: 1px solid var(--neon-border);
+    }
+    .screenshot-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--neon-text-tertiary);
+    }
+    .screenshot-dot:first-child { background: #ef4444; }
+    .screenshot-dot:nth-child(2) { background: #eab308; }
+    .screenshot-dot:nth-child(3) { background: #22c55e; }
+    .screenshot-body {
+      height: 240px;
+      background: linear-gradient(135deg, var(--neon-pink-dim), var(--neon-cyan-dim));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--neon-text-tertiary);
+      font-family: var(--neon-font-mono);
+      font-size: 0.875rem;
+    }
+
+    /* ── Scroll Animations ── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity var(--neon-duration-slow) var(--neon-ease),
+                  transform var(--neon-duration-slow) var(--neon-ease);
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Narrative ── */
+    .narrative {
+      margin-bottom: 2.5rem;
+    }
+    .narrative p {
+      color: var(--neon-text-secondary);
+      margin-bottom: 1rem;
+      font-size: 0.9375rem;
+      line-height: 1.7;
+    }
+
+    /* ── Stats Row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 2.5rem;
+    }
+    .stat-item {
+      background: var(--neon-surface);
+      border: 1px solid var(--neon-border);
+      border-radius: var(--neon-radius-lg);
+      padding: 1rem;
+      text-align: center;
+    }
+    .stat-item:nth-child(odd) {
+      box-shadow: 0 0 16px var(--neon-pink-dim);
+    }
+    .stat-item:nth-child(even) {
+      box-shadow: 0 0 16px var(--neon-cyan-dim);
+    }
+    .stat-item .value {
+      font-family: var(--neon-font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+    .stat-item:nth-child(odd) .value { color: var(--neon-pink); }
+    .stat-item:nth-child(even) .value { color: var(--neon-cyan); }
+    .stat-item .label {
+      font-size: 0.6875rem;
+      color: var(--neon-text-tertiary);
+      margin-top: 0.15rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Pulsing Stats ── */
+    @keyframes pulse-pink {
+      0%, 100% { box-shadow: 0 0 16px var(--neon-pink-dim); }
+      50% { box-shadow: 0 0 28px var(--neon-pink-glow); }
+    }
+    @keyframes pulse-cyan {
+      0%, 100% { box-shadow: 0 0 16px var(--neon-cyan-dim); }
+      50% { box-shadow: 0 0 28px var(--neon-cyan-glow); }
+    }
+    .stat-item.pulsing:nth-child(odd) {
+      animation: pulse-pink 3s ease-in-out infinite;
+    }
+    .stat-item.pulsing:nth-child(even) {
+      animation: pulse-cyan 3s ease-in-out infinite;
+    }
+    .stat-item--leverage {
+      grid-column: span 2;
+      box-shadow: 0 0 16px var(--neon-pink-dim), 0 0 16px var(--neon-cyan-dim);
+    }
+    .leverage-nums {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .leverage-nums .lev-val {
+      font-family: var(--neon-font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+    .leverage-nums .lev-val--pink { color: var(--neon-pink); }
+    .leverage-nums .lev-val--cyan { color: var(--neon-cyan); }
+    .leverage-nums .lev-lbl {
+      font-size: 0.6875rem;
+      color: var(--neon-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .neon-leverage-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.06);
+      display: flex;
+      overflow: hidden;
+    }
+    .neon-leverage-bar__human {
+      height: 100%;
+      width: 19%;
+      background: var(--neon-pink);
+      box-shadow: 0 0 8px var(--neon-pink-glow);
+      border-radius: 2px 0 0 2px;
+    }
+    .neon-leverage-bar__agent {
+      height: 100%;
+      width: 81%;
+      background: var(--neon-cyan);
+      box-shadow: 0 0 8px var(--neon-cyan-glow);
+      border-radius: 0 2px 2px 0;
+    }
+
+    /* ── Section Heading ── */
+    .section-heading {
+      font-family: var(--neon-font-display);
+      font-size: 1.375rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--neon-border);
+    }
+
+    /* ── Work Timeline Chart ── */
+    .timeline-section {
+      margin-bottom: 2.5rem;
+    }
+    .timeline-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .timeline-row {
+      display: grid;
+      grid-template-columns: 2.5rem 1fr 5rem;
+      gap: 0.75rem;
+      align-items: center;
+      font-size: 0.8125rem;
+    }
+    .timeline-num {
+      font-family: var(--neon-font-mono);
+      color: var(--neon-text-tertiary);
+      text-align: right;
+    }
+    .timeline-bar-track {
+      height: 28px;
+      background: var(--neon-surface);
+      border-radius: var(--neon-radius);
+      overflow: hidden;
+      position: relative;
+    }
+    .timeline-bar {
+      height: 100%;
+      border-radius: var(--neon-radius);
+      display: flex;
+      align-items: center;
+      padding-inline: 0.75rem;
+      font-family: var(--neon-font-mono);
+      font-size: 0.6875rem;
+      color: var(--neon-bg);
+      font-weight: 500;
+      transition: width 0.8s var(--neon-ease);
+      width: 0%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .timeline-bar.claude {
+      background: var(--neon-pink);
+      box-shadow: 0 0 12px var(--neon-pink-glow);
+    }
+    .timeline-bar.cursor {
+      background: var(--neon-cyan);
+      box-shadow: 0 0 12px var(--neon-cyan-glow);
+    }
+    .timeline-duration {
+      font-family: var(--neon-font-mono);
+      font-size: 0.75rem;
+      color: var(--neon-text-tertiary);
+      text-align: right;
+    }
+
+    /* ── Phases ── */
+    .phases-section {
+      margin-bottom: 2.5rem;
+    }
+    .phase-list {
+      list-style: none;
+    }
+    .phase-item {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid rgba(244, 114, 182, 0.08);
+    }
+    .phase-item:last-child { border-bottom: none; }
+    .phase-num {
+      font-family: var(--neon-font-display);
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: var(--neon-pink);
+      min-width: 2rem;
+      text-align: center;
+      line-height: 1;
+      padding-top: 0.2rem;
+    }
+    .phase-item:nth-child(even) .phase-num { color: var(--neon-cyan); }
+    .phase-name {
+      font-family: var(--neon-font-display);
+      font-weight: 600;
+      font-size: 0.9375rem;
+      margin-bottom: 0.15rem;
+    }
+    .phase-dates {
+      font-family: var(--neon-font-mono);
+      font-size: 0.75rem;
+      color: var(--neon-text-tertiary);
+      margin-bottom: 0.25rem;
+    }
+    .phase-desc {
+      font-size: 0.875rem;
+      color: var(--neon-text-secondary);
+    }
+
+    /* ── Skills ── */
+    .skills-section {
+      margin-bottom: 2.5rem;
+    }
+    .skills-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      list-style: none;
+    }
+    .skill-chip {
+      font-family: var(--neon-font-mono);
+      font-size: 0.75rem;
+      padding: 0.3rem 0.75rem;
+      border: 1px solid var(--neon-border-cyan);
+      border-radius: var(--neon-radius);
+      color: var(--neon-cyan);
+      background: var(--neon-cyan-dim);
+      transition: box-shadow var(--neon-duration) ease,
+                  border-color var(--neon-duration) ease;
+    }
+    .skill-chip:hover {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 10px var(--neon-cyan-dim);
+    }
+
+    /* ── Key Decisions ── */
+    .decisions-section {
+      margin-bottom: 2.5rem;
+    }
+    .decision-list {
+      list-style: none;
+      counter-reset: decision;
+    }
+    .decision-item {
+      counter-increment: decision;
+      padding: 1rem 1.25rem;
+      background: var(--neon-surface);
+      border: 1px solid var(--neon-border);
+      border-radius: var(--neon-radius-lg);
+      margin-bottom: 0.75rem;
+      font-size: 0.9375rem;
+      color: var(--neon-text-secondary);
+      position: relative;
+      padding-inline-start: 3rem;
+    }
+    .decision-item::before {
+      content: counter(decision);
+      position: absolute;
+      left: 1rem;
+      font-family: var(--neon-font-display);
+      font-weight: 700;
+      color: var(--neon-pink);
+      font-size: 1.125rem;
+    }
+
+    /* ── Source Breakdown ── */
+    .source-section {
+      margin-bottom: 2.5rem;
+    }
+    .source-bar-container {
+      margin-top: 0.5rem;
+    }
+    .source-bar {
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+      background: var(--neon-surface-raised);
+    }
+    .source-bar .claude {
+      background: var(--neon-pink);
+      box-shadow: 0 0 8px var(--neon-pink-glow);
+      transition: width 1s var(--neon-ease);
+    }
+    .source-bar .cursor {
+      background: var(--neon-cyan);
+      box-shadow: 0 0 8px var(--neon-cyan-glow);
+      transition: width 1s var(--neon-ease);
+    }
+    .source-legend {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 0.5rem;
+      font-size: 0.8125rem;
+      color: var(--neon-text-tertiary);
+      font-family: var(--neon-font-mono);
+    }
+    .source-legend span::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .source-legend .claude-label::before { background: var(--neon-pink); }
+    .source-legend .cursor-label::before { background: var(--neon-cyan); }
+
+    /* ── Featured Sessions ── */
+    .sessions-section {
+      margin-bottom: 2.5rem;
+    }
+    .session-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+    .session-card {
+      background: var(--neon-surface);
+      border: 1px solid var(--neon-border);
+      border-radius: var(--neon-radius-lg);
+      padding: 1.25rem;
+      transition: border-color var(--neon-duration) ease,
+                  box-shadow var(--neon-duration) ease;
+    }
+    .session-card:hover {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 20px var(--neon-cyan-dim);
+    }
+    .session-card a {
+      font-family: var(--neon-font-display);
+      font-weight: 600;
+      font-size: 0.9375rem;
+      color: var(--neon-text);
+    }
+    .session-card a:hover { color: var(--neon-cyan); }
+    .session-card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+      font-family: var(--neon-font-mono);
+      color: var(--neon-text-tertiary);
+    }
+    .session-tag {
+      display: inline-block;
+      margin-top: 0.5rem;
+      font-family: var(--neon-font-mono);
+      font-size: 0.6875rem;
+      padding: 0.15rem 0.5rem;
+      border: 1px solid var(--neon-pink);
+      border-radius: var(--neon-radius);
+      color: var(--neon-pink);
+      background: var(--neon-pink-dim);
+    }
+
+    /* ── Footer ── */
+    footer {
+      padding-block: 3rem;
+      text-align: center;
+      color: var(--neon-text-tertiary);
+      font-size: 0.8125rem;
+      border-top: 1px solid var(--neon-border);
+      margin-top: 2rem;
+    }
+    footer a { color: var(--neon-pink); }
+
+    /* ── Reduced Motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .fade-in { opacity: 1; transform: none; }
+      .grid-bg::before { display: none; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .stats-row {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .session-grid {
+        grid-template-columns: 1fr;
+      }
+      .timeline-row {
+        grid-template-columns: 2rem 1fr 4rem;
+      }
+    }
+    @media (max-width: 480px) {
+      .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .nav-inner {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .project-links {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+    }
+  
+    /* ── Clickable session cards ── */
+    a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="grid-bg" aria-hidden="true"></div>
+
+  <!-- Nav -->
+  <nav aria-label="Main navigation">
+    <div class="nav-inner">
+      <span class="nav-logo">heyi.am</span>
+      <ul class="nav-links">
+        <li><a href="./portfolio.html">Portfolio</a></li>
+        <li><a href="./project.html" aria-current="page">Project</a></li>
+        <li><a href="./session.html">Session</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main id="main-content">
+    <div class="container">
+
+      <!-- Breadcrumb -->
+      <div class="breadcrumb" aria-label="Breadcrumb">
+        <a href="./portfolio.html">alex</a> /
+        <span>budgetwise</span>
+      </div>
+
+      <!-- Project Header -->
+      <header class="project-header fade-in">
+        <h1>BudgetWise</h1>
+        <div class="project-links">
+          <a href="https://github.com/alex/budgetwise" rel="noopener">github.com/alex/budgetwise</a>
+          <a href="https://budgetwise.app" rel="noopener">budgetwise.app</a>
+        </div>
+      </header>
+
+      <!-- Screenshot -->
+      <div class="screenshot fade-in" role="img" aria-label="BudgetWise application screenshot">
+        <div class="screenshot-chrome">
+          <span class="screenshot-dot"></span>
+          <span class="screenshot-dot"></span>
+          <span class="screenshot-dot"></span>
+        </div>
+        <div class="screenshot-body">budgetwise.app</div>
+      </div>
+
+      <!-- Narrative -->
+      <section class="narrative fade-in" aria-label="Project narrative">
+        <p>Started with a basic Prisma schema but realized halfway through that I needed polymorphic transaction types. The AI kept suggesting single-table inheritance but I pushed back &mdash; went with a discriminated union pattern instead. Nullable fields for transfer-specific data, hard deletes with an audit log.</p>
+        <p>The recurring transaction detection was the hardest part. Had to figure out the right tolerance windows &mdash; monthly transactions drift by a few days, weekly ones are more precise. Settled on three consecutive interval matches before marking something as recurring. The partial index on merchant_normalized brought the detection query from 2 seconds to 120ms on 10k transactions.</p>
+        <p>Plaid integration went smoother than expected. The token exchange flow is straightforward, but the webhook handling needed careful idempotency &mdash; Plaid sends duplicate webhooks, so I used a processed-events table keyed on webhook ID.</p>
+      </section>
+
+      <!-- Stats -->
+      <section class="fade-in" aria-label="Project statistics">
+        <div class="stats-row">
+          <div class="stat-item" role="figure" aria-label="8 sessions">
+            <div class="value" data-target="8">0</div>
+            <div class="label">Sessions</div>
+          </div>
+          <div class="stat-item stat-item--leverage" role="figure" aria-label="8.1 hours you, 34.4 hours agents, 4.2x leverage">
+            <div class="leverage-nums">
+              <span><span class="lev-val lev-val--pink">8.1h</span> <span class="lev-lbl">you</span></span>
+              <span><span class="lev-val lev-val--cyan">34.4h</span> <span class="lev-lbl">agents</span></span>
+              <span><span class="lev-val lev-val--pink">4.2x</span></span>
+            </div>
+            <div class="neon-leverage-bar">
+              <div class="neon-leverage-bar__human"></div>
+              <div class="neon-leverage-bar__agent"></div>
+            </div>
+          </div>
+          <div class="stat-item" role="figure" aria-label="4,460 lines of code">
+            <div class="value" data-target="4460" data-format="comma">0</div>
+            <div class="label">LOC</div>
+          </div>
+          <div class="stat-item" role="figure" aria-label="156 files">
+            <div class="value" data-target="156">0</div>
+            <div class="label">Files</div>
+          </div>
+          <div class="stat-item" role="figure" aria-label="2.1 million tokens">
+            <div class="value">2.1M</div>
+            <div class="label">Tokens</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Work Timeline -->
+      <section class="timeline-section fade-in" aria-label="Work timeline">
+        <h2 class="section-heading">Work Timeline</h2>
+        <div class="timeline-chart" role="img" aria-label="Session durations chart showing 8 sessions">
+          <div class="timeline-row">
+            <span class="timeline-num">1</span>
+            <div class="timeline-bar-track">
+              <div class="timeline-bar claude" data-width="82" title="Set up Prisma schema">Set up Prisma schema</div>
+            </div>
+            <span class="timeline-duration">72m</span>
+          </div>
+          <div class="timeline-row">
+            <span class="timeline-num">2</span>
+            <div class="timeline-bar-track">
+              <div class="timeline-bar cursor" data-width="74" title="Transaction list + infinite scroll">Transaction list</div>
+            </div>
+            <span class="timeline-duration">65m</span>
+          </div>
+          <div class="timeline-row">
+            <span class="timeline-num">3</span>
+            <div class="timeline-bar-track">
+              <div class="timeline-bar claude" data-width="100" title="Recurring transaction detection">Recurring detection</div>
+            </div>
+            <span class="timeline-duration">88m</span>
+          </div>
+          <div class="timeline-row">
+            <span class="timeline-num">4</span>
+            <div class="timeline-bar-track">
+              <div class="timeline-bar claude" data-width="63" title="Stripe integration">Stripe integration</div>
+            </div>
+            <span class="timeline-duration">55m</span>
+          </div>
+          <div class="timeline-row">
+            <span class="timeline-num">5</span>
+            <div class="timeline-bar-track">
+              <div class="timeline-bar cursor" data-width="51" title="CSV import pipeline">CSV import pipeline</div>
+            </div>
+            <span class="timeline-duration">45m</span>
+          </div>
+          <div class="timeline-row">
+            <span class="timeline-num">6</span>
+            <div class="timeline-bar-track">
+              <div class="timeline-bar claude" data-width="70" title="Full-text search tsvector">Full-text search</div>
+            </div>
+            <span class="timeline-duration">62m</span>
+          </div>
+          <div class="timeline-row">
+            <span class="timeline-num">7</span>
+            <div class="timeline-bar-track">
+              <div class="timeline-bar claude" data-width="89" title="Spending insights dashboard">Spending insights</div>
+            </div>
+            <span class="timeline-duration">78m</span>
+          </div>
+          <div class="timeline-row">
+            <span class="timeline-num">8</span>
+            <div class="timeline-bar-track">
+              <div class="timeline-bar cursor" data-width="57" title="Mobile responsive + 2FA">Mobile + 2FA</div>
+            </div>
+            <span class="timeline-duration">50m</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Phases -->
+      <section class="phases-section fade-in" aria-label="Project phases">
+        <h2 class="section-heading">Phases</h2>
+        <ol class="phase-list">
+          <li class="phase-item">
+            <span class="phase-num">1</span>
+            <div>
+              <div class="phase-name">Foundation</div>
+              <div class="phase-dates">Feb 3 &ndash; 14</div>
+              <div class="phase-desc">Schema design, Prisma setup, transaction CRUD</div>
+            </div>
+          </li>
+          <li class="phase-item">
+            <span class="phase-num">2</span>
+            <div>
+              <div class="phase-name">Data Pipeline</div>
+              <div class="phase-dates">Feb 17 &ndash; 26</div>
+              <div class="phase-desc">CSV import, Plaid integration, recurring detection</div>
+            </div>
+          </li>
+          <li class="phase-item">
+            <span class="phase-num">3</span>
+            <div>
+              <div class="phase-name">Intelligence</div>
+              <div class="phase-dates">Mar 1 &ndash; 14</div>
+              <div class="phase-desc">Search, full-text indexing, spending insights</div>
+            </div>
+          </li>
+          <li class="phase-item">
+            <span class="phase-num">4</span>
+            <div>
+              <div class="phase-name">Hardening</div>
+              <div class="phase-dates">Mar 16 &ndash; 26</div>
+              <div class="phase-desc">2FA, mobile responsive, CI/CD, performance</div>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <!-- Skills -->
+      <section class="skills-section fade-in" aria-label="Technologies used">
+        <h2 class="section-heading">Skills</h2>
+        <ul class="skills-list">
+          <li class="skill-chip">TypeScript</li>
+          <li class="skill-chip">React</li>
+          <li class="skill-chip">Next.js</li>
+          <li class="skill-chip">Prisma</li>
+          <li class="skill-chip">PostgreSQL</li>
+          <li class="skill-chip">Tailwind CSS</li>
+          <li class="skill-chip">Stripe API</li>
+          <li class="skill-chip">Plaid API</li>
+          <li class="skill-chip">Chart.js</li>
+          <li class="skill-chip">Playwright</li>
+        </ul>
+      </section>
+
+      <!-- Key Decisions -->
+      <section class="decisions-section fade-in" aria-label="Key decisions">
+        <h2 class="section-heading">Key Decisions</h2>
+        <ol class="decision-list">
+          <li class="decision-item">Discriminated union over single-table inheritance for transaction types</li>
+          <li class="decision-item">Partial index on merchant_normalized for 16x query speedup</li>
+          <li class="decision-item">Processed-events table for Plaid webhook idempotency</li>
+        </ol>
+      </section>
+
+      <!-- Source Breakdown -->
+      <section class="source-section fade-in" aria-label="Source breakdown">
+        <h2 class="section-heading">Source Breakdown</h2>
+        <div class="source-bar-container">
+          <div class="source-bar" role="img" aria-label="Claude Code 62.5%, Cursor 37.5%">
+            <div class="claude" style="width: 0%" data-width="62.5"></div>
+            <div class="cursor" style="width: 0%" data-width="37.5"></div>
+          </div>
+          <div class="source-legend">
+            <span class="claude-label">Claude Code 62.5% (5 sessions)</span>
+            <span class="cursor-label">Cursor 37.5% (3 sessions)</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Featured Sessions -->
+      <section class="sessions-section fade-in" aria-label="Featured sessions">
+        <h2 class="section-heading">Featured Sessions</h2>
+        <div class="session-grid">
+          <article class="session-card">
+            <a href="./session.html">Prisma schema</a>
+            <div class="session-card-meta">
+              <span>72m</span>
+              <span>680 LOC</span>
+              <span>7 agents</span>
+            </div>
+            <span class="session-tag">schema</span>
+          </article>
+          <article class="session-card">
+            <a href="./session.html">Transaction list</a>
+            <div class="session-card-meta">
+              <span>65m</span>
+              <span>520 LOC</span>
+              <span>5 agents</span>
+            </div>
+            <span class="session-tag">frontend</span>
+          </article>
+          <article class="session-card">
+            <a href="./session.html">Recurring detection</a>
+            <div class="session-card-meta">
+              <span>88m</span>
+              <span>890 LOC</span>
+              <span>6 agents</span>
+            </div>
+            <span class="session-tag">algorithm</span>
+          </article>
+          <article class="session-card">
+            <a href="./session.html">CSV import</a>
+            <div class="session-card-meta">
+              <span>78m</span>
+              <span>640 LOC</span>
+              <span>5 agents</span>
+            </div>
+            <span class="session-tag">import</span>
+          </article>
+          <article class="session-card">
+            <a href="./session.html">Plaid integration</a>
+            <div class="session-card-meta">
+              <span>90m</span>
+              <span>780 LOC</span>
+              <span>8 agents</span>
+            </div>
+            <span class="session-tag">integration</span>
+          </article>
+          <article class="session-card">
+            <a href="./session.html">Spending insights</a>
+            <div class="session-card-meta">
+              <span>70m</span>
+              <span>620 LOC</span>
+              <span>4 agents</span>
+            </div>
+            <span class="session-tag">insights</span>
+          </article>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>Built with <a href="https://heyi.am">heyi.am</a></p>
+    </div>
+  </footer>
+
+  <script>
+    /* ── Scroll-triggered fade-in ── */
+    (function () {
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (prefersReducedMotion) {
+        document.querySelectorAll('.fade-in').forEach(function (el) {
+          el.classList.add('visible');
+        });
+        return;
+      }
+
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.fade-in').forEach(function (el) {
+        observer.observe(el);
+      });
+    })();
+
+    /* ── Stat Counter Animation ── */
+    (function () {
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var counters = document.querySelectorAll('.value[data-target]');
+
+      function formatNumber(n, format) {
+        if (format === 'comma') return n.toLocaleString('en-US');
+        return String(n);
+      }
+
+      function animateCounter(el) {
+        var target = parseInt(el.getAttribute('data-target'), 10);
+        var format = el.getAttribute('data-format');
+        var duration = 1000;
+        var startTime = null;
+
+        if (prefersReducedMotion) {
+          el.textContent = formatNumber(target, format);
+          return;
+        }
+
+        function step(timestamp) {
+          if (!startTime) startTime = timestamp;
+          var progress = Math.min((timestamp - startTime) / duration, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          var current = Math.round(eased * target);
+          el.textContent = formatNumber(current, format);
+          if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            animateCounter(entry.target);
+            var card = entry.target.closest('.stat-item');
+            if (card) {
+              setTimeout(function () { card.classList.add('pulsing'); }, 1200);
+            }
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.5 });
+
+      counters.forEach(function (c) { observer.observe(c); });
+    })();
+
+    /* ── Timeline Bar Animation ── */
+    (function () {
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var bars = document.querySelectorAll('.timeline-bar[data-width]');
+
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            var w = entry.target.getAttribute('data-width');
+            if (prefersReducedMotion) {
+              entry.target.style.width = w + '%';
+            } else {
+              requestAnimationFrame(function () {
+                entry.target.style.width = w + '%';
+              });
+            }
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.2 });
+
+      bars.forEach(function (b) { observer.observe(b); });
+    })();
+
+    /* ── Source Bar Animation ── */
+    (function () {
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var bars = document.querySelectorAll('.source-bar');
+
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            var segments = entry.target.querySelectorAll('[data-width]');
+            segments.forEach(function (seg) {
+              var w = seg.getAttribute('data-width');
+              if (prefersReducedMotion) {
+                seg.style.width = w + '%';
+              } else {
+                requestAnimationFrame(function () {
+                  seg.style.width = w + '%';
+                });
+              }
+            });
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.3 });
+
+      bars.forEach(function (b) { observer.observe(b); });
+    })();
+  </script>
+</body>
+</html>

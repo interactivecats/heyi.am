@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alex Chen — Portfolio | Grid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Tokens ── */
+  :root {
+    --bg: #fafafa;
+    --fg: #1e293b;
+    --fg-muted: #64748b;
+    --fg-faint: #94a3b8;
+    --accent: #6366f1;
+    --accent-light: #a5b4fc;
+    --accent-bg: #eef2ff;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --radius-sm: 12px;
+    --radius: 16px;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04);
+  }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--fg);
+    background-color: var(--bg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Skip link ── */
+  .skip-link {
+    position: absolute;
+    inset-inline-start: -9999px;
+    top: 0;
+    background: var(--accent);
+    color: #fff;
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    z-index: 100;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+  }
+  .skip-link:focus {
+    inset-inline-start: 8px;
+    top: 8px;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 1120px;
+    margin-inline: auto;
+    padding-inline: 24px;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+    background: rgba(250,250,250,0.92);
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-brand {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--fg);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+  .nav-brand span {
+    color: var(--accent);
+  }
+  .nav-links {
+    display: flex;
+    gap: 8px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--fg-muted);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s, background-color 0.15s;
+  }
+  .nav-links a:hover {
+    color: var(--fg);
+    background: var(--border-light);
+  }
+  .nav-links a[aria-current="page"] {
+    color: var(--accent);
+    background: var(--accent-bg);
+  }
+  .nav-links a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Bento Grid ── */
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 32px 0 64px;
+  }
+
+  .bento-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    opacity: 0;
+    transform: translateY(12px);
+    animation: cellFadeIn 0.4s ease forwards;
+  }
+
+  @keyframes cellFadeIn {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bento-cell {
+      opacity: 1;
+      transform: none;
+      animation: none;
+    }
+    .stat-number {
+      /* counters won't animate */
+    }
+  }
+
+  /* Stagger delays */
+  .bento-cell:nth-child(1)  { animation-delay: 0s; }
+  .bento-cell:nth-child(2)  { animation-delay: 0.06s; }
+  .bento-cell:nth-child(3)  { animation-delay: 0.12s; }
+  .bento-cell:nth-child(4)  { animation-delay: 0.18s; }
+  .bento-cell:nth-child(5)  { animation-delay: 0.24s; }
+  .bento-cell:nth-child(6)  { animation-delay: 0.30s; }
+  .bento-cell:nth-child(7)  { animation-delay: 0.36s; }
+  .bento-cell:nth-child(8)  { animation-delay: 0.42s; }
+  .bento-cell:nth-child(9)  { animation-delay: 0.48s; }
+  .bento-cell:nth-child(10) { animation-delay: 0.54s; }
+  .bento-cell:nth-child(11) { animation-delay: 0.60s; }
+  .bento-cell:nth-child(12) { animation-delay: 0.66s; }
+
+  /* Span classes */
+  .span-2 { grid-column: span 2; }
+  .span-3 { grid-column: span 3; }
+  .span-4 { grid-column: span 4; }
+  .span-row-2 { grid-row: span 2; }
+
+  /* ── Identity Cell (wide) ── */
+  .cell-identity {
+    grid-column: span 2;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .cell-identity h1 {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .cell-identity .location {
+    font-size: 13px;
+    color: var(--fg-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .cell-identity .location svg {
+    width: 14px;
+    height: 14px;
+    color: var(--fg-faint);
+    flex-shrink: 0;
+  }
+  .cell-identity .bio {
+    font-size: 14px;
+    color: var(--fg-muted);
+    line-height: 1.6;
+    max-width: 48ch;
+    margin-top: 6px;
+  }
+  .identity-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* ── Profile photo ── */
+  .cell-identity .profile-photo {
+    width: 100px;
+    height: 130px;
+    border-radius: 16px;
+    object-fit: cover;
+    object-position: 70% 5%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+  }
+  .identity-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  /* ── Contact links ── */
+  .contact-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-top: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+  .contact-row a,
+  .contact-row span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--fg-muted);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .contact-row a:hover {
+    color: var(--accent);
+  }
+  .contact-row a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  .contact-row svg {
+    flex-shrink: 0;
+  }
+  .resume-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    text-decoration: none;
+    transition: border-color 0.15s, color 0.15s;
+    background: transparent;
+  }
+  .resume-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  @media (max-width: 768px) {
+    .cell-identity .profile-photo { width: 80px; height: 100px; }
+    .identity-top { flex-direction: column; }
+  }
+
+  /* ── Stat Cell (small square) ── */
+  .cell-stat {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 120px;
+  }
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-muted);
+  }
+  .stat-number {
+    font-family: var(--font-display);
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--fg);
+    line-height: 1;
+  }
+  .stat-number .stat-unit {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--fg-muted);
+    margin-inline-start: 2px;
+  }
+  .stat-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--accent-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .stat-icon svg {
+    width: 16px;
+    height: 16px;
+    color: var(--accent);
+  }
+
+  /* ── Source Mix Cell ── */
+  .cell-source {
+    grid-column: span 2;
+  }
+  .cell-source h2 {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--fg);
+  }
+  .source-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .source-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .source-name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    width: 80px;
+    flex-shrink: 0;
+  }
+  .source-bar-track {
+    flex: 1;
+    height: 8px;
+    background: var(--border-light);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .source-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--accent);
+  }
+  .source-bar-fill--secondary {
+    background: var(--accent-light);
+  }
+  .source-pct {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg);
+    font-weight: 500;
+    width: 36px;
+    text-align: end;
+  }
+
+  /* ── Project Card Cell ── */
+  .cell-project {
+    grid-column: span 2;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: box-shadow 0.2s, transform 0.2s;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+  }
+  .cell-project:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  .cell-project:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .project-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .project-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--fg);
+  }
+  .project-arrow {
+    width: 20px;
+    height: 20px;
+    color: var(--fg-faint);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .project-narrative {
+    font-size: 14px;
+    color: var(--fg-muted);
+    line-height: 1.6;
+  }
+  .project-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .project-meta-item {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+  .project-meta-item strong {
+    color: var(--fg);
+    font-weight: 600;
+  }
+  .project-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .skill-chip {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .project-source-bar {
+    display: flex;
+    height: 4px;
+    border-radius: 2px;
+    overflow: hidden;
+    gap: 2px;
+  }
+  .project-source-segment {
+    height: 100%;
+    border-radius: 2px;
+  }
+
+  /* ── Skills Aggregate Cell ── */
+  .cell-all-skills {
+    grid-column: span 2;
+  }
+  .cell-all-skills h2 {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--fg);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cell-all-skills h2 svg {
+    width: 16px;
+    height: 16px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .all-skills-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* ── Activity Cell (heatmap-style) ── */
+  .cell-activity {
+    grid-column: span 2;
+  }
+  .cell-activity h2 {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--fg);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cell-activity h2 svg {
+    width: 16px;
+    height: 16px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .heatmap {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 4px;
+  }
+  .heatmap-cell {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    background: var(--border-light);
+  }
+  .heatmap-cell--l1 { background: #e0e7ff; }
+  .heatmap-cell--l2 { background: #c7d2fe; }
+  .heatmap-cell--l3 { background: #a5b4fc; }
+  .heatmap-cell--l4 { background: #6366f1; }
+  .heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    justify-content: flex-end;
+  }
+  .heatmap-legend-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--fg-faint);
+  }
+  .heatmap-legend-cell {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+
+  /* ── Recent Sessions Cell ── */
+  .cell-recent {
+    grid-column: span 4;
+  }
+  .cell-recent h2 {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--fg);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cell-recent h2 svg {
+    width: 16px;
+    height: 16px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .recent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .recent-row {
+    display: grid;
+    grid-template-columns: 1fr 120px 60px 60px;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 13px;
+  }
+  .recent-row:last-child {
+    border-bottom: none;
+  }
+  .recent-title {
+    color: var(--fg);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .recent-project {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+  }
+  .recent-date {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-faint);
+    text-align: end;
+  }
+  .recent-duration {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    text-align: end;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 0;
+    text-align: center;
+  }
+  .footer p {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-faint);
+  }
+  .footer a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .footer a:hover {
+    text-decoration: underline;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .bento {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .cell-identity,
+    .cell-source,
+    .cell-project,
+    .cell-all-skills,
+    .cell-activity,
+    .cell-recent,
+    .span-2, .span-3, .span-4 {
+      grid-column: span 1;
+    }
+    .recent-row {
+      grid-template-columns: 1fr 60px;
+    }
+    .recent-date,
+    .recent-project {
+      display: none;
+    }
+    .cell-identity h1 {
+      font-size: 22px;
+    }
+    .stat-number {
+      font-size: 28px;
+    }
+    .nav-links {
+      gap: 4px;
+    }
+    .nav-links a {
+      font-size: 13px;
+      padding: 6px 10px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<a href="#main" class="skip-link">Skip to content</a>
+
+<nav class="nav" aria-label="Main navigation">
+  <div class="container nav-inner">
+    <a href="./portfolio.html" class="nav-brand"><span>@</span>alex</a>
+    <ul class="nav-links">
+      <li><a href="./portfolio.html" aria-current="page">Portfolio</a></li>
+      <li><a href="./project.html">Project</a></li>
+      <li><a href="./session.html">Session</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main" class="container">
+  <div class="bento" aria-label="Portfolio dashboard">
+
+    <!-- Cell 1: Identity (2-wide) -->
+    <div class="bento-cell cell-identity">
+      <div class="identity-top">
+        <img src="../assets/headshot-man-2-400.jpg" alt="Alex Chen" class="profile-photo">
+        <div class="identity-text">
+          <h1>Alex Chen</h1>
+          <p class="location">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            San Francisco, CA
+          </p>
+          <p class="bio">Full-stack engineer building tools for personal finance and real-time collaboration. I care about schema design, performance, and building things that feel right. Previously at Stripe and a YC startup.</p>
+        </div>
+      </div>
+      <div class="contact-row">
+        <a href="mailto:alex@heyiam.com"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg> alex@heyiam.com</a>
+        <a href="https://linkedin.com/in/alexchen" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg> LinkedIn</a>
+        <a href="https://github.com/interactivecats/heyi.am" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg> GitHub</a>
+        <a href="https://x.com/alexchendev" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> @alexchendev</a>
+        <a href="https://alexchen.dev" target="_blank" rel="noopener">alexchen.dev</a>
+        <a href="./project.html" class="resume-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg> Resume (PDF)</a>
+      </div>
+    </div>
+
+    <!-- Cell 2: Stat — Projects -->
+    <section class="bento-cell cell-stat" aria-label="Projects count">
+      <div class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div>
+        <div class="stat-number" data-target="3">0</div>
+        <div class="stat-label">Projects</div>
+      </div>
+    </section>
+
+    <!-- Cell 3: Stat — Sessions -->
+    <section class="bento-cell cell-stat" aria-label="Sessions count">
+      <div class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div>
+        <div class="stat-number" data-target="28">0</div>
+        <div class="stat-label">Sessions</div>
+      </div>
+    </section>
+
+    <!-- Cell 4: Stat — Human Time -->
+    <section class="bento-cell cell-stat" aria-label="Human time">
+      <div class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div>
+        <div class="stat-number">24<span class="stat-unit">h</span></div>
+        <div class="stat-label">You</div>
+      </div>
+    </section>
+
+    <!-- Cell 4b: Stat — Agent Time -->
+    <section class="bento-cell cell-stat" aria-label="Agent time">
+      <div class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="9" x2="9" y2="9.01"/><line x1="15" y1="9" x2="15" y2="9.01"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg>
+      </div>
+      <div>
+        <div class="stat-number">100<span class="stat-unit">h</span></div>
+        <div class="stat-label">Agents</div>
+      </div>
+    </section>
+
+    <!-- Cell 4c: Stat — Multiplier -->
+    <section class="bento-cell cell-stat" aria-label="Multiplier">
+      <div class="stat-icon" aria-hidden="true" style="color: var(--accent);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      </div>
+      <div>
+        <div class="stat-number">4.2<span class="stat-unit">&times;</span></div>
+        <div class="stat-label">Multiplier</div>
+      </div>
+    </section>
+
+    <!-- Cell 5: Stat — LOC -->
+    <section class="bento-cell cell-stat" aria-label="Lines of code">
+      <div class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      </div>
+      <div>
+        <div class="stat-number" data-target="18400" data-format="comma">0</div>
+        <div class="stat-label">Lines of Code</div>
+      </div>
+    </section>
+
+    <!-- Cell 6: Source Mix (2-wide) -->
+    <section class="bento-cell cell-source" aria-label="Source breakdown">
+      <h2>Source Mix</h2>
+      <div class="source-bars">
+        <div class="source-item">
+          <span class="source-name">Claude</span>
+          <div class="source-bar-track">
+            <div class="source-bar-fill" style="width: 69%" role="progressbar" aria-valuenow="69" aria-valuemin="0" aria-valuemax="100" aria-label="Claude usage"></div>
+          </div>
+          <span class="source-pct">69%</span>
+        </div>
+        <div class="source-item">
+          <span class="source-name">Cursor</span>
+          <div class="source-bar-track">
+            <div class="source-bar-fill source-bar-fill--secondary" style="width: 31%" role="progressbar" aria-valuenow="31" aria-valuemin="0" aria-valuemax="100" aria-label="Cursor usage"></div>
+          </div>
+          <span class="source-pct">31%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cell 7: Project — BudgetWise (2-wide) -->
+    <a href="./project.html" class="bento-cell cell-project" aria-label="View BudgetWise project">
+      <div class="project-header">
+        <h2 class="project-title">BudgetWise</h2>
+        <svg class="project-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+      </div>
+      <p class="project-narrative">Personal finance app with recurring transaction detection, Plaid integration, and spending insights dashboard.</p>
+      <div class="project-meta">
+        <span class="project-meta-item"><strong>8</strong> sessions</span>
+        <span class="project-meta-item"><strong>42.5</strong>h</span>
+        <span class="project-meta-item"><strong>4,460</strong> LOC</span>
+      </div>
+      <div class="project-skills">
+        <span class="skill-chip">TypeScript</span>
+        <span class="skill-chip">React</span>
+        <span class="skill-chip">Next.js</span>
+        <span class="skill-chip">Prisma</span>
+        <span class="skill-chip">PostgreSQL</span>
+        <span class="skill-chip">Stripe API</span>
+      </div>
+      <div class="project-source-bar" aria-label="Source: Claude 62.5%, Cursor 37.5%">
+        <div class="project-source-segment" style="width: 62.5%; background: var(--accent);"></div>
+        <div class="project-source-segment" style="width: 37.5%; background: var(--accent-light);"></div>
+      </div>
+    </a>
+
+    <!-- Cell 8: Project — ShellHook (2-wide) -->
+    <a href="./project.html" class="bento-cell cell-project" aria-label="View ShellHook project">
+      <div class="project-header">
+        <h2 class="project-title">ShellHook</h2>
+        <svg class="project-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+      </div>
+      <p class="project-narrative">Rust CLI tool for managing git hooks with TOML configuration and automatic symlinking.</p>
+      <div class="project-meta">
+        <span class="project-meta-item"><strong>7</strong> sessions</span>
+        <span class="project-meta-item"><strong>32</strong>h</span>
+        <span class="project-meta-item"><strong>3,580</strong> LOC</span>
+      </div>
+      <div class="project-skills">
+        <span class="skill-chip">Rust</span>
+        <span class="skill-chip">CLI design</span>
+        <span class="skill-chip">TOML parsing</span>
+        <span class="skill-chip">Git internals</span>
+        <span class="skill-chip">Shell scripting</span>
+      </div>
+      <div class="project-source-bar" aria-label="Source: Claude 85%, Cursor 15%">
+        <div class="project-source-segment" style="width: 85%; background: var(--accent);"></div>
+        <div class="project-source-segment" style="width: 15%; background: var(--accent-light);"></div>
+      </div>
+    </a>
+
+    <!-- Cell 9: Project — PixelBoard (2-wide) -->
+    <a href="./project.html" class="bento-cell cell-project" aria-label="View PixelBoard project">
+      <div class="project-header">
+        <h2 class="project-title">PixelBoard</h2>
+        <svg class="project-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+      </div>
+      <p class="project-narrative">Real-time collaborative drawing canvas with CRDT-based state sync and pressure-sensitive input.</p>
+      <div class="project-meta">
+        <span class="project-meta-item"><strong>5</strong> sessions</span>
+        <span class="project-meta-item"><strong>28</strong>h</span>
+        <span class="project-meta-item"><strong>2,940</strong> LOC</span>
+      </div>
+      <div class="project-skills">
+        <span class="skill-chip">TypeScript</span>
+        <span class="skill-chip">WebSocket</span>
+        <span class="skill-chip">Canvas API</span>
+        <span class="skill-chip">Redis</span>
+        <span class="skill-chip">Express</span>
+        <span class="skill-chip">CRDT</span>
+      </div>
+      <div class="project-source-bar" aria-label="Source: Claude 60%, Cursor 40%">
+        <div class="project-source-segment" style="width: 60%; background: var(--accent);"></div>
+        <div class="project-source-segment" style="width: 40%; background: var(--accent-light);"></div>
+      </div>
+    </a>
+
+    <a href="./project.html" class="bento-cell cell-project" aria-label="View DevLog project">
+      <div class="project-header">
+        <h2 class="project-title">DevLog</h2>
+        <svg class="project-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+      </div>
+      <p class="project-narrative">CLI tool for capturing development decisions and context as structured markdown notes.</p>
+      <div class="project-meta">
+        <span class="project-meta-item"><strong>5</strong> sessions</span>
+        <span class="project-meta-item"><strong>18</strong>h</span>
+        <span class="project-meta-item"><strong>1,840</strong> LOC</span>
+      </div>
+      <div class="project-skills">
+        <span class="skill-chip">TypeScript</span>
+        <span class="skill-chip">Node.js</span>
+        <span class="skill-chip">CLI design</span>
+        <span class="skill-chip">Markdown</span>
+        <span class="skill-chip">SQLite</span>
+</div>
+      <div class="project-source-bar" aria-label="Source: Claude 80%, Cursor 20%">
+        <div class="project-source-segment" style="width: 80%; background: var(--accent);"></div>
+        <div class="project-source-segment" style="width: 20%; background: var(--accent-light);"></div>
+      </div>
+    </a>
+
+    <a href="./project.html" class="bento-cell cell-project" aria-label="View Snapgrid project">
+      <div class="project-header">
+        <h2 class="project-title">Snapgrid</h2>
+        <svg class="project-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+      </div>
+      <p class="project-narrative">Responsive image gallery with masonry layout, lazy loading, and keyboard navigation.</p>
+      <div class="project-meta">
+        <span class="project-meta-item"><strong>4</strong> sessions</span>
+        <span class="project-meta-item"><strong>14</strong>h</span>
+        <span class="project-meta-item"><strong>1,520</strong> LOC</span>
+      </div>
+      <div class="project-skills">
+        <span class="skill-chip">TypeScript</span>
+        <span class="skill-chip">React</span>
+        <span class="skill-chip">CSS Grid</span>
+        <span class="skill-chip">IntersectionObserver</span>
+        <span class="skill-chip">Accessibility</span>
+</div>
+      <div class="project-source-bar" aria-label="Source: Claude 50%, Cursor 50%">
+        <div class="project-source-segment" style="width: 50%; background: var(--accent);"></div>
+        <div class="project-source-segment" style="width: 50%; background: var(--accent-light);"></div>
+      </div>
+    </a>
+
+    <a href="./project.html" class="bento-cell cell-project" aria-label="View Terracotta project">
+      <div class="project-header">
+        <h2 class="project-title">Terracotta</h2>
+        <svg class="project-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+      </div>
+      <p class="project-narrative">Design token pipeline that generates CSS custom properties, Tailwind config, and Figma tokens from a single YAML source.</p>
+      <div class="project-meta">
+        <span class="project-meta-item"><strong>6</strong> sessions</span>
+        <span class="project-meta-item"><strong>22</strong>h</span>
+        <span class="project-meta-item"><strong>2,680</strong> LOC</span>
+      </div>
+      <div class="project-skills">
+        <span class="skill-chip">TypeScript</span>
+        <span class="skill-chip">Node.js</span>
+        <span class="skill-chip">YAML</span>
+        <span class="skill-chip">CSS</span>
+        <span class="skill-chip">Figma API</span>
+</div>
+      <div class="project-source-bar" aria-label="Source: Claude 70%, Cursor 30%">
+        <div class="project-source-segment" style="width: 70%; background: var(--accent);"></div>
+        <div class="project-source-segment" style="width: 30%; background: var(--accent-light);"></div>
+      </div>
+    </a>
+
+    <!-- Cell 10: All Skills (2-wide) -->
+    <section class="bento-cell cell-all-skills" aria-label="All skills across projects">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Skills
+      </h2>
+      <div class="all-skills-grid">
+        <span class="skill-chip">TypeScript</span>
+        <span class="skill-chip">React</span>
+        <span class="skill-chip">Next.js</span>
+        <span class="skill-chip">Rust</span>
+        <span class="skill-chip">Prisma</span>
+        <span class="skill-chip">PostgreSQL</span>
+        <span class="skill-chip">Stripe API</span>
+        <span class="skill-chip">CLI design</span>
+        <span class="skill-chip">TOML parsing</span>
+        <span class="skill-chip">Git internals</span>
+        <span class="skill-chip">Shell scripting</span>
+        <span class="skill-chip">WebSocket</span>
+        <span class="skill-chip">Canvas API</span>
+        <span class="skill-chip">Redis</span>
+        <span class="skill-chip">Express</span>
+        <span class="skill-chip">CRDT</span>
+      </div>
+    </section>
+
+    <!-- Cell 11: Activity Heatmap (2-wide) -->
+    <section class="bento-cell cell-activity" aria-label="Activity over time">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Activity
+      </h2>
+      <div class="heatmap" role="img" aria-label="Activity heatmap showing session density over 8 weeks">
+        <!-- Row 1 -->
+        <div class="heatmap-cell" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l2" aria-hidden="true"></div>
+        <div class="heatmap-cell" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l1" aria-hidden="true"></div>
+        <div class="heatmap-cell" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l3" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l1" aria-hidden="true"></div>
+        <div class="heatmap-cell" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l4" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l2" aria-hidden="true"></div>
+        <div class="heatmap-cell" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l1" aria-hidden="true"></div>
+        <!-- Row 2 -->
+        <div class="heatmap-cell heatmap-cell--l1" aria-hidden="true"></div>
+        <div class="heatmap-cell" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l4" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l2" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l1" aria-hidden="true"></div>
+        <div class="heatmap-cell" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l3" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l2" aria-hidden="true"></div>
+        <div class="heatmap-cell" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l1" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l4" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l2" aria-hidden="true"></div>
+        <!-- Row 3 -->
+        <div class="heatmap-cell" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l1" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l2" aria-hidden="true"></div>
+        <div class="heatmap-cell" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l3" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l1" aria-hidden="true"></div>
+        <div class="heatmap-cell" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l2" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l1" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l3" aria-hidden="true"></div>
+        <div class="heatmap-cell" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l1" aria-hidden="true"></div>
+        <!-- Row 4 -->
+        <div class="heatmap-cell heatmap-cell--l2" aria-hidden="true"></div>
+        <div class="heatmap-cell" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l1" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l4" aria-hidden="true"></div>
+        <div class="heatmap-cell" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l2" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l1" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l3" aria-hidden="true"></div>
+        <div class="heatmap-cell" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l2" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l4" aria-hidden="true"></div>
+        <div class="heatmap-cell heatmap-cell--l1" aria-hidden="true"></div>
+      </div>
+      <div class="heatmap-legend">
+        <span class="heatmap-legend-label">Less</span>
+        <span class="heatmap-legend-cell" style="background: var(--border-light);" aria-hidden="true"></span>
+        <span class="heatmap-legend-cell heatmap-cell--l1" aria-hidden="true"></span>
+        <span class="heatmap-legend-cell heatmap-cell--l2" aria-hidden="true"></span>
+        <span class="heatmap-legend-cell heatmap-cell--l3" aria-hidden="true"></span>
+        <span class="heatmap-legend-cell heatmap-cell--l4" aria-hidden="true"></span>
+        <span class="heatmap-legend-label">More</span>
+      </div>
+    </section>
+
+    <!-- Cell 12: Recent Sessions (4-wide) -->
+    <section class="bento-cell cell-recent" aria-label="Recent sessions">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Recent Sessions
+      </h2>
+      <div class="recent-list" role="table" aria-label="Recent sessions list">
+        <div class="recent-row" role="row">
+          <span class="recent-title" role="cell">Mobile responsive + 2FA</span>
+          <span class="recent-project" role="cell">BudgetWise</span>
+          <span class="recent-date" role="cell">Mar 26</span>
+          <span class="recent-duration" role="cell">50m</span>
+        </div>
+        <div class="recent-row" role="row">
+          <span class="recent-title" role="cell">Spending insights dashboard</span>
+          <span class="recent-project" role="cell">BudgetWise</span>
+          <span class="recent-date" role="cell">Mar 22</span>
+          <span class="recent-duration" role="cell">78m</span>
+        </div>
+        <div class="recent-row" role="row">
+          <span class="recent-title" role="cell">Full-text search tsvector</span>
+          <span class="recent-project" role="cell">BudgetWise</span>
+          <span class="recent-date" role="cell">Mar 18</span>
+          <span class="recent-duration" role="cell">62m</span>
+        </div>
+        <div class="recent-row" role="row">
+          <span class="recent-title" role="cell">CSV import pipeline</span>
+          <span class="recent-project" role="cell">BudgetWise</span>
+          <span class="recent-date" role="cell">Mar 14</span>
+          <span class="recent-duration" role="cell">45m</span>
+        </div>
+        <div class="recent-row" role="row">
+          <span class="recent-title" role="cell">Stripe integration</span>
+          <span class="recent-project" role="cell">BudgetWise</span>
+          <span class="recent-date" role="cell">Mar 10</span>
+          <span class="recent-duration" role="cell">55m</span>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <p>Built with <a href="./project.html">heyi.am</a></p>
+  </div>
+</footer>
+
+<script>
+  // Stat counter animation
+  (function() {
+    var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var stats = document.querySelectorAll('.stat-number[data-target]');
+
+    stats.forEach(function(el) {
+      var target = parseInt(el.getAttribute('data-target'), 10);
+      var format = el.getAttribute('data-format');
+      var unit = el.querySelector('.stat-unit');
+
+      if (reducedMotion) {
+        el.textContent = format === 'comma' ? target.toLocaleString() : String(target);
+        if (unit) el.appendChild(unit);
+        return;
+      }
+
+      var duration = 1200;
+      var start = null;
+
+      function step(timestamp) {
+        if (!start) start = timestamp;
+        var progress = Math.min((timestamp - start) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        var current = Math.round(eased * target);
+        el.textContent = format === 'comma' ? current.toLocaleString() : String(current);
+        if (unit) el.appendChild(unit);
+        if (progress < 1) requestAnimationFrame(step);
+      }
+
+      // Use IntersectionObserver to start when visible
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            requestAnimationFrame(step);
+            observer.unobserve(el);
+          }
+        });
+      }, { threshold: 0.5 });
+      observer.observe(el);
+    });
+  })();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alex Chen -- Showcase Portfolio -- heyi.am</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Design Tokens ── */
+    :root {
+      --bg:             #09090b;
+      --surface:        #111113;
+      --surface-2:      #18181b;
+      --surface-3:      #27272a;
+
+      --border:         rgba(255,255,255,0.06);
+      --border-accent:  rgba(129,140,248,0.2);
+
+      --text:           #fafafa;
+      --text-2:         rgba(255,255,255,0.65);
+      --text-3:         rgba(255,255,255,0.4);
+      --text-muted:     rgba(255,255,255,0.25);
+
+      --accent:         #818cf8;
+      --accent-dim:     rgba(129,140,248,0.1);
+      --accent-mid:     rgba(129,140,248,0.15);
+      --accent-glow:    rgba(129,140,248,0.06);
+
+      --green:          #4ade80;
+      --green-dim:      rgba(74,222,128,0.1);
+
+      --font-display:   'Space Grotesk', sans-serif;
+      --font-body:      'Inter', sans-serif;
+      --font-mono:      'JetBrains Mono', monospace;
+
+      --radius-sm:      4px;
+      --radius-md:      8px;
+      --radius-lg:      12px;
+
+      --ease-out:       cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out:    cubic-bezier(0.65, 0, 0.35, 1);
+      --dur-micro:      150ms;
+      --dur-section:    600ms;
+      --dur-chart:      800ms;
+      --dur-slow:       1200ms;
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ── Skip to content ── */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      z-index: 1000;
+      padding: 0.5rem 1rem;
+      background: var(--accent);
+      color: var(--bg);
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+    }
+    .skip-link:focus {
+      top: 1rem;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Scroll Animation System ── */
+    .sc-section {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity var(--dur-section) var(--ease-out),
+                  transform var(--dur-section) var(--ease-out);
+    }
+    .sc-section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .sc-stagger {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 400ms var(--ease-out), transform 400ms var(--ease-out);
+    }
+    .sc-section.visible .sc-stagger {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .sc-section.visible .sc-stagger:nth-child(1) { transition-delay: 0ms; }
+    .sc-section.visible .sc-stagger:nth-child(2) { transition-delay: 80ms; }
+    .sc-section.visible .sc-stagger:nth-child(3) { transition-delay: 160ms; }
+    .sc-section.visible .sc-stagger:nth-child(4) { transition-delay: 240ms; }
+    .sc-section.visible .sc-stagger:nth-child(5) { transition-delay: 320ms; }
+    .sc-section.visible .sc-stagger:nth-child(6) { transition-delay: 400ms; }
+
+    /* ── Cinematic Hero ── */
+    .hero {
+      position: relative;
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: -40px;
+      background-image: url('../assets/headshot-man-2-400.jpg');
+      background-size: cover;
+      background-position: center 10%;
+      filter: blur(40px) brightness(0.25) saturate(0.5);
+      z-index: 0;
+    }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(9,9,11,0.4) 0%,
+        rgba(9,9,11,0.2) 40%,
+        rgba(9,9,11,0.6) 100%
+      );
+      z-index: 0;
+    }
+    .hero-nav {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1.5rem 2rem;
+    }
+    .hero-nav__brand {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.02em;
+    }
+    .hero-nav__links {
+      display: flex;
+      gap: 1rem;
+      margin-inline-start: auto;
+    }
+    .hero-nav__link {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.4);
+      text-decoration: none;
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--radius-sm);
+      transition: color var(--dur-micro) ease, background var(--dur-micro) ease;
+    }
+    .hero-nav__link:hover {
+      color: var(--text);
+      background: rgba(255,255,255,0.08);
+      text-decoration: none;
+    }
+    .hero-nav__link--active {
+      color: var(--accent);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+      max-width: 800px;
+      padding: 0 1.5rem;
+      width: 100%;
+    }
+    .hero-photo-sharp {
+      width: 160px;
+      height: 200px;
+      border-radius: var(--radius-lg);
+      object-fit: cover;
+      object-position: center 10%;
+      border: 2px solid rgba(129,140,248,0.3);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      flex-shrink: 0;
+    }
+    .hero-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .hero-name {
+      font-family: var(--font-display);
+      font-size: 2.75rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .hero-location {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-3);
+      letter-spacing: 0.02em;
+    }
+    .hero-bio {
+      font-family: var(--font-body);
+      font-size: 1rem;
+      color: var(--text-2);
+      line-height: 1.6;
+      max-width: 460px;
+    }
+
+    /* ── Hero Contact Row ── */
+    .hero-contact {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      max-width: 800px;
+      width: 100%;
+      padding: 0 1.5rem;
+      margin-top: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+    .hero-contact a,
+    .hero-contact span {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--text-3);
+      text-decoration: none;
+      transition: color var(--dur-micro) ease;
+    }
+    .hero-contact a:hover {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .hero-contact a:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+      border-radius: var(--radius-sm);
+    }
+    .hero-contact svg {
+      flex-shrink: 0;
+    }
+    .hero-resume-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-3);
+      text-decoration: none;
+      transition: border-color var(--dur-micro) ease, color var(--dur-micro) ease;
+      background: transparent;
+    }
+    .hero-resume-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* ── Hero Stats ── */
+    .hero-stats {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      max-width: 800px;
+      width: 100%;
+      padding: 0 1.5rem;
+      margin-top: 2rem;
+    }
+    .hero-stat {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+    .hero-stat__value {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .hero-stat__label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 400;
+      color: var(--text-3);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 0.375rem;
+    }
+
+    /* ── Leverage stat — full width below the grid ── */
+    .hero-stat--leverage {
+      grid-column: 1 / -1;
+      text-align: left;
+      padding: 1.25rem 1.5rem;
+    }
+    .leverage-header {
+      display: flex;
+      align-items: baseline;
+      gap: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .leverage-header .leverage-stat {
+      display: flex;
+      flex-direction: column;
+    }
+    .leverage-header .leverage-val {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+    .leverage-header .leverage-lbl {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-3);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 0.25rem;
+    }
+    .leverage-header .leverage-agents .leverage-val {
+      color: var(--accent);
+    }
+    .leverage-header .leverage-multiplier .leverage-val {
+      color: var(--accent);
+    }
+    .leverage-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+      display: flex;
+    }
+    .leverage-bar__human {
+      height: 100%;
+      background: rgba(255,255,255,0.25);
+      border-radius: 3px 0 0 3px;
+      width: 19%;
+    }
+    .leverage-bar__agent {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 0 3px 3px 0;
+      width: 81%;
+    }
+
+    /* ── Hero entrance animations ── */
+    .hero-fade {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 800ms var(--ease-out), transform 800ms var(--ease-out);
+    }
+    .hero.visible .hero-fade {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .hero.visible .hero-fade:nth-child(1) { transition-delay: 200ms; }
+    .hero.visible .hero-fade:nth-child(2) { transition-delay: 400ms; }
+    .hero.visible .hero-fade:nth-child(3) { transition-delay: 600ms; }
+
+    /* ── Page Container (below hero) ── */
+    .page {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 4rem;
+    }
+
+    /* ── Section Spacing ── */
+    .section-gap { margin-bottom: 3rem; }
+    .section-gap-sm { margin-bottom: 2rem; }
+    .section-gap-lg { margin-bottom: 4rem; }
+
+    /* ── Section Header ── */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 1rem;
+    }
+    .section-header h2 {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 400;
+      color: var(--text-3);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── Project Cards ── */
+    .project-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      transition: border-color var(--dur-micro) ease, background var(--dur-micro) ease;
+      display: block;
+      color: inherit;
+      text-decoration: none;
+    }
+    .project-card:hover {
+      border-color: var(--border-accent);
+      background: var(--surface-2);
+      text-decoration: none;
+    }
+    .project-card:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .project-card__accent-bar {
+      height: 2px;
+      border-radius: 1px;
+      margin-bottom: 1rem;
+    }
+    .project-card__title {
+      font-family: var(--font-display);
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .project-card__narrative {
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      color: var(--text-2);
+      line-height: 1.5;
+      margin-bottom: 1rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .project-card__meta {
+      display: flex;
+      gap: 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-3);
+      margin-bottom: 1rem;
+    }
+    .project-card__skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+    }
+    .skill-chip {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+      background: var(--accent-dim);
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-sm);
+      padding: 0.25rem 0.5rem;
+      white-space: nowrap;
+    }
+    .project-card__source {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+    .source-bar-track {
+      flex: 1;
+      height: 3px;
+      background: var(--surface-3);
+      border-radius: 2px;
+      overflow: hidden;
+      display: flex;
+    }
+    .source-bar-segment {
+      height: 100%;
+    }
+    .source-labels {
+      display: flex;
+      gap: 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-3);
+    }
+
+    /* ── Skills Section ── */
+    .skills-section-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+    }
+    .skills-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .skill-chip--lg {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+      background: var(--accent-dim);
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-sm);
+      padding: 0.375rem 0.75rem;
+      white-space: nowrap;
+    }
+
+    /* ── Source Summary ── */
+    .source-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    .source-summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+    }
+    .source-summary-card h3 {
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+    }
+    .source-summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.375rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .source-summary-row:last-child { border-bottom: none; }
+    .source-summary-row__name {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-2);
+    }
+    .source-summary-row__value {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-3);
+    }
+    .source-bar-track--summary {
+      flex: 1;
+      height: 4px;
+      background: var(--surface-3);
+      border-radius: 2px;
+      margin: 0 0.75rem;
+      overflow: hidden;
+    }
+    .source-bar-fill--summary {
+      height: 100%;
+      border-radius: 2px;
+      background: var(--accent);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform var(--dur-chart) var(--ease-out) 200ms;
+    }
+    .sc-section.visible .source-bar-fill--summary {
+      transform: scaleX(1);
+    }
+
+    /* ── Activity Heatmap ── */
+    .activity-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+    }
+    .activity-grid {
+      display: flex;
+      gap: 3px;
+      flex-wrap: wrap;
+    }
+    .activity-cell {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      background: var(--surface-2);
+      transition: background var(--dur-micro) ease;
+    }
+    .activity-cell--1 { background: rgba(129,140,248,0.15); }
+    .activity-cell--2 { background: rgba(129,140,248,0.3); }
+    .activity-cell--3 { background: rgba(129,140,248,0.5); }
+    .activity-cell--4 { background: rgba(129,140,248,0.75); }
+    .activity-legend {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-3);
+    }
+    .activity-legend__cell {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding: 2rem 0 1rem;
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+    .footer span {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-3);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hero {
+        min-height: 100vh;
+        min-height: 100dvh;
+      }
+      .hero-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 1.5rem;
+      }
+      .hero-photo-sharp {
+        width: 120px;
+        height: 150px;
+      }
+      .hero-info {
+        align-items: center;
+      }
+      .hero-name {
+        font-size: 2rem;
+      }
+      .hero-bio {
+        font-size: 0.9375rem;
+        text-align: center;
+      }
+      .hero-contact {
+        justify-content: center;
+      }
+      .hero-stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .hero-stat__value {
+        font-size: 1.5rem;
+      }
+      .hero-nav {
+        padding: 1rem 1.25rem;
+      }
+      .source-summary { grid-template-columns: 1fr; }
+      .project-card__meta { flex-wrap: wrap; }
+    }
+
+    /* ── Reduced Motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      .sc-section,
+      .sc-stagger,
+      .hero-fade,
+      .source-bar-fill--summary {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+      }
+    }
+  
+    /* ── Clickable cards ── */
+    a.project-card, a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.project-card:hover, a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
+  <!-- ══════════════════════════════════════════════════════════
+       CINEMATIC HERO SECTION
+       ══════════════════════════════════════════════════════════ -->
+  <section class="hero" id="hero-section" aria-label="Portfolio header">
+    <div class="hero-bg" aria-hidden="true"></div>
+    <div class="hero-overlay" aria-hidden="true"></div>
+
+    <!-- Nav overlays the hero -->
+    <nav class="hero-nav" aria-label="Main navigation">
+      <span class="hero-nav__brand">heyi.am</span>
+      <div class="hero-nav__links">
+        <a href="./portfolio.html" class="hero-nav__link hero-nav__link--active" aria-current="page">Portfolio</a>
+        <a href="./project.html" class="hero-nav__link">Project</a>
+        <a href="./session.html" class="hero-nav__link">Session</a>
+      </div>
+    </nav>
+
+    <!-- Sharp photo + identity -->
+    <div class="hero-content hero-fade">
+      <img
+        src="../assets/headshot-man-2-400.jpg"
+        alt="Alex Chen"
+        class="hero-photo-sharp"
+        width="160"
+        height="200"
+      >
+      <div class="hero-info">
+        <h1 class="hero-name">Alex Chen</h1>
+        <div class="hero-location">San Francisco, CA</div>
+        <p class="hero-bio">Full-stack engineer building tools for personal finance and real-time collaboration. I care about schema design, performance, and building things that feel right. Previously at Stripe and a YC startup.</p>
+      </div>
+    </div>
+
+    <!-- Contact links -->
+    <div class="hero-contact hero-fade">
+      <a href="mailto:alex@heyiam.com"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg> alex@heyiam.com</a>
+      <a href="https://linkedin.com/in/alexchendev" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg> LinkedIn</a>
+      <a href="https://github.com/interactivecats/heyi.am" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg> GitHub</a>
+      <a href="https://x.com/alexchendev" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> @alexchendev</a>
+      <a href="https://alexchen.dev" target="_blank" rel="noopener">alexchen.dev</a>
+      <a href="./project.html" class="hero-resume-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg> Resume (PDF)</a>
+    </div>
+
+    <!-- Stats counters -->
+    <div class="hero-stats hero-fade" id="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat__value" data-count-to="3" data-format="int">0</div>
+        <div class="hero-stat__label">Projects</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat__value" data-count-to="28" data-format="int">0</div>
+        <div class="hero-stat__label">Sessions</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat__value" data-count-to="18400" data-format="comma">0</div>
+        <div class="hero-stat__label">Lines Changed</div>
+      </div>
+      <div class="hero-stat hero-stat--leverage">
+        <div class="leverage-header">
+          <div class="leverage-stat">
+            <span class="leverage-val">24h</span>
+            <span class="leverage-lbl">You</span>
+          </div>
+          <div class="leverage-stat leverage-agents">
+            <span class="leverage-val">100h</span>
+            <span class="leverage-lbl">Agents</span>
+          </div>
+          <div class="leverage-stat leverage-multiplier">
+            <span class="leverage-val">4.2x</span>
+            <span class="leverage-lbl">Multiplier</span>
+          </div>
+        </div>
+        <div class="leverage-bar">
+          <div class="leverage-bar__human"></div>
+          <div class="leverage-bar__agent"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       BELOW-THE-FOLD CONTENT
+       ══════════════════════════════════════════════════════════ -->
+  <div class="page">
+    <main id="main-content">
+
+      <!-- ══════════════════════════════════════════════════════════
+           SECTION: PROJECT CARDS
+           ══════════════════════════════════════════════════════════ -->
+      <section class="sc-section section-gap-lg" aria-label="Projects">
+        <div class="section-header">
+          <h2>Projects</h2>
+          <span class="section-label">3 projects</span>
+        </div>
+
+        <!-- BudgetWise -->
+        <a href="./project.html" class="project-card sc-stagger" style="display: block; margin-bottom: 0.75rem;">
+          <div class="project-card__accent-bar" style="background: var(--accent);"></div>
+          <div class="project-card__title">BudgetWise</div>
+          <p class="project-card__narrative">Personal finance app with recurring transaction detection, Plaid integration, and spending insights dashboard.</p>
+          <div class="project-card__meta">
+            <span>8 sessions</span>
+            <span>42.5h</span>
+            <span>4,460 LOC</span>
+          </div>
+          <div class="project-card__skills">
+            <span class="skill-chip">TypeScript</span>
+            <span class="skill-chip">React</span>
+            <span class="skill-chip">Next.js</span>
+            <span class="skill-chip">Prisma</span>
+            <span class="skill-chip">PostgreSQL</span>
+            <span class="skill-chip">Stripe API</span>
+          </div>
+          <div class="project-card__source">
+            <div class="source-bar-track">
+              <div class="source-bar-segment" style="width: 62.5%; background: var(--accent);"></div>
+              <div class="source-bar-segment" style="width: 37.5%; background: var(--green);"></div>
+            </div>
+            <div class="source-labels">
+              <span>Claude 62.5%</span>
+              <span>Cursor 37.5%</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- ShellHook -->
+        <div class="project-card sc-stagger" style="margin-bottom: 0.75rem;">
+          <div class="project-card__accent-bar" style="background: #a78bfa;"></div>
+          <div class="project-card__title">ShellHook</div>
+          <p class="project-card__narrative">Rust CLI tool for managing git hooks with TOML configuration and automatic symlinking.</p>
+          <div class="project-card__meta">
+            <span>7 sessions</span>
+            <span>32h</span>
+            <span>3,580 LOC</span>
+          </div>
+          <div class="project-card__skills">
+            <span class="skill-chip">Rust</span>
+            <span class="skill-chip">CLI design</span>
+            <span class="skill-chip">TOML parsing</span>
+            <span class="skill-chip">Git internals</span>
+            <span class="skill-chip">Shell scripting</span>
+          </div>
+          <div class="project-card__source">
+            <div class="source-bar-track">
+              <div class="source-bar-segment" style="width: 85%; background: var(--accent);"></div>
+              <div class="source-bar-segment" style="width: 15%; background: var(--green);"></div>
+            </div>
+            <div class="source-labels">
+              <span>Claude 85%</span>
+              <span>Cursor 15%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PixelBoard -->
+        <div class="project-card sc-stagger">
+          <div class="project-card__accent-bar" style="background: #c084fc;"></div>
+          <div class="project-card__title">PixelBoard</div>
+          <p class="project-card__narrative">Real-time collaborative drawing canvas with CRDT-based state sync and pressure-sensitive input.</p>
+          <div class="project-card__meta">
+            <span>5 sessions</span>
+            <span>28h</span>
+            <span>2,940 LOC</span>
+          </div>
+          <div class="project-card__skills">
+            <span class="skill-chip">TypeScript</span>
+            <span class="skill-chip">WebSocket</span>
+            <span class="skill-chip">Canvas API</span>
+            <span class="skill-chip">Redis</span>
+            <span class="skill-chip">Express</span>
+            <span class="skill-chip">CRDT</span>
+          </div>
+          <div class="project-card__source">
+            <div class="source-bar-track">
+              <div class="source-bar-segment" style="width: 60%; background: var(--accent);"></div>
+              <div class="source-bar-segment" style="width: 40%; background: var(--green);"></div>
+            </div>
+            <div class="source-labels">
+              <span>Claude 60%</span>
+              <span>Cursor 40%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- DevLog -->
+        <div class="project-card sc-stagger">
+          <div class="project-card__accent-bar" style="background: #c084fc;"></div>
+          <div class="project-card__title">DevLog</div>
+          <p class="project-card__narrative">CLI tool for capturing development decisions and context as structured markdown notes.</p>
+          <div class="project-card__meta">
+            <span>5 sessions</span>
+            <span>18h</span>
+            <span>1,840 LOC</span>
+          </div>
+          <div class="project-card__skills">
+            <span class="skill-chip">TypeScript</span>
+            <span class="skill-chip">Node.js</span>
+            <span class="skill-chip">CLI design</span>
+            <span class="skill-chip">Markdown</span>
+            <span class="skill-chip">SQLite</span>
+</div>
+          <div class="project-card__source">
+            <div class="source-bar-track">
+              <div class="source-bar-segment" style="width: 80%; background: var(--accent);"></div>
+              <div class="source-bar-segment" style="width: 20%; background: var(--green);"></div>
+            </div>
+            <div class="source-labels">
+              <span>Claude 80%</span>
+              <span>Cursor 20%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Snapgrid -->
+        <div class="project-card sc-stagger">
+          <div class="project-card__accent-bar" style="background: #c084fc;"></div>
+          <div class="project-card__title">Snapgrid</div>
+          <p class="project-card__narrative">Responsive image gallery with masonry layout, lazy loading, and keyboard navigation.</p>
+          <div class="project-card__meta">
+            <span>4 sessions</span>
+            <span>14h</span>
+            <span>1,520 LOC</span>
+          </div>
+          <div class="project-card__skills">
+            <span class="skill-chip">TypeScript</span>
+            <span class="skill-chip">React</span>
+            <span class="skill-chip">CSS Grid</span>
+            <span class="skill-chip">IntersectionObserver</span>
+            <span class="skill-chip">Accessibility</span>
+</div>
+          <div class="project-card__source">
+            <div class="source-bar-track">
+              <div class="source-bar-segment" style="width: 50%; background: var(--accent);"></div>
+              <div class="source-bar-segment" style="width: 50%; background: var(--green);"></div>
+            </div>
+            <div class="source-labels">
+              <span>Claude 50%</span>
+              <span>Cursor 50%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terracotta -->
+        <div class="project-card sc-stagger">
+          <div class="project-card__accent-bar" style="background: #c084fc;"></div>
+          <div class="project-card__title">Terracotta</div>
+          <p class="project-card__narrative">Design token pipeline that generates CSS custom properties, Tailwind config, and Figma tokens from a single YAML source.</p>
+          <div class="project-card__meta">
+            <span>6 sessions</span>
+            <span>22h</span>
+            <span>2,680 LOC</span>
+          </div>
+          <div class="project-card__skills">
+            <span class="skill-chip">TypeScript</span>
+            <span class="skill-chip">Node.js</span>
+            <span class="skill-chip">YAML</span>
+            <span class="skill-chip">CSS</span>
+            <span class="skill-chip">Figma API</span>
+</div>
+          <div class="project-card__source">
+            <div class="source-bar-track">
+              <div class="source-bar-segment" style="width: 70%; background: var(--accent);"></div>
+              <div class="source-bar-segment" style="width: 30%; background: var(--green);"></div>
+            </div>
+            <div class="source-labels">
+              <span>Claude 70%</span>
+              <span>Cursor 30%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════
+           SECTION: AGGREGATE SKILLS
+           ══════════════════════════════════════════════════════════ -->
+      <section class="sc-section section-gap-lg" aria-label="All skills">
+        <div class="section-header">
+          <h2>Skills Across Projects</h2>
+          <span class="section-label">16 technologies</span>
+        </div>
+        <div class="skills-section-card">
+          <div class="skills-grid">
+            <span class="skill-chip--lg sc-stagger">TypeScript</span>
+            <span class="skill-chip--lg sc-stagger">React</span>
+            <span class="skill-chip--lg sc-stagger">Next.js</span>
+            <span class="skill-chip--lg sc-stagger">Prisma</span>
+            <span class="skill-chip--lg sc-stagger">PostgreSQL</span>
+            <span class="skill-chip--lg sc-stagger">Stripe API</span>
+            <span class="skill-chip--lg sc-stagger">Rust</span>
+            <span class="skill-chip--lg sc-stagger">CLI design</span>
+            <span class="skill-chip--lg sc-stagger">TOML parsing</span>
+            <span class="skill-chip--lg sc-stagger">Git internals</span>
+            <span class="skill-chip--lg sc-stagger">Shell scripting</span>
+            <span class="skill-chip--lg sc-stagger">WebSocket</span>
+            <span class="skill-chip--lg sc-stagger">Canvas API</span>
+            <span class="skill-chip--lg sc-stagger">Redis</span>
+            <span class="skill-chip--lg sc-stagger">Express</span>
+            <span class="skill-chip--lg sc-stagger">CRDT</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════
+           SECTION: SOURCE SUMMARY + ACTIVITY
+           ══════════════════════════════════════════════════════════ -->
+      <section class="sc-section section-gap-lg" aria-label="Source breakdown and activity">
+        <div class="source-summary">
+          <div class="source-summary-card sc-stagger">
+            <h3>Source Breakdown</h3>
+            <div class="source-summary-row">
+              <span class="source-summary-row__name">Claude Code</span>
+              <div class="source-bar-track--summary">
+                <div class="source-bar-fill--summary" style="width: 69%;"></div>
+              </div>
+              <span class="source-summary-row__value">69%</span>
+            </div>
+            <div class="source-summary-row">
+              <span class="source-summary-row__name">Cursor</span>
+              <div class="source-bar-track--summary">
+                <div class="source-bar-fill--summary" style="width: 31%;"></div>
+              </div>
+              <span class="source-summary-row__value">31%</span>
+            </div>
+            <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
+              <div class="source-summary-row">
+                <span class="source-summary-row__name">Total sessions</span>
+                <span class="source-summary-row__value">28</span>
+              </div>
+              <div class="source-summary-row">
+                <span class="source-summary-row__name">Sessions w/ agents</span>
+                <span class="source-summary-row__value">20</span>
+              </div>
+            </div>
+          </div>
+          <div class="activity-card sc-stagger">
+            <h3 style="font-family: var(--font-display); font-size: 0.875rem; font-weight: 600; color: var(--text); margin-bottom: 0.75rem;">Activity</h3>
+            <div class="activity-grid" aria-label="Activity heatmap showing session frequency over 12 weeks">
+              <!-- Week 1 -->
+              <div class="activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell--1 activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell"></div>
+              <!-- Week 2 -->
+              <div class="activity-cell"></div>
+              <div class="activity-cell--2 activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell--1 activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell"></div>
+              <!-- Week 3 -->
+              <div class="activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell--3 activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell--1 activity-cell"></div>
+              <div class="activity-cell"></div>
+              <!-- Week 4 -->
+              <div class="activity-cell--2 activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell--1 activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell"></div>
+              <!-- Week 5 -->
+              <div class="activity-cell"></div>
+              <div class="activity-cell--4 activity-cell"></div>
+              <div class="activity-cell--2 activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell--1 activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell"></div>
+              <!-- Week 6 -->
+              <div class="activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell--3 activity-cell"></div>
+              <div class="activity-cell--1 activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell--2 activity-cell"></div>
+              <!-- Week 7 -->
+              <div class="activity-cell--1 activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell--2 activity-cell"></div>
+              <div class="activity-cell--3 activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell"></div>
+              <!-- Week 8 -->
+              <div class="activity-cell"></div>
+              <div class="activity-cell--1 activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell"></div>
+              <div class="activity-cell--4 activity-cell"></div>
+              <div class="activity-cell--2 activity-cell"></div>
+              <div class="activity-cell"></div>
+            </div>
+            <div class="activity-legend">
+              <span>Less</span>
+              <div class="activity-legend__cell" style="background: var(--surface-2);"></div>
+              <div class="activity-legend__cell" style="background: rgba(129,140,248,0.15);"></div>
+              <div class="activity-legend__cell" style="background: rgba(129,140,248,0.3);"></div>
+              <div class="activity-legend__cell" style="background: rgba(129,140,248,0.5);"></div>
+              <div class="activity-legend__cell" style="background: rgba(129,140,248,0.75);"></div>
+              <span>More</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ══════════════════════════════════════════════════════════
+         FOOTER
+         ══════════════════════════════════════════════════════════ -->
+    <footer class="footer">
+      <span>built with <a href="./project.html">heyi.am</a></span>
+    </footer>
+  </div>
+
+  <script>
+  (function() {
+    'use strict';
+
+    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // ── Hero entrance animation ──
+    var hero = document.getElementById('hero-section');
+    if (hero) {
+      if (prefersReduced) {
+        hero.classList.add('visible');
+      } else {
+        // Small delay so the browser paints the initial state first
+        requestAnimationFrame(function() {
+          requestAnimationFrame(function() {
+            hero.classList.add('visible');
+          });
+        });
+      }
+    }
+
+    // ── IntersectionObserver for scroll animations ──
+    var sections = document.querySelectorAll('.sc-section');
+    if (sections.length) {
+      if (prefersReduced) {
+        sections.forEach(function(s) { s.classList.add('visible'); });
+      } else {
+        var observer = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+        sections.forEach(function(s) { observer.observe(s); });
+      }
+    }
+
+    // ── Animated Counters ──
+    var COUNTER_DURATION = 1200;
+    var heroStats = document.getElementById('hero-stats');
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    function formatCounter(value, format) {
+      switch (format) {
+        case 'int':
+          return String(Math.round(value));
+        case 'comma':
+          return Math.round(value).toLocaleString('en-US');
+        default:
+          return String(Math.round(value));
+      }
+    }
+
+    function animateCounters(container) {
+      var values = container.querySelectorAll('[data-count-to]');
+      values.forEach(function(el, index) {
+        var target = parseFloat(el.getAttribute('data-count-to'));
+        var format = el.getAttribute('data-format');
+        var delay = index * 100;
+
+        setTimeout(function() {
+          var startTime = null;
+          function tick(timestamp) {
+            if (!startTime) startTime = timestamp;
+            var elapsed = timestamp - startTime;
+            var progress = Math.min(elapsed / COUNTER_DURATION, 1);
+            var easedProgress = easeOutCubic(progress);
+            var currentValue = target * easedProgress;
+            el.textContent = formatCounter(currentValue, format);
+            if (progress < 1) {
+              requestAnimationFrame(tick);
+            }
+          }
+          requestAnimationFrame(tick);
+        }, delay);
+      });
+    }
+
+    if (heroStats) {
+      if (prefersReduced) {
+        // Show final values immediately
+        heroStats.querySelectorAll('[data-count-to]').forEach(function(el) {
+          var target = parseFloat(el.getAttribute('data-count-to'));
+          var format = el.getAttribute('data-format');
+          el.textContent = formatCounter(target, format);
+        });
+      } else {
+        var counterObserver = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              animateCounters(heroStats);
+              counterObserver.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+        counterObserver.observe(heroStats);
+      }
+    }
+  })();
+  </script>
+</body>
+</html>

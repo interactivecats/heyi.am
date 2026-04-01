@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parallax Template — @alex</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════
+   RESET
+   ══════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ══════════════════════════════════════════════════════
+   DESIGN TOKENS
+   ══════════════════════════════════════════════════════ */
+:root {
+  --px-bg:             #0a0a0f;
+  --px-surface:        rgba(255, 255, 255, 0.04);
+  --px-surface-hover:  rgba(255, 255, 255, 0.08);
+  --px-surface-solid:  #12121a;
+  --px-accent:         #ffffff;
+  --px-accent-blue:    #60a5fa;
+  --px-accent-dim:     rgba(96, 165, 250, 0.15);
+  --px-text:           #f1f5f9;
+  --px-text-secondary: rgba(255, 255, 255, 0.5);
+  --px-text-tertiary:  rgba(255, 255, 255, 0.3);
+  --px-border:         rgba(255, 255, 255, 0.08);
+
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
+  --radius:    8px;
+  --radius-lg: 12px;
+}
+
+/* ══════════════════════════════════════════════════════
+   SKIP LINK
+   ══════════════════════════════════════════════════════ */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--px-accent);
+  color: var(--px-bg);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  z-index: 1000;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 1rem;
+  outline: 2px solid var(--px-accent-blue);
+  outline-offset: 2px;
+}
+
+/* ══════════════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════════════ */
+html {
+  scroll-behavior: smooth;
+}
+body {
+  font-family: var(--font-body);
+  background: var(--px-bg);
+  color: var(--px-text);
+  line-height: 1.6;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ══════════════════════════════════════════════════════
+   FOCUS VISIBLE
+   ══════════════════════════════════════════════════════ */
+:focus-visible {
+  outline: 2px solid var(--px-accent-blue);
+  outline-offset: 2px;
+}
+
+/* ══════════════════════════════════════════════════════
+   BACKGROUND SHAPES — decorative, fixed, subtle drift + rotate
+   ══════════════════════════════════════════════════════ */
+.bg-shapes {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.bg-shape {
+  position: absolute;
+  opacity: 0.03;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  will-change: transform;
+  animation: shapeDrift 20s ease-in-out infinite alternate;
+}
+.bg-shape--1 { width: 400px; height: 400px; top: 10%; left: -5%; animation-duration: 25s; }
+.bg-shape--2 { width: 200px; height: 200px; top: 30%; right: 10%; animation-duration: 18s; animation-delay: -3s; }
+.bg-shape--3 { width: 600px; height: 600px; top: 60%; left: 50%; transform: translateX(-50%); animation-duration: 30s; animation-delay: -7s; }
+.bg-shape--4 { width: 150px; height: 150px; top: 15%; right: 30%; border-radius: 0; animation-duration: 22s; animation-delay: -5s; animation-name: shapeDriftRotate; }
+.bg-shape--5 { width: 80px;  height: 80px;  top: 75%; left: 15%; animation-duration: 16s; animation-delay: -2s; }
+.bg-shape--6 { width: 300px; height: 300px; top: 85%; right: -5%; animation-duration: 28s; animation-delay: -10s; }
+.bg-shape--7 { width: 1px;   height: 200px; top: 40%; left: 25%; border-radius: 0; opacity: 0.05; animation-duration: 20s; animation-delay: -4s; }
+.bg-shape--8 { width: 1px;   height: 300px; top: 20%; right: 20%; border-radius: 0; opacity: 0.04; animation-duration: 24s; animation-delay: -8s; }
+
+@keyframes shapeDrift {
+  0%   { transform: translate(0, 0); }
+  100% { transform: translate(20px, -15px); }
+}
+@keyframes shapeDriftRotate {
+  0%   { transform: translate(0, 0) rotate(45deg); }
+  100% { transform: translate(15px, -20px) rotate(75deg); }
+}
+
+/* ══════════════════════════════════════════════════════
+   FIXED PHOTO LAYER
+   The headshot is the anchor. Everything scrolls around it.
+   ══════════════════════════════════════════════════════ */
+.photo-layer {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  pointer-events: none;
+}
+.photo-fixed {
+  width: 500px;
+  height: auto;
+  object-fit: cover;
+  object-position: 55% 0%;
+  filter: contrast(1.08) brightness(1.08);
+  mask-image: radial-gradient(ellipse 75% 85% at 50% 30%, black 40%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse 75% 85% at 50% 30%, black 40%, transparent 85%);
+  will-change: transform, opacity;
+  animation: photoEntrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+             photoFloat 6s ease-in-out 1.5s infinite;
+}
+@keyframes photoEntrance {
+  0% { opacity: 0; transform: scale(1.15) translateY(40px); filter: contrast(1.08) brightness(0.6) blur(8px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); filter: contrast(1.08) brightness(1.08) blur(0); }
+}
+@keyframes photoFloat {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50%      { transform: scale(1) translateY(-8px); }
+}
+/* Screen-reader-only image description (the fixed photo is aria-hidden) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ══════════════════════════════════════════════════════
+   CONTENT LAYER — scrolls OVER the fixed photo
+   ══════════════════════════════════════════════════════ */
+.content-layer {
+  position: relative;
+  z-index: 2;
+}
+
+/* ══════════════════════════════════════════════════════
+   NAVIGATION
+   ══════════════════════════════════════════════════════ */
+.site-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 1.25rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(to bottom, rgba(10, 10, 15, 0.95), rgba(10, 10, 15, 0.6) 60%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.site-nav__brand {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--px-text);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+.site-nav__links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+.site-nav__link {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  color: var(--px-text-secondary);
+  text-decoration: none;
+  transition: color 0.2s;
+  letter-spacing: 0.02em;
+}
+.site-nav__link:hover,
+.site-nav__link[aria-current="page"] {
+  color: var(--px-accent);
+}
+
+/* ══════════════════════════════════════════════════════
+   HERO SECTION — Phase 1 (0-100vh)
+   Text overlays the fixed photo, then scrolls away.
+   Gradient overlay ensures text readability over photo.
+   ══════════════════════════════════════════════════════ */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6rem 2rem 4rem;
+  text-align: center;
+}
+/* Gradient overlay for text contrast against the photo */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 10%, rgba(10, 10, 15, 0.6) 40%, rgba(10, 10, 15, 0.92) 65%, var(--px-bg) 90%);
+  z-index: 0;
+  pointer-events: none;
+}
+.hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Hero fly-in animations ── */
+.hero__name {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 7vw, 5rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  color: var(--px-accent);
+  text-shadow: 0 2px 40px rgba(0, 0, 0, 0.8), 0 0 80px rgba(10, 10, 15, 0.6);
+  margin-block-start: 8rem;
+  opacity: 0;
+  transform: translateX(-100px);
+  animation: flyInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
+}
+.hero__location {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--px-text-secondary);
+  margin-block-start: 0.75rem;
+  text-shadow: 0 1px 20px rgba(0, 0, 0, 0.8);
+  opacity: 0;
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards;
+}
+.hero__bio {
+  max-width: 560px;
+  font-size: 1.0625rem;
+  color: var(--px-text-secondary);
+  line-height: 1.7;
+  margin-block-start: 2rem;
+  text-shadow: 0 1px 20px rgba(0, 0, 0, 0.8);
+  opacity: 0;
+  transform: translateX(100px);
+  animation: flyInRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.8s forwards;
+}
+.hero__contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin-block-start: 2rem;
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 1.0s forwards;
+}
+.hero__contact-link {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--px-accent-blue);
+  text-decoration: none;
+  transition: color 0.2s;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.6);
+}
+.hero__contact-link:hover {
+  color: var(--px-accent);
+}
+.hero__contact-sep {
+  color: var(--px-text-tertiary);
+}
+
+/* ── Hero entrance keyframes ── */
+@keyframes flyInLeft {
+  0%   { opacity: 0; transform: translateX(-100px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+@keyframes flyInRight {
+  0%   { opacity: 0; transform: translateX(100px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeIn {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes fadeUp {
+  0%   { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleUp {
+  0%   { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ══════════════════════════════════════════════════════
+   STATS ROW — staggered scale-up entrance
+   ══════════════════════════════════════════════════════ */
+.stats-row {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-block-start: 3rem;
+}
+.stat-card {
+  background: rgba(10, 10, 15, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--px-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.75rem;
+  text-align: center;
+  min-width: 100px;
+  transition: border-color 0.3s, background 0.3s;
+  opacity: 0;
+  transform: scale(0.8);
+  animation: scaleUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.stat-card:nth-child(1) { animation-delay: 1.2s; }
+.stat-card:nth-child(2) { animation-delay: 1.3s; }
+.stat-card:nth-child(3) { animation-delay: 1.4s; }
+.stat-card:nth-child(4) { animation-delay: 1.5s; }
+.stat-card:hover {
+  background: rgba(10, 10, 15, 0.85);
+  border-color: rgba(96, 165, 250, 0.2);
+}
+.stat-card__value {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--px-accent);
+  line-height: 1.2;
+}
+.stat-card__label {
+  font-size: 0.75rem;
+  color: var(--px-text-secondary);
+  margin-block-start: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ── Leverage stat ── */
+.stat-card--leverage {
+  grid-column: span 2;
+}
+.stats-bar__item--leverage {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+}
+.stats-bar__item--leverage .lev-group {
+  text-align: center;
+}
+.stats-bar__item--leverage .lev-val {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--px-accent);
+}
+.stats-bar__item--leverage .lev-val--big {
+  font-size: 2.5rem;
+  color: var(--px-accent-blue);
+}
+.stats-bar__item--leverage .lev-lbl {
+  font-size: 0.6875rem;
+  color: var(--px-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-block-start: 0.125rem;
+}
+
+/* ══════════════════════════════════════════════════════
+   SPACER — Phase 2 transition zone (100vh-200vh)
+   Photo fades/shrinks behind this transparent spacer
+   ══════════════════════════════════════════════════════ */
+.transition-spacer {
+  position: relative;
+  height: 60vh;
+  /* The photo shows through this gap */
+}
+
+/* ══════════════════════════════════════════════════════
+   SECTION SHARED
+   ══════════════════════════════════════════════════════ */
+.section {
+  position: relative;
+  max-width: 1000px;
+  margin-inline: auto;
+  padding: 5rem 2rem;
+}
+.section__title {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--px-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-block-end: 2.5rem;
+}
+
+/* Opaque backing so sections obscure the fixed photo */
+.section--opaque {
+  background: var(--px-bg);
+}
+.about-section--opaque {
+  background: var(--px-bg);
+}
+.footer--opaque {
+  background: var(--px-bg);
+}
+
+/* ══════════════════════════════════════════════════════
+   SKILLS OVERVIEW (between hero and projects)
+   ══════════════════════════════════════════════════════ */
+.skills-overview {
+  max-width: 1000px;
+  margin-inline: auto;
+  padding: 3rem 2rem 1rem;
+  background: var(--px-bg);
+}
+.skills-overview__title {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--px-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-block-end: 1.5rem;
+}
+.skills-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+.skills-cloud__chip {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--px-accent-blue);
+  background: var(--px-accent-dim);
+  padding: 0.375rem 0.875rem;
+  border-radius: 9999px;
+  letter-spacing: 0.02em;
+  transition: background 0.2s, color 0.2s;
+}
+.skills-cloud__chip:hover {
+  background: rgba(96, 165, 250, 0.25);
+  color: var(--px-accent);
+}
+
+/* ══════════════════════════════════════════════════════
+   PROJECT CARDS
+   ══════════════════════════════════════════════════════ */
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+.project-card {
+  background: var(--px-surface);
+  border: 1px solid var(--px-border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s,
+              background 0.3s;
+}
+.project-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(96, 165, 250, 0.3);
+  background: var(--px-surface-hover);
+}
+.project-card__name {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: var(--px-accent);
+  margin-block-end: 0.75rem;
+  letter-spacing: -0.02em;
+}
+.project-card__narrative {
+  font-size: 0.9375rem;
+  color: var(--px-text-secondary);
+  line-height: 1.6;
+  margin-block-end: 1.25rem;
+}
+.project-card__skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block-end: 1.25rem;
+}
+.skill-chip {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--px-accent-blue);
+  background: var(--px-accent-dim);
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  letter-spacing: 0.02em;
+}
+.project-card__stats {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--px-text-tertiary);
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.project-card__source {
+  display: flex;
+  gap: 0.75rem;
+  margin-block-start: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--px-text-tertiary);
+}
+.source-bar {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--px-border);
+  flex: 1;
+  margin-block-start: 1rem;
+  overflow: hidden;
+}
+.source-bar__fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--px-accent-blue);
+}
+
+/* ══════════════════════════════════════════════════════
+   TIMELINE — work history visualization
+   ══════════════════════════════════════════════════════ */
+.timeline {
+  position: relative;
+  padding-inline-start: 2rem;
+  margin-block-start: 2rem;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0.5rem;
+  width: 1px;
+  background: var(--px-border);
+}
+.timeline__item {
+  position: relative;
+  padding-block-end: 2rem;
+}
+.timeline__item:last-child {
+  padding-block-end: 0;
+}
+.timeline__dot {
+  position: absolute;
+  left: -1.625rem;
+  top: 0.35rem;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--px-accent-blue);
+  box-shadow: 0 0 0 3px var(--px-bg), 0 0 0 4px var(--px-border);
+}
+.timeline__date {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--px-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-block-end: 0.25rem;
+}
+.timeline__title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--px-text);
+  margin-block-end: 0.25rem;
+}
+.timeline__desc {
+  font-size: 0.875rem;
+  color: var(--px-text-secondary);
+  line-height: 1.5;
+}
+.timeline__meta {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--px-text-tertiary);
+  margin-block-start: 0.375rem;
+}
+
+/* ══════════════════════════════════════════════════════
+   ABOUT / CONNECT SECTION
+   ══════════════════════════════════════════════════════ */
+.about-section {
+  position: relative;
+  max-width: 1000px;
+  margin-inline: auto;
+  padding: 3rem 2rem 5rem;
+}
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+.about-card {
+  background: var(--px-surface);
+  border: 1px solid var(--px-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+}
+.about-card__title {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--px-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-block-end: 1rem;
+}
+.about-card__link {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--px-accent-blue);
+  text-decoration: none;
+  padding: 0.375rem 0;
+  transition: color 0.2s;
+}
+.about-card__link:hover {
+  color: var(--px-accent);
+}
+.about-card__link + .about-card__link {
+  border-top: 1px solid var(--px-border);
+}
+.resume-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--px-bg);
+  background: var(--px-accent);
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius);
+  text-decoration: none;
+  margin-block-start: 1rem;
+  transition: opacity 0.2s;
+}
+.resume-btn:hover {
+  opacity: 0.85;
+}
+
+/* ══════════════════════════════════════════════════════
+   APPROACH SECTION — methodology cards
+   ══════════════════════════════════════════════════════ */
+.approach-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-block-start: 2rem;
+}
+.approach-card {
+  background: var(--px-surface);
+  border: 1px solid var(--px-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  transition: border-color 0.3s;
+}
+.approach-card:hover {
+  border-color: rgba(96, 165, 250, 0.2);
+}
+.approach-card__icon {
+  font-size: 1.5rem;
+  margin-block-end: 0.75rem;
+  line-height: 1;
+}
+.approach-card__title {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--px-accent);
+  margin-block-end: 0.5rem;
+}
+.approach-card__desc {
+  font-size: 0.8125rem;
+  color: var(--px-text-secondary);
+  line-height: 1.5;
+}
+
+/* ══════════════════════════════════════════════════════
+   FOOTER
+   ══════════════════════════════════════════════════════ */
+.site-footer {
+  position: relative;
+  text-align: center;
+  padding: 3rem 2rem;
+  font-size: 0.75rem;
+  color: var(--px-text-tertiary);
+  border-top: 1px solid var(--px-border);
+  max-width: 1000px;
+  margin-inline: auto;
+}
+.site-footer a {
+  color: var(--px-accent-blue);
+  text-decoration: none;
+}
+
+/* ══════════════════════════════════════════════════════
+   SCROLL REVEAL
+   ══════════════════════════════════════════════════════ */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+/* Stagger children when parent reveals */
+.reveal-stagger > .reveal:nth-child(1) { transition-delay: 0ms; }
+.reveal-stagger > .reveal:nth-child(2) { transition-delay: 80ms; }
+.reveal-stagger > .reveal:nth-child(3) { transition-delay: 160ms; }
+.reveal-stagger > .reveal:nth-child(4) { transition-delay: 240ms; }
+.reveal-stagger > .reveal:nth-child(5) { transition-delay: 320ms; }
+.reveal-stagger > .reveal:nth-child(6) { transition-delay: 400ms; }
+
+/* ══════════════════════════════════════════════════════
+   REDUCED MOTION — disables ALL animations and parallax
+   ══════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-fill-mode: forwards !important;
+  }
+  .photo-layer {
+    position: relative !important;
+    height: auto;
+    padding: 6rem 2rem 2rem;
+  }
+  .photo-fixed {
+    position: static !important;
+    transform: none !important;
+    opacity: 1 !important;
+    width: 280px;
+    mask-image: radial-gradient(ellipse 60% 70% at 55% 35%, black 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 60% 70% at 55% 35%, black 30%, transparent 75%);
+    animation: none !important;
+  }
+  .hero__name,
+  .hero__location,
+  .hero__bio,
+  .hero__contact {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+  .stat-card {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+  [data-float] {
+    transform: none !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+  .bg-shapes { display: none; }
+  .bg-shape { animation: none !important; }
+  .transition-spacer { height: 2rem; }
+  html { scroll-behavior: auto; }
+}
+
+/* ══════════════════════════════════════════════════════
+   MOBILE (<768px) — No fixed photo, no parallax
+   ══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .photo-layer {
+    position: relative;
+    height: auto;
+    padding: 5rem 2rem 1rem;
+  }
+  .photo-fixed {
+    width: 240px;
+    position: static;
+    transform: none !important;
+    opacity: 1 !important;
+    animation: photoEntrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .transition-spacer {
+    height: 0;
+  }
+  .hero {
+    min-height: auto;
+    padding: 2rem 1.5rem 3rem;
+  }
+  .hero__name {
+    font-size: 2.25rem;
+    margin-block-start: 0;
+  }
+  .stats-row {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .stat-card {
+    min-width: 80px;
+    padding: 1rem 1.25rem;
+  }
+  .stat-card__value {
+    font-size: 1.375rem;
+  }
+  .project-grid {
+    grid-template-columns: 1fr;
+  }
+  .about-grid {
+    grid-template-columns: 1fr;
+  }
+  .approach-grid {
+    grid-template-columns: 1fr;
+  }
+  .site-nav {
+    padding: 1rem;
+  }
+  .site-nav__links {
+    gap: 1rem;
+  }
+  [data-float] {
+    transform: none !important;
+  }
+  .bg-shapes { display: none; }
+  .section--opaque,
+  .about-section--opaque,
+  .footer--opaque,
+  .skills-overview {
+    background: transparent;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   TABLET (769px - 1024px)
+   ══════════════════════════════════════════════════════ */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .photo-fixed {
+    width: 320px;
+  }
+  .approach-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+    /* ── Clickable cards ── */
+    a.project-card, a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.project-card:hover, a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<!-- ════════════════════════════════════════════════════
+     BACKGROUND SHAPES — decorative depth layer
+     ════════════════════════════════════════════════════ -->
+<div class="bg-shapes" aria-hidden="true">
+  <div class="bg-shape bg-shape--1" data-bg-drift="0.15"></div>
+  <div class="bg-shape bg-shape--2" data-bg-drift="0.25"></div>
+  <div class="bg-shape bg-shape--3" data-bg-drift="0.1"></div>
+  <div class="bg-shape bg-shape--4" data-bg-drift="0.2"></div>
+  <div class="bg-shape bg-shape--5" data-bg-drift="0.35"></div>
+  <div class="bg-shape bg-shape--6" data-bg-drift="0.12"></div>
+  <div class="bg-shape bg-shape--7" data-bg-drift="0.3"></div>
+  <div class="bg-shape bg-shape--8" data-bg-drift="0.18"></div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     FIXED PHOTO LAYER — the visual anchor
+     Stays centered while content scrolls over it
+     ════════════════════════════════════════════════════ -->
+<div class="photo-layer" aria-hidden="true">
+  <img
+    class="photo-fixed"
+    src="../assets/headshot-man-2-400.jpg"
+    alt=""
+    width="420"
+    height="420"
+  >
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     NAVIGATION
+     ════════════════════════════════════════════════════ -->
+<nav class="site-nav" aria-label="Main navigation">
+  <a href="./portfolio.html" class="site-nav__brand">@alex</a>
+  <ul class="site-nav__links">
+    <li><a href="./portfolio.html" class="site-nav__link" aria-current="page">Portfolio</a></li>
+    <li><a href="./project.html" class="site-nav__link">Project</a></li>
+    <li><a href="./session.html" class="site-nav__link">Session</a></li>
+  </ul>
+</nav>
+
+<!-- ════════════════════════════════════════════════════
+     SCROLLABLE CONTENT LAYER
+     Everything here is z-index: 2, above the photo
+     ════════════════════════════════════════════════════ -->
+<div class="content-layer">
+  <main id="main-content">
+
+    <!-- ── PHASE 1: Hero (0-100vh) ──
+         Text over the fixed photo, scrolls away normally -->
+    <section class="hero" aria-label="Introduction">
+      <!-- Accessible alt text for the photo (the visible one is aria-hidden) -->
+      <span class="sr-only">Alex Chen, profile photo</span>
+
+      <h1 class="hero__name">Alex Chen</h1>
+      <p class="hero__location">San Francisco, CA</p>
+
+      <p class="hero__bio">
+        Full-stack engineer building tools for personal finance and real-time
+        collaboration. I care about schema design, performance, and building
+        things that feel right. Previously at Stripe and a YC startup. I use
+        AI as a force multiplier &mdash; my sessions show the thinking, not
+        just the output.
+      </p>
+
+      <div class="hero__contact">
+        <a href="mailto:alex@alexchen.dev" class="hero__contact-link">alex@alexchen.dev</a>
+        <span class="hero__contact-sep" aria-hidden="true">&middot;</span>
+        <a href="https://linkedin.com/in/alexchendev" class="hero__contact-link" rel="noopener noreferrer" target="_blank">LinkedIn</a>
+        <span class="hero__contact-sep" aria-hidden="true">&middot;</span>
+        <a href="https://github.com/alexchen" class="hero__contact-link" rel="noopener noreferrer" target="_blank">GitHub</a>
+        <span class="hero__contact-sep" aria-hidden="true">&middot;</span>
+        <a href="https://alexchen.dev" class="hero__contact-link" rel="noopener noreferrer" target="_blank">alexchen.dev</a>
+        <span class="hero__contact-sep" aria-hidden="true">&middot;</span>
+        <a href="https://x.com/alexchendev" class="hero__contact-link" rel="noopener noreferrer" target="_blank">@alexchendev</a>
+      </div>
+
+      <div class="stats-row" aria-label="Aggregate statistics">
+        <div class="stat-card">
+          <div class="stat-card__value" data-counter="3">0</div>
+          <div class="stat-card__label">Projects</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__value" data-counter="28">0</div>
+          <div class="stat-card__label">Sessions</div>
+        </div>
+        <div class="stat-card stat-card--leverage">
+          <div class="stats-bar__item--leverage">
+            <div class="lev-group">
+              <div class="lev-val" data-counter="24" data-suffix="h">0h</div>
+              <div class="lev-lbl">You</div>
+            </div>
+            <div class="lev-group">
+              <div class="lev-val" data-counter="100" data-suffix="h">0h</div>
+              <div class="lev-lbl">Agents</div>
+            </div>
+            <div class="lev-group">
+              <div class="lev-val lev-val--big" data-counter="4.2" data-suffix="x" data-decimal="true">0x</div>
+              <div class="lev-lbl">Multiplier</div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__value" data-counter="18400" data-format="compact">0</div>
+          <div class="stat-card__label">Lines of code</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PHASE 2: Transition spacer (100vh-~160vh) ──
+         Photo shows through this gap, fading as you scroll -->
+    <div class="transition-spacer" aria-hidden="true"></div>
+
+    <!-- ── PHASE 3: Content sections (opaque bg covers photo) ── -->
+
+    <!-- Skills Overview -->
+    <div class="skills-overview section--opaque">
+      <h2 class="skills-overview__title reveal">Technology Expertise</h2>
+      <div class="skills-cloud reveal-stagger">
+        <span class="skills-cloud__chip reveal">TypeScript</span>
+        <span class="skills-cloud__chip reveal">React</span>
+        <span class="skills-cloud__chip reveal">Next.js</span>
+        <span class="skills-cloud__chip reveal">Rust</span>
+        <span class="skills-cloud__chip reveal">PostgreSQL</span>
+        <span class="skills-cloud__chip reveal">Prisma</span>
+        <span class="skills-cloud__chip reveal">WebSocket</span>
+        <span class="skills-cloud__chip reveal">Canvas API</span>
+        <span class="skills-cloud__chip reveal">Redis</span>
+        <span class="skills-cloud__chip reveal">Express</span>
+        <span class="skills-cloud__chip reveal">CRDT</span>
+        <span class="skills-cloud__chip reveal">Stripe API</span>
+        <span class="skills-cloud__chip reveal">Plaid API</span>
+        <span class="skills-cloud__chip reveal">CLI design</span>
+        <span class="skills-cloud__chip reveal">TOML parsing</span>
+        <span class="skills-cloud__chip reveal">Git internals</span>
+        <span class="skills-cloud__chip reveal">Shell scripting</span>
+        <span class="skills-cloud__chip reveal">Tailwind CSS</span>
+        <span class="skills-cloud__chip reveal">Playwright</span>
+        <span class="skills-cloud__chip reveal">Chart.js</span>
+      </div>
+    </div>
+
+    <!-- Projects Section -->
+    <section class="section section--opaque" aria-label="Projects">
+      <h2 class="section__title reveal">Projects</h2>
+
+      <div class="project-grid reveal-stagger">
+
+        <!-- BudgetWise -->
+        <a href="./project.html" class="project-card reveal" data-float="0.08">
+          <h3 class="project-card__name">BudgetWise</h3>
+          <p class="project-card__narrative">
+            Personal finance app with recurring transaction detection, Plaid
+            integration, and spending insights dashboard.
+          </p>
+          <div class="project-card__skills">
+            <span class="skill-chip">TypeScript</span>
+            <span class="skill-chip">React</span>
+            <span class="skill-chip">Next.js</span>
+            <span class="skill-chip">Prisma</span>
+            <span class="skill-chip">PostgreSQL</span>
+            <span class="skill-chip">Stripe API</span>
+          </div>
+          <div class="project-card__stats">
+            <span>8 sessions</span>
+            <span>42.5h</span>
+            <span>4,460 LOC</span>
+          </div>
+          <div class="source-bar" aria-label="Source mix: Claude 62.5%, Cursor 37.5%">
+            <div class="source-bar__fill" style="width: 62.5%"></div>
+          </div>
+          <div class="project-card__source">
+            <span>Claude 62.5%</span>
+            <span>Cursor 37.5%</span>
+          </div>
+        </a>
+
+        <!-- ShellHook -->
+        <a href="./project.html" class="project-card reveal" data-float="0.12">
+          <h3 class="project-card__name">ShellHook</h3>
+          <p class="project-card__narrative">
+            Rust CLI tool for managing git hooks with TOML configuration and
+            automatic symlinking.
+          </p>
+          <div class="project-card__skills">
+            <span class="skill-chip">Rust</span>
+            <span class="skill-chip">CLI design</span>
+            <span class="skill-chip">TOML parsing</span>
+            <span class="skill-chip">Git internals</span>
+            <span class="skill-chip">Shell scripting</span>
+          </div>
+          <div class="project-card__stats">
+            <span>7 sessions</span>
+            <span>32h</span>
+            <span>3,580 LOC</span>
+          </div>
+          <div class="source-bar" aria-label="Source mix: Claude 85%, Cursor 15%">
+            <div class="source-bar__fill" style="width: 85%"></div>
+          </div>
+          <div class="project-card__source">
+            <span>Claude 85%</span>
+            <span>Cursor 15%</span>
+          </div>
+        </a>
+
+        <!-- PixelBoard -->
+        <a href="./project.html" class="project-card reveal" data-float="0.1">
+          <h3 class="project-card__name">PixelBoard</h3>
+          <p class="project-card__narrative">
+            Real-time collaborative drawing canvas with CRDT-based state sync
+            and pressure-sensitive input.
+          </p>
+          <div class="project-card__skills">
+            <span class="skill-chip">TypeScript</span>
+            <span class="skill-chip">WebSocket</span>
+            <span class="skill-chip">Canvas API</span>
+            <span class="skill-chip">Redis</span>
+            <span class="skill-chip">Express</span>
+            <span class="skill-chip">CRDT</span>
+          </div>
+          <div class="project-card__stats">
+            <span>5 sessions</span>
+            <span>28h</span>
+            <span>2,940 LOC</span>
+          </div>
+          <div class="source-bar" aria-label="Source mix: Claude 60%, Cursor 40%">
+            <div class="source-bar__fill" style="width: 60%"></div>
+          </div>
+          <div class="project-card__source">
+            <span>Claude 60%</span>
+            <span>Cursor 40%</span>
+          </div>
+        </a>
+
+        <!-- DevLog -->
+        <a href="./project.html" class="project-card reveal" data-float="0.1">
+          <h3 class="project-card__name">DevLog</h3>
+          <p class="project-card__narrative">
+            Real-time collaborative drawing canvas with CRDT-based state sync
+            and pressure-sensitive input.
+          </p>
+          <div class="project-card__skills">
+            <span class="skill-chip">TypeScript</span>
+            <span class="skill-chip">Node.js</span>
+            <span class="skill-chip">CLI design</span>
+            <span class="skill-chip">Markdown</span>
+            <span class="skill-chip">SQLite</span>
+</div>
+          <div class="project-card__stats">
+            <span>5 sessions</span>
+            <span>18h</span>
+            <span>1,840 LOC</span>
+          </div>
+          <div class="source-bar" aria-label="Source mix: Claude 80%, Cursor 20%">
+            <div class="source-bar__fill" style="width: 80%"></div>
+          </div>
+          <div class="project-card__source">
+            <span>Claude 80%</span>
+            <span>Cursor 20%</span>
+          </div>
+        </a>
+
+        <!-- Snapgrid -->
+        <a href="./project.html" class="project-card reveal" data-float="0.1">
+          <h3 class="project-card__name">Snapgrid</h3>
+          <p class="project-card__narrative">
+            Real-time collaborative drawing canvas with CRDT-based state sync
+            and pressure-sensitive input.
+          </p>
+          <div class="project-card__skills">
+            <span class="skill-chip">TypeScript</span>
+            <span class="skill-chip">React</span>
+            <span class="skill-chip">CSS Grid</span>
+            <span class="skill-chip">IntersectionObserver</span>
+            <span class="skill-chip">Accessibility</span>
+</div>
+          <div class="project-card__stats">
+            <span>4 sessions</span>
+            <span>14h</span>
+            <span>1,520 LOC</span>
+          </div>
+          <div class="source-bar" aria-label="Source mix: Claude 50%, Cursor 50%">
+            <div class="source-bar__fill" style="width: 50%"></div>
+          </div>
+          <div class="project-card__source">
+            <span>Claude 50%</span>
+            <span>Cursor 50%</span>
+          </div>
+        </a>
+
+        <!-- Terracotta -->
+        <a href="./project.html" class="project-card reveal" data-float="0.1">
+          <h3 class="project-card__name">Terracotta</h3>
+          <p class="project-card__narrative">
+            Real-time collaborative drawing canvas with CRDT-based state sync
+            and pressure-sensitive input.
+          </p>
+          <div class="project-card__skills">
+            <span class="skill-chip">TypeScript</span>
+            <span class="skill-chip">Node.js</span>
+            <span class="skill-chip">YAML</span>
+            <span class="skill-chip">CSS</span>
+            <span class="skill-chip">Figma API</span>
+</div>
+          <div class="project-card__stats">
+            <span>6 sessions</span>
+            <span>22h</span>
+            <span>2,680 LOC</span>
+          </div>
+          <div class="source-bar" aria-label="Source mix: Claude 70%, Cursor 30%">
+            <div class="source-bar__fill" style="width: 70%"></div>
+          </div>
+          <div class="project-card__source">
+            <span>Claude 70%</span>
+            <span>Cursor 30%</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- Approach Section -->
+    <section class="section section--opaque" aria-label="Development approach">
+      <h2 class="section__title reveal">How I Work</h2>
+
+      <div class="approach-grid reveal-stagger">
+        <div class="approach-card reveal" data-float="0.06">
+          <div class="approach-card__icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <h3 class="approach-card__title">Schema First</h3>
+          <p class="approach-card__desc">
+            Data models before UI. If the schema is right, the rest follows.
+            Discriminated unions over nullable columns.
+          </p>
+        </div>
+
+        <div class="approach-card reveal" data-float="0.09">
+          <div class="approach-card__icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+          </div>
+          <h3 class="approach-card__title">Performance Budget</h3>
+          <p class="approach-card__desc">
+            Every query has a target. Partial indexes, connection pooling,
+            and profiling before shipping.
+          </p>
+        </div>
+
+        <div class="approach-card reveal" data-float="0.07">
+          <div class="approach-card__icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
+          </div>
+          <h3 class="approach-card__title">AI as Multiplier</h3>
+          <p class="approach-card__desc">
+            AI handles boilerplate so I can focus on architecture decisions.
+            Every session is recorded to show the real process.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Work Timeline Section -->
+    <section class="section section--opaque" aria-label="Work timeline">
+      <h2 class="section__title reveal">Recent Activity</h2>
+
+      <div class="timeline reveal">
+        <div class="timeline__item" data-float="0.05">
+          <div class="timeline__dot"></div>
+          <div class="timeline__date">Mar 26, 2026</div>
+          <div class="timeline__title">Mobile responsive + 2FA</div>
+          <div class="timeline__desc">Added responsive breakpoints and two-factor authentication to BudgetWise.</div>
+          <div class="timeline__meta">BudgetWise &middot; 50m &middot; 340 LOC</div>
+        </div>
+
+        <div class="timeline__item" data-float="0.08">
+          <div class="timeline__dot"></div>
+          <div class="timeline__date">Mar 22, 2026</div>
+          <div class="timeline__title">Spending insights dashboard</div>
+          <div class="timeline__desc">Built the Chart.js visualization layer for category breakdowns and trend analysis.</div>
+          <div class="timeline__meta">BudgetWise &middot; 78m &middot; 720 LOC</div>
+        </div>
+
+        <div class="timeline__item" data-float="0.06">
+          <div class="timeline__dot"></div>
+          <div class="timeline__date">Mar 18, 2026</div>
+          <div class="timeline__title">Full-text search tsvector</div>
+          <div class="timeline__desc">Implemented PostgreSQL full-text search with tsvector indexing for transaction lookup.</div>
+          <div class="timeline__meta">BudgetWise &middot; 62m &middot; 510 LOC</div>
+        </div>
+
+        <div class="timeline__item" data-float="0.07">
+          <div class="timeline__dot"></div>
+          <div class="timeline__date">Mar 14, 2026</div>
+          <div class="timeline__title">CSV import pipeline</div>
+          <div class="timeline__desc">Built a streaming CSV parser with validation, deduplication, and batch insert.</div>
+          <div class="timeline__meta">BudgetWise &middot; 45m &middot; 380 LOC</div>
+        </div>
+
+        <div class="timeline__item" data-float="0.05">
+          <div class="timeline__dot"></div>
+          <div class="timeline__date">Mar 10, 2026</div>
+          <div class="timeline__title">Stripe integration</div>
+          <div class="timeline__desc">Token exchange flow and webhook handling with idempotency via processed-events table.</div>
+          <div class="timeline__meta">BudgetWise &middot; 55m &middot; 420 LOC</div>
+        </div>
+
+        <div class="timeline__item" data-float="0.09">
+          <div class="timeline__dot"></div>
+          <div class="timeline__date">Mar 1, 2026</div>
+          <div class="timeline__title">Recurring transaction detection</div>
+          <div class="timeline__desc">Algorithm to detect recurring charges: three consecutive interval matches, tolerance windows for monthly drift.</div>
+          <div class="timeline__meta">BudgetWise &middot; 88m &middot; 890 LOC</div>
+        </div>
+
+        <div class="timeline__item" data-float="0.06">
+          <div class="timeline__dot"></div>
+          <div class="timeline__date">Feb 14, 2026</div>
+          <div class="timeline__title">Transaction list + infinite scroll</div>
+          <div class="timeline__desc">React component with cursor-based pagination and optimistic UI updates.</div>
+          <div class="timeline__meta">BudgetWise &middot; 65m &middot; 520 LOC</div>
+        </div>
+
+        <div class="timeline__item" data-float="0.08">
+          <div class="timeline__dot"></div>
+          <div class="timeline__date">Feb 3, 2026</div>
+          <div class="timeline__title">Set up Prisma schema</div>
+          <div class="timeline__desc">Core models for User, Account, and Transaction with discriminated union pattern.</div>
+          <div class="timeline__meta">BudgetWise &middot; 72m &middot; 680 LOC</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- About / Connect -->
+    <section class="about-section about-section--opaque" aria-label="About and links">
+      <div class="about-grid">
+        <div class="about-card reveal" data-float="0.06">
+          <h2 class="about-card__title">Connect</h2>
+          <a href="mailto:alex@alexchen.dev" class="about-card__link">alex@alexchen.dev</a>
+          <a href="https://linkedin.com/in/alexchendev" class="about-card__link" rel="noopener noreferrer" target="_blank">linkedin.com/in/alexchendev</a>
+          <a href="https://github.com/alexchen" class="about-card__link" rel="noopener noreferrer" target="_blank">github.com/alexchen</a>
+          <a href="https://alexchen.dev" class="about-card__link" rel="noopener noreferrer" target="_blank">alexchen.dev</a>
+          <a href="https://x.com/alexchendev" class="about-card__link" rel="noopener noreferrer" target="_blank">@alexchendev</a>
+        </div>
+        <div class="about-card reveal" data-float="0.09">
+          <h2 class="about-card__title">Resume</h2>
+          <p style="font-size: 0.875rem; color: var(--px-text-secondary); margin-block-end: 1rem;">
+            Download my full resume for a deeper look at experience and education.
+          </p>
+          <a href="./project.html" class="resume-btn" download>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M8 1v10m0 0L4.5 7.5M8 11l3.5-3.5M2 14h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Download resume.pdf
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer footer--opaque">
+    <p>Built with <a href="./project.html">heyi.am</a> &mdash; signal over noise.</p>
+  </footer>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     JAVASCRIPT — Parallax, Reveals, Counters
+     ══════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  'use strict';
+
+  /* ── Feature detection and state ── */
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var isMobile = window.innerWidth < 769;
+  var ticking = false;
+
+  /* ── DOM references ── */
+  var photo = document.querySelector('.photo-fixed');
+  var photoLayer = document.querySelector('.photo-layer');
+  var floatElements = [];
+  var bgDriftElements = [];
+
+  /* ══════════════════════════════════════════════════════
+     CACHE ELEMENTS
+     ══════════════════════════════════════════════════════ */
+  function cacheElements() {
+    /* Content elements with subtle float effect */
+    floatElements = [];
+    var floats = document.querySelectorAll('[data-float]');
+    for (var i = 0; i < floats.length; i++) {
+      floatElements.push({
+        el: floats[i],
+        speed: parseFloat(floats[i].dataset.float)
+      });
+    }
+
+    /* Background decorative shapes */
+    bgDriftElements = [];
+    var drifts = document.querySelectorAll('[data-bg-drift]');
+    for (var j = 0; j < drifts.length; j++) {
+      bgDriftElements.push({
+        el: drifts[j],
+        speed: parseFloat(drifts[j].dataset.bgDrift)
+      });
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════
+     PARALLAX UPDATE — runs on rAF, no layout thrashing
+
+     - Photo: scroll-progress-based fade + scale
+     - Content: element-relative parallax, clamped to +/-30px
+     - Bg shapes: CSS animation handles drift/rotate,
+       JS adds subtle vertical scroll offset
+     ══════════════════════════════════════════════════════ */
+  function updateParallax() {
+    if (prefersReducedMotion.matches || isMobile) {
+      ticking = false;
+      return;
+    }
+
+    var scrollY = window.scrollY;
+    var vh = window.innerHeight;
+
+    /* ── Fixed photo: fade out and shrink as user scrolls past hero ── */
+    if (photo && photoLayer) {
+      var fadeProgress = Math.min(scrollY / vh, 1);
+      var opacity = 1 - fadeProgress * 0.85;
+      if (opacity < 0) opacity = 0;
+      var scale = 1 - fadeProgress * 0.35;
+      var drift = -fadeProgress * 40;
+
+      photo.style.opacity = opacity;
+      photo.style.transform = 'translate(-50%, calc(-50% + ' + drift + 'px)) scale(' + scale + ')';
+
+      if (opacity <= 0) {
+        photoLayer.style.visibility = 'hidden';
+      } else {
+        photoLayer.style.visibility = 'visible';
+      }
+    }
+
+    /* ── Content float: element-relative parallax ──
+       Clamped to +/-30px so elements never collide. */
+    for (var i = 0; i < floatElements.length; i++) {
+      var item = floatElements[i];
+      var rect = item.el.getBoundingClientRect();
+      var elementCenter = rect.top + rect.height * 0.5;
+      var viewportCenter = vh * 0.5;
+      var centerOffset = (elementCenter - viewportCenter) / vh;
+      var offset = centerOffset * item.speed * 50;
+      if (offset > 30) offset = 30;
+      if (offset < -30) offset = -30;
+      item.el.style.transform = 'translateY(' + offset + 'px)';
+    }
+
+    /* ── Background shapes: additional scroll-based vertical drift ── */
+    for (var k = 0; k < bgDriftElements.length; k++) {
+      var bg = bgDriftElements[k];
+      var bgOffset = scrollY * bg.speed * 0.15;
+      bg.el.style.transform = 'translateY(' + (-bgOffset) + 'px)';
+    }
+
+    ticking = false;
+  }
+
+  /* ══════════════════════════════════════════════════════
+     SCROLL HANDLER — batched with rAF
+     ══════════════════════════════════════════════════════ */
+  function onScroll() {
+    if (!ticking) {
+      requestAnimationFrame(updateParallax);
+      ticking = true;
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════
+     SCROLL REVEAL — IntersectionObserver
+     ══════════════════════════════════════════════════════ */
+  function initReveal() {
+    var reveals = document.querySelectorAll('.reveal');
+    if (!reveals.length) return;
+
+    if (prefersReducedMotion.matches) {
+      for (var i = 0; i < reveals.length; i++) {
+        reveals[i].classList.add('reveal--visible');
+      }
+      return;
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('reveal--visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    for (var j = 0; j < reveals.length; j++) {
+      observer.observe(reveals[j]);
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════
+     ANIMATED COUNTERS
+     ══════════════════════════════════════════════════════ */
+  function initCounters() {
+    var counters = document.querySelectorAll('[data-counter]');
+    if (!counters.length) return;
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          animateCounter(entry.target);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.5 });
+
+    for (var i = 0; i < counters.length; i++) {
+      observer.observe(counters[i]);
+    }
+  }
+
+  function animateCounter(el) {
+    var isDecimal = el.dataset.decimal === 'true';
+    var target = isDecimal ? parseFloat(el.dataset.counter) : parseInt(el.dataset.counter, 10);
+    var suffix = el.dataset.suffix || '';
+    var format = el.dataset.format || '';
+    var duration = 1500;
+    var startTime = null;
+
+    function formatValue(val) {
+      if (format === 'compact') {
+        if (val >= 1000) {
+          return (val / 1000).toFixed(val >= 10000 ? 0 : 1) + 'k';
+        }
+      }
+      if (isDecimal) return val.toFixed(1);
+      return val.toLocaleString();
+    }
+
+    function step(timestamp) {
+      if (!startTime) startTime = timestamp;
+      var progress = Math.min((timestamp - startTime) / duration, 1);
+      /* Ease-out cubic */
+      var eased = 1 - Math.pow(1 - progress, 3);
+      var current = isDecimal ? (eased * target) : Math.round(eased * target);
+      el.textContent = formatValue(current) + suffix;
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      }
+    }
+
+    if (prefersReducedMotion.matches) {
+      el.textContent = formatValue(target) + suffix;
+      return;
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  /* ══════════════════════════════════════════════════════
+     NAV SCROLL EFFECT — slight background on scroll
+     ══════════════════════════════════════════════════════ */
+  function initNavScroll() {
+    var nav = document.querySelector('.site-nav');
+    if (!nav) return;
+
+    var scrolled = false;
+
+    function checkNav() {
+      var shouldBeScrolled = window.scrollY > 80;
+      if (shouldBeScrolled !== scrolled) {
+        scrolled = shouldBeScrolled;
+        if (scrolled) {
+          nav.style.background = 'rgba(10, 10, 15, 0.95)';
+          nav.style.borderBottom = '1px solid rgba(255, 255, 255, 0.06)';
+        } else {
+          nav.style.background = '';
+          nav.style.borderBottom = '';
+        }
+      }
+    }
+
+    window.addEventListener('scroll', checkNav, { passive: true });
+    checkNav();
+  }
+
+  /* ══════════════════════════════════════════════════════
+     RESIZE HANDLER
+     ══════════════════════════════════════════════════════ */
+  function onResize() {
+    var wasMobile = isMobile;
+    isMobile = window.innerWidth < 769;
+
+    if (isMobile && !wasMobile) {
+      for (var i = 0; i < floatElements.length; i++) {
+        floatElements[i].el.style.transform = '';
+      }
+      for (var j = 0; j < bgDriftElements.length; j++) {
+        bgDriftElements[j].el.style.transform = '';
+      }
+      if (photo) {
+        photo.style.transform = '';
+        photo.style.opacity = '';
+      }
+      if (photoLayer) {
+        photoLayer.style.visibility = '';
+      }
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════
+     INITIALIZATION
+     ══════════════════════════════════════════════════════ */
+  function init() {
+    cacheElements();
+    initReveal();
+    initCounters();
+    initNavScroll();
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
+
+    prefersReducedMotion.addEventListener('change', function() {
+      if (prefersReducedMotion.matches) {
+        for (var i = 0; i < floatElements.length; i++) {
+          floatElements[i].el.style.transform = '';
+        }
+        for (var j = 0; j < bgDriftElements.length; j++) {
+          bgDriftElements[j].el.style.transform = '';
+        }
+        if (photo) {
+          photo.style.transform = '';
+          photo.style.opacity = '';
+        }
+        if (photoLayer) {
+          photoLayer.style.visibility = '';
+        }
+      }
+    });
+
+    updateParallax();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>

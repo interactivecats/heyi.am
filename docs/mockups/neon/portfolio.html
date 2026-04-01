@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maya Johnson — heyi.am</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Neon Design Tokens ── */
+    :root {
+      --neon-bg: #0c0014;
+      --neon-surface: #1a0a2e;
+      --neon-surface-raised: #22103a;
+      --neon-pink: #f472b6;
+      --neon-pink-dim: rgba(244, 114, 182, 0.15);
+      --neon-pink-glow: rgba(244, 114, 182, 0.3);
+      --neon-cyan: #22d3ee;
+      --neon-cyan-dim: rgba(34, 211, 238, 0.15);
+      --neon-cyan-glow: rgba(34, 211, 238, 0.3);
+      --neon-text: #f0e6ff;
+      --neon-text-secondary: #a78bbd;
+      --neon-text-tertiary: #6b5280;
+      --neon-border: rgba(244, 114, 182, 0.2);
+      --neon-border-cyan: rgba(34, 211, 238, 0.2);
+      --neon-font-display: 'Space Grotesk', system-ui, sans-serif;
+      --neon-font-body: 'Inter', system-ui, sans-serif;
+      --neon-font-mono: 'JetBrains Mono', monospace;
+      --neon-radius: 4px;
+      --neon-radius-lg: 8px;
+      --neon-duration: 300ms;
+      --neon-duration-slow: 600ms;
+      --neon-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    body {
+      font-family: var(--neon-font-body);
+      color: var(--neon-text);
+      background: var(--neon-bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    /* ── Skip Link ── */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--neon-pink);
+      color: var(--neon-bg);
+      font-weight: 600;
+      border-radius: var(--neon-radius);
+      z-index: 1000;
+      text-decoration: none;
+    }
+    .skip-link:focus {
+      top: 1rem;
+    }
+
+    a {
+      color: var(--neon-cyan);
+      text-decoration: none;
+      transition: color var(--neon-duration) ease-out;
+    }
+    a:hover { color: var(--neon-pink); }
+    a:focus-visible {
+      outline: 2px solid var(--neon-cyan);
+      outline-offset: 2px;
+      border-radius: var(--neon-radius);
+    }
+
+    /* ── Grid Background ── */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .grid-bg::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%) perspective(500px) rotateX(60deg);
+      width: 200%;
+      height: 60vh;
+      background-image:
+        linear-gradient(rgba(244, 114, 182, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34, 211, 238, 0.08) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 80%);
+      -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 80%);
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 960px;
+      margin-inline: auto;
+      padding-inline: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Nav ── */
+    nav {
+      padding-block: 1.25rem;
+      border-bottom: 1px solid var(--neon-border);
+      position: sticky;
+      top: 0;
+      background: rgba(12, 0, 20, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 960px;
+      margin-inline: auto;
+      padding-inline: 1.5rem;
+    }
+    .nav-logo {
+      font-family: var(--neon-font-display);
+      font-weight: 700;
+      font-size: 1.125rem;
+      background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--neon-text-secondary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color var(--neon-duration) ease;
+    }
+    .nav-links a:hover,
+    .nav-links a[aria-current="page"] {
+      color: var(--neon-text);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding-block: 5rem 3rem;
+      text-align: center;
+    }
+    .hero h1 {
+      font-family: var(--neon-font-display);
+      font-size: clamp(2.25rem, 5vw, 3.5rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+      line-height: 1.15;
+    }
+    .hero-bio {
+      font-size: 1.125rem;
+      color: var(--neon-text-secondary);
+      max-width: 560px;
+      margin-inline: auto;
+      margin-bottom: 0.75rem;
+    }
+    .hero-location {
+      font-size: 0.875rem;
+      color: var(--neon-text-tertiary);
+      font-family: var(--neon-font-mono);
+    }
+
+    .hero-photo {
+      width: 120px;
+      height: 120px;
+      border-radius: 8px;
+      object-fit: cover;
+      object-position: center 15%;
+      margin-inline: auto;
+      margin-block-end: 1.5rem;
+      display: block;
+      border: 2px solid var(--neon-pink-dim);
+      box-shadow: 0 0 24px var(--neon-pink-glow);
+    }
+
+    .hero-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+      margin-block-start: 1.25rem;
+      list-style: none;
+    }
+    .hero-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-family: var(--neon-font-mono);
+      font-size: 0.8125rem;
+      color: var(--neon-text-secondary);
+      transition: color var(--neon-duration) ease-out;
+    }
+    .hero-links a:hover {
+      color: var(--neon-pink);
+    }
+    .hero-links svg {
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+      .hero-photo {
+        width: 80px;
+        height: 80px;
+      }
+    }
+
+    /* ── Scroll Animations ── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity var(--neon-duration-slow) var(--neon-ease),
+                  transform var(--neon-duration-slow) var(--neon-ease);
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Stats Grid ── */
+    .stats-section {
+      padding-block: 2rem;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    .stat-card {
+      background: var(--neon-surface);
+      border: 1px solid var(--neon-border);
+      border-radius: var(--neon-radius-lg);
+      padding: 1.5rem;
+      text-align: center;
+      transition: box-shadow var(--neon-duration) ease;
+    }
+    .stat-card:nth-child(odd) {
+      box-shadow: 0 0 20px var(--neon-pink-dim);
+    }
+    .stat-card:nth-child(even) {
+      box-shadow: 0 0 20px var(--neon-cyan-dim);
+    }
+    .stat-card:hover:nth-child(odd) {
+      box-shadow: 0 0 30px var(--neon-pink-glow);
+    }
+    .stat-card:hover:nth-child(even) {
+      box-shadow: 0 0 30px var(--neon-cyan-glow);
+    }
+    .stat-value {
+      font-family: var(--neon-font-display);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--neon-text);
+      line-height: 1.2;
+    }
+    .stat-value.pink { color: var(--neon-pink); }
+    .stat-value.cyan { color: var(--neon-cyan); }
+    .stat-label {
+      font-size: 0.8125rem;
+      color: var(--neon-text-tertiary);
+      margin-top: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Pulsing glow on stats ── */
+    @keyframes pulse-pink {
+      0%, 100% { box-shadow: 0 0 20px var(--neon-pink-dim); }
+      50% { box-shadow: 0 0 30px var(--neon-pink-glow); }
+    }
+    @keyframes pulse-cyan {
+      0%, 100% { box-shadow: 0 0 20px var(--neon-cyan-dim); }
+      50% { box-shadow: 0 0 30px var(--neon-cyan-glow); }
+    }
+    .stat-card.pulsing:nth-child(odd) {
+      animation: pulse-pink 3s ease-in-out infinite;
+    }
+    .stat-card.pulsing:nth-child(even) {
+      animation: pulse-cyan 3s ease-in-out infinite;
+    }
+
+    /* ── Leverage stat ── */
+    .stat-card--leverage {
+      grid-column: span 2;
+      box-shadow: 0 0 16px var(--neon-pink-dim), 0 0 16px var(--neon-cyan-dim);
+    }
+    .leverage-nums {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .leverage-nums .lev-val {
+      font-family: var(--neon-font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+    .leverage-nums .lev-val--pink { color: var(--neon-pink); }
+    .leverage-nums .lev-val--cyan { color: var(--neon-cyan); }
+    .leverage-nums .lev-lbl {
+      font-size: 0.6875rem;
+      color: var(--neon-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .neon-leverage-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.06);
+      display: flex;
+      overflow: hidden;
+    }
+    .neon-leverage-bar__human {
+      height: 100%;
+      width: 19%;
+      background: rgba(255,255,255,0.25);
+      border-radius: 2px 0 0 2px;
+    }
+    .neon-leverage-bar__agent {
+      height: 100%;
+      width: 81%;
+      background: var(--neon-cyan);
+      box-shadow: 0 0 8px var(--neon-cyan-glow);
+      border-radius: 0 2px 2px 0;
+    }
+
+    /* ── Section Heading ── */
+    .section-heading {
+      font-family: var(--neon-font-display);
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--neon-border);
+    }
+
+    /* ── Project Cards ── */
+    .projects-section {
+      padding-block: 3rem;
+    }
+    .project-card {
+      background: var(--neon-surface);
+      border: 1px solid var(--neon-border);
+      border-radius: var(--neon-radius-lg);
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      transition: border-color var(--neon-duration) ease,
+                  box-shadow var(--neon-duration) ease;
+    }
+    .project-card:hover {
+      border-color: var(--neon-pink);
+      box-shadow: 0 0 24px var(--neon-pink-dim), 0 0 48px rgba(244, 114, 182, 0.08);
+    }
+    .project-card a.project-title {
+      font-family: var(--neon-font-display);
+      font-size: 1.375rem;
+      font-weight: 700;
+      color: var(--neon-text);
+      text-decoration: none;
+    }
+    .project-card a.project-title:hover {
+      color: var(--neon-pink);
+    }
+    .project-narrative {
+      color: var(--neon-text-secondary);
+      margin-top: 0.75rem;
+      font-size: 0.9375rem;
+      line-height: 1.65;
+    }
+
+    /* ── Skills (Neon chips) ── */
+    .skills-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      list-style: none;
+    }
+    .skill-chip {
+      font-family: var(--neon-font-mono);
+      font-size: 0.75rem;
+      padding: 0.25rem 0.75rem;
+      border: 1px solid var(--neon-border);
+      border-radius: var(--neon-radius);
+      color: var(--neon-cyan);
+      background: var(--neon-cyan-dim);
+      transition: box-shadow var(--neon-duration) ease,
+                  border-color var(--neon-duration) ease;
+    }
+    .skill-chip:hover {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 10px var(--neon-cyan-dim);
+    }
+
+    /* ── Project Stats Row ── */
+    .project-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-top: 1.25rem;
+      font-size: 0.8125rem;
+      color: var(--neon-text-tertiary);
+      font-family: var(--neon-font-mono);
+    }
+    .project-meta span {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    /* ── Source Mix Bar ── */
+    .source-bar-container {
+      margin-top: 1rem;
+    }
+    .source-bar-label {
+      font-size: 0.75rem;
+      color: var(--neon-text-tertiary);
+      margin-bottom: 0.35rem;
+      font-family: var(--neon-font-mono);
+    }
+    .source-bar {
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+      display: flex;
+      background: var(--neon-surface-raised);
+    }
+    .source-bar .claude {
+      background: var(--neon-pink);
+      box-shadow: 0 0 8px var(--neon-pink-glow);
+      transition: width 1s var(--neon-ease);
+    }
+    .source-bar .cursor {
+      background: var(--neon-cyan);
+      box-shadow: 0 0 8px var(--neon-cyan-glow);
+      transition: width 1s var(--neon-ease);
+    }
+    .source-legend {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.35rem;
+      font-size: 0.6875rem;
+      color: var(--neon-text-tertiary);
+      font-family: var(--neon-font-mono);
+    }
+    .source-legend span::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .source-legend .claude-label::before { background: var(--neon-pink); }
+    .source-legend .cursor-label::before { background: var(--neon-cyan); }
+
+    /* ── Activity Timeline ── */
+    .activity-section {
+      padding-block: 1rem 3rem;
+    }
+    .activity-list {
+      list-style: none;
+      position: relative;
+    }
+    .activity-list::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--neon-pink), var(--neon-cyan), var(--neon-pink));
+      opacity: 0.35;
+    }
+    .activity-item {
+      position: relative;
+      padding-left: 3rem;
+      padding-bottom: 1.5rem;
+    }
+    .activity-item:last-child { padding-bottom: 0; }
+    .activity-item::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 4px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--neon-bg);
+      border: 2px solid var(--neon-pink);
+      box-shadow: 0 0 8px var(--neon-pink-glow);
+      z-index: 1;
+    }
+    .activity-item:nth-child(even)::before {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 8px var(--neon-cyan-glow);
+    }
+    .activity-date {
+      font-family: var(--neon-font-mono);
+      font-size: 0.75rem;
+      color: var(--neon-text-tertiary);
+      margin-bottom: 0.15rem;
+    }
+    .activity-title {
+      font-family: var(--neon-font-display);
+      font-weight: 600;
+      font-size: 0.9375rem;
+    }
+    .activity-title a {
+      color: var(--neon-text);
+    }
+    .activity-title a:hover {
+      color: var(--neon-cyan);
+    }
+    .activity-detail {
+      font-size: 0.8125rem;
+      color: var(--neon-text-secondary);
+      margin-top: 0.15rem;
+    }
+
+    /* ── All Skills Aggregate ── */
+    .all-skills-section {
+      padding-block: 1rem 3rem;
+    }
+    .skills-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      list-style: none;
+    }
+    .skills-grid .skill-chip.primary {
+      border-color: var(--neon-pink);
+      color: var(--neon-pink);
+      background: var(--neon-pink-dim);
+      box-shadow: 0 0 8px var(--neon-pink-dim);
+    }
+    .skills-grid .skill-chip.primary:hover {
+      box-shadow: 0 0 14px var(--neon-pink-glow);
+    }
+
+    /* ── Contribution Chart (SVG) ── */
+    .chart-section {
+      padding-block: 1rem 3rem;
+    }
+    .contrib-chart {
+      background: var(--neon-surface);
+      border: 1px solid var(--neon-border);
+      border-radius: var(--neon-radius-lg);
+      padding: 1.5rem;
+      overflow: hidden;
+    }
+    .contrib-chart svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .chart-legend {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-top: 1rem;
+      font-size: 0.75rem;
+      font-family: var(--neon-font-mono);
+      color: var(--neon-text-tertiary);
+    }
+    .chart-legend span::before {
+      content: '';
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .chart-legend .pink-label::before { background: var(--neon-pink); }
+    .chart-legend .cyan-label::before { background: var(--neon-cyan); }
+
+    /* ── Footer ── */
+    footer {
+      padding-block: 3rem;
+      text-align: center;
+      color: var(--neon-text-tertiary);
+      font-size: 0.8125rem;
+      border-top: 1px solid var(--neon-border);
+      margin-top: 2rem;
+    }
+    footer a {
+      color: var(--neon-pink);
+    }
+
+    /* ── Reduced Motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .fade-in { opacity: 1; transform: none; }
+      .grid-bg::before { display: none; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .hero { padding-block: 3rem 2rem; }
+      .project-header { flex-direction: column; gap: 0.5rem; }
+      .project-meta { gap: 0.75rem; flex-wrap: wrap; }
+      .nav-links { gap: 1rem; }
+      .hero-links { font-size: 0.75rem; }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      .nav-inner {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .contrib-chart { padding: 1rem; }
+    }
+  
+    /* ── Clickable cards ── */
+    a.project-card, a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.project-card:hover, a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+  <div class="grid-bg" aria-hidden="true"></div>
+
+  <!-- Nav -->
+  <nav aria-label="Main navigation">
+    <div class="nav-inner">
+      <span class="nav-logo">heyi.am</span>
+      <ul class="nav-links">
+        <li><a href="./portfolio.html" aria-current="page">Portfolio</a></li>
+        <li><a href="./project.html">Project</a></li>
+        <li><a href="./session.html">Session</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main id="main-content">
+    <div class="container">
+
+      <!-- Hero -->
+      <section class="hero fade-in" aria-label="Profile">
+        <img src="../assets/headshot-woman-1-400.jpg" alt="Maya Johnson" class="hero-photo">
+        <h1>Maya Johnson</h1>
+        <p class="hero-bio">Backend engineer passionate about distributed systems and developer tooling. I build things that scale — from real-time collaboration to event-driven architectures. Currently exploring how AI changes the way we write software.</p>
+        <p class="hero-location">Brooklyn, NY</p>
+        <ul class="hero-links" aria-label="Contact and social links">
+          <li><a href="mailto:maya@heyiam.com"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg>maya@heyiam.com</a></li>
+          <li><a href="https://linkedin.com/in/mayajohnson"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>LinkedIn</a></li>
+          <li><a href="https://github.com/interactivecats/heyi.am"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>GitHub</a></li>
+          <li><a href="https://x.com/mayajdev"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>@mayajdev</a></li>
+          <li><a href="https://mayajohnson.dev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>mayajohnson.dev</a></li>
+          <li><a href="./project.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>Resume (PDF)</a></li>
+        </ul>
+      </section>
+
+      <!-- Aggregate Stats -->
+      <section class="stats-section fade-in" aria-label="Aggregate statistics">
+        <div class="stats-grid">
+          <div class="stat-card" role="figure" aria-label="3 projects">
+            <div class="stat-value pink" data-target="3">0</div>
+            <div class="stat-label">Projects</div>
+          </div>
+          <div class="stat-card" role="figure" aria-label="28 sessions">
+            <div class="stat-value cyan" data-target="28">0</div>
+            <div class="stat-label">Sessions</div>
+          </div>
+          <div class="stat-card stat-card--leverage" role="figure" aria-label="24 hours you, 100 hours agents, 4.2x leverage">
+            <div class="leverage-nums">
+              <span><span class="lev-val lev-val--pink">24h</span> <span class="lev-lbl">you</span></span>
+              <span><span class="lev-val lev-val--cyan">100h</span> <span class="lev-lbl">agents</span></span>
+              <span><span class="lev-val lev-val--pink">4.2x</span></span>
+            </div>
+            <div class="neon-leverage-bar">
+              <div class="neon-leverage-bar__human"></div>
+              <div class="neon-leverage-bar__agent"></div>
+            </div>
+          </div>
+          <div class="stat-card" role="figure" aria-label="18,400 lines of code">
+            <div class="stat-value cyan" data-target="18400" data-format="comma">0</div>
+            <div class="stat-label">Lines Changed</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Projects -->
+      <section class="projects-section" aria-label="Projects">
+        <h2 class="section-heading">Projects</h2>
+
+        <!-- BudgetWise -->
+        <article class="project-card fade-in">
+          <a href="./project.html" class="project-title">BudgetWise</a>
+          <p class="project-narrative">Personal finance app with recurring transaction detection, Plaid integration, and spending insights dashboard.</p>
+          <ul class="skills-list" aria-label="Skills used in BudgetWise">
+            <li class="skill-chip">TypeScript</li>
+            <li class="skill-chip">React</li>
+            <li class="skill-chip">Next.js</li>
+            <li class="skill-chip">Prisma</li>
+            <li class="skill-chip">PostgreSQL</li>
+            <li class="skill-chip">Stripe API</li>
+          </ul>
+          <div class="project-meta">
+            <span>8 sessions</span>
+            <span>42.5h</span>
+            <span>4,460 LOC</span>
+          </div>
+          <div class="source-bar-container">
+            <div class="source-bar-label">Source mix</div>
+            <div class="source-bar" role="img" aria-label="Claude 62.5%, Cursor 37.5%">
+              <div class="claude" style="width: 0%" data-width="62.5"></div>
+              <div class="cursor" style="width: 0%" data-width="37.5"></div>
+            </div>
+            <div class="source-legend">
+              <span class="claude-label">Claude 62.5%</span>
+              <span class="cursor-label">Cursor 37.5%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- ShellHook -->
+        <article class="project-card fade-in">
+          <a href="./project.html" class="project-title">ShellHook</a>
+          <p class="project-narrative">Rust CLI tool for managing git hooks with TOML configuration and automatic symlinking.</p>
+          <ul class="skills-list" aria-label="Skills used in ShellHook">
+            <li class="skill-chip">Rust</li>
+            <li class="skill-chip">CLI design</li>
+            <li class="skill-chip">TOML parsing</li>
+            <li class="skill-chip">Git internals</li>
+            <li class="skill-chip">Shell scripting</li>
+          </ul>
+          <div class="project-meta">
+            <span>7 sessions</span>
+            <span>32h</span>
+            <span>3,580 LOC</span>
+          </div>
+          <div class="source-bar-container">
+            <div class="source-bar-label">Source mix</div>
+            <div class="source-bar" role="img" aria-label="Claude 85%, Cursor 15%">
+              <div class="claude" style="width: 0%" data-width="85"></div>
+              <div class="cursor" style="width: 0%" data-width="15"></div>
+            </div>
+            <div class="source-legend">
+              <span class="claude-label">Claude 85%</span>
+              <span class="cursor-label">Cursor 15%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- PixelBoard -->
+        <article class="project-card fade-in">
+          <a href="./project.html" class="project-title">PixelBoard</a>
+          <p class="project-narrative">Real-time collaborative drawing canvas with CRDT-based state sync and pressure-sensitive input.</p>
+          <ul class="skills-list" aria-label="Skills used in PixelBoard">
+            <li class="skill-chip">TypeScript</li>
+            <li class="skill-chip">WebSocket</li>
+            <li class="skill-chip">Canvas API</li>
+            <li class="skill-chip">Redis</li>
+            <li class="skill-chip">Express</li>
+            <li class="skill-chip">CRDT</li>
+          </ul>
+          <div class="project-meta">
+            <span>5 sessions</span>
+            <span>28h</span>
+            <span>2,940 LOC</span>
+          </div>
+          <div class="source-bar-container">
+            <div class="source-bar-label">Source mix</div>
+            <div class="source-bar" role="img" aria-label="Claude 60%, Cursor 40%">
+              <div class="claude" style="width: 0%" data-width="60"></div>
+              <div class="cursor" style="width: 0%" data-width="40"></div>
+            </div>
+            <div class="source-legend">
+              <span class="claude-label">Claude 60%</span>
+              <span class="cursor-label">Cursor 40%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- DevLog -->
+        <article class="project-card fade-in">
+          <a href="./project.html" class="project-title">DevLog</a>
+          <p class="project-narrative">CLI tool for capturing development decisions and context as structured markdown notes.</p>
+          <ul class="skills-list" aria-label="Skills used in DevLog">
+            <li class="skill-chip">TypeScript</li>
+            <li class="skill-chip">Node.js</li>
+            <li class="skill-chip">CLI design</li>
+            <li class="skill-chip">Markdown</li>
+            <li class="skill-chip">SQLite</li>
+</ul>
+          <div class="project-meta">
+            <span>5 sessions</span>
+            <span>18h</span>
+            <span>1,840 LOC</span>
+          </div>
+          <div class="source-bar-container">
+            <div class="source-bar-label">Source mix</div>
+            <div class="source-bar" role="img" aria-label="Claude 80%, Cursor 20%">
+              <div class="claude" style="width: 0%" data-width="60"></div>
+              <div class="cursor" style="width: 0%" data-width="40"></div>
+            </div>
+            <div class="source-legend">
+              <span class="claude-label">Claude 80%</span>
+              <span class="cursor-label">Cursor 20%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Snapgrid -->
+        <article class="project-card fade-in">
+          <a href="./project.html" class="project-title">Snapgrid</a>
+          <p class="project-narrative">Responsive image gallery with masonry layout, lazy loading, and keyboard navigation.</p>
+          <ul class="skills-list" aria-label="Skills used in Snapgrid">
+            <li class="skill-chip">TypeScript</li>
+            <li class="skill-chip">React</li>
+            <li class="skill-chip">CSS Grid</li>
+            <li class="skill-chip">IntersectionObserver</li>
+            <li class="skill-chip">Accessibility</li>
+</ul>
+          <div class="project-meta">
+            <span>4 sessions</span>
+            <span>14h</span>
+            <span>1,520 LOC</span>
+          </div>
+          <div class="source-bar-container">
+            <div class="source-bar-label">Source mix</div>
+            <div class="source-bar" role="img" aria-label="Claude 50%, Cursor 50%">
+              <div class="claude" style="width: 0%" data-width="60"></div>
+              <div class="cursor" style="width: 0%" data-width="40"></div>
+            </div>
+            <div class="source-legend">
+              <span class="claude-label">Claude 50%</span>
+              <span class="cursor-label">Cursor 50%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Terracotta -->
+        <article class="project-card fade-in">
+          <a href="./project.html" class="project-title">Terracotta</a>
+          <p class="project-narrative">Design token pipeline that generates CSS custom properties, Tailwind config, and Figma tokens from a single YAML source.</p>
+          <ul class="skills-list" aria-label="Skills used in Terracotta">
+            <li class="skill-chip">TypeScript</li>
+            <li class="skill-chip">Node.js</li>
+            <li class="skill-chip">YAML</li>
+            <li class="skill-chip">CSS</li>
+            <li class="skill-chip">Figma API</li>
+</ul>
+          <div class="project-meta">
+            <span>6 sessions</span>
+            <span>22h</span>
+            <span>2,680 LOC</span>
+          </div>
+          <div class="source-bar-container">
+            <div class="source-bar-label">Source mix</div>
+            <div class="source-bar" role="img" aria-label="Claude 70%, Cursor 30%">
+              <div class="claude" style="width: 0%" data-width="60"></div>
+              <div class="cursor" style="width: 0%" data-width="40"></div>
+            </div>
+            <div class="source-legend">
+              <span class="claude-label">Claude 70%</span>
+              <span class="cursor-label">Cursor 30%</span>
+            </div>
+          </div>
+        </article>
+
+      </section>
+
+      <!-- Contribution Chart -->
+      <section class="chart-section fade-in" aria-label="Contribution overview">
+        <h2 class="section-heading">Contribution Overview</h2>
+        <div class="contrib-chart">
+          <svg viewBox="0 0 600 200" role="img" aria-label="Bar chart showing hours per project: BudgetWise 42.5h, ShellHook 32h, PixelBoard 28h">
+            <!-- Y axis labels -->
+            <text x="45" y="30" fill="#6b5280" font-family="'JetBrains Mono', monospace" font-size="10" text-anchor="end">50h</text>
+            <text x="45" y="80" fill="#6b5280" font-family="'JetBrains Mono', monospace" font-size="10" text-anchor="end">30h</text>
+            <text x="45" y="130" fill="#6b5280" font-family="'JetBrains Mono', monospace" font-size="10" text-anchor="end">10h</text>
+            <!-- Grid lines -->
+            <line x1="55" y1="27" x2="580" y2="27" stroke="rgba(244,114,182,0.08)" stroke-width="1"/>
+            <line x1="55" y1="77" x2="580" y2="77" stroke="rgba(244,114,182,0.08)" stroke-width="1"/>
+            <line x1="55" y1="127" x2="580" y2="127" stroke="rgba(244,114,182,0.08)" stroke-width="1"/>
+            <line x1="55" y1="170" x2="580" y2="170" stroke="rgba(244,114,182,0.12)" stroke-width="1"/>
+            <!-- BudgetWise bar -->
+            <rect class="chart-bar" x="100" y="170" width="100" height="0" rx="4" fill="#f472b6" data-target-y="38" data-target-height="132">
+              <title>BudgetWise: 42.5h</title>
+            </rect>
+            <text x="150" y="188" fill="#a78bbd" font-family="'JetBrains Mono', monospace" font-size="10" text-anchor="middle">BudgetWise</text>
+            <!-- ShellHook bar -->
+            <rect class="chart-bar" x="260" y="170" width="100" height="0" rx="4" fill="#22d3ee" data-target-y="70" data-target-height="100">
+              <title>ShellHook: 32h</title>
+            </rect>
+            <text x="310" y="188" fill="#a78bbd" font-family="'JetBrains Mono', monospace" font-size="10" text-anchor="middle">ShellHook</text>
+            <!-- PixelBoard bar -->
+            <rect class="chart-bar" x="420" y="170" width="100" height="0" rx="4" fill="#f472b6" data-target-y="83" data-target-height="87">
+              <title>PixelBoard: 28h</title>
+            </rect>
+            <text x="470" y="188" fill="#a78bbd" font-family="'JetBrains Mono', monospace" font-size="10" text-anchor="middle">PixelBoard</text>
+          </svg>
+          <div class="chart-legend">
+            <span class="pink-label">Claude sessions</span>
+            <span class="cyan-label">Cursor sessions</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- All Skills -->
+      <section class="all-skills-section fade-in" aria-label="All skills across projects">
+        <h2 class="section-heading">All Skills</h2>
+        <ul class="skills-grid">
+          <li class="skill-chip primary">TypeScript</li>
+          <li class="skill-chip primary">React</li>
+          <li class="skill-chip primary">Rust</li>
+          <li class="skill-chip">Next.js</li>
+          <li class="skill-chip">Prisma</li>
+          <li class="skill-chip">PostgreSQL</li>
+          <li class="skill-chip">Stripe API</li>
+          <li class="skill-chip">CLI design</li>
+          <li class="skill-chip">TOML parsing</li>
+          <li class="skill-chip">Git internals</li>
+          <li class="skill-chip">Shell scripting</li>
+          <li class="skill-chip">WebSocket</li>
+          <li class="skill-chip">Canvas API</li>
+          <li class="skill-chip">Redis</li>
+          <li class="skill-chip">Express</li>
+          <li class="skill-chip">CRDT</li>
+        </ul>
+      </section>
+
+      <!-- Recent Activity -->
+      <section class="activity-section fade-in" aria-label="Recent activity timeline">
+        <h2 class="section-heading">Recent Activity</h2>
+        <ol class="activity-list">
+          <li class="activity-item">
+            <div class="activity-date">Mar 26</div>
+            <div class="activity-title"><a href="./session.html">Mobile responsive + 2FA</a></div>
+            <div class="activity-detail">BudgetWise &middot; 50m &middot; 340 LOC</div>
+          </li>
+          <li class="activity-item">
+            <div class="activity-date">Mar 22</div>
+            <div class="activity-title"><a href="./session.html">Spending insights dashboard</a></div>
+            <div class="activity-detail">BudgetWise &middot; 78m &middot; 720 LOC</div>
+          </li>
+          <li class="activity-item">
+            <div class="activity-date">Mar 18</div>
+            <div class="activity-title"><a href="./session.html">Full-text search tsvector</a></div>
+            <div class="activity-detail">BudgetWise &middot; 62m &middot; 510 LOC</div>
+          </li>
+          <li class="activity-item">
+            <div class="activity-date">Mar 14</div>
+            <div class="activity-title"><a href="./session.html">CSV import pipeline</a></div>
+            <div class="activity-detail">BudgetWise &middot; 45m &middot; 380 LOC</div>
+          </li>
+          <li class="activity-item">
+            <div class="activity-date">Mar 10</div>
+            <div class="activity-title"><a href="./session.html">Stripe integration</a></div>
+            <div class="activity-detail">BudgetWise &middot; 55m &middot; 420 LOC</div>
+          </li>
+          <li class="activity-item">
+            <div class="activity-date">Mar 1</div>
+            <div class="activity-title"><a href="./session.html">Recurring transaction detection</a></div>
+            <div class="activity-detail">BudgetWise &middot; 88m &middot; 890 LOC</div>
+          </li>
+        </ol>
+      </section>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>Built with <a href="https://heyi.am">heyi.am</a></p>
+    </div>
+  </footer>
+
+  <script>
+    /* ── Scroll-triggered fade-in ── */
+    (function () {
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (prefersReducedMotion) {
+        document.querySelectorAll('.fade-in').forEach(function (el) {
+          el.classList.add('visible');
+        });
+        return;
+      }
+
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+
+      document.querySelectorAll('.fade-in').forEach(function (el) {
+        observer.observe(el);
+      });
+    })();
+
+    /* ── Stat Counter Animation ── */
+    (function () {
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var counters = document.querySelectorAll('.stat-value[data-target]');
+
+      function formatNumber(n, format) {
+        if (format === 'comma') {
+          return n.toLocaleString('en-US');
+        }
+        return String(n);
+      }
+
+      function animateCounter(el) {
+        var target = parseInt(el.getAttribute('data-target'), 10);
+        var format = el.getAttribute('data-format');
+        var duration = 1200;
+        var startTime = null;
+
+        if (prefersReducedMotion) {
+          el.textContent = formatNumber(target, format);
+          return;
+        }
+
+        function step(timestamp) {
+          if (!startTime) startTime = timestamp;
+          var progress = Math.min((timestamp - startTime) / duration, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          var current = Math.round(eased * target);
+          el.textContent = formatNumber(current, format);
+          if (progress < 1) {
+            requestAnimationFrame(step);
+          }
+        }
+        requestAnimationFrame(step);
+      }
+
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            animateCounter(entry.target);
+            /* Add pulsing glow after count finishes */
+            var card = entry.target.closest('.stat-card');
+            if (card) {
+              setTimeout(function () { card.classList.add('pulsing'); }, 1400);
+            }
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.5 });
+
+      counters.forEach(function (c) { observer.observe(c); });
+    })();
+
+    /* ── Source Bar Animation ── */
+    (function () {
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var bars = document.querySelectorAll('.source-bar');
+
+      function animateBar(bar) {
+        var segments = bar.querySelectorAll('[data-width]');
+        segments.forEach(function (seg) {
+          var w = seg.getAttribute('data-width');
+          if (prefersReducedMotion) {
+            seg.style.width = w + '%';
+          } else {
+            requestAnimationFrame(function () {
+              seg.style.width = w + '%';
+            });
+          }
+        });
+      }
+
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            animateBar(entry.target);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.3 });
+
+      bars.forEach(function (b) { observer.observe(b); });
+    })();
+
+    /* ── Chart Bar Animation ── */
+    (function () {
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var chartBars = document.querySelectorAll('.chart-bar');
+
+      function animateChartBar(rect) {
+        var targetY = parseFloat(rect.getAttribute('data-target-y'));
+        var targetH = parseFloat(rect.getAttribute('data-target-height'));
+        var startY = parseFloat(rect.getAttribute('y'));
+        var duration = 800;
+        var startTime = null;
+
+        if (prefersReducedMotion) {
+          rect.setAttribute('y', targetY);
+          rect.setAttribute('height', targetH);
+          return;
+        }
+
+        function step(timestamp) {
+          if (!startTime) startTime = timestamp;
+          var progress = Math.min((timestamp - startTime) / duration, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          var currentH = eased * targetH;
+          var currentY = startY - currentH;
+          rect.setAttribute('y', currentY);
+          rect.setAttribute('height', currentH);
+          if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            var bars = entry.target.querySelectorAll('.chart-bar');
+            bars.forEach(function (bar, i) {
+              setTimeout(function () { animateChartBar(bar); }, i * 150);
+            });
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.2 });
+
+      var chart = document.querySelector('.contrib-chart');
+      if (chart) observer.observe(chart);
+    })();
+  </script>
+</body>
+</html>

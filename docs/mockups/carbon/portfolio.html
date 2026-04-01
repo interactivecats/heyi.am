@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carbon Template — James Miller</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Carbon Design Tokens ── */
+:root {
+  --carbon-bg:             #171717;
+  --carbon-surface:        #1f1f1f;
+  --carbon-card:           #262626;
+  --carbon-border:         rgba(148, 163, 184, 0.20);
+  --carbon-border-hover:   rgba(148, 163, 184, 0.45);
+  --carbon-accent:         #94a3b8;
+  --carbon-accent-dim:     rgba(148, 163, 184, 0.6);
+  --carbon-text:           #d4d4d8;
+  --carbon-text-secondary: #a1a1aa;
+  --carbon-text-muted:     #71717a;
+  --carbon-white:          #e4e4e7;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--carbon-text);
+  background-color: var(--carbon-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--carbon-accent); text-decoration: none; }
+a:hover { color: var(--carbon-white); }
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--carbon-accent);
+  color: var(--carbon-bg);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  z-index: 1000;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+.skip-link:focus { top: 1rem; }
+
+/* ── Page Shell ── */
+.carbon-page {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ── Navigation ── */
+.carbon-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block-end: 1.25rem;
+  border-bottom: 1px solid var(--carbon-border);
+  margin-block-end: 3rem;
+}
+
+.carbon-nav__brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--carbon-white);
+  letter-spacing: -0.02em;
+}
+
+.carbon-nav__links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+
+.carbon-nav__links a {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--carbon-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: color 0.2s;
+}
+.carbon-nav__links a:hover,
+.carbon-nav__links a[aria-current="page"] {
+  color: var(--carbon-accent);
+}
+
+/* ── Brushed Metal Texture ── */
+.brushed-header {
+  position: relative;
+  overflow: hidden;
+}
+.brushed-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 1px,
+    rgba(148, 163, 184, 0.03) 1px,
+    rgba(148, 163, 184, 0.03) 2px
+  );
+  pointer-events: none;
+}
+
+/* ── Fade-in animation ── */
+.fade-in {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .card { transition: none !important; }
+}
+
+/* ── Profile Header ── */
+.profile {
+  margin-block-end: 3rem;
+}
+
+.profile__name {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--carbon-white);
+  letter-spacing: -0.03em;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5), 0 1px 0 rgba(148,163,184,0.1);
+}
+
+.profile__bio {
+  font-size: 1rem;
+  color: var(--carbon-text-secondary);
+  max-width: 600px;
+  margin-block-start: 0.5rem;
+  line-height: 1.7;
+}
+
+.profile__location {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--carbon-text-muted);
+  margin-block-start: 0.75rem;
+}
+
+.profile__photo {
+  width: 100px;
+  height: 130px;
+  border-radius: 6px;
+  object-fit: cover;
+  object-position: 55% 10%;
+  border: 2px solid var(--carbon-border);
+  margin-block-end: 1rem;
+  filter: grayscale(0.8) contrast(1.1);
+}
+
+.profile__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-block-start: 1rem;
+  align-items: center;
+}
+
+.profile__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--carbon-text-muted);
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.profile__links a:hover {
+  color: var(--carbon-accent);
+  border-color: var(--carbon-border-hover);
+}
+
+.profile__links a svg {
+  flex-shrink: 0;
+}
+
+/* ── Stats Bar ── */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--carbon-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-block-end: 3rem;
+}
+
+.stat-cell {
+  background: var(--carbon-surface);
+  padding: 1.25rem 1rem;
+  text-align: center;
+}
+
+.stat-cell__value {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--carbon-white);
+  text-shadow: 0 1px 0 rgba(148,163,184,0.15), 0 -1px 0 rgba(0,0,0,0.4);
+  line-height: 1.2;
+}
+
+.stat-cell__label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--carbon-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-block-start: 0.25rem;
+}
+
+/* ── Leverage cells ── */
+.stat-cell--leverage {
+  grid-column: span 2;
+  display: flex;
+  justify-content: space-evenly;
+  gap: 1rem;
+}
+.leverage-cell {
+  text-align: center;
+}
+.leverage-cell__value {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--carbon-white);
+  text-shadow: 0 1px 0 rgba(148,163,184,0.15), 0 -1px 0 rgba(0,0,0,0.4);
+  line-height: 1.2;
+}
+.leverage-cell__value--accent {
+  color: var(--carbon-accent);
+}
+.leverage-cell__label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--carbon-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-block-start: 0.25rem;
+}
+
+/* ── Section Headings ── */
+.section-heading {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--carbon-white);
+  margin-block-end: 1.25rem;
+  letter-spacing: -0.01em;
+}
+
+/* ── Project Cards ── */
+.projects-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.card {
+  background: var(--carbon-card);
+  border: 1px solid var(--carbon-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color 0.25s ease;
+}
+.card:hover {
+  border-color: var(--carbon-border-hover);
+}
+
+.card__header {
+  position: relative;
+  padding: 1.25rem 1.5rem;
+  background: var(--carbon-surface);
+  border-bottom: 1px solid var(--carbon-border);
+  overflow: hidden;
+}
+.card__header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 1px,
+    rgba(148, 163, 184, 0.035) 1px,
+    rgba(148, 163, 184, 0.035) 2px
+  );
+  pointer-events: none;
+}
+
+.card__title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--carbon-white);
+  position: relative;
+}
+.card__title a { color: inherit; }
+.card__title a:hover { color: var(--carbon-accent); }
+
+.card__body {
+  padding: 1.25rem 1.5rem;
+}
+
+.card__narrative {
+  font-size: 0.9375rem;
+  color: var(--carbon-text-secondary);
+  line-height: 1.65;
+  margin-block-end: 1rem;
+}
+
+/* ── Skills ── */
+.skill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  list-style: none;
+  margin-block-end: 1rem;
+}
+
+.skill-chip {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--carbon-accent);
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.02em;
+}
+
+/* ── Card Stats Row ── */
+.card-stats {
+  display: flex;
+  gap: 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--carbon-text-muted);
+  padding-block-start: 0.75rem;
+  border-top: 1px solid var(--carbon-border);
+}
+
+.card-stats span {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.card-stats__value {
+  color: var(--carbon-text-secondary);
+}
+
+/* ── Source Bar ── */
+.source-bar {
+  display: flex;
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-block-start: 1rem;
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.source-bar__segment {
+  height: 100%;
+}
+.source-bar__segment--claude {
+  background: var(--carbon-accent);
+}
+.source-bar__segment--cursor {
+  background: rgba(148, 163, 184, 0.3);
+}
+
+.source-legend {
+  display: flex;
+  gap: 1rem;
+  margin-block-start: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--carbon-text-muted);
+}
+.source-legend__dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-inline-end: 0.375rem;
+  vertical-align: middle;
+}
+.source-legend__dot--claude { background: var(--carbon-accent); }
+.source-legend__dot--cursor { background: rgba(148, 163, 184, 0.3); }
+
+/* ── Aggregate Source Chart ── */
+.source-overview {
+  margin-block-end: 3rem;
+}
+
+.source-chart-container {
+  background: var(--carbon-surface);
+  border: 1px solid var(--carbon-border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+}
+
+.source-chart-container svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.source-overview__legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-block-start: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--carbon-text-muted);
+}
+
+.source-overview__dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-inline-end: 0.375rem;
+  vertical-align: middle;
+}
+
+/* ── Aggregate Skills ── */
+.all-skills {
+  margin-block-end: 3rem;
+}
+
+.all-skills__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+}
+
+.all-skills__chip {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--carbon-accent);
+  background: rgba(148, 163, 184, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  padding: 0.3125rem 0.75rem;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.02em;
+}
+
+/* ── Activity Summary ── */
+.activity-summary {
+  margin-block-end: 3rem;
+}
+
+.activity-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--carbon-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.activity-cell {
+  background: var(--carbon-card);
+  padding: 1.25rem 1rem;
+}
+
+.activity-cell__project {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--carbon-white);
+  margin-block-end: 0.75rem;
+}
+
+.activity-cell__bar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(148, 163, 184, 0.08);
+  margin-block-end: 0.5rem;
+  overflow: hidden;
+}
+
+.activity-cell__fill {
+  height: 100%;
+  background: var(--carbon-accent);
+  border-radius: 2px;
+}
+
+.activity-cell__meta {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--carbon-text-muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+@media (max-width: 768px) {
+  .activity-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Footer ── */
+.carbon-footer {
+  margin-block-start: 4rem;
+  padding-block-start: 1.5rem;
+  border-top: 1px solid var(--carbon-border);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--carbon-text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .carbon-page { padding: 1.25rem 1rem; }
+  .carbon-nav { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+  .profile__name { font-size: 1.75rem; }
+  .profile__photo { width: 80px; height: 100px; }
+  .profile__links { font-size: 0.75rem; }
+  .stats-bar { grid-template-columns: repeat(2, 1fr); }
+  .card__header, .card__body { padding: 1rem 1.25rem; }
+  .card-stats { flex-wrap: wrap; gap: 0.75rem; }
+  .carbon-footer { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+}
+
+/* ── Focus styles ── */
+*:focus-visible {
+  outline: 2px solid var(--carbon-accent);
+  outline-offset: 2px;
+}
+
+    /* ── Clickable cards ── */
+    a.project-card, a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.project-card:hover, a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<div class="carbon-page">
+
+  <!-- Navigation -->
+  <nav class="carbon-nav" aria-label="Main navigation">
+    <a href="./portfolio.html" class="carbon-nav__brand">@james</a>
+    <ul class="carbon-nav__links">
+      <li><a href="./portfolio.html" aria-current="page">Portfolio</a></li>
+      <li><a href="./project.html">Project</a></li>
+      <li><a href="./session.html">Session</a></li>
+    </ul>
+  </nav>
+
+  <main id="main-content">
+
+    <!-- Profile Header -->
+    <header class="profile fade-in" aria-label="Profile">
+      <img src="../assets/headshot-man-1-400.jpg" alt="James Miller" class="profile__photo" width="120" height="120">
+      <h1 class="profile__name">James Miller</h1>
+      <p class="profile__bio">Software architect focused on systems programming and developer experience. I think deeply about the tools developers use daily — from git hooks to real-time sync. Rust and TypeScript are my primary languages.</p>
+      <p class="profile__location">Austin, TX</p>
+      <div class="profile__links">
+        <a href="mailto:james@heyiam.com">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg>
+          james@heyiam.com
+        </a>
+        <a href="https://linkedin.com/in/jamesmiller">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>
+          LinkedIn
+        </a>
+        <a href="https://github.com/interactivecats/heyi.am">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+        <a href="https://x.com/jmillerdev">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          @jmillerdev
+        </a>
+        <a href="https://jamesmiller.dev">jamesmiller.dev</a>
+        <a href="./project.html">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+          Resume (PDF)
+        </a>
+      </div>
+    </header>
+
+    <!-- Aggregate Stats -->
+    <section class="stats-bar fade-in" aria-label="Portfolio statistics">
+      <div class="stat-cell">
+        <div class="stat-cell__value" data-count="3">0</div>
+        <div class="stat-cell__label">Projects</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell__value" data-count="28">0</div>
+        <div class="stat-cell__label">Sessions</div>
+      </div>
+      <div class="stat-cell stat-cell--leverage">
+        <div class="leverage-cell">
+          <div class="leverage-cell__value">24h</div>
+          <div class="leverage-cell__label">You</div>
+        </div>
+        <div class="leverage-cell">
+          <div class="leverage-cell__value leverage-cell__value--accent">100h</div>
+          <div class="leverage-cell__label">Agents</div>
+        </div>
+        <div class="leverage-cell">
+          <div class="leverage-cell__value leverage-cell__value--accent">4.2&times;</div>
+          <div class="leverage-cell__label">Multiplier</div>
+        </div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell__value" data-count="18400">0</div>
+        <div class="stat-cell__label">Lines Changed</div>
+      </div>
+    </section>
+
+    <!-- Projects -->
+    <section aria-label="Projects">
+      <h2 class="section-heading">Projects</h2>
+
+      <div class="projects-grid">
+
+        <!-- BudgetWise -->
+        <article class="card fade-in">
+          <div class="card__header brushed-header">
+            <h3 class="card__title"><a href="./project.html">BudgetWise</a></h3>
+          </div>
+          <div class="card__body">
+            <p class="card__narrative">Personal finance app with recurring transaction detection, Plaid integration, and spending insights dashboard.</p>
+            <ul class="skill-list" aria-label="Skills used in BudgetWise">
+              <li class="skill-chip">TypeScript</li>
+              <li class="skill-chip">React</li>
+              <li class="skill-chip">Next.js</li>
+              <li class="skill-chip">Prisma</li>
+              <li class="skill-chip">PostgreSQL</li>
+              <li class="skill-chip">Stripe API</li>
+            </ul>
+            <div class="card-stats">
+              <span><span class="card-stats__value">8</span> sessions</span>
+              <span><span class="card-stats__value">42.5h</span> time</span>
+              <span><span class="card-stats__value">4,460</span> LOC</span>
+            </div>
+            <div class="source-bar" role="img" aria-label="Source breakdown: Claude 62.5%, Cursor 37.5%">
+              <div class="source-bar__segment source-bar__segment--claude" style="width: 62.5%"></div>
+              <div class="source-bar__segment source-bar__segment--cursor" style="width: 37.5%"></div>
+            </div>
+            <div class="source-legend">
+              <span><span class="source-legend__dot source-legend__dot--claude"></span>Claude 62.5%</span>
+              <span><span class="source-legend__dot source-legend__dot--cursor"></span>Cursor 37.5%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- ShellHook -->
+        <article class="card fade-in">
+          <div class="card__header brushed-header">
+            <h3 class="card__title"><a href="./project.html">ShellHook</a></h3>
+          </div>
+          <div class="card__body">
+            <p class="card__narrative">Rust CLI tool for managing git hooks with TOML configuration and automatic symlinking.</p>
+            <ul class="skill-list" aria-label="Skills used in ShellHook">
+              <li class="skill-chip">Rust</li>
+              <li class="skill-chip">CLI design</li>
+              <li class="skill-chip">TOML parsing</li>
+              <li class="skill-chip">Git internals</li>
+              <li class="skill-chip">Shell scripting</li>
+            </ul>
+            <div class="card-stats">
+              <span><span class="card-stats__value">7</span> sessions</span>
+              <span><span class="card-stats__value">32h</span> time</span>
+              <span><span class="card-stats__value">3,580</span> LOC</span>
+            </div>
+            <div class="source-bar" role="img" aria-label="Source breakdown: Claude 85%, Cursor 15%">
+              <div class="source-bar__segment source-bar__segment--claude" style="width: 85%"></div>
+              <div class="source-bar__segment source-bar__segment--cursor" style="width: 15%"></div>
+            </div>
+            <div class="source-legend">
+              <span><span class="source-legend__dot source-legend__dot--claude"></span>Claude 85%</span>
+              <span><span class="source-legend__dot source-legend__dot--cursor"></span>Cursor 15%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- PixelBoard -->
+        <article class="card fade-in">
+          <div class="card__header brushed-header">
+            <h3 class="card__title"><a href="./project.html">PixelBoard</a></h3>
+          </div>
+          <div class="card__body">
+            <p class="card__narrative">Real-time collaborative drawing canvas with CRDT-based state sync and pressure-sensitive input.</p>
+            <ul class="skill-list" aria-label="Skills used in PixelBoard">
+              <li class="skill-chip">TypeScript</li>
+              <li class="skill-chip">WebSocket</li>
+              <li class="skill-chip">Canvas API</li>
+              <li class="skill-chip">Redis</li>
+              <li class="skill-chip">Express</li>
+              <li class="skill-chip">CRDT</li>
+            </ul>
+            <div class="card-stats">
+              <span><span class="card-stats__value">5</span> sessions</span>
+              <span><span class="card-stats__value">28h</span> time</span>
+              <span><span class="card-stats__value">2,940</span> LOC</span>
+            </div>
+            <div class="source-bar" role="img" aria-label="Source breakdown: Claude 60%, Cursor 40%">
+              <div class="source-bar__segment source-bar__segment--claude" style="width: 60%"></div>
+              <div class="source-bar__segment source-bar__segment--cursor" style="width: 40%"></div>
+            </div>
+            <div class="source-legend">
+              <span><span class="source-legend__dot source-legend__dot--claude"></span>Claude 60%</span>
+              <span><span class="source-legend__dot source-legend__dot--cursor"></span>Cursor 40%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- DevLog -->
+        <article class="card fade-in">
+          <div class="card__header brushed-header">
+            <h3 class="card__title"><a href="./project.html">DevLog</a></h3>
+          </div>
+          <div class="card__body">
+            <p class="card__narrative">CLI tool for capturing development decisions and context as structured markdown notes.</p>
+            <ul class="skill-list" aria-label="Skills used in DevLog">
+              <li class="skill-chip">TypeScript</li>
+              <li class="skill-chip">Node.js</li>
+              <li class="skill-chip">CLI design</li>
+              <li class="skill-chip">Markdown</li>
+              <li class="skill-chip">SQLite</li>
+</ul>
+            <div class="card-stats">
+              <span><span class="card-stats__value">5</span> sessions</span>
+              <span><span class="card-stats__value">18h</span> time</span>
+              <span><span class="card-stats__value">1,840</span> LOC</span>
+            </div>
+            <div class="source-bar" role="img" aria-label="Source breakdown: Claude 80%, Cursor 20%">
+              <div class="source-bar__segment source-bar__segment--claude" style="width: 80%"></div>
+              <div class="source-bar__segment source-bar__segment--cursor" style="width: 20%"></div>
+            </div>
+            <div class="source-legend">
+              <span><span class="source-legend__dot source-legend__dot--claude"></span>Claude 80%</span>
+              <span><span class="source-legend__dot source-legend__dot--cursor"></span>Cursor 20%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Snapgrid -->
+        <article class="card fade-in">
+          <div class="card__header brushed-header">
+            <h3 class="card__title"><a href="./project.html">Snapgrid</a></h3>
+          </div>
+          <div class="card__body">
+            <p class="card__narrative">Responsive image gallery with masonry layout, lazy loading, and keyboard navigation.</p>
+            <ul class="skill-list" aria-label="Skills used in Snapgrid">
+              <li class="skill-chip">TypeScript</li>
+              <li class="skill-chip">React</li>
+              <li class="skill-chip">CSS Grid</li>
+              <li class="skill-chip">IntersectionObserver</li>
+              <li class="skill-chip">Accessibility</li>
+</ul>
+            <div class="card-stats">
+              <span><span class="card-stats__value">4</span> sessions</span>
+              <span><span class="card-stats__value">14h</span> time</span>
+              <span><span class="card-stats__value">1,520</span> LOC</span>
+            </div>
+            <div class="source-bar" role="img" aria-label="Source breakdown: Claude 50%, Cursor 50%">
+              <div class="source-bar__segment source-bar__segment--claude" style="width: 50%"></div>
+              <div class="source-bar__segment source-bar__segment--cursor" style="width: 50%"></div>
+            </div>
+            <div class="source-legend">
+              <span><span class="source-legend__dot source-legend__dot--claude"></span>Claude 50%</span>
+              <span><span class="source-legend__dot source-legend__dot--cursor"></span>Cursor 50%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Terracotta -->
+        <article class="card fade-in">
+          <div class="card__header brushed-header">
+            <h3 class="card__title"><a href="./project.html">Terracotta</a></h3>
+          </div>
+          <div class="card__body">
+            <p class="card__narrative">Design token pipeline that generates CSS custom properties, Tailwind config, and Figma tokens from a single YAML source.</p>
+            <ul class="skill-list" aria-label="Skills used in Terracotta">
+              <li class="skill-chip">TypeScript</li>
+              <li class="skill-chip">Node.js</li>
+              <li class="skill-chip">YAML</li>
+              <li class="skill-chip">CSS</li>
+              <li class="skill-chip">Figma API</li>
+</ul>
+            <div class="card-stats">
+              <span><span class="card-stats__value">6</span> sessions</span>
+              <span><span class="card-stats__value">22h</span> time</span>
+              <span><span class="card-stats__value">2,680</span> LOC</span>
+            </div>
+            <div class="source-bar" role="img" aria-label="Source breakdown: Claude 70%, Cursor 30%">
+              <div class="source-bar__segment source-bar__segment--claude" style="width: 70%"></div>
+              <div class="source-bar__segment source-bar__segment--cursor" style="width: 30%"></div>
+            </div>
+            <div class="source-legend">
+              <span><span class="source-legend__dot source-legend__dot--claude"></span>Claude 70%</span>
+              <span><span class="source-legend__dot source-legend__dot--cursor"></span>Cursor 30%</span>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- Aggregate Source Chart -->
+    <section class="source-overview fade-in" aria-label="Source breakdown across all projects">
+      <h2 class="section-heading">Source Overview</h2>
+      <div class="source-chart-container">
+        <svg viewBox="0 0 800 160" aria-label="Bar chart showing source tool usage per project">
+          <!-- Grid -->
+          <line x1="120" y1="20" x2="120" y2="140" stroke="rgba(148,163,184,0.1)" stroke-width="1"/>
+          <line x1="120" y1="140" x2="770" y2="140" stroke="rgba(148,163,184,0.15)" stroke-width="1"/>
+          <line x1="120" y1="20" x2="770" y2="20" stroke="rgba(148,163,184,0.06)" stroke-width="1" stroke-dasharray="4,4"/>
+          <line x1="120" y1="60" x2="770" y2="60" stroke="rgba(148,163,184,0.06)" stroke-width="1" stroke-dasharray="4,4"/>
+          <line x1="120" y1="100" x2="770" y2="100" stroke="rgba(148,163,184,0.06)" stroke-width="1" stroke-dasharray="4,4"/>
+
+          <!-- Project labels -->
+          <text x="115" y="42" text-anchor="end" fill="#a1a1aa" font-family="Inter, sans-serif" font-size="11">BudgetWise</text>
+          <text x="115" y="82" text-anchor="end" fill="#a1a1aa" font-family="Inter, sans-serif" font-size="11">ShellHook</text>
+          <text x="115" y="122" text-anchor="end" fill="#a1a1aa" font-family="Inter, sans-serif" font-size="11">PixelBoard</text>
+
+          <!-- BudgetWise bars -->
+          <rect x="120" y="28" width="406" height="18" rx="3" fill="#94a3b8" opacity="0.9"/>
+          <rect x="526" y="28" width="244" height="18" rx="3" fill="rgba(148,163,184,0.3)"/>
+          <text x="530" y="41" fill="#171717" font-family="IBM Plex Mono, monospace" font-size="9">37.5%</text>
+          <text x="124" y="41" fill="#171717" font-family="IBM Plex Mono, monospace" font-size="9">62.5%</text>
+
+          <!-- ShellHook bars -->
+          <rect x="120" y="68" width="553" height="18" rx="3" fill="#94a3b8" opacity="0.9"/>
+          <rect x="673" y="68" width="97" height="18" rx="3" fill="rgba(148,163,184,0.3)"/>
+          <text x="124" y="81" fill="#171717" font-family="IBM Plex Mono, monospace" font-size="9">85%</text>
+
+          <!-- PixelBoard bars -->
+          <rect x="120" y="108" width="390" height="18" rx="3" fill="#94a3b8" opacity="0.9"/>
+          <rect x="510" y="108" width="260" height="18" rx="3" fill="rgba(148,163,184,0.3)"/>
+          <text x="124" y="121" fill="#171717" font-family="IBM Plex Mono, monospace" font-size="9">60%</text>
+          <text x="514" y="121" fill="#171717" font-family="IBM Plex Mono, monospace" font-size="9">40%</text>
+        </svg>
+      </div>
+      <div class="source-overview__legend">
+        <span><span class="source-overview__dot" style="background:#94a3b8;"></span>Claude Code</span>
+        <span><span class="source-overview__dot" style="background:rgba(148,163,184,0.3);"></span>Cursor</span>
+      </div>
+    </section>
+
+    <!-- Activity Summary -->
+    <section class="activity-summary fade-in" aria-label="Activity summary">
+      <h2 class="section-heading">Activity</h2>
+      <div class="activity-grid">
+        <div class="activity-cell">
+          <div class="activity-cell__project">BudgetWise</div>
+          <div class="activity-cell__bar">
+            <div class="activity-cell__fill" style="width: 100%;"></div>
+          </div>
+          <div class="activity-cell__meta">
+            <span>8 sessions</span>
+            <span>42.5h</span>
+          </div>
+        </div>
+        <div class="activity-cell">
+          <div class="activity-cell__project">ShellHook</div>
+          <div class="activity-cell__bar">
+            <div class="activity-cell__fill" style="width: 75%;"></div>
+          </div>
+          <div class="activity-cell__meta">
+            <span>7 sessions</span>
+            <span>32h</span>
+          </div>
+        </div>
+        <div class="activity-cell">
+          <div class="activity-cell__project">PixelBoard</div>
+          <div class="activity-cell__bar">
+            <div class="activity-cell__fill" style="width: 66%;"></div>
+          </div>
+          <div class="activity-cell__meta">
+            <span>5 sessions</span>
+            <span>28h</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Aggregate Skills -->
+    <section class="all-skills fade-in" aria-label="All skills across projects">
+      <h2 class="section-heading">Skills</h2>
+      <ul class="all-skills__list">
+        <li class="all-skills__chip">TypeScript</li>
+        <li class="all-skills__chip">React</li>
+        <li class="all-skills__chip">Next.js</li>
+        <li class="all-skills__chip">Prisma</li>
+        <li class="all-skills__chip">PostgreSQL</li>
+        <li class="all-skills__chip">Stripe API</li>
+        <li class="all-skills__chip">Rust</li>
+        <li class="all-skills__chip">CLI design</li>
+        <li class="all-skills__chip">TOML parsing</li>
+        <li class="all-skills__chip">Git internals</li>
+        <li class="all-skills__chip">Shell scripting</li>
+        <li class="all-skills__chip">WebSocket</li>
+        <li class="all-skills__chip">Canvas API</li>
+        <li class="all-skills__chip">Redis</li>
+        <li class="all-skills__chip">Express</li>
+        <li class="all-skills__chip">CRDT</li>
+      </ul>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="carbon-footer">
+    <span>Built with heyi.am</span>
+    <span>Carbon template</span>
+  </footer>
+
+</div>
+
+<script>
+/* ── Intersection Observer for fade-in ── */
+(function() {
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var els = document.querySelectorAll('.fade-in');
+
+  if (prefersReduced) {
+    els.forEach(function(el) { el.classList.add('visible'); });
+    return;
+  }
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  els.forEach(function(el, i) {
+    el.style.transitionDelay = (i * 0.08) + 's';
+    observer.observe(el);
+  });
+})();
+
+/* ── Stat Counter Animation ── */
+(function() {
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var cells = document.querySelectorAll('.stat-cell__value[data-count]');
+
+  if (prefersReduced) {
+    cells.forEach(function(el) {
+      var target = parseInt(el.getAttribute('data-count'), 10);
+      el.textContent = target >= 1000 ? target.toLocaleString() : target;
+    });
+    return;
+  }
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (!entry.isIntersecting) return;
+      var el = entry.target;
+      var target = parseInt(el.getAttribute('data-count'), 10);
+      var duration = 1200;
+      var start = null;
+
+      function step(timestamp) {
+        if (!start) start = timestamp;
+        var progress = Math.min((timestamp - start) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        var current = Math.round(eased * target);
+        el.textContent = current >= 1000 ? current.toLocaleString() : current;
+        if (progress < 1) requestAnimationFrame(step);
+      }
+
+      requestAnimationFrame(step);
+      observer.unobserve(el);
+    });
+  }, { threshold: 0.3 });
+
+  cells.forEach(function(el) { observer.observe(el); });
+})();
+</script>
+
+</body>
+</html>

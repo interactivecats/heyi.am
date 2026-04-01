@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BudgetWise — Alex Chen — heyi.am</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ────────────────────────────────────────────────
+       ZEN TEMPLATE — Project Page
+       Japanese minimalism. Maximum whitespace.
+       No cards, no borders, no backgrounds.
+       Just typography and horizontal rules.
+       ──────────────────────────────────────────────── */
+
+    /* ── Reset ── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ── Zen Design Tokens ── */
+    :root {
+      /* Palette — stone family, intentionally muted */
+      --zen-bg:             #fafaf9;
+      --zen-text:           #1c1917;
+      --zen-text-secondary: #78716c;
+      --zen-text-tertiary:  #a8a29e;
+      --zen-accent:         #78716c;
+      --zen-accent-hover:   #57534e;
+      --zen-rule:           #d6d3d1;
+      --zen-selection-bg:   #d6d3d1;
+      --zen-selection-text: #1c1917;
+
+      /* Typography */
+      --zen-font-display:   'Cormorant Garamond', 'Noto Serif JP', Georgia, serif;
+      --zen-font-body:      'Inter', system-ui, sans-serif;
+      --zen-font-mono:      'IBM Plex Mono', monospace;
+
+      /* Spacing */
+      --zen-radius:         2px;
+      --zen-max-width:      640px;
+      --zen-section-gap:    6rem;
+      --zen-section-gap-sm: 4rem;
+
+      /* Motion */
+      --zen-fade-duration:  1000ms;
+      --zen-fade-ease:      cubic-bezier(0.25, 0.1, 0.25, 1);
+      --zen-stagger:        150ms;
+    }
+
+    /* ── Reduced Motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      :root {
+        --zen-fade-duration: 0ms;
+        --zen-stagger: 0ms;
+      }
+      .zen-fade {
+        opacity: 1 !important;
+        transform: none !important;
+      }
+    }
+
+    /* ── Selection ── */
+    ::selection {
+      background: var(--zen-selection-bg);
+      color: var(--zen-selection-text);
+    }
+    ::-moz-selection {
+      background: var(--zen-selection-bg);
+      color: var(--zen-selection-text);
+    }
+
+    /* ── Skip Link ── */
+    .zen-skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      background: var(--zen-text);
+      color: var(--zen-bg);
+      padding: 0.5rem 1rem;
+      font-family: var(--zen-font-body);
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: var(--zen-radius);
+      z-index: 100;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .zen-skip-link:focus {
+      top: 1rem;
+      outline: 2px solid var(--zen-accent);
+      outline-offset: 2px;
+    }
+
+    /* ── Base ── */
+    html {
+      scroll-behavior: smooth;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+    }
+
+    body {
+      font-family: var(--zen-font-body);
+      color: var(--zen-text);
+      background: var(--zen-bg);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: 100vh;
+    }
+
+    /* ── Links ── */
+    a {
+      color: var(--zen-text);
+      text-decoration: underline;
+      text-decoration-color: var(--zen-rule);
+      text-underline-offset: 3px;
+      text-decoration-thickness: 1px;
+      transition: text-decoration-color 300ms ease;
+    }
+    a:hover {
+      text-decoration-color: var(--zen-text);
+    }
+    a:focus-visible {
+      outline: 2px solid var(--zen-accent);
+      outline-offset: 3px;
+      border-radius: var(--zen-radius);
+    }
+    a:active {
+      color: var(--zen-accent-hover);
+    }
+
+    /* ── Layout ── */
+    .zen-container {
+      max-width: var(--zen-max-width);
+      margin: 0 auto;
+      padding: 3rem 1.25rem 5rem;
+    }
+
+    @media (min-width: 480px) {
+      .zen-container {
+        padding: 4rem 1.5rem 6rem;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .zen-container {
+        padding: 6rem 2rem 8rem;
+      }
+    }
+
+    /* ── Navigation ── */
+    .zen-nav {
+      padding: 1.25rem;
+      max-width: var(--zen-max-width);
+      margin: 0 auto;
+    }
+
+    @media (min-width: 768px) {
+      .zen-nav {
+        padding: 1.5rem 2rem;
+      }
+    }
+
+    .zen-nav-inner {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      font-family: var(--zen-font-mono);
+      font-size: 0.8125rem;
+      color: var(--zen-text-secondary);
+      letter-spacing: 0.01em;
+    }
+
+    .zen-nav a {
+      color: var(--zen-text-secondary);
+      text-decoration: none;
+      padding: 0.125rem 0;
+      transition: color 300ms ease;
+    }
+    .zen-nav a:hover {
+      color: var(--zen-text);
+    }
+    .zen-nav a[aria-current="page"] {
+      color: var(--zen-text);
+    }
+
+    .zen-nav-sep {
+      color: var(--zen-rule);
+      user-select: none;
+    }
+
+    /* ── Sections ── */
+    .zen-section {
+      margin-block-end: var(--zen-section-gap);
+    }
+
+    @media (max-width: 479px) {
+      .zen-section {
+        margin-block-end: var(--zen-section-gap-sm);
+      }
+    }
+
+    /* ── Horizontal Rule ── */
+    .zen-rule {
+      border: none;
+      border-block-start: 1px solid var(--zen-rule);
+      margin-block-end: var(--zen-section-gap);
+    }
+
+    @media (max-width: 479px) {
+      .zen-rule {
+        margin-block-end: var(--zen-section-gap-sm);
+      }
+    }
+
+    /* ── Fade Animation ── */
+    .zen-fade {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    .zen-fade.zen-visible {
+      opacity: 1;
+      transform: translateY(0);
+      transition:
+        opacity var(--zen-fade-duration) var(--zen-fade-ease),
+        transform var(--zen-fade-duration) var(--zen-fade-ease);
+    }
+
+    /* ── Typography ── */
+    .zen-display {
+      font-family: var(--zen-font-display);
+      font-weight: 400;
+      font-size: 2.25rem;
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      color: var(--zen-text);
+      word-break: break-word;
+    }
+
+    @media (min-width: 480px) {
+      .zen-display {
+        font-size: 2.5rem;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .zen-display {
+        font-size: 3rem;
+        line-height: 1.1;
+      }
+    }
+
+    .zen-heading {
+      font-family: var(--zen-font-display);
+      font-weight: 400;
+      font-size: 1.375rem;
+      line-height: 1.3;
+      color: var(--zen-text);
+      margin-block-end: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .zen-heading {
+        font-size: 1.5rem;
+      }
+    }
+
+    .zen-subheading {
+      font-family: var(--zen-font-display);
+      font-weight: 400;
+      font-size: 1.125rem;
+      line-height: 1.4;
+      color: var(--zen-text);
+      margin-block-end: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .zen-subheading {
+        font-size: 1.1875rem;
+      }
+    }
+
+    .zen-body {
+      font-family: var(--zen-font-body);
+      font-size: 0.9375rem;
+      line-height: 1.8;
+      color: var(--zen-text-secondary);
+    }
+
+    .zen-mono {
+      font-family: var(--zen-font-mono);
+      font-size: 0.8125rem;
+      color: var(--zen-text-tertiary);
+      letter-spacing: 0.01em;
+    }
+
+    /* ── Project Links ── */
+    .zen-project-links {
+      font-family: var(--zen-font-mono);
+      font-size: 0.8125rem;
+      color: var(--zen-text-tertiary);
+      margin-block-start: 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem 1.25rem;
+      letter-spacing: 0.01em;
+    }
+
+    .zen-project-links a {
+      color: var(--zen-text-tertiary);
+      transition: color 300ms ease;
+    }
+    .zen-project-links a:hover {
+      color: var(--zen-text);
+    }
+
+    /* ── Screenshot Placeholder ── */
+    .zen-screenshot {
+      margin-block-start: 2.5rem;
+      border-radius: var(--zen-radius);
+      overflow: hidden;
+    }
+
+    .zen-screenshot-chrome {
+      background: #e7e5e4;
+      padding: 0.625rem 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .zen-screenshot-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--zen-rule);
+    }
+
+    .zen-screenshot-url {
+      font-family: var(--zen-font-mono);
+      font-size: 0.6875rem;
+      color: var(--zen-text-tertiary);
+      margin-inline-start: 0.75rem;
+    }
+
+    .zen-screenshot-body {
+      background: linear-gradient(
+        160deg,
+        #e7e5e4 0%,
+        #d6d3d1 40%,
+        #e7e5e4 100%
+      );
+      height: 180px;
+    }
+
+    @media (min-width: 480px) {
+      .zen-screenshot-body {
+        height: 220px;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .zen-screenshot-body {
+        height: 280px;
+      }
+    }
+
+    /* ── Narrative ── */
+    .zen-narrative p {
+      font-family: var(--zen-font-body);
+      font-size: 0.9375rem;
+      line-height: 1.9;
+      color: var(--zen-text-secondary);
+      margin-block-end: 1.5rem;
+    }
+
+    .zen-narrative p:last-child {
+      margin-block-end: 0;
+    }
+
+    @media (min-width: 768px) {
+      .zen-narrative p {
+        line-height: 2;
+      }
+    }
+
+    /* ── Stats — simple inline text ── */
+    .zen-stats {
+      font-family: var(--zen-font-body);
+      font-size: 0.9375rem;
+      color: var(--zen-text-secondary);
+      line-height: 2.2;
+    }
+
+    .zen-stat-value {
+      font-family: var(--zen-font-display);
+      font-size: 1.125rem;
+      font-weight: 500;
+      color: var(--zen-text);
+    }
+
+    @media (min-width: 768px) {
+      .zen-stat-value {
+        font-size: 1.25rem;
+      }
+    }
+
+    /* ── Work Timeline Chart — minimal bars ── */
+    .zen-chart {
+      margin-block-start: 0.5rem;
+    }
+
+    .zen-chart-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-block-end: 0.625rem;
+      font-family: var(--zen-font-mono);
+      font-size: 0.75rem;
+      color: var(--zen-text-tertiary);
+      letter-spacing: 0.01em;
+    }
+
+    .zen-chart-row:last-child {
+      margin-block-end: 0;
+    }
+
+    .zen-chart-label {
+      min-width: 4.5rem;
+      text-align: end;
+      flex-shrink: 0;
+    }
+
+    @media (min-width: 480px) {
+      .zen-chart-label {
+        min-width: 5rem;
+      }
+    }
+
+    .zen-chart-bar-track {
+      flex: 1;
+      min-width: 0;
+      height: 3px;
+      background: transparent;
+      position: relative;
+    }
+
+    .zen-chart-bar {
+      height: 3px;
+      background: var(--zen-rule);
+      border-radius: 1px;
+      position: absolute;
+      inset-block-start: 0;
+      inset-inline-start: 0;
+    }
+
+    .zen-chart-value {
+      min-width: 2.25rem;
+      flex-shrink: 0;
+    }
+
+    /* ── Phase Timeline — minimal vertical line ── */
+    .zen-timeline {
+      position: relative;
+      padding-inline-start: 1.75rem;
+    }
+
+    .zen-timeline::before {
+      content: '';
+      position: absolute;
+      inset-inline-start: 0;
+      top: 0.5rem;
+      bottom: 0.5rem;
+      width: 1px;
+      background: var(--zen-rule);
+    }
+
+    .zen-timeline-item {
+      margin-block-end: 2.25rem;
+      position: relative;
+    }
+
+    .zen-timeline-item:last-child {
+      margin-block-end: 0;
+    }
+
+    .zen-timeline-item::before {
+      content: '';
+      position: absolute;
+      inset-inline-start: -1.75rem;
+      top: 0.5rem;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--zen-accent);
+      transform: translateX(-2px);
+    }
+
+    .zen-timeline-date {
+      font-family: var(--zen-font-mono);
+      font-size: 0.75rem;
+      color: var(--zen-text-tertiary);
+      margin-block-end: 0.25rem;
+      letter-spacing: 0.01em;
+    }
+
+    .zen-timeline-title {
+      font-family: var(--zen-font-display);
+      font-size: 1.0625rem;
+      font-weight: 500;
+      color: var(--zen-text);
+      margin-block-end: 0.375rem;
+    }
+
+    .zen-timeline-desc {
+      font-family: var(--zen-font-body);
+      font-size: 0.875rem;
+      line-height: 1.7;
+      color: var(--zen-text-secondary);
+    }
+
+    /* ── Skills — plain comma-separated text ── */
+    .zen-skills-text {
+      font-family: var(--zen-font-body);
+      font-size: 0.9375rem;
+      line-height: 1.9;
+      color: var(--zen-text-secondary);
+    }
+
+    /* ── Key Decisions ── */
+    .zen-decisions {
+      list-style: none;
+    }
+
+    .zen-decision-item {
+      margin-block-end: 1.25rem;
+      padding-inline-start: 1.25rem;
+      position: relative;
+    }
+
+    .zen-decision-item::before {
+      content: '';
+      position: absolute;
+      inset-inline-start: 0;
+      top: 0.625rem;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--zen-text-tertiary);
+    }
+
+    .zen-decision-item:last-child {
+      margin-block-end: 0;
+    }
+
+    .zen-decision-text {
+      font-family: var(--zen-font-body);
+      font-size: 0.9375rem;
+      line-height: 1.7;
+      color: var(--zen-text-secondary);
+    }
+
+    /* ── Source Breakdown ── */
+    .zen-source {
+      font-family: var(--zen-font-mono);
+      font-size: 0.8125rem;
+      color: var(--zen-text-tertiary);
+      line-height: 2;
+      letter-spacing: 0.01em;
+    }
+
+    /* ── Session List ── */
+    .zen-session-item {
+      margin-block-end: 1.75rem;
+    }
+
+    .zen-session-item:last-child {
+      margin-block-end: 0;
+    }
+
+    .zen-session-title {
+      font-family: var(--zen-font-display);
+      font-size: 1.0625rem;
+      font-weight: 500;
+      color: var(--zen-text);
+      margin-block-end: 0.25rem;
+    }
+
+    .zen-session-title a {
+      text-decoration: none;
+      transition: color 300ms ease;
+    }
+    .zen-session-title a:hover {
+      text-decoration: underline;
+      text-decoration-color: var(--zen-rule);
+      text-underline-offset: 3px;
+      text-decoration-thickness: 1px;
+    }
+    .zen-session-title a:focus-visible {
+      outline: 2px solid var(--zen-accent);
+      outline-offset: 3px;
+      border-radius: var(--zen-radius);
+    }
+
+    .zen-session-meta {
+      font-family: var(--zen-font-mono);
+      font-size: 0.75rem;
+      color: var(--zen-text-tertiary);
+      letter-spacing: 0.01em;
+    }
+
+    .zen-session-divider {
+      border: none;
+      border-block-start: 1px solid var(--zen-rule);
+      margin-block-start: 1.75rem;
+      margin-block-end: 1.75rem;
+      opacity: 0.4;
+    }
+
+    /* ── Footer ── */
+    .zen-footer {
+      margin-block-start: var(--zen-section-gap);
+      padding-block-start: 2rem;
+      border-block-start: 1px solid var(--zen-rule);
+    }
+
+    .zen-footer-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .zen-footer-inner {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
+    .zen-footer-text {
+      font-family: var(--zen-font-mono);
+      font-size: 0.75rem;
+      color: var(--zen-text-tertiary);
+      letter-spacing: 0.01em;
+    }
+
+    .zen-footer-nav {
+      display: flex;
+      gap: 1.5rem;
+      font-family: var(--zen-font-mono);
+      font-size: 0.75rem;
+    }
+
+    .zen-footer-nav a {
+      color: var(--zen-text-tertiary);
+      text-decoration: none;
+      transition: color 300ms ease;
+    }
+    .zen-footer-nav a:hover {
+      color: var(--zen-text);
+    }
+
+    /* ── Print Styles ── */
+    @media print {
+      body {
+        background: white;
+        color: black;
+        font-size: 11pt;
+      }
+
+      .zen-nav,
+      .zen-skip-link,
+      .zen-footer-nav,
+      .zen-screenshot {
+        display: none;
+      }
+
+      .zen-container {
+        max-width: 100%;
+        padding: 0;
+      }
+
+      .zen-fade {
+        opacity: 1 !important;
+        transform: none !important;
+      }
+
+      .zen-section {
+        margin-block-end: 2rem;
+        break-inside: avoid;
+      }
+
+      .zen-rule {
+        margin-block-end: 2rem;
+      }
+
+      .zen-display {
+        font-size: 24pt;
+      }
+
+      .zen-heading {
+        font-size: 14pt;
+      }
+
+      a {
+        text-decoration: none;
+        color: black;
+      }
+
+      a[href^="http"]::after {
+        content: " (" attr(href) ")";
+        font-size: 0.75em;
+        color: #666;
+      }
+
+      .zen-timeline-item {
+        break-inside: avoid;
+      }
+
+      .zen-footer {
+        border-block-start-color: #ccc;
+      }
+    }
+  
+    /* ── Clickable session cards ── */
+    a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="zen-skip-link">Skip to content</a>
+
+  <!-- ── Navigation ── -->
+  <header>
+    <nav class="zen-nav" aria-label="Portfolio navigation">
+      <div class="zen-nav-inner">
+        <a href="./portfolio.html">@alex</a>
+        <span class="zen-nav-sep" aria-hidden="true">/</span>
+        <a href="./project.html" aria-current="page">budgetwise</a>
+        <span class="zen-nav-sep" aria-hidden="true">/</span>
+        <a href="./session.html">session</a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ── Main Content ── -->
+  <main id="main-content" class="zen-container">
+
+    <!-- ────────────────────────────────
+         Section 1: Project Header
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Project header">
+      <h1 class="zen-display">BudgetWise</h1>
+      <div class="zen-project-links">
+        <a href="https://github.com/alex/budgetwise">github.com/alex/budgetwise</a>
+        <a href="https://budgetwise.app">budgetwise.app</a>
+      </div>
+
+      <div class="zen-screenshot" role="img" aria-label="BudgetWise application screenshot placeholder">
+        <div class="zen-screenshot-chrome">
+          <span class="zen-screenshot-dot"></span>
+          <span class="zen-screenshot-dot"></span>
+          <span class="zen-screenshot-dot"></span>
+          <span class="zen-screenshot-url">budgetwise.app</span>
+        </div>
+        <div class="zen-screenshot-body"></div>
+      </div>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+
+    <!-- ────────────────────────────────
+         Section 2: Narrative
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Project narrative">
+      <h2 class="zen-heading">Narrative</h2>
+      <div class="zen-narrative">
+        <p>
+          Started with a basic Prisma schema but realized halfway through that
+          I needed polymorphic transaction types. The AI kept suggesting
+          single-table inheritance but I pushed back &mdash; went with a
+          discriminated union pattern instead. Nullable fields for
+          transfer-specific data, hard deletes with an audit log.
+        </p>
+        <p>
+          The recurring transaction detection was the hardest part. Had to
+          figure out the right tolerance windows &mdash; monthly transactions
+          drift by a few days, weekly ones are more precise. Settled on three
+          consecutive interval matches before marking something as recurring.
+          The partial index on merchant_normalized brought the detection query
+          from 2 seconds to 120ms on 10k transactions.
+        </p>
+        <p>
+          Plaid integration went smoother than expected. The token exchange flow
+          is straightforward, but the webhook handling needed careful
+          idempotency &mdash; Plaid sends duplicate webhooks, so I used a
+          processed-events table keyed on webhook ID.
+        </p>
+      </div>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+
+    <!-- ────────────────────────────────
+         Section 3: Stats (inline text)
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Project statistics">
+      <h2 class="zen-heading">Numbers</h2>
+      <p class="zen-stats">
+        <span class="zen-stat-value">8</span> sessions,
+        <span class="zen-stat-value">8.1</span> hours of my time,
+        <span class="zen-stat-value">34.4</span> hours of agent time,
+        <span class="zen-stat-value">4,460</span> lines of code,
+        <span class="zen-stat-value">156</span> files,
+        <span class="zen-stat-value">2.1M</span> tokens
+      </p>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+
+    <!-- ────────────────────────────────
+         Section 4: Work Timeline
+         Minimal horizontal bars
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Work timeline">
+      <h2 class="zen-heading">Work Timeline</h2>
+      <div class="zen-chart" role="img" aria-label="Session duration chart showing 8 sessions from February to March 2026">
+        <div class="zen-chart-row">
+          <span class="zen-chart-label">Feb 3</span>
+          <span class="zen-chart-bar-track">
+            <span class="zen-chart-bar" style="width: 81.8%"></span>
+          </span>
+          <span class="zen-chart-value">72m</span>
+        </div>
+        <div class="zen-chart-row">
+          <span class="zen-chart-label">Feb 14</span>
+          <span class="zen-chart-bar-track">
+            <span class="zen-chart-bar" style="width: 73.9%"></span>
+          </span>
+          <span class="zen-chart-value">65m</span>
+        </div>
+        <div class="zen-chart-row">
+          <span class="zen-chart-label">Mar 1</span>
+          <span class="zen-chart-bar-track">
+            <span class="zen-chart-bar" style="width: 100%"></span>
+          </span>
+          <span class="zen-chart-value">88m</span>
+        </div>
+        <div class="zen-chart-row">
+          <span class="zen-chart-label">Mar 10</span>
+          <span class="zen-chart-bar-track">
+            <span class="zen-chart-bar" style="width: 62.5%"></span>
+          </span>
+          <span class="zen-chart-value">55m</span>
+        </div>
+        <div class="zen-chart-row">
+          <span class="zen-chart-label">Mar 14</span>
+          <span class="zen-chart-bar-track">
+            <span class="zen-chart-bar" style="width: 51.1%"></span>
+          </span>
+          <span class="zen-chart-value">45m</span>
+        </div>
+        <div class="zen-chart-row">
+          <span class="zen-chart-label">Mar 18</span>
+          <span class="zen-chart-bar-track">
+            <span class="zen-chart-bar" style="width: 70.5%"></span>
+          </span>
+          <span class="zen-chart-value">62m</span>
+        </div>
+        <div class="zen-chart-row">
+          <span class="zen-chart-label">Mar 22</span>
+          <span class="zen-chart-bar-track">
+            <span class="zen-chart-bar" style="width: 88.6%"></span>
+          </span>
+          <span class="zen-chart-value">78m</span>
+        </div>
+        <div class="zen-chart-row">
+          <span class="zen-chart-label">Mar 26</span>
+          <span class="zen-chart-bar-track">
+            <span class="zen-chart-bar" style="width: 56.8%"></span>
+          </span>
+          <span class="zen-chart-value">50m</span>
+        </div>
+      </div>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+
+    <!-- ────────────────────────────────
+         Section 5: Phases
+         Minimal vertical line with dates
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Project phases">
+      <h2 class="zen-heading">Phases</h2>
+      <div class="zen-timeline" role="list" aria-label="Project phase timeline">
+        <div class="zen-timeline-item" role="listitem">
+          <p class="zen-timeline-date">Feb 3 &ndash; 14</p>
+          <p class="zen-timeline-title">Foundation</p>
+          <p class="zen-timeline-desc">
+            Schema design, Prisma setup, transaction CRUD
+          </p>
+        </div>
+        <div class="zen-timeline-item" role="listitem">
+          <p class="zen-timeline-date">Feb 17 &ndash; 26</p>
+          <p class="zen-timeline-title">Data Pipeline</p>
+          <p class="zen-timeline-desc">
+            CSV import, Plaid integration, recurring detection
+          </p>
+        </div>
+        <div class="zen-timeline-item" role="listitem">
+          <p class="zen-timeline-date">Mar 1 &ndash; 14</p>
+          <p class="zen-timeline-title">Intelligence</p>
+          <p class="zen-timeline-desc">
+            Search, full-text indexing, spending insights
+          </p>
+        </div>
+        <div class="zen-timeline-item" role="listitem">
+          <p class="zen-timeline-date">Mar 16 &ndash; 26</p>
+          <p class="zen-timeline-title">Hardening</p>
+          <p class="zen-timeline-desc">
+            2FA, mobile responsive, CI/CD, performance
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+
+    <!-- ────────────────────────────────
+         Section 6: Skills
+         Plain comma-separated text
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Skills used">
+      <h2 class="zen-heading">Skills</h2>
+      <p class="zen-skills-text">
+        TypeScript, React, Next.js, Prisma, PostgreSQL, Tailwind CSS,
+        Stripe API, Plaid API, Chart.js, Playwright
+      </p>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+
+    <!-- ────────────────────────────────
+         Section 7: Key Decisions
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Key decisions">
+      <h2 class="zen-heading">Key Decisions</h2>
+      <ul class="zen-decisions" role="list">
+        <li class="zen-decision-item">
+          <p class="zen-decision-text">
+            Discriminated union over single-table inheritance for transaction types
+          </p>
+        </li>
+        <li class="zen-decision-item">
+          <p class="zen-decision-text">
+            Partial index on merchant_normalized for 16x query speedup
+          </p>
+        </li>
+        <li class="zen-decision-item">
+          <p class="zen-decision-text">
+            Processed-events table for Plaid webhook idempotency
+          </p>
+        </li>
+      </ul>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+
+    <!-- ────────────────────────────────
+         Section 8: Source Breakdown
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Source breakdown">
+      <h2 class="zen-heading">Source</h2>
+      <p class="zen-source">
+        Claude Code 62.5% (5 sessions) &middot; Cursor 37.5% (3 sessions)
+      </p>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+
+    <!-- ────────────────────────────────
+         Section 9: Featured Sessions
+         ──────────────────────────────── -->
+    <section class="zen-section zen-fade" aria-label="Featured sessions">
+      <h2 class="zen-heading">Sessions</h2>
+
+      <div class="zen-session-item zen-fade">
+        <p class="zen-session-title">
+          <a href="./session.html">Set up Prisma schema</a>
+        </p>
+        <p class="zen-session-meta">
+          Feb 3 &middot; 72m &middot; 680 LOC &middot; 7 agents &middot; schema
+        </p>
+      </div>
+
+      <hr class="zen-session-divider" aria-hidden="true">
+
+      <div class="zen-session-item zen-fade">
+        <p class="zen-session-title">
+          <a href="./session.html">Transaction list + infinite scroll</a>
+        </p>
+        <p class="zen-session-meta">
+          Feb 14 &middot; 65m &middot; 520 LOC &middot; 5 agents &middot; frontend
+        </p>
+      </div>
+
+      <hr class="zen-session-divider" aria-hidden="true">
+
+      <div class="zen-session-item zen-fade">
+        <p class="zen-session-title">
+          <a href="./session.html">Recurring transaction detection</a>
+        </p>
+        <p class="zen-session-meta">
+          Mar 1 &middot; 88m &middot; 890 LOC &middot; 6 agents &middot; algorithm
+        </p>
+      </div>
+
+      <hr class="zen-session-divider" aria-hidden="true">
+
+      <div class="zen-session-item zen-fade">
+        <p class="zen-session-title">
+          <a href="./session.html">CSV import pipeline</a>
+        </p>
+        <p class="zen-session-meta">
+          Mar 14 &middot; 78m &middot; 640 LOC &middot; 5 agents &middot; import
+        </p>
+      </div>
+
+      <hr class="zen-session-divider" aria-hidden="true">
+
+      <div class="zen-session-item zen-fade">
+        <p class="zen-session-title">
+          <a href="./session.html">Plaid integration</a>
+        </p>
+        <p class="zen-session-meta">
+          Mar 22 &middot; 90m &middot; 780 LOC &middot; 8 agents &middot; integration
+        </p>
+      </div>
+
+      <hr class="zen-session-divider" aria-hidden="true">
+
+      <div class="zen-session-item zen-fade">
+        <p class="zen-session-title">
+          <a href="./session.html">Spending insights dashboard</a>
+        </p>
+        <p class="zen-session-meta">
+          Mar 26 &middot; 70m &middot; 620 LOC &middot; 4 agents &middot; insights
+        </p>
+      </div>
+    </section>
+
+    <!-- ── Footer ── -->
+    <footer class="zen-footer zen-fade" role="contentinfo">
+      <div class="zen-footer-inner">
+        <p class="zen-footer-text">heyi.am</p>
+        <nav class="zen-footer-nav" aria-label="Footer navigation">
+          <a href="./portfolio.html">portfolio</a>
+          <a href="./project.html">project</a>
+          <a href="./session.html">session</a>
+        </nav>
+      </div>
+    </footer>
+
+  </main>
+
+  <!-- ── Fade-in Script ── -->
+  <script>
+    /**
+     * Zen template — Intersection Observer fade-in
+     *
+     * Each .zen-fade element starts at opacity:0 with a slight
+     * translateY offset. When it enters the viewport, we add
+     * .zen-visible which triggers a 1000ms CSS transition.
+     *
+     * prefers-reduced-motion: all elements shown immediately.
+     */
+    (function () {
+      'use strict';
+
+      /* Respect user motion preferences */
+      var motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+      var elements = document.querySelectorAll('.zen-fade');
+
+      function showAllImmediately() {
+        for (var i = 0; i < elements.length; i++) {
+          elements[i].classList.add('zen-visible');
+          elements[i].style.transitionDelay = '0ms';
+        }
+      }
+
+      if (motionQuery.matches) {
+        showAllImmediately();
+        return;
+      }
+
+      /* Listen for changes (user toggles setting while page is open) */
+      if (motionQuery.addEventListener) {
+        motionQuery.addEventListener('change', function (e) {
+          if (e.matches) {
+            showAllImmediately();
+          }
+        });
+      }
+
+      /* Stagger index tracking for sequential reveal */
+      var revealIndex = 0;
+
+      var observer = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              var delay = revealIndex * 150;
+              entry.target.style.transitionDelay = delay + 'ms';
+              entry.target.classList.add('zen-visible');
+              observer.unobserve(entry.target);
+              revealIndex++;
+
+              /* Reset stagger after a batch has animated */
+              clearTimeout(observer._resetTimer);
+              observer._resetTimer = setTimeout(function () {
+                revealIndex = 0;
+              }, 200);
+            }
+          });
+        },
+        {
+          threshold: 0.08,
+          rootMargin: '0px 0px -60px 0px'
+        }
+      );
+
+      for (var j = 0; j < elements.length; j++) {
+        observer.observe(elements[j]);
+      }
+    })();
+  </script>
+</body>
+</html>

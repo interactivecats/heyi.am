@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Set up Prisma schema — BudgetWise | Daylight</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Daylight Design Tokens ── */
+    :root {
+      --dl-bg:             #ffffff;
+      --dl-surface:        #f8fafc;
+      --dl-card:           #ffffff;
+      --dl-card-tint:      #eff6ff;
+      --dl-text:           #0f172a;
+      --dl-text-secondary: #475569;
+      --dl-text-tertiary:  #94a3b8;
+      --dl-accent:         #0ea5e9;
+      --dl-accent-light:   #e0f2fe;
+      --dl-accent-dark:    #0284c7;
+      --dl-accent-green:   #10b981;
+      --dl-accent-green-light: #d1fae5;
+      --dl-border:         #e2e8f0;
+      --dl-shadow-blue:    0 1px 3px rgba(14, 165, 233, 0.08), 0 1px 2px rgba(14, 165, 233, 0.04);
+      --dl-shadow-blue-lg: 0 4px 16px rgba(14, 165, 233, 0.10), 0 2px 4px rgba(14, 165, 233, 0.06);
+
+      --dl-font-display:   'DM Sans', system-ui, sans-serif;
+      --dl-font-body:      'Inter', system-ui, sans-serif;
+      --dl-font-mono:      'IBM Plex Mono', monospace;
+
+      --dl-radius:         12px;
+      --dl-radius-lg:      16px;
+      --dl-max-width:      1080px;
+
+      --dl-anim-duration:  600ms;
+      --dl-anim-ease:      cubic-bezier(0.34, 1.56, 0.64, 1);
+      --dl-anim-ease-soft: cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      :root { --dl-anim-duration: 0ms; }
+      .dl-bounce { transform: none !important; opacity: 1 !important; }
+    }
+
+    /* ── Skip Link ── */
+    .dl-skip-link {
+      position: absolute;
+      top: -100%;
+      inset-inline-start: 1rem;
+      background: var(--dl-accent);
+      color: #ffffff;
+      padding: 0.5rem 1rem;
+      font-family: var(--dl-font-body);
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: var(--dl-radius);
+      z-index: 100;
+      text-decoration: none;
+    }
+    .dl-skip-link:focus { top: 1rem; }
+
+    /* ── Base ── */
+    body {
+      font-family: var(--dl-font-body);
+      color: var(--dl-text);
+      background: var(--dl-bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    a {
+      color: var(--dl-accent);
+      text-decoration: none;
+      transition: color 200ms var(--dl-anim-ease-soft);
+    }
+    a:hover { color: var(--dl-accent-dark); }
+    a:focus-visible {
+      outline: 2px solid var(--dl-accent);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    /* ── Layout ── */
+    .dl-container {
+      max-width: var(--dl-max-width);
+      margin-inline: auto;
+      padding-inline: 1.25rem;
+    }
+
+    .dl-session-layout {
+      display: grid;
+      gap: 2rem;
+    }
+
+    @media (min-width: 768px) {
+      .dl-session-layout {
+        grid-template-columns: 1fr 280px;
+        gap: 2.5rem;
+      }
+    }
+
+    /* ── Navigation ── */
+    .dl-nav {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      border-block-end: 1px solid var(--dl-border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding-block: 1rem;
+    }
+    .dl-nav-inner {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--dl-font-body);
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .dl-nav-brand {
+      font-family: var(--dl-font-display);
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--dl-accent);
+      text-decoration: none;
+    }
+    .dl-nav-brand:hover { color: var(--dl-accent-dark); }
+    .dl-nav-sep { color: var(--dl-text-tertiary); margin-inline: 0.25rem; }
+    .dl-nav-link {
+      color: var(--dl-text-secondary);
+      text-decoration: none;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      transition: background 200ms var(--dl-anim-ease-soft), color 200ms var(--dl-anim-ease-soft);
+    }
+    .dl-nav-link:hover { background: var(--dl-accent-light); color: var(--dl-accent); }
+    .dl-nav-link[aria-current="page"] { background: var(--dl-accent-light); color: var(--dl-accent); }
+
+    /* ── Breadcrumb ── */
+    .dl-breadcrumb {
+      padding-block: 1rem;
+      font-family: var(--dl-font-mono);
+      font-size: 0.8125rem;
+      color: var(--dl-text-tertiary);
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      flex-wrap: wrap;
+    }
+    .dl-breadcrumb a {
+      color: var(--dl-text-tertiary);
+    }
+    .dl-breadcrumb a:hover { color: var(--dl-accent); }
+    .dl-breadcrumb-current {
+      color: var(--dl-text-secondary);
+    }
+
+    /* ── Session Header ── */
+    .dl-session-header {
+      padding-block: 1.5rem 2.5rem;
+    }
+
+    .dl-session-header h1 {
+      font-family: var(--dl-font-display);
+      font-weight: 700;
+      font-size: 1.75rem;
+      color: var(--dl-text);
+      line-height: 1.25;
+      margin-block-end: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .dl-session-header h1 { font-size: 2.25rem; }
+    }
+
+    .dl-session-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.25rem;
+      font-family: var(--dl-font-mono);
+      font-size: 0.8125rem;
+      color: var(--dl-text-tertiary);
+    }
+
+    .dl-session-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .dl-meta-icon {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: var(--dl-accent);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .dl-source-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      background: var(--dl-accent-light);
+      color: var(--dl-accent);
+      font-weight: 500;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+    }
+
+    /* ── Dev Take ── */
+    .dl-dev-take {
+      background: var(--dl-card-tint);
+      border: 1px solid var(--dl-accent-light);
+      border-inline-start: 4px solid var(--dl-accent);
+      border-radius: 0 var(--dl-radius) var(--dl-radius) 0;
+      padding: 1.25rem 1.5rem;
+      margin-block-end: 2.5rem;
+    }
+    .dl-dev-take-label {
+      font-family: var(--dl-font-display);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--dl-accent);
+      margin-block-end: 0.5rem;
+    }
+    .dl-dev-take p {
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--dl-text-secondary);
+      font-style: italic;
+    }
+
+    /* ── Section Heading ── */
+    .dl-section-heading {
+      font-family: var(--dl-font-display);
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--dl-text);
+      margin-block-end: 1.25rem;
+      padding-block-end: 0.625rem;
+      border-block-end: 2px solid var(--dl-accent-light);
+    }
+
+    /* ── Execution Path / Beats ── */
+    .dl-beats {
+      margin-block-end: 2.5rem;
+    }
+    .dl-beat-list {
+      list-style: none;
+      position: relative;
+      padding-inline-start: 2.25rem;
+    }
+    .dl-beat-list::before {
+      content: '';
+      position: absolute;
+      inset-inline-start: 7px;
+      top: 8px;
+      bottom: 8px;
+      width: 3px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, var(--dl-accent), #38bdf8);
+    }
+    .dl-beat-item {
+      position: relative;
+      margin-block-end: 1.5rem;
+    }
+    .dl-beat-item:last-child { margin-block-end: 0; }
+    .dl-beat-item::before {
+      content: '';
+      position: absolute;
+      inset-inline-start: -2.25rem;
+      top: 6px;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--dl-accent);
+      border: 3px solid var(--dl-bg);
+      box-shadow: 0 0 0 2px var(--dl-accent);
+    }
+    .dl-beat-title {
+      font-family: var(--dl-font-display);
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--dl-text);
+      margin-block-end: 0.25rem;
+    }
+    .dl-beat-desc {
+      font-size: 0.9375rem;
+      line-height: 1.7;
+      color: var(--dl-text-secondary);
+    }
+
+    /* ── Q&A ── */
+    .dl-qa {
+      margin-block-end: 2.5rem;
+    }
+    .dl-qa-pair {
+      background: var(--dl-card);
+      border: 1px solid var(--dl-border);
+      border-radius: var(--dl-radius);
+      padding: 1.25rem;
+      margin-block-end: 1rem;
+      box-shadow: var(--dl-shadow-blue);
+    }
+    .dl-qa-pair:last-child { margin-block-end: 0; }
+    .dl-qa-question {
+      font-family: var(--dl-font-display);
+      font-weight: 600;
+      font-size: 0.9375rem;
+      color: var(--dl-text);
+      margin-block-end: 0.75rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .dl-qa-q-marker {
+      color: var(--dl-accent);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .dl-qa-answer {
+      font-size: 0.9375rem;
+      line-height: 1.7;
+      color: var(--dl-text-secondary);
+      padding-inline-start: 1.5rem;
+    }
+
+    /* ── Agent Summary ── */
+    .dl-agents {
+      margin-block-end: 2.5rem;
+    }
+    .dl-agent-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    .dl-agent-table th {
+      font-family: var(--dl-font-display);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--dl-text-tertiary);
+      text-align: start;
+      padding: 0.625rem 0.75rem;
+      border-block-end: 2px solid var(--dl-accent-light);
+    }
+    .dl-agent-table td {
+      padding: 0.625rem 0.75rem;
+      border-block-end: 1px solid var(--dl-border);
+      color: var(--dl-text-secondary);
+    }
+    .dl-agent-table tr:last-child td {
+      border-block-end: none;
+    }
+    .dl-agent-role-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .dl-agent-color-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dl-agent-bar-cell {
+      width: 40%;
+    }
+    .dl-agent-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: var(--dl-border);
+      overflow: hidden;
+    }
+    .dl-agent-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--dl-accent), #38bdf8);
+    }
+
+    /* ── Sidebar ── */
+    .dl-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .dl-sidebar-card {
+      background: var(--dl-card);
+      border: 1px solid var(--dl-border);
+      border-radius: var(--dl-radius);
+      padding: 1.25rem;
+      box-shadow: var(--dl-shadow-blue);
+    }
+
+    .dl-sidebar-title {
+      font-family: var(--dl-font-display);
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--dl-text);
+      margin-block-end: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Tools Used ── */
+    .dl-tool-list {
+      list-style: none;
+    }
+    .dl-tool-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-block: 0.375rem;
+      font-size: 0.8125rem;
+      border-block-end: 1px solid var(--dl-border);
+    }
+    .dl-tool-item:last-child { border-block-end: none; }
+    .dl-tool-name {
+      font-family: var(--dl-font-mono);
+      color: var(--dl-text-secondary);
+    }
+    .dl-tool-count {
+      font-family: var(--dl-font-display);
+      font-weight: 600;
+      color: var(--dl-accent);
+      background: var(--dl-accent-light);
+      padding: 0.125rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+    }
+
+    /* ── Files Changed ── */
+    .dl-file-list {
+      list-style: none;
+    }
+    .dl-file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding-block: 0.375rem;
+      font-size: 0.8125rem;
+      border-block-end: 1px solid var(--dl-border);
+    }
+    .dl-file-item:last-child { border-block-end: none; }
+    .dl-file-name {
+      font-family: var(--dl-font-mono);
+      font-size: 0.75rem;
+      color: var(--dl-text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+    .dl-file-diff {
+      font-family: var(--dl-font-mono);
+      font-size: 0.75rem;
+      color: var(--dl-accent-green);
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    /* ── Sidebar Skills ── */
+    .dl-sidebar-skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+    }
+    .dl-skill-chip {
+      display: inline-block;
+      font-family: var(--dl-font-body);
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--dl-accent);
+      background: var(--dl-accent-light);
+      padding: 0.25rem 0.625rem;
+      border-radius: 999px;
+      line-height: 1.4;
+    }
+
+    /* ── Footer ── */
+    .dl-footer {
+      margin-block-start: 2rem;
+      padding-block: 2rem;
+      border-block-start: 1px solid var(--dl-border);
+      text-align: center;
+      font-family: var(--dl-font-body);
+      font-size: 0.8125rem;
+      color: var(--dl-text-tertiary);
+    }
+    .dl-footer a {
+      color: var(--dl-accent);
+      font-weight: 500;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 767px) {
+      .dl-agent-bar-cell { display: none; }
+      .dl-agent-table th:last-child { display: none; }
+      .dl-session-header { padding-block: 1rem 1.5rem; }
+      .dl-sidebar { order: -1; }
+    }
+
+    /* ── Bounce Animation ── */
+    .dl-bounce {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    .dl-bounce.dl-visible {
+      opacity: 1;
+      transform: translateY(0);
+      transition:
+        opacity var(--dl-anim-duration) var(--dl-anim-ease-soft),
+        transform var(--dl-anim-duration) var(--dl-anim-ease);
+    }
+    .dl-delay-1 { transition-delay: 80ms; }
+    .dl-delay-2 { transition-delay: 160ms; }
+    .dl-delay-3 { transition-delay: 240ms; }
+    .dl-delay-4 { transition-delay: 320ms; }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="dl-skip-link">Skip to content</a>
+
+  <nav class="dl-nav" aria-label="Portfolio navigation">
+    <div class="dl-container dl-nav-inner">
+      <a href="./portfolio.html" class="dl-nav-brand">@alex</a>
+      <span class="dl-nav-sep">/</span>
+      <a href="./project.html" class="dl-nav-link">budgetwise</a>
+      <span class="dl-nav-sep">/</span>
+      <a href="./session.html" class="dl-nav-link" aria-current="page">session</a>
+    </div>
+  </nav>
+
+  <!-- ── Breadcrumb ── -->
+  <div class="dl-container">
+    <nav class="dl-breadcrumb" aria-label="Breadcrumb">
+      <a href="./portfolio.html">alex</a>
+      <span aria-hidden="true">/</span>
+      <a href="./project.html">budgetwise</a>
+      <span aria-hidden="true">/</span>
+      <span class="dl-breadcrumb-current" aria-current="page">Set up Prisma schema</span>
+    </nav>
+  </div>
+
+  <main id="main-content">
+    <div class="dl-container">
+
+      <!-- ── Session Header ── -->
+      <header class="dl-session-header dl-bounce">
+        <h1>Set up Prisma schema with User, Account, and Transaction models</h1>
+        <div class="dl-session-meta-row">
+          <span class="dl-session-meta-item">
+            <svg class="dl-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            February 3, 2026
+          </span>
+          <span class="dl-source-badge">Claude Code</span>
+          <span class="dl-session-meta-item">
+            <svg class="dl-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            72m (87m wall)
+          </span>
+          <span class="dl-session-meta-item">
+            <svg class="dl-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            45 turns
+          </span>
+          <span class="dl-session-meta-item">
+            <svg class="dl-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            680 LOC
+          </span>
+          <span class="dl-session-meta-item">
+            <svg class="dl-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            4 files
+          </span>
+        </div>
+      </header>
+
+      <!-- ── Two-column layout ── -->
+      <div class="dl-session-layout">
+
+        <!-- ── Main Column ── -->
+        <div>
+
+          <!-- ── Dev Take ── -->
+          <div class="dl-dev-take dl-bounce dl-delay-1">
+            <div class="dl-dev-take-label">Dev Take</div>
+            <p>
+              Went with discriminated unions over STI &mdash; nullable columns
+              everywhere felt wrong. The audit log instead of soft deletes was
+              the right call too.
+            </p>
+          </div>
+
+          <!-- ── Execution Path ── -->
+          <section class="dl-beats dl-bounce dl-delay-2" aria-label="Execution path">
+            <h2 class="dl-section-heading">Execution Path</h2>
+            <ol class="dl-beat-list" role="list">
+              <li class="dl-beat-item">
+                <span class="dl-beat-title">Schema design</span>
+                <p class="dl-beat-desc">
+                  Sketched out the core models &mdash; User, Account, Transaction.
+                  Decided on a discriminated union for transaction types instead of STI.
+                </p>
+              </li>
+              <li class="dl-beat-item">
+                <span class="dl-beat-title">Prisma setup</span>
+                <p class="dl-beat-desc">
+                  Initialized Prisma with PostgreSQL, wrote the schema file with
+                  proper relations and indexes.
+                </p>
+              </li>
+              <li class="dl-beat-item">
+                <span class="dl-beat-title">Migration</span>
+                <p class="dl-beat-desc">
+                  Ran the initial migration, fixed a cascade delete issue on
+                  Account &rarr; Transaction.
+                </p>
+              </li>
+              <li class="dl-beat-item">
+                <span class="dl-beat-title">Seed data</span>
+                <p class="dl-beat-desc">
+                  Created a seed script with realistic test data &mdash; multiple
+                  accounts, mixed transaction types.
+                </p>
+              </li>
+            </ol>
+          </section>
+
+          <!-- ── Q&A ── -->
+          <section class="dl-qa dl-bounce dl-delay-3" aria-label="Questions and answers">
+            <h2 class="dl-section-heading">Q&amp;A</h2>
+
+            <div class="dl-qa-pair">
+              <div class="dl-qa-question">
+                <span class="dl-qa-q-marker">Q</span>
+                <span>Why did you choose a discriminated union over single-table inheritance for transaction types?</span>
+              </div>
+              <p class="dl-qa-answer">
+                STI would have left nullable columns everywhere &mdash; transferTo
+                only makes sense for transfers, recurringSchedule only for
+                recurring. The union pattern keeps each type clean and the
+                TypeScript compiler catches missing fields.
+              </p>
+            </div>
+
+            <div class="dl-qa-pair">
+              <div class="dl-qa-question">
+                <span class="dl-qa-q-marker">Q</span>
+                <span>How does the cascade delete work between Account and Transaction?</span>
+              </div>
+              <p class="dl-qa-answer">
+                Deleting an account cascades to its transactions. Initially had it
+                set to restrict, but that made account cleanup impossible without
+                manual transaction deletion first.
+              </p>
+            </div>
+          </section>
+
+          <!-- ── Agent Summary ── -->
+          <section class="dl-agents dl-bounce dl-delay-4" aria-label="Agent summary">
+            <h2 class="dl-section-heading">Agent Summary</h2>
+            <table class="dl-agent-table">
+              <thead>
+                <tr>
+                  <th scope="col">Role</th>
+                  <th scope="col">Duration</th>
+                  <th scope="col">LOC</th>
+                  <th scope="col" class="dl-agent-bar-cell">Contribution</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="dl-agent-role-cell">
+                      <span class="dl-agent-color-dot" style="background: #0891b2"></span>
+                      backend-dev
+                    </div>
+                  </td>
+                  <td><span style="font-family: var(--dl-font-mono); font-size: 0.8125rem">25m</span></td>
+                  <td><span style="font-family: var(--dl-font-mono); font-size: 0.8125rem">280</span></td>
+                  <td class="dl-agent-bar-cell">
+                    <div class="dl-agent-bar"><div class="dl-agent-bar-fill" style="width: 100%"></div></div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="dl-agent-role-cell">
+                      <span class="dl-agent-color-dot" style="background: #059669"></span>
+                      qa-engineer
+                    </div>
+                  </td>
+                  <td><span style="font-family: var(--dl-font-mono); font-size: 0.8125rem">18m</span></td>
+                  <td><span style="font-family: var(--dl-font-mono); font-size: 0.8125rem">190</span></td>
+                  <td class="dl-agent-bar-cell">
+                    <div class="dl-agent-bar"><div class="dl-agent-bar-fill" style="width: 68%"></div></div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="dl-agent-role-cell">
+                      <span class="dl-agent-color-dot" style="background: #7c3aed"></span>
+                      frontend-dev
+                    </div>
+                  </td>
+                  <td><span style="font-family: var(--dl-font-mono); font-size: 0.8125rem">15m</span></td>
+                  <td><span style="font-family: var(--dl-font-mono); font-size: 0.8125rem">125</span></td>
+                  <td class="dl-agent-bar-cell">
+                    <div class="dl-agent-bar"><div class="dl-agent-bar-fill" style="width: 45%"></div></div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="dl-agent-role-cell">
+                      <span class="dl-agent-color-dot" style="background: #475569"></span>
+                      security-engineer
+                    </div>
+                  </td>
+                  <td><span style="font-family: var(--dl-font-mono); font-size: 0.8125rem">12m</span></td>
+                  <td><span style="font-family: var(--dl-font-mono); font-size: 0.8125rem">85</span></td>
+                  <td class="dl-agent-bar-cell">
+                    <div class="dl-agent-bar"><div class="dl-agent-bar-fill" style="width: 30%"></div></div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="dl-agent-role-cell">
+                      <span class="dl-agent-color-dot" style="background: #e11d48"></span>
+                      code-reviewer
+                    </div>
+                  </td>
+                  <td><span style="font-family: var(--dl-font-mono); font-size: 0.8125rem">8m</span></td>
+                  <td><span style="font-family: var(--dl-font-mono); font-size: 0.8125rem">0</span></td>
+                  <td class="dl-agent-bar-cell">
+                    <div class="dl-agent-bar"><div class="dl-agent-bar-fill" style="width: 0%"></div></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+        </div>
+
+        <!-- ── Sidebar ── -->
+        <aside class="dl-sidebar dl-bounce dl-delay-2" aria-label="Session details">
+
+          <!-- Tools Used -->
+          <div class="dl-sidebar-card">
+            <h2 class="dl-sidebar-title">Tools Used</h2>
+            <ul class="dl-tool-list">
+              <li class="dl-tool-item">
+                <span class="dl-tool-name">Edit</span>
+                <span class="dl-tool-count">18</span>
+              </li>
+              <li class="dl-tool-item">
+                <span class="dl-tool-name">Read</span>
+                <span class="dl-tool-count">12</span>
+              </li>
+              <li class="dl-tool-item">
+                <span class="dl-tool-name">Bash</span>
+                <span class="dl-tool-count">9</span>
+              </li>
+              <li class="dl-tool-item">
+                <span class="dl-tool-name">Write</span>
+                <span class="dl-tool-count">4</span>
+              </li>
+              <li class="dl-tool-item">
+                <span class="dl-tool-name">Grep</span>
+                <span class="dl-tool-count">2</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Files Changed -->
+          <div class="dl-sidebar-card">
+            <h2 class="dl-sidebar-title">Files Changed</h2>
+            <ul class="dl-file-list">
+              <li class="dl-file-item">
+                <span class="dl-file-name" title="prisma/schema.prisma">prisma/schema.prisma</span>
+                <span class="dl-file-diff">+142</span>
+              </li>
+              <li class="dl-file-item">
+                <span class="dl-file-name" title="prisma/seed.ts">prisma/seed.ts</span>
+                <span class="dl-file-diff">+89</span>
+              </li>
+              <li class="dl-file-item">
+                <span class="dl-file-name" title="prisma/migrations/20260203_init/migration.sql">prisma/migrations/.../migration.sql</span>
+                <span class="dl-file-diff">+415</span>
+              </li>
+              <li class="dl-file-item">
+                <span class="dl-file-name" title="src/lib/db.ts">src/lib/db.ts</span>
+                <span class="dl-file-diff">+34</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Skills -->
+          <div class="dl-sidebar-card">
+            <h2 class="dl-sidebar-title">Skills</h2>
+            <div class="dl-sidebar-skills">
+              <span class="dl-skill-chip">TypeScript</span>
+              <span class="dl-skill-chip">Prisma</span>
+              <span class="dl-skill-chip">PostgreSQL</span>
+            </div>
+          </div>
+
+        </aside>
+
+      </div>
+
+      <footer class="dl-footer" role="contentinfo">
+        <p>Built with <a href="https://heyi.am">heyi.am</a> &middot; Daylight theme</p>
+      </footer>
+
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var prefersReduced = window.matchMedia(
+        '(prefers-reduced-motion: reduce)'
+      ).matches;
+
+      /* ── Bounce-in animation ── */
+      var bounceEls = document.querySelectorAll('.dl-bounce');
+
+      if (prefersReduced) {
+        for (var i = 0; i < bounceEls.length; i++) {
+          bounceEls[i].classList.add('dl-visible');
+        }
+      } else {
+        var observer = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('dl-visible');
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+        );
+
+        for (var j = 0; j < bounceEls.length; j++) {
+          observer.observe(bounceEls[j]);
+        }
+      }
+    })();
+  </script>
+</body>
+</html>

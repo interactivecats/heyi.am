@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mono Template — BudgetWise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Mono Design Tokens ── */
+:root {
+  --mono-bg:              #0a0a0a;
+  --mono-surface:         #111111;
+  --mono-surface-raised:  #1a1a1a;
+  --mono-border:          #2a2a2a;
+  --mono-border-accent:   #4ade80;
+  --mono-text:            #e0e0e0;
+  --mono-text-dim:        #666666;
+  --mono-text-muted:      #444444;
+  --mono-accent:          #4ade80;
+  --mono-accent-dim:      rgba(74, 222, 128, 0.15);
+  --mono-accent-glow:     rgba(74, 222, 128, 0.3);
+  --mono-error:           #ef4444;
+  --mono-warn:            #f59e0b;
+  --mono-cyan:            #22d3ee;
+  --mono-purple:          #a78bfa;
+  --mono-yellow:          #fbbf24;
+
+  --font: 'JetBrains Mono', monospace;
+  --radius: 0px;
+}
+
+body {
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--mono-text);
+  background-color: var(--mono-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--mono-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible {
+  outline: 2px solid var(--mono-accent);
+  outline-offset: 2px;
+}
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--mono-accent);
+  color: var(--mono-bg);
+  padding: 0.5rem 1rem;
+  z-index: 1000;
+  font-family: var(--font);
+  font-weight: 600;
+  border-radius: var(--radius);
+}
+.skip-link:focus { top: 1rem; }
+
+/* ── Nav ── */
+.mono-nav {
+  border-bottom: 1px solid var(--mono-border);
+  background: var(--mono-surface);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.mono-nav-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.mono-nav-prompt {
+  color: var(--mono-accent);
+  font-weight: 600;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+.mono-nav-links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+.mono-nav-links a {
+  color: var(--mono-text-dim);
+  font-size: 0.8125rem;
+  transition: color 0.15s;
+}
+.mono-nav-links a:hover,
+.mono-nav-links a[aria-current="page"] {
+  color: var(--mono-accent);
+}
+
+/* ── Page Container ── */
+.mono-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+}
+
+/* ── Section ── */
+.mono-section {
+  margin-bottom: 3rem;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.mono-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Section Heading ── */
+.mono-heading {
+  color: var(--mono-accent);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--mono-border);
+}
+
+/* ── Terminal Block ── */
+.terminal-block {
+  background: var(--mono-surface);
+  border: 1px solid var(--mono-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  background: var(--mono-surface-raised);
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--mono-border);
+  font-size: 0.75rem;
+  color: var(--mono-text-dim);
+}
+.terminal-dots {
+  display: flex;
+  gap: 6px;
+}
+.terminal-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: block;
+}
+.terminal-dots .dot-red { background: #ef4444; }
+.terminal-dots .dot-yellow { background: #f59e0b; }
+.terminal-dots .dot-green { background: #4ade80; }
+.terminal-body {
+  padding: 1.25rem;
+}
+
+/* ── Breadcrumb ── */
+.breadcrumb {
+  font-size: 0.8125rem;
+  color: var(--mono-text-dim);
+  margin-bottom: 1.5rem;
+}
+.breadcrumb a {
+  color: var(--mono-text-dim);
+}
+.breadcrumb a:hover {
+  color: var(--mono-accent);
+}
+.breadcrumb .sep {
+  margin: 0 0.25rem;
+  color: var(--mono-text-muted);
+}
+
+/* ── Hero ── */
+.hero-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--mono-accent);
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 3px solid var(--mono-accent);
+  width: 0;
+  animation: typing-project 1s steps(10, end) forwards, blink 0.7s step-end infinite;
+}
+.hero-links {
+  font-size: 0.8125rem;
+  color: var(--mono-text-dim);
+  margin-bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+@keyframes typing-project {
+  from { width: 0; }
+  to { width: 10ch; }
+}
+@keyframes blink {
+  50% { border-color: transparent; }
+}
+
+/* ── Screenshot Placeholder ── */
+.screenshot-frame {
+  background: var(--mono-surface);
+  border: 1px solid var(--mono-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+.screenshot-chrome {
+  background: var(--mono-surface-raised);
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--mono-border);
+}
+.screenshot-chrome .dots {
+  display: flex;
+  gap: 6px;
+}
+.screenshot-chrome .dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: block;
+}
+.screenshot-chrome .dot-r { background: #ef4444; }
+.screenshot-chrome .dot-y { background: #f59e0b; }
+.screenshot-chrome .dot-g { background: #4ade80; }
+.screenshot-chrome .url-bar {
+  flex: 1;
+  background: var(--mono-bg);
+  border: 1px solid var(--mono-border);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.6875rem;
+  color: var(--mono-text-dim);
+  border-radius: var(--radius);
+}
+.screenshot-body {
+  height: 200px;
+  background: linear-gradient(135deg, var(--mono-accent-dim) 0%, var(--mono-surface) 50%, var(--mono-accent-dim) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mono-text-dim);
+  font-size: 0.875rem;
+}
+
+/* ── Stats Grid ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1px;
+  background: var(--mono-border);
+  border: 1px solid var(--mono-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.stat-cell {
+  background: var(--mono-surface);
+  padding: 0.75rem 1rem;
+}
+.stat-key {
+  font-size: 0.6875rem;
+  color: var(--mono-text-dim);
+  margin-bottom: 0.125rem;
+}
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--mono-accent);
+}
+.stat-cell--leverage {
+  grid-column: 1 / -1;
+  padding: 0.75rem 1rem;
+}
+.leverage-terminal {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+.leverage-terminal .lev-line {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+.leverage-terminal .lev-key {
+  color: var(--mono-text-dim);
+  min-width: 5.5em;
+  text-align: right;
+}
+.leverage-terminal .lev-val {
+  color: var(--mono-accent);
+  font-weight: 700;
+  min-width: 3.5em;
+}
+.leverage-terminal .lev-bar {
+  color: var(--mono-accent);
+  letter-spacing: 0;
+}
+.leverage-terminal .lev-pct {
+  color: var(--mono-text-dim);
+  font-size: 0.75rem;
+}
+
+/* ── Narrative ── */
+.narrative-block {
+  padding: 1.25rem;
+  font-size: 0.875rem;
+  line-height: 1.8;
+}
+.narrative-line {
+  margin-bottom: 1rem;
+  color: var(--mono-text);
+}
+.narrative-line::before {
+  content: '> ';
+  color: var(--mono-text-dim);
+}
+.narrative-line:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Git Log Phases ── */
+.git-log {
+  font-size: 0.8125rem;
+  line-height: 2;
+}
+.git-log-entry {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+.git-log-graph {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 20px;
+}
+.git-log-node {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--mono-accent);
+  flex-shrink: 0;
+}
+.git-log-line {
+  width: 2px;
+  flex: 1;
+  background: var(--mono-border);
+  min-height: 24px;
+}
+.git-log-content {
+  flex: 1;
+  padding-bottom: 1rem;
+}
+.git-log-hash {
+  color: var(--mono-accent);
+  font-weight: 600;
+}
+.git-log-date {
+  color: var(--mono-text-dim);
+  font-size: 0.75rem;
+}
+.git-log-msg {
+  color: var(--mono-text);
+}
+.git-log-detail {
+  color: var(--mono-text-dim);
+  font-size: 0.75rem;
+}
+
+/* ── Tags ── */
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.tag {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--mono-border);
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  color: var(--mono-accent);
+  background: var(--mono-accent-dim);
+}
+
+/* ── Key Decisions ── */
+.decisions-list {
+  list-style: none;
+  font-size: 0.875rem;
+}
+.decisions-list li {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--mono-border);
+  display: flex;
+  gap: 0.75rem;
+}
+.decisions-list li:last-child {
+  border-bottom: none;
+}
+.decision-num {
+  color: var(--mono-accent);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* ── Source Breakdown ── */
+.source-breakdown {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+.source-bar {
+  display: flex;
+  height: 8px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--mono-surface-raised);
+  width: 100%;
+}
+.source-bar-segment { transition: width 0.6s ease; }
+.source-bar-segment.claude { background: var(--mono-accent); }
+.source-bar-segment.cursor { background: var(--mono-text-dim); }
+
+/* ── Work Timeline ASCII ── */
+.ascii-chart {
+  font-size: 0.8125rem;
+  line-height: 1.8;
+}
+.ascii-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.ascii-label {
+  width: 80px;
+  flex-shrink: 0;
+  color: var(--mono-text-dim);
+  text-align: end;
+  font-size: 0.6875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ascii-bar {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.ascii-bar-fill {
+  color: var(--mono-accent);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.ascii-bar-value {
+  color: var(--mono-text-dim);
+  font-size: 0.6875rem;
+  white-space: nowrap;
+}
+
+/* ── Session Cards (Terminal Output) ── */
+.session-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.session-card {
+  border: 1px solid var(--mono-border);
+  border-radius: var(--radius);
+  background: var(--mono-surface);
+  transition: border-color 0.15s;
+}
+.session-card:hover {
+  border-color: var(--mono-accent);
+}
+.session-card-header {
+  padding: 0.5rem 0.75rem;
+  background: var(--mono-surface-raised);
+  border-bottom: 1px solid var(--mono-border);
+  font-size: 0.6875rem;
+  color: var(--mono-text-dim);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.session-card-body {
+  padding: 1rem;
+  font-size: 0.8125rem;
+}
+.session-card-title {
+  color: var(--mono-accent);
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+.session-card-title a { color: inherit; }
+.session-kv {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.125rem 0;
+  font-size: 0.75rem;
+}
+.session-kv-key { color: var(--mono-text-dim); }
+.session-kv-value { color: var(--mono-text); }
+.session-card-tag {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.0625rem 0.375rem;
+  border: 1px solid var(--mono-border);
+  border-radius: var(--radius);
+  font-size: 0.6875rem;
+  color: var(--mono-accent);
+  background: var(--mono-accent-dim);
+}
+
+/* ── Footer ── */
+.mono-footer {
+  border-top: 1px solid var(--mono-border);
+  padding: 2rem 0;
+  margin-top: 2rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--mono-text-dim);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .mono-page { padding: 1.5rem 1rem; }
+  .hero-title {
+    font-size: 1.5rem;
+    animation: typing-project 1s steps(10, end) forwards, blink 0.7s step-end infinite;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .session-grid {
+    grid-template-columns: 1fr;
+  }
+  .git-log-entry {
+    font-size: 0.75rem;
+  }
+  .ascii-label {
+    width: 60px;
+    font-size: 0.625rem;
+  }
+  .mono-nav-inner {
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-title {
+    animation: none;
+    width: auto;
+    border-right: none;
+  }
+  .mono-section {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .source-bar-segment {
+    transition: none;
+  }
+}
+
+    /* ── Clickable session cards ── */
+    a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<nav class="mono-nav" aria-label="Main navigation">
+  <div class="mono-nav-inner">
+    <span class="mono-nav-prompt" aria-hidden="true">~/alex/budgetwise $</span>
+    <ul class="mono-nav-links">
+      <li><a href="./portfolio.html">portfolio</a></li>
+      <li><a href="./project.html" aria-current="page">project</a></li>
+      <li><a href="./session.html">session</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main-content" class="mono-page">
+
+  <!-- ── Breadcrumb ── -->
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="./portfolio.html">alex</a>
+    <span class="sep">/</span>
+    <span>budgetwise</span>
+  </nav>
+
+  <!-- ── Hero ── -->
+  <section class="mono-section" aria-label="Project header">
+    <h1 class="hero-title" aria-label="BudgetWise">BudgetWise</h1>
+    <div class="hero-links">
+      <a href="./session.html">github.com/alex/budgetwise</a>
+      <a href="./session.html">budgetwise.app</a>
+    </div>
+
+    <!-- Screenshot -->
+    <div class="screenshot-frame">
+      <div class="screenshot-chrome">
+        <div class="dots">
+          <span class="dot-r" aria-hidden="true"></span>
+          <span class="dot-y" aria-hidden="true"></span>
+          <span class="dot-g" aria-hidden="true"></span>
+        </div>
+        <div class="url-bar">https://budgetwise.app</div>
+      </div>
+      <div class="screenshot-body" role="img" aria-label="Application screenshot placeholder">
+        [ screenshot placeholder ]
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Stats ── -->
+  <section class="mono-section" aria-label="Project statistics">
+    <h2 class="mono-heading"># stats</h2>
+    <div class="stats-grid" role="list">
+      <div class="stat-cell" role="listitem">
+        <div class="stat-key">sessions:</div>
+        <div class="stat-value">8</div>
+      </div>
+      <div class="stat-cell stat-cell--leverage" role="listitem">
+        <div class="leverage-terminal">
+          <div class="lev-line"><span class="lev-key">human:</span> <span class="lev-val">8.1h</span> <span class="lev-bar">&#9608;&#9608;&#9608;&#9608;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;</span> <span class="lev-pct">19%</span></div>
+          <div class="lev-line"><span class="lev-key">agents:</span> <span class="lev-val">34.4h</span> <span class="lev-bar">&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9617;&#9617;&#9617;&#9617;</span> <span class="lev-pct">81%</span></div>
+          <div class="lev-line"><span class="lev-key">multi:</span> <span class="lev-val">4.2x</span></div>
+        </div>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <div class="stat-key">loc:</div>
+        <div class="stat-value">4,460</div>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <div class="stat-key">files:</div>
+        <div class="stat-value">156</div>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <div class="stat-key">tokens:</div>
+        <div class="stat-value">2.1M</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Narrative ── -->
+  <section class="mono-section" aria-label="Project narrative">
+    <h2 class="mono-heading"># narrative</h2>
+    <div class="terminal-block">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <span class="dot-red" aria-hidden="true"></span>
+          <span class="dot-yellow" aria-hidden="true"></span>
+          <span class="dot-green" aria-hidden="true"></span>
+        </div>
+        <span>cat narrative.md</span>
+      </div>
+      <div class="narrative-block">
+        <p class="narrative-line">Started with a basic Prisma schema but realized halfway through that I needed polymorphic transaction types. The AI kept suggesting single-table inheritance but I pushed back &mdash; went with a discriminated union pattern instead. Nullable fields for transfer-specific data, hard deletes with an audit log.</p>
+        <p class="narrative-line">The recurring transaction detection was the hardest part. Had to figure out the right tolerance windows &mdash; monthly transactions drift by a few days, weekly ones are more precise. Settled on three consecutive interval matches before marking something as recurring. The partial index on merchant_normalized brought the detection query from 2 seconds to 120ms on 10k transactions.</p>
+        <p class="narrative-line">Plaid integration went smoother than expected. The token exchange flow is straightforward, but the webhook handling needed careful idempotency &mdash; Plaid sends duplicate webhooks, so I used a processed-events table keyed on webhook ID.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Phases (Git Log) ── -->
+  <section class="mono-section" aria-label="Project phases">
+    <h2 class="mono-heading"># git log --phases</h2>
+    <div class="terminal-block">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <span class="dot-red" aria-hidden="true"></span>
+          <span class="dot-yellow" aria-hidden="true"></span>
+          <span class="dot-green" aria-hidden="true"></span>
+        </div>
+        <span>git log --oneline --graph</span>
+      </div>
+      <div class="terminal-body">
+        <div class="git-log" role="list" aria-label="Project phases as git log">
+
+          <div class="git-log-entry" role="listitem">
+            <div class="git-log-graph" aria-hidden="true">
+              <div class="git-log-node"></div>
+              <div class="git-log-line"></div>
+            </div>
+            <div class="git-log-content">
+              <div><span class="git-log-hash">a1b2c3d</span> <span class="git-log-msg">Foundation</span></div>
+              <div class="git-log-date">Feb 3 &ndash; Feb 14</div>
+              <div class="git-log-detail">Schema design, Prisma setup, transaction CRUD</div>
+            </div>
+          </div>
+
+          <div class="git-log-entry" role="listitem">
+            <div class="git-log-graph" aria-hidden="true">
+              <div class="git-log-node"></div>
+              <div class="git-log-line"></div>
+            </div>
+            <div class="git-log-content">
+              <div><span class="git-log-hash">e4f5a6b</span> <span class="git-log-msg">Data Pipeline</span></div>
+              <div class="git-log-date">Feb 17 &ndash; Feb 26</div>
+              <div class="git-log-detail">CSV import, Plaid integration, recurring detection</div>
+            </div>
+          </div>
+
+          <div class="git-log-entry" role="listitem">
+            <div class="git-log-graph" aria-hidden="true">
+              <div class="git-log-node"></div>
+              <div class="git-log-line"></div>
+            </div>
+            <div class="git-log-content">
+              <div><span class="git-log-hash">c7d8e9f</span> <span class="git-log-msg">Intelligence</span></div>
+              <div class="git-log-date">Mar 1 &ndash; Mar 14</div>
+              <div class="git-log-detail">Search, full-text indexing, spending insights</div>
+            </div>
+          </div>
+
+          <div class="git-log-entry" role="listitem">
+            <div class="git-log-graph" aria-hidden="true">
+              <div class="git-log-node"></div>
+            </div>
+            <div class="git-log-content">
+              <div><span class="git-log-hash">0a1b2c3</span> <span class="git-log-msg">Hardening</span></div>
+              <div class="git-log-date">Mar 16 &ndash; Mar 26</div>
+              <div class="git-log-detail">2FA, mobile responsive, CI/CD, performance</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Work Timeline (ASCII) ── -->
+  <section class="mono-section" aria-label="Session work timeline">
+    <h2 class="mono-heading"># work_timeline</h2>
+    <div class="terminal-block">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <span class="dot-red" aria-hidden="true"></span>
+          <span class="dot-yellow" aria-hidden="true"></span>
+          <span class="dot-green" aria-hidden="true"></span>
+        </div>
+        <span>LOC per session</span>
+      </div>
+      <div class="terminal-body">
+        <div class="ascii-chart" role="img" aria-label="Lines of code per session bar chart">
+          <div class="ascii-row">
+            <span class="ascii-label">Schema</span>
+            <div class="ascii-bar">
+              <span class="ascii-bar-fill" aria-hidden="true">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓</span>
+              <span class="ascii-bar-value">680</span>
+            </div>
+          </div>
+          <div class="ascii-row">
+            <span class="ascii-label">Txn list</span>
+            <div class="ascii-bar">
+              <span class="ascii-bar-fill" aria-hidden="true">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░</span>
+              <span class="ascii-bar-value">520</span>
+            </div>
+          </div>
+          <div class="ascii-row">
+            <span class="ascii-label">Recurring</span>
+            <div class="ascii-bar">
+              <span class="ascii-bar-fill" aria-hidden="true">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓</span>
+              <span class="ascii-bar-value">890</span>
+            </div>
+          </div>
+          <div class="ascii-row">
+            <span class="ascii-label">Stripe</span>
+            <div class="ascii-bar">
+              <span class="ascii-bar-fill" aria-hidden="true">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░</span>
+              <span class="ascii-bar-value">420</span>
+            </div>
+          </div>
+          <div class="ascii-row">
+            <span class="ascii-label">CSV</span>
+            <div class="ascii-bar">
+              <span class="ascii-bar-fill" aria-hidden="true">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░</span>
+              <span class="ascii-bar-value">380</span>
+            </div>
+          </div>
+          <div class="ascii-row">
+            <span class="ascii-label">Search</span>
+            <div class="ascii-bar">
+              <span class="ascii-bar-fill" aria-hidden="true">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░</span>
+              <span class="ascii-bar-value">510</span>
+            </div>
+          </div>
+          <div class="ascii-row">
+            <span class="ascii-label">Insights</span>
+            <div class="ascii-bar">
+              <span class="ascii-bar-fill" aria-hidden="true">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓</span>
+              <span class="ascii-bar-value">720</span>
+            </div>
+          </div>
+          <div class="ascii-row">
+            <span class="ascii-label">Mobile+2FA</span>
+            <div class="ascii-bar">
+              <span class="ascii-bar-fill" aria-hidden="true">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░</span>
+              <span class="ascii-bar-value">340</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Skills ── -->
+  <section class="mono-section" aria-label="Skills used">
+    <h2 class="mono-heading"># skills</h2>
+    <div class="tag-list">
+      <span class="tag">[TypeScript]</span>
+      <span class="tag">[React]</span>
+      <span class="tag">[Next.js]</span>
+      <span class="tag">[Prisma]</span>
+      <span class="tag">[PostgreSQL]</span>
+      <span class="tag">[Tailwind CSS]</span>
+      <span class="tag">[Stripe API]</span>
+      <span class="tag">[Plaid API]</span>
+      <span class="tag">[Chart.js]</span>
+      <span class="tag">[Playwright]</span>
+    </div>
+  </section>
+
+  <!-- ── Key Decisions ── -->
+  <section class="mono-section" aria-label="Key decisions">
+    <h2 class="mono-heading"># key_decisions</h2>
+    <div class="terminal-block">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <span class="dot-red" aria-hidden="true"></span>
+          <span class="dot-yellow" aria-hidden="true"></span>
+          <span class="dot-green" aria-hidden="true"></span>
+        </div>
+        <span>cat decisions.log</span>
+      </div>
+      <div class="terminal-body">
+        <ol class="decisions-list">
+          <li>
+            <span class="decision-num">[1]</span>
+            <span>Discriminated union over single-table inheritance for transaction types</span>
+          </li>
+          <li>
+            <span class="decision-num">[2]</span>
+            <span>Partial index on merchant_normalized for 16x query speedup</span>
+          </li>
+          <li>
+            <span class="decision-num">[3]</span>
+            <span>Processed-events table for Plaid webhook idempotency</span>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Source Breakdown ── -->
+  <section class="mono-section" aria-label="Source breakdown">
+    <h2 class="mono-heading"># source_breakdown</h2>
+    <div class="source-breakdown">
+      <span style="color: var(--mono-accent);">Claude Code 62.5%</span>
+      <span style="color: var(--mono-text-dim);">Cursor 37.5%</span>
+    </div>
+    <div class="source-bar" role="img" aria-label="Source mix: Claude 62.5%, Cursor 37.5%">
+      <div class="source-bar-segment claude" style="width: 62.5%;"></div>
+      <div class="source-bar-segment cursor" style="width: 37.5%;"></div>
+    </div>
+  </section>
+
+  <!-- ── Featured Sessions ── -->
+  <section class="mono-section" aria-label="Featured sessions">
+    <h2 class="mono-heading"># sessions</h2>
+    <div class="session-grid">
+
+      <article class="session-card">
+        <div class="session-card-header">
+          <span aria-hidden="true">$</span> session #1
+        </div>
+        <div class="session-card-body">
+          <h3 class="session-card-title"><a href="./session.html">Prisma schema</a></h3>
+          <div class="session-kv"><span class="session-kv-key">duration:</span><span class="session-kv-value">72m</span></div>
+          <div class="session-kv"><span class="session-kv-key">loc:</span><span class="session-kv-value">680</span></div>
+          <div class="session-kv"><span class="session-kv-key">agents:</span><span class="session-kv-value">7</span></div>
+          <span class="session-card-tag">[schema]</span>
+        </div>
+      </article>
+
+      <article class="session-card">
+        <div class="session-card-header">
+          <span aria-hidden="true">$</span> session #2
+        </div>
+        <div class="session-card-body">
+          <h3 class="session-card-title">Transaction list</h3>
+          <div class="session-kv"><span class="session-kv-key">duration:</span><span class="session-kv-value">65m</span></div>
+          <div class="session-kv"><span class="session-kv-key">loc:</span><span class="session-kv-value">520</span></div>
+          <div class="session-kv"><span class="session-kv-key">agents:</span><span class="session-kv-value">5</span></div>
+          <span class="session-card-tag">[frontend]</span>
+        </div>
+      </article>
+
+      <article class="session-card">
+        <div class="session-card-header">
+          <span aria-hidden="true">$</span> session #3
+        </div>
+        <div class="session-card-body">
+          <h3 class="session-card-title">Recurring detection</h3>
+          <div class="session-kv"><span class="session-kv-key">duration:</span><span class="session-kv-value">88m</span></div>
+          <div class="session-kv"><span class="session-kv-key">loc:</span><span class="session-kv-value">890</span></div>
+          <div class="session-kv"><span class="session-kv-key">agents:</span><span class="session-kv-value">6</span></div>
+          <span class="session-card-tag">[algorithm]</span>
+        </div>
+      </article>
+
+      <article class="session-card">
+        <div class="session-card-header">
+          <span aria-hidden="true">$</span> session #4
+        </div>
+        <div class="session-card-body">
+          <h3 class="session-card-title">CSV import</h3>
+          <div class="session-kv"><span class="session-kv-key">duration:</span><span class="session-kv-value">78m</span></div>
+          <div class="session-kv"><span class="session-kv-key">loc:</span><span class="session-kv-value">640</span></div>
+          <div class="session-kv"><span class="session-kv-key">agents:</span><span class="session-kv-value">5</span></div>
+          <span class="session-card-tag">[import]</span>
+        </div>
+      </article>
+
+      <article class="session-card">
+        <div class="session-card-header">
+          <span aria-hidden="true">$</span> session #5
+        </div>
+        <div class="session-card-body">
+          <h3 class="session-card-title">Plaid integration</h3>
+          <div class="session-kv"><span class="session-kv-key">duration:</span><span class="session-kv-value">90m</span></div>
+          <div class="session-kv"><span class="session-kv-key">loc:</span><span class="session-kv-value">780</span></div>
+          <div class="session-kv"><span class="session-kv-key">agents:</span><span class="session-kv-value">8</span></div>
+          <span class="session-card-tag">[integration]</span>
+        </div>
+      </article>
+
+      <article class="session-card">
+        <div class="session-card-header">
+          <span aria-hidden="true">$</span> session #6
+        </div>
+        <div class="session-card-body">
+          <h3 class="session-card-title">Spending insights</h3>
+          <div class="session-kv"><span class="session-kv-key">duration:</span><span class="session-kv-value">70m</span></div>
+          <div class="session-kv"><span class="session-kv-key">loc:</span><span class="session-kv-value">620</span></div>
+          <div class="session-kv"><span class="session-kv-key">agents:</span><span class="session-kv-value">4</span></div>
+          <span class="session-card-tag">[insights]</span>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+</main>
+
+<footer class="mono-footer">
+  <p>// generated by heyi.am &middot; mono template &middot; 2026</p>
+</footer>
+
+<script>
+(function() {
+  'use strict';
+
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var sections = document.querySelectorAll('.mono-section');
+
+  if (prefersReducedMotion) {
+    sections.forEach(function(s) { s.classList.add('visible'); });
+  } else {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    sections.forEach(function(s) { observer.observe(s); });
+  }
+})();
+</script>
+
+</body>
+</html>

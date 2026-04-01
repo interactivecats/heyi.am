@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BudgetWise — Project | Parchment Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Parchment Design Tokens ── */
+    :root {
+      --parch-bg:             #fdf6e3;
+      --parch-surface:        #f5ead0;
+      --parch-accent:         #92400e;
+      --parch-text:           #3c2a14;
+      --parch-text-secondary: #6b5744;
+      --parch-text-tertiary:  #8c7a66;
+      --parch-border:         #92400e;
+      --parch-border-light:   #d4c4a8;
+      --parch-border-faint:   #e8dcc8;
+      --parch-font-display:   'Crimson Pro', Georgia, serif;
+      --parch-font-body:      'Crimson Pro', Georgia, serif;
+      --parch-font-mono:      'IBM Plex Mono', monospace;
+      --parch-radius:         0px;
+      --parch-duration:       500ms;
+      --parch-ease:           ease-out;
+    }
+
+    /* ── Base ── */
+    body {
+      font-family: var(--parch-font-body);
+      color: var(--parch-text);
+      background: var(--parch-bg);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-size: 18px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    }
+
+    a {
+      color: var(--parch-accent);
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+      transition: opacity var(--parch-duration) var(--parch-ease);
+    }
+    a:hover { opacity: 0.75; }
+    a:focus-visible {
+      outline: 2px solid var(--parch-accent);
+      outline-offset: 3px;
+    }
+
+    /* ── Skip Link ── */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      background: var(--parch-accent);
+      color: var(--parch-bg);
+      padding: 0.5rem 1rem;
+      z-index: 1000;
+      font-family: var(--parch-font-mono);
+      font-size: 0.8125rem;
+      text-decoration: none;
+    }
+    .skip-link:focus { top: 0.5rem; }
+
+    /* ── Fade In ── */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeIn var(--parch-duration) var(--parch-ease) both; }
+    .fade-in-d1 { animation-delay: 100ms; }
+    .fade-in-d2 { animation-delay: 200ms; }
+    .fade-in-d3 { animation-delay: 300ms; }
+    .fade-in-d4 { animation-delay: 400ms; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fade-in, .fade-in-d1, .fade-in-d2, .fade-in-d3, .fade-in-d4 {
+        animation: none;
+      }
+    }
+
+    /* ── Layout ── */
+    .page-wrapper {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* ── Decorative HR — thin-thick-thin ── */
+    .hr-triple {
+      border: none;
+      margin: 2.5rem 0;
+      padding: 0;
+      height: auto;
+      text-align: center;
+      overflow: visible;
+    }
+    .hr-triple::before {
+      content: '';
+      display: block;
+      border-top: 1px solid var(--parch-border-light);
+      margin-bottom: 2px;
+    }
+    .hr-triple::after {
+      content: '';
+      display: block;
+      border-top: 1px solid var(--parch-border-light);
+      margin-top: 2px;
+    }
+    .hr-triple-inner {
+      display: block;
+      border-top: 2px solid var(--parch-accent);
+    }
+
+    /* ── Navigation ── */
+    .nav {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--parch-border-light);
+      font-family: var(--parch-font-display);
+      font-size: 1rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .nav a {
+      color: var(--parch-text-secondary);
+      text-decoration: none;
+    }
+    .nav a:hover { color: var(--parch-accent); opacity: 1; }
+    .nav a[aria-current="page"] {
+      color: var(--parch-accent);
+      border-bottom: 2px solid var(--parch-accent);
+      padding-bottom: 2px;
+    }
+
+    /* ── Breadcrumb ── */
+    .breadcrumb {
+      font-family: var(--parch-font-mono);
+      font-size: 0.75rem;
+      color: var(--parch-text-tertiary);
+      padding: 1rem 0 0;
+      letter-spacing: 0.03em;
+    }
+    .breadcrumb a {
+      color: var(--parch-text-tertiary);
+    }
+    .breadcrumb__sep {
+      margin: 0 0.35rem;
+      color: var(--parch-border-light);
+    }
+
+    /* ── Title Page ── */
+    .title-page {
+      text-align: center;
+      padding: 2.5rem 0 1.5rem;
+    }
+    .title-page__heading {
+      font-family: var(--parch-font-display);
+      font-size: clamp(2rem, 6vw, 3.25rem);
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: var(--parch-accent);
+      line-height: 1.15;
+    }
+    .title-page__links {
+      font-family: var(--parch-font-mono);
+      font-size: 0.75rem;
+      color: var(--parch-text-tertiary);
+      margin-top: 0.75rem;
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+    .title-page__links a {
+      color: var(--parch-accent);
+      font-size: 0.75rem;
+    }
+
+    /* ── Screenshot Placeholder ── */
+    .screenshot {
+      margin: 2rem 0;
+      border: 1px solid var(--parch-border-light);
+      border-radius: var(--parch-radius);
+      overflow: hidden;
+    }
+    .screenshot__chrome {
+      background: var(--parch-surface);
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--parch-border-faint);
+    }
+    .screenshot__dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--parch-border-light);
+    }
+    .screenshot__bar {
+      flex: 1;
+      height: 18px;
+      background: var(--parch-bg);
+      border: 1px solid var(--parch-border-faint);
+      border-radius: 3px;
+      margin-inline-start: 0.5rem;
+      font-family: var(--parch-font-mono);
+      font-size: 0.625rem;
+      line-height: 18px;
+      padding-inline-start: 0.5rem;
+      color: var(--parch-text-tertiary);
+    }
+    .screenshot__body {
+      height: 220px;
+      background: linear-gradient(135deg, var(--parch-surface) 0%, #efe0c4 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--parch-font-display);
+      font-style: italic;
+      color: var(--parch-text-tertiary);
+      font-size: 1.125rem;
+    }
+
+    /* ── Narrative (Drop Caps) ── */
+    .narrative {
+      margin: 2rem 0;
+    }
+    .narrative p {
+      margin-bottom: 1.25rem;
+      font-size: 1.0625rem;
+      line-height: 1.75;
+    }
+    .narrative p:first-child::first-letter {
+      font-family: var(--parch-font-display);
+      font-size: 3.5rem;
+      font-weight: 700;
+      float: left;
+      line-height: 0.8;
+      padding-inline-end: 0.5rem;
+      padding-top: 0.15rem;
+      color: var(--parch-accent);
+    }
+
+    /* ── Margin Stats (Project Level) ── */
+    .project-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 1rem;
+      padding: 1.5rem;
+      background: var(--parch-surface);
+      border: 1px solid var(--parch-border-light);
+      border-radius: var(--parch-radius);
+      margin: 2rem 0;
+    }
+    .project-stat {
+      text-align: center;
+    }
+    .project-stat__value {
+      font-family: var(--parch-font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--parch-accent);
+      line-height: 1.2;
+    }
+    .project-stat__label {
+      font-family: var(--parch-font-mono);
+      font-size: 0.625rem;
+      color: var(--parch-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 0.15rem;
+    }
+
+    /* ── Chapter Headings ── */
+    .chapter-heading {
+      font-family: var(--parch-font-display);
+      font-size: 1.375rem;
+      font-weight: 600;
+      color: var(--parch-accent);
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 0 0 1.75rem;
+    }
+    .chapter-heading__number {
+      display: block;
+      font-family: var(--parch-font-mono);
+      font-size: 0.6875rem;
+      color: var(--parch-text-tertiary);
+      letter-spacing: 0.15em;
+      margin-bottom: 0.25rem;
+    }
+
+    /* ── Phase Timeline (Chapter Headings) ── */
+    .phases {
+      margin: 0 0 1rem;
+    }
+    .phase {
+      padding: 1.25rem 0;
+      border-bottom: 1px solid var(--parch-border-faint);
+    }
+    .phase:last-child {
+      border-bottom: none;
+    }
+    .phase__number {
+      font-family: var(--parch-font-mono);
+      font-size: 0.625rem;
+      color: var(--parch-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+    .phase__title {
+      font-family: var(--parch-font-display);
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--parch-accent);
+      margin-top: 0.25rem;
+    }
+    .phase__dates {
+      font-family: var(--parch-font-mono);
+      font-size: 0.6875rem;
+      color: var(--parch-text-tertiary);
+      margin-top: 0.25rem;
+    }
+    .phase__desc {
+      font-family: var(--parch-font-body);
+      color: var(--parch-text-secondary);
+      font-size: 0.9375rem;
+      margin-top: 0.5rem;
+      line-height: 1.65;
+    }
+
+    /* ── Key Decisions ── */
+    .decisions-list {
+      list-style: none;
+      counter-reset: decision;
+      margin: 0;
+    }
+    .decisions-list li {
+      counter-increment: decision;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--parch-border-faint);
+      font-size: 1rem;
+      line-height: 1.6;
+      display: flex;
+      gap: 0.75rem;
+    }
+    .decisions-list li:last-child {
+      border-bottom: none;
+    }
+    .decisions-list li::before {
+      content: counter(decision) ".";
+      font-family: var(--parch-font-display);
+      font-weight: 700;
+      color: var(--parch-accent);
+      font-size: 1.125rem;
+      flex-shrink: 0;
+      min-width: 1.5rem;
+    }
+
+    /* ── Skills ── */
+    .skills-section {
+      margin: 0;
+    }
+    .skill-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .skill-tag {
+      font-family: var(--parch-font-mono);
+      font-size: 0.6875rem;
+      color: var(--parch-accent);
+      border: 1px solid var(--parch-border-light);
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--parch-radius);
+      letter-spacing: 0.03em;
+      background: var(--parch-bg);
+    }
+
+    /* ── Source Breakdown ── */
+    .source-breakdown {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin: 0;
+    }
+    .source-bar-container {
+      flex: 1;
+    }
+    .source-bar {
+      display: flex;
+      height: 6px;
+      border-radius: var(--parch-radius);
+      overflow: hidden;
+      background: var(--parch-border-faint);
+    }
+    .source-bar__segment { height: 100%; }
+    .source-bar__segment--claude { background: var(--parch-accent); }
+    .source-bar__segment--cursor { background: var(--parch-text-tertiary); }
+    .source-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.35rem;
+      font-family: var(--parch-font-mono);
+      font-size: 0.625rem;
+      color: var(--parch-text-tertiary);
+    }
+
+    /* ── Session Cards (Book Excerpts) ── */
+    .session-list {
+      margin: 0 0 1rem;
+    }
+    .session-card {
+      background: var(--parch-surface);
+      border: 1px solid var(--parch-border-light);
+      border-radius: var(--parch-radius);
+      padding: 1.5rem 1.5rem 1.25rem;
+      margin-bottom: 1.25rem;
+      position: relative;
+    }
+    .session-card__page {
+      position: absolute;
+      top: 0.75rem;
+      inset-inline-end: 1rem;
+      font-family: var(--parch-font-mono);
+      font-size: 0.625rem;
+      color: var(--parch-text-tertiary);
+      letter-spacing: 0.1em;
+    }
+    .session-card__number {
+      font-family: var(--parch-font-mono);
+      font-size: 0.625rem;
+      color: var(--parch-text-tertiary);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .session-card__title {
+      font-family: var(--parch-font-display);
+      font-size: 1.1875rem;
+      font-weight: 600;
+      color: var(--parch-accent);
+      margin-top: 0.25rem;
+    }
+    .session-card__title a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .session-card__title a:hover {
+      text-decoration: underline;
+      opacity: 1;
+    }
+    .session-card__meta {
+      display: flex;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      font-family: var(--parch-font-mono);
+      font-size: 0.6875rem;
+      color: var(--parch-text-tertiary);
+      margin-top: 0.5rem;
+    }
+    .session-card__tag {
+      display: inline-block;
+      font-family: var(--parch-font-mono);
+      font-size: 0.5625rem;
+      color: var(--parch-accent);
+      border: 1px solid var(--parch-border-light);
+      padding: 0.1rem 0.4rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-inline-start: 0.5rem;
+    }
+
+    /* ── Work Timeline Table ── */
+    .timeline-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      margin: 0;
+    }
+    .timeline-table th {
+      font-family: var(--parch-font-mono);
+      font-size: 0.625rem;
+      font-weight: 600;
+      color: var(--parch-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      text-align: start;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 2px solid var(--parch-accent);
+    }
+    .timeline-table td {
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--parch-border-faint);
+      font-family: var(--parch-font-body);
+      vertical-align: top;
+    }
+    .timeline-table td:first-child {
+      font-family: var(--parch-font-mono);
+      font-size: 0.75rem;
+      color: var(--parch-text-tertiary);
+      white-space: nowrap;
+    }
+    .timeline-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ── Colophon ── */
+    .colophon {
+      text-align: center;
+      padding: 2rem 0 3rem;
+      font-family: var(--parch-font-mono);
+      font-size: 0.6875rem;
+      color: var(--parch-text-tertiary);
+      letter-spacing: 0.05em;
+    }
+    .colophon__mark {
+      font-family: var(--parch-font-display);
+      font-size: 1.25rem;
+      color: var(--parch-accent);
+      margin-bottom: 0.5rem;
+    }
+    .colophon p { margin-top: 0.25rem; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .page-wrapper { padding: 0 1rem; }
+      .title-page { padding: 2rem 0 1rem; }
+      .title-page__links { flex-direction: column; gap: 0.5rem; }
+      .project-stats { grid-template-columns: repeat(3, 1fr); }
+      .session-card { padding: 1.25rem 1rem 1rem; }
+      .timeline-table { font-size: 0.8125rem; }
+      .timeline-table th, .timeline-table td { padding: 0.4rem 0.5rem; }
+      .nav { gap: 1.25rem; font-size: 0.875rem; }
+      .screenshot__body { height: 160px; }
+      .narrative p:first-child::first-letter { font-size: 2.75rem; }
+    }
+
+    @media (max-width: 480px) {
+      .project-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ── Clickable session cards ── */
+    a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
+  <div class="page-wrapper">
+    <!-- Navigation -->
+    <nav class="nav" aria-label="Main navigation">
+      <a href="./portfolio.html">Portfolio</a>
+      <a href="./project.html" aria-current="page">Project</a>
+      <a href="./session.html">Session</a>
+    </nav>
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb" aria-label="Breadcrumb">
+      <a href="./portfolio.html">alex</a>
+      <span class="breadcrumb__sep" aria-hidden="true">/</span>
+      <span>budgetwise</span>
+    </div>
+
+    <!-- Title Page -->
+    <header class="title-page fade-in" role="banner">
+      <h1 class="title-page__heading">BudgetWise</h1>
+      <div class="title-page__links">
+        <a href="https://github.com/alex/budgetwise" rel="noopener noreferrer">github.com/alex/budgetwise</a>
+        <a href="https://budgetwise.app" rel="noopener noreferrer">budgetwise.app</a>
+      </div>
+    </header>
+
+    <!-- Screenshot -->
+    <figure class="screenshot fade-in fade-in-d1" aria-label="Application screenshot">
+      <div class="screenshot__chrome">
+        <span class="screenshot__dot" aria-hidden="true"></span>
+        <span class="screenshot__dot" aria-hidden="true"></span>
+        <span class="screenshot__dot" aria-hidden="true"></span>
+        <span class="screenshot__bar">budgetwise.app</span>
+      </div>
+      <div class="screenshot__body" role="img" aria-label="BudgetWise application preview">
+        BudgetWise Preview
+      </div>
+    </figure>
+
+    <!-- Decorative Rule -->
+    <div class="hr-triple" role="separator">
+      <span class="hr-triple-inner"></span>
+    </div>
+
+    <main id="main-content">
+      <!-- Narrative with Drop Cap -->
+      <section class="narrative fade-in fade-in-d2" aria-label="Project narrative">
+        <p>Started with a basic Prisma schema but realized halfway through that I needed polymorphic transaction types. The AI kept suggesting single-table inheritance but I pushed back &mdash; went with a discriminated union pattern instead. Nullable fields for transfer-specific data, hard deletes with an audit log.</p>
+        <p>The recurring transaction detection was the hardest part. Had to figure out the right tolerance windows &mdash; monthly transactions drift by a few days, weekly ones are more precise. Settled on three consecutive interval matches before marking something as recurring. The partial index on merchant_normalized brought the detection query from 2 seconds to 120ms on 10k transactions.</p>
+        <p>Plaid integration went smoother than expected. The token exchange flow is straightforward, but the webhook handling needed careful idempotency &mdash; Plaid sends duplicate webhooks, so I used a processed-events table keyed on webhook ID.</p>
+      </section>
+
+      <!-- Decorative Rule -->
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+
+      <!-- Stats as Margin Annotations -->
+      <section class="project-stats fade-in fade-in-d2" aria-label="Project statistics">
+        <div class="project-stat">
+          <div class="project-stat__value">8</div>
+          <div class="project-stat__label">Sessions</div>
+        </div>
+        <div class="project-stat">
+          <div class="project-stat__value">8.1<span style="font-size: 0.75em; opacity: 0.6;">h</span></div>
+          <div class="project-stat__label">the author</div>
+        </div>
+        <div class="project-stat">
+          <div class="project-stat__value">34.4<span style="font-size: 0.75em; opacity: 0.6;">h</span></div>
+          <div class="project-stat__label">the machines</div>
+        </div>
+        <div class="project-stat">
+          <div class="project-stat__value">4.2<span style="font-size: 0.75em; opacity: 0.6;">&times;</span></div>
+          <div class="project-stat__label">leverage</div>
+        </div>
+        <div class="project-stat">
+          <div class="project-stat__value">4,460</div>
+          <div class="project-stat__label">Lines of Code</div>
+        </div>
+        <div class="project-stat">
+          <div class="project-stat__value">156</div>
+          <div class="project-stat__label">Files</div>
+        </div>
+        <div class="project-stat">
+          <div class="project-stat__value">2.1M</div>
+          <div class="project-stat__label">Tokens</div>
+        </div>
+      </section>
+
+      <!-- Decorative Rule -->
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+
+      <!-- Chapter II: Phases -->
+      <section aria-label="Project phases">
+        <h2 class="chapter-heading fade-in fade-in-d3">
+          <span class="chapter-heading__number">Chapter II</span>
+          Phases
+        </h2>
+        <div class="phases">
+          <div class="phase">
+            <div class="phase__number">Phase I</div>
+            <h3 class="phase__title">Foundation</h3>
+            <div class="phase__dates">Feb 3 &ndash; 14</div>
+            <p class="phase__desc">Schema design, Prisma setup, transaction CRUD</p>
+          </div>
+          <div class="phase">
+            <div class="phase__number">Phase II</div>
+            <h3 class="phase__title">Data Pipeline</h3>
+            <div class="phase__dates">Feb 17 &ndash; 26</div>
+            <p class="phase__desc">CSV import, Plaid integration, recurring detection</p>
+          </div>
+          <div class="phase">
+            <div class="phase__number">Phase III</div>
+            <h3 class="phase__title">Intelligence</h3>
+            <div class="phase__dates">Mar 1 &ndash; 14</div>
+            <p class="phase__desc">Search, full-text indexing, spending insights</p>
+          </div>
+          <div class="phase">
+            <div class="phase__number">Phase IV</div>
+            <h3 class="phase__title">Hardening</h3>
+            <div class="phase__dates">Mar 16 &ndash; 26</div>
+            <p class="phase__desc">2FA, mobile responsive, CI/CD, performance</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Decorative Rule -->
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+
+      <!-- Chapter III: Key Decisions -->
+      <section aria-label="Key decisions">
+        <h2 class="chapter-heading fade-in fade-in-d3">
+          <span class="chapter-heading__number">Chapter III</span>
+          Key Decisions
+        </h2>
+        <ol class="decisions-list">
+          <li>Discriminated union over single-table inheritance for transaction types</li>
+          <li>Partial index on merchant_normalized for 16x query speedup</li>
+          <li>Processed-events table for Plaid webhook idempotency</li>
+        </ol>
+      </section>
+
+      <!-- Decorative Rule -->
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+
+      <!-- Chapter IV: Skills -->
+      <section class="skills-section" aria-label="Skills used">
+        <h2 class="chapter-heading fade-in fade-in-d3">
+          <span class="chapter-heading__number">Chapter IV</span>
+          Skills
+        </h2>
+        <div class="skill-list">
+          <span class="skill-tag">TypeScript</span>
+          <span class="skill-tag">React</span>
+          <span class="skill-tag">Next.js</span>
+          <span class="skill-tag">Prisma</span>
+          <span class="skill-tag">PostgreSQL</span>
+          <span class="skill-tag">Tailwind CSS</span>
+          <span class="skill-tag">Stripe API</span>
+          <span class="skill-tag">Plaid API</span>
+          <span class="skill-tag">Chart.js</span>
+          <span class="skill-tag">Playwright</span>
+        </div>
+      </section>
+
+      <!-- Decorative Rule -->
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+
+      <!-- Source Breakdown -->
+      <section aria-label="Source breakdown">
+        <h2 class="chapter-heading fade-in fade-in-d3">
+          <span class="chapter-heading__number">Chapter V</span>
+          Source
+        </h2>
+        <div class="source-breakdown">
+          <div class="source-bar-container">
+            <div class="source-bar" role="img" aria-label="Claude Code 62.5%, Cursor 37.5%">
+              <div class="source-bar__segment source-bar__segment--claude" style="width: 62.5%"></div>
+              <div class="source-bar__segment source-bar__segment--cursor" style="width: 37.5%"></div>
+            </div>
+            <div class="source-labels">
+              <span>Claude Code &mdash; 5 sessions (62.5%)</span>
+              <span>Cursor &mdash; 3 sessions (37.5%)</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Decorative Rule -->
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+
+      <!-- Chapter VI: Work Timeline -->
+      <section aria-label="Work timeline">
+        <h2 class="chapter-heading fade-in fade-in-d4">
+          <span class="chapter-heading__number">Chapter VI</span>
+          Work Timeline
+        </h2>
+        <div style="overflow-x: auto;">
+          <table class="timeline-table">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Title</th>
+                <th scope="col">Date</th>
+                <th scope="col">Duration</th>
+                <th scope="col">LOC</th>
+                <th scope="col">Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>Set up Prisma schema</td>
+                <td>Feb 3</td>
+                <td>72m</td>
+                <td>680</td>
+                <td>Claude</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>Transaction list + infinite scroll</td>
+                <td>Feb 14</td>
+                <td>65m</td>
+                <td>520</td>
+                <td>Cursor</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td>Recurring transaction detection</td>
+                <td>Mar 1</td>
+                <td>88m</td>
+                <td>890</td>
+                <td>Claude</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td>Stripe integration</td>
+                <td>Mar 10</td>
+                <td>55m</td>
+                <td>420</td>
+                <td>Claude</td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td>CSV import pipeline</td>
+                <td>Mar 14</td>
+                <td>45m</td>
+                <td>380</td>
+                <td>Cursor</td>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td>Full-text search tsvector</td>
+                <td>Mar 18</td>
+                <td>62m</td>
+                <td>510</td>
+                <td>Claude</td>
+              </tr>
+              <tr>
+                <td>7</td>
+                <td>Spending insights dashboard</td>
+                <td>Mar 22</td>
+                <td>78m</td>
+                <td>720</td>
+                <td>Claude</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td>Mobile responsive + 2FA</td>
+                <td>Mar 26</td>
+                <td>50m</td>
+                <td>340</td>
+                <td>Cursor</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Decorative Rule -->
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+
+      <!-- Chapter VII: Featured Sessions -->
+      <section class="session-list" aria-label="Featured sessions">
+        <h2 class="chapter-heading fade-in fade-in-d4">
+          <span class="chapter-heading__number">Chapter VII</span>
+          Featured Sessions
+        </h2>
+
+        <article class="session-card">
+          <span class="session-card__page">p. 1</span>
+          <div class="session-card__number">Session 1</div>
+          <h3 class="session-card__title">
+            <a href="./session.html">Prisma schema</a>
+            <span class="session-card__tag">schema</span>
+          </h3>
+          <div class="session-card__meta">
+            <span>72m</span>
+            <span>680 LOC</span>
+            <span>7 agents</span>
+          </div>
+        </article>
+
+        <article class="session-card">
+          <span class="session-card__page">p. 2</span>
+          <div class="session-card__number">Session 2</div>
+          <h3 class="session-card__title">
+            <a href="./session.html">Transaction list</a>
+            <span class="session-card__tag">frontend</span>
+          </h3>
+          <div class="session-card__meta">
+            <span>65m</span>
+            <span>520 LOC</span>
+            <span>5 agents</span>
+          </div>
+        </article>
+
+        <article class="session-card">
+          <span class="session-card__page">p. 3</span>
+          <div class="session-card__number">Session 3</div>
+          <h3 class="session-card__title">
+            <a href="./session.html">Recurring detection</a>
+            <span class="session-card__tag">algorithm</span>
+          </h3>
+          <div class="session-card__meta">
+            <span>88m</span>
+            <span>890 LOC</span>
+            <span>6 agents</span>
+          </div>
+        </article>
+
+        <article class="session-card">
+          <span class="session-card__page">p. 4</span>
+          <div class="session-card__number">Session 4</div>
+          <h3 class="session-card__title">
+            <a href="./session.html">CSV import</a>
+            <span class="session-card__tag">import</span>
+          </h3>
+          <div class="session-card__meta">
+            <span>78m</span>
+            <span>640 LOC</span>
+            <span>5 agents</span>
+          </div>
+        </article>
+
+        <article class="session-card">
+          <span class="session-card__page">p. 5</span>
+          <div class="session-card__number">Session 5</div>
+          <h3 class="session-card__title">
+            <a href="./session.html">Plaid integration</a>
+            <span class="session-card__tag">integration</span>
+          </h3>
+          <div class="session-card__meta">
+            <span>90m</span>
+            <span>780 LOC</span>
+            <span>8 agents</span>
+          </div>
+        </article>
+
+        <article class="session-card">
+          <span class="session-card__page">p. 6</span>
+          <div class="session-card__number">Session 6</div>
+          <h3 class="session-card__title">
+            <a href="./session.html">Spending insights</a>
+            <span class="session-card__tag">insights</span>
+          </h3>
+          <div class="session-card__meta">
+            <span>70m</span>
+            <span>620 LOC</span>
+            <span>4 agents</span>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <!-- Decorative Rule -->
+    <div class="hr-triple" role="separator">
+      <span class="hr-triple-inner"></span>
+    </div>
+
+    <!-- Colophon -->
+    <footer class="colophon" role="contentinfo">
+      <div class="colophon__mark" aria-hidden="true">&sect;</div>
+      <p>Set in Crimson Pro &amp; IBM Plex Mono</p>
+      <p>Composed with AI-assisted development tools</p>
+      <p>Published on heyi.am</p>
+    </footer>
+  </div>
+
+  <script>
+    // Intersection Observer for fade-in on scroll
+    (function() {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.session-card, .phase').forEach(function(el) {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(8px)';
+        el.style.transition = 'opacity 500ms ease-out, transform 500ms ease-out';
+        observer.observe(el);
+      });
+    })();
+  </script>
+</body>
+</html>

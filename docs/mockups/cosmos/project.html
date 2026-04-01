@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cosmos Template — BudgetWise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Cosmos Design Tokens ── */
+:root {
+  --cos-bg:             #030712;
+  --cos-surface:        #0f172a;
+  --cos-surface-hover:  #1e293b;
+  --cos-accent:         #fbbf24;
+  --cos-accent-dim:     rgba(251, 191, 36, 0.15);
+  --cos-accent-glow:    rgba(251, 191, 36, 0.3);
+  --cos-text:           #f1f5f9;
+  --cos-text-secondary: #94a3b8;
+  --cos-text-tertiary:  #64748b;
+  --cos-border:         #1e293b;
+  --cos-border-accent:  rgba(251, 191, 36, 0.3);
+
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
+  --radius:    8px;
+  --radius-lg: 12px;
+
+  --duration-fade:    600ms;
+  --duration-draw:    1200ms;
+  --duration-counter: 1800ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Agent role colors */
+  --color-frontend:  #7c3aed;
+  --color-backend:   #0891b2;
+  --color-qa:        #059669;
+  --color-security:  #475569;
+  --color-reviewer:  #e11d48;
+  --color-ux:        #d97706;
+}
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--cos-accent);
+  color: var(--cos-bg);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-weight: 600;
+  z-index: 1000;
+  text-decoration: none;
+}
+.skip-link:focus { top: 1rem; }
+
+/* ── Base ── */
+body {
+  font-family: var(--font-body);
+  color: var(--cos-text);
+  background-color: var(--cos-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+a { color: var(--cos-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible {
+  outline: 2px solid var(--cos-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ── Starfield ── */
+.starfield {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1px 1px at 10% 15%, rgba(251,191,36,0.4), transparent),
+    radial-gradient(1px 1px at 25% 35%, rgba(241,245,249,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 40% 10%, rgba(251,191,36,0.5), transparent),
+    radial-gradient(1px 1px at 55% 45%, rgba(241,245,249,0.25), transparent),
+    radial-gradient(1px 1px at 70% 20%, rgba(241,245,249,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 85% 55%, rgba(251,191,36,0.35), transparent),
+    radial-gradient(1px 1px at 15% 70%, rgba(241,245,249,0.2), transparent),
+    radial-gradient(1px 1px at 30% 85%, rgba(251,191,36,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 50% 65%, rgba(241,245,249,0.35), transparent),
+    radial-gradient(1px 1px at 65% 80%, rgba(241,245,249,0.2), transparent),
+    radial-gradient(1px 1px at 80% 40%, rgba(251,191,36,0.25), transparent),
+    radial-gradient(1px 1px at 92% 75%, rgba(241,245,249,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 5% 50%, rgba(251,191,36,0.4), transparent),
+    radial-gradient(1px 1px at 45% 30%, rgba(241,245,249,0.2), transparent),
+    radial-gradient(1px 1px at 75% 60%, rgba(251,191,36,0.3), transparent),
+    radial-gradient(1px 1px at 20% 90%, rgba(241,245,249,0.25), transparent),
+    radial-gradient(1px 1px at 60% 5%, rgba(241,245,249,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 35% 55%, rgba(251,191,36,0.2), transparent),
+    radial-gradient(1px 1px at 88% 15%, rgba(241,245,249,0.35), transparent),
+    radial-gradient(1px 1px at 50% 90%, rgba(251,191,36,0.25), transparent);
+}
+
+/* ── Page ── */
+.cos-page {
+  position: relative;
+  z-index: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ── Constellation ── */
+.cos-constellation {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.cos-constellation-line {
+  fill: none;
+  stroke: var(--cos-accent);
+  stroke-width: 1;
+  stroke-opacity: 0.15;
+  stroke-linecap: round;
+  stroke-dasharray: 800;
+  stroke-dashoffset: 800;
+}
+.cos-constellation-line.drawn {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset var(--duration-draw) var(--ease-out);
+}
+.cos-constellation-dot {
+  fill: var(--cos-accent);
+  opacity: 0.3;
+}
+
+/* ── Nav ── */
+.cos-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  margin-block-end: 2rem;
+  border-block-end: 1px solid var(--cos-border);
+}
+.cos-nav-brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--cos-accent);
+  text-decoration: none;
+}
+.cos-nav-brand:hover { text-decoration: none; opacity: 0.85; }
+.cos-nav-links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+.cos-nav-links a {
+  color: var(--cos-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: color 200ms;
+}
+.cos-nav-links a:hover { color: var(--cos-accent); text-decoration: none; }
+.cos-nav-links a[aria-current="page"] { color: var(--cos-accent); }
+
+/* ── Section Animation ── */
+.cos-section {
+  opacity: 0;
+  transform: scale(0.98);
+  transition: opacity var(--duration-fade) var(--ease-out),
+              transform var(--duration-fade) var(--ease-out);
+}
+.cos-section.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cos-section { opacity: 1; transform: none; transition: none; }
+  .cos-constellation-line { stroke-dasharray: none; stroke-dashoffset: 0; transition: none; }
+  .cos-constellation-line.drawn { transition: none; }
+  .stat-value { transition: none; }
+  .cos-orbit-node { transition: none; }
+}
+
+/* ── Breadcrumb ── */
+.cos-breadcrumb {
+  font-size: 0.8125rem;
+  color: var(--cos-text-tertiary);
+  margin-block-end: 1.5rem;
+  font-family: var(--font-mono);
+}
+.cos-breadcrumb a { color: var(--cos-text-secondary); }
+.cos-breadcrumb a:hover { color: var(--cos-accent); }
+.cos-breadcrumb-sep { margin-inline: 0.375rem; opacity: 0.5; }
+
+/* ── Project Header ── */
+.cos-project-header {
+  margin-block-end: 2.5rem;
+}
+.cos-project-header h1 {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-block-end: 0.75rem;
+}
+.cos-project-links {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.875rem;
+  margin-block-end: 1rem;
+}
+.cos-project-links a {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* ── Screenshot ── */
+.cos-screenshot {
+  background: var(--cos-surface);
+  border: 1px solid var(--cos-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-block-end: 2.5rem;
+}
+.cos-screenshot-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.75rem 1rem;
+  background: var(--cos-surface);
+  border-block-end: 1px solid var(--cos-border);
+}
+.cos-screenshot-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--cos-text-tertiary);
+  opacity: 0.4;
+}
+.cos-screenshot-dot:first-child { background: #ef4444; opacity: 0.6; }
+.cos-screenshot-dot:nth-child(2) { background: #fbbf24; opacity: 0.6; }
+.cos-screenshot-dot:nth-child(3) { background: #22c55e; opacity: 0.6; }
+.cos-screenshot-body {
+  height: 240px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cos-screenshot-placeholder {
+  color: var(--cos-text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+
+/* ── Stats Row ── */
+.cos-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-block-end: 2.5rem;
+}
+.cos-stat-pill {
+  background: var(--cos-surface);
+  border: 1px solid var(--cos-border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 100px;
+}
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--cos-accent);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.stat-label {
+  font-size: 0.6875rem;
+  color: var(--cos-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-block-start: 0.125rem;
+}
+.cos-stat-pill--donut {
+  flex-direction: row;
+  gap: 0.75rem;
+  align-items: center;
+  flex: 2;
+  min-width: 200px;
+}
+.cos-donut-ring {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+.cos-donut-ring circle {
+  fill: none;
+  stroke-width: 5;
+}
+.cos-donut-ring .ring-bg {
+  stroke: var(--cos-border);
+}
+.cos-donut-ring .ring-human {
+  stroke: var(--cos-accent);
+  stroke-dasharray: 0 100;
+  stroke-dashoffset: 25;
+  transition: stroke-dasharray 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cos-donut-ring .ring-agent {
+  stroke: rgba(251, 191, 36, 0.3);
+  stroke-dasharray: 0 100;
+  stroke-dashoffset: 25;
+  transition: stroke-dasharray 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
+}
+.cos-donut-ring.animated .ring-human {
+  stroke-dasharray: 19 81;
+}
+.cos-donut-ring.animated .ring-agent {
+  stroke-dasharray: 81 19;
+}
+.cos-donut-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+.cos-donut-labels .donut-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.cos-donut-labels .donut-val {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cos-accent);
+  line-height: 1.2;
+}
+.cos-donut-labels .donut-val--dim {
+  color: var(--cos-text-secondary);
+}
+.cos-donut-labels .donut-lbl {
+  font-size: 0.625rem;
+  color: var(--cos-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.cos-donut-labels .donut-multi {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--cos-accent);
+  margin-top: 0.125rem;
+}
+
+/* ── Section Title ── */
+.cos-section-title {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 600;
+  margin-block-end: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.cos-section-title::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cos-accent);
+  box-shadow: 0 0 8px var(--cos-accent-glow);
+  flex-shrink: 0;
+}
+
+/* ── Narrative ── */
+.cos-narrative {
+  margin-block-end: 2.5rem;
+}
+.cos-narrative p {
+  color: var(--cos-text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  margin-block-end: 1rem;
+}
+.cos-narrative p:last-child { margin-block-end: 0; }
+
+/* ── Orbital Timeline ── */
+.cos-orbit-timeline {
+  position: relative;
+  margin-block-end: 2.5rem;
+}
+.cos-orbit-svg {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  display: block;
+}
+.cos-orbit-path {
+  fill: none;
+  stroke: var(--cos-border);
+  stroke-width: 1.5;
+}
+.cos-orbit-path-active {
+  fill: none;
+  stroke: var(--cos-accent);
+  stroke-width: 1.5;
+  stroke-opacity: 0.4;
+  stroke-dasharray: 1200;
+  stroke-dashoffset: 1200;
+}
+.cos-orbit-path-active.drawn {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 2s var(--ease-out);
+}
+.cos-orbit-node {
+  cursor: default;
+}
+.cos-orbit-node circle {
+  transition: r 200ms var(--ease-out);
+}
+.cos-orbit-node:hover circle {
+  r: 8;
+}
+.cos-orbit-node text {
+  fill: var(--cos-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.cos-orbit-phase-label {
+  fill: var(--cos-text-tertiary);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ── Phase Cards ── */
+.cos-phases {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-block-end: 2.5rem;
+}
+.cos-phase-card {
+  background: var(--cos-surface);
+  border: 1px solid var(--cos-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+.cos-phase-card::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--cos-accent);
+  opacity: 0.4;
+}
+.cos-phase-number {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--cos-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-block-end: 0.25rem;
+}
+.cos-phase-card h3 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-block-end: 0.375rem;
+}
+.cos-phase-dates {
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--cos-text-tertiary);
+  margin-block-end: 0.5rem;
+}
+.cos-phase-desc {
+  font-size: 0.8125rem;
+  color: var(--cos-text-secondary);
+  line-height: 1.5;
+}
+
+/* ── Work Timeline Chart ── */
+.cos-chart-container {
+  background: var(--cos-surface);
+  border: 1px solid var(--cos-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-block-end: 2.5rem;
+  overflow-x: auto;
+}
+.cos-chart-svg {
+  width: 100%;
+  min-width: 600px;
+  display: block;
+}
+.cos-chart-bar {
+  transition: opacity 200ms;
+}
+.cos-chart-bar:hover { opacity: 0.8; }
+.cos-chart-grid-line {
+  stroke: var(--cos-border);
+  stroke-width: 0.5;
+}
+.cos-chart-label {
+  fill: var(--cos-text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.cos-chart-value {
+  fill: var(--cos-accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* ── Key Decisions ── */
+.cos-decisions {
+  margin-block-end: 2.5rem;
+}
+.cos-decision {
+  background: var(--cos-surface);
+  border: 1px solid var(--cos-border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-block-end: 0.75rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.cos-decision-number {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--cos-accent);
+  line-height: 1;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--cos-border-accent);
+  border-radius: 50%;
+}
+.cos-decision p {
+  color: var(--cos-text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+/* ── Skills ── */
+.cos-skill-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.cos-skill-chip {
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  border: 1px solid var(--cos-border-accent);
+  color: var(--cos-accent);
+  background: var(--cos-accent-dim);
+  white-space: nowrap;
+}
+
+/* ── Source Breakdown ── */
+.cos-source-section {
+  margin-block-end: 2.5rem;
+}
+.cos-source-bar-large {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--cos-border);
+  margin-block-end: 0.75rem;
+}
+.cos-source-fill-claude { background: var(--cos-accent); height: 100%; }
+.cos-source-fill-cursor { background: var(--cos-text-tertiary); height: 100%; }
+.cos-source-labels {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.8125rem;
+  color: var(--cos-text-secondary);
+}
+.cos-source-labels span {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+.cos-source-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.cos-source-dot.claude { background: var(--cos-accent); }
+.cos-source-dot.cursor { background: var(--cos-text-tertiary); }
+
+/* ── Session Cards ── */
+.cos-sessions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-block-end: 2.5rem;
+}
+.cos-session-card {
+  background: var(--cos-surface);
+  border: 1px solid var(--cos-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  transition: border-color 200ms, box-shadow 200ms;
+}
+.cos-session-card:hover {
+  border-color: var(--cos-border-accent);
+  box-shadow: 0 0 16px var(--cos-accent-dim);
+}
+.cos-session-card h3 {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-block-end: 0.5rem;
+}
+.cos-session-card h3 a {
+  color: var(--cos-text);
+  transition: color 200ms;
+}
+.cos-session-card h3 a:hover {
+  color: var(--cos-accent);
+  text-decoration: none;
+}
+.cos-session-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--cos-text-tertiary);
+}
+.cos-session-meta strong {
+  color: var(--cos-accent);
+  font-weight: 500;
+}
+.cos-session-tag {
+  font-size: 0.6875rem;
+  font-family: var(--font-mono);
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--cos-border);
+  color: var(--cos-text-tertiary);
+  margin-block-start: 0.5rem;
+  display: inline-block;
+}
+
+/* ── Footer ── */
+.cos-footer {
+  margin-block-start: 4rem;
+  padding-block-start: 1.5rem;
+  border-block-start: 1px solid var(--cos-border);
+  text-align: center;
+  color: var(--cos-text-tertiary);
+  font-size: 0.8125rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .cos-page { padding: 1.25rem 1rem; }
+  .cos-project-header h1 { font-size: 1.75rem; }
+  .cos-phases { grid-template-columns: 1fr; }
+  .cos-sessions { grid-template-columns: 1fr; }
+  .cos-stats-row { flex-direction: column; }
+  .cos-stat-pill { flex-direction: row; gap: 0.75rem; justify-content: center; }
+  .cos-nav {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .cos-nav-links { gap: 1rem; }
+}
+
+    /* ── Clickable session cards ── */
+    a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<div class="starfield" aria-hidden="true"></div>
+
+<div class="cos-page">
+
+  <!-- Constellation SVG -->
+  <svg class="cos-constellation" aria-hidden="true">
+    <circle class="cos-constellation-dot" cx="60" cy="200" r="2" />
+    <circle class="cos-constellation-dot" cx="250" cy="150" r="1.5" />
+    <circle class="cos-constellation-dot" cx="450" cy="220" r="2" />
+    <circle class="cos-constellation-dot" cx="700" cy="180" r="1.5" />
+    <circle class="cos-constellation-dot" cx="150" cy="500" r="2" />
+    <circle class="cos-constellation-dot" cx="400" cy="600" r="1.5" />
+    <circle class="cos-constellation-dot" cx="650" cy="550" r="2" />
+    <circle class="cos-constellation-dot" cx="850" cy="450" r="1.5" />
+    <circle class="cos-constellation-dot" cx="100" cy="850" r="2" />
+    <circle class="cos-constellation-dot" cx="500" cy="900" r="1.5" />
+    <circle class="cos-constellation-dot" cx="800" cy="800" r="2" />
+    <path class="cos-constellation-line" d="M60,200 Q155,165 250,150" />
+    <path class="cos-constellation-line" d="M250,150 Q350,190 450,220" />
+    <path class="cos-constellation-line" d="M450,220 Q575,195 700,180" />
+    <path class="cos-constellation-line" d="M150,500 Q275,555 400,600" />
+    <path class="cos-constellation-line" d="M400,600 Q525,570 650,550" />
+    <path class="cos-constellation-line" d="M650,550 Q750,495 850,450" />
+    <path class="cos-constellation-line" d="M100,850 Q300,880 500,900" />
+    <path class="cos-constellation-line" d="M500,900 Q650,845 800,800" />
+  </svg>
+
+  <!-- Nav -->
+  <nav class="cos-nav" aria-label="Main navigation">
+    <a href="./portfolio.html" class="cos-nav-brand">cosmos</a>
+    <ul class="cos-nav-links">
+      <li><a href="./portfolio.html">Portfolio</a></li>
+      <li><a href="./project.html" aria-current="page">Project</a></li>
+      <li><a href="./session.html">Session</a></li>
+    </ul>
+  </nav>
+
+  <main id="main-content">
+
+    <!-- Breadcrumb -->
+    <nav class="cos-breadcrumb" aria-label="Breadcrumb">
+      <a href="./portfolio.html">alex</a>
+      <span class="cos-breadcrumb-sep" aria-hidden="true">/</span>
+      <span aria-current="page">budgetwise</span>
+    </nav>
+
+    <!-- Project Header -->
+    <header class="cos-section cos-project-header">
+      <h1>BudgetWise</h1>
+      <div class="cos-project-links">
+        <a href="./session.html">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          github.com/alex/budgetwise
+        </a>
+        <a href="./session.html">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          budgetwise.app
+        </a>
+      </div>
+    </header>
+
+    <!-- Screenshot -->
+    <div class="cos-section cos-screenshot">
+      <div class="cos-screenshot-bar" aria-hidden="true">
+        <span class="cos-screenshot-dot"></span>
+        <span class="cos-screenshot-dot"></span>
+        <span class="cos-screenshot-dot"></span>
+      </div>
+      <div class="cos-screenshot-body">
+        <span class="cos-screenshot-placeholder">budgetwise.app</span>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <section class="cos-section" aria-label="Project statistics">
+      <div class="cos-stats-row">
+        <div class="cos-stat-pill">
+          <span class="stat-value" data-target="8">0</span>
+          <span class="stat-label">Sessions</span>
+        </div>
+        <div class="cos-stat-pill cos-stat-pill--donut">
+          <svg class="cos-donut-ring" viewBox="0 0 36 36" aria-label="8.1 hours you, 34.4 hours agents">
+            <circle class="ring-bg" cx="18" cy="18" r="16" />
+            <circle class="ring-human" cx="18" cy="18" r="16" stroke-linecap="round"
+              style="stroke-dasharray: 0 100; stroke-dashoffset: 25;" />
+            <circle class="ring-agent" cx="18" cy="18" r="16"
+              style="stroke-dasharray: 0 100; stroke-dashoffset: -50;" />
+          </svg>
+          <div class="cos-donut-labels">
+            <div class="donut-line">
+              <span class="donut-val">8.1h</span>
+              <span class="donut-lbl">you</span>
+              <span class="donut-val donut-val--dim">34.4h</span>
+              <span class="donut-lbl">agents</span>
+            </div>
+            <div class="donut-multi">4.2x leverage</div>
+          </div>
+        </div>
+        <div class="cos-stat-pill">
+          <span class="stat-value" data-target="4460" data-format="comma">0</span>
+          <span class="stat-label">LOC</span>
+        </div>
+        <div class="cos-stat-pill">
+          <span class="stat-value" data-target="156">0</span>
+          <span class="stat-label">Files</span>
+        </div>
+        <div class="cos-stat-pill">
+          <span class="stat-value" data-target="2.1" data-suffix="M" data-decimal="true">0</span>
+          <span class="stat-label">Tokens</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Narrative -->
+    <section class="cos-section cos-narrative" aria-label="Project narrative">
+      <h2 class="cos-section-title">Narrative</h2>
+      <p>Started with a basic Prisma schema but realized halfway through that I needed polymorphic transaction types. The AI kept suggesting single-table inheritance but I pushed back -- went with a discriminated union pattern instead. Nullable fields for transfer-specific data, hard deletes with an audit log.</p>
+      <p>The recurring transaction detection was the hardest part. Had to figure out the right tolerance windows -- monthly transactions drift by a few days, weekly ones are more precise. Settled on three consecutive interval matches before marking something as recurring. The partial index on merchant_normalized brought the detection query from 2 seconds to 120ms on 10k transactions.</p>
+      <p>Plaid integration went smoother than expected. The token exchange flow is straightforward, but the webhook handling needed careful idempotency -- Plaid sends duplicate webhooks, so I used a processed-events table keyed on webhook ID.</p>
+    </section>
+
+    <!-- Orbital Phase Timeline -->
+    <section class="cos-section cos-orbit-timeline" aria-label="Project phases">
+      <h2 class="cos-section-title">Orbital Timeline</h2>
+      <svg class="cos-orbit-svg" viewBox="0 0 800 200" role="img" aria-label="Phase timeline showing 4 project phases as points along an orbital path">
+        <!-- Orbit path -->
+        <path class="cos-orbit-path" d="M50,100 C150,30 250,170 400,100 C550,30 650,170 750,100" />
+        <path class="cos-orbit-path-active" d="M50,100 C150,30 250,170 400,100 C550,30 650,170 750,100" />
+
+        <!-- Phase labels -->
+        <text class="cos-orbit-phase-label" x="100" y="50">Foundation</text>
+        <text class="cos-orbit-phase-label" x="270" y="170">Data Pipeline</text>
+        <text class="cos-orbit-phase-label" x="470" y="50">Intelligence</text>
+        <text class="cos-orbit-phase-label" x="650" y="170">Hardening</text>
+
+        <!-- Nodes -->
+        <g class="cos-orbit-node">
+          <circle cx="100" cy="65" r="6" fill="#030712" stroke="#fbbf24" stroke-width="2" />
+          <text x="100" y="40" text-anchor="middle">Feb 3-14</text>
+        </g>
+        <g class="cos-orbit-node">
+          <circle cx="290" cy="145" r="6" fill="#030712" stroke="#fbbf24" stroke-width="2" />
+          <text x="290" y="190" text-anchor="middle">Feb 17-26</text>
+        </g>
+        <g class="cos-orbit-node">
+          <circle cx="500" cy="65" r="6" fill="#030712" stroke="#fbbf24" stroke-width="2" />
+          <text x="500" y="40" text-anchor="middle">Mar 1-14</text>
+        </g>
+        <g class="cos-orbit-node">
+          <circle cx="700" cy="120" r="6" fill="#030712" stroke="#fbbf24" stroke-width="2" />
+          <text x="700" y="155" text-anchor="middle">Mar 16-26</text>
+        </g>
+      </svg>
+    </section>
+
+    <!-- Phase Cards -->
+    <section class="cos-section" aria-label="Phase details">
+      <div class="cos-phases">
+        <div class="cos-phase-card">
+          <div class="cos-phase-number">Phase 1</div>
+          <h3>Foundation</h3>
+          <div class="cos-phase-dates">Feb 3 -- 14</div>
+          <p class="cos-phase-desc">Schema design, Prisma setup, transaction CRUD</p>
+        </div>
+        <div class="cos-phase-card">
+          <div class="cos-phase-number">Phase 2</div>
+          <h3>Data Pipeline</h3>
+          <div class="cos-phase-dates">Feb 17 -- 26</div>
+          <p class="cos-phase-desc">CSV import, Plaid integration, recurring detection</p>
+        </div>
+        <div class="cos-phase-card">
+          <div class="cos-phase-number">Phase 3</div>
+          <h3>Intelligence</h3>
+          <div class="cos-phase-dates">Mar 1 -- 14</div>
+          <p class="cos-phase-desc">Search, full-text indexing, spending insights</p>
+        </div>
+        <div class="cos-phase-card">
+          <div class="cos-phase-number">Phase 4</div>
+          <h3>Hardening</h3>
+          <div class="cos-phase-dates">Mar 16 -- 26</div>
+          <p class="cos-phase-desc">2FA, mobile responsive, CI/CD, performance</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Work Timeline Chart (LOC per session) -->
+    <section class="cos-section" aria-label="Work timeline chart">
+      <h2 class="cos-section-title">Work Timeline</h2>
+      <div class="cos-chart-container">
+        <svg class="cos-chart-svg" viewBox="0 0 700 240" role="img" aria-label="Bar chart showing lines of code written per session">
+          <!-- Grid lines -->
+          <line class="cos-chart-grid-line" x1="60" y1="30" x2="680" y2="30" />
+          <line class="cos-chart-grid-line" x1="60" y1="75" x2="680" y2="75" />
+          <line class="cos-chart-grid-line" x1="60" y1="120" x2="680" y2="120" />
+          <line class="cos-chart-grid-line" x1="60" y1="165" x2="680" y2="165" />
+          <line class="cos-chart-grid-line" x1="60" y1="210" x2="680" y2="210" />
+
+          <!-- Y-axis labels -->
+          <text class="cos-chart-label" x="55" y="34" text-anchor="end">900</text>
+          <text class="cos-chart-label" x="55" y="79" text-anchor="end">675</text>
+          <text class="cos-chart-label" x="55" y="124" text-anchor="end">450</text>
+          <text class="cos-chart-label" x="55" y="169" text-anchor="end">225</text>
+          <text class="cos-chart-label" x="55" y="214" text-anchor="end">0</text>
+
+          <!-- Bars (LOC values: 680, 520, 890, 420, 380, 510, 720, 340) -->
+          <!-- Max = 890, scale: height = (val/890) * 180 -->
+          <g class="cos-chart-bar">
+            <rect x="80" y="72.6" width="55" height="137.4" rx="4" fill="#fbbf24" opacity="0.7" />
+            <text class="cos-chart-value" x="107" y="66" text-anchor="middle">680</text>
+            <text class="cos-chart-label" x="107" y="228" text-anchor="middle">S1</text>
+          </g>
+          <g class="cos-chart-bar">
+            <rect x="155" y="104.8" width="55" height="105.2" rx="4" fill="#fbbf24" opacity="0.7" />
+            <text class="cos-chart-value" x="182" y="98" text-anchor="middle">520</text>
+            <text class="cos-chart-label" x="182" y="228" text-anchor="middle">S2</text>
+          </g>
+          <g class="cos-chart-bar">
+            <rect x="230" y="30" width="55" height="180" rx="4" fill="#fbbf24" opacity="0.7" />
+            <text class="cos-chart-value" x="257" y="24" text-anchor="middle">890</text>
+            <text class="cos-chart-label" x="257" y="228" text-anchor="middle">S3</text>
+          </g>
+          <g class="cos-chart-bar">
+            <rect x="305" y="125.1" width="55" height="84.9" rx="4" fill="#fbbf24" opacity="0.7" />
+            <text class="cos-chart-value" x="332" y="119" text-anchor="middle">420</text>
+            <text class="cos-chart-label" x="332" y="228" text-anchor="middle">S4</text>
+          </g>
+          <g class="cos-chart-bar">
+            <rect x="380" y="133.2" width="55" height="76.8" rx="4" fill="#fbbf24" opacity="0.7" />
+            <text class="cos-chart-value" x="407" y="127" text-anchor="middle">380</text>
+            <text class="cos-chart-label" x="407" y="228" text-anchor="middle">S5</text>
+          </g>
+          <g class="cos-chart-bar">
+            <rect x="455" y="106.9" width="55" height="103.1" rx="4" fill="#fbbf24" opacity="0.7" />
+            <text class="cos-chart-value" x="482" y="100" text-anchor="middle">510</text>
+            <text class="cos-chart-label" x="482" y="228" text-anchor="middle">S6</text>
+          </g>
+          <g class="cos-chart-bar">
+            <rect x="530" y="64.5" width="55" height="145.5" rx="4" fill="#fbbf24" opacity="0.7" />
+            <text class="cos-chart-value" x="557" y="58" text-anchor="middle">720</text>
+            <text class="cos-chart-label" x="557" y="228" text-anchor="middle">S7</text>
+          </g>
+          <g class="cos-chart-bar">
+            <rect x="605" y="141.2" width="55" height="68.8" rx="4" fill="#fbbf24" opacity="0.7" />
+            <text class="cos-chart-value" x="632" y="135" text-anchor="middle">340</text>
+            <text class="cos-chart-label" x="632" y="228" text-anchor="middle">S8</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Key Decisions -->
+    <section class="cos-section cos-decisions" aria-label="Key decisions">
+      <h2 class="cos-section-title">Key Decisions</h2>
+      <div class="cos-decision">
+        <span class="cos-decision-number" aria-hidden="true">1</span>
+        <p>Discriminated union over single-table inheritance for transaction types</p>
+      </div>
+      <div class="cos-decision">
+        <span class="cos-decision-number" aria-hidden="true">2</span>
+        <p>Partial index on merchant_normalized for 16x query speedup</p>
+      </div>
+      <div class="cos-decision">
+        <span class="cos-decision-number" aria-hidden="true">3</span>
+        <p>Processed-events table for Plaid webhook idempotency</p>
+      </div>
+    </section>
+
+    <!-- Skills -->
+    <section class="cos-section" aria-label="Skills used">
+      <h2 class="cos-section-title">Skills</h2>
+      <div class="cos-skill-chips" style="margin-block-end: 2.5rem;">
+        <span class="cos-skill-chip">TypeScript</span>
+        <span class="cos-skill-chip">React</span>
+        <span class="cos-skill-chip">Next.js</span>
+        <span class="cos-skill-chip">Prisma</span>
+        <span class="cos-skill-chip">PostgreSQL</span>
+        <span class="cos-skill-chip">Tailwind CSS</span>
+        <span class="cos-skill-chip">Stripe API</span>
+        <span class="cos-skill-chip">Plaid API</span>
+        <span class="cos-skill-chip">Chart.js</span>
+        <span class="cos-skill-chip">Playwright</span>
+      </div>
+    </section>
+
+    <!-- Source Breakdown -->
+    <section class="cos-section cos-source-section" aria-label="Source breakdown">
+      <h2 class="cos-section-title">Source Breakdown</h2>
+      <div class="cos-source-bar-large">
+        <div class="cos-source-fill-claude" style="width: 62.5%"></div>
+        <div class="cos-source-fill-cursor" style="width: 37.5%"></div>
+      </div>
+      <div class="cos-source-labels">
+        <span><span class="cos-source-dot claude" aria-hidden="true"></span>Claude Code 62.5% (5 sessions)</span>
+        <span><span class="cos-source-dot cursor" aria-hidden="true"></span>Cursor 37.5% (3 sessions)</span>
+      </div>
+    </section>
+
+    <!-- Featured Sessions -->
+    <section class="cos-section" aria-label="Featured sessions">
+      <h2 class="cos-section-title">Sessions</h2>
+      <div class="cos-sessions">
+        <article class="cos-session-card">
+          <h3><a href="./session.html">Prisma schema</a></h3>
+          <div class="cos-session-meta">
+            <span><strong>72</strong>m</span>
+            <span><strong>680</strong> LOC</span>
+            <span><strong>7</strong> agents</span>
+          </div>
+          <span class="cos-session-tag">schema</span>
+        </article>
+        <article class="cos-session-card">
+          <h3><a href="./session.html">Transaction list</a></h3>
+          <div class="cos-session-meta">
+            <span><strong>65</strong>m</span>
+            <span><strong>520</strong> LOC</span>
+            <span><strong>5</strong> agents</span>
+          </div>
+          <span class="cos-session-tag">frontend</span>
+        </article>
+        <article class="cos-session-card">
+          <h3><a href="./session.html">Recurring detection</a></h3>
+          <div class="cos-session-meta">
+            <span><strong>88</strong>m</span>
+            <span><strong>890</strong> LOC</span>
+            <span><strong>6</strong> agents</span>
+          </div>
+          <span class="cos-session-tag">algorithm</span>
+        </article>
+        <article class="cos-session-card">
+          <h3><a href="./session.html">CSV import</a></h3>
+          <div class="cos-session-meta">
+            <span><strong>78</strong>m</span>
+            <span><strong>640</strong> LOC</span>
+            <span><strong>5</strong> agents</span>
+          </div>
+          <span class="cos-session-tag">import</span>
+        </article>
+        <article class="cos-session-card">
+          <h3><a href="./session.html">Plaid integration</a></h3>
+          <div class="cos-session-meta">
+            <span><strong>90</strong>m</span>
+            <span><strong>780</strong> LOC</span>
+            <span><strong>8</strong> agents</span>
+          </div>
+          <span class="cos-session-tag">integration</span>
+        </article>
+        <article class="cos-session-card">
+          <h3><a href="./session.html">Spending insights</a></h3>
+          <div class="cos-session-meta">
+            <span><strong>70</strong>m</span>
+            <span><strong>620</strong> LOC</span>
+            <span><strong>4</strong> agents</span>
+          </div>
+          <span class="cos-session-tag">insights</span>
+        </article>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="cos-footer">
+    <p>Built with <a href="./session.html">heyi.am</a></p>
+  </footer>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── Section fade-in ──
+  var sections = document.querySelectorAll('.cos-section');
+  if (prefersReducedMotion) {
+    sections.forEach(function(s) { s.classList.add('visible'); });
+  } else {
+    var sectionObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          sectionObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    sections.forEach(function(s) { sectionObserver.observe(s); });
+  }
+
+  // ── Constellation lines ──
+  var lines = document.querySelectorAll('.cos-constellation-line');
+  if (prefersReducedMotion) {
+    lines.forEach(function(l) { l.classList.add('drawn'); });
+  } else {
+    var lineObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('drawn');
+          lineObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0, rootMargin: '0px 0px -50px 0px' });
+    lines.forEach(function(l) { lineObserver.observe(l); });
+  }
+
+  // ── Orbit path draw ──
+  var orbitPaths = document.querySelectorAll('.cos-orbit-path-active');
+  if (prefersReducedMotion) {
+    orbitPaths.forEach(function(p) { p.classList.add('drawn'); });
+  } else {
+    var orbitObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('drawn');
+          orbitObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.2 });
+    orbitPaths.forEach(function(p) { orbitObserver.observe(p); });
+  }
+
+  // ── Stat counters ──
+  function animateCounter(el) {
+    var target = parseFloat(el.getAttribute('data-target'));
+    var format = el.getAttribute('data-format');
+    var suffix = el.getAttribute('data-suffix') || '';
+    var isDecimal = el.getAttribute('data-decimal') === 'true';
+    var duration = 1800;
+    var start = performance.now();
+
+    function update(now) {
+      var elapsed = now - start;
+      var progress = Math.min(elapsed / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      var current = eased * target;
+
+      if (isDecimal) {
+        el.textContent = current.toFixed(1) + suffix;
+      } else if (format === 'comma') {
+        el.textContent = Math.round(current).toLocaleString();
+      } else if (suffix) {
+        el.textContent = Math.round(current) + suffix;
+      } else {
+        el.textContent = Math.round(current);
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      } else {
+        // Final exact value
+        if (isDecimal) {
+          el.textContent = target.toFixed(1) + suffix;
+        } else if (format === 'comma') {
+          el.textContent = target.toLocaleString();
+        } else if (suffix) {
+          el.textContent = target + suffix;
+        } else {
+          el.textContent = target;
+        }
+      }
+    }
+
+    if (prefersReducedMotion) {
+      if (isDecimal) {
+        el.textContent = target.toFixed(1) + suffix;
+      } else if (format === 'comma') {
+        el.textContent = target.toLocaleString();
+      } else if (suffix) {
+        el.textContent = target + suffix;
+      } else {
+        el.textContent = target;
+      }
+    } else {
+      requestAnimationFrame(update);
+    }
+  }
+
+  var statsRows = document.querySelectorAll('.cos-stats-row');
+  var statsObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.querySelectorAll('.stat-value[data-target]').forEach(animateCounter);
+        // Animate donut ring
+        var donut = entry.target.querySelector('.cos-donut-ring');
+        if (donut) {
+          var human = donut.querySelector('.ring-human');
+          var agent = donut.querySelector('.ring-agent');
+          if (human) human.style.strokeDasharray = '19 81';
+          if (agent) agent.style.strokeDasharray = '81 19';
+        }
+        statsObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  statsRows.forEach(function(r) { statsObserver.observe(r); });
+})();
+</script>
+</body>
+</html>

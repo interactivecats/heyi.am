@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cosmos Template — @alex</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Cosmos Design Tokens ── */
+:root {
+  --cos-bg:             #030712;
+  --cos-surface:        #0f172a;
+  --cos-surface-hover:  #1e293b;
+  --cos-accent:         #fbbf24;
+  --cos-accent-dim:     rgba(251, 191, 36, 0.15);
+  --cos-accent-glow:    rgba(251, 191, 36, 0.3);
+  --cos-text:           #f1f5f9;
+  --cos-text-secondary: #94a3b8;
+  --cos-text-tertiary:  #64748b;
+  --cos-border:         #1e293b;
+  --cos-border-accent:  rgba(251, 191, 36, 0.3);
+
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
+  --radius:    8px;
+  --radius-lg: 12px;
+
+  --duration-fade:    600ms;
+  --duration-draw:    1200ms;
+  --duration-counter: 1800ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--cos-accent);
+  color: var(--cos-bg);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-weight: 600;
+  z-index: 1000;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* ── Base ── */
+body {
+  font-family: var(--font-body);
+  color: var(--cos-text);
+  background-color: var(--cos-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+a { color: var(--cos-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible {
+  outline: 2px solid var(--cos-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ── Starfield Background ── */
+.starfield {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1px 1px at 10% 15%, rgba(251,191,36,0.4), transparent),
+    radial-gradient(1px 1px at 25% 35%, rgba(241,245,249,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 40% 10%, rgba(251,191,36,0.5), transparent),
+    radial-gradient(1px 1px at 55% 45%, rgba(241,245,249,0.25), transparent),
+    radial-gradient(1px 1px at 70% 20%, rgba(241,245,249,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 85% 55%, rgba(251,191,36,0.35), transparent),
+    radial-gradient(1px 1px at 15% 70%, rgba(241,245,249,0.2), transparent),
+    radial-gradient(1px 1px at 30% 85%, rgba(251,191,36,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 50% 65%, rgba(241,245,249,0.35), transparent),
+    radial-gradient(1px 1px at 65% 80%, rgba(241,245,249,0.2), transparent),
+    radial-gradient(1px 1px at 80% 40%, rgba(251,191,36,0.25), transparent),
+    radial-gradient(1px 1px at 92% 75%, rgba(241,245,249,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 5% 50%, rgba(251,191,36,0.4), transparent),
+    radial-gradient(1px 1px at 45% 30%, rgba(241,245,249,0.2), transparent),
+    radial-gradient(1px 1px at 75% 60%, rgba(251,191,36,0.3), transparent),
+    radial-gradient(1px 1px at 20% 90%, rgba(241,245,249,0.25), transparent),
+    radial-gradient(1px 1px at 60% 5%, rgba(241,245,249,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 35% 55%, rgba(251,191,36,0.2), transparent),
+    radial-gradient(1px 1px at 88% 15%, rgba(241,245,249,0.35), transparent),
+    radial-gradient(1px 1px at 50% 90%, rgba(251,191,36,0.25), transparent);
+}
+
+/* ── Page Container ── */
+.cos-page {
+  position: relative;
+  z-index: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ── Constellation SVG Overlay ── */
+.cos-constellation {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.cos-constellation-line {
+  fill: none;
+  stroke: var(--cos-accent);
+  stroke-width: 1;
+  stroke-opacity: 0.15;
+  stroke-linecap: round;
+  stroke-dasharray: 800;
+  stroke-dashoffset: 800;
+}
+.cos-constellation-line.drawn {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset var(--duration-draw) var(--ease-out);
+}
+.cos-constellation-dot {
+  fill: var(--cos-accent);
+  opacity: 0.3;
+}
+
+/* ── Nav ── */
+.cos-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  margin-block-end: 3rem;
+  border-block-end: 1px solid var(--cos-border);
+}
+.cos-nav-brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--cos-accent);
+  text-decoration: none;
+}
+.cos-nav-brand:hover { text-decoration: none; opacity: 0.85; }
+.cos-nav-links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+.cos-nav-links a {
+  color: var(--cos-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: color 200ms;
+}
+.cos-nav-links a:hover { color: var(--cos-accent); text-decoration: none; }
+.cos-nav-links a[aria-current="page"] { color: var(--cos-accent); }
+
+/* ── Section Animations ── */
+.cos-section {
+  opacity: 0;
+  transform: scale(0.98);
+  transition: opacity var(--duration-fade) var(--ease-out),
+              transform var(--duration-fade) var(--ease-out);
+}
+.cos-section.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cos-section {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .cos-constellation-line {
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+    transition: none;
+  }
+  .cos-constellation-line.drawn {
+    transition: none;
+  }
+  .stat-value {
+    transition: none;
+  }
+}
+
+/* ── Hero / Profile ── */
+.cos-hero {
+  text-align: center;
+  padding: 3rem 0 2rem;
+}
+.cos-hero-photo {
+  width: 120px;
+  height: 150px;
+  border-radius: 12px;
+  object-fit: cover;
+  object-position: 55% 10%;
+  border: 2px solid var(--cos-accent);
+  box-shadow: 0 0 24px var(--cos-accent-dim), 0 0 48px var(--cos-accent-glow);
+  margin: 0 auto 1.5rem;
+  display: block;
+  filter: contrast(1.1) brightness(0.95);
+}
+.cos-hero h1 {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin-block-end: 0.5rem;
+  letter-spacing: -0.02em;
+}
+.cos-hero-handle {
+  color: var(--cos-accent);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  margin-block-end: 0.75rem;
+}
+.cos-hero-bio {
+  color: var(--cos-text-secondary);
+  max-width: 560px;
+  margin: 0 auto;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+.cos-hero-location {
+  color: var(--cos-text-tertiary);
+  font-size: 0.875rem;
+  margin-block-start: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+}
+.cos-hero-contact {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-block-start: 1.25rem;
+  list-style: none;
+}
+.cos-hero-contact a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--cos-text-tertiary);
+  transition: color 0.2s;
+}
+.cos-hero-contact a:hover {
+  color: var(--cos-accent);
+  text-decoration: none;
+}
+.cos-hero-contact svg {
+  flex-shrink: 0;
+}
+.cos-hero-resume {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-block-start: 1.25rem;
+  padding: 0.5rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--cos-bg);
+  background: var(--cos-accent);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.cos-hero-resume:hover {
+  opacity: 0.85;
+  text-decoration: none;
+  color: var(--cos-bg);
+}
+
+/* ── Stats Grid ── */
+.cos-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin: 2.5rem 0 3rem;
+}
+.cos-stat-card {
+  background: var(--cos-surface);
+  border: 1px solid var(--cos-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.cos-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cos-accent), transparent);
+}
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--cos-accent);
+  display: block;
+  line-height: 1.2;
+}
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--cos-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-block-start: 0.25rem;
+}
+
+/* ── Leverage donut ── */
+.cos-stat-card--donut {
+  flex-direction: row;
+  gap: 0.75rem;
+  align-items: center;
+  flex: 2;
+  min-width: 200px;
+}
+.cos-donut-ring {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+.cos-donut-ring circle {
+  fill: none;
+  stroke-width: 5;
+}
+.cos-donut-ring .ring-bg {
+  stroke: var(--cos-border);
+}
+.cos-donut-ring .ring-human {
+  stroke: rgba(255, 255, 255, 0.25);
+  stroke-dasharray: 19 81;
+  stroke-dashoffset: 25;
+}
+.cos-donut-ring .ring-agent {
+  stroke: var(--cos-accent);
+  stroke-dasharray: 81 19;
+  stroke-dashoffset: 25;
+}
+.cos-donut-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+.cos-donut-labels .donut-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.cos-donut-labels .donut-val {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cos-text);
+  line-height: 1.2;
+}
+.cos-donut-labels .donut-val--agent {
+  color: var(--cos-accent);
+}
+.cos-donut-labels .donut-lbl {
+  font-size: 0.625rem;
+  color: var(--cos-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.cos-donut-labels .donut-multi {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--cos-accent);
+  margin-top: 0.125rem;
+}
+
+/* ── Section Title ── */
+.cos-section-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-block-end: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.cos-section-title::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cos-accent);
+  box-shadow: 0 0 8px var(--cos-accent-glow);
+  flex-shrink: 0;
+}
+
+/* ── Project Cards ── */
+.cos-projects {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-block-end: 3rem;
+}
+.cos-project-card {
+  background: var(--cos-surface);
+  border: 1px solid var(--cos-border);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  transition: border-color 200ms, box-shadow 200ms;
+  position: relative;
+}
+.cos-project-card:hover {
+  border-color: var(--cos-border-accent);
+  box-shadow: 0 0 20px var(--cos-accent-dim);
+}
+.cos-project-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-block-end: 0.75rem;
+}
+.cos-project-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.cos-project-card h3 a {
+  color: var(--cos-text);
+  transition: color 200ms;
+}
+.cos-project-card h3 a:hover {
+  color: var(--cos-accent);
+  text-decoration: none;
+}
+.cos-project-card-narrative {
+  color: var(--cos-text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin-block-end: 1.25rem;
+}
+.cos-project-card-meta {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.8125rem;
+  color: var(--cos-text-tertiary);
+  font-family: var(--font-mono);
+  margin-block-end: 1rem;
+}
+.cos-project-card-meta strong {
+  color: var(--cos-accent);
+  font-weight: 500;
+}
+.cos-skill-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.cos-skill-chip {
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  border: 1px solid var(--cos-border-accent);
+  color: var(--cos-accent);
+  background: var(--cos-accent-dim);
+  white-space: nowrap;
+}
+
+/* ── Source Mix Bar ── */
+.cos-source-bar {
+  margin-block-start: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.cos-source-track {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--cos-border);
+  overflow: hidden;
+  display: flex;
+}
+.cos-source-fill-claude {
+  background: var(--cos-accent);
+  height: 100%;
+}
+.cos-source-fill-cursor {
+  background: var(--cos-text-tertiary);
+  height: 100%;
+}
+.cos-source-labels {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--cos-text-tertiary);
+  flex-shrink: 0;
+}
+.cos-source-labels span {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+.cos-source-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.cos-source-dot.claude { background: var(--cos-accent); }
+.cos-source-dot.cursor { background: var(--cos-text-tertiary); }
+
+/* ── Skills Overview ── */
+.cos-skills-overview {
+  margin-block-end: 3rem;
+}
+.cos-skill-overview-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.cos-skill-overview-chip {
+  font-size: 0.8125rem;
+  font-family: var(--font-mono);
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--cos-border-accent);
+  color: var(--cos-accent);
+  background: var(--cos-accent-dim);
+  white-space: nowrap;
+  transition: background 200ms, box-shadow 200ms;
+}
+.cos-skill-overview-chip:hover {
+  background: rgba(251, 191, 36, 0.25);
+  box-shadow: 0 0 12px var(--cos-accent-dim);
+}
+
+/* ── Activity Chart ── */
+.cos-activity {
+  margin-block-end: 3rem;
+}
+.cos-activity-chart {
+  background: var(--cos-surface);
+  border: 1px solid var(--cos-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+}
+.cos-activity-svg {
+  width: 100%;
+  display: block;
+}
+.cos-activity-bar {
+  transition: opacity 200ms;
+}
+.cos-activity-bar:hover {
+  opacity: 0.8;
+}
+.cos-activity-label {
+  fill: var(--cos-text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.cos-activity-value {
+  fill: var(--cos-accent);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+}
+.cos-activity-grid {
+  stroke: var(--cos-border);
+  stroke-width: 0.5;
+}
+
+/* ── Footer ── */
+.cos-footer {
+  margin-block-start: 4rem;
+  padding-block-start: 1.5rem;
+  border-block-start: 1px solid var(--cos-border);
+  text-align: center;
+  color: var(--cos-text-tertiary);
+  font-size: 0.8125rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .cos-page { padding: 1.25rem 1rem; }
+  .cos-hero h1 { font-size: 1.75rem; }
+  .cos-hero-photo {
+    width: 80px;
+    height: 100px;
+  }
+  .cos-hero-contact { font-size: 0.75rem; }
+  .cos-stats { grid-template-columns: repeat(2, 1fr); }
+  .cos-project-card-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .cos-project-card-meta {
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+  .cos-source-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .cos-nav {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .cos-nav-links { gap: 1rem; }
+  .cos-footer { margin-block-start: 2rem; }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<div class="starfield" aria-hidden="true"></div>
+
+<div class="cos-page">
+
+  <!-- Constellation SVG -->
+  <svg class="cos-constellation" aria-hidden="true">
+    <circle class="cos-constellation-dot" cx="80" cy="120" r="2" />
+    <circle class="cos-constellation-dot" cx="200" cy="80" r="1.5" />
+    <circle class="cos-constellation-dot" cx="340" cy="160" r="2" />
+    <circle class="cos-constellation-dot" cx="500" cy="100" r="1.5" />
+    <circle class="cos-constellation-dot" cx="650" cy="200" r="2" />
+    <circle class="cos-constellation-dot" cx="780" cy="140" r="1.5" />
+    <circle class="cos-constellation-dot" cx="150" cy="400" r="2" />
+    <circle class="cos-constellation-dot" cx="420" cy="480" r="1.5" />
+    <circle class="cos-constellation-dot" cx="700" cy="520" r="2" />
+    <circle class="cos-constellation-dot" cx="300" cy="700" r="1.5" />
+    <circle class="cos-constellation-dot" cx="600" cy="750" r="2" />
+    <circle class="cos-constellation-dot" cx="850" cy="680" r="1.5" />
+    <path class="cos-constellation-line" d="M80,120 Q140,90 200,80" />
+    <path class="cos-constellation-line" d="M200,80 Q270,120 340,160" />
+    <path class="cos-constellation-line" d="M340,160 Q420,120 500,100" />
+    <path class="cos-constellation-line" d="M500,100 Q575,160 650,200" />
+    <path class="cos-constellation-line" d="M650,200 Q715,160 780,140" />
+    <path class="cos-constellation-line" d="M150,400 Q285,430 420,480" />
+    <path class="cos-constellation-line" d="M420,480 Q560,490 700,520" />
+    <path class="cos-constellation-line" d="M300,700 Q450,720 600,750" />
+    <path class="cos-constellation-line" d="M600,750 Q725,710 850,680" />
+  </svg>
+
+  <!-- Nav -->
+  <nav class="cos-nav" aria-label="Main navigation">
+    <a href="./portfolio.html" class="cos-nav-brand">cosmos</a>
+    <ul class="cos-nav-links">
+      <li><a href="./portfolio.html" aria-current="page">Portfolio</a></li>
+      <li><a href="./project.html">Project</a></li>
+      <li><a href="./session.html">Session</a></li>
+    </ul>
+  </nav>
+
+  <main id="main-content">
+
+    <!-- Hero -->
+    <section class="cos-section cos-hero" aria-label="Profile">
+      <img src="../assets/headshot-man-2-400.jpg" alt="Alex Chen" class="cos-hero-photo" width="120" height="120">
+      <h1>Alex Chen</h1>
+      <p class="cos-hero-handle">@alex</p>
+      <p class="cos-hero-bio">Full-stack engineer building tools for personal finance and real-time collaboration. I care about schema design, performance, and building things that feel right. Previously at Stripe and a YC startup.</p>
+      <p class="cos-hero-location">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        San Francisco, CA
+      </p>
+      <ul class="cos-hero-contact" aria-label="Contact and social links">
+        <li><a href="mailto:alex@heyiam.com"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg>alex@heyiam.com</a></li>
+        <li><a href="https://linkedin.com/in/alexchen"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>LinkedIn</a></li>
+        <li><a href="https://github.com/interactivecats/heyi.am"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>GitHub</a></li>
+        <li><a href="https://x.com/alexchendev"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>@alexchendev</a></li>
+        <li><a href="https://alexchen.dev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>alexchen.dev</a></li>
+      </ul>
+      <a href="./project.html" class="cos-hero-resume"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>Download Resume</a>
+    </section>
+
+    <!-- Stats -->
+    <section class="cos-section" aria-label="Aggregate statistics">
+      <div class="cos-stats">
+        <div class="cos-stat-card">
+          <span class="stat-value" data-target="3">0</span>
+          <span class="stat-label">Projects</span>
+        </div>
+        <div class="cos-stat-card">
+          <span class="stat-value" data-target="28">0</span>
+          <span class="stat-label">Sessions</span>
+        </div>
+        <div class="cos-stat-card cos-stat-card--donut">
+          <svg class="cos-donut-ring" viewBox="0 0 36 36" aria-label="24 hours you, 100 hours agents">
+            <circle class="ring-bg" cx="18" cy="18" r="16" />
+            <circle class="ring-human" cx="18" cy="18" r="16" stroke-linecap="round" />
+            <circle class="ring-agent" cx="18" cy="18" r="16" />
+          </svg>
+          <div class="cos-donut-labels">
+            <div class="donut-line">
+              <span class="donut-val">24h</span>
+              <span class="donut-lbl">you</span>
+              <span class="donut-val donut-val--agent">100h</span>
+              <span class="donut-lbl">agents</span>
+            </div>
+            <div class="donut-multi">4.2x leverage</div>
+          </div>
+        </div>
+        <div class="cos-stat-card">
+          <span class="stat-value" data-target="18400" data-format="comma">0</span>
+          <span class="stat-label">Lines Changed</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Projects -->
+    <section class="cos-section" aria-label="Projects">
+      <h2 class="cos-section-title">Projects</h2>
+      <div class="cos-projects">
+
+        <!-- BudgetWise -->
+        <article class="cos-project-card">
+          <div class="cos-project-card-header">
+            <h3><a href="./project.html">BudgetWise</a></h3>
+          </div>
+          <p class="cos-project-card-narrative">Personal finance app with recurring transaction detection, Plaid integration, and spending insights dashboard.</p>
+          <div class="cos-project-card-meta">
+            <span><strong>8</strong> sessions</span>
+            <span><strong>42.5</strong>h</span>
+            <span><strong>4,460</strong> LOC</span>
+          </div>
+          <div class="cos-skill-chips">
+            <span class="cos-skill-chip">TypeScript</span>
+            <span class="cos-skill-chip">React</span>
+            <span class="cos-skill-chip">Next.js</span>
+            <span class="cos-skill-chip">Prisma</span>
+            <span class="cos-skill-chip">PostgreSQL</span>
+            <span class="cos-skill-chip">Stripe API</span>
+          </div>
+          <div class="cos-source-bar">
+            <div class="cos-source-track">
+              <div class="cos-source-fill-claude" style="width: 62.5%"></div>
+              <div class="cos-source-fill-cursor" style="width: 37.5%"></div>
+            </div>
+            <div class="cos-source-labels">
+              <span><span class="cos-source-dot claude" aria-hidden="true"></span>Claude 62.5%</span>
+              <span><span class="cos-source-dot cursor" aria-hidden="true"></span>Cursor 37.5%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- ShellHook -->
+        <article class="cos-project-card">
+          <div class="cos-project-card-header">
+            <h3><a href="./project.html">ShellHook</a></h3>
+          </div>
+          <p class="cos-project-card-narrative">Rust CLI tool for managing git hooks with TOML configuration and automatic symlinking.</p>
+          <div class="cos-project-card-meta">
+            <span><strong>7</strong> sessions</span>
+            <span><strong>32</strong>h</span>
+            <span><strong>3,580</strong> LOC</span>
+          </div>
+          <div class="cos-skill-chips">
+            <span class="cos-skill-chip">Rust</span>
+            <span class="cos-skill-chip">CLI design</span>
+            <span class="cos-skill-chip">TOML parsing</span>
+            <span class="cos-skill-chip">Git internals</span>
+            <span class="cos-skill-chip">Shell scripting</span>
+          </div>
+          <div class="cos-source-bar">
+            <div class="cos-source-track">
+              <div class="cos-source-fill-claude" style="width: 85%"></div>
+              <div class="cos-source-fill-cursor" style="width: 15%"></div>
+            </div>
+            <div class="cos-source-labels">
+              <span><span class="cos-source-dot claude" aria-hidden="true"></span>Claude 85%</span>
+              <span><span class="cos-source-dot cursor" aria-hidden="true"></span>Cursor 15%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- PixelBoard -->
+        <article class="cos-project-card">
+          <div class="cos-project-card-header">
+            <h3><a href="./project.html">PixelBoard</a></h3>
+          </div>
+          <p class="cos-project-card-narrative">Real-time collaborative drawing canvas with CRDT-based state sync and pressure-sensitive input.</p>
+          <div class="cos-project-card-meta">
+            <span><strong>5</strong> sessions</span>
+            <span><strong>28</strong>h</span>
+            <span><strong>2,940</strong> LOC</span>
+          </div>
+          <div class="cos-skill-chips">
+            <span class="cos-skill-chip">TypeScript</span>
+            <span class="cos-skill-chip">WebSocket</span>
+            <span class="cos-skill-chip">Canvas API</span>
+            <span class="cos-skill-chip">Redis</span>
+            <span class="cos-skill-chip">Express</span>
+            <span class="cos-skill-chip">CRDT</span>
+          </div>
+          <div class="cos-source-bar">
+            <div class="cos-source-track">
+              <div class="cos-source-fill-claude" style="width: 60%"></div>
+              <div class="cos-source-fill-cursor" style="width: 40%"></div>
+            </div>
+            <div class="cos-source-labels">
+              <span><span class="cos-source-dot claude" aria-hidden="true"></span>Claude 60%</span>
+              <span><span class="cos-source-dot cursor" aria-hidden="true"></span>Cursor 40%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- DevLog -->
+        <article class="cos-project-card">
+          <div class="cos-project-card-header">
+            <h3><a href="./project.html">DevLog</a></h3>
+          </div>
+          <p class="cos-project-card-narrative">CLI tool for capturing development decisions and context as structured markdown notes.</p>
+          <div class="cos-project-card-meta">
+            <span><strong>5</strong> sessions</span>
+            <span><strong>18</strong>h</span>
+            <span><strong>1,840</strong> LOC</span>
+          </div>
+          <div class="cos-skill-chips">
+            <span class="cos-skill-chip">TypeScript</span>
+            <span class="cos-skill-chip">WebSocket</span>
+            <span class="cos-skill-chip">Canvas API</span>
+            <span class="cos-skill-chip">Redis</span>
+            <span class="cos-skill-chip">Express</span>
+            <span class="cos-skill-chip">CRDT</span>
+          </div>
+          <div class="cos-source-bar">
+            <div class="cos-source-track">
+              <div class="cos-source-fill-claude" style="width: 80%"></div>
+              <div class="cos-source-fill-cursor" style="width: 20%"></div>
+            </div>
+            <div class="cos-source-labels">
+              <span><span class="cos-source-dot claude" aria-hidden="true"></span>Claude 80%</span>
+              <span><span class="cos-source-dot cursor" aria-hidden="true"></span>Cursor 20%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Snapgrid -->
+        <article class="cos-project-card">
+          <div class="cos-project-card-header">
+            <h3><a href="./project.html">Snapgrid</a></h3>
+          </div>
+          <p class="cos-project-card-narrative">Responsive image gallery with masonry layout, lazy loading, and keyboard navigation.</p>
+          <div class="cos-project-card-meta">
+            <span><strong>4</strong> sessions</span>
+            <span><strong>14</strong>h</span>
+            <span><strong>1,520</strong> LOC</span>
+          </div>
+          <div class="cos-skill-chips">
+            <span class="cos-skill-chip">TypeScript</span>
+            <span class="cos-skill-chip">WebSocket</span>
+            <span class="cos-skill-chip">Canvas API</span>
+            <span class="cos-skill-chip">Redis</span>
+            <span class="cos-skill-chip">Express</span>
+            <span class="cos-skill-chip">CRDT</span>
+          </div>
+          <div class="cos-source-bar">
+            <div class="cos-source-track">
+              <div class="cos-source-fill-claude" style="width: 50%"></div>
+              <div class="cos-source-fill-cursor" style="width: 50%"></div>
+            </div>
+            <div class="cos-source-labels">
+              <span><span class="cos-source-dot claude" aria-hidden="true"></span>Claude 50%</span>
+              <span><span class="cos-source-dot cursor" aria-hidden="true"></span>Cursor 50%</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Terracotta -->
+        <article class="cos-project-card">
+          <div class="cos-project-card-header">
+            <h3><a href="./project.html">Terracotta</a></h3>
+          </div>
+          <p class="cos-project-card-narrative">Design token pipeline that generates CSS custom properties, Tailwind config, and Figma tokens from a single YAML source.</p>
+          <div class="cos-project-card-meta">
+            <span><strong>6</strong> sessions</span>
+            <span><strong>22</strong>h</span>
+            <span><strong>2,680</strong> LOC</span>
+          </div>
+          <div class="cos-skill-chips">
+            <span class="cos-skill-chip">TypeScript</span>
+            <span class="cos-skill-chip">WebSocket</span>
+            <span class="cos-skill-chip">Canvas API</span>
+            <span class="cos-skill-chip">Redis</span>
+            <span class="cos-skill-chip">Express</span>
+            <span class="cos-skill-chip">CRDT</span>
+          </div>
+          <div class="cos-source-bar">
+            <div class="cos-source-track">
+              <div class="cos-source-fill-claude" style="width: 70%"></div>
+              <div class="cos-source-fill-cursor" style="width: 30%"></div>
+            </div>
+            <div class="cos-source-labels">
+              <span><span class="cos-source-dot claude" aria-hidden="true"></span>Claude 70%</span>
+              <span><span class="cos-source-dot cursor" aria-hidden="true"></span>Cursor 30%</span>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- Skills Overview -->
+    <section class="cos-section cos-skills-overview" aria-label="Skills overview">
+      <h2 class="cos-section-title">Skills</h2>
+      <div class="cos-skill-overview-grid">
+        <span class="cos-skill-overview-chip">TypeScript</span>
+        <span class="cos-skill-overview-chip">React</span>
+        <span class="cos-skill-overview-chip">Next.js</span>
+        <span class="cos-skill-overview-chip">Rust</span>
+        <span class="cos-skill-overview-chip">Prisma</span>
+        <span class="cos-skill-overview-chip">PostgreSQL</span>
+        <span class="cos-skill-overview-chip">WebSocket</span>
+        <span class="cos-skill-overview-chip">Canvas API</span>
+        <span class="cos-skill-overview-chip">Redis</span>
+        <span class="cos-skill-overview-chip">CRDT</span>
+        <span class="cos-skill-overview-chip">CLI design</span>
+        <span class="cos-skill-overview-chip">Stripe API</span>
+        <span class="cos-skill-overview-chip">Git internals</span>
+        <span class="cos-skill-overview-chip">TOML parsing</span>
+        <span class="cos-skill-overview-chip">Shell scripting</span>
+        <span class="cos-skill-overview-chip">Express</span>
+      </div>
+    </section>
+
+    <!-- Activity Chart -->
+    <section class="cos-section cos-activity" aria-label="Monthly activity">
+      <h2 class="cos-section-title">Activity</h2>
+      <div class="cos-activity-chart">
+        <svg class="cos-activity-svg" viewBox="0 0 600 180" role="img" aria-label="Bar chart showing sessions per month: February 6, March 14, April 8">
+          <!-- Grid -->
+          <line class="cos-activity-grid" x1="60" y1="20" x2="560" y2="20" />
+          <line class="cos-activity-grid" x1="60" y1="55" x2="560" y2="55" />
+          <line class="cos-activity-grid" x1="60" y1="90" x2="560" y2="90" />
+          <line class="cos-activity-grid" x1="60" y1="125" x2="560" y2="125" />
+          <line class="cos-activity-grid" x1="60" y1="160" x2="560" y2="160" />
+
+          <!-- Y-axis -->
+          <text class="cos-activity-label" x="55" y="24" text-anchor="end">15</text>
+          <text class="cos-activity-label" x="55" y="59" text-anchor="end">10</text>
+          <text class="cos-activity-label" x="55" y="94" text-anchor="end">5</text>
+          <text class="cos-activity-label" x="55" y="129" text-anchor="end">0</text>
+
+          <!-- Feb: 6 sessions -->
+          <g class="cos-activity-bar">
+            <rect x="120" y="72" width="80" height="53" rx="4" fill="#fbbf24" opacity="0.65" />
+            <text class="cos-activity-value" x="160" y="66" text-anchor="middle">6</text>
+            <text class="cos-activity-label" x="160" y="148" text-anchor="middle">Feb</text>
+          </g>
+
+          <!-- Mar: 14 sessions -->
+          <g class="cos-activity-bar">
+            <rect x="260" y="28" width="80" height="97" rx="4" fill="#fbbf24" opacity="0.75" />
+            <text class="cos-activity-value" x="300" y="22" text-anchor="middle">14</text>
+            <text class="cos-activity-label" x="300" y="148" text-anchor="middle">Mar</text>
+          </g>
+
+          <!-- Apr: 8 sessions -->
+          <g class="cos-activity-bar">
+            <rect x="400" y="59" width="80" height="66" rx="4" fill="#fbbf24" opacity="0.65" />
+            <text class="cos-activity-value" x="440" y="53" text-anchor="middle">8</text>
+            <text class="cos-activity-label" x="440" y="148" text-anchor="middle">Apr</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="cos-footer">
+    <p>Built with <a href="./project.html">heyi.am</a></p>
+  </footer>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // Respect reduced motion preference
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── Intersection Observer: fade-in sections ──
+  var sections = document.querySelectorAll('.cos-section');
+  if (prefersReducedMotion) {
+    sections.forEach(function(s) { s.classList.add('visible'); });
+  } else {
+    var sectionObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          sectionObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    sections.forEach(function(s) { sectionObserver.observe(s); });
+  }
+
+  // ── Constellation line draw on scroll ──
+  var lines = document.querySelectorAll('.cos-constellation-line');
+  if (prefersReducedMotion) {
+    lines.forEach(function(l) { l.classList.add('drawn'); });
+  } else {
+    var lineObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('drawn');
+          lineObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0, rootMargin: '0px 0px -50px 0px' });
+    lines.forEach(function(l) { lineObserver.observe(l); });
+  }
+
+  // ── Stat Counter Animation ──
+  var statValues = document.querySelectorAll('.stat-value[data-target]');
+  function animateCounter(el) {
+    var target = parseInt(el.getAttribute('data-target'), 10);
+    var format = el.getAttribute('data-format');
+    var duration = 1800;
+    var start = performance.now();
+
+    function update(now) {
+      var elapsed = now - start;
+      var progress = Math.min(elapsed / duration, 1);
+      // Ease out cubic
+      var eased = 1 - Math.pow(1 - progress, 3);
+      var current = Math.round(eased * target);
+      if (format === 'comma') {
+        el.textContent = current.toLocaleString();
+      } else {
+        el.textContent = current;
+      }
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      }
+    }
+
+    if (prefersReducedMotion) {
+      el.textContent = format === 'comma' ? target.toLocaleString() : target;
+    } else {
+      requestAnimationFrame(update);
+    }
+  }
+
+  var statsObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        var counters = entry.target.querySelectorAll('.stat-value[data-target]');
+        counters.forEach(animateCounter);
+        statsObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  var statsSection = document.querySelector('.cos-stats');
+  if (statsSection) {
+    statsObserver.observe(statsSection);
+  }
+})();
+</script>
+</body>
+</html>

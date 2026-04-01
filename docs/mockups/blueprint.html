@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blueprint Template — BudgetWise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Blueprint Design Tokens ── */
+:root {
+  --bp-surface:            #ffffff;
+  --bp-surface-grid:       #e2e8f0;
+  --bp-surface-low:        #f8fafc;
+  --bp-on-surface:         #1e293b;
+  --bp-on-surface-variant:  #64748b;
+  --bp-accent:             #64748b;
+  --bp-accent-light:       #cbd5e1;
+  --bp-accent-lighter:     #e2e8f0;
+  --bp-accent-bg:          #f1f5f9;
+  --bp-connector:          #94a3b8;
+  --bp-node-fill:          #64748b;
+  --bp-crosshatch:         #e2e8f0;
+  --bp-dimension:          #94a3b8;
+  --bp-green:              #059669;
+  --bp-green-bg:           #ecfdf5;
+  --bp-error:              #dc2626;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--bp-on-surface);
+  background-color: var(--bp-surface);
+  background-image:
+    linear-gradient(rgba(226,232,240,0.35) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(226,232,240,0.35) 1px, transparent 1px),
+    linear-gradient(rgba(226,232,240,0.55) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(226,232,240,0.55) 1px, transparent 1px);
+  background-size: 24px 24px, 24px 24px, 120px 120px, 120px 120px;
+  background-position: -1px -1px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--bp-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Page Container ── */
+.bp-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  position: relative;
+}
+
+/* ── SVG Connector Overlay ── */
+.bp-connectors {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.bp-connector-path {
+  fill: none;
+  stroke: var(--bp-connector);
+  stroke-width: 1.5px;
+  stroke-linecap: round;
+  stroke-dasharray: 2000;
+  stroke-dashoffset: 2000;
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.bp-connector-path.bp-drawn {
+  stroke-dashoffset: 0;
+}
+
+/* ── Section Entrance Animation ── */
+.bp-section {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 2rem;
+}
+.bp-section.bp-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .bp-connector-path {
+    stroke-dashoffset: 0 !important;
+    transition: none !important;
+  }
+  .bp-section {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .bp-dim__line {
+    transform: scaleX(1) !important;
+    transition: none !important;
+  }
+  .bp-timeline-bar,
+  .bp-agent-line,
+  .bp-growth-loc-line,
+  .bp-growth-files-line,
+  .bp-growth-area {
+    stroke-dashoffset: 0 !important;
+    transition: none !important;
+    transform: scaleX(1) !important;
+  }
+}
+
+/* ── Blueprint Card ── */
+.bp-card {
+  background: var(--bp-surface-low);
+  border: 1px solid var(--bp-accent-lighter);
+  border-radius: 3px;
+  padding: 1.5rem;
+}
+
+/* ── Section Header ── */
+.bp-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.bp-section-header__title {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bp-on-surface-variant);
+}
+.bp-section-header__ref {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bp-on-surface-variant);
+}
+.bp-section-divider {
+  border: none;
+  border-top: 1px solid var(--bp-accent-lighter);
+  margin: 0 0 0.75rem;
+}
+
+/* ── Title Section ── */
+.bp-title {
+  position: relative;
+  padding-left: 0;
+}
+.bp-title::before {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: 0.5rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bp-node-fill);
+}
+.bp-title h1 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--bp-on-surface);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+.bp-title__annotation {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  color: var(--bp-dimension);
+  margin-left: 0.75rem;
+  vertical-align: super;
+}
+.bp-links {
+  display: flex;
+  gap: 1.5rem;
+}
+.bp-link {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--bp-accent);
+  border-left: 1px solid var(--bp-accent-light);
+  padding-left: 0.75rem;
+  transition: color 150ms ease;
+}
+.bp-link:hover { color: var(--bp-on-surface); }
+
+/* ── Browser Chrome / Screenshot ── */
+.bp-browser-chrome {
+  border-radius: 3px;
+  border: 1px solid var(--bp-accent-lighter);
+  overflow: hidden;
+}
+.bp-browser-chrome__bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 0.75rem;
+  background: var(--bp-accent-bg);
+  border-bottom: 1px solid var(--bp-accent-lighter);
+}
+.bp-browser-chrome__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.bp-browser-chrome__dot--red    { background: #ff5f57; }
+.bp-browser-chrome__dot--yellow { background: #febc2e; }
+.bp-browser-chrome__dot--green  { background: #28c840; }
+.bp-browser-chrome__url {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--bp-on-surface-variant);
+  margin-left: 0.5rem;
+}
+.bp-browser-chrome__viewport {
+  background: linear-gradient(135deg, var(--bp-accent-bg) 0%, #e8ecf1 50%, var(--bp-accent-bg) 100%);
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bp-browser-chrome__placeholder {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--bp-accent-light);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.bp-viewport-dim {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* ── Dimension Line Component ── */
+.bp-dim {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  height: 12px;
+}
+.bp-dim__cap {
+  width: 1px;
+  height: 6px;
+  background: var(--bp-dimension);
+}
+.bp-dim__line {
+  height: 1px;
+  background: var(--bp-dimension);
+  min-width: 20px;
+  transform: scaleX(0);
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s;
+}
+.bp-visible .bp-dim__line,
+.bp-dim__line.bp-dim-drawn {
+  transform: scaleX(1);
+}
+.bp-dim__label {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  color: var(--bp-dimension);
+  white-space: nowrap;
+  padding: 0 0.375rem;
+}
+
+/* ── Narrative ── */
+.bp-narrative p {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--bp-on-surface);
+  margin-bottom: 0.75rem;
+}
+.bp-narrative p:last-child { margin-bottom: 0; }
+
+/* ── Stat Grid ── */
+.bp-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.bp-stat-grid--2col {
+  grid-template-columns: repeat(2, 1fr);
+  margin-bottom: 0;
+}
+.bp-stat-cell {
+  border: 1px dashed var(--bp-accent-lighter);
+  border-radius: 2px;
+  padding: 1rem;
+}
+.bp-stat-cell__label {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bp-on-surface-variant);
+  margin-bottom: 0.375rem;
+}
+.bp-stat-cell__value {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--bp-on-surface);
+}
+
+/* ── Charts ── */
+.bp-chart-container {
+  width: 100%;
+  overflow: visible;
+}
+.bp-chart-container svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ── Two Column Layout ── */
+.bp-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* ── Key Decisions ── */
+.bp-decision {
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px dashed var(--bp-accent-lighter);
+}
+.bp-decision:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.bp-decision__number {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--bp-accent);
+  margin-right: 0.5rem;
+}
+.bp-decision__title {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--bp-on-surface);
+}
+.bp-decision__desc {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  color: var(--bp-on-surface-variant);
+  line-height: 1.6;
+  margin-top: 0.25rem;
+  padding-left: 1.75rem;
+}
+
+/* ── Source Table ── */
+.bp-source-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.bp-source-table th {
+  text-align: left;
+  padding: 0.5rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bp-on-surface-variant);
+  border-bottom: 1px solid var(--bp-accent-lighter);
+  font-weight: 400;
+}
+.bp-source-table th:nth-child(2) { text-align: center; }
+.bp-source-table th:nth-child(3) { text-align: right; }
+.bp-source-table td {
+  padding: 0.5rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  border-bottom: 1px dashed var(--bp-accent-lighter);
+}
+.bp-source-table td:nth-child(2) { text-align: center; }
+.bp-source-table td:nth-child(3) { text-align: right; color: var(--bp-accent); }
+
+/* ── Phase Timeline ── */
+.bp-phase-timeline {
+  position: relative;
+  padding-left: 2.5rem;
+}
+.bp-phase-timeline__line {
+  position: absolute;
+  left: 0.625rem;
+  top: 10px;
+  bottom: 10px;
+  width: 1.5px;
+  background: var(--bp-accent-light);
+}
+.bp-phase-item {
+  position: relative;
+  padding-bottom: 1.5rem;
+}
+.bp-phase-item:last-child { padding-bottom: 0; }
+.bp-phase-node {
+  position: absolute;
+  left: -2.5rem;
+  top: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--bp-accent);
+  background: var(--bp-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  color: var(--bp-accent);
+}
+.bp-phase-connector {
+  position: absolute;
+  left: -1.25rem;
+  top: 9px;
+  width: 1rem;
+  height: 1.5px;
+  background: var(--bp-accent-light);
+}
+.bp-phase-item__title {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--bp-on-surface);
+  margin-bottom: 0.25rem;
+}
+.bp-phase-item__desc {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  color: var(--bp-on-surface-variant);
+  line-height: 1.6;
+}
+
+/* ── Skills ── */
+.bp-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.bp-chip {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--bp-accent);
+  background: transparent;
+  border: 1px solid var(--bp-accent-light);
+  border-radius: 2px;
+  padding: 0.25rem 0.625rem;
+  transition: background-color 150ms ease;
+}
+.bp-chip:hover {
+  background: var(--bp-accent-bg);
+}
+
+/* ── Session Cards ── */
+.bp-session-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+.bp-session-card {
+  position: relative;
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-accent-lighter);
+  border-radius: 3px;
+  padding: 1rem;
+  padding-top: 1.25rem;
+  transition: box-shadow 150ms ease;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.bp-session-card:hover {
+  box-shadow: 0 2px 8px rgba(100, 116, 139, 0.12);
+  text-decoration: none;
+}
+.bp-session-card__badge {
+  position: absolute;
+  top: -0.5rem;
+  left: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  color: var(--bp-accent);
+  background: var(--bp-surface);
+  padding: 0 0.25rem;
+}
+.bp-session-card__title {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--bp-on-surface);
+  margin-bottom: 0.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.bp-session-card__meta {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--bp-on-surface-variant);
+  margin-bottom: 0.5rem;
+}
+.bp-session-card__source {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--bp-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.375rem;
+}
+.bp-session-card__skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+/* ── Footer ── */
+.bp-footer {
+  border-top: 1px solid var(--bp-accent-lighter);
+  padding-top: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.bp-footer__text {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bp-on-surface-variant);
+}
+
+/* ── Portfolio Section ── */
+.bp-portfolio-divider {
+  border: none;
+  border-top: 2px solid var(--bp-accent-lighter);
+  margin: 3rem 0;
+  position: relative;
+}
+.bp-portfolio-divider::after {
+  content: 'PORTFOLIO VIEW';
+  position: absolute;
+  top: -0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bp-surface);
+  padding: 0 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--bp-on-surface-variant);
+}
+
+.bp-portfolio-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.bp-portfolio-header__name {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--bp-on-surface);
+  margin-bottom: 0.25rem;
+}
+.bp-portfolio-header__bio {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--bp-on-surface-variant);
+  max-width: 480px;
+  margin: 0 auto 1rem;
+  line-height: 1.6;
+}
+.bp-portfolio-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+}
+.bp-portfolio-stat {
+  text-align: center;
+}
+.bp-portfolio-stat__value {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--bp-on-surface);
+}
+.bp-portfolio-stat__label {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bp-on-surface-variant);
+}
+
+.bp-portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  position: relative;
+}
+.bp-portfolio-card {
+  background: var(--bp-surface-low);
+  border: 1px solid var(--bp-accent-lighter);
+  border-radius: 3px;
+  padding: 1.25rem;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: box-shadow 150ms ease;
+}
+.bp-portfolio-card:hover {
+  box-shadow: 0 2px 8px rgba(100, 116, 139, 0.12);
+  text-decoration: none;
+}
+.bp-portfolio-card__title {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--bp-on-surface);
+  margin-bottom: 0.375rem;
+}
+.bp-portfolio-card__desc {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  color: var(--bp-on-surface-variant);
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+.bp-portfolio-card__meta {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--bp-on-surface-variant);
+}
+
+/* SVG for portfolio connectors */
+.bp-portfolio-connectors {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* ── Timeline Bar Animation ── */
+.bp-timeline-bar {
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.bp-visible .bp-timeline-bar {
+  transform: scaleX(1);
+}
+.bp-timeline-bar:nth-child(2) { transition-delay: 0.05s; }
+.bp-timeline-bar:nth-child(3) { transition-delay: 0.1s; }
+.bp-timeline-bar:nth-child(4) { transition-delay: 0.15s; }
+.bp-timeline-bar:nth-child(5) { transition-delay: 0.2s; }
+.bp-timeline-bar:nth-child(6) { transition-delay: 0.25s; }
+.bp-timeline-bar:nth-child(7) { transition-delay: 0.3s; }
+.bp-timeline-bar:nth-child(8) { transition-delay: 0.35s; }
+
+/* ── Responsive ── */
+@media (max-width: 960px) {
+  .bp-page { padding: 2rem 1.5rem; }
+}
+@media (max-width: 767px) {
+  .bp-two-col { grid-template-columns: 1fr; }
+  .bp-session-grid { grid-template-columns: 1fr; }
+  .bp-stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .bp-portfolio-grid { grid-template-columns: 1fr; }
+  .bp-connectors { display: none; }
+  .bp-dim { display: none; }
+  .bp-portfolio-connectors { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="bp-page">
+
+  <!-- ============================================================ -->
+  <!-- SVG Connector Overlay                                         -->
+  <!-- ============================================================ -->
+  <svg class="bp-connectors" id="bp-connectors" aria-hidden="true">
+    <defs>
+      <marker id="bp-node-start" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="8" markerHeight="8">
+        <circle cx="4" cy="4" r="3" fill="var(--bp-node-fill)"/>
+      </marker>
+      <marker id="bp-node-end" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="8" markerHeight="8">
+        <circle cx="4" cy="4" r="3" fill="var(--bp-node-fill)"/>
+      </marker>
+      <pattern id="bp-crosshatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="4" stroke="var(--bp-crosshatch)" stroke-width="1"/>
+      </pattern>
+    </defs>
+    <!-- Paths injected by JS -->
+  </svg>
+
+  <!-- ============================================================ -->
+  <!-- 1. TITLE                                                      -->
+  <!-- ============================================================ -->
+  <section class="bp-section bp-title" data-bp-node="title">
+    <h1>BudgetWise <span class="bp-title__annotation">REF: 001</span></h1>
+    <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--bp-on-surface-variant); margin-bottom: 0.5rem;">Personal finance app with AI-powered categorization and spending insights</div>
+    <div class="bp-links">
+      <a href="#" class="bp-link">github.com/alex/budgetwise</a>
+      <a href="#" class="bp-link">budgetwise.app</a>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 3. SCREENSHOT                                                 -->
+  <!-- ============================================================ -->
+  <section class="bp-section" data-bp-node="screenshot">
+    <div class="bp-browser-chrome">
+      <div class="bp-browser-chrome__bar">
+        <span class="bp-browser-chrome__dot bp-browser-chrome__dot--red"></span>
+        <span class="bp-browser-chrome__dot bp-browser-chrome__dot--yellow"></span>
+        <span class="bp-browser-chrome__dot bp-browser-chrome__dot--green"></span>
+        <span class="bp-browser-chrome__url">budgetwise.app</span>
+      </div>
+      <div class="bp-browser-chrome__viewport">
+        <span class="bp-browser-chrome__placeholder">Screenshot Placeholder — 1200 x 800</span>
+      </div>
+    </div>
+    <div class="bp-viewport-dim" aria-hidden="true">
+      <span class="bp-dim">
+        <span class="bp-dim__cap"></span>
+        <span class="bp-dim__line" style="width: 120px;"></span>
+        <span class="bp-dim__label">VIEWPORT: 1200 x 800</span>
+        <span class="bp-dim__line" style="width: 120px;"></span>
+        <span class="bp-dim__cap"></span>
+      </span>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 4. NARRATIVE                                                  -->
+  <!-- ============================================================ -->
+  <section class="bp-section" data-bp-node="narrative">
+    <div class="bp-card">
+      <div class="bp-section-header">
+        <span class="bp-section-header__title">Narrative Summary</span>
+        <span class="bp-section-header__ref">REF: 002</span>
+      </div>
+      <hr class="bp-section-divider">
+      <div class="bp-narrative">
+        <p>BudgetWise started as a weekend experiment to scratch my own itch: I wanted a finance tracker that understood developer spending patterns. Most budgeting apps treat all subscriptions equally, but I needed something that could differentiate between a $20/month SaaS tool that pays for itself in productivity and a streaming service I forgot to cancel.</p>
+        <p>The project grew from a simple CSV parser into a full-stack application with AI-powered transaction categorization. The core insight was that spending patterns are more useful than spending totals. Instead of showing a pie chart of where money went, BudgetWise surfaces trends and anomalies that need attention.</p>
+        <p>The hardest part was not the ML model or the data pipeline. It was designing an interface that makes financial data feel approachable without dumbing it down. Every chart, every number, every color choice went through multiple iterations to find the right balance between information density and clarity.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 5. STATS GRID (Animated Counters)                             -->
+  <!-- ============================================================ -->
+  <section class="bp-section" data-bp-node="stats" id="stats-section">
+    <div class="bp-card">
+      <div class="bp-section-header">
+        <span class="bp-section-header__title">Metrics</span>
+        <span class="bp-section-header__ref">REF: 003</span>
+      </div>
+      <hr class="bp-section-divider">
+      <div class="bp-stat-grid">
+        <div class="bp-stat-cell">
+          <div class="bp-stat-cell__label">Sessions</div>
+          <div class="bp-stat-cell__value" data-count-to="8" data-format="int">0</div>
+        </div>
+        <div class="bp-stat-cell">
+          <div class="bp-stat-cell__label">Duration</div>
+          <div style="margin-bottom: 0.25rem;" aria-hidden="true">
+            <span class="bp-dim">
+              <span class="bp-dim__cap"></span>
+              <span class="bp-dim__line" style="width: 40px;"></span>
+              <span class="bp-dim__label">42h 30m</span>
+              <span class="bp-dim__line" style="width: 40px;"></span>
+              <span class="bp-dim__cap"></span>
+            </span>
+          </div>
+          <div class="bp-stat-cell__value" data-count-to="42.5" data-format="duration-h">0</div>
+        </div>
+        <div class="bp-stat-cell">
+          <div class="bp-stat-cell__label">Lines of Code</div>
+          <div style="margin-bottom: 0.25rem;" aria-hidden="true">
+            <span class="bp-dim">
+              <span class="bp-dim__cap"></span>
+              <span class="bp-dim__line" style="width: 30px;"></span>
+              <span class="bp-dim__label">4,460 LOC</span>
+              <span class="bp-dim__line" style="width: 30px;"></span>
+              <span class="bp-dim__cap"></span>
+            </span>
+          </div>
+          <div class="bp-stat-cell__value" data-count-to="4460" data-format="comma">0</div>
+        </div>
+        <div class="bp-stat-cell">
+          <div class="bp-stat-cell__label">Files</div>
+          <div class="bp-stat-cell__value" data-count-to="156" data-format="int">0</div>
+        </div>
+      </div>
+      <div class="bp-stat-grid bp-stat-grid--2col">
+        <div class="bp-stat-cell">
+          <div class="bp-stat-cell__label">Tokens</div>
+          <div class="bp-stat-cell__value" data-count-to="2100000" data-format="tokens">0</div>
+        </div>
+        <div class="bp-stat-cell">
+          <div class="bp-stat-cell__label">Efficiency Multiplier</div>
+          <div class="bp-stat-cell__value" data-count-to="4.2" data-format="multiplier">0</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 6. WORK TIMELINE (Schematic Style, Animated)                  -->
+  <!-- ============================================================ -->
+  <section class="bp-section" data-bp-node="timeline">
+    <div class="bp-card">
+      <div class="bp-section-header">
+        <span class="bp-section-header__title">Work Timeline</span>
+        <span class="bp-section-header__ref">REF: 004</span>
+      </div>
+      <hr class="bp-section-divider">
+      <div class="bp-chart-container">
+        <svg viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg" aria-label="Work timeline showing 8 sessions as horizontal bars">
+          <defs>
+            <pattern id="hatch-bars" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="4" stroke="#cbd5e1" stroke-width="1"/>
+            </pattern>
+          </defs>
+
+          <!-- Grid lines -->
+          <line x1="140" y1="10" x2="640" y2="10" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2 2"/>
+          <line x1="140" y1="235" x2="640" y2="235" stroke="#e2e8f0" stroke-width="0.5"/>
+          <!-- Vertical duration guides -->
+          <line x1="240" y1="10" x2="240" y2="235" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2 2"/>
+          <line x1="340" y1="10" x2="340" y2="235" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2 2"/>
+          <line x1="440" y1="10" x2="440" y2="235" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2 2"/>
+          <line x1="540" y1="10" x2="540" y2="235" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2 2"/>
+          <line x1="640" y1="10" x2="640" y2="235" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2 2"/>
+
+          <!-- Duration axis labels -->
+          <text x="140" y="248" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="middle">0m</text>
+          <text x="240" y="248" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="middle">20m</text>
+          <text x="340" y="248" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="middle">40m</text>
+          <text x="440" y="248" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="middle">60m</text>
+          <text x="540" y="248" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="middle">80m</text>
+          <text x="640" y="248" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="middle">100m</text>
+
+          <!-- Session labels (left) -->
+          <text x="135" y="31" font-family="IBM Plex Mono" font-size="9" fill="#64748b" text-anchor="end">Prisma schema</text>
+          <text x="135" y="58" font-family="IBM Plex Mono" font-size="9" fill="#64748b" text-anchor="end">Transaction list</text>
+          <text x="135" y="85" font-family="IBM Plex Mono" font-size="9" fill="#64748b" text-anchor="end">Recurring detect</text>
+          <text x="135" y="112" font-family="IBM Plex Mono" font-size="9" fill="#64748b" text-anchor="end">Stripe integ.</text>
+          <text x="135" y="139" font-family="IBM Plex Mono" font-size="9" fill="#64748b" text-anchor="end">CSV import</text>
+          <text x="135" y="166" font-family="IBM Plex Mono" font-size="9" fill="#64748b" text-anchor="end">FTS tsvector</text>
+          <text x="135" y="193" font-family="IBM Plex Mono" font-size="9" fill="#64748b" text-anchor="end">Spending dash</text>
+          <text x="135" y="220" font-family="IBM Plex Mono" font-size="9" fill="#64748b" text-anchor="end">Mobile + 2FA</text>
+
+          <!-- Date annotations (right side) -->
+          <text x="645" y="31" font-family="IBM Plex Mono" font-size="7" fill="#94a3b8">Feb 3</text>
+          <text x="645" y="58" font-family="IBM Plex Mono" font-size="7" fill="#94a3b8">Feb 14</text>
+          <text x="645" y="85" font-family="IBM Plex Mono" font-size="7" fill="#94a3b8">Mar 1</text>
+          <text x="645" y="112" font-family="IBM Plex Mono" font-size="7" fill="#94a3b8">Mar 10</text>
+          <text x="645" y="139" font-family="IBM Plex Mono" font-size="7" fill="#94a3b8">Mar 14</text>
+          <text x="645" y="166" font-family="IBM Plex Mono" font-size="7" fill="#94a3b8">Mar 18</text>
+          <text x="645" y="193" font-family="IBM Plex Mono" font-size="7" fill="#94a3b8">Mar 22</text>
+          <text x="645" y="220" font-family="IBM Plex Mono" font-size="7" fill="#94a3b8">Mar 26</text>
+
+          <!-- Horizontal bars (width proportional to duration: 5px per minute) -->
+          <!-- Session 1: 72m = 360px -->
+          <g class="bp-timeline-bar">
+            <rect x="140" y="22" width="360" height="16" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.5" rx="1"/>
+            <rect x="140" y="22" width="360" height="16" fill="url(#hatch-bars)" rx="1"/>
+          </g>
+          <!-- Session 2: 65m = 325px -->
+          <g class="bp-timeline-bar">
+            <rect x="140" y="49" width="325" height="16" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.5" rx="1"/>
+            <rect x="140" y="49" width="325" height="16" fill="url(#hatch-bars)" rx="1"/>
+          </g>
+          <!-- Session 3: 88m = 440px -->
+          <g class="bp-timeline-bar">
+            <rect x="140" y="76" width="440" height="16" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.5" rx="1"/>
+            <rect x="140" y="76" width="440" height="16" fill="url(#hatch-bars)" rx="1"/>
+          </g>
+          <!-- Session 4: 55m = 275px -->
+          <g class="bp-timeline-bar">
+            <rect x="140" y="103" width="275" height="16" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.5" rx="1"/>
+            <rect x="140" y="103" width="275" height="16" fill="url(#hatch-bars)" rx="1"/>
+          </g>
+          <!-- Session 5: 45m = 225px -->
+          <g class="bp-timeline-bar">
+            <rect x="140" y="130" width="225" height="16" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.5" rx="1"/>
+            <rect x="140" y="130" width="225" height="16" fill="url(#hatch-bars)" rx="1"/>
+          </g>
+          <!-- Session 6: 62m = 310px -->
+          <g class="bp-timeline-bar">
+            <rect x="140" y="157" width="310" height="16" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.5" rx="1"/>
+            <rect x="140" y="157" width="310" height="16" fill="url(#hatch-bars)" rx="1"/>
+          </g>
+          <!-- Session 7: 78m = 390px -->
+          <g class="bp-timeline-bar">
+            <rect x="140" y="184" width="390" height="16" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.5" rx="1"/>
+            <rect x="140" y="184" width="390" height="16" fill="url(#hatch-bars)" rx="1"/>
+          </g>
+          <!-- Session 8: 50m = 250px -->
+          <g class="bp-timeline-bar">
+            <rect x="140" y="211" width="250" height="16" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="0.5" rx="1"/>
+            <rect x="140" y="211" width="250" height="16" fill="url(#hatch-bars)" rx="1"/>
+          </g>
+
+          <!-- Agent fork lines (dashed) for sessions that have agents -->
+          <!-- S1: 7 agents -->
+          <g class="bp-agent-lines" opacity="0">
+            <line x1="180" y1="38" x2="180" y2="44" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="210" y1="38" x2="210" y2="44" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="240" y1="38" x2="240" y2="44" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="270" y1="38" x2="270" y2="44" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="300" y1="38" x2="300" y2="44" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="330" y1="38" x2="330" y2="44" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="360" y1="38" x2="360" y2="44" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+          </g>
+          <!-- S2: 5 agents -->
+          <g class="bp-agent-lines" opacity="0">
+            <line x1="180" y1="65" x2="180" y2="71" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="220" y1="65" x2="220" y2="71" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="260" y1="65" x2="260" y2="71" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="300" y1="65" x2="300" y2="71" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="340" y1="65" x2="340" y2="71" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+          </g>
+          <!-- S3: 6 agents -->
+          <g class="bp-agent-lines" opacity="0">
+            <line x1="200" y1="92" x2="200" y2="98" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="250" y1="92" x2="250" y2="98" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="300" y1="92" x2="300" y2="98" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="350" y1="92" x2="350" y2="98" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="400" y1="92" x2="400" y2="98" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="450" y1="92" x2="450" y2="98" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+          </g>
+          <!-- S4: 0 agents (none) -->
+          <!-- S5: 4 agents -->
+          <g class="bp-agent-lines" opacity="0">
+            <line x1="170" y1="146" x2="170" y2="152" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="210" y1="146" x2="210" y2="152" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="250" y1="146" x2="250" y2="152" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="290" y1="146" x2="290" y2="152" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+          </g>
+          <!-- S6: 3 agents -->
+          <g class="bp-agent-lines" opacity="0">
+            <line x1="200" y1="173" x2="200" y2="179" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="270" y1="173" x2="270" y2="179" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="340" y1="173" x2="340" y2="179" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+          </g>
+          <!-- S7: 5 agents -->
+          <g class="bp-agent-lines" opacity="0">
+            <line x1="190" y1="200" x2="190" y2="206" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="240" y1="200" x2="240" y2="206" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="300" y1="200" x2="300" y2="206" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="360" y1="200" x2="360" y2="206" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+            <line x1="420" y1="200" x2="420" y2="206" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="2 2"/>
+          </g>
+          <!-- S8: 0 agents (none) -->
+
+          <!-- LOC annotations on bars -->
+          <text x="505" y="33" font-family="IBM Plex Mono" font-size="7" fill="#94a3b8">680 LOC</text>
+          <text x="470" y="60" font-family="IBM Plex Mono" font-size="7" fill="#94a3b8">520 LOC</text>
+          <text x="585" y="87" font-family="IBM Plex Mono" font-size="7" fill="#94a3b8">890 LOC</text>
+          <text x="420" y="114" font-family="IBM Plex Mono" font-size="7" fill="#94a3b8">420 LOC</text>
+          <text x="370" y="141" font-family="IBM Plex Mono" font-size="7" fill="#94a3b8">380 LOC</text>
+          <text x="455" y="168" font-family="IBM Plex Mono" font-size="7" fill="#94a3b8">510 LOC</text>
+          <text x="535" y="195" font-family="IBM Plex Mono" font-size="7" fill="#94a3b8">720 LOC</text>
+          <text x="395" y="222" font-family="IBM Plex Mono" font-size="7" fill="#94a3b8">340 LOC</text>
+
+          <!-- Dimension annotation: total duration span -->
+          <line x1="140" y1="256" x2="580" y2="256" stroke="#94a3b8" stroke-width="0.75" id="timeline-dim-line"/>
+          <line x1="140" y1="253" x2="140" y2="259" stroke="#94a3b8" stroke-width="0.75"/>
+          <line x1="580" y1="253" x2="580" y2="259" stroke="#94a3b8" stroke-width="0.75"/>
+          <text x="360" y="254" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="middle">
+            <tspan dy="-2">515 min total (8.6h)</tspan>
+          </text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 7. GROWTH CHART (Schematic Style, Animated)                   -->
+  <!-- ============================================================ -->
+  <section class="bp-section" data-bp-node="growth">
+    <div class="bp-card">
+      <div class="bp-section-header">
+        <span class="bp-section-header__title">Cumulative Growth</span>
+        <span class="bp-section-header__ref">REF: 005</span>
+      </div>
+      <hr class="bp-section-divider">
+      <div class="bp-chart-container">
+        <svg viewBox="0 0 620 200" xmlns="http://www.w3.org/2000/svg" aria-label="Cumulative growth chart showing LOC and files over 8 sessions">
+          <defs>
+            <pattern id="hatch-area" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="4" stroke="rgba(226,232,240,0.6)" stroke-width="1"/>
+            </pattern>
+          </defs>
+
+          <!-- Grid -->
+          <line x1="48" y1="10" x2="48" y2="155" stroke="#e2e8f0" stroke-width="0.5"/>
+          <line x1="48" y1="155" x2="560" y2="155" stroke="#e2e8f0" stroke-width="0.5"/>
+          <line x1="48" y1="119" x2="560" y2="119" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2 2"/>
+          <line x1="48" y1="83" x2="560" y2="83" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2 2"/>
+          <line x1="48" y1="47" x2="560" y2="47" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2 2"/>
+          <line x1="48" y1="10" x2="560" y2="10" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2 2"/>
+
+          <!-- Y-axis labels (LOC cumulative: 0, 1250, 2500, 3750, 5000) -->
+          <text x="44" y="158" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="end">0</text>
+          <text x="44" y="122" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="end">1.2k</text>
+          <text x="44" y="86" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="end">2.5k</text>
+          <text x="44" y="50" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="end">3.7k</text>
+          <text x="44" y="14" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="end">5.0k</text>
+
+          <!-- X-axis date labels -->
+          <text x="112" y="172" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="middle">Feb 3</text>
+          <text x="176" y="172" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="middle">Feb 14</text>
+          <text x="240" y="172" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="middle">Mar 1</text>
+          <text x="304" y="172" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="middle">Mar 10</text>
+          <text x="368" y="172" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="middle">Mar 14</text>
+          <text x="432" y="172" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="middle">Mar 18</text>
+          <text x="496" y="172" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="middle">Mar 22</text>
+          <text x="560" y="172" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" text-anchor="middle">Mar 26</text>
+
+          <!--
+            Cumulative LOC data points:
+            S1: 680       -> y = 155 - (680/5000)*145 = 135.3
+            S2: 1200      -> y = 155 - (1200/5000)*145 = 120.2
+            S3: 2090      -> y = 155 - (2090/5000)*145 = 94.4
+            S4: 2510      -> y = 155 - (2510/5000)*145 = 82.2
+            S5: 2890      -> y = 155 - (2890/5000)*145 = 71.2
+            S6: 3400      -> y = 155 - (3400/5000)*145 = 56.4
+            S7: 4120      -> y = 155 - (4120/5000)*145 = 35.5
+            S8: 4460      -> y = 155 - (4460/5000)*145 = 25.7
+          -->
+
+          <!-- Area fill under LOC line (crosshatch) -->
+          <path id="growth-area"
+            d="M112,135 L176,120 L240,94 L304,82 L368,71 L432,56 L496,36 L560,26 L560,155 L112,155 Z"
+            fill="#f1f5f9" opacity="0.5"/>
+          <path id="growth-area-hatch"
+            d="M112,135 L176,120 L240,94 L304,82 L368,71 L432,56 L496,36 L560,26 L560,155 L112,155 Z"
+            fill="url(#hatch-area)" opacity="0.6"/>
+
+          <!-- LOC line (solid) -->
+          <polyline id="growth-loc-line"
+            points="112,135 176,120 240,94 304,82 368,71 432,56 496,36 560,26"
+            fill="none" stroke="#64748b" stroke-width="1.5"
+            stroke-linejoin="round" stroke-linecap="round"
+            stroke-dasharray="1000" stroke-dashoffset="1000"
+            style="transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1) 0.2s;"/>
+
+          <!-- Files line (dashed) — cumulative files: 20, 36, 56, 68, 80, 96, 124, 156 -->
+          <!--
+            Normalize to max 156, scale y = 155 - (val/200)*145
+            F1: 20 -> 140.5
+            F2: 36 -> 128.9
+            F3: 56 -> 114.4
+            F4: 68 -> 105.7
+            F5: 80 -> 97.0
+            F6: 96 -> 85.4
+            F7: 124 -> 65.1
+            F8: 156 -> 41.8
+          -->
+          <polyline id="growth-files-line"
+            points="112,141 176,129 240,114 304,106 368,97 432,85 496,65 560,42"
+            fill="none" stroke="#64748b" stroke-width="1.5"
+            stroke-dasharray="4 3"
+            stroke-linejoin="round" stroke-linecap="round"
+            opacity="0"
+            style="transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.8s;"/>
+
+          <!-- Data point dots on LOC line -->
+          <g id="growth-dots" opacity="0" style="transition: opacity 0.4s ease 1.2s;">
+            <circle cx="112" cy="135" r="3" fill="#64748b"/>
+            <circle cx="176" cy="120" r="3" fill="#64748b"/>
+            <circle cx="240" cy="94" r="3" fill="#64748b"/>
+            <circle cx="304" cy="82" r="3" fill="#64748b"/>
+            <circle cx="368" cy="71" r="3" fill="#64748b"/>
+            <circle cx="432" cy="56" r="3" fill="#64748b"/>
+            <circle cx="496" cy="36" r="3" fill="#64748b"/>
+            <circle cx="560" cy="26" r="3" fill="#64748b"/>
+          </g>
+
+          <!-- Dimension annotation: total LOC on right edge -->
+          <line x1="572" y1="26" x2="572" y2="155" stroke="#94a3b8" stroke-width="0.75"/>
+          <line x1="568" y1="26" x2="576" y2="26" stroke="#94a3b8" stroke-width="0.75"/>
+          <line x1="568" y1="155" x2="576" y2="155" stroke="#94a3b8" stroke-width="0.75"/>
+          <text x="582" y="94" font-family="IBM Plex Mono" font-size="8" fill="#94a3b8" transform="rotate(90, 582, 94)" text-anchor="middle">4,460 LOC</text>
+
+          <!-- Legend -->
+          <line x1="48" y1="188" x2="64" y2="188" stroke="#64748b" stroke-width="1.5"/>
+          <text x="70" y="191" font-family="IBM Plex Mono" font-size="9" fill="#64748b">LOC</text>
+          <line x1="110" y1="188" x2="126" y2="188" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <text x="132" y="191" font-family="IBM Plex Mono" font-size="9" fill="#64748b">FILES</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 8. TWO-COL: Key Decisions + Source Breakdown                  -->
+  <!-- ============================================================ -->
+  <section class="bp-section" data-bp-node="details">
+    <div class="bp-two-col">
+      <!-- Key Decisions -->
+      <div class="bp-card">
+        <div class="bp-section-header">
+          <span class="bp-section-header__title">Key Decisions</span>
+          <span class="bp-section-header__ref">REF: 006</span>
+        </div>
+        <hr class="bp-section-divider">
+        <div class="bp-decision">
+          <div><span class="bp-decision__number">[1]</span><span class="bp-decision__title">TypeScript over JavaScript</span></div>
+          <div class="bp-decision__desc">Type safety caught three critical data-shape bugs during the transaction categorization pipeline before they reached production.</div>
+        </div>
+        <div class="bp-decision">
+          <div><span class="bp-decision__number">[2]</span><span class="bp-decision__title">Prisma for schema management</span></div>
+          <div class="bp-decision__desc">Auto-generated types from the database schema eliminated an entire category of runtime errors and kept the API layer honest.</div>
+        </div>
+        <div class="bp-decision">
+          <div><span class="bp-decision__number">[3]</span><span class="bp-decision__title">Rule engine over hardcoded categories</span></div>
+          <div class="bp-decision__desc">Built a composable rule system so users can define their own categorization logic instead of relying on a fixed taxonomy.</div>
+        </div>
+      </div>
+
+      <!-- Source Breakdown -->
+      <div class="bp-card">
+        <div class="bp-section-header">
+          <span class="bp-section-header__title">Source Breakdown</span>
+          <span class="bp-section-header__ref">REF: 007</span>
+        </div>
+        <hr class="bp-section-divider">
+        <table class="bp-source-table">
+          <thead>
+            <tr>
+              <th>Ext</th>
+              <th>Count</th>
+              <th>%</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>.ts</td><td>62</td><td>40%</td></tr>
+            <tr><td>.tsx</td><td>38</td><td>24%</td></tr>
+            <tr><td>.css</td><td>22</td><td>14%</td></tr>
+            <tr><td>.json</td><td>16</td><td>10%</td></tr>
+            <tr><td>.sql</td><td>12</td><td>8%</td></tr>
+            <tr><td>other</td><td>6</td><td>4%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 9. PHASE TIMELINE                                             -->
+  <!-- ============================================================ -->
+  <section class="bp-section" data-bp-node="phases">
+    <div class="bp-card">
+      <div class="bp-section-header">
+        <span class="bp-section-header__title">Project Phases</span>
+        <span class="bp-section-header__ref">REF: 008</span>
+      </div>
+      <hr class="bp-section-divider">
+      <div class="bp-phase-timeline">
+        <div class="bp-phase-timeline__line"></div>
+
+        <div class="bp-phase-item">
+          <div class="bp-phase-node">1</div>
+          <div class="bp-phase-connector"></div>
+          <div class="bp-phase-item__title">Phase 1: Foundation</div>
+          <div class="bp-phase-item__desc">Set up project structure with Prisma schema, TypeScript config, and the initial data model. Established transaction parsing pipeline and basic CRUD operations.</div>
+        </div>
+
+        <div class="bp-phase-item">
+          <div class="bp-phase-node">2</div>
+          <div class="bp-phase-connector"></div>
+          <div class="bp-phase-item__title">Phase 2: Core Features</div>
+          <div class="bp-phase-item__desc">Built transaction list UI, recurring transaction detection, and the Stripe integration for live bank feeds. Added CSV import as a fallback path.</div>
+        </div>
+
+        <div class="bp-phase-item">
+          <div class="bp-phase-node">3</div>
+          <div class="bp-phase-connector"></div>
+          <div class="bp-phase-item__title">Phase 3: Intelligence Layer</div>
+          <div class="bp-phase-item__desc">Implemented full-text search with tsvector, spending insights dashboard with trend analysis, and anomaly detection for unusual charges.</div>
+        </div>
+
+        <div class="bp-phase-item">
+          <div class="bp-phase-node">4</div>
+          <div class="bp-phase-connector"></div>
+          <div class="bp-phase-item__title">Phase 4: Polish and Launch</div>
+          <div class="bp-phase-item__desc">Mobile responsive redesign, two-factor authentication, performance optimization, and final QA pass before public launch.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 10. SKILLS                                                    -->
+  <!-- ============================================================ -->
+  <section class="bp-section" data-bp-node="skills">
+    <div class="bp-card">
+      <div class="bp-section-header">
+        <span class="bp-section-header__title">Skills</span>
+        <span class="bp-section-header__ref">REF: 009</span>
+      </div>
+      <hr class="bp-section-divider">
+      <div class="bp-chip-list">
+        <span class="bp-chip">TypeScript</span>
+        <span class="bp-chip">React</span>
+        <span class="bp-chip">Prisma</span>
+        <span class="bp-chip">PostgreSQL</span>
+        <span class="bp-chip">Stripe API</span>
+        <span class="bp-chip">Node.js</span>
+        <span class="bp-chip">CSS</span>
+        <span class="bp-chip">D3.js</span>
+        <span class="bp-chip">Vitest</span>
+        <span class="bp-chip">CSV Parsing</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 11. SESSION CARDS                                             -->
+  <!-- ============================================================ -->
+  <section class="bp-section" data-bp-node="sessions">
+    <div class="bp-card">
+      <div class="bp-section-header">
+        <span class="bp-section-header__title">Sessions</span>
+        <span class="bp-section-header__ref">REF: 010 &nbsp;&middot;&nbsp; 8 total</span>
+      </div>
+      <hr class="bp-section-divider">
+      <div class="bp-session-grid">
+
+        <a href="#" class="bp-session-card">
+          <span class="bp-session-card__badge">[01]</span>
+          <div class="bp-session-card__title">Set up Prisma schema</div>
+          <div class="bp-session-card__meta">72m . 680 LOC . 7 agents</div>
+          <div class="bp-session-card__source">Claude</div>
+          <div class="bp-session-card__skills">
+            <span class="bp-chip">TypeScript</span>
+            <span class="bp-chip">Prisma</span>
+          </div>
+        </a>
+
+        <a href="#" class="bp-session-card">
+          <span class="bp-session-card__badge">[02]</span>
+          <div class="bp-session-card__title">Build transaction list</div>
+          <div class="bp-session-card__meta">65m . 520 LOC . 5 agents</div>
+          <div class="bp-session-card__source">Cursor</div>
+          <div class="bp-session-card__skills">
+            <span class="bp-chip">React</span>
+            <span class="bp-chip">CSS</span>
+          </div>
+        </a>
+
+        <a href="#" class="bp-session-card">
+          <span class="bp-session-card__badge">[03]</span>
+          <div class="bp-session-card__title">Recurring transaction detection</div>
+          <div class="bp-session-card__meta">88m . 890 LOC . 6 agents</div>
+          <div class="bp-session-card__source">Claude</div>
+          <div class="bp-session-card__skills">
+            <span class="bp-chip">TypeScript</span>
+            <span class="bp-chip">PostgreSQL</span>
+          </div>
+        </a>
+
+        <a href="#" class="bp-session-card">
+          <span class="bp-session-card__badge">[04]</span>
+          <div class="bp-session-card__title">Stripe integration</div>
+          <div class="bp-session-card__meta">55m . 420 LOC . 0 agents</div>
+          <div class="bp-session-card__source">Claude</div>
+          <div class="bp-session-card__skills">
+            <span class="bp-chip">Stripe API</span>
+            <span class="bp-chip">Node.js</span>
+          </div>
+        </a>
+
+        <a href="#" class="bp-session-card">
+          <span class="bp-session-card__badge">[05]</span>
+          <div class="bp-session-card__title">CSV import pipeline</div>
+          <div class="bp-session-card__meta">45m . 380 LOC . 4 agents</div>
+          <div class="bp-session-card__source">Cursor</div>
+          <div class="bp-session-card__skills">
+            <span class="bp-chip">CSV Parsing</span>
+            <span class="bp-chip">Node.js</span>
+          </div>
+        </a>
+
+        <a href="#" class="bp-session-card">
+          <span class="bp-session-card__badge">[06]</span>
+          <div class="bp-session-card__title">Full-text search tsvector</div>
+          <div class="bp-session-card__meta">62m . 510 LOC . 3 agents</div>
+          <div class="bp-session-card__source">Claude</div>
+          <div class="bp-session-card__skills">
+            <span class="bp-chip">PostgreSQL</span>
+            <span class="bp-chip">TypeScript</span>
+          </div>
+        </a>
+
+        <a href="#" class="bp-session-card">
+          <span class="bp-session-card__badge">[07]</span>
+          <div class="bp-session-card__title">Spending insights dashboard</div>
+          <div class="bp-session-card__meta">78m . 720 LOC . 5 agents</div>
+          <div class="bp-session-card__source">Claude</div>
+          <div class="bp-session-card__skills">
+            <span class="bp-chip">React</span>
+            <span class="bp-chip">D3.js</span>
+          </div>
+        </a>
+
+        <a href="#" class="bp-session-card">
+          <span class="bp-session-card__badge">[08]</span>
+          <div class="bp-session-card__title">Mobile responsive + 2FA</div>
+          <div class="bp-session-card__meta">50m . 340 LOC . 0 agents</div>
+          <div class="bp-session-card__source">Cursor</div>
+          <div class="bp-session-card__skills">
+            <span class="bp-chip">CSS</span>
+            <span class="bp-chip">React</span>
+          </div>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 12. FOOTER (Drawing Title Block)                              -->
+  <!-- ============================================================ -->
+  <section class="bp-section bp-footer" style="margin-bottom: 0;">
+    <span class="bp-footer__text">Built with heyi.am</span>
+    <span class="bp-footer__text">DWG NO: budgetwise &nbsp;&nbsp; REV: 2026-03-26</span>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- PORTFOLIO SECTION                                             -->
+  <!-- ============================================================ -->
+  <hr class="bp-portfolio-divider">
+
+  <section class="bp-section" style="margin-bottom: 0;">
+    <div class="bp-portfolio-header">
+      <div style="font-family: var(--font-mono); font-size: 0.5625rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--bp-on-surface-variant); margin-bottom: 0.75rem;">heyi.am/@alex</div>
+      <h2 class="bp-portfolio-header__name">Alex Chen</h2>
+      <p class="bp-portfolio-header__bio">Full-stack developer building developer tools and fintech applications. I document how I think through technical problems.</p>
+      <div class="bp-portfolio-stats">
+        <div class="bp-portfolio-stat">
+          <div class="bp-portfolio-stat__value">3</div>
+          <div class="bp-portfolio-stat__label">Projects</div>
+        </div>
+        <div class="bp-portfolio-stat">
+          <div class="bp-portfolio-stat__value">24</div>
+          <div class="bp-portfolio-stat__label">Sessions</div>
+        </div>
+        <div class="bp-portfolio-stat">
+          <div class="bp-portfolio-stat__value">128h</div>
+          <div class="bp-portfolio-stat__label">Total Time</div>
+        </div>
+        <div class="bp-portfolio-stat">
+          <div class="bp-portfolio-stat__value">34.2k</div>
+          <div class="bp-portfolio-stat__label">Lines Written</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bp-portfolio-grid" id="portfolio-grid">
+      <svg class="bp-portfolio-connectors" id="portfolio-connectors" aria-hidden="true">
+        <defs>
+          <marker id="bp-pnode" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="8" markerHeight="8">
+            <circle cx="4" cy="4" r="3" fill="var(--bp-node-fill)"/>
+          </marker>
+        </defs>
+      </svg>
+
+      <a href="#" class="bp-portfolio-card">
+        <div class="bp-portfolio-card__title">BudgetWise</div>
+        <div class="bp-portfolio-card__desc">Personal finance app with AI-powered categorization and spending insights.</div>
+        <div class="bp-portfolio-card__meta">8 sessions . 42.5h . 4.5k LOC</div>
+      </a>
+      <a href="#" class="bp-portfolio-card">
+        <div class="bp-portfolio-card__title">heyi.am CLI</div>
+        <div class="bp-portfolio-card__desc">Terminal-first developer portfolio generator that turns coding sessions into case studies.</div>
+        <div class="bp-portfolio-card__meta">10 sessions . 61h . 18.4k LOC</div>
+      </a>
+      <a href="#" class="bp-portfolio-card">
+        <div class="bp-portfolio-card__title">SQLite Lens</div>
+        <div class="bp-portfolio-card__desc">Visual query explorer and schema browser for local SQLite databases.</div>
+        <div class="bp-portfolio-card__meta">6 sessions . 24.5h . 11.3k LOC</div>
+      </a>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── Reduced Motion Detection ──
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── Section Entrance + Connector Draw via IntersectionObserver ──
+  var sections = document.querySelectorAll('.bp-section');
+  var sectionObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('bp-visible');
+
+        // Draw any connector targeting this section
+        var nodeId = entry.target.getAttribute('data-bp-node');
+        if (nodeId) {
+          var path = document.querySelector('[data-bp-target="' + nodeId + '"]');
+          if (path) {
+            path.classList.add('bp-drawn');
+          }
+        }
+
+        // Show agent fork lines within timeline section
+        if (nodeId === 'timeline') {
+          var agentGroups = entry.target.querySelectorAll('.bp-agent-lines');
+          agentGroups.forEach(function(g, i) {
+            setTimeout(function() {
+              g.style.transition = 'opacity 0.4s ease';
+              g.style.opacity = '1';
+            }, prefersReducedMotion ? 0 : 400 + i * 80);
+          });
+        }
+
+        // Animate growth chart elements
+        if (nodeId === 'growth') {
+          var locLine = document.getElementById('growth-loc-line');
+          var filesLine = document.getElementById('growth-files-line');
+          var dots = document.getElementById('growth-dots');
+          if (locLine) {
+            if (prefersReducedMotion) {
+              locLine.style.strokeDashoffset = '0';
+            } else {
+              locLine.style.strokeDashoffset = '0';
+            }
+          }
+          if (filesLine) {
+            filesLine.style.opacity = '1';
+          }
+          if (dots) {
+            dots.style.opacity = '1';
+          }
+        }
+
+        sectionObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+
+  sections.forEach(function(section) {
+    sectionObserver.observe(section);
+  });
+
+  // ── Stat Counter Animation ──
+  var statsSection = document.getElementById('stats-section');
+  if (statsSection) {
+    var statsObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          statsObserver.unobserve(entry.target);
+          setTimeout(function() { animateCounters(entry.target); }, prefersReducedMotion ? 0 : 200);
+        }
+      });
+    }, { threshold: 0.2 });
+    statsObserver.observe(statsSection);
+  }
+
+  function animateCounters(container) {
+    var counters = container.querySelectorAll('[data-count-to]');
+    counters.forEach(function(el) {
+      var target = parseFloat(el.getAttribute('data-count-to'));
+      var format = el.getAttribute('data-format');
+      var duration = prefersReducedMotion ? 0 : 1200;
+
+      if (duration === 0) {
+        el.textContent = formatCounterValue(target, format);
+        return;
+      }
+
+      var start = performance.now();
+
+      function easeOut(t) {
+        return 1 - Math.pow(1 - t, 3);
+      }
+
+      function tick(now) {
+        var elapsed = now - start;
+        var progress = Math.min(elapsed / duration, 1);
+        var easedProgress = easeOut(progress);
+        var current = target * easedProgress;
+        el.textContent = formatCounterValue(current, format);
+        if (progress < 1) {
+          requestAnimationFrame(tick);
+        }
+      }
+
+      requestAnimationFrame(tick);
+    });
+  }
+
+  function formatCounterValue(val, format) {
+    switch (format) {
+      case 'int':
+        return Math.round(val).toString();
+      case 'comma':
+        return Math.round(val).toLocaleString();
+      case 'duration-h':
+        return val.toFixed(1) + 'h';
+      case 'tokens':
+        if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+        if (val >= 1000) return (val / 1000).toFixed(0) + 'K';
+        return Math.round(val).toString();
+      case 'multiplier':
+        return val.toFixed(1) + 'x';
+      default:
+        return Math.round(val).toString();
+    }
+  }
+
+  // ── Connector Path Calculation ──
+
+  var connections = [
+    { from: 'title',    to: 'stats',    shape: 'vertical' },
+    { from: 'stats',    to: 'timeline', shape: 'elbow-right' },
+    { from: 'timeline', to: 'growth',   shape: 'vertical' },
+    { from: 'growth',   to: 'details',  shape: 'elbow-left' },
+    { from: 'details',  to: 'phases',   shape: 'vertical' },
+    { from: 'phases',   to: 'skills',   shape: 'vertical' },
+    { from: 'skills',   to: 'sessions', shape: 'elbow-right' }
+  ];
+
+  function calculateConnectors() {
+    var svg = document.getElementById('bp-connectors');
+    if (!svg) return;
+    if (window.innerWidth < 768) return;
+
+    var page = document.querySelector('.bp-page');
+    var pageRect = page.getBoundingClientRect();
+
+    // Remove old paths, preserve drawn state
+    var oldPaths = svg.querySelectorAll('.bp-connector-path');
+    var drawnSet = new Set();
+    oldPaths.forEach(function(p) {
+      if (p.classList.contains('bp-drawn')) {
+        drawnSet.add(p.getAttribute('data-bp-target'));
+      }
+      p.remove();
+    });
+
+    connections.forEach(function(conn) {
+      var fromEl = document.querySelector('[data-bp-node="' + conn.from + '"]');
+      var toEl   = document.querySelector('[data-bp-node="' + conn.to + '"]');
+      if (!fromEl || !toEl) return;
+
+      var fromRect = fromEl.getBoundingClientRect();
+      var toRect   = toEl.getBoundingClientRect();
+
+      var startX = fromRect.left + fromRect.width / 2 - pageRect.left;
+      var startY = fromRect.bottom - pageRect.top;
+      var endX   = toRect.left + toRect.width / 2 - pageRect.left;
+      var endY   = toRect.top - pageRect.top;
+
+      var d = '';
+      var midY = (startY + endY) / 2;
+
+      if (conn.shape === 'vertical') {
+        d = 'M ' + startX + ' ' + startY +
+            ' L ' + startX + ' ' + (startY + 24) +
+            ' C ' + startX + ' ' + midY + ' ' + endX + ' ' + midY + ' ' + endX + ' ' + (endY - 24) +
+            ' L ' + endX + ' ' + endY;
+      } else if (conn.shape === 'elbow-right') {
+        var elbowX = startX + 80;
+        d = 'M ' + startX + ' ' + startY +
+            ' L ' + startX + ' ' + (startY + 24) +
+            ' Q ' + startX + ' ' + (startY + 36) + ' ' + (startX + 12) + ' ' + (startY + 36) +
+            ' L ' + elbowX + ' ' + (startY + 36) +
+            ' Q ' + (elbowX + 12) + ' ' + (startY + 36) + ' ' + (elbowX + 12) + ' ' + (startY + 48) +
+            ' L ' + (elbowX + 12) + ' ' + (endY - 24) +
+            ' C ' + (elbowX + 12) + ' ' + (endY - 12) + ' ' + endX + ' ' + (endY - 12) + ' ' + endX + ' ' + endY;
+      } else if (conn.shape === 'elbow-left') {
+        var elbowLX = startX - 80;
+        d = 'M ' + startX + ' ' + startY +
+            ' L ' + startX + ' ' + (startY + 24) +
+            ' Q ' + startX + ' ' + (startY + 36) + ' ' + (startX - 12) + ' ' + (startY + 36) +
+            ' L ' + elbowLX + ' ' + (startY + 36) +
+            ' Q ' + (elbowLX - 12) + ' ' + (startY + 36) + ' ' + (elbowLX - 12) + ' ' + (startY + 48) +
+            ' L ' + (elbowLX - 12) + ' ' + (endY - 24) +
+            ' C ' + (elbowLX - 12) + ' ' + (endY - 12) + ' ' + endX + ' ' + (endY - 12) + ' ' + endX + ' ' + endY;
+      }
+
+      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('class', 'bp-connector-path');
+      path.setAttribute('data-bp-target', conn.to);
+      path.setAttribute('marker-start', 'url(#bp-node-start)');
+      path.setAttribute('marker-end', 'url(#bp-node-end)');
+
+      // Restore drawn state for already-visible sections
+      if (drawnSet.has(conn.to)) {
+        path.classList.add('bp-drawn');
+      }
+
+      svg.appendChild(path);
+
+      // Set proper dasharray based on actual path length
+      var length = path.getTotalLength();
+      path.style.strokeDasharray = length;
+      path.style.strokeDashoffset = path.classList.contains('bp-drawn') ? '0' : length;
+    });
+  }
+
+  // ── Portfolio Connector Lines (Bezier curves between cards) ──
+
+  function calculatePortfolioConnectors() {
+    var svg = document.getElementById('portfolio-connectors');
+    var grid = document.getElementById('portfolio-grid');
+    if (!svg || !grid || window.innerWidth < 768) return;
+
+    var gridRect = grid.getBoundingClientRect();
+    var cards = grid.querySelectorAll('.bp-portfolio-card');
+    if (cards.length < 2) return;
+
+    // Remove old
+    var oldPaths = svg.querySelectorAll('path');
+    oldPaths.forEach(function(p) { p.remove(); });
+
+    svg.setAttribute('width', gridRect.width);
+    svg.setAttribute('height', gridRect.height);
+
+    for (var i = 0; i < cards.length - 1; i++) {
+      var fromRect = cards[i].getBoundingClientRect();
+      var toRect = cards[i + 1].getBoundingClientRect();
+
+      var startX = fromRect.right - gridRect.left;
+      var startY = fromRect.top + fromRect.height / 2 - gridRect.top;
+      var endX = toRect.left - gridRect.left;
+      var endY = toRect.top + toRect.height / 2 - gridRect.top;
+      var midX = (startX + endX) / 2;
+
+      var d = 'M ' + startX + ' ' + startY +
+              ' C ' + midX + ' ' + startY + ' ' + midX + ' ' + endY + ' ' + endX + ' ' + endY;
+
+      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', 'var(--bp-connector)');
+      path.setAttribute('stroke-width', '1.5');
+      path.setAttribute('stroke-dasharray', '6 4');
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('marker-start', 'url(#bp-pnode)');
+      path.setAttribute('marker-end', 'url(#bp-pnode)');
+      svg.appendChild(path);
+    }
+  }
+
+  // ── Init ──
+
+  function initConnectors() {
+    calculateConnectors();
+    calculatePortfolioConnectors();
+  }
+
+  // Run after fonts load for accurate measurements
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function() {
+      requestAnimationFrame(initConnectors);
+    });
+  } else {
+    window.addEventListener('load', initConnectors);
+  }
+
+  // Debounced resize
+  var resizeTimer;
+  window.addEventListener('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(initConnectors, 200);
+  });
+
+})();
+</script>
+
+</body>
+</html>

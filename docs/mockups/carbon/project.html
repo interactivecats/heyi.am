@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carbon Template — BudgetWise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Carbon Design Tokens ── */
+:root {
+  --carbon-bg:             #171717;
+  --carbon-surface:        #1f1f1f;
+  --carbon-card:           #262626;
+  --carbon-border:         rgba(148, 163, 184, 0.20);
+  --carbon-border-hover:   rgba(148, 163, 184, 0.45);
+  --carbon-accent:         #94a3b8;
+  --carbon-accent-dim:     rgba(148, 163, 184, 0.6);
+  --carbon-text:           #d4d4d8;
+  --carbon-text-secondary: #a1a1aa;
+  --carbon-text-muted:     #71717a;
+  --carbon-white:          #e4e4e7;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--carbon-text);
+  background-color: var(--carbon-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--carbon-accent); text-decoration: none; }
+a:hover { color: var(--carbon-white); }
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--carbon-accent);
+  color: var(--carbon-bg);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  z-index: 1000;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+.skip-link:focus { top: 1rem; }
+
+/* ── Page Shell ── */
+.carbon-page {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ── Navigation ── */
+.carbon-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block-end: 1.25rem;
+  border-bottom: 1px solid var(--carbon-border);
+  margin-block-end: 3rem;
+}
+
+.carbon-nav__brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--carbon-white);
+  letter-spacing: -0.02em;
+}
+
+.carbon-nav__links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+
+.carbon-nav__links a {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--carbon-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: color 0.2s;
+}
+.carbon-nav__links a:hover,
+.carbon-nav__links a[aria-current="page"] {
+  color: var(--carbon-accent);
+}
+
+/* ── Brushed Metal Texture ── */
+.brushed-header {
+  position: relative;
+  overflow: hidden;
+}
+.brushed-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 1px,
+    rgba(148, 163, 184, 0.03) 1px,
+    rgba(148, 163, 184, 0.03) 2px
+  );
+  pointer-events: none;
+}
+
+/* ── Fade-in ── */
+.fade-in {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in { opacity: 1; transform: none; transition: none; }
+  .card, .session-row { transition: none !important; }
+}
+
+/* ── Focus styles ── */
+*:focus-visible {
+  outline: 2px solid var(--carbon-accent);
+  outline-offset: 2px;
+}
+
+/* ── Breadcrumb ── */
+.breadcrumb {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--carbon-text-muted);
+  margin-block-end: 1.5rem;
+}
+.breadcrumb a { color: var(--carbon-text-muted); }
+.breadcrumb a:hover { color: var(--carbon-accent); }
+.breadcrumb__sep { margin-inline: 0.375rem; opacity: 0.4; }
+
+/* ── Project Header ── */
+.project-header {
+  margin-block-end: 2.5rem;
+}
+
+.project-header__title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--carbon-white);
+  letter-spacing: -0.03em;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5), 0 1px 0 rgba(148,163,184,0.1);
+}
+
+.project-header__links {
+  display: flex;
+  gap: 1.25rem;
+  margin-block-start: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+/* ── Screenshot Placeholder ── */
+.screenshot {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--carbon-border);
+  overflow: hidden;
+  margin-block-end: 2.5rem;
+}
+
+.screenshot__chrome {
+  background: var(--carbon-surface);
+  padding: 0.625rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--carbon-border);
+}
+
+.screenshot__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.15);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.screenshot__url {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--carbon-text-muted);
+  margin-inline-start: 0.5rem;
+}
+
+.screenshot__body {
+  height: 240px;
+  background: linear-gradient(135deg, var(--carbon-card) 0%, var(--carbon-surface) 50%, var(--carbon-card) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--carbon-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+/* ── Stats Bar ── */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
+  background: var(--carbon-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-block-end: 2.5rem;
+}
+
+.stat-cell {
+  background: var(--carbon-surface);
+  padding: 1rem 0.75rem;
+  text-align: center;
+}
+
+.stat-cell__value {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--carbon-white);
+  text-shadow: 0 1px 0 rgba(148,163,184,0.15), 0 -1px 0 rgba(0,0,0,0.4);
+  line-height: 1.2;
+}
+
+.stat-cell__label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--carbon-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-block-start: 0.25rem;
+}
+.stat-cell--leverage {
+  grid-column: span 2;
+  display: flex;
+  justify-content: space-evenly;
+  gap: 1rem;
+}
+.leverage-cell {
+  text-align: center;
+}
+.leverage-cell__value {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--carbon-white);
+  text-shadow: 0 1px 0 rgba(148,163,184,0.15), 0 -1px 0 rgba(0,0,0,0.4);
+  line-height: 1.2;
+}
+.leverage-cell__label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--carbon-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-block-start: 0.25rem;
+}
+
+/* ── Narrative ── */
+.narrative {
+  margin-block-end: 2.5rem;
+}
+
+.narrative p {
+  font-size: 0.9375rem;
+  color: var(--carbon-text-secondary);
+  line-height: 1.75;
+  margin-block-end: 1rem;
+}
+.narrative p:last-child { margin-block-end: 0; }
+
+/* ── Section Headings ── */
+.section-heading {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--carbon-white);
+  margin-block-end: 1.25rem;
+  letter-spacing: -0.01em;
+}
+
+/* ── Phase Timeline ── */
+.phase-timeline {
+  margin-block-end: 2.5rem;
+  position: relative;
+  padding-inline-start: 1.75rem;
+}
+
+.phase-timeline::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 6px;
+  bottom: 6px;
+  width: 1px;
+  background: linear-gradient(to bottom, var(--carbon-accent), rgba(148,163,184,0.15));
+}
+
+.phase-item {
+  position: relative;
+  margin-block-end: 1.5rem;
+}
+.phase-item:last-child { margin-block-end: 0; }
+
+.phase-item::before {
+  content: '';
+  position: absolute;
+  left: -1.75rem;
+  top: 6px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--carbon-bg);
+  border: 2px solid var(--carbon-accent);
+  box-shadow: 0 0 0 3px var(--carbon-bg), 0 0 8px rgba(148,163,184,0.2);
+}
+
+.phase-item__title {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--carbon-white);
+}
+
+.phase-item__dates {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--carbon-text-muted);
+  margin-block-start: 0.125rem;
+}
+
+.phase-item__desc {
+  font-size: 0.875rem;
+  color: var(--carbon-text-secondary);
+  margin-block-start: 0.375rem;
+}
+
+/* ── Work Timeline Chart ── */
+.timeline-chart {
+  margin-block-end: 2.5rem;
+}
+
+.timeline-chart__canvas {
+  width: 100%;
+  background: var(--carbon-surface);
+  border: 1px solid var(--carbon-border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+}
+
+.timeline-chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ── Key Decisions ── */
+.decisions {
+  margin-block-end: 2.5rem;
+}
+
+.decision-item {
+  display: flex;
+  gap: 0.75rem;
+  margin-block-end: 0.75rem;
+  font-size: 0.9375rem;
+  color: var(--carbon-text-secondary);
+  line-height: 1.6;
+}
+
+.decision-item__num {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--carbon-accent);
+  min-width: 1.5rem;
+  padding-block-start: 0.125rem;
+}
+
+/* ── Skills ── */
+.skill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  list-style: none;
+  margin-block-end: 2.5rem;
+}
+
+.skill-chip {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--carbon-accent);
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.02em;
+}
+
+/* ── Source Breakdown ── */
+.source-breakdown {
+  margin-block-end: 2.5rem;
+}
+
+.source-bar-lg {
+  display: flex;
+  height: 8px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: rgba(148, 163, 184, 0.06);
+  margin-block-end: 0.75rem;
+}
+
+.source-bar-lg__segment { height: 100%; }
+.source-bar-lg__segment--claude { background: var(--carbon-accent); }
+.source-bar-lg__segment--cursor { background: rgba(148, 163, 184, 0.3); }
+
+.source-labels {
+  display: flex;
+  gap: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--carbon-text-muted);
+}
+
+.source-labels__dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-inline-end: 0.375rem;
+  vertical-align: middle;
+}
+.source-labels__dot--claude { background: var(--carbon-accent); }
+.source-labels__dot--cursor { background: rgba(148, 163, 184, 0.3); }
+
+/* ── Sessions Table ── */
+.sessions-table {
+  margin-block-end: 2.5rem;
+}
+
+.session-row {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto auto auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.875rem 1rem;
+  background: var(--carbon-card);
+  border: 1px solid var(--carbon-border);
+  border-radius: var(--radius-sm);
+  margin-block-end: 0.5rem;
+  transition: border-color 0.2s;
+}
+.session-row:hover { border-color: var(--carbon-border-hover); }
+
+.session-row__num {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--carbon-text-muted);
+}
+
+.session-row__title {
+  font-size: 0.875rem;
+  color: var(--carbon-text);
+}
+.session-row__title a { color: inherit; }
+.session-row__title a:hover { color: var(--carbon-accent); }
+
+.session-row__date,
+.session-row__dur,
+.session-row__loc {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--carbon-text-muted);
+  white-space: nowrap;
+}
+
+/* ── Footer ── */
+.carbon-footer {
+  margin-block-start: 4rem;
+  padding-block-start: 1.5rem;
+  border-top: 1px solid var(--carbon-border);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--carbon-text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .carbon-page { padding: 1.25rem 1rem; }
+  .carbon-nav { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+  .project-header__title { font-size: 1.5rem; }
+  .stats-bar { grid-template-columns: repeat(3, 1fr); }
+  .session-row {
+    grid-template-columns: 1fr;
+    gap: 0.375rem;
+  }
+  .session-row__num { display: none; }
+  .session-row__date, .session-row__dur, .session-row__loc {
+    font-size: 0.6875rem;
+  }
+  .carbon-footer { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+}
+
+@media (max-width: 480px) {
+  .stats-bar { grid-template-columns: repeat(2, 1fr); }
+  .project-header__title { font-size: 1.25rem; }
+}
+
+    /* ── Clickable session cards ── */
+    a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<div class="carbon-page">
+
+  <!-- Navigation -->
+  <nav class="carbon-nav" aria-label="Main navigation">
+    <a href="./portfolio.html" class="carbon-nav__brand">@alex</a>
+    <ul class="carbon-nav__links">
+      <li><a href="./portfolio.html">Portfolio</a></li>
+      <li><a href="./project.html" aria-current="page">Project</a></li>
+      <li><a href="./session.html">Session</a></li>
+    </ul>
+  </nav>
+
+  <main id="main-content">
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="./portfolio.html">alex</a>
+      <span class="breadcrumb__sep">/</span>
+      <span aria-current="page">budgetwise</span>
+    </nav>
+
+    <!-- Project Header -->
+    <header class="project-header fade-in">
+      <h1 class="project-header__title">BudgetWise</h1>
+      <div class="project-header__links">
+        <a href="https://github.com/alex/budgetwise" aria-label="GitHub repository">github.com/alex/budgetwise</a>
+        <a href="https://budgetwise.app" aria-label="Live site">budgetwise.app</a>
+      </div>
+    </header>
+
+    <!-- Screenshot -->
+    <figure class="screenshot fade-in" aria-label="Application screenshot">
+      <div class="screenshot__chrome">
+        <span class="screenshot__dot"></span>
+        <span class="screenshot__dot"></span>
+        <span class="screenshot__dot"></span>
+        <span class="screenshot__url">budgetwise.app</span>
+      </div>
+      <div class="screenshot__body" role="img" aria-label="Gradient placeholder for application screenshot">
+        [ screenshot ]
+      </div>
+    </figure>
+
+    <!-- Stats -->
+    <section class="stats-bar fade-in" aria-label="Project statistics">
+      <div class="stat-cell">
+        <div class="stat-cell__value" data-count="8">0</div>
+        <div class="stat-cell__label">Sessions</div>
+      </div>
+      <div class="stat-cell stat-cell--leverage">
+        <div class="leverage-cell">
+          <div class="leverage-cell__value">8.1h</div>
+          <div class="leverage-cell__label">You</div>
+        </div>
+        <div class="leverage-cell">
+          <div class="leverage-cell__value">34.4h</div>
+          <div class="leverage-cell__label">Agents</div>
+        </div>
+        <div class="leverage-cell">
+          <div class="leverage-cell__value">4.2&times;</div>
+          <div class="leverage-cell__label">Multiplier</div>
+        </div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell__value" data-count="4460">0</div>
+        <div class="stat-cell__label">LOC</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell__value" data-count="156">0</div>
+        <div class="stat-cell__label">Files</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell__value">2.1M</div>
+        <div class="stat-cell__label">Tokens</div>
+      </div>
+    </section>
+
+    <!-- Narrative -->
+    <section class="narrative fade-in" aria-label="Project narrative">
+      <h2 class="section-heading">Narrative</h2>
+      <p>Started with a basic Prisma schema but realized halfway through that I needed polymorphic transaction types. The AI kept suggesting single-table inheritance but I pushed back -- went with a discriminated union pattern instead. Nullable fields for transfer-specific data, hard deletes with an audit log.</p>
+      <p>The recurring transaction detection was the hardest part. Had to figure out the right tolerance windows -- monthly transactions drift by a few days, weekly ones are more precise. Settled on three consecutive interval matches before marking something as recurring. The partial index on merchant_normalized brought the detection query from 2 seconds to 120ms on 10k transactions.</p>
+      <p>Plaid integration went smoother than expected. The token exchange flow is straightforward, but the webhook handling needed careful idempotency -- Plaid sends duplicate webhooks, so I used a processed-events table keyed on webhook ID.</p>
+    </section>
+
+    <!-- Phase Timeline -->
+    <section class="fade-in" aria-label="Project phases">
+      <h2 class="section-heading">Phases</h2>
+      <div class="phase-timeline">
+        <div class="phase-item">
+          <div class="phase-item__title">1. Foundation</div>
+          <div class="phase-item__dates">Feb 3 -- 14</div>
+          <div class="phase-item__desc">Schema design, Prisma setup, transaction CRUD</div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-item__title">2. Data Pipeline</div>
+          <div class="phase-item__dates">Feb 17 -- 26</div>
+          <div class="phase-item__desc">CSV import, Plaid integration, recurring detection</div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-item__title">3. Intelligence</div>
+          <div class="phase-item__dates">Mar 1 -- 14</div>
+          <div class="phase-item__desc">Search, full-text indexing, spending insights</div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-item__title">4. Hardening</div>
+          <div class="phase-item__dates">Mar 16 -- 26</div>
+          <div class="phase-item__desc">2FA, mobile responsive, CI/CD, performance</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Work Timeline Chart (SVG) -->
+    <section class="timeline-chart fade-in" aria-label="Work timeline">
+      <h2 class="section-heading">Work Timeline</h2>
+      <div class="timeline-chart__canvas">
+        <svg viewBox="0 0 800 200" aria-label="Chart showing session duration and lines of code over time">
+          <!-- Grid lines -->
+          <line x1="50" y1="20" x2="50" y2="170" stroke="rgba(148,163,184,0.08)" stroke-width="1"/>
+          <line x1="50" y1="170" x2="770" y2="170" stroke="rgba(148,163,184,0.15)" stroke-width="1"/>
+          <line x1="50" y1="120" x2="770" y2="120" stroke="rgba(148,163,184,0.06)" stroke-width="1" stroke-dasharray="4,4"/>
+          <line x1="50" y1="70" x2="770" y2="70" stroke="rgba(148,163,184,0.06)" stroke-width="1" stroke-dasharray="4,4"/>
+
+          <!-- Y-axis labels -->
+          <text x="44" y="174" text-anchor="end" fill="#71717a" font-family="IBM Plex Mono, monospace" font-size="9">0</text>
+          <text x="44" y="124" text-anchor="end" fill="#71717a" font-family="IBM Plex Mono, monospace" font-size="9">45m</text>
+          <text x="44" y="74" text-anchor="end" fill="#71717a" font-family="IBM Plex Mono, monospace" font-size="9">90m</text>
+
+          <!-- Duration line -->
+          <polyline
+            fill="none"
+            stroke="#94a3b8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            points="100,50 200,58 300,28 400,78 475,90 550,62 640,42 720,80"
+          />
+
+          <!-- Data points -->
+          <circle cx="100" cy="50" r="5" fill="#171717" stroke="#94a3b8" stroke-width="2"/>
+          <circle cx="200" cy="58" r="5" fill="#171717" stroke="#94a3b8" stroke-width="2"/>
+          <circle cx="300" cy="28" r="5" fill="#171717" stroke="#94a3b8" stroke-width="2"/>
+          <circle cx="400" cy="78" r="5" fill="#171717" stroke="#94a3b8" stroke-width="2"/>
+          <circle cx="475" cy="90" r="5" fill="#171717" stroke="#94a3b8" stroke-width="2"/>
+          <circle cx="550" cy="62" r="5" fill="#171717" stroke="#94a3b8" stroke-width="2"/>
+          <circle cx="640" cy="42" r="5" fill="#171717" stroke="#94a3b8" stroke-width="2"/>
+          <circle cx="720" cy="80" r="5" fill="#171717" stroke="#94a3b8" stroke-width="2"/>
+
+          <!-- X-axis labels -->
+          <text x="100" y="190" text-anchor="middle" fill="#71717a" font-family="IBM Plex Mono, monospace" font-size="8">Feb 3</text>
+          <text x="200" y="190" text-anchor="middle" fill="#71717a" font-family="IBM Plex Mono, monospace" font-size="8">Feb 14</text>
+          <text x="300" y="190" text-anchor="middle" fill="#71717a" font-family="IBM Plex Mono, monospace" font-size="8">Mar 1</text>
+          <text x="400" y="190" text-anchor="middle" fill="#71717a" font-family="IBM Plex Mono, monospace" font-size="8">Mar 10</text>
+          <text x="475" y="190" text-anchor="middle" fill="#71717a" font-family="IBM Plex Mono, monospace" font-size="8">Mar 14</text>
+          <text x="550" y="190" text-anchor="middle" fill="#71717a" font-family="IBM Plex Mono, monospace" font-size="8">Mar 18</text>
+          <text x="640" y="190" text-anchor="middle" fill="#71717a" font-family="IBM Plex Mono, monospace" font-size="8">Mar 22</text>
+          <text x="720" y="190" text-anchor="middle" fill="#71717a" font-family="IBM Plex Mono, monospace" font-size="8">Mar 26</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Key Decisions -->
+    <section class="decisions fade-in" aria-label="Key decisions">
+      <h2 class="section-heading">Key Decisions</h2>
+      <div class="decision-item">
+        <span class="decision-item__num">01</span>
+        <span>Discriminated union over single-table inheritance for transaction types</span>
+      </div>
+      <div class="decision-item">
+        <span class="decision-item__num">02</span>
+        <span>Partial index on merchant_normalized for 16x query speedup</span>
+      </div>
+      <div class="decision-item">
+        <span class="decision-item__num">03</span>
+        <span>Processed-events table for Plaid webhook idempotency</span>
+      </div>
+    </section>
+
+    <!-- Skills -->
+    <section class="fade-in" aria-label="Technologies used">
+      <h2 class="section-heading">Skills</h2>
+      <ul class="skill-list">
+        <li class="skill-chip">TypeScript</li>
+        <li class="skill-chip">React</li>
+        <li class="skill-chip">Next.js</li>
+        <li class="skill-chip">Prisma</li>
+        <li class="skill-chip">PostgreSQL</li>
+        <li class="skill-chip">Tailwind CSS</li>
+        <li class="skill-chip">Stripe API</li>
+        <li class="skill-chip">Plaid API</li>
+        <li class="skill-chip">Chart.js</li>
+        <li class="skill-chip">Playwright</li>
+      </ul>
+    </section>
+
+    <!-- Source Breakdown -->
+    <section class="source-breakdown fade-in" aria-label="Source breakdown">
+      <h2 class="section-heading">Source Breakdown</h2>
+      <div class="source-bar-lg" role="img" aria-label="Claude Code 62.5%, Cursor 37.5%">
+        <div class="source-bar-lg__segment source-bar-lg__segment--claude" style="width: 62.5%"></div>
+        <div class="source-bar-lg__segment source-bar-lg__segment--cursor" style="width: 37.5%"></div>
+      </div>
+      <div class="source-labels">
+        <span><span class="source-labels__dot source-labels__dot--claude"></span>Claude Code 62.5% (5 sessions)</span>
+        <span><span class="source-labels__dot source-labels__dot--cursor"></span>Cursor 37.5% (3 sessions)</span>
+      </div>
+    </section>
+
+    <!-- Sessions Table -->
+    <section class="sessions-table fade-in" aria-label="Sessions">
+      <h2 class="section-heading">Sessions</h2>
+
+      <div class="session-row" role="row">
+        <span class="session-row__num">1</span>
+        <span class="session-row__title"><a href="./session.html">Set up Prisma schema</a></span>
+        <span class="session-row__date">Feb 3</span>
+        <span class="session-row__dur">72m</span>
+        <span class="session-row__loc">680 LOC</span>
+      </div>
+
+      <div class="session-row" role="row">
+        <span class="session-row__num">2</span>
+        <span class="session-row__title"><a href="./session.html">Transaction list + infinite scroll</a></span>
+        <span class="session-row__date">Feb 14</span>
+        <span class="session-row__dur">65m</span>
+        <span class="session-row__loc">520 LOC</span>
+      </div>
+
+      <div class="session-row" role="row">
+        <span class="session-row__num">3</span>
+        <span class="session-row__title"><a href="./session.html">Recurring transaction detection</a></span>
+        <span class="session-row__date">Mar 1</span>
+        <span class="session-row__dur">88m</span>
+        <span class="session-row__loc">890 LOC</span>
+      </div>
+
+      <div class="session-row" role="row">
+        <span class="session-row__num">4</span>
+        <span class="session-row__title"><a href="./session.html">Stripe integration</a></span>
+        <span class="session-row__date">Mar 10</span>
+        <span class="session-row__dur">55m</span>
+        <span class="session-row__loc">420 LOC</span>
+      </div>
+
+      <div class="session-row" role="row">
+        <span class="session-row__num">5</span>
+        <span class="session-row__title"><a href="./session.html">CSV import pipeline</a></span>
+        <span class="session-row__date">Mar 14</span>
+        <span class="session-row__dur">45m</span>
+        <span class="session-row__loc">380 LOC</span>
+      </div>
+
+      <div class="session-row" role="row">
+        <span class="session-row__num">6</span>
+        <span class="session-row__title"><a href="./session.html">Full-text search tsvector</a></span>
+        <span class="session-row__date">Mar 18</span>
+        <span class="session-row__dur">62m</span>
+        <span class="session-row__loc">510 LOC</span>
+      </div>
+
+      <div class="session-row" role="row">
+        <span class="session-row__num">7</span>
+        <span class="session-row__title"><a href="./session.html">Spending insights dashboard</a></span>
+        <span class="session-row__date">Mar 22</span>
+        <span class="session-row__dur">78m</span>
+        <span class="session-row__loc">720 LOC</span>
+      </div>
+
+      <div class="session-row" role="row">
+        <span class="session-row__num">8</span>
+        <span class="session-row__title"><a href="./session.html">Mobile responsive + 2FA</a></span>
+        <span class="session-row__date">Mar 26</span>
+        <span class="session-row__dur">50m</span>
+        <span class="session-row__loc">340 LOC</span>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="carbon-footer">
+    <span>Built with heyi.am</span>
+    <span>Carbon template</span>
+  </footer>
+
+</div>
+
+<script>
+/* ── Intersection Observer for fade-in ── */
+(function() {
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var els = document.querySelectorAll('.fade-in');
+
+  if (prefersReduced) {
+    els.forEach(function(el) { el.classList.add('visible'); });
+    return;
+  }
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  els.forEach(function(el, i) {
+    el.style.transitionDelay = (i * 0.08) + 's';
+    observer.observe(el);
+  });
+})();
+
+/* ── Stat Counter Animation ── */
+(function() {
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var cells = document.querySelectorAll('.stat-cell__value[data-count]');
+
+  if (prefersReduced) {
+    cells.forEach(function(el) {
+      var target = parseInt(el.getAttribute('data-count'), 10);
+      el.textContent = target >= 1000 ? target.toLocaleString() : target;
+    });
+    return;
+  }
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (!entry.isIntersecting) return;
+      var el = entry.target;
+      var target = parseInt(el.getAttribute('data-count'), 10);
+      var duration = 1200;
+      var start = null;
+
+      function step(timestamp) {
+        if (!start) start = timestamp;
+        var progress = Math.min((timestamp - start) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        var current = Math.round(eased * target);
+        el.textContent = current >= 1000 ? current.toLocaleString() : current;
+        if (progress < 1) requestAnimationFrame(step);
+      }
+
+      requestAnimationFrame(step);
+      observer.unobserve(el);
+    });
+  }, { threshold: 0.3 });
+
+  cells.forEach(function(el) { observer.observe(el); });
+})();
+</script>
+
+</body>
+</html>

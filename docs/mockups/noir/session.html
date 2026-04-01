@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noir Template — Set up Prisma schema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Noir Design Tokens ── */
+:root {
+  --noir-bg:              #000000;
+  --noir-surface:         #0a0a0a;
+  --noir-card:            #141414;
+  --noir-border:          #2a2a2a;
+  --noir-border-strong:   #404040;
+  --noir-text:            #e5e5e5;
+  --noir-text-secondary:  #a3a3a3;
+  --noir-text-muted:      #737373;
+  --noir-white:           #ffffff;
+  --noir-highlight:       #e5e5e5;
+  --noir-rule:            #333333;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+
+  --radius: 0px;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--noir-text);
+  background-color: var(--noir-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--noir-text); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--noir-white);
+  color: var(--noir-bg);
+  padding: 0.5rem 1rem;
+  z-index: 1000;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+.skip-link:focus { top: 1rem; }
+
+/* ── Page Shell ── */
+.noir-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ── Navigation ── */
+.noir-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block-end: 1.5rem;
+  border-bottom: 1px solid var(--noir-rule);
+  margin-block-end: 3rem;
+}
+
+.noir-nav__brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--noir-white);
+  letter-spacing: -0.02em;
+}
+
+.noir-nav__links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+
+.noir-nav__links a {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--noir-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: color 0.2s;
+}
+.noir-nav__links a:hover,
+.noir-nav__links a[aria-current="page"] {
+  color: var(--noir-white);
+  text-decoration: none;
+}
+
+/* ── Section Fade-in ── */
+.noir-section {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-block-end: 3rem;
+}
+.noir-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Horizontal Rule Divider ── */
+.noir-rule {
+  border: none;
+  height: 1px;
+  background: var(--noir-rule);
+  margin-block: 3rem;
+}
+
+/* ── Section Headers ── */
+.noir-heading {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--noir-white);
+  letter-spacing: -0.02em;
+  margin-block-end: 1.5rem;
+}
+
+/* ── Breadcrumb ── */
+.noir-breadcrumb {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--noir-text-muted);
+  margin-block-end: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.noir-breadcrumb a { color: var(--noir-text-secondary); }
+.noir-breadcrumb a:hover { color: var(--noir-white); }
+.noir-breadcrumb__sep { color: var(--noir-border-strong); }
+
+/* ── Session Header ── */
+.noir-session-header {
+  margin-block-end: 2rem;
+}
+
+.noir-session-header__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 4.5vw, 2.75rem);
+  color: var(--noir-white);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-block-end: 1.25rem;
+}
+
+.noir-session-header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--noir-text-muted);
+}
+
+.noir-session-header__meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.noir-session-header__meta-value {
+  color: var(--noir-text);
+}
+
+/* ── Dev Take ── */
+.noir-dev-take {
+  background: var(--noir-surface);
+  border-left: 3px solid var(--noir-white);
+  padding: 1.25rem 1.5rem;
+  margin-block-end: 0;
+}
+
+.noir-dev-take__label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--noir-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-block-end: 0.5rem;
+}
+
+.noir-dev-take__text {
+  font-size: 1rem;
+  color: var(--noir-text-secondary);
+  line-height: 1.7;
+  font-style: italic;
+}
+
+/* ── Stats Row ── */
+.noir-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--noir-border);
+  border: 1px solid var(--noir-border);
+}
+
+.noir-stat-cell {
+  background: var(--noir-surface);
+  padding: 1.25rem 1rem;
+  text-align: center;
+}
+
+.noir-stat-cell__value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--noir-white);
+  line-height: 1.1;
+  display: block;
+}
+
+.noir-stat-cell__label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--noir-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-block-start: 0.375rem;
+  display: block;
+}
+
+/* ── Main Content + Sidebar Layout ── */
+.noir-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 3rem;
+  align-items: start;
+}
+
+/* ── Execution Path (Beats) ── */
+.noir-beats {
+  list-style: none;
+  counter-reset: beat;
+}
+
+.noir-beat {
+  counter-increment: beat;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--noir-border);
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 1rem;
+}
+.noir-beat:first-child { border-top: 1px solid var(--noir-border); }
+
+.noir-beat__number {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.75rem;
+  color: var(--noir-white);
+  line-height: 1;
+  text-align: center;
+}
+
+.noir-beat__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  color: var(--noir-white);
+  margin-block-end: 0.375rem;
+}
+
+.noir-beat__desc {
+  font-size: 0.9375rem;
+  color: var(--noir-text-secondary);
+  line-height: 1.7;
+}
+
+/* ── Q&A ── */
+.noir-qa-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.noir-qa {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--noir-border);
+}
+.noir-qa:first-child { border-top: 1px solid var(--noir-border); }
+
+.noir-qa__question {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--noir-white);
+  margin-block-end: 0.75rem;
+  line-height: 1.5;
+}
+
+.noir-qa__answer {
+  font-size: 0.9375rem;
+  color: var(--noir-text-secondary);
+  line-height: 1.7;
+}
+
+/* ── Agent Summary ── */
+.noir-agents {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.noir-agent-row {
+  display: grid;
+  grid-template-columns: 1fr 80px 60px;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--noir-border);
+}
+.noir-agent-row:first-child { border-top: 1px solid var(--noir-border); }
+
+.noir-agent-row__role {
+  font-size: 0.9375rem;
+  color: var(--noir-text);
+  font-weight: 500;
+}
+
+.noir-agent-row__duration {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--noir-text-muted);
+  text-align: right;
+}
+
+.noir-agent-row__loc {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--noir-text-muted);
+  text-align: right;
+}
+
+/* ── Agent Bar Chart ── */
+.noir-agent-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-block-start: 1rem;
+}
+
+.noir-agent-bar-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 40px;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.noir-agent-bar-row__label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--noir-text-muted);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.noir-agent-bar-row__track {
+  height: 16px;
+  background: var(--noir-surface);
+  position: relative;
+}
+
+.noir-agent-bar-row__fill {
+  height: 100%;
+  background: var(--noir-white);
+  position: absolute;
+  left: 0;
+  top: 0;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.noir-agent-bar-row__value {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--noir-text-muted);
+  text-align: right;
+}
+
+/* ── Sidebar ── */
+.noir-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.noir-sidebar-section {
+  background: var(--noir-surface);
+  border: 1px solid var(--noir-border);
+  padding: 1.25rem;
+}
+
+.noir-sidebar-section__title {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--noir-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-block-end: 1rem;
+  padding-block-end: 0.75rem;
+  border-bottom: 1px solid var(--noir-border);
+}
+
+/* ── Tool Usage Table ── */
+.noir-tool-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.noir-tool-table tr {
+  border-bottom: 1px solid var(--noir-border);
+}
+.noir-tool-table tr:last-child { border-bottom: none; }
+
+.noir-tool-table td {
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+.noir-tool-table td:first-child {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--noir-text);
+}
+
+.noir-tool-table td:last-child {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--noir-text-muted);
+  text-align: right;
+}
+
+/* ── File Changes ── */
+.noir-file-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.noir-file-item {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--noir-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.noir-file-item:last-child { border-bottom: none; }
+
+.noir-file-item__name {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.noir-file-item__diff {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Skills chips ── */
+.noir-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.noir-chip {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text);
+  border: 1px solid var(--noir-border-strong);
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius);
+  white-space: nowrap;
+}
+
+/* ── Footer ── */
+.noir-footer {
+  border-top: 1px solid var(--noir-rule);
+  padding-block-start: 2rem;
+  margin-block-start: 3rem;
+  text-align: center;
+}
+
+.noir-footer__text {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--noir-text-muted);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .noir-page { padding: 1.25rem 1rem; }
+  .noir-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  .noir-sidebar { order: -1; }
+  .noir-stats-row { grid-template-columns: repeat(2, 1fr); }
+  .noir-beat { grid-template-columns: 36px 1fr; }
+  .noir-agent-bar-row { grid-template-columns: 80px 1fr 36px; }
+  .noir-nav__links { gap: 1rem; }
+  .noir-session-header__meta { gap: 1rem; }
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .noir-section {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .noir-agent-bar-row__fill { transition: none; }
+}
+
+/* ── Focus Styles ── */
+:focus-visible {
+  outline: 2px solid var(--noir-white);
+  outline-offset: 2px;
+}
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<div class="noir-page">
+
+  <!-- Navigation -->
+  <nav class="noir-nav" aria-label="Main navigation">
+    <a href="./portfolio.html" class="noir-nav__brand">heyi.am/alex</a>
+    <ul class="noir-nav__links" role="list">
+      <li><a href="./portfolio.html">Portfolio</a></li>
+      <li><a href="./project.html">Project</a></li>
+      <li><a href="./session.html" aria-current="page">Session</a></li>
+    </ul>
+  </nav>
+
+  <main id="main-content">
+
+    <!-- Breadcrumb -->
+    <nav class="noir-breadcrumb" aria-label="Breadcrumb">
+      <a href="./portfolio.html">alex</a>
+      <span class="noir-breadcrumb__sep">/</span>
+      <a href="./project.html">budgetwise</a>
+      <span class="noir-breadcrumb__sep">/</span>
+      <span>Set up Prisma schema</span>
+    </nav>
+
+    <!-- Session Header -->
+    <section class="noir-section noir-session-header" aria-label="Session header">
+      <h1 class="noir-session-header__title">Set up Prisma schema with User, Account, and Transaction models</h1>
+      <div class="noir-session-header__meta">
+        <span class="noir-session-header__meta-item">
+          <span class="noir-session-header__meta-value">February 3, 2026</span>
+        </span>
+        <span class="noir-session-header__meta-item">
+          Source: <span class="noir-session-header__meta-value">Claude Code</span>
+        </span>
+      </div>
+    </section>
+
+    <!-- Dev Take -->
+    <section class="noir-section" aria-label="Developer take">
+      <div class="noir-dev-take">
+        <p class="noir-dev-take__label">Dev Take</p>
+        <p class="noir-dev-take__text">"Went with discriminated unions over STI &mdash; nullable columns everywhere felt wrong. The audit log instead of soft deletes was the right call too."</p>
+      </div>
+    </section>
+
+    <hr class="noir-rule">
+
+    <!-- Stats -->
+    <section class="noir-section" aria-label="Session statistics">
+      <div class="noir-stats-row" role="list">
+        <div class="noir-stat-cell" role="listitem">
+          <span class="noir-stat-cell__value" data-target-text="72m">--</span>
+          <span class="noir-stat-cell__label">Duration</span>
+        </div>
+        <div class="noir-stat-cell" role="listitem">
+          <span class="noir-stat-cell__value" data-target="45">0</span>
+          <span class="noir-stat-cell__label">Turns</span>
+        </div>
+        <div class="noir-stat-cell" role="listitem">
+          <span class="noir-stat-cell__value" data-target="680">0</span>
+          <span class="noir-stat-cell__label">LOC</span>
+        </div>
+        <div class="noir-stat-cell" role="listitem">
+          <span class="noir-stat-cell__value" data-target="4">0</span>
+          <span class="noir-stat-cell__label">Files Changed</span>
+        </div>
+      </div>
+    </section>
+
+    <hr class="noir-rule">
+
+    <!-- Main Content + Sidebar -->
+    <div class="noir-layout">
+
+      <!-- Main Column -->
+      <div>
+
+        <!-- Execution Path -->
+        <section class="noir-section" aria-label="Execution path">
+          <h2 class="noir-heading">Execution Path</h2>
+          <ol class="noir-beats">
+            <li class="noir-beat">
+              <span class="noir-beat__number">01</span>
+              <div>
+                <h3 class="noir-beat__title">Schema design</h3>
+                <p class="noir-beat__desc">Sketched out the core models &mdash; User, Account, Transaction. Decided on a discriminated union for transaction types instead of STI.</p>
+              </div>
+            </li>
+            <li class="noir-beat">
+              <span class="noir-beat__number">02</span>
+              <div>
+                <h3 class="noir-beat__title">Prisma setup</h3>
+                <p class="noir-beat__desc">Initialized Prisma with PostgreSQL, wrote the schema file with proper relations and indexes.</p>
+              </div>
+            </li>
+            <li class="noir-beat">
+              <span class="noir-beat__number">03</span>
+              <div>
+                <h3 class="noir-beat__title">Migration</h3>
+                <p class="noir-beat__desc">Ran the initial migration, fixed a cascade delete issue on Account to Transaction.</p>
+              </div>
+            </li>
+            <li class="noir-beat">
+              <span class="noir-beat__number">04</span>
+              <div>
+                <h3 class="noir-beat__title">Seed data</h3>
+                <p class="noir-beat__desc">Created a seed script with realistic test data &mdash; multiple accounts, mixed transaction types.</p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <hr class="noir-rule">
+
+        <!-- Q&A -->
+        <section class="noir-section" aria-label="Questions and answers">
+          <h2 class="noir-heading">Q&amp;A</h2>
+          <div class="noir-qa-list">
+            <article class="noir-qa">
+              <h3 class="noir-qa__question">Why did you choose a discriminated union over single-table inheritance for transaction types?</h3>
+              <p class="noir-qa__answer">STI would have left nullable columns everywhere &mdash; transferTo only makes sense for transfers, recurringSchedule only for recurring. The union pattern keeps each type clean and the TypeScript compiler catches missing fields.</p>
+            </article>
+            <article class="noir-qa">
+              <h3 class="noir-qa__question">How does the cascade delete work between Account and Transaction?</h3>
+              <p class="noir-qa__answer">Deleting an account cascades to its transactions. Initially had it set to restrict, but that made account cleanup impossible without manual transaction deletion first.</p>
+            </article>
+          </div>
+        </section>
+
+        <hr class="noir-rule">
+
+        <!-- Agent Summary -->
+        <section class="noir-section" aria-label="Agent summary">
+          <h2 class="noir-heading">Agent Summary</h2>
+          <p style="font-family: var(--font-mono); font-size: 0.8125rem; color: var(--noir-text-muted); margin-block-end: 1.25rem;">7 sub-sessions</p>
+
+          <!-- Agent table -->
+          <div class="noir-agents" role="table" aria-label="Agent breakdown">
+            <div class="noir-agent-row" role="row">
+              <span class="noir-agent-row__role" role="cell">backend-dev</span>
+              <span class="noir-agent-row__duration" role="cell">25m</span>
+              <span class="noir-agent-row__loc" role="cell">280 LOC</span>
+            </div>
+            <div class="noir-agent-row" role="row">
+              <span class="noir-agent-row__role" role="cell">qa-engineer</span>
+              <span class="noir-agent-row__duration" role="cell">18m</span>
+              <span class="noir-agent-row__loc" role="cell">190 LOC</span>
+            </div>
+            <div class="noir-agent-row" role="row">
+              <span class="noir-agent-row__role" role="cell">frontend-dev</span>
+              <span class="noir-agent-row__duration" role="cell">15m</span>
+              <span class="noir-agent-row__loc" role="cell">125 LOC</span>
+            </div>
+            <div class="noir-agent-row" role="row">
+              <span class="noir-agent-row__role" role="cell">security-engineer</span>
+              <span class="noir-agent-row__duration" role="cell">12m</span>
+              <span class="noir-agent-row__loc" role="cell">85 LOC</span>
+            </div>
+            <div class="noir-agent-row" role="row">
+              <span class="noir-agent-row__role" role="cell">code-reviewer</span>
+              <span class="noir-agent-row__duration" role="cell">8m</span>
+              <span class="noir-agent-row__loc" role="cell">0 LOC</span>
+            </div>
+          </div>
+
+          <!-- Agent bar chart (white bars on black) -->
+          <div class="noir-agent-bars" aria-label="Agent duration chart">
+            <div class="noir-agent-bar-row">
+              <span class="noir-agent-bar-row__label">backend-dev</span>
+              <div class="noir-agent-bar-row__track">
+                <div class="noir-agent-bar-row__fill" style="width: 0%;" data-width="100%"></div>
+              </div>
+              <span class="noir-agent-bar-row__value">25m</span>
+            </div>
+            <div class="noir-agent-bar-row">
+              <span class="noir-agent-bar-row__label">qa-engineer</span>
+              <div class="noir-agent-bar-row__track">
+                <div class="noir-agent-bar-row__fill" style="width: 0%;" data-width="72%"></div>
+              </div>
+              <span class="noir-agent-bar-row__value">18m</span>
+            </div>
+            <div class="noir-agent-bar-row">
+              <span class="noir-agent-bar-row__label">frontend-dev</span>
+              <div class="noir-agent-bar-row__track">
+                <div class="noir-agent-bar-row__fill" style="width: 0%;" data-width="60%"></div>
+              </div>
+              <span class="noir-agent-bar-row__value">15m</span>
+            </div>
+            <div class="noir-agent-bar-row">
+              <span class="noir-agent-bar-row__label">security-eng</span>
+              <div class="noir-agent-bar-row__track">
+                <div class="noir-agent-bar-row__fill" style="width: 0%;" data-width="48%"></div>
+              </div>
+              <span class="noir-agent-bar-row__value">12m</span>
+            </div>
+            <div class="noir-agent-bar-row">
+              <span class="noir-agent-bar-row__label">code-reviewer</span>
+              <div class="noir-agent-bar-row__track">
+                <div class="noir-agent-bar-row__fill" style="width: 0%;" data-width="32%"></div>
+              </div>
+              <span class="noir-agent-bar-row__value">8m</span>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="noir-sidebar" aria-label="Session details">
+
+        <!-- Tools Used -->
+        <div class="noir-sidebar-section">
+          <h2 class="noir-sidebar-section__title">Tools Used</h2>
+          <table class="noir-tool-table" aria-label="Tool usage counts">
+            <tbody>
+              <tr>
+                <td>Edit</td>
+                <td>18</td>
+              </tr>
+              <tr>
+                <td>Read</td>
+                <td>12</td>
+              </tr>
+              <tr>
+                <td>Bash</td>
+                <td>9</td>
+              </tr>
+              <tr>
+                <td>Write</td>
+                <td>4</td>
+              </tr>
+              <tr>
+                <td>Grep</td>
+                <td>2</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Files Changed -->
+        <div class="noir-sidebar-section">
+          <h2 class="noir-sidebar-section__title">Files Changed</h2>
+          <ul class="noir-file-list" aria-label="Changed files">
+            <li class="noir-file-item">
+              <span class="noir-file-item__name" title="prisma/schema.prisma">prisma/schema.prisma</span>
+              <span class="noir-file-item__diff">+142</span>
+            </li>
+            <li class="noir-file-item">
+              <span class="noir-file-item__name" title="prisma/seed.ts">prisma/seed.ts</span>
+              <span class="noir-file-item__diff">+89</span>
+            </li>
+            <li class="noir-file-item">
+              <span class="noir-file-item__name" title="prisma/migrations/20260203_init/migration.sql">migrations/.../migration.sql</span>
+              <span class="noir-file-item__diff">+415</span>
+            </li>
+            <li class="noir-file-item">
+              <span class="noir-file-item__name" title="src/lib/db.ts">src/lib/db.ts</span>
+              <span class="noir-file-item__diff">+34</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Skills -->
+        <div class="noir-sidebar-section">
+          <h2 class="noir-sidebar-section__title">Skills</h2>
+          <div class="noir-chips">
+            <span class="noir-chip">TypeScript</span>
+            <span class="noir-chip">Prisma</span>
+            <span class="noir-chip">PostgreSQL</span>
+          </div>
+        </div>
+
+      </aside>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="noir-footer">
+    <p class="noir-footer__text">Built with heyi.am</p>
+  </footer>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Section fade-in on scroll
+  var sections = document.querySelectorAll('.noir-section');
+
+  if (prefersReducedMotion) {
+    sections.forEach(function(s) { s.classList.add('visible'); });
+  } else {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    sections.forEach(function(s) { observer.observe(s); });
+  }
+
+  // Stat counter animation
+  function animateCounters() {
+    var counters = document.querySelectorAll('[data-target]');
+    counters.forEach(function(counter) {
+      var target = parseInt(counter.getAttribute('data-target'), 10);
+      if (prefersReducedMotion) {
+        counter.textContent = target.toLocaleString();
+        return;
+      }
+      var duration = 1000;
+      var startTime = null;
+
+      function step(timestamp) {
+        if (!startTime) startTime = timestamp;
+        var progress = Math.min((timestamp - startTime) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        var current = Math.floor(eased * target);
+        counter.textContent = current.toLocaleString();
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        } else {
+          counter.textContent = target.toLocaleString();
+        }
+      }
+      requestAnimationFrame(step);
+    });
+
+    // Text-based stat values
+    var textCounters = document.querySelectorAll('[data-target-text]');
+    textCounters.forEach(function(counter) {
+      counter.textContent = counter.getAttribute('data-target-text');
+    });
+  }
+
+  // Trigger counters when stats become visible
+  var statsSection = document.querySelector('[aria-label="Session statistics"]');
+  if (statsSection) {
+    if (prefersReducedMotion) {
+      animateCounters();
+    } else {
+      var statsObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            animateCounters();
+            statsObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.3 });
+      statsObserver.observe(statsSection);
+    }
+  }
+
+  // Animate agent bars on scroll
+  var agentBars = document.querySelector('[aria-label="Agent duration chart"]');
+  if (agentBars) {
+    var fills = agentBars.querySelectorAll('.noir-agent-bar-row__fill');
+    if (prefersReducedMotion) {
+      fills.forEach(function(fill) {
+        fill.style.width = fill.getAttribute('data-width');
+      });
+    } else {
+      var barObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            fills.forEach(function(fill, i) {
+              setTimeout(function() {
+                fill.style.width = fill.getAttribute('data-width');
+              }, i * 100);
+            });
+            barObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.3 });
+      barObserver.observe(agentBars);
+    }
+  }
+})();
+</script>
+
+</body>
+</html>

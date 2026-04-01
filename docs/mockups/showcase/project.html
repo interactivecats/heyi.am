@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BudgetWise -- Showcase Project -- heyi.am</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Design Tokens ── */
+    :root {
+      --bg:             #09090b;
+      --surface:        #111113;
+      --surface-2:      #18181b;
+      --surface-3:      #27272a;
+
+      --border:         rgba(255,255,255,0.06);
+      --border-accent:  rgba(129,140,248,0.2);
+
+      --text:           #fafafa;
+      --text-2:         rgba(255,255,255,0.65);
+      --text-3:         rgba(255,255,255,0.4);
+      --text-muted:     rgba(255,255,255,0.25);
+
+      --accent:         #818cf8;
+      --accent-dim:     rgba(129,140,248,0.1);
+      --accent-mid:     rgba(129,140,248,0.15);
+      --accent-glow:    rgba(129,140,248,0.06);
+
+      --green:          #4ade80;
+      --green-dim:      rgba(74,222,128,0.1);
+      --red:            #f87171;
+      --red-dim:        rgba(248,113,113,0.1);
+
+      --font-display:   'Space Grotesk', sans-serif;
+      --font-body:      'Inter', sans-serif;
+      --font-mono:      'JetBrains Mono', monospace;
+
+      --radius-sm:      4px;
+      --radius-md:      8px;
+      --radius-lg:      12px;
+
+      --ease-out:       cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out:    cubic-bezier(0.65, 0, 0.35, 1);
+      --dur-micro:      150ms;
+      --dur-section:    600ms;
+      --dur-chart:      800ms;
+      --dur-slow:       1200ms;
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ── Skip to content ── */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      z-index: 1000;
+      padding: 0.5rem 1rem;
+      background: var(--accent);
+      color: var(--bg);
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+    }
+    .skip-link:focus { top: 1rem; }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Scroll Animation System ── */
+    .sc-section {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity var(--dur-section) var(--ease-out),
+                  transform var(--dur-section) var(--ease-out);
+    }
+    .sc-section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .sc-section--screenshot {
+      transform: translateY(32px);
+      transition-duration: 700ms;
+    }
+
+    .sc-stagger {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 400ms var(--ease-out), transform 400ms var(--ease-out);
+    }
+    .sc-section.visible .sc-stagger {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .sc-section.visible .sc-stagger:nth-child(1) { transition-delay: 0ms; }
+    .sc-section.visible .sc-stagger:nth-child(2) { transition-delay: 80ms; }
+    .sc-section.visible .sc-stagger:nth-child(3) { transition-delay: 160ms; }
+    .sc-section.visible .sc-stagger:nth-child(4) { transition-delay: 240ms; }
+    .sc-section.visible .sc-stagger:nth-child(5) { transition-delay: 320ms; }
+    .sc-section.visible .sc-stagger:nth-child(6) { transition-delay: 400ms; }
+    .sc-section.visible .sc-stagger:nth-child(7) { transition-delay: 480ms; }
+    .sc-section.visible .sc-stagger:nth-child(8) { transition-delay: 560ms; }
+
+    /* Skills use faster stagger */
+    .sc-section--skills .sc-stagger { transition-duration: 300ms; }
+    .sc-section--skills.visible .sc-stagger:nth-child(1)  { transition-delay: 0ms; }
+    .sc-section--skills.visible .sc-stagger:nth-child(2)  { transition-delay: 40ms; }
+    .sc-section--skills.visible .sc-stagger:nth-child(3)  { transition-delay: 80ms; }
+    .sc-section--skills.visible .sc-stagger:nth-child(4)  { transition-delay: 120ms; }
+    .sc-section--skills.visible .sc-stagger:nth-child(5)  { transition-delay: 160ms; }
+    .sc-section--skills.visible .sc-stagger:nth-child(6)  { transition-delay: 200ms; }
+    .sc-section--skills.visible .sc-stagger:nth-child(7)  { transition-delay: 240ms; }
+    .sc-section--skills.visible .sc-stagger:nth-child(8)  { transition-delay: 280ms; }
+    .sc-section--skills.visible .sc-stagger:nth-child(9)  { transition-delay: 320ms; }
+    .sc-section--skills.visible .sc-stagger:nth-child(10) { transition-delay: 360ms; }
+
+    /* Session cards stagger */
+    .sc-section--cards.visible .sc-stagger:nth-child(1) { transition-delay: 0ms; }
+    .sc-section--cards.visible .sc-stagger:nth-child(2) { transition-delay: 100ms; }
+    .sc-section--cards.visible .sc-stagger:nth-child(3) { transition-delay: 200ms; }
+    .sc-section--cards.visible .sc-stagger:nth-child(4) { transition-delay: 300ms; }
+    .sc-section--cards.visible .sc-stagger:nth-child(5) { transition-delay: 400ms; }
+    .sc-section--cards.visible .sc-stagger:nth-child(6) { transition-delay: 500ms; }
+
+    /* ── Page Container ── */
+    .page {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 4rem;
+    }
+
+    /* ── Section Spacing ── */
+    .section-gap { margin-bottom: 3rem; }
+    .section-gap-sm { margin-bottom: 2rem; }
+    .section-gap-lg { margin-bottom: 4rem; }
+
+    /* ── Nav ── */
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 3rem;
+    }
+    .nav__brand {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--text-3);
+      letter-spacing: 0.02em;
+    }
+    .nav__links {
+      display: flex;
+      gap: 1rem;
+      margin-inline-start: auto;
+    }
+    .nav__link {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-3);
+      text-decoration: none;
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--radius-sm);
+      transition: color var(--dur-micro) ease, background var(--dur-micro) ease;
+    }
+    .nav__link:hover {
+      color: var(--text);
+      background: var(--surface-2);
+      text-decoration: none;
+    }
+    .nav__link--active {
+      color: var(--accent);
+    }
+
+    /* ── Section Label + Header ── */
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 400;
+      color: var(--text-3);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 1rem;
+    }
+    .section-header h3 {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .section-header .section-label { margin-bottom: 0; }
+
+    /* ── Title ── */
+    .title-section h1 {
+      font-family: var(--font-display);
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+    }
+    .title-section .subtitle {
+      font-family: var(--font-body);
+      font-size: 1.0625rem;
+      color: var(--text-2);
+    }
+
+    /* ── Links ── */
+    .links {
+      display: flex;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--accent);
+      transition: opacity var(--dur-micro) ease;
+    }
+    .links a:hover { opacity: 0.8; text-decoration: underline; }
+    .links svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    /* ── Screenshot ── */
+    .screenshot-frame {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .screenshot-chrome {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 14px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+    }
+    .screenshot-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--surface-3);
+    }
+    .screenshot-url {
+      margin-inline-start: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-3);
+    }
+    .screenshot-body {
+      height: 28rem;
+      background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 40%, #1a1a2e 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .screenshot-body::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 30% 40%, rgba(129,140,248,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse at 70% 60%, rgba(74,222,128,0.04) 0%, transparent 50%);
+    }
+    .screenshot-placeholder {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-muted);
+      z-index: 1;
+    }
+
+    /* ── Narrative ── */
+    .narrative {
+      border-inline-start: 3px solid transparent;
+      padding-inline-start: 1rem;
+      transition: border-color 600ms var(--ease-out) 200ms;
+    }
+    .sc-section.visible .narrative {
+      border-inline-start-color: var(--accent);
+    }
+    .narrative p {
+      font-family: var(--font-body);
+      font-size: 1.0625rem;
+      color: var(--text-2);
+      line-height: 1.7;
+      margin-bottom: 1rem;
+    }
+    .narrative p:last-child { margin-bottom: 0; }
+
+    /* ── Stats Grid ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+    }
+    .stat-card__label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 400;
+      color: var(--text-3);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .stat-card__value {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .stat-card--leverage {
+      grid-column: span 2;
+    }
+    .leverage-header {
+      display: flex;
+      align-items: baseline;
+      gap: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .leverage-header .leverage-stat {
+      display: flex;
+      flex-direction: column;
+    }
+    .leverage-header .leverage-val {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+    .leverage-header .leverage-lbl {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-3);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 0.25rem;
+    }
+    .leverage-header .leverage-agents .leverage-val {
+      color: var(--accent);
+    }
+    .leverage-header .leverage-multiplier .leverage-val {
+      color: var(--accent);
+    }
+    .leverage-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+      display: flex;
+    }
+    .leverage-bar__human {
+      height: 100%;
+      background: rgba(255,255,255,0.35);
+      border-radius: 3px 0 0 3px;
+      width: 0%;
+      transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .leverage-bar__agent {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 0 3px 3px 0;
+      width: 0%;
+      transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
+    }
+    .sc-section.visible .leverage-bar__human { width: 19%; }
+    .sc-section.visible .leverage-bar__agent { width: 81%; }
+
+    /* ── Chart Containers ── */
+    .chart-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      overflow: hidden;
+    }
+    .chart-container svg { display: block; width: 100%; }
+
+    /* ── Work Timeline Bars ── */
+    .timeline-bar {
+      transform: scaleX(0);
+      transform-origin: left center;
+      transition: transform var(--dur-chart) var(--ease-out);
+    }
+    .sc-section.visible .timeline-bar { transform: scaleX(1); }
+
+    .fork-line {
+      transition: stroke-dashoffset var(--dur-slow) var(--ease-out);
+    }
+    .sc-section.visible .fork-line { stroke-dashoffset: 0 !important; }
+
+    /* ── Growth Chart ── */
+    .growth-line {
+      transition: stroke-dashoffset var(--dur-slow) var(--ease-in-out);
+    }
+    .sc-section.visible .growth-line { stroke-dashoffset: 0 !important; }
+    .growth-area {
+      opacity: 0;
+      transition: opacity 600ms var(--ease-out) 1000ms;
+    }
+    .sc-section.visible .growth-area { opacity: 1; }
+    .growth-dot {
+      opacity: 0;
+      transform-origin: center;
+      transform: scale(0);
+      transition: opacity 300ms var(--ease-out), transform 300ms var(--ease-out);
+    }
+    .sc-section.visible .growth-dot {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* ── Two Column ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    .two-col-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+    }
+    .two-col-card h4 {
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+    .decision-item {
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .decision-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .decision-item .phase-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.25rem;
+    }
+    .decision-item p {
+      font-size: 0.8125rem;
+      color: var(--text-2);
+      line-height: 1.5;
+    }
+    .source-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .source-row:last-child { border-bottom: none; }
+    .source-name {
+      font-family: var(--font-body);
+      font-size: 0.8125rem;
+      color: var(--text-2);
+    }
+    .source-bar-track {
+      flex: 1;
+      height: 4px;
+      background: var(--surface-3);
+      border-radius: 2px;
+      margin: 0 0.75rem;
+      overflow: hidden;
+    }
+    .source-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: var(--accent);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform var(--dur-chart) var(--ease-out) 200ms;
+    }
+    .sc-section.visible .source-bar-fill { transform: scaleX(1); }
+    .source-pct {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-3);
+      min-width: 2.5rem;
+      text-align: right;
+    }
+
+    /* ── Phase Timeline ── */
+    .phase-timeline {
+      position: relative;
+      padding-inline-start: 2rem;
+    }
+    .phase-line {
+      position: absolute;
+      left: 7px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--border);
+      transform: scaleY(0);
+      transform-origin: top;
+      transition: transform var(--dur-slow) var(--ease-out);
+    }
+    .sc-section.visible .phase-line { transform: scaleY(1); }
+    .phase-item {
+      position: relative;
+      padding-bottom: 1.5rem;
+    }
+    .phase-item:last-child { padding-bottom: 0; }
+    .phase-dot {
+      position: absolute;
+      left: -2rem;
+      top: 4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 2px solid var(--accent);
+      transform: scale(0);
+      transition: transform 400ms var(--ease-out);
+    }
+    .sc-section.visible .phase-dot { transform: scale(1); }
+    .phase-item:nth-child(1) .phase-dot { transition-delay: 100ms; }
+    .phase-item:nth-child(2) .phase-dot { transition-delay: 350ms; }
+    .phase-item:nth-child(3) .phase-dot { transition-delay: 600ms; }
+    .phase-item:nth-child(4) .phase-dot { transition-delay: 850ms; }
+    .phase-number {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.25rem;
+    }
+    .phase-title {
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+    }
+    .phase-dates {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-3);
+      margin-bottom: 0.25rem;
+    }
+    .phase-desc {
+      font-size: 0.8125rem;
+      color: var(--text-2);
+      line-height: 1.5;
+    }
+
+    /* ── Skills ── */
+    .skills-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .skill-chip {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+      background: var(--accent-dim);
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-sm);
+      padding: 0.375rem 0.75rem;
+      white-space: nowrap;
+    }
+
+    /* ── Session Cards ── */
+    .session-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    .session-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      transition: border-color var(--dur-micro) ease, background var(--dur-micro) ease;
+      display: block;
+      color: inherit;
+      text-decoration: none;
+    }
+    .session-card:hover {
+      border-color: var(--border-accent);
+      background: var(--surface-2);
+      text-decoration: none;
+    }
+    .session-card:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .session-card__accent-bar {
+      height: 2px;
+      border-radius: 1px;
+      margin-bottom: 0.75rem;
+    }
+    .session-card__title {
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+      line-height: 1.3;
+    }
+    .session-card__meta {
+      display: flex;
+      gap: 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-3);
+      margin-bottom: 0.5rem;
+    }
+    .session-card__bottom {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .session-card__skill {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border-radius: var(--radius-sm);
+      padding: 0.2rem 0.5rem;
+    }
+    .session-card__source {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-3);
+      margin-inline-start: auto;
+    }
+
+    /* ── Gap marker ── */
+    .gap-marker__label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding: 2rem 0 1rem;
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+    .footer span {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-3);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .two-col { grid-template-columns: 1fr; }
+      .session-grid { grid-template-columns: 1fr; }
+      .title-section h1 { font-size: 1.75rem; }
+    }
+
+    /* ── Reduced Motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      .sc-section,
+      .sc-stagger,
+      .timeline-bar,
+      .fork-line,
+      .growth-line,
+      .growth-area,
+      .growth-dot,
+      .phase-line,
+      .phase-dot,
+      .source-bar-fill,
+      .narrative {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+        stroke-dashoffset: 0 !important;
+      }
+    }
+  
+    /* ── Clickable session cards ── */
+    a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
+  <div class="page">
+    <!-- ══════════════════════════════════════════════════════════
+         NAV
+         ══════════════════════════════════════════════════════════ -->
+    <nav class="nav" aria-label="Main navigation">
+      <span class="nav__brand">heyi.am</span>
+      <div class="nav__links">
+        <a href="./portfolio.html" class="nav__link">Portfolio</a>
+        <a href="./project.html" class="nav__link nav__link--active" aria-current="page">Project</a>
+        <a href="./session.html" class="nav__link">Session</a>
+      </div>
+    </nav>
+
+    <main id="main-content">
+      <!-- ══════════════════════════════════════════════════════════
+           SECTION 1: TITLE (above the fold, visible on load)
+           ══════════════════════════════════════════════════════════ -->
+      <section class="title-section sc-section section-gap" style="transition-delay: 100ms;" aria-label="Project title">
+        <h1>BudgetWise</h1>
+        <p class="subtitle">Personal finance app</p>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════
+           SECTION 2: LINKS
+           ══════════════════════════════════════════════════════════ -->
+      <section class="sc-section section-gap-sm" aria-label="Project links">
+        <div class="links">
+          <a href="./session.html" class="sc-stagger">
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            github.com/alex/budgetwise
+          </a>
+          <a href="./session.html" class="sc-stagger">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3.5h-4a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1v-4"/><path d="M9.5 1.5h5v5"/><path d="M14.5 1.5L7 9"/></svg>
+            budgetwise.app
+          </a>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════
+           SECTION 3: SCREENSHOT
+           ══════════════════════════════════════════════════════════ -->
+      <section class="sc-section sc-section--screenshot section-gap-lg" aria-label="Screenshot">
+        <div class="screenshot-frame">
+          <div class="screenshot-chrome" aria-hidden="true">
+            <span class="screenshot-dot"></span>
+            <span class="screenshot-dot"></span>
+            <span class="screenshot-dot"></span>
+            <span class="screenshot-url">budgetwise.app</span>
+          </div>
+          <div class="screenshot-body">
+            <span class="screenshot-placeholder">screenshot</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════
+           SECTION 4: NARRATIVE
+           ══════════════════════════════════════════════════════════ -->
+      <section class="sc-section section-gap-lg" aria-label="Project narrative">
+        <div class="narrative">
+          <p>Started with a basic Prisma schema but realized halfway through that I needed polymorphic transaction types. The AI kept suggesting single-table inheritance but I pushed back -- went with a discriminated union pattern instead. Nullable fields for transfer-specific data, hard deletes with an audit log.</p>
+          <p>The recurring transaction detection was the hardest part. Had to figure out the right tolerance windows -- monthly transactions drift by a few days, weekly ones are more precise. Settled on three consecutive interval matches before marking something as recurring. The partial index on merchant_normalized brought the detection query from 2 seconds to 120ms on 10k transactions.</p>
+          <p>Plaid integration went smoother than expected. The token exchange flow is straightforward, but the webhook handling needed careful idempotency -- Plaid sends duplicate webhooks, so I used a processed-events table keyed on webhook ID.</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════
+           SECTION 5: STATS GRID (animated counters)
+           ══════════════════════════════════════════════════════════ -->
+      <section class="sc-section section-gap-lg" id="stats-section" aria-label="Project statistics">
+        <div class="stats-grid">
+          <div class="stat-card sc-stagger">
+            <div class="stat-card__label">Sessions</div>
+            <div class="stat-card__value" data-count-to="8" data-format="int">0</div>
+          </div>
+          <div class="stat-card stat-card--leverage sc-stagger">
+            <div class="stat-card__label">Leverage</div>
+            <div class="leverage-header">
+              <div class="leverage-stat">
+                <span class="leverage-val" data-count-to="8.1" data-format="hours-short">0h</span>
+                <span class="leverage-lbl">You</span>
+              </div>
+              <div class="leverage-stat leverage-agents">
+                <span class="leverage-val" data-count-to="34.4" data-format="hours-short">0h</span>
+                <span class="leverage-lbl">Agents</span>
+              </div>
+              <div class="leverage-stat leverage-multiplier">
+                <span class="leverage-val" data-count-to="4.2" data-format="multiplier">0x</span>
+                <span class="leverage-lbl">Multiplier</span>
+              </div>
+            </div>
+            <div class="leverage-bar">
+              <div class="leverage-bar__human"></div>
+              <div class="leverage-bar__agent"></div>
+            </div>
+          </div>
+          <div class="stat-card sc-stagger">
+            <div class="stat-card__label">Lines Changed</div>
+            <div class="stat-card__value" data-count-to="4460" data-format="comma">0</div>
+          </div>
+          <div class="stat-card sc-stagger">
+            <div class="stat-card__label">Files Changed</div>
+            <div class="stat-card__value" data-count-to="156" data-format="int">0</div>
+          </div>
+          <div class="stat-card sc-stagger">
+            <div class="stat-card__label">Tokens</div>
+            <div class="stat-card__value" data-count-to="2.1" data-format="token">0</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════
+           SECTION 6: WORK TIMELINE (animated SVG)
+           ══════════════════════════════════════════════════════════ -->
+      <section class="sc-section section-gap-lg" id="timeline-section" aria-label="Work timeline">
+        <div class="chart-container">
+          <div class="section-header">
+            <h3>Work Timeline</h3>
+            <span class="section-label">8 sessions across 52 days</span>
+          </div>
+          <svg id="work-timeline" viewBox="0 0 760 380" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Horizontal bar chart showing 8 work sessions with agent fork curves. Session durations range from 45 to 88 minutes."></svg>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════
+           SECTION 7: GROWTH CHART (animated line draw)
+           ══════════════════════════════════════════════════════════ -->
+      <section class="sc-section section-gap-lg" id="growth-section" aria-label="Code growth chart">
+        <div class="chart-container">
+          <div class="section-header">
+            <h3>Code Growth</h3>
+            <span class="section-label">cumulative lines of code</span>
+          </div>
+          <svg id="growth-chart" viewBox="0 0 760 260" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Step chart showing cumulative lines of code growing from 680 to 4,460 across 8 sessions."></svg>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════
+           SECTION 8: TWO-COLUMN (Key Decisions + Source Breakdown)
+           ══════════════════════════════════════════════════════════ -->
+      <section class="sc-section section-gap-lg" aria-label="Decisions and source breakdown">
+        <div class="two-col">
+          <div class="two-col-card sc-stagger">
+            <h4>Key Decisions</h4>
+            <div class="decision-item">
+              <div class="phase-label">Foundation</div>
+              <p>Discriminated union over single-table inheritance for transaction types</p>
+            </div>
+            <div class="decision-item">
+              <div class="phase-label">Intelligence</div>
+              <p>Partial index on merchant_normalized for 16x query speedup</p>
+            </div>
+            <div class="decision-item">
+              <div class="phase-label">Hardening</div>
+              <p>Processed-events table for Plaid webhook idempotency</p>
+            </div>
+          </div>
+          <div class="two-col-card sc-stagger">
+            <h4>Source Breakdown</h4>
+            <div style="margin-top: 0.5rem;">
+              <div class="source-row">
+                <span class="source-name">Claude Code</span>
+                <div class="source-bar-track">
+                  <div class="source-bar-fill" style="width: 62.5%;"></div>
+                </div>
+                <span class="source-pct">62.5%</span>
+              </div>
+              <div class="source-row">
+                <span class="source-name">Cursor</span>
+                <div class="source-bar-track">
+                  <div class="source-bar-fill" style="width: 37.5%;"></div>
+                </div>
+                <span class="source-pct">37.5%</span>
+              </div>
+            </div>
+            <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em;">Sessions with agents</span>
+                <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-2);">6 / 8</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em;">Claude sessions</span>
+                <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-2);">5</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════
+           SECTION 9: PHASE TIMELINE
+           ══════════════════════════════════════════════════════════ -->
+      <section class="sc-section section-gap-lg" aria-label="Project phases">
+        <div class="section-header">
+          <h3>Project Arc</h3>
+          <span class="section-label">4 phases</span>
+        </div>
+        <div class="phase-timeline">
+          <div class="phase-line" aria-hidden="true"></div>
+          <div class="phase-item">
+            <div class="phase-dot" aria-hidden="true"></div>
+            <div class="phase-number">Phase 1</div>
+            <div class="phase-title">Foundation</div>
+            <div class="phase-dates">Feb 3 -- Feb 14</div>
+            <div class="phase-desc">Schema design, Prisma setup, transaction CRUD</div>
+          </div>
+          <div class="phase-item">
+            <div class="phase-dot" aria-hidden="true"></div>
+            <div class="phase-number">Phase 2</div>
+            <div class="phase-title">Data Pipeline</div>
+            <div class="phase-dates">Feb 17 -- Feb 26</div>
+            <div class="phase-desc">CSV import, Plaid integration, recurring detection</div>
+          </div>
+          <div class="phase-item">
+            <div class="phase-dot" aria-hidden="true"></div>
+            <div class="phase-number">Phase 3</div>
+            <div class="phase-title">Intelligence</div>
+            <div class="phase-dates">Mar 1 -- Mar 14</div>
+            <div class="phase-desc">Search, full-text indexing, spending insights</div>
+          </div>
+          <div class="phase-item">
+            <div class="phase-dot" aria-hidden="true"></div>
+            <div class="phase-number">Phase 4</div>
+            <div class="phase-title">Hardening</div>
+            <div class="phase-dates">Mar 16 -- Mar 26</div>
+            <div class="phase-desc">2FA, mobile responsive, CI/CD, performance</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════
+           SECTION 10: SKILLS
+           ══════════════════════════════════════════════════════════ -->
+      <section class="sc-section sc-section--skills section-gap-lg" aria-label="Skills">
+        <div class="section-header">
+          <h3>Skills</h3>
+          <span class="section-label">10 technologies</span>
+        </div>
+        <div class="skills-grid">
+          <span class="skill-chip sc-stagger">TypeScript</span>
+          <span class="skill-chip sc-stagger">React</span>
+          <span class="skill-chip sc-stagger">Next.js</span>
+          <span class="skill-chip sc-stagger">Prisma</span>
+          <span class="skill-chip sc-stagger">PostgreSQL</span>
+          <span class="skill-chip sc-stagger">Tailwind CSS</span>
+          <span class="skill-chip sc-stagger">Stripe API</span>
+          <span class="skill-chip sc-stagger">Plaid API</span>
+          <span class="skill-chip sc-stagger">Chart.js</span>
+          <span class="skill-chip sc-stagger">Playwright</span>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════
+           SECTION 11: FEATURED SESSION CARDS
+           ══════════════════════════════════════════════════════════ -->
+      <section class="sc-section sc-section--cards section-gap-lg" aria-label="Featured sessions">
+        <div class="section-header">
+          <h3>Sessions</h3>
+          <span class="section-label">6 of 8</span>
+        </div>
+        <div class="session-grid">
+          <a href="./session.html" class="session-card sc-stagger">
+            <div class="session-card__accent-bar" style="background: var(--accent);"></div>
+            <div class="session-card__title">Set up Prisma schema</div>
+            <div class="session-card__meta">
+              <span>72m</span>
+              <span>680 LOC</span>
+              <span>7 agents</span>
+            </div>
+            <div class="session-card__bottom">
+              <span class="session-card__skill">schema</span>
+              <span class="session-card__source">Claude</span>
+            </div>
+          </a>
+          <div class="session-card sc-stagger">
+            <div class="session-card__accent-bar" style="background: #a78bfa;"></div>
+            <div class="session-card__title">Transaction list + infinite scroll</div>
+            <div class="session-card__meta">
+              <span>65m</span>
+              <span>520 LOC</span>
+              <span>5 agents</span>
+            </div>
+            <div class="session-card__bottom">
+              <span class="session-card__skill">frontend</span>
+              <span class="session-card__source">Cursor</span>
+            </div>
+          </div>
+          <div class="session-card sc-stagger">
+            <div class="session-card__accent-bar" style="background: #c084fc;"></div>
+            <div class="session-card__title">Recurring transaction detection</div>
+            <div class="session-card__meta">
+              <span>88m</span>
+              <span>890 LOC</span>
+              <span>6 agents</span>
+            </div>
+            <div class="session-card__bottom">
+              <span class="session-card__skill">algorithm</span>
+              <span class="session-card__source">Claude</span>
+            </div>
+          </div>
+          <div class="session-card sc-stagger">
+            <div class="session-card__accent-bar" style="background: var(--accent);"></div>
+            <div class="session-card__title">CSV import pipeline</div>
+            <div class="session-card__meta">
+              <span>78m</span>
+              <span>640 LOC</span>
+              <span>5 agents</span>
+            </div>
+            <div class="session-card__bottom">
+              <span class="session-card__skill">import</span>
+              <span class="session-card__source">Cursor</span>
+            </div>
+          </div>
+          <div class="session-card sc-stagger">
+            <div class="session-card__accent-bar" style="background: #a78bfa;"></div>
+            <div class="session-card__title">Plaid integration</div>
+            <div class="session-card__meta">
+              <span>90m</span>
+              <span>780 LOC</span>
+              <span>8 agents</span>
+            </div>
+            <div class="session-card__bottom">
+              <span class="session-card__skill">integration</span>
+              <span class="session-card__source">Claude</span>
+            </div>
+          </div>
+          <div class="session-card sc-stagger">
+            <div class="session-card__accent-bar" style="background: #c084fc;"></div>
+            <div class="session-card__title">Spending insights dashboard</div>
+            <div class="session-card__meta">
+              <span>70m</span>
+              <span>620 LOC</span>
+              <span>4 agents</span>
+            </div>
+            <div class="session-card__bottom">
+              <span class="session-card__skill">insights</span>
+              <span class="session-card__source">Claude</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ══════════════════════════════════════════════════════════
+         FOOTER
+         ══════════════════════════════════════════════════════════ -->
+    <footer class="footer">
+      <span>built with <a href="./session.html">heyi.am</a></span>
+    </footer>
+  </div>
+
+  <script>
+  (function() {
+    'use strict';
+
+    // ── IntersectionObserver for scroll animations ──
+    var sections = document.querySelectorAll('.sc-section');
+    if (sections.length) {
+      var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReduced) {
+        sections.forEach(function(s) { s.classList.add('visible'); });
+      } else {
+        var observer = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+        sections.forEach(function(s) { observer.observe(s); });
+      }
+    }
+
+    // ── Animated Counters ──
+    var COUNTER_DURATION = 1200;
+    var statsSection = document.getElementById('stats-section');
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    function formatCounter(value, format) {
+      switch (format) {
+        case 'int':
+          return String(Math.round(value));
+        case 'comma':
+          return Math.round(value).toLocaleString('en-US');
+        case 'duration': {
+          var totalMin = Math.round(value);
+          var h = Math.floor(totalMin / 60);
+          var m = totalMin % 60;
+          if (h === 0) return m + 'm';
+          if (m === 0) return h + 'h';
+          return h + 'h ' + m + 'm';
+        }
+        case 'hours-short':
+          return value.toFixed(1) + 'h';
+        case 'token':
+          return value.toFixed(1) + 'M';
+        case 'multiplier':
+          return value.toFixed(1) + 'x';
+        default:
+          return String(Math.round(value));
+      }
+    }
+
+    function animateCounters() {
+      var values = statsSection.querySelectorAll('[data-count-to]');
+      values.forEach(function(el, index) {
+        var target = parseFloat(el.getAttribute('data-count-to'));
+        var format = el.getAttribute('data-format');
+        var delay = index * 100;
+
+        setTimeout(function() {
+          var startTime = null;
+          function tick(timestamp) {
+            if (!startTime) startTime = timestamp;
+            var elapsed = timestamp - startTime;
+            var progress = Math.min(elapsed / COUNTER_DURATION, 1);
+            var easedProgress = easeOutCubic(progress);
+            var currentValue = target * easedProgress;
+            el.textContent = formatCounter(currentValue, format);
+            if (progress < 1) {
+              requestAnimationFrame(tick);
+            }
+          }
+          requestAnimationFrame(tick);
+        }, delay);
+      });
+    }
+
+    if (statsSection) {
+      var counterObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            animateCounters();
+            counterObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+      counterObserver.observe(statsSection);
+    }
+
+    // ── Session Data ──
+    var sessions = [
+      { title: 'Set up Prisma schema',                       date: '2026-02-03', duration: 72,  loc: 680, source: 'Claude',  children: 7,
+        agents: ['frontend-dev','backend-dev','qa-engineer','security-engineer','code-reviewer','ux-designer','backend-dev'] },
+      { title: 'Transaction list + infinite scroll',          date: '2026-02-14', duration: 65,  loc: 520, source: 'Cursor',  children: 5,
+        agents: ['frontend-dev','backend-dev','qa-engineer','code-reviewer','ux-designer'] },
+      { title: 'Recurring transaction detection',             date: '2026-03-01', duration: 88,  loc: 890, source: 'Claude',  children: 6,
+        agents: ['backend-dev','qa-engineer','security-engineer','code-reviewer','frontend-dev','backend-dev'] },
+      { title: 'Stripe integration',                          date: '2026-03-10', duration: 55,  loc: 420, source: 'Claude',  children: 0, agents: [] },
+      { title: 'CSV import pipeline',                         date: '2026-03-14', duration: 45,  loc: 380, source: 'Cursor',  children: 4,
+        agents: ['backend-dev','qa-engineer','code-reviewer','security-engineer'] },
+      { title: 'Full-text search tsvector',                   date: '2026-03-18', duration: 62,  loc: 510, source: 'Claude',  children: 3,
+        agents: ['backend-dev','qa-engineer','code-reviewer'] },
+      { title: 'Spending insights dashboard',                 date: '2026-03-22', duration: 78,  loc: 720, source: 'Claude',  children: 5,
+        agents: ['frontend-dev','backend-dev','ux-designer','qa-engineer','code-reviewer'] },
+      { title: 'Mobile responsive + 2FA',                     date: '2026-03-26', duration: 50,  loc: 340, source: 'Cursor',  children: 0, agents: [] }
+    ];
+
+    var AGENT_COLORS = {
+      'frontend-dev':     '#7c3aed',
+      'backend-dev':      '#0891b2',
+      'qa-engineer':      '#059669',
+      'security-engineer':'#475569',
+      'code-reviewer':    '#e11d48',
+      'ux-designer':      '#d97706'
+    };
+
+    // ── Build Work Timeline SVG ──
+    (function buildWorkTimeline() {
+      var svg = document.getElementById('work-timeline');
+      if (!svg) return;
+
+      var W = 760;
+      var padL = 10, padR = 10, padT = 30, barY = 60;
+      var barH = 20;
+      var agentLaneH = 14;
+      var agentGap = 4;
+      var gapW = 24;
+
+      var totalDuration = sessions.reduce(function(sum, s) { return sum + s.duration; }, 0);
+      var usableW = W - padL - padR - (sessions.length - 1) * gapW;
+      var pxPerMin = usableW / totalDuration;
+
+      var bars = [];
+      var x = padL;
+      sessions.forEach(function(s, i) {
+        var w = s.duration * pxPerMin;
+        bars.push({ x: x, w: w, session: s, index: i });
+        x += w + gapW;
+      });
+
+      var maxAgents = Math.max.apply(null, sessions.map(function(s) { return s.children; }));
+      var forkZoneH = maxAgents * (agentLaneH + agentGap) + 20;
+      var totalH = barY + barH + forkZoneH + 30;
+      svg.setAttribute('viewBox', '0 0 ' + W + ' ' + totalH);
+
+      var ns = 'http://www.w3.org/2000/svg';
+      var frag = document.createDocumentFragment();
+
+      // Horizontal axis line
+      var axisLine = document.createElementNS(ns, 'line');
+      axisLine.setAttribute('x1', padL);
+      axisLine.setAttribute('y1', barY + barH + 2);
+      axisLine.setAttribute('x2', W - padR);
+      axisLine.setAttribute('y2', barY + barH + 2);
+      axisLine.setAttribute('stroke', 'rgba(255,255,255,0.06)');
+      axisLine.setAttribute('stroke-width', '1');
+      frag.appendChild(axisLine);
+
+      bars.forEach(function(bar, i) {
+        var s = bar.session;
+        var delay = i * 150;
+
+        // Session bar group
+        var g = document.createElementNS(ns, 'g');
+        g.setAttribute('class', 'timeline-bar');
+        g.style.transitionDelay = delay + 'ms';
+
+        var rect = document.createElementNS(ns, 'rect');
+        rect.setAttribute('x', bar.x);
+        rect.setAttribute('y', barY);
+        rect.setAttribute('width', bar.w);
+        rect.setAttribute('height', barH);
+        rect.setAttribute('rx', '3');
+        rect.setAttribute('fill', '#818cf8');
+        rect.setAttribute('opacity', '0.8');
+        g.appendChild(rect);
+        frag.appendChild(g);
+
+        // Label above bar
+        var titleText = document.createElementNS(ns, 'text');
+        var truncated = s.title.length > 18 ? s.title.slice(0, 17) + '\u2026' : s.title;
+        titleText.textContent = truncated;
+        titleText.setAttribute('x', bar.x + bar.w / 2);
+        titleText.setAttribute('y', barY - 12);
+        titleText.setAttribute('text-anchor', 'middle');
+        titleText.setAttribute('font-family', "'JetBrains Mono', monospace");
+        titleText.setAttribute('font-size', '9');
+        titleText.setAttribute('fill', 'rgba(255,255,255,0.4)');
+        titleText.setAttribute('class', 'timeline-bar');
+        titleText.style.transitionDelay = delay + 'ms';
+        frag.appendChild(titleText);
+
+        // Duration below bar
+        var durText = document.createElementNS(ns, 'text');
+        durText.textContent = s.duration + 'm';
+        durText.setAttribute('x', bar.x + bar.w / 2);
+        durText.setAttribute('y', barY + barH + 16);
+        durText.setAttribute('text-anchor', 'middle');
+        durText.setAttribute('font-family', "'JetBrains Mono', monospace");
+        durText.setAttribute('font-size', '9');
+        durText.setAttribute('fill', 'rgba(255,255,255,0.25)');
+        durText.setAttribute('class', 'timeline-bar');
+        durText.style.transitionDelay = delay + 'ms';
+        frag.appendChild(durText);
+
+        // Source indicator dot
+        var sourceDot = document.createElementNS(ns, 'circle');
+        sourceDot.setAttribute('cx', bar.x + bar.w / 2);
+        sourceDot.setAttribute('cy', barY - 24);
+        sourceDot.setAttribute('r', '2.5');
+        sourceDot.setAttribute('fill', s.source === 'Claude' ? '#818cf8' : '#4ade80');
+        sourceDot.setAttribute('class', 'timeline-bar');
+        sourceDot.style.transitionDelay = delay + 'ms';
+        frag.appendChild(sourceDot);
+
+        // Agent fork lines
+        if (s.children > 0 && s.agents.length > 0) {
+          var forkStartY = barY + barH + 2;
+          var forkX = bar.x + bar.w * 0.15;
+          var rejoinX = bar.x + bar.w * 0.85;
+
+          s.agents.forEach(function(agentRole, ai) {
+            var laneY = forkStartY + 24 + ai * (agentLaneH + agentGap);
+            var color = AGENT_COLORS[agentRole] || '#818cf8';
+
+            var cx1 = forkX + (rejoinX - forkX) * 0.15;
+            var cx2 = forkX + (rejoinX - forkX) * 0.85;
+
+            var d = 'M ' + forkX + ' ' + forkStartY +
+                    ' C ' + cx1 + ' ' + laneY + ', ' + cx1 + ' ' + laneY + ', ' + ((forkX + rejoinX) / 2) + ' ' + laneY +
+                    ' C ' + cx2 + ' ' + laneY + ', ' + cx2 + ' ' + laneY + ', ' + rejoinX + ' ' + forkStartY;
+
+            var path = document.createElementNS(ns, 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', color);
+            path.setAttribute('stroke-width', '1.5');
+            path.setAttribute('stroke-opacity', '0.6');
+            path.setAttribute('stroke-linecap', 'round');
+
+            var pathLen = path.getTotalLength ? path.getTotalLength() : 200;
+            path.setAttribute('stroke-dasharray', pathLen);
+            path.setAttribute('stroke-dashoffset', pathLen);
+            path.setAttribute('class', 'fork-line');
+            path.style.transitionDelay = (delay + 200 + ai * 60) + 'ms';
+            frag.appendChild(path);
+
+            // Small dot at midpoint
+            var midDot = document.createElementNS(ns, 'circle');
+            midDot.setAttribute('cx', (forkX + rejoinX) / 2);
+            midDot.setAttribute('cy', laneY);
+            midDot.setAttribute('r', '2');
+            midDot.setAttribute('fill', color);
+            midDot.setAttribute('opacity', '0.7');
+            midDot.setAttribute('class', 'fork-line');
+            midDot.style.transitionDelay = (delay + 400 + ai * 60) + 'ms';
+            midDot.setAttribute('stroke-dasharray', '0');
+            midDot.setAttribute('stroke-dashoffset', '0');
+            frag.appendChild(midDot);
+          });
+        }
+
+        // Gap marker between sessions
+        if (i < sessions.length - 1) {
+          var gapX = bar.x + bar.w + gapW / 2;
+          var nextDate = new Date(sessions[i + 1].date);
+          var curDate = new Date(s.date);
+          var daysDiff = Math.round((nextDate - curDate) / 86400000);
+
+          var gapText = document.createElementNS(ns, 'text');
+          gapText.textContent = daysDiff + 'd';
+          gapText.setAttribute('x', gapX);
+          gapText.setAttribute('y', barY + barH / 2 + 3);
+          gapText.setAttribute('text-anchor', 'middle');
+          gapText.setAttribute('font-family', "'JetBrains Mono', monospace");
+          gapText.setAttribute('font-size', '8');
+          gapText.setAttribute('fill', 'rgba(255,255,255,0.15)');
+          frag.appendChild(gapText);
+
+          var dashLine = document.createElementNS(ns, 'line');
+          dashLine.setAttribute('x1', bar.x + bar.w + 2);
+          dashLine.setAttribute('y1', barY + barH / 2);
+          dashLine.setAttribute('x2', bar.x + bar.w + gapW - 2);
+          dashLine.setAttribute('y2', barY + barH / 2);
+          dashLine.setAttribute('stroke', 'rgba(255,255,255,0.08)');
+          dashLine.setAttribute('stroke-width', '1');
+          dashLine.setAttribute('stroke-dasharray', '3,3');
+          frag.appendChild(dashLine);
+        }
+      });
+
+      // Legend for agent colors
+      var legendY = totalH - 18;
+      var legendX = padL;
+      var agentRoles = ['frontend-dev', 'backend-dev', 'qa-engineer', 'security-engineer', 'code-reviewer', 'ux-designer'];
+      var agentLabels = ['Frontend', 'Backend', 'QA', 'Security', 'Reviewer', 'UX'];
+      agentRoles.forEach(function(role, i) {
+        var lx = legendX + i * 110;
+        var dot = document.createElementNS(ns, 'circle');
+        dot.setAttribute('cx', lx);
+        dot.setAttribute('cy', legendY);
+        dot.setAttribute('r', '3');
+        dot.setAttribute('fill', AGENT_COLORS[role]);
+        frag.appendChild(dot);
+
+        var label = document.createElementNS(ns, 'text');
+        label.textContent = agentLabels[i];
+        label.setAttribute('x', lx + 8);
+        label.setAttribute('y', legendY + 3);
+        label.setAttribute('font-family', "'JetBrains Mono', monospace");
+        label.setAttribute('font-size', '8');
+        label.setAttribute('fill', 'rgba(255,255,255,0.3)');
+        frag.appendChild(label);
+      });
+
+      // Source legend
+      var srcLegendX = W - 160;
+      var claudeDot = document.createElementNS(ns, 'circle');
+      claudeDot.setAttribute('cx', srcLegendX);
+      claudeDot.setAttribute('cy', legendY);
+      claudeDot.setAttribute('r', '2.5');
+      claudeDot.setAttribute('fill', '#818cf8');
+      frag.appendChild(claudeDot);
+      var claudeLabel = document.createElementNS(ns, 'text');
+      claudeLabel.textContent = 'Claude';
+      claudeLabel.setAttribute('x', srcLegendX + 7);
+      claudeLabel.setAttribute('y', legendY + 3);
+      claudeLabel.setAttribute('font-family', "'JetBrains Mono', monospace");
+      claudeLabel.setAttribute('font-size', '8');
+      claudeLabel.setAttribute('fill', 'rgba(255,255,255,0.3)');
+      frag.appendChild(claudeLabel);
+
+      var cursorDot = document.createElementNS(ns, 'circle');
+      cursorDot.setAttribute('cx', srcLegendX + 60);
+      cursorDot.setAttribute('cy', legendY);
+      cursorDot.setAttribute('r', '2.5');
+      cursorDot.setAttribute('fill', '#4ade80');
+      frag.appendChild(cursorDot);
+      var cursorLabel = document.createElementNS(ns, 'text');
+      cursorLabel.textContent = 'Cursor';
+      cursorLabel.setAttribute('x', srcLegendX + 67);
+      cursorLabel.setAttribute('y', legendY + 3);
+      cursorLabel.setAttribute('font-family', "'JetBrains Mono', monospace");
+      cursorLabel.setAttribute('font-size', '8');
+      cursorLabel.setAttribute('fill', 'rgba(255,255,255,0.3)');
+      frag.appendChild(cursorLabel);
+
+      svg.appendChild(frag);
+    })();
+
+    // ── Build Growth Chart SVG ──
+    (function buildGrowthChart() {
+      var svg = document.getElementById('growth-chart');
+      if (!svg) return;
+
+      var W = 760, H = 260;
+      var padL = 48, padR = 16, padT = 16, padB = 36;
+      var chartW = W - padL - padR;
+      var chartH = H - padT - padB;
+
+      var cumulative = [];
+      var running = 0;
+      sessions.forEach(function(s) {
+        running += s.loc;
+        cumulative.push({ date: s.date, cumLoc: running, loc: s.loc, title: s.title });
+      });
+
+      var axisMax = 5000;
+
+      function toX(i) { return padL + (i / (cumulative.length - 1)) * chartW; }
+      function toY(val) { return padT + chartH - (val / axisMax) * chartH; }
+
+      var ns = 'http://www.w3.org/2000/svg';
+      var frag = document.createDocumentFragment();
+
+      // Defs for gradient
+      var defs = document.createElementNS(ns, 'defs');
+      var grad = document.createElementNS(ns, 'linearGradient');
+      grad.setAttribute('id', 'growthGrad');
+      grad.setAttribute('x1', '0'); grad.setAttribute('y1', '0');
+      grad.setAttribute('x2', '0'); grad.setAttribute('y2', '1');
+      var stop1 = document.createElementNS(ns, 'stop');
+      stop1.setAttribute('offset', '0%');
+      stop1.setAttribute('stop-color', '#4ade80');
+      stop1.setAttribute('stop-opacity', '0.2');
+      var stop2 = document.createElementNS(ns, 'stop');
+      stop2.setAttribute('offset', '100%');
+      stop2.setAttribute('stop-color', '#4ade80');
+      stop2.setAttribute('stop-opacity', '0.02');
+      grad.appendChild(stop1); grad.appendChild(stop2);
+      defs.appendChild(grad);
+      frag.appendChild(defs);
+
+      // Y-axis grid lines
+      var yTicks = [0, 1000, 2000, 3000, 4000, 5000];
+      yTicks.forEach(function(tick) {
+        if (tick > 0) {
+          var gridLine = document.createElementNS(ns, 'line');
+          gridLine.setAttribute('x1', padL);
+          gridLine.setAttribute('y1', toY(tick));
+          gridLine.setAttribute('x2', W - padR);
+          gridLine.setAttribute('y2', toY(tick));
+          gridLine.setAttribute('stroke', 'rgba(255,255,255,0.06)');
+          gridLine.setAttribute('stroke-width', '0.5');
+          gridLine.setAttribute('stroke-dasharray', '4,4');
+          frag.appendChild(gridLine);
+        }
+        var label = document.createElementNS(ns, 'text');
+        label.textContent = tick === 0 ? '0' : (tick / 1000) + 'k';
+        label.setAttribute('x', padL - 8);
+        label.setAttribute('y', toY(tick) + 3);
+        label.setAttribute('text-anchor', 'end');
+        label.setAttribute('font-family', "'JetBrains Mono', monospace");
+        label.setAttribute('font-size', '9');
+        label.setAttribute('fill', 'rgba(255,255,255,0.25)');
+        frag.appendChild(label);
+      });
+
+      // Baseline
+      var baseline = document.createElementNS(ns, 'line');
+      baseline.setAttribute('x1', padL);
+      baseline.setAttribute('y1', toY(0));
+      baseline.setAttribute('x2', W - padR);
+      baseline.setAttribute('y2', toY(0));
+      baseline.setAttribute('stroke', 'rgba(255,255,255,0.08)');
+      baseline.setAttribute('stroke-width', '1');
+      frag.appendChild(baseline);
+
+      // Build step-line path
+      var coords = cumulative.map(function(p, i) {
+        return { x: toX(i), y: toY(p.cumLoc) };
+      });
+
+      var linePath = 'M' + coords[0].x.toFixed(1) + ',' + coords[0].y.toFixed(1);
+      for (var i = 1; i < coords.length; i++) {
+        linePath += ' L' + coords[i].x.toFixed(1) + ',' + coords[i - 1].y.toFixed(1);
+        linePath += ' L' + coords[i].x.toFixed(1) + ',' + coords[i].y.toFixed(1);
+      }
+
+      var areaPath = linePath +
+        ' L' + coords[coords.length - 1].x.toFixed(1) + ',' + toY(0).toFixed(1) +
+        ' L' + coords[0].x.toFixed(1) + ',' + toY(0).toFixed(1) + ' Z';
+
+      // Area fill
+      var area = document.createElementNS(ns, 'path');
+      area.setAttribute('d', areaPath);
+      area.setAttribute('fill', 'url(#growthGrad)');
+      area.setAttribute('class', 'growth-area');
+      frag.appendChild(area);
+
+      // Line
+      var line = document.createElementNS(ns, 'path');
+      line.setAttribute('d', linePath);
+      line.setAttribute('fill', 'none');
+      line.setAttribute('stroke', '#4ade80');
+      line.setAttribute('stroke-width', '2');
+      line.setAttribute('stroke-linecap', 'round');
+      line.setAttribute('class', 'growth-line');
+      frag.appendChild(line);
+
+      // Dots and labels
+      coords.forEach(function(c, idx) {
+        var dot = document.createElementNS(ns, 'circle');
+        dot.setAttribute('cx', c.x);
+        dot.setAttribute('cy', c.y);
+        dot.setAttribute('r', '4');
+        dot.setAttribute('fill', '#4ade80');
+        dot.setAttribute('stroke', '#09090b');
+        dot.setAttribute('stroke-width', '2');
+        dot.setAttribute('class', 'growth-dot');
+        dot.style.transitionDelay = (200 + idx * 100) + 'ms';
+        frag.appendChild(dot);
+
+        var d = new Date(cumulative[idx].date);
+        var dateLabel = document.createElementNS(ns, 'text');
+        dateLabel.textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        dateLabel.setAttribute('x', c.x);
+        dateLabel.setAttribute('y', H - 8);
+        dateLabel.setAttribute('text-anchor', 'middle');
+        dateLabel.setAttribute('font-family', "'JetBrains Mono', monospace");
+        dateLabel.setAttribute('font-size', '8');
+        dateLabel.setAttribute('fill', 'rgba(255,255,255,0.25)');
+        frag.appendChild(dateLabel);
+
+        var locLabel = document.createElementNS(ns, 'text');
+        locLabel.textContent = '+' + cumulative[idx].loc;
+        locLabel.setAttribute('x', c.x);
+        locLabel.setAttribute('y', c.y - 10);
+        locLabel.setAttribute('text-anchor', 'middle');
+        locLabel.setAttribute('font-family', "'JetBrains Mono', monospace");
+        locLabel.setAttribute('font-size', '8');
+        locLabel.setAttribute('fill', 'rgba(74,222,128,0.5)');
+        locLabel.setAttribute('class', 'growth-dot');
+        locLabel.style.transitionDelay = (300 + idx * 100) + 'ms';
+        frag.appendChild(locLabel);
+      });
+
+      svg.appendChild(frag);
+
+      // Measure actual path length for dash animation
+      requestAnimationFrame(function() {
+        var pathLen = line.getTotalLength();
+        line.style.strokeDasharray = pathLen;
+        line.style.strokeDashoffset = pathLen;
+      });
+    })();
+
+  })();
+  </script>
+</body>
+</html>

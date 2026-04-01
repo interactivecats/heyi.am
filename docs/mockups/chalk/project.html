@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BudgetWise — Project | Chalk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Tokens ── */
+  :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --fg: #1e293b;
+    --fg-muted: #64748b;
+    --accent: #334155;
+    --accent-light: #475569;
+    --border: #cbd5e1;
+    --border-light: #e2e8f0;
+    --sketch-color: #94a3b8;
+    --radius-sm: 4px;
+    --radius: 8px;
+    --font-display: 'Caveat', cursive;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --agent-frontend: #7c3aed;
+    --agent-backend: #0891b2;
+    --agent-qa: #059669;
+    --agent-security: #475569;
+    --agent-reviewer: #e11d48;
+    --agent-ux: #d97706;
+  }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--fg);
+    background-color: var(--bg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── SVG filters ── */
+  .svg-filters {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
+  /* ── Skip link ── */
+  .skip-link {
+    position: absolute;
+    inset-inline-start: -9999px;
+    top: 0;
+    background: var(--accent);
+    color: var(--surface);
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    z-index: 100;
+    border-radius: var(--radius-sm);
+  }
+  .skip-link:focus {
+    inset-inline-start: 8px;
+    top: 8px;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 960px;
+    margin-inline: auto;
+    padding-inline: 24px;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    padding: 16px 0;
+    background: var(--surface);
+    border-bottom: 2px solid var(--border-light);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-brand {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .nav-links {
+    display: flex;
+    gap: 24px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--fg-muted);
+    text-decoration: none;
+    position: relative;
+    transition: color 0.15s;
+  }
+  .nav-links a:hover,
+  .nav-links a[aria-current="page"] {
+    color: var(--accent);
+  }
+  .nav-links a[aria-current="page"]::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
+    bottom: -4px;
+    height: 3px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='6'%3E%3Cpath d='M0 3 Q 10 0, 20 3 T 40 3 T 60 3 T 80 3 T 100 3' fill='none' stroke='%23334155' stroke-width='2'/%3E%3C/svg%3E") repeat-x;
+    background-size: 50px 6px;
+  }
+  .nav-links a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Sketch underline ── */
+  .sketch-underline {
+    position: relative;
+    display: inline-block;
+  }
+  .sketch-underline::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: -4px;
+    inset-inline-end: -4px;
+    bottom: -2px;
+    height: 6px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='8'%3E%3Cpath d='M0 4 Q 8 1, 16 4 T 32 4 T 48 4 T 64 4 T 80 4 T 96 4 T 112 4 L 120 4' fill='none' stroke='%23334155' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x;
+    background-size: 60px 8px;
+  }
+
+  /* ── Hand-drawn card ── */
+  .chalk-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 28px;
+    filter: url(#chalk-rough);
+  }
+
+  /* ── Pin-to-board animation ── */
+  @keyframes pin-in {
+    from {
+      opacity: 0;
+      transform: rotate(-2deg) translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: rotate(0deg) translateY(0);
+    }
+  }
+  .fade-in {
+    animation: pin-in 0.5s ease-out both;
+  }
+
+  /* ── Annotation arrow ── */
+  .annotation {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--accent-light);
+  }
+  .annotation-arrow {
+    width: 40px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+  .annotation-arrow path {
+    fill: none;
+    stroke: var(--accent-light);
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 56px 0 40px;
+  }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 6vw, 56px);
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .hero-links {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg-muted);
+    margin-bottom: 12px;
+  }
+  .hero-links a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .hero-links a:hover {
+    text-decoration: underline;
+    text-decoration-style: wavy;
+    text-underline-offset: 3px;
+  }
+  .hero-links a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Screenshot placeholder ── */
+  .screenshot {
+    background: linear-gradient(135deg, var(--border-light) 0%, var(--border) 100%);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 24px;
+    color: var(--fg-muted);
+    margin-bottom: 32px;
+    filter: url(#chalk-rough);
+    position: relative;
+    overflow: hidden;
+  }
+  .screenshot-chrome {
+    position: absolute;
+    top: 0;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
+    height: 32px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding-inline-start: 12px;
+    gap: 6px;
+  }
+  .chrome-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+  }
+
+  /* ── Section heading ── */
+  .section-heading {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+
+  /* ── Narrative ── */
+  .narrative-section {
+    padding: 32px 0;
+  }
+  .narrative p {
+    font-size: 15px;
+    color: var(--fg);
+    margin-bottom: 16px;
+    line-height: 1.7;
+  }
+  .narrative p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* ── Stats row ── */
+  .stats-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 24px 0;
+    border-top: 2px solid var(--border-light);
+    border-bottom: 2px solid var(--border-light);
+    margin-bottom: 32px;
+  }
+  .stat-item {
+    text-align: center;
+    min-width: 80px;
+  }
+  .stat-item-value {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.1;
+  }
+  .stat-item-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-muted);
+    margin-top: 2px;
+  }
+
+  /* ── Work timeline chart (hand-drawn style) ── */
+  .timeline-section {
+    padding: 32px 0;
+  }
+  .timeline-chart {
+    width: 100%;
+    overflow-x: auto;
+  }
+  .timeline-chart svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* ── Phase timeline with hand-drawn circles ── */
+  .phases-section {
+    padding: 32px 0;
+  }
+  .phase-list {
+    list-style: none;
+    position: relative;
+    padding-inline-start: 32px;
+  }
+  .phase-list::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 11px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='10'%3E%3Cline x1='1' y1='0' x2='1' y2='6' stroke='%23cbd5e1' stroke-width='2' stroke-dasharray='4 3'/%3E%3C/svg%3E") repeat-y;
+  }
+  .phase-item {
+    position: relative;
+    padding-bottom: 28px;
+  }
+  .phase-item:last-child {
+    padding-bottom: 0;
+  }
+  .phase-circle {
+    position: absolute;
+    inset-inline-start: -32px;
+    top: 2px;
+    width: 24px;
+    height: 24px;
+  }
+  .phase-circle circle {
+    fill: var(--surface);
+    stroke: var(--accent);
+    stroke-width: 2;
+  }
+  .phase-circle text {
+    font-family: var(--font-display);
+    font-size: 12px;
+    fill: var(--accent);
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+  .phase-name {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .phase-dates {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    margin-bottom: 4px;
+  }
+  .phase-desc {
+    font-size: 14px;
+    color: var(--fg-muted);
+  }
+
+  /* ── Key decisions ── */
+  .decisions-section {
+    padding: 32px 0;
+  }
+  .decision-list {
+    list-style: none;
+    counter-reset: decisions;
+  }
+  .decision-item {
+    counter-increment: decisions;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: var(--fg);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    filter: url(#chalk-rough);
+  }
+  .decision-item::before {
+    counter-increment: decisions;
+    content: counter(decisions);
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+    line-height: 1;
+    min-width: 20px;
+    text-align: center;
+  }
+
+  /* ── Source breakdown ── */
+  .source-section {
+    padding: 32px 0;
+  }
+  .source-bar-lg {
+    height: 16px;
+    border-radius: 8px;
+    background: var(--border-light);
+    overflow: hidden;
+    margin-bottom: 12px;
+    border: 2px solid var(--border);
+    filter: url(#chalk-rough);
+  }
+  .source-fill-lg {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 8px;
+  }
+  .source-legend-lg {
+    display: flex;
+    gap: 24px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg-muted);
+  }
+  .source-legend-lg span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dot-claude-lg {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+  }
+  .dot-cursor-lg {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+    display: inline-block;
+  }
+
+  /* ── Skills ── */
+  .skills-section {
+    padding: 32px 0;
+  }
+  .skills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    list-style: none;
+  }
+  .skill-chip {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 4px 12px;
+    color: var(--accent);
+    background: transparent;
+    text-decoration: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: var(--sketch-color);
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1.5px;
+  }
+
+  /* ── Sessions table ── */
+  .sessions-section {
+    padding: 32px 0;
+  }
+  .sessions-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+  }
+  .sessions-table thead th {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-muted);
+    text-align: start;
+    padding: 8px 12px;
+    border-bottom: 2px solid var(--border);
+    font-weight: 500;
+  }
+  .sessions-table tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--fg);
+    vertical-align: top;
+  }
+  .sessions-table tbody tr:hover {
+    background: rgba(51, 65, 85, 0.04);
+  }
+  .session-title-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .session-title-link:hover {
+    text-decoration: underline;
+    text-decoration-style: wavy;
+    text-underline-offset: 2px;
+  }
+  .session-title-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  .session-source {
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    border-top: 2px solid var(--border);
+    margin-top: 48px;
+    padding: 24px 0;
+  }
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+  .footer-brand {
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--accent);
+  }
+
+  /* ── Reduced motion ── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .nav-inner {
+      flex-direction: column;
+      gap: 12px;
+    }
+    .stats-row {
+      gap: 12px;
+    }
+    .stat-item {
+      min-width: 70px;
+    }
+    .sessions-table {
+      font-size: 12px;
+    }
+    .sessions-table thead th,
+    .sessions-table tbody td {
+      padding: 8px 6px;
+    }
+    .sessions-table .hide-mobile {
+      display: none;
+    }
+    .footer-inner {
+      flex-direction: column;
+      gap: 8px;
+      text-align: center;
+    }
+  }
+
+    /* ── Clickable session cards ── */
+    a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+<!-- SVG filters -->
+<svg class="svg-filters" aria-hidden="true">
+  <defs>
+    <filter id="chalk-rough">
+      <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" seed="1" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </defs>
+</svg>
+
+<a href="#main" class="skip-link">Skip to content</a>
+
+<!-- Nav -->
+<nav class="nav" aria-label="Main navigation">
+  <div class="container nav-inner">
+    <a href="./portfolio.html" class="nav-brand">alex chen</a>
+    <ul class="nav-links">
+      <li><a href="./portfolio.html">Portfolio</a></li>
+      <li><a href="./project.html" aria-current="page">Project</a></li>
+      <li><a href="./session.html">Session</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Main -->
+<main id="main" class="container">
+
+  <!-- Hero -->
+  <section class="hero" aria-label="Project header">
+    <h1>BudgetWise</h1>
+    <p class="hero-links">
+      <a href="https://github.com/alex/budgetwise">github.com/alex/budgetwise</a>
+      &middot;
+      <a href="https://budgetwise.app">budgetwise.app</a>
+    </p>
+
+    <!-- Screenshot placeholder -->
+    <div class="screenshot" role="img" aria-label="BudgetWise application screenshot">
+      <div class="screenshot-chrome" aria-hidden="true">
+        <span class="chrome-dot"></span>
+        <span class="chrome-dot"></span>
+        <span class="chrome-dot"></span>
+      </div>
+      <span>budgetwise.app</span>
+    </div>
+  </section>
+
+  <!-- Narrative -->
+  <section class="narrative-section" aria-label="Project narrative">
+    <h2 class="section-heading"><span class="sketch-underline">The Story</span></h2>
+    <div class="narrative">
+      <p>Started with a basic Prisma schema but realized halfway through that I needed polymorphic transaction types. The AI kept suggesting single-table inheritance but I pushed back &mdash; went with a discriminated union pattern instead. Nullable fields for transfer-specific data, hard deletes with an audit log.</p>
+      <p>The recurring transaction detection was the hardest part. Had to figure out the right tolerance windows &mdash; monthly transactions drift by a few days, weekly ones are more precise. Settled on three consecutive interval matches before marking something as recurring. The partial index on merchant_normalized brought the detection query from 2 seconds to 120ms on 10k transactions.</p>
+      <p>Plaid integration went smoother than expected. The token exchange flow is straightforward, but the webhook handling needed careful idempotency &mdash; Plaid sends duplicate webhooks, so I used a processed-events table keyed on webhook ID.</p>
+    </div>
+    <div class="annotation" aria-hidden="true">
+      <svg class="annotation-arrow" viewBox="0 0 40 24">
+        <path d="M2 20 C 10 20, 20 4, 36 4" />
+        <path d="M30 2 L 37 4 L 31 8" />
+      </svg>
+      <span>pushed back on the AI here -- good call</span>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section aria-label="Project statistics">
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-item-value">8</div>
+        <div class="stat-item-label">Sessions</div>
+      </div>
+      <div class="stat-item" style="position: relative;">
+        <div style="display: flex; flex-direction: column; gap: 4px; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 8px; width: 100%; max-width: 140px;">
+            <div style="flex: 19; height: 8px; background: var(--fg); border-radius: 4px; position: relative; transform: rotate(-0.5deg);">
+              <span style="position: absolute; top: -14px; left: 0; font-family: var(--font-mono); font-size: 9px; color: var(--fg-muted);">8.1h</span>
+            </div>
+            <div style="flex: 81; height: 8px; background: var(--fg); border-radius: 4px; opacity: 0.4; position: relative; transform: rotate(0.3deg);">
+              <span style="position: absolute; top: -14px; right: 0; font-family: var(--font-mono); font-size: 9px; color: var(--fg-muted);">34.4h</span>
+            </div>
+          </div>
+        </div>
+        <div class="stat-item-label" style="margin-top: 6px;">You &larr;&rarr; Agents &middot; 4.2&times;</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-item-value">4,460</div>
+        <div class="stat-item-label">LOC</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-item-value">156</div>
+        <div class="stat-item-label">Files</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-item-value">2.1M</div>
+        <div class="stat-item-label">Tokens</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Work timeline chart -->
+  <section class="timeline-section" aria-label="Work timeline">
+    <h2 class="section-heading"><span class="sketch-underline">Work Timeline</span></h2>
+    <div class="timeline-chart" role="img" aria-label="Bar chart showing 8 sessions from February to March 2026, with varying durations and lines of code">
+      <svg viewBox="0 0 800 260" preserveAspectRatio="xMidYMid meet">
+        <!-- Grid lines (hand-drawn style) -->
+        <line x1="60" y1="20" x2="60" y2="200" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="6 4" />
+        <line x1="60" y1="200" x2="780" y2="200" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="6 4" />
+
+        <!-- Y-axis labels -->
+        <text x="50" y="40" text-anchor="end" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#64748b">900</text>
+        <text x="50" y="80" text-anchor="end" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#64748b">700</text>
+        <text x="50" y="120" text-anchor="end" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#64748b">500</text>
+        <text x="50" y="160" text-anchor="end" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#64748b">300</text>
+        <text x="50" y="200" text-anchor="end" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#64748b">0</text>
+        <text x="20" y="115" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#64748b" transform="rotate(-90 20 115)">LOC</text>
+
+        <!-- Bars with hand-drawn stroke style (dasharray variation) -->
+        <!-- Session 1: 680 LOC, Claude -->
+        <rect x="80" y="49" width="70" height="151" rx="4" fill="#334155" opacity="0.85" stroke="#334155" stroke-width="1.5" stroke-dasharray="8 2 3 2" />
+        <!-- Session 2: 520 LOC, Cursor -->
+        <rect x="170" y="85" width="70" height="115" rx="4" fill="#94a3b8" opacity="0.85" stroke="#475569" stroke-width="1.5" stroke-dasharray="5 3 8 2" />
+        <!-- Session 3: 890 LOC, Claude -->
+        <rect x="260" y="2" width="70" height="198" rx="4" fill="#334155" opacity="0.85" stroke="#334155" stroke-width="1.5" stroke-dasharray="7 2 4 3" />
+        <!-- Session 4: 420 LOC, Claude -->
+        <rect x="350" y="107" width="70" height="93" rx="4" fill="#334155" opacity="0.85" stroke="#334155" stroke-width="1.5" stroke-dasharray="6 3 5 2" />
+        <!-- Session 5: 380 LOC, Cursor -->
+        <rect x="440" y="116" width="70" height="84" rx="4" fill="#94a3b8" opacity="0.85" stroke="#475569" stroke-width="1.5" stroke-dasharray="4 2 7 3" />
+        <!-- Session 6: 510 LOC, Claude -->
+        <rect x="530" y="87" width="70" height="113" rx="4" fill="#334155" opacity="0.85" stroke="#334155" stroke-width="1.5" stroke-dasharray="8 3 3 2" />
+        <!-- Session 7: 720 LOC, Claude -->
+        <rect x="620" y="40" width="70" height="160" rx="4" fill="#334155" opacity="0.85" stroke="#334155" stroke-width="1.5" stroke-dasharray="5 2 6 3" />
+        <!-- Session 8: 340 LOC, Cursor -->
+        <rect x="710" y="125" width="70" height="75" rx="4" fill="#94a3b8" opacity="0.85" stroke="#475569" stroke-width="1.5" stroke-dasharray="7 3 4 2" />
+
+        <!-- X-axis labels -->
+        <text x="115" y="220" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#64748b">Feb 3</text>
+        <text x="205" y="220" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#64748b">Feb 14</text>
+        <text x="295" y="220" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#64748b">Mar 1</text>
+        <text x="385" y="220" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#64748b">Mar 10</text>
+        <text x="475" y="220" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#64748b">Mar 14</text>
+        <text x="565" y="220" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#64748b">Mar 18</text>
+        <text x="655" y="220" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#64748b">Mar 22</text>
+        <text x="745" y="220" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#64748b">Mar 26</text>
+
+        <!-- Annotation arrow pointing to tallest bar -->
+        <path d="M340 15 C 330 10, 310 5, 300 10" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" />
+        <path d="M304 6 L 298 11 L 306 13" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" />
+        <text x="342" y="14" font-family="'Caveat', cursive" font-size="14" fill="#475569">890 LOC!</text>
+
+        <!-- Legend -->
+        <rect x="240" y="240" width="12" height="12" rx="3" fill="#334155" />
+        <text x="258" y="251" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#64748b">Claude</text>
+        <rect x="320" y="240" width="12" height="12" rx="3" fill="#94a3b8" />
+        <text x="338" y="251" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#64748b">Cursor</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Phases -->
+  <section class="phases-section" aria-label="Project phases">
+    <h2 class="section-heading"><span class="sketch-underline">Phases</span></h2>
+    <ol class="phase-list">
+      <li class="phase-item">
+        <svg class="phase-circle" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <text x="12" y="12">1</text>
+        </svg>
+        <div class="phase-name">Foundation</div>
+        <div class="phase-dates">Feb 3 &ndash; 14</div>
+        <div class="phase-desc">Schema design, Prisma setup, transaction CRUD</div>
+      </li>
+      <li class="phase-item">
+        <svg class="phase-circle" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <text x="12" y="12">2</text>
+        </svg>
+        <div class="phase-name">Data Pipeline</div>
+        <div class="phase-dates">Feb 17 &ndash; 26</div>
+        <div class="phase-desc">CSV import, Plaid integration, recurring detection</div>
+      </li>
+      <li class="phase-item">
+        <svg class="phase-circle" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <text x="12" y="12">3</text>
+        </svg>
+        <div class="phase-name">Intelligence</div>
+        <div class="phase-dates">Mar 1 &ndash; 14</div>
+        <div class="phase-desc">Search, full-text indexing, spending insights</div>
+      </li>
+      <li class="phase-item">
+        <svg class="phase-circle" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <text x="12" y="12">4</text>
+        </svg>
+        <div class="phase-name">Hardening</div>
+        <div class="phase-dates">Mar 16 &ndash; 26</div>
+        <div class="phase-desc">2FA, mobile responsive, CI/CD, performance</div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- Key Decisions -->
+  <section class="decisions-section" aria-label="Key decisions">
+    <h2 class="section-heading"><span class="sketch-underline">Key Decisions</span></h2>
+    <ol class="decision-list">
+      <li class="decision-item">Discriminated union over single-table inheritance for transaction types</li>
+      <li class="decision-item">Partial index on merchant_normalized for 16x query speedup</li>
+      <li class="decision-item">Processed-events table for Plaid webhook idempotency</li>
+    </ol>
+  </section>
+
+  <!-- Source Breakdown -->
+  <section class="source-section" aria-label="Source breakdown">
+    <h2 class="section-heading"><span class="sketch-underline">Source Mix</span></h2>
+    <div class="source-bar-lg" role="img" aria-label="Claude Code 62.5%, Cursor 37.5%">
+      <div class="source-fill-lg" style="width: 62.5%"></div>
+    </div>
+    <div class="source-legend-lg">
+      <span><span class="dot-claude-lg"></span> Claude Code 62.5% (5 sessions)</span>
+      <span><span class="dot-cursor-lg"></span> Cursor 37.5% (3 sessions)</span>
+    </div>
+  </section>
+
+  <!-- Skills -->
+  <section class="skills-section" aria-label="Skills used">
+    <h2 class="section-heading"><span class="sketch-underline">Skills</span></h2>
+    <ul class="skills-list">
+      <li class="skill-chip">TypeScript</li>
+      <li class="skill-chip">React</li>
+      <li class="skill-chip">Next.js</li>
+      <li class="skill-chip">Prisma</li>
+      <li class="skill-chip">PostgreSQL</li>
+      <li class="skill-chip">Tailwind CSS</li>
+      <li class="skill-chip">Stripe API</li>
+      <li class="skill-chip">Plaid API</li>
+      <li class="skill-chip">Chart.js</li>
+      <li class="skill-chip">Playwright</li>
+    </ul>
+  </section>
+
+  <!-- Sessions -->
+  <section class="sessions-section" aria-label="Featured sessions">
+    <h2 class="section-heading"><span class="sketch-underline">Sessions</span></h2>
+    <div style="overflow-x: auto;">
+      <table class="sessions-table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Title</th>
+            <th scope="col">Date</th>
+            <th scope="col">Duration</th>
+            <th scope="col">LOC</th>
+            <th scope="col" class="hide-mobile">Source</th>
+            <th scope="col" class="hide-mobile">Agents</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td><a href="./session.html" class="session-title-link">Set up Prisma schema</a></td>
+            <td>Feb 3</td>
+            <td>72m</td>
+            <td>680</td>
+            <td class="hide-mobile"><span class="session-source">Claude</span></td>
+            <td class="hide-mobile">7</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><a href="./session.html" class="session-title-link">Transaction list + infinite scroll</a></td>
+            <td>Feb 14</td>
+            <td>65m</td>
+            <td>520</td>
+            <td class="hide-mobile"><span class="session-source">Cursor</span></td>
+            <td class="hide-mobile">5</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><a href="./session.html" class="session-title-link">Recurring transaction detection</a></td>
+            <td>Mar 1</td>
+            <td>88m</td>
+            <td>890</td>
+            <td class="hide-mobile"><span class="session-source">Claude</span></td>
+            <td class="hide-mobile">6</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><a href="./session.html" class="session-title-link">Stripe integration</a></td>
+            <td>Mar 10</td>
+            <td>55m</td>
+            <td>420</td>
+            <td class="hide-mobile"><span class="session-source">Claude</span></td>
+            <td class="hide-mobile">0</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td><a href="./session.html" class="session-title-link">CSV import pipeline</a></td>
+            <td>Mar 14</td>
+            <td>45m</td>
+            <td>380</td>
+            <td class="hide-mobile"><span class="session-source">Cursor</span></td>
+            <td class="hide-mobile">4</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td><a href="./session.html" class="session-title-link">Full-text search tsvector</a></td>
+            <td>Mar 18</td>
+            <td>62m</td>
+            <td>510</td>
+            <td class="hide-mobile"><span class="session-source">Claude</span></td>
+            <td class="hide-mobile">3</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td><a href="./session.html" class="session-title-link">Spending insights dashboard</a></td>
+            <td>Mar 22</td>
+            <td>78m</td>
+            <td>720</td>
+            <td class="hide-mobile"><span class="session-source">Claude</span></td>
+            <td class="hide-mobile">5</td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td><a href="./session.html" class="session-title-link">Mobile responsive + 2FA</a></td>
+            <td>Mar 26</td>
+            <td>50m</td>
+            <td>340</td>
+            <td class="hide-mobile"><span class="session-source">Cursor</span></td>
+            <td class="hide-mobile">0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<!-- Footer -->
+<footer class="footer" role="contentinfo">
+  <div class="container footer-inner">
+    <span class="footer-brand">Chalk Template</span>
+    <span>heyi.am</span>
+  </div>
+</footer>
+
+<script>
+(function() {
+  'use strict';
+
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── Scroll-triggered fade-in for sections ── */
+  function setupFadeIn() {
+    var sections = document.querySelectorAll('.chalk-card, .decision-item');
+    if (prefersReducedMotion || !sections.length) return;
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0) rotate(0deg)';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    sections.forEach(function(el) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(12px) rotate(-1deg)';
+      el.style.transition = 'opacity 0.4s ease-out, transform 0.4s ease-out';
+      observer.observe(el);
+    });
+  }
+
+  /* ── Chart bar animation ── */
+  function setupChartAnimation() {
+    var chart = document.querySelector('.timeline-chart');
+    if (!chart || prefersReducedMotion) return;
+
+    var bars = chart.querySelectorAll('rect[rx]');
+    bars.forEach(function(bar) {
+      var originalHeight = parseFloat(bar.getAttribute('height'));
+      var originalY = parseFloat(bar.getAttribute('y'));
+      bar.setAttribute('height', '0');
+      bar.setAttribute('y', String(originalY + originalHeight));
+      bar.dataset.targetHeight = String(originalHeight);
+      bar.dataset.targetY = String(originalY);
+    });
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          bars.forEach(function(bar, i) {
+            setTimeout(function() {
+              bar.style.transition = 'all 0.5s ease-out';
+              bar.setAttribute('height', bar.dataset.targetHeight);
+              bar.setAttribute('y', bar.dataset.targetY);
+            }, i * 80);
+          });
+          observer.disconnect();
+        }
+      });
+    }, { threshold: 0.2 });
+    observer.observe(chart);
+  }
+
+  setupFadeIn();
+  setupChartAnimation();
+})();
+</script>
+</body>
+</html>

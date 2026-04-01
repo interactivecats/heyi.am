@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BudgetWise — Alex Chen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ============================
+       BAUHAUS TEMPLATE — PROJECT
+       ============================ */
+
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #fafafa;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --text-secondary: #555555;
+      --red: #dc2626;
+      --blue: #2563eb;
+      --yellow: #eab308;
+      --black: #1a1a1a;
+      --border: 3px solid var(--black);
+      --font-display: 'Space Grotesk', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+      --radius: 0px;
+      --max-width: 1200px;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 16px;
+      z-index: 1000;
+      padding: 12px 24px;
+      background: var(--black);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      text-decoration: none;
+    }
+    .skip-link:focus { top: 16px; }
+
+    /* Nav */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--card);
+      border-bottom: var(--border);
+    }
+
+    .nav-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .nav-logo {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 20px;
+      text-decoration: none;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-logo-shape {
+      width: 24px;
+      height: 24px;
+      background: var(--red);
+      display: inline-block;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 8px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      color: var(--text);
+      padding: 8px 16px;
+      border: 2px solid transparent;
+      transition: border-color 0.15s ease;
+    }
+
+    .nav-links a:hover,
+    .nav-links a:focus-visible { border-color: var(--black); }
+    .nav-links a[aria-current="page"] { background: var(--black); color: #fff; }
+    .nav-links a:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+    /* Main */
+    main {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+      padding: 20px 0;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .breadcrumb a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb a:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+    .breadcrumb span { margin: 0 8px; }
+
+    /* Project hero */
+    .project-hero {
+      padding: 40px 0 48px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 48px;
+      align-items: start;
+    }
+
+    .project-hero-content { position: relative; }
+
+    .project-hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(40px, 6vw, 64px);
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -1.5px;
+      margin-bottom: 16px;
+    }
+
+    .project-links {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .project-links a {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--blue);
+      text-decoration: none;
+      border-bottom: 2px solid var(--blue);
+      padding-bottom: 2px;
+    }
+    .project-links a:hover { color: var(--red); border-color: var(--red); }
+    .project-links a:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; }
+
+    .project-hero-shapes {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      flex-shrink: 0;
+    }
+
+    .hero-shape-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: var(--yellow);
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
+
+    .hero-shape-rect {
+      width: 60px;
+      height: 120px;
+      background: var(--red);
+      position: absolute;
+      bottom: 0;
+      left: 0;
+    }
+
+    .hero-shape-line-h {
+      width: 140px;
+      height: 3px;
+      background: var(--black);
+      position: absolute;
+      top: 100px;
+      left: 10px;
+    }
+
+    .hero-shape-small-sq {
+      width: 30px;
+      height: 30px;
+      background: var(--blue);
+      position: absolute;
+      bottom: 20px;
+      right: 30px;
+    }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0;
+      border: var(--border);
+      margin-bottom: 48px;
+    }
+
+    .stat-cell {
+      padding: 20px 16px;
+      text-align: center;
+      border-right: var(--border);
+    }
+    .stat-cell:last-child { border-right: none; }
+
+    .stat-cell:nth-child(1) { background: var(--red); color: #fff; }
+    .stat-cell:nth-child(2) { background: var(--card); }
+    .stat-cell:nth-child(3) { background: var(--blue); color: #fff; }
+    .stat-cell:nth-child(4) { background: var(--card); }
+    .stat-cell:nth-child(5) { background: var(--yellow); color: var(--black); }
+    .stat-cell:nth-child(6) { background: var(--card); }
+
+    .stat-cell-number {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 3.5vw, 40px);
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stat-cell-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Section heading */
+    .section-heading {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .section-heading h2 {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .heading-line {
+      flex: 1;
+      height: 3px;
+      background: var(--black);
+    }
+
+    /* Narrative */
+    .narrative-section {
+      margin-bottom: 56px;
+      position: relative;
+    }
+
+    .narrative-section::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -24px;
+      width: 6px;
+      height: 100%;
+      background: var(--red);
+    }
+
+    .narrative-block {
+      display: grid;
+      gap: 20px;
+    }
+
+    .narrative-block p {
+      font-size: 16px;
+      line-height: 1.8;
+      color: var(--text-secondary);
+    }
+
+    /* Screenshot placeholder */
+    .screenshot-section {
+      margin-bottom: 56px;
+    }
+
+    .screenshot-frame {
+      border: var(--border);
+      overflow: hidden;
+      background: var(--card);
+    }
+
+    .screenshot-chrome {
+      height: 36px;
+      background: var(--black);
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 8px;
+    }
+
+    .chrome-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .chrome-dot:nth-child(1) { background: var(--red); }
+    .chrome-dot:nth-child(2) { background: var(--yellow); }
+    .chrome-dot:nth-child(3) { background: #4ade80; }
+
+    .screenshot-body {
+      height: 280px;
+      background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 50%, #94a3b8 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .screenshot-placeholder {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: #64748b;
+      background: rgba(255,255,255,0.7);
+      padding: 12px 24px;
+      border: 2px dashed #94a3b8;
+    }
+
+    /* Phases / arc */
+    .phases-section {
+      margin-bottom: 56px;
+    }
+
+    .phases-grid {
+      display: grid;
+      gap: 0;
+    }
+
+    .phase-row {
+      display: grid;
+      grid-template-columns: 60px 1fr;
+      border: var(--border);
+      border-bottom: none;
+    }
+    .phase-row:last-child { border-bottom: var(--border); }
+
+    .phase-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+      border-right: var(--border);
+    }
+
+    .phase-row:nth-child(1) .phase-number { background: var(--red); }
+    .phase-row:nth-child(2) .phase-number { background: var(--blue); }
+    .phase-row:nth-child(3) .phase-number { background: var(--yellow); color: var(--black); }
+    .phase-row:nth-child(4) .phase-number { background: var(--black); }
+
+    .phase-content {
+      padding: 20px 24px;
+      background: var(--card);
+    }
+
+    .phase-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+
+    .phase-dates {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .phase-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* Key decisions */
+    .decisions-section {
+      margin-bottom: 56px;
+    }
+
+    .decisions-list {
+      list-style: none;
+      display: grid;
+      gap: 16px;
+    }
+
+    .decision-item {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      border: var(--border);
+      background: var(--card);
+      overflow: hidden;
+    }
+
+    .decision-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 700;
+      border-right: var(--border);
+      background: var(--bg);
+    }
+
+    .decision-item:nth-child(1) .decision-number { color: var(--red); }
+    .decision-item:nth-child(2) .decision-number { color: var(--blue); }
+    .decision-item:nth-child(3) .decision-number { color: var(--yellow); }
+
+    .decision-text {
+      padding: 16px 20px;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* Skills */
+    .skills-section {
+      margin-bottom: 56px;
+    }
+
+    .skills-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .skill-tag {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 16px;
+      border: var(--border);
+      background: var(--card);
+      transition: transform 0.15s ease;
+    }
+
+    .skill-tag:nth-child(3n+1) { border-left: 6px solid var(--red); }
+    .skill-tag:nth-child(3n+2) { border-left: 6px solid var(--blue); }
+    .skill-tag:nth-child(3n) { border-left: 6px solid var(--yellow); }
+
+    /* Source breakdown */
+    .source-section {
+      margin-bottom: 56px;
+    }
+
+    .source-bar-wrapper {
+      margin-bottom: 12px;
+    }
+
+    .source-bar {
+      height: 24px;
+      display: flex;
+      border: var(--border);
+      overflow: hidden;
+    }
+
+    .source-claude { background: var(--blue); }
+    .source-cursor { background: var(--yellow); }
+
+    .source-legend {
+      display: flex;
+      gap: 24px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+    }
+
+    .legend-swatch {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    .swatch-claude { background: var(--blue); }
+    .swatch-cursor { background: var(--yellow); }
+
+    /* Sessions timeline */
+    .sessions-section {
+      margin-bottom: 56px;
+    }
+
+    .sessions-table-wrapper {
+      border: var(--border);
+      overflow-x: auto;
+    }
+
+    .sessions-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .sessions-table thead {
+      background: var(--black);
+      color: #fff;
+    }
+
+    .sessions-table th {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 14px 16px;
+      text-align: left;
+    }
+
+    .sessions-table td {
+      padding: 14px 16px;
+      border-bottom: 2px solid var(--bg);
+    }
+
+    .sessions-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .sessions-table tbody tr {
+      background: var(--card);
+    }
+
+    .sessions-table tbody tr:hover {
+      background: #f0f0f0;
+    }
+
+    .session-num {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .session-title-link {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .session-title-link:hover { color: var(--blue); }
+    .session-title-link:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+    .session-source-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 3px 8px;
+      border: 2px solid var(--black);
+      white-space: nowrap;
+    }
+
+    .badge-claude { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .badge-cursor { background: var(--yellow); color: var(--black); border-color: var(--yellow); }
+
+    .agent-dots {
+      display: flex;
+      gap: 3px;
+    }
+
+    .agent-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* Featured sessions */
+    .featured-section {
+      margin-bottom: 64px;
+    }
+
+    .featured-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .featured-card {
+      border: var(--border);
+      background: var(--card);
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease;
+    }
+
+    .featured-card:hover {
+      transform: translate(-3px, -3px);
+      box-shadow: 3px 3px 0 var(--black);
+    }
+
+    .featured-card:focus-visible {
+      outline: 3px solid var(--blue);
+      outline-offset: 2px;
+    }
+
+    .featured-card-accent {
+      height: 6px;
+    }
+
+    .featured-card:nth-child(1) .featured-card-accent { background: var(--red); }
+    .featured-card:nth-child(2) .featured-card-accent { background: var(--blue); }
+    .featured-card:nth-child(3) .featured-card-accent { background: var(--yellow); }
+    .featured-card:nth-child(4) .featured-card-accent { background: var(--blue); }
+    .featured-card:nth-child(5) .featured-card-accent { background: var(--red); }
+    .featured-card:nth-child(6) .featured-card-accent { background: var(--yellow); }
+
+    .featured-card-body {
+      padding: 20px;
+    }
+
+    .featured-card-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .featured-card-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 18px;
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+
+    .featured-card-stats {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      gap: 12px;
+    }
+
+    .featured-card-stats strong {
+      color: var(--text);
+    }
+
+    /* Footer */
+    footer {
+      border-top: var(--border);
+      margin-top: 40px;
+    }
+
+    .footer-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .footer-text {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .footer-shapes {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .footer-shape { display: inline-block; }
+    .footer-sq-red { width: 16px; height: 16px; background: var(--red); }
+    .footer-circle-blue { width: 16px; height: 16px; background: var(--blue); border-radius: 50%; }
+    .footer-sq-yellow { width: 16px; height: 16px; background: var(--yellow); }
+
+    /* Animations */
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-60px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(60px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.6) rotate(-15deg); }
+      to   { opacity: 1; transform: scale(1) rotate(0deg); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .anim-slide-left  { opacity: 0; animation: slideInLeft  0.6s cubic-bezier(0.22,1,0.36,1) forwards; }
+    .anim-slide-right { opacity: 0; animation: slideInRight 0.6s cubic-bezier(0.22,1,0.36,1) forwards; }
+    .anim-scale-in    { opacity: 0; animation: scaleIn     0.7s cubic-bezier(0.22,1,0.36,1) forwards; }
+    .anim-fade-up     { opacity: 0; animation: fadeUp      0.5s cubic-bezier(0.22,1,0.36,1) forwards; }
+
+    .anim-delay-1 { animation-delay: 0.1s; }
+    .anim-delay-2 { animation-delay: 0.2s; }
+    .anim-delay-3 { animation-delay: 0.3s; }
+    .anim-delay-4 { animation-delay: 0.4s; }
+    .anim-delay-5 { animation-delay: 0.5s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-delay: 0ms !important;
+        transition-duration: 0.01ms !important;
+      }
+      .anim-slide-left, .anim-slide-right, .anim-scale-in, .anim-fade-up {
+        opacity: 1; transform: none;
+      }
+      .featured-card:hover, .skill-tag:hover { transform: none; box-shadow: none; }
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .project-hero {
+        grid-template-columns: 1fr;
+        gap: 24px;
+        padding: 24px 0 32px;
+      }
+
+      .project-hero-shapes {
+        width: 120px;
+        height: 120px;
+      }
+
+      .hero-shape-circle { width: 60px; height: 60px; }
+      .hero-shape-rect { width: 40px; height: 80px; }
+      .hero-shape-line-h { width: 90px; top: 65px; }
+      .hero-shape-small-sq { width: 20px; height: 20px; }
+
+      .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .stat-cell:nth-child(4) { border-right: none; }
+      .stat-cell:nth-child(1),
+      .stat-cell:nth-child(2),
+      .stat-cell:nth-child(3),
+      .stat-cell:nth-child(4) {
+        border-bottom: var(--border);
+      }
+
+      .narrative-section::before { left: -16px; width: 4px; }
+
+      .phase-row { grid-template-columns: 44px 1fr; }
+
+      .featured-grid { grid-template-columns: 1fr; }
+
+      .nav-links a { padding: 6px 10px; font-size: 12px; }
+
+      .footer-inner { flex-direction: column; text-align: center; }
+
+      .sessions-table { font-size: 13px; }
+      .sessions-table th,
+      .sessions-table td { padding: 10px 12px; }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    /* ── Clickable session cards ── */
+    a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
+  <nav aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="./portfolio.html" class="nav-logo" aria-label="Alex Chen portfolio home">
+        <span class="nav-logo-shape" aria-hidden="true"></span>
+        alex.chen
+      </a>
+      <ul class="nav-links">
+        <li><a href="./portfolio.html">Portfolio</a></li>
+        <li><a href="./project.html" aria-current="page">Project</a></li>
+        <li><a href="./session.html">Session</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main id="main-content">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="./portfolio.html">alex</a>
+      <span aria-hidden="true">/</span>
+      <strong>budgetwise</strong>
+    </nav>
+
+    <!-- Project hero -->
+    <section class="project-hero" aria-label="Project overview">
+      <div class="project-hero-content anim-slide-left">
+        <h1>Budget<wbr>Wise</h1>
+        <div class="project-links">
+          <a href="./session.html">github.com/alex/budgetwise</a>
+          <a href="./session.html">budgetwise.app</a>
+        </div>
+      </div>
+      <div class="project-hero-shapes anim-scale-in anim-delay-2" aria-hidden="true">
+        <div class="hero-shape-circle"></div>
+        <div class="hero-shape-rect"></div>
+        <div class="hero-shape-line-h"></div>
+        <div class="hero-shape-small-sq"></div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats-grid anim-fade-up anim-delay-1" aria-label="Project statistics">
+      <div class="stat-cell">
+        <div class="stat-cell-number">8</div>
+        <div class="stat-cell-label">Sessions</div>
+      </div>
+      <div class="stat-cell" style="background: var(--red); color: #fff;">
+        <div class="stat-cell-number">8.1h</div>
+        <div class="stat-cell-label">You</div>
+      </div>
+      <div class="stat-cell" style="background: var(--blue); color: #fff;">
+        <div class="stat-cell-number">34.4h</div>
+        <div class="stat-cell-label">Agents</div>
+      </div>
+      <div class="stat-cell" style="background: var(--yellow); color: var(--black);">
+        <div class="stat-cell-number">4.2&times;</div>
+        <div class="stat-cell-label">Multiplier</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell-number">4,460</div>
+        <div class="stat-cell-label">LOC</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell-number">156</div>
+        <div class="stat-cell-label">Files</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell-number">2.1M</div>
+        <div class="stat-cell-label">Tokens</div>
+      </div>
+    </section>
+
+    <!-- Screenshot -->
+    <section class="screenshot-section anim-slide-right anim-delay-2" aria-label="Project screenshot">
+      <div class="screenshot-frame">
+        <div class="screenshot-chrome" aria-hidden="true">
+          <span class="chrome-dot"></span>
+          <span class="chrome-dot"></span>
+          <span class="chrome-dot"></span>
+        </div>
+        <div class="screenshot-body">
+          <span class="screenshot-placeholder">budgetwise.app preview</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Narrative -->
+    <section class="narrative-section anim-slide-left anim-delay-2" aria-label="Project narrative">
+      <div class="section-heading">
+        <svg width="20" height="20" aria-hidden="true">
+          <rect width="20" height="20" fill="var(--red)" />
+        </svg>
+        <h2>Narrative</h2>
+        <div class="heading-line" aria-hidden="true"></div>
+      </div>
+      <div class="narrative-block">
+        <p>Started with a basic Prisma schema but realized halfway through that I needed polymorphic transaction types. The AI kept suggesting single-table inheritance but I pushed back &mdash; went with a discriminated union pattern instead. Nullable fields for transfer-specific data, hard deletes with an audit log.</p>
+        <p>The recurring transaction detection was the hardest part. Had to figure out the right tolerance windows &mdash; monthly transactions drift by a few days, weekly ones are more precise. Settled on three consecutive interval matches before marking something as recurring. The partial index on merchant_normalized brought the detection query from 2 seconds to 120ms on 10k transactions.</p>
+        <p>Plaid integration went smoother than expected. The token exchange flow is straightforward, but the webhook handling needed careful idempotency &mdash; Plaid sends duplicate webhooks, so I used a processed-events table keyed on webhook ID.</p>
+      </div>
+    </section>
+
+    <!-- Phases -->
+    <section class="phases-section anim-slide-right anim-delay-3" aria-label="Project phases">
+      <div class="section-heading">
+        <svg width="20" height="20" aria-hidden="true">
+          <circle cx="10" cy="10" r="10" fill="var(--blue)" />
+        </svg>
+        <h2>Phases</h2>
+        <div class="heading-line" aria-hidden="true"></div>
+      </div>
+      <div class="phases-grid">
+        <div class="phase-row">
+          <div class="phase-number">1</div>
+          <div class="phase-content">
+            <div class="phase-title">Foundation</div>
+            <div class="phase-dates">Feb 3 &ndash; 14</div>
+            <div class="phase-desc">Schema design, Prisma setup, transaction CRUD</div>
+          </div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-number">2</div>
+          <div class="phase-content">
+            <div class="phase-title">Data Pipeline</div>
+            <div class="phase-dates">Feb 17 &ndash; 26</div>
+            <div class="phase-desc">CSV import, Plaid integration, recurring detection</div>
+          </div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-number">3</div>
+          <div class="phase-content">
+            <div class="phase-title">Intelligence</div>
+            <div class="phase-dates">Mar 1 &ndash; 14</div>
+            <div class="phase-desc">Search, full-text indexing, spending insights</div>
+          </div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-number">4</div>
+          <div class="phase-content">
+            <div class="phase-title">Hardening</div>
+            <div class="phase-dates">Mar 16 &ndash; 26</div>
+            <div class="phase-desc">2FA, mobile responsive, CI/CD, performance</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Key decisions -->
+    <section class="decisions-section anim-slide-left anim-delay-3" aria-label="Key decisions">
+      <div class="section-heading">
+        <svg width="20" height="20" aria-hidden="true">
+          <rect width="20" height="20" fill="var(--yellow)" />
+        </svg>
+        <h2>Key Decisions</h2>
+        <div class="heading-line" aria-hidden="true"></div>
+      </div>
+      <ol class="decisions-list">
+        <li class="decision-item">
+          <div class="decision-number" aria-hidden="true">1</div>
+          <div class="decision-text">Discriminated union over single-table inheritance for transaction types</div>
+        </li>
+        <li class="decision-item">
+          <div class="decision-number" aria-hidden="true">2</div>
+          <div class="decision-text">Partial index on merchant_normalized for 16x query speedup</div>
+        </li>
+        <li class="decision-item">
+          <div class="decision-number" aria-hidden="true">3</div>
+          <div class="decision-text">Processed-events table for Plaid webhook idempotency</div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Skills -->
+    <section class="skills-section anim-slide-right anim-delay-3" aria-label="Skills used">
+      <div class="section-heading">
+        <svg width="20" height="20" aria-hidden="true">
+          <circle cx="10" cy="10" r="10" fill="var(--red)" />
+        </svg>
+        <h2>Skills</h2>
+        <div class="heading-line" aria-hidden="true"></div>
+      </div>
+      <div class="skills-grid">
+        <span class="skill-tag">TypeScript</span>
+        <span class="skill-tag">React</span>
+        <span class="skill-tag">Next.js</span>
+        <span class="skill-tag">Prisma</span>
+        <span class="skill-tag">PostgreSQL</span>
+        <span class="skill-tag">Tailwind CSS</span>
+        <span class="skill-tag">Stripe API</span>
+        <span class="skill-tag">Plaid API</span>
+        <span class="skill-tag">Chart.js</span>
+        <span class="skill-tag">Playwright</span>
+      </div>
+    </section>
+
+    <!-- Source breakdown -->
+    <section class="source-section anim-slide-left anim-delay-4" aria-label="Source breakdown">
+      <div class="section-heading">
+        <svg width="20" height="20" aria-hidden="true">
+          <rect width="20" height="20" fill="var(--blue)" />
+        </svg>
+        <h2>Source Breakdown</h2>
+        <div class="heading-line" aria-hidden="true"></div>
+      </div>
+      <div class="source-bar-wrapper">
+        <div class="source-bar" aria-label="Claude Code 62.5%, Cursor 37.5%">
+          <div class="source-claude" style="width: 62.5%"></div>
+          <div class="source-cursor" style="width: 37.5%"></div>
+        </div>
+      </div>
+      <div class="source-legend">
+        <span><span class="legend-swatch swatch-claude" aria-hidden="true"></span>Claude Code 62.5% (5 sessions)</span>
+        <span><span class="legend-swatch swatch-cursor" aria-hidden="true"></span>Cursor 37.5% (3 sessions)</span>
+      </div>
+    </section>
+
+    <!-- Work timeline table -->
+    <section class="sessions-section anim-slide-right anim-delay-4" aria-label="Work timeline">
+      <div class="section-heading">
+        <svg width="20" height="20" aria-hidden="true">
+          <rect width="20" height="20" fill="var(--yellow)" />
+        </svg>
+        <h2>Work Timeline</h2>
+        <div class="heading-line" aria-hidden="true"></div>
+      </div>
+      <div class="sessions-table-wrapper">
+        <table class="sessions-table">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Session</th>
+              <th scope="col">Date</th>
+              <th scope="col">Duration</th>
+              <th scope="col">LOC</th>
+              <th scope="col">Source</th>
+              <th scope="col">Agents</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="session-num">1</span></td>
+              <td><a href="./session.html" class="session-title-link">Set up Prisma schema</a></td>
+              <td>Feb 3</td>
+              <td>72m</td>
+              <td>680</td>
+              <td><span class="session-source-badge badge-claude">Claude</span></td>
+              <td>
+                <div class="agent-dots" aria-label="7 agents">
+                  <span class="agent-dot" style="background:#7c3aed" title="frontend-dev"></span>
+                  <span class="agent-dot" style="background:#0891b2" title="backend-dev"></span>
+                  <span class="agent-dot" style="background:#059669" title="qa-engineer"></span>
+                  <span class="agent-dot" style="background:#475569" title="security-engineer"></span>
+                  <span class="agent-dot" style="background:#e11d48" title="code-reviewer"></span>
+                  <span class="agent-dot" style="background:#d97706" title="ux-designer"></span>
+                  <span class="agent-dot" style="background:#7c3aed" title="frontend-dev"></span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="session-num">2</span></td>
+              <td><a href="./session.html" class="session-title-link">Transaction list + infinite scroll</a></td>
+              <td>Feb 14</td>
+              <td>65m</td>
+              <td>520</td>
+              <td><span class="session-source-badge badge-cursor">Cursor</span></td>
+              <td>
+                <div class="agent-dots" aria-label="5 agents">
+                  <span class="agent-dot" style="background:#7c3aed" title="frontend-dev"></span>
+                  <span class="agent-dot" style="background:#0891b2" title="backend-dev"></span>
+                  <span class="agent-dot" style="background:#059669" title="qa-engineer"></span>
+                  <span class="agent-dot" style="background:#475569" title="security-engineer"></span>
+                  <span class="agent-dot" style="background:#e11d48" title="code-reviewer"></span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="session-num">3</span></td>
+              <td><a href="./session.html" class="session-title-link">Recurring transaction detection</a></td>
+              <td>Mar 1</td>
+              <td>88m</td>
+              <td>890</td>
+              <td><span class="session-source-badge badge-claude">Claude</span></td>
+              <td>
+                <div class="agent-dots" aria-label="6 agents">
+                  <span class="agent-dot" style="background:#7c3aed" title="frontend-dev"></span>
+                  <span class="agent-dot" style="background:#0891b2" title="backend-dev"></span>
+                  <span class="agent-dot" style="background:#059669" title="qa-engineer"></span>
+                  <span class="agent-dot" style="background:#475569" title="security-engineer"></span>
+                  <span class="agent-dot" style="background:#e11d48" title="code-reviewer"></span>
+                  <span class="agent-dot" style="background:#d97706" title="ux-designer"></span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="session-num">4</span></td>
+              <td><a href="./session.html" class="session-title-link">Stripe integration</a></td>
+              <td>Mar 10</td>
+              <td>55m</td>
+              <td>420</td>
+              <td><span class="session-source-badge badge-claude">Claude</span></td>
+              <td><span style="font-family:var(--font-mono);font-size:12px;color:var(--text-secondary)">0</span></td>
+            </tr>
+            <tr>
+              <td><span class="session-num">5</span></td>
+              <td><a href="./session.html" class="session-title-link">CSV import pipeline</a></td>
+              <td>Mar 14</td>
+              <td>45m</td>
+              <td>380</td>
+              <td><span class="session-source-badge badge-cursor">Cursor</span></td>
+              <td>
+                <div class="agent-dots" aria-label="4 agents">
+                  <span class="agent-dot" style="background:#7c3aed" title="frontend-dev"></span>
+                  <span class="agent-dot" style="background:#0891b2" title="backend-dev"></span>
+                  <span class="agent-dot" style="background:#059669" title="qa-engineer"></span>
+                  <span class="agent-dot" style="background:#475569" title="security-engineer"></span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="session-num">6</span></td>
+              <td><a href="./session.html" class="session-title-link">Full-text search tsvector</a></td>
+              <td>Mar 18</td>
+              <td>62m</td>
+              <td>510</td>
+              <td><span class="session-source-badge badge-claude">Claude</span></td>
+              <td>
+                <div class="agent-dots" aria-label="3 agents">
+                  <span class="agent-dot" style="background:#7c3aed" title="frontend-dev"></span>
+                  <span class="agent-dot" style="background:#0891b2" title="backend-dev"></span>
+                  <span class="agent-dot" style="background:#059669" title="qa-engineer"></span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="session-num">7</span></td>
+              <td><a href="./session.html" class="session-title-link">Spending insights dashboard</a></td>
+              <td>Mar 22</td>
+              <td>78m</td>
+              <td>720</td>
+              <td><span class="session-source-badge badge-claude">Claude</span></td>
+              <td>
+                <div class="agent-dots" aria-label="5 agents">
+                  <span class="agent-dot" style="background:#7c3aed" title="frontend-dev"></span>
+                  <span class="agent-dot" style="background:#0891b2" title="backend-dev"></span>
+                  <span class="agent-dot" style="background:#059669" title="qa-engineer"></span>
+                  <span class="agent-dot" style="background:#475569" title="security-engineer"></span>
+                  <span class="agent-dot" style="background:#e11d48" title="code-reviewer"></span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="session-num">8</span></td>
+              <td><a href="./session.html" class="session-title-link">Mobile responsive + 2FA</a></td>
+              <td>Mar 26</td>
+              <td>50m</td>
+              <td>340</td>
+              <td><span class="session-source-badge badge-cursor">Cursor</span></td>
+              <td><span style="font-family:var(--font-mono);font-size:12px;color:var(--text-secondary)">0</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Featured sessions -->
+    <section class="featured-section anim-fade-up anim-delay-4" aria-label="Featured sessions">
+      <div class="section-heading">
+        <svg width="20" height="20" aria-hidden="true">
+          <circle cx="10" cy="10" r="10" fill="var(--red)" />
+        </svg>
+        <h2>Featured Sessions</h2>
+        <div class="heading-line" aria-hidden="true"></div>
+      </div>
+      <div class="featured-grid">
+        <a href="./session.html" class="featured-card">
+          <div class="featured-card-accent" aria-hidden="true"></div>
+          <div class="featured-card-body">
+            <div class="featured-card-tag">schema</div>
+            <h3 class="featured-card-title">Prisma schema</h3>
+            <div class="featured-card-stats">
+              <span><strong>72</strong>m</span>
+              <span><strong>680</strong> LOC</span>
+              <span><strong>7</strong> agents</span>
+            </div>
+          </div>
+        </a>
+        <a href="./session.html" class="featured-card">
+          <div class="featured-card-accent" aria-hidden="true"></div>
+          <div class="featured-card-body">
+            <div class="featured-card-tag">frontend</div>
+            <h3 class="featured-card-title">Transaction list</h3>
+            <div class="featured-card-stats">
+              <span><strong>65</strong>m</span>
+              <span><strong>520</strong> LOC</span>
+              <span><strong>5</strong> agents</span>
+            </div>
+          </div>
+        </a>
+        <a href="./session.html" class="featured-card">
+          <div class="featured-card-accent" aria-hidden="true"></div>
+          <div class="featured-card-body">
+            <div class="featured-card-tag">algorithm</div>
+            <h3 class="featured-card-title">Recurring detection</h3>
+            <div class="featured-card-stats">
+              <span><strong>88</strong>m</span>
+              <span><strong>890</strong> LOC</span>
+              <span><strong>6</strong> agents</span>
+            </div>
+          </div>
+        </a>
+        <a href="./session.html" class="featured-card">
+          <div class="featured-card-accent" aria-hidden="true"></div>
+          <div class="featured-card-body">
+            <div class="featured-card-tag">import</div>
+            <h3 class="featured-card-title">CSV import</h3>
+            <div class="featured-card-stats">
+              <span><strong>78</strong>m</span>
+              <span><strong>640</strong> LOC</span>
+              <span><strong>5</strong> agents</span>
+            </div>
+          </div>
+        </a>
+        <a href="./session.html" class="featured-card">
+          <div class="featured-card-accent" aria-hidden="true"></div>
+          <div class="featured-card-body">
+            <div class="featured-card-tag">integration</div>
+            <h3 class="featured-card-title">Plaid integration</h3>
+            <div class="featured-card-stats">
+              <span><strong>90</strong>m</span>
+              <span><strong>780</strong> LOC</span>
+              <span><strong>8</strong> agents</span>
+            </div>
+          </div>
+        </a>
+        <a href="./session.html" class="featured-card">
+          <div class="featured-card-accent" aria-hidden="true"></div>
+          <div class="featured-card-body">
+            <div class="featured-card-tag">insights</div>
+            <h3 class="featured-card-title">Spending insights</h3>
+            <div class="featured-card-stats">
+              <span><strong>70</strong>m</span>
+              <span><strong>620</strong> LOC</span>
+              <span><strong>4</strong> agents</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <span class="footer-text">Built with heyi.am &mdash; Bauhaus template</span>
+      <div class="footer-shapes" aria-hidden="true">
+        <span class="footer-shape footer-sq-red"></span>
+        <span class="footer-shape footer-circle-blue"></span>
+        <span class="footer-shape footer-sq-yellow"></span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var targets = document.querySelectorAll(
+        '.anim-slide-left, .anim-slide-right, .anim-scale-in, .anim-fade-up'
+      );
+      if (!('IntersectionObserver' in window)) {
+        targets.forEach(function (el) { el.style.opacity = '1'; });
+        return;
+      }
+      targets.forEach(function (el) { el.style.animationPlayState = 'paused'; });
+      var observer = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.style.animationPlayState = 'running';
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.1 }
+      );
+      targets.forEach(function (el) { observer.observe(el); });
+    })();
+  </script>
+</body>
+</html>

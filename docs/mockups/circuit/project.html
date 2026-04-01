@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BudgetWise — Project | Circuit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Tokens ── */
+  :root {
+    --bg: #0a0f0a;
+    --bg-surface: #111a11;
+    --fg: #d4e6d4;
+    --fg-muted: #7a937a;
+    --accent: #a3e635;
+    --accent-dim: rgba(163, 230, 53, 0.15);
+    --accent-glow: rgba(163, 230, 53, 0.25);
+    --border: #1e2e1e;
+    --border-accent: rgba(163, 230, 53, 0.3);
+    --radius-sm: 2px;
+    --radius: 4px;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --trace: rgba(163, 230, 53, 0.08);
+    --trace-bright: rgba(163, 230, 53, 0.18);
+    --pad-size: 6px;
+  }
+
+  /* ── Circuit board background ── */
+  body {
+    font-family: var(--font-body);
+    color: var(--fg);
+    background-color: var(--bg);
+    background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 0v40h30v-20h40v60h-20v40h60v-30h20v50h-40v20h70v-40h30v-20' fill='none' stroke='rgba(163,230,53,0.06)' stroke-width='1'/%3E%3Cpath d='M0 120h30v40h20v-20h40v30h-10v30' fill='none' stroke='rgba(163,230,53,0.06)' stroke-width='1'/%3E%3Cpath d='M120 0v20h40v30h-20v20h60v40h-30v20h30v20h-50v30h-20' fill='none' stroke='rgba(163,230,53,0.06)' stroke-width='1'/%3E%3Ccircle cx='10' cy='40' r='2' fill='rgba(163,230,53,0.1)'/%3E%3Ccircle cx='80' cy='80' r='2' fill='rgba(163,230,53,0.1)'/%3E%3Ccircle cx='160' cy='50' r='2' fill='rgba(163,230,53,0.1)'/%3E%3Ccircle cx='40' cy='160' r='2' fill='rgba(163,230,53,0.1)'/%3E%3Ccircle cx='130' cy='150' r='2' fill='rgba(163,230,53,0.1)'/%3E%3C/svg%3E");
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Skip link ── */
+  .skip-link {
+    position: absolute;
+    inset-inline-start: -9999px;
+    top: 0;
+    background: var(--accent);
+    color: var(--bg);
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    z-index: 100;
+    border-radius: var(--radius);
+  }
+  .skip-link:focus {
+    inset-inline-start: 8px;
+    top: 8px;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 960px;
+    margin-inline: auto;
+    padding-inline: 24px;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+    background: rgba(10, 15, 10, 0.94);
+    backdrop-filter: blur(6px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-brand {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+  .nav-brand span { color: var(--fg-muted); }
+  .nav-links {
+    display: flex;
+    gap: 24px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg-muted);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .nav-links a:hover,
+  .nav-links a[aria-current="page"] { color: var(--accent); }
+  .nav-links a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Breadcrumb ── */
+  .breadcrumb {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    padding: 16px 0 0;
+  }
+  .breadcrumb a {
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+  .breadcrumb a:hover { color: var(--accent); }
+  .breadcrumb a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  .breadcrumb .sep { color: var(--accent); opacity: 0.5; margin: 0 6px; }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 48px 0 40px;
+  }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 5vw, 40px);
+    font-weight: 700;
+    color: var(--fg);
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  .hero-links {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg-muted);
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .hero-links a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent-dim);
+  }
+  .hero-links a:hover { border-color: var(--accent); }
+  .hero-links a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Screenshot placeholder ── */
+  .screenshot {
+    background: linear-gradient(135deg, #1a2a1a 0%, #0f1a0f 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .screenshot::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 50h30v-30h40v60h30' fill='none' stroke='rgba(163,230,53,0.08)' stroke-width='1'/%3E%3Ccircle cx='30' cy='50' r='2' fill='rgba(163,230,53,0.12)'/%3E%3Ccircle cx='70' cy='20' r='2' fill='rgba(163,230,53,0.12)'/%3E%3C/svg%3E");
+  }
+  .screenshot-text {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--fg-muted);
+    opacity: 0.5;
+    z-index: 1;
+  }
+  /* Browser chrome bar */
+  .screenshot-chrome {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 32px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding-inline-start: 12px;
+    gap: 6px;
+  }
+  .screenshot-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+
+  /* ── Stat Chips ── */
+  .stat-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+  .stat-chip {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 20px;
+    position: relative;
+    min-width: 100px;
+  }
+  .stat-chip::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    inset-inline-start: 10px;
+    width: 14px;
+    height: 3px;
+    background: var(--bg);
+    border-bottom-left-radius: 2px;
+    border-bottom-right-radius: 2px;
+  }
+  .stat-chip::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    inset-inline-end: 6px;
+    width: 3px;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+  .stat-chip-value {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--accent);
+    display: block;
+    line-height: 1.1;
+  }
+  .stat-chip-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 2px;
+    display: block;
+  }
+  .stat-chip--leverage {
+    flex: 2 1 220px;
+  }
+  .leverage-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .leverage-row .lev-val {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--accent);
+    line-height: 1.1;
+  }
+  .leverage-row .lev-lbl {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .circuit-leverage-bar {
+    height: 3px;
+    border-radius: 1px;
+    background: rgba(255,255,255,0.06);
+    display: flex;
+    overflow: hidden;
+  }
+  .circuit-leverage-bar__human {
+    height: 100%;
+    width: 19%;
+    background: var(--fg);
+    border-radius: 1px 0 0 1px;
+  }
+  .circuit-leverage-bar__agent {
+    height: 100%;
+    width: 81%;
+    background: var(--accent);
+    border-radius: 0 1px 1px 0;
+  }
+
+  /* ── Section headers ── */
+  .section-header {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--fg);
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .section-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    inset-inline-start: 0;
+    width: 48px;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  /* ── Trace connector ── */
+  .trace-connector {
+    width: 2px;
+    height: 32px;
+    background: linear-gradient(to bottom, var(--trace-bright), var(--trace));
+    margin-inline-start: 48px;
+    position: relative;
+  }
+  .trace-connector::before,
+  .trace-connector::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: -2px;
+    width: var(--pad-size);
+    height: var(--pad-size);
+    background: var(--accent-dim);
+    border-radius: 50%;
+  }
+  .trace-connector::before { top: 0; }
+  .trace-connector::after { bottom: 0; }
+
+  /* ── Narrative ── */
+  .narrative {
+    margin-bottom: 40px;
+  }
+  .narrative p {
+    font-size: 15px;
+    color: var(--fg);
+    line-height: 1.75;
+    margin-bottom: 16px;
+  }
+  .narrative p:last-child { margin-bottom: 0; }
+
+  /* ── Skills IC package ── */
+  .skill-pins {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 40px;
+  }
+  .skill-pin {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(163, 230, 53, 0.15);
+    border-radius: var(--radius-sm);
+    padding: 3px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .skill-pin::before {
+    content: '';
+    width: 3px;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── Key Decisions ── */
+  .decisions {
+    margin-bottom: 40px;
+  }
+  .decision-item {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-inline-start: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: var(--fg);
+    line-height: 1.6;
+    position: relative;
+  }
+  .decision-item::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    inset-inline-end: 8px;
+    width: 4px;
+    height: 4px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+  .decision-number {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    margin-inline-end: 8px;
+  }
+
+  /* ── Phase Bus Line ── */
+  .phase-bus {
+    margin-bottom: 40px;
+    position: relative;
+    padding-inline-start: 28px;
+  }
+  /* Main bus trace */
+  .phase-bus::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--trace-bright);
+  }
+  .phase-item {
+    position: relative;
+    padding-bottom: 28px;
+  }
+  .phase-item:last-child { padding-bottom: 0; }
+  /* Branch line from bus */
+  .phase-item::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: -20px;
+    top: 8px;
+    width: 16px;
+    height: 2px;
+    background: var(--accent);
+  }
+  /* Pad at junction */
+  .phase-item::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: -24px;
+    top: 5px;
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    border: 2px solid var(--bg);
+  }
+  .phase-label {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--fg);
+    margin-bottom: 4px;
+  }
+  .phase-label .phase-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    margin-inline-end: 8px;
+  }
+  .phase-dates {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+    margin-bottom: 4px;
+  }
+  .phase-desc {
+    font-size: 13px;
+    color: var(--fg-muted);
+    line-height: 1.55;
+  }
+
+  /* ── Source breakdown ── */
+  .source-section {
+    margin-bottom: 40px;
+  }
+  .source-bar-container { margin-top: 8px; }
+  .source-bar-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .source-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    display: flex;
+  }
+  .source-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.6s ease;
+  }
+  .source-bar-fill.cursor { background: var(--fg-muted); }
+
+  /* ── Session table ── */
+  .session-table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 40px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .session-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .session-table th {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-align: start;
+    padding: 8px 12px;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  .session-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .session-table tr:hover td {
+    background: var(--accent-dim);
+  }
+  .session-table .num {
+    font-family: var(--font-mono);
+    color: var(--accent);
+    font-size: 12px;
+  }
+  .session-table .title-cell a {
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .session-table .title-cell a:hover { color: var(--accent); }
+  .session-table .title-cell a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  .session-table .mono {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+
+  /* ── Agent dots ── */
+  .agent-dots {
+    display: flex;
+    gap: 3px;
+  }
+  .agent-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  /* ── Featured sessions grid ── */
+  .featured-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+  .featured-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .featured-card:hover { border-color: var(--border-accent); }
+  .featured-card::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    inset-inline-end: 8px;
+    width: 4px;
+    height: 4px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+  .featured-card-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .featured-card h4 {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--fg);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+  .featured-card h4 a {
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .featured-card h4 a:hover { color: var(--accent); }
+  .featured-card h4 a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  .featured-card-stats {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-muted);
+    display: flex;
+    gap: 12px;
+  }
+  .featured-card-stats .val { color: var(--accent); }
+
+  /* ── Footer ── */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0;
+    margin-top: 64px;
+    text-align: center;
+  }
+  .footer p {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+
+  /* ── Animations ── */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fade-in { opacity: 1; transform: none; transition: none; }
+    .source-bar-fill { transition: none; }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .hero { padding: 32px 0 24px; }
+    .stat-chips { gap: 8px; }
+    .stat-chip { min-width: 90px; padding: 10px 14px; flex: 1 1 calc(50% - 8px); }
+    .stat-chip-value { font-size: 16px; }
+    .featured-grid { grid-template-columns: 1fr; }
+    .phase-bus { padding-inline-start: 24px; }
+    .nav-links { gap: 16px; }
+    .screenshot { height: 180px; }
+  }
+
+  @media (max-width: 480px) {
+    .stat-chip { flex: 1 1 100%; }
+    .nav-inner { flex-direction: column; gap: 12px; }
+    .hero-links { flex-direction: column; gap: 8px; }
+  }
+
+    /* ── Clickable session cards ── */
+    a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to content</a>
+
+<nav class="nav" aria-label="Main navigation">
+  <div class="container nav-inner">
+    <a href="./portfolio.html" class="nav-brand"><span>circuit://</span>alex</a>
+    <ul class="nav-links">
+      <li><a href="./portfolio.html">Portfolio</a></li>
+      <li><a href="./project.html" aria-current="page">Project</a></li>
+      <li><a href="./session.html">Session</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main" class="container">
+
+  <div class="breadcrumb" aria-label="Breadcrumb">
+    <a href="./portfolio.html">alex</a>
+    <span class="sep">/</span>
+    <span aria-current="page">budgetwise</span>
+  </div>
+
+  <section class="hero fade-in" aria-label="Project header">
+    <h1>BudgetWise</h1>
+    <div class="hero-links">
+      <a href="https://github.com/alex/budgetwise" rel="noopener">github.com/alex/budgetwise</a>
+      <a href="https://budgetwise.app" rel="noopener">budgetwise.app</a>
+    </div>
+  </section>
+
+  <!-- Screenshot placeholder -->
+  <div class="screenshot fade-in" role="img" aria-label="BudgetWise application screenshot placeholder">
+    <div class="screenshot-chrome" aria-hidden="true">
+      <span class="screenshot-dot"></span>
+      <span class="screenshot-dot"></span>
+      <span class="screenshot-dot"></span>
+    </div>
+    <span class="screenshot-text">budgetwise.app</span>
+  </div>
+
+  <!-- Stats -->
+  <section class="stat-chips fade-in" aria-label="Project statistics">
+    <div class="stat-chip" role="group" aria-label="Sessions">
+      <span class="stat-chip-value">8</span>
+      <span class="stat-chip-label">Sessions</span>
+    </div>
+    <div class="stat-chip stat-chip--leverage" role="group" aria-label="8.1 hours you, 34.4 hours agents, 4.2x leverage">
+      <div class="leverage-row">
+        <span><span class="lev-val">8.1h</span> <span class="lev-lbl">you</span></span>
+        <span><span class="lev-val">34.4h</span> <span class="lev-lbl">agents</span></span>
+        <span><span class="lev-val">4.2x</span></span>
+      </div>
+      <div class="circuit-leverage-bar">
+        <div class="circuit-leverage-bar__human"></div>
+        <div class="circuit-leverage-bar__agent"></div>
+      </div>
+    </div>
+    <div class="stat-chip" role="group" aria-label="Lines of code">
+      <span class="stat-chip-value">4,460</span>
+      <span class="stat-chip-label">LOC</span>
+    </div>
+    <div class="stat-chip" role="group" aria-label="Files">
+      <span class="stat-chip-value">156</span>
+      <span class="stat-chip-label">Files</span>
+    </div>
+    <div class="stat-chip" role="group" aria-label="Tokens">
+      <span class="stat-chip-value">2.1M</span>
+      <span class="stat-chip-label">Tokens</span>
+    </div>
+  </section>
+
+  <div class="trace-connector" aria-hidden="true"></div>
+
+  <!-- Narrative -->
+  <section class="narrative fade-in" aria-label="Project narrative">
+    <h2 class="section-header">Narrative</h2>
+    <p>Started with a basic Prisma schema but realized halfway through that I needed polymorphic transaction types. The AI kept suggesting single-table inheritance but I pushed back &mdash; went with a discriminated union pattern instead. Nullable fields for transfer-specific data, hard deletes with an audit log.</p>
+    <p>The recurring transaction detection was the hardest part. Had to figure out the right tolerance windows &mdash; monthly transactions drift by a few days, weekly ones are more precise. Settled on three consecutive interval matches before marking something as recurring. The partial index on merchant_normalized brought the detection query from 2 seconds to 120ms on 10k transactions.</p>
+    <p>Plaid integration went smoother than expected. The token exchange flow is straightforward, but the webhook handling needed careful idempotency &mdash; Plaid sends duplicate webhooks, so I used a processed-events table keyed on webhook ID.</p>
+  </section>
+
+  <div class="trace-connector" aria-hidden="true"></div>
+
+  <!-- Skills -->
+  <section class="fade-in" aria-label="Technologies used">
+    <h2 class="section-header">Skills</h2>
+    <div class="skill-pins">
+      <span class="skill-pin">TypeScript</span>
+      <span class="skill-pin">React</span>
+      <span class="skill-pin">Next.js</span>
+      <span class="skill-pin">Prisma</span>
+      <span class="skill-pin">PostgreSQL</span>
+      <span class="skill-pin">Tailwind CSS</span>
+      <span class="skill-pin">Stripe API</span>
+      <span class="skill-pin">Plaid API</span>
+      <span class="skill-pin">Chart.js</span>
+      <span class="skill-pin">Playwright</span>
+    </div>
+  </section>
+
+  <div class="trace-connector" aria-hidden="true"></div>
+
+  <!-- Key Decisions -->
+  <section class="decisions fade-in" aria-label="Key decisions">
+    <h2 class="section-header">Key Decisions</h2>
+    <div class="decision-item">
+      <span class="decision-number">01</span>
+      Discriminated union over single-table inheritance for transaction types
+    </div>
+    <div class="decision-item">
+      <span class="decision-number">02</span>
+      Partial index on merchant_normalized for 16x query speedup
+    </div>
+    <div class="decision-item">
+      <span class="decision-number">03</span>
+      Processed-events table for Plaid webhook idempotency
+    </div>
+  </section>
+
+  <div class="trace-connector" aria-hidden="true"></div>
+
+  <!-- Phases (Bus Line) -->
+  <section class="fade-in" aria-label="Project phases">
+    <h2 class="section-header">Phases</h2>
+    <div class="phase-bus" role="list">
+      <div class="phase-item" role="listitem">
+        <div class="phase-label"><span class="phase-num">01</span> Foundation</div>
+        <div class="phase-dates">Feb 3 &ndash; 14</div>
+        <div class="phase-desc">Schema design, Prisma setup, transaction CRUD</div>
+      </div>
+      <div class="phase-item" role="listitem">
+        <div class="phase-label"><span class="phase-num">02</span> Data Pipeline</div>
+        <div class="phase-dates">Feb 17 &ndash; 26</div>
+        <div class="phase-desc">CSV import, Plaid integration, recurring detection</div>
+      </div>
+      <div class="phase-item" role="listitem">
+        <div class="phase-label"><span class="phase-num">03</span> Intelligence</div>
+        <div class="phase-dates">Mar 1 &ndash; 14</div>
+        <div class="phase-desc">Search, full-text indexing, spending insights</div>
+      </div>
+      <div class="phase-item" role="listitem">
+        <div class="phase-label"><span class="phase-num">04</span> Hardening</div>
+        <div class="phase-dates">Mar 16 &ndash; 26</div>
+        <div class="phase-desc">2FA, mobile responsive, CI/CD, performance</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="trace-connector" aria-hidden="true"></div>
+
+  <!-- Source Breakdown -->
+  <section class="source-section fade-in" aria-label="Source breakdown">
+    <h2 class="section-header">Source Breakdown</h2>
+    <div class="source-bar-container">
+      <div class="source-bar-label">
+        <span>Claude Code &mdash; 62.5% (5 sessions)</span>
+        <span>Cursor &mdash; 37.5% (3 sessions)</span>
+      </div>
+      <div class="source-bar" role="img" aria-label="Source breakdown: Claude Code 62.5%, Cursor 37.5%">
+        <div class="source-bar-fill" style="width: 62.5%"></div>
+        <div class="source-bar-fill cursor" style="width: 37.5%"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="trace-connector" aria-hidden="true"></div>
+
+  <!-- Work Timeline / Session Table -->
+  <section class="fade-in" aria-label="Session timeline">
+    <h2 class="section-header">Sessions</h2>
+    <div class="session-table-wrapper">
+      <table class="session-table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Title</th>
+            <th scope="col">Date</th>
+            <th scope="col">Duration</th>
+            <th scope="col">LOC</th>
+            <th scope="col">Source</th>
+            <th scope="col">Agents</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="num">1</td>
+            <td class="title-cell"><a href="./session.html">Set up Prisma schema</a></td>
+            <td class="mono">Feb 3</td>
+            <td class="mono">72m</td>
+            <td class="mono">680</td>
+            <td class="mono">Claude</td>
+            <td>
+              <div class="agent-dots" aria-label="7 agents">
+                <span class="agent-dot" style="background:#0891b2" title="backend-dev"></span>
+                <span class="agent-dot" style="background:#059669" title="qa-engineer"></span>
+                <span class="agent-dot" style="background:#7c3aed" title="frontend-dev"></span>
+                <span class="agent-dot" style="background:#475569" title="security-engineer"></span>
+                <span class="agent-dot" style="background:#e11d48" title="code-reviewer"></span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="num">2</td>
+            <td class="title-cell"><a href="./session.html">Transaction list + infinite scroll</a></td>
+            <td class="mono">Feb 14</td>
+            <td class="mono">65m</td>
+            <td class="mono">520</td>
+            <td class="mono">Cursor</td>
+            <td>
+              <div class="agent-dots" aria-label="5 agents">
+                <span class="agent-dot" style="background:#7c3aed" title="frontend-dev"></span>
+                <span class="agent-dot" style="background:#0891b2" title="backend-dev"></span>
+                <span class="agent-dot" style="background:#059669" title="qa-engineer"></span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="num">3</td>
+            <td class="title-cell"><a href="./session.html">Recurring transaction detection</a></td>
+            <td class="mono">Mar 1</td>
+            <td class="mono">88m</td>
+            <td class="mono">890</td>
+            <td class="mono">Claude</td>
+            <td>
+              <div class="agent-dots" aria-label="6 agents">
+                <span class="agent-dot" style="background:#0891b2" title="backend-dev"></span>
+                <span class="agent-dot" style="background:#059669" title="qa-engineer"></span>
+                <span class="agent-dot" style="background:#7c3aed" title="frontend-dev"></span>
+                <span class="agent-dot" style="background:#e11d48" title="code-reviewer"></span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="num">4</td>
+            <td class="title-cell"><a href="./session.html">Stripe integration</a></td>
+            <td class="mono">Mar 10</td>
+            <td class="mono">55m</td>
+            <td class="mono">420</td>
+            <td class="mono">Claude</td>
+            <td>
+              <div class="agent-dots" aria-label="0 agents">
+                <span class="mono" style="font-size:11px;color:var(--fg-muted)">&mdash;</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="num">5</td>
+            <td class="title-cell"><a href="./session.html">CSV import pipeline</a></td>
+            <td class="mono">Mar 14</td>
+            <td class="mono">45m</td>
+            <td class="mono">380</td>
+            <td class="mono">Cursor</td>
+            <td>
+              <div class="agent-dots" aria-label="4 agents">
+                <span class="agent-dot" style="background:#0891b2" title="backend-dev"></span>
+                <span class="agent-dot" style="background:#059669" title="qa-engineer"></span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="num">6</td>
+            <td class="title-cell"><a href="./session.html">Full-text search tsvector</a></td>
+            <td class="mono">Mar 18</td>
+            <td class="mono">62m</td>
+            <td class="mono">510</td>
+            <td class="mono">Claude</td>
+            <td>
+              <div class="agent-dots" aria-label="3 agents">
+                <span class="agent-dot" style="background:#0891b2" title="backend-dev"></span>
+                <span class="agent-dot" style="background:#059669" title="qa-engineer"></span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="num">7</td>
+            <td class="title-cell"><a href="./session.html">Spending insights dashboard</a></td>
+            <td class="mono">Mar 22</td>
+            <td class="mono">78m</td>
+            <td class="mono">720</td>
+            <td class="mono">Claude</td>
+            <td>
+              <div class="agent-dots" aria-label="5 agents">
+                <span class="agent-dot" style="background:#7c3aed" title="frontend-dev"></span>
+                <span class="agent-dot" style="background:#0891b2" title="backend-dev"></span>
+                <span class="agent-dot" style="background:#d97706" title="ux-designer"></span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="num">8</td>
+            <td class="title-cell"><a href="./session.html">Mobile responsive + 2FA</a></td>
+            <td class="mono">Mar 26</td>
+            <td class="mono">50m</td>
+            <td class="mono">340</td>
+            <td class="mono">Cursor</td>
+            <td>
+              <div class="agent-dots" aria-label="0 agents">
+                <span class="mono" style="font-size:11px;color:var(--fg-muted)">&mdash;</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="trace-connector" aria-hidden="true"></div>
+
+  <!-- Featured Sessions -->
+  <section class="fade-in" aria-label="Featured sessions" style="padding-bottom: 64px;">
+    <h2 class="section-header">Featured Sessions</h2>
+    <div class="featured-grid">
+      <article class="featured-card">
+        <span class="featured-card-tag">schema</span>
+        <h4><a href="./session.html">Prisma schema</a></h4>
+        <div class="featured-card-stats">
+          <span><span class="val">72</span>m</span>
+          <span><span class="val">680</span> LOC</span>
+          <span><span class="val">7</span> agents</span>
+        </div>
+      </article>
+      <article class="featured-card">
+        <span class="featured-card-tag">frontend</span>
+        <h4><a href="./session.html">Transaction list</a></h4>
+        <div class="featured-card-stats">
+          <span><span class="val">65</span>m</span>
+          <span><span class="val">520</span> LOC</span>
+          <span><span class="val">5</span> agents</span>
+        </div>
+      </article>
+      <article class="featured-card">
+        <span class="featured-card-tag">algorithm</span>
+        <h4><a href="./session.html">Recurring detection</a></h4>
+        <div class="featured-card-stats">
+          <span><span class="val">88</span>m</span>
+          <span><span class="val">890</span> LOC</span>
+          <span><span class="val">6</span> agents</span>
+        </div>
+      </article>
+      <article class="featured-card">
+        <span class="featured-card-tag">import</span>
+        <h4><a href="./session.html">CSV import</a></h4>
+        <div class="featured-card-stats">
+          <span><span class="val">78</span>m</span>
+          <span><span class="val">640</span> LOC</span>
+          <span><span class="val">5</span> agents</span>
+        </div>
+      </article>
+      <article class="featured-card">
+        <span class="featured-card-tag">integration</span>
+        <h4><a href="./session.html">Plaid integration</a></h4>
+        <div class="featured-card-stats">
+          <span><span class="val">90</span>m</span>
+          <span><span class="val">780</span> LOC</span>
+          <span><span class="val">8</span> agents</span>
+        </div>
+      </article>
+      <article class="featured-card">
+        <span class="featured-card-tag">insights</span>
+        <h4><a href="./session.html">Spending insights</a></h4>
+        <div class="featured-card-stats">
+          <span><span class="val">70</span>m</span>
+          <span><span class="val">620</span> LOC</span>
+          <span><span class="val">4</span> agents</span>
+        </div>
+      </article>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <p>circuit://alex/budgetwise &mdash; built with heyi.am</p>
+  </div>
+</footer>
+
+<script>
+  (function() {
+    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReduced) {
+      document.querySelectorAll('.fade-in').forEach(function(el) {
+        el.classList.add('visible');
+      });
+      return;
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-in').forEach(function(el) {
+      observer.observe(el);
+    });
+  })();
+</script>
+</body>
+</html>

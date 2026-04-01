@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mono Template — @ryan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Mono Design Tokens ── */
+:root {
+  --mono-bg:              #0a0a0a;
+  --mono-surface:         #111111;
+  --mono-surface-raised:  #1a1a1a;
+  --mono-border:          #2a2a2a;
+  --mono-border-accent:   #4ade80;
+  --mono-text:            #e0e0e0;
+  --mono-text-dim:        #666666;
+  --mono-text-muted:      #444444;
+  --mono-accent:          #4ade80;
+  --mono-accent-dim:      rgba(74, 222, 128, 0.15);
+  --mono-accent-glow:     rgba(74, 222, 128, 0.3);
+  --mono-error:           #ef4444;
+  --mono-warn:            #f59e0b;
+
+  --font: 'JetBrains Mono', monospace;
+  --radius: 0px;
+}
+
+body {
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--mono-text);
+  background-color: var(--mono-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--mono-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible {
+  outline: 2px solid var(--mono-accent);
+  outline-offset: 2px;
+}
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--mono-accent);
+  color: var(--mono-bg);
+  padding: 0.5rem 1rem;
+  z-index: 1000;
+  font-family: var(--font);
+  font-weight: 600;
+  border-radius: var(--radius);
+}
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* ── Nav ── */
+.mono-nav {
+  border-bottom: 1px solid var(--mono-border);
+  background: var(--mono-surface);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.mono-nav-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.mono-nav-prompt {
+  color: var(--mono-accent);
+  font-weight: 600;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+.mono-nav-links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+.mono-nav-links a {
+  color: var(--mono-text-dim);
+  font-size: 0.8125rem;
+  transition: color 0.15s;
+}
+.mono-nav-links a:hover,
+.mono-nav-links a[aria-current="page"] {
+  color: var(--mono-accent);
+}
+
+/* ── Page Container ── */
+.mono-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+}
+
+/* ── Section ── */
+.mono-section {
+  margin-bottom: 3rem;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.mono-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Section Heading ── */
+.mono-heading {
+  color: var(--mono-accent);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--mono-border);
+}
+
+/* ── Terminal Block ── */
+.terminal-block {
+  background: var(--mono-surface);
+  border: 1px solid var(--mono-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  background: var(--mono-surface-raised);
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--mono-border);
+  font-size: 0.75rem;
+  color: var(--mono-text-dim);
+}
+.terminal-dots {
+  display: flex;
+  gap: 6px;
+}
+.terminal-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: block;
+}
+.terminal-dots .dot-red { background: #ef4444; }
+.terminal-dots .dot-yellow { background: #f59e0b; }
+.terminal-dots .dot-green { background: #4ade80; }
+.terminal-body {
+  padding: 1.25rem;
+}
+
+/* ── Hero ── */
+.hero-profile {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+.hero-photo {
+  width: 120px;
+  height: 150px;
+  border-radius: 0px;
+  object-fit: cover;
+  object-position: 55% 10%;
+  border: 1px solid var(--mono-accent);
+  flex-shrink: 0;
+  filter: grayscale(1) contrast(1.2) brightness(0.9);
+}
+.hero-info {
+  flex: 1;
+  min-width: 0;
+}
+.hero-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--mono-accent);
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 3px solid var(--mono-accent);
+  width: 0;
+  animation: typing 1.2s steps(20, end) forwards, blink 0.7s step-end infinite;
+}
+.hero-handle {
+  font-size: 1rem;
+  color: var(--mono-text-dim);
+  margin-bottom: 1rem;
+}
+.hero-bio {
+  color: var(--mono-text);
+  font-size: 0.875rem;
+  line-height: 1.7;
+  max-width: 640px;
+}
+.hero-bio .comment {
+  color: var(--mono-text-dim);
+}
+.hero-location {
+  color: var(--mono-text-dim);
+  font-size: 0.8125rem;
+  margin-top: 0.75rem;
+}
+.hero-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  list-style: none;
+}
+.hero-contact a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--mono-text-dim);
+  transition: color 0.15s;
+}
+.hero-contact a:hover {
+  color: var(--mono-accent);
+  text-decoration: none;
+}
+.hero-contact svg {
+  flex-shrink: 0;
+}
+.hero-resume-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 1rem;
+  padding: 0.375rem 0.75rem;
+  font-family: var(--font);
+  font-size: 0.8125rem;
+  color: var(--mono-bg);
+  background: var(--mono-accent);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.hero-resume-btn:hover {
+  opacity: 0.85;
+  text-decoration: none;
+  color: var(--mono-bg);
+}
+
+@keyframes typing {
+  from { width: 0; }
+  to { width: 10.5ch; }
+}
+@keyframes blink {
+  50% { border-color: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-title {
+    animation: none;
+    width: auto;
+    border-right: none;
+  }
+  .hero-profile {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .mono-section {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .stat-bar-fill {
+    transition: none !important;
+  }
+}
+
+/* ── Stats Grid ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1px;
+  background: var(--mono-border);
+  border: 1px solid var(--mono-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.stat-cell {
+  background: var(--mono-surface);
+  padding: 1rem 1.25rem;
+}
+.stat-key {
+  font-size: 0.75rem;
+  color: var(--mono-text-dim);
+  margin-bottom: 0.25rem;
+}
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--mono-accent);
+}
+.stat-value .unit {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--mono-text-dim);
+}
+
+/* ── Leverage terminal ── */
+.stat-cell--leverage {
+  grid-column: 1 / -1;
+  padding: 0.75rem 1rem;
+}
+.leverage-terminal {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+.leverage-terminal .lev-line {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+.leverage-terminal .lev-key {
+  color: var(--mono-text-dim);
+  min-width: 5.5em;
+  text-align: right;
+}
+.leverage-terminal .lev-val {
+  color: var(--mono-text);
+  font-weight: 700;
+  min-width: 3.5em;
+}
+.leverage-terminal .lev-val--agent {
+  color: var(--mono-accent);
+}
+.leverage-terminal .lev-val--multi {
+  color: var(--mono-accent);
+}
+.leverage-terminal .lev-bar {
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 0;
+}
+.leverage-terminal .lev-bar--agent {
+  color: var(--mono-accent);
+}
+.leverage-terminal .lev-pct {
+  color: var(--mono-text-dim);
+  font-size: 0.75rem;
+}
+
+/* ── Project Cards ── */
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.project-card {
+  border: 1px solid var(--mono-border);
+  border-radius: var(--radius);
+  background: var(--mono-surface);
+  transition: border-color 0.15s;
+}
+.project-card:hover {
+  border-color: var(--mono-accent);
+}
+.project-card-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--mono-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.project-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--mono-accent);
+}
+.project-name a {
+  color: inherit;
+}
+.project-source {
+  font-size: 0.75rem;
+  color: var(--mono-text-dim);
+}
+.project-card-body {
+  padding: 1.25rem;
+}
+.project-narrative {
+  font-size: 0.8125rem;
+  color: var(--mono-text);
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+.project-narrative::before {
+  content: '> ';
+  color: var(--mono-text-dim);
+}
+.project-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.8125rem;
+}
+.project-stat {
+  color: var(--mono-text-dim);
+}
+.project-stat strong {
+  color: var(--mono-text);
+  font-weight: 500;
+}
+.project-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.tag {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--mono-border);
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  color: var(--mono-accent);
+  background: var(--mono-accent-dim);
+}
+
+/* ── Source Bar ── */
+.source-bar {
+  display: flex;
+  height: 6px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 0.75rem;
+  background: var(--mono-surface-raised);
+}
+.source-bar-segment {
+  transition: width 0.6s ease;
+}
+.source-bar-segment.claude { background: var(--mono-accent); }
+.source-bar-segment.cursor { background: var(--mono-text-dim); }
+.source-legend {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.6875rem;
+  color: var(--mono-text-dim);
+}
+.source-legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-inline-end: 4px;
+  vertical-align: middle;
+}
+.source-legend-dot.claude { background: var(--mono-accent); }
+.source-legend-dot.cursor { background: var(--mono-text-dim); }
+
+/* ── Work Timeline (ASCII Bar Chart) ── */
+.ascii-chart {
+  font-size: 0.8125rem;
+  line-height: 1.8;
+}
+.ascii-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.ascii-label {
+  width: 110px;
+  flex-shrink: 0;
+  color: var(--mono-text-dim);
+  text-align: end;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+}
+.ascii-bar {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.ascii-bar-fill {
+  color: var(--mono-accent);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.ascii-bar-value {
+  color: var(--mono-text-dim);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* ── Footer ── */
+.mono-footer {
+  border-top: 1px solid var(--mono-border);
+  padding: 2rem 0;
+  margin-top: 2rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--mono-text-dim);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .mono-page {
+    padding: 1.5rem 1rem;
+  }
+  .hero-profile {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .hero-photo {
+    width: 80px;
+    height: 100px;
+  }
+  .hero-contact {
+    justify-content: center;
+    font-size: 0.75rem;
+  }
+  .hero-title {
+    font-size: 1.5rem;
+    animation: typing 1.2s steps(15, end) forwards, blink 0.7s step-end infinite;
+  }
+  @keyframes typing {
+    from { width: 0; }
+    to { width: 10.5ch; }
+  }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .stat-value {
+    font-size: 1.25rem;
+  }
+  .project-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .ascii-label {
+    width: 80px;
+    font-size: 0.6875rem;
+  }
+  .mono-nav-inner {
+    padding: 0.75rem 1rem;
+  }
+  .mono-nav-links {
+    gap: 1rem;
+  }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<nav class="mono-nav" aria-label="Main navigation">
+  <div class="mono-nav-inner">
+    <span class="mono-nav-prompt" aria-hidden="true">~/ryan $</span>
+    <ul class="mono-nav-links">
+      <li><a href="./portfolio.html" aria-current="page">portfolio</a></li>
+      <li><a href="./project.html">project</a></li>
+      <li><a href="./session.html">session</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main-content" class="mono-page">
+
+  <!-- ── Hero ── -->
+  <section class="mono-section" aria-label="Profile">
+    <div class="terminal-block">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <span class="dot-red" aria-hidden="true"></span>
+          <span class="dot-yellow" aria-hidden="true"></span>
+          <span class="dot-green" aria-hidden="true"></span>
+        </div>
+        <span>ryan@heyi.am ~ portfolio</span>
+      </div>
+      <div class="terminal-body">
+        <div class="hero-profile">
+          <img src="../assets/headshot-man-3-400.jpg" alt="Ryan Smith" class="hero-photo" width="120" height="120">
+          <div class="hero-info">
+            <h1 class="hero-title" aria-label="Ryan Smith">Ryan Smith</h1>
+            <p class="hero-handle">
+              <span style="color: var(--mono-accent);">@</span>ryan
+            </p>
+            <p class="hero-bio">
+              <span class="comment">// </span>Infrastructure engineer who thinks in systems. I build CLIs, data pipelines, and the invisible plumbing that makes products work. TypeScript and Rust, with a soft spot for elegant error handling.
+            </p>
+            <p class="hero-location">
+              <span class="comment">location: </span>Seattle, WA
+            </p>
+            <ul class="hero-contact" aria-label="Contact and social links">
+              <li><a href="mailto:ryan@heyiam.com"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg>ryan@heyiam.com</a></li>
+              <li><a href="https://linkedin.com/in/ryansmith"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>LinkedIn</a></li>
+              <li><a href="https://github.com/interactivecats/heyi.am"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>GitHub</a></li>
+              <li><a href="https://x.com/ryansmithdev"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>@ryansmithdev</a></li>
+              <li><a href="https://ryansmith.dev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>ryansmith.dev</a></li>
+            </ul>
+            <a href="./project.html" class="hero-resume-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>Download Resume</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Stats ── -->
+  <section class="mono-section" aria-label="Aggregate statistics">
+    <h2 class="mono-heading"># stats</h2>
+    <div class="stats-grid" role="list">
+      <div class="stat-cell" role="listitem">
+        <div class="stat-key">projects:</div>
+        <div class="stat-value">3</div>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <div class="stat-key">sessions:</div>
+        <div class="stat-value">28</div>
+      </div>
+      <div class="stat-cell stat-cell--leverage" role="listitem">
+        <div class="leverage-terminal">
+          <div class="lev-line"><span class="lev-key">human:</span> <span class="lev-val">24h</span> <span class="lev-bar">&#9608;&#9608;&#9608;&#9608;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;&#9617;</span> <span class="lev-pct">19%</span></div>
+          <div class="lev-line"><span class="lev-key">agents:</span> <span class="lev-val lev-val--agent">100h</span> <span class="lev-bar lev-bar--agent">&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9617;&#9617;&#9617;&#9617;</span> <span class="lev-pct">81%</span></div>
+          <div class="lev-line"><span class="lev-key">multi:</span> <span class="lev-val lev-val--multi">4.2x</span></div>
+        </div>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <div class="stat-key">lines_changed:</div>
+        <div class="stat-value">18,400</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Work Timeline (ASCII Bar Chart) ── -->
+  <section class="mono-section" aria-label="Work timeline">
+    <h2 class="mono-heading"># work_timeline</h2>
+    <div class="terminal-block">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <span class="dot-red" aria-hidden="true"></span>
+          <span class="dot-yellow" aria-hidden="true"></span>
+          <span class="dot-green" aria-hidden="true"></span>
+        </div>
+        <span>hours per project</span>
+      </div>
+      <div class="terminal-body">
+        <div class="ascii-chart" role="img" aria-label="Hours per project: BudgetWise 42.5 hours, ShellHook 32 hours, PixelBoard 28 hours">
+          <div class="ascii-row">
+            <span class="ascii-label">BudgetWise</span>
+            <div class="ascii-bar">
+              <span class="ascii-bar-fill" aria-hidden="true">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░</span>
+              <span class="ascii-bar-value">42.5h</span>
+            </div>
+          </div>
+          <div class="ascii-row">
+            <span class="ascii-label">ShellHook</span>
+            <div class="ascii-bar">
+              <span class="ascii-bar-fill" aria-hidden="true">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░</span>
+              <span class="ascii-bar-value">32h</span>
+            </div>
+          </div>
+          <div class="ascii-row">
+            <span class="ascii-label">PixelBoard</span>
+            <div class="ascii-bar">
+              <span class="ascii-bar-fill" aria-hidden="true">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░</span>
+              <span class="ascii-bar-value">28h</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Projects ── -->
+  <section class="mono-section" aria-label="Projects">
+    <h2 class="mono-heading"># projects</h2>
+    <div class="project-list">
+
+      <!-- BudgetWise -->
+      <article class="project-card">
+        <div class="project-card-header">
+          <h3 class="project-name"><a href="./project.html">BudgetWise</a></h3>
+          <span class="project-source">claude: 62.5% | cursor: 37.5%</span>
+        </div>
+        <div class="project-card-body">
+          <p class="project-narrative">Personal finance app with recurring transaction detection, Plaid integration, and spending insights dashboard.</p>
+          <div class="project-stats-row">
+            <span class="project-stat"><strong>8</strong> sessions</span>
+            <span class="project-stat"><strong>42.5</strong>h</span>
+            <span class="project-stat"><strong>4,460</strong> LOC</span>
+          </div>
+          <div class="project-tags">
+            <span class="tag">[TypeScript]</span>
+            <span class="tag">[React]</span>
+            <span class="tag">[Next.js]</span>
+            <span class="tag">[Prisma]</span>
+            <span class="tag">[PostgreSQL]</span>
+            <span class="tag">[Stripe API]</span>
+          </div>
+          <div class="source-bar" role="img" aria-label="Source mix: Claude 62.5%, Cursor 37.5%">
+            <div class="source-bar-segment claude" style="width: 62.5%;"></div>
+            <div class="source-bar-segment cursor" style="width: 37.5%;"></div>
+          </div>
+          <div class="source-legend" aria-hidden="true">
+            <span><span class="source-legend-dot claude"></span>Claude 62.5%</span>
+            <span><span class="source-legend-dot cursor"></span>Cursor 37.5%</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- ShellHook -->
+      <article class="project-card">
+        <div class="project-card-header">
+          <h3 class="project-name">ShellHook</h3>
+          <span class="project-source">claude: 85% | cursor: 15%</span>
+        </div>
+        <div class="project-card-body">
+          <p class="project-narrative">Rust CLI tool for managing git hooks with TOML configuration and automatic symlinking.</p>
+          <div class="project-stats-row">
+            <span class="project-stat"><strong>7</strong> sessions</span>
+            <span class="project-stat"><strong>32</strong>h</span>
+            <span class="project-stat"><strong>3,580</strong> LOC</span>
+          </div>
+          <div class="project-tags">
+            <span class="tag">[Rust]</span>
+            <span class="tag">[CLI design]</span>
+            <span class="tag">[TOML parsing]</span>
+            <span class="tag">[Git internals]</span>
+            <span class="tag">[Shell scripting]</span>
+          </div>
+          <div class="source-bar" role="img" aria-label="Source mix: Claude 85%, Cursor 15%">
+            <div class="source-bar-segment claude" style="width: 85%;"></div>
+            <div class="source-bar-segment cursor" style="width: 15%;"></div>
+          </div>
+          <div class="source-legend" aria-hidden="true">
+            <span><span class="source-legend-dot claude"></span>Claude 85%</span>
+            <span><span class="source-legend-dot cursor"></span>Cursor 15%</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- PixelBoard -->
+      <article class="project-card">
+        <div class="project-card-header">
+          <h3 class="project-name"><a href="./project.html">PixelBoard</a></h3>
+          <span class="project-source">claude: 60% | cursor: 40%</span>
+        </div>
+        <div class="project-card-body">
+          <p class="project-narrative">Real-time collaborative drawing canvas with CRDT-based state sync and pressure-sensitive input.</p>
+          <div class="project-stats-row">
+            <span class="project-stat"><strong>5</strong> sessions</span>
+            <span class="project-stat"><strong>28</strong>h</span>
+            <span class="project-stat"><strong>2,940</strong> LOC</span>
+          </div>
+          <div class="project-tags">
+            <span class="tag">[TypeScript]</span>
+            <span class="tag">[WebSocket]</span>
+            <span class="tag">[Canvas API]</span>
+            <span class="tag">[Redis]</span>
+            <span class="tag">[Express]</span>
+            <span class="tag">[CRDT]</span>
+          </div>
+          <div class="source-bar" role="img" aria-label="Source mix: Claude 60%, Cursor 40%">
+            <div class="source-bar-segment claude" style="width: 60%;"></div>
+            <div class="source-bar-segment cursor" style="width: 40%;"></div>
+          </div>
+          <div class="source-legend" aria-hidden="true">
+            <span><span class="source-legend-dot claude"></span>Claude 60%</span>
+            <span><span class="source-legend-dot cursor"></span>Cursor 40%</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- DevLog -->
+      <article class="project-card">
+        <div class="project-card-header">
+          <h3 class="project-name"><a href="./project.html">DevLog</a></h3>
+          <span class="project-source">claude: 80% | cursor: 20%</span>
+        </div>
+        <div class="project-card-body">
+          <p class="project-narrative">CLI tool for capturing development decisions and context as structured markdown notes.</p>
+          <div class="project-stats-row">
+            <span class="project-stat"><strong>5</strong> sessions</span>
+            <span class="project-stat"><strong>18</strong>h</span>
+            <span class="project-stat"><strong>1,840</strong> LOC</span>
+          </div>
+          <div class="project-tags">
+            <span class="tag">[TypeScript]</span>
+            <span class="tag">[Node.js]</span>
+            <span class="tag">[CLI design]</span>
+            <span class="tag">[Markdown]</span>
+            <span class="tag">[SQLite]</span>
+          </div>
+          <div class="source-bar" role="img" aria-label="Source mix: Claude 80%, Cursor 20%">
+            <div class="source-bar-segment claude" style="width: 80%;"></div>
+            <div class="source-bar-segment cursor" style="width: 20%;"></div>
+          </div>
+          <div class="source-legend" aria-hidden="true">
+            <span><span class="source-legend-dot claude"></span>Claude 80%</span>
+            <span><span class="source-legend-dot cursor"></span>Cursor 20%</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Snapgrid -->
+      <article class="project-card">
+        <div class="project-card-header">
+          <h3 class="project-name"><a href="./project.html">Snapgrid</a></h3>
+          <span class="project-source">claude: 50% | cursor: 50%</span>
+        </div>
+        <div class="project-card-body">
+          <p class="project-narrative">Responsive image gallery with masonry layout, lazy loading, and keyboard navigation.</p>
+          <div class="project-stats-row">
+            <span class="project-stat"><strong>4</strong> sessions</span>
+            <span class="project-stat"><strong>14</strong>h</span>
+            <span class="project-stat"><strong>1,520</strong> LOC</span>
+          </div>
+          <div class="project-tags">
+            <span class="tag">[TypeScript]</span>
+            <span class="tag">[React]</span>
+            <span class="tag">[CSS Grid]</span>
+            <span class="tag">[IntersectionObserver]</span>
+            <span class="tag">[Accessibility]</span>
+          </div>
+          <div class="source-bar" role="img" aria-label="Source mix: Claude 50%, Cursor 50%">
+            <div class="source-bar-segment claude" style="width: 50%;"></div>
+            <div class="source-bar-segment cursor" style="width: 50%;"></div>
+          </div>
+          <div class="source-legend" aria-hidden="true">
+            <span><span class="source-legend-dot claude"></span>Claude 50%</span>
+            <span><span class="source-legend-dot cursor"></span>Cursor 50%</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Terracotta -->
+      <article class="project-card">
+        <div class="project-card-header">
+          <h3 class="project-name"><a href="./project.html">Terracotta</a></h3>
+          <span class="project-source">claude: 70% | cursor: 30%</span>
+        </div>
+        <div class="project-card-body">
+          <p class="project-narrative">Design token pipeline that generates CSS custom properties, Tailwind config, and Figma tokens from a single YAML source.</p>
+          <div class="project-stats-row">
+            <span class="project-stat"><strong>6</strong> sessions</span>
+            <span class="project-stat"><strong>22</strong>h</span>
+            <span class="project-stat"><strong>2,680</strong> LOC</span>
+          </div>
+          <div class="project-tags">
+            <span class="tag">[TypeScript]</span>
+            <span class="tag">[Node.js]</span>
+            <span class="tag">[YAML]</span>
+            <span class="tag">[CSS]</span>
+            <span class="tag">[Figma API]</span>
+          </div>
+          <div class="source-bar" role="img" aria-label="Source mix: Claude 70%, Cursor 30%">
+            <div class="source-bar-segment claude" style="width: 70%;"></div>
+            <div class="source-bar-segment cursor" style="width: 30%;"></div>
+          </div>
+          <div class="source-legend" aria-hidden="true">
+            <span><span class="source-legend-dot claude"></span>Claude 70%</span>
+            <span><span class="source-legend-dot cursor"></span>Cursor 30%</span>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ── LOC Timeline (ASCII) ── -->
+  <section class="mono-section" aria-label="Lines of code per project">
+    <h2 class="mono-heading"># loc_breakdown</h2>
+    <div class="terminal-block">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <span class="dot-red" aria-hidden="true"></span>
+          <span class="dot-yellow" aria-hidden="true"></span>
+          <span class="dot-green" aria-hidden="true"></span>
+        </div>
+        <span>lines of code per project</span>
+      </div>
+      <div class="terminal-body">
+        <div class="ascii-chart" role="img" aria-label="Lines of code: BudgetWise 4460, ShellHook 3580, PixelBoard 2940">
+          <div class="ascii-row">
+            <span class="ascii-label">BudgetWise</span>
+            <div class="ascii-bar">
+              <span class="ascii-bar-fill" aria-hidden="true">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓</span>
+              <span class="ascii-bar-value">4,460</span>
+            </div>
+          </div>
+          <div class="ascii-row">
+            <span class="ascii-label">ShellHook</span>
+            <div class="ascii-bar">
+              <span class="ascii-bar-fill" aria-hidden="true">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░</span>
+              <span class="ascii-bar-value">3,580</span>
+            </div>
+          </div>
+          <div class="ascii-row">
+            <span class="ascii-label">PixelBoard</span>
+            <div class="ascii-bar">
+              <span class="ascii-bar-fill" aria-hidden="true">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░</span>
+              <span class="ascii-bar-value">2,940</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Sessions per Project (ASCII) ── -->
+  <section class="mono-section" aria-label="Sessions per project">
+    <h2 class="mono-heading"># sessions_per_project</h2>
+    <div class="terminal-block">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <span class="dot-red" aria-hidden="true"></span>
+          <span class="dot-yellow" aria-hidden="true"></span>
+          <span class="dot-green" aria-hidden="true"></span>
+        </div>
+        <span>session count per project</span>
+      </div>
+      <div class="terminal-body">
+        <div class="ascii-chart" role="img" aria-label="Sessions: BudgetWise 8, ShellHook 7, PixelBoard 5">
+          <div class="ascii-row">
+            <span class="ascii-label">BudgetWise</span>
+            <div class="ascii-bar">
+              <span class="ascii-bar-fill" aria-hidden="true">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓</span>
+              <span class="ascii-bar-value">8</span>
+            </div>
+          </div>
+          <div class="ascii-row">
+            <span class="ascii-label">ShellHook</span>
+            <div class="ascii-bar">
+              <span class="ascii-bar-fill" aria-hidden="true">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░</span>
+              <span class="ascii-bar-value">7</span>
+            </div>
+          </div>
+          <div class="ascii-row">
+            <span class="ascii-label">PixelBoard</span>
+            <div class="ascii-bar">
+              <span class="ascii-bar-fill" aria-hidden="true">▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░</span>
+              <span class="ascii-bar-value">5</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Skills Aggregate ── -->
+  <section class="mono-section" aria-label="All skills">
+    <h2 class="mono-heading"># skills --all</h2>
+    <div class="terminal-block">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <span class="dot-red" aria-hidden="true"></span>
+          <span class="dot-yellow" aria-hidden="true"></span>
+          <span class="dot-green" aria-hidden="true"></span>
+        </div>
+        <span>cat skills.json | sort</span>
+      </div>
+      <div class="terminal-body">
+        <div class="project-tags">
+          <span class="tag">[TypeScript]</span>
+          <span class="tag">[React]</span>
+          <span class="tag">[Next.js]</span>
+          <span class="tag">[Prisma]</span>
+          <span class="tag">[PostgreSQL]</span>
+          <span class="tag">[Stripe API]</span>
+          <span class="tag">[Rust]</span>
+          <span class="tag">[CLI design]</span>
+          <span class="tag">[TOML parsing]</span>
+          <span class="tag">[Git internals]</span>
+          <span class="tag">[Shell scripting]</span>
+          <span class="tag">[WebSocket]</span>
+          <span class="tag">[Canvas API]</span>
+          <span class="tag">[Redis]</span>
+          <span class="tag">[Express]</span>
+          <span class="tag">[CRDT]</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── System Info ── -->
+  <section class="mono-section" aria-label="System information">
+    <h2 class="mono-heading"># sys_info</h2>
+    <div class="terminal-block">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <span class="dot-red" aria-hidden="true"></span>
+          <span class="dot-yellow" aria-hidden="true"></span>
+          <span class="dot-green" aria-hidden="true"></span>
+        </div>
+        <span>heyi --version</span>
+      </div>
+      <div class="terminal-body" style="font-size: 0.8125rem; line-height: 2;">
+        <div style="color: var(--mono-text-dim);">
+          <span style="color: var(--mono-accent);">platform:</span> heyi.am<br>
+          <span style="color: var(--mono-accent);">template:</span> mono<br>
+          <span style="color: var(--mono-accent);">sources:</span> Claude Code, Cursor<br>
+          <span style="color: var(--mono-accent);">active_since:</span> February 2026<br>
+          <span style="color: var(--mono-accent);">total_projects:</span> 3<br>
+          <span style="color: var(--mono-accent);">total_sessions:</span> 28<br>
+          <span style="color: var(--mono-accent);">status:</span> <span style="color: var(--mono-accent);">online</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="mono-footer">
+  <p>// generated by heyi.am &middot; mono template &middot; 2026</p>
+</footer>
+
+<script>
+(function() {
+  'use strict';
+
+  // Section entrance animation via IntersectionObserver
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var sections = document.querySelectorAll('.mono-section');
+
+  if (prefersReducedMotion) {
+    sections.forEach(function(s) { s.classList.add('visible'); });
+  } else {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    sections.forEach(function(s) { observer.observe(s); });
+  }
+})();
+</script>
+
+</body>
+</html>

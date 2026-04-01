@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alex Chen -- Radar Portfolio -- heyi.am</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--accent);
+  color: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  border-radius: var(--radius-sm);
+  z-index: 200;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* ── Design Tokens ── */
+:root {
+  --surface:          #0f172a;
+  --surface-low:      #131c31;
+  --surface-lowest:   #1a2540;
+  --surface-high:     #0b1120;
+  --on-surface:       #e2e8f0;
+  --on-surface-variant: #64748b;
+
+  --accent:           #22d3ee;
+  --accent-dim:       rgba(34, 211, 238, 0.15);
+  --accent-faint:     rgba(34, 211, 238, 0.06);
+
+  --outline:          #1e293b;
+  --ghost:            rgba(34, 211, 238, 0.08);
+  --grid-line:        rgba(34, 211, 238, 0.04);
+
+  --green:            #34d399;
+  --green-bg:         rgba(52, 211, 153, 0.1);
+  --violet:           #a78bfa;
+  --violet-bg:        rgba(167, 139, 250, 0.1);
+
+  --font-display:     'Space Grotesk', sans-serif;
+  --font-body:        'Inter', sans-serif;
+  --font-mono:        'IBM Plex Mono', monospace;
+
+  --radius-sm:        2px;
+  --radius-md:        4px;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--on-surface);
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 40px 40px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; text-decoration-color: var(--accent-dim); }
+
+/* ── Section Fade-In ── */
+.radar-section {
+  margin-bottom: 2.5rem;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+.radar-section.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-section {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ── Container ── */
+.radar-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+/* ── Section Labels ── */
+.radar-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.radar-label::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 1px;
+}
+
+/* ── Top Nav ── */
+.radar-topnav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+.radar-topnav a {
+  color: var(--accent);
+}
+.radar-topnav__sep {
+  color: var(--on-surface-variant);
+}
+.radar-topnav__current {
+  color: var(--on-surface);
+}
+
+/* ── Portfolio Header ── */
+.portfolio-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.portfolio-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--surface-lowest);
+  border: 1px solid var(--ghost);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.portfolio-info { flex: 1; min-width: 0; }
+
+.portfolio-name {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--on-surface);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.125rem;
+}
+
+.portfolio-handle {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.portfolio-bio {
+  font-size: 0.875rem;
+  color: var(--on-surface-variant);
+  line-height: 1.6;
+  max-width: 50ch;
+}
+
+.portfolio-location {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--on-surface-variant);
+  margin-top: 0.375rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+.portfolio-location svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: var(--on-surface-variant);
+  stroke-width: 1.5;
+}
+
+/* ── Profile photo ── */
+.portfolio-photo {
+  width: 100px;
+  height: 130px;
+  border-radius: 4px;
+  object-fit: cover;
+  object-position: 55% 10%;
+  border: 2px solid var(--ghost);
+  flex-shrink: 0;
+}
+
+/* ── Contact links ── */
+.contact-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin-top: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+}
+.contact-row a,
+.contact-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--on-surface-variant);
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+.contact-row a:hover {
+  color: var(--accent);
+}
+.contact-row a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+.contact-row svg {
+  flex-shrink: 0;
+}
+.resume-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border: 1px solid var(--ghost);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--on-surface-variant);
+  text-decoration: none;
+  transition: border-color 150ms ease, color 150ms ease;
+  background: transparent;
+}
+.resume-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Aggregate Stats ── */
+.portfolio-stats {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+}
+
+.portfolio-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  background: var(--surface-lowest);
+  border: 1px solid var(--ghost);
+  border-radius: var(--radius-sm);
+  min-width: 100px;
+}
+
+.portfolio-stat__value {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.portfolio-stat__label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface-variant);
+}
+.portfolio-stat--cyan {
+  border-color: rgba(34,211,238,0.4);
+}
+.portfolio-stat--cyan .portfolio-stat__value {
+  color: var(--accent);
+}
+
+/* ── Project Cards ── */
+.portfolio-projects {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
+}
+
+.portfolio-card {
+  background: var(--surface-lowest);
+  border: 1px solid var(--ghost);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  transition: border-color 150ms ease;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.portfolio-card:hover {
+  border-color: var(--accent-dim);
+  text-decoration: none;
+}
+
+.portfolio-card__bar {
+  height: 2px;
+  border-radius: 1px;
+  margin-bottom: 0.75rem;
+}
+.portfolio-card__bar--cyan { background: var(--accent); }
+.portfolio-card__bar--green { background: var(--green); }
+.portfolio-card__bar--violet { background: var(--violet); }
+
+.portfolio-card__title {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  margin-bottom: 0.25rem;
+}
+
+.portfolio-card__desc {
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.portfolio-card__meta {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--on-surface-variant);
+  margin-bottom: 0.5rem;
+}
+
+.portfolio-card__skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+/* ── Skill Chips ── */
+.chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.2;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent-faint);
+  color: var(--accent);
+  border: 1px solid var(--ghost);
+}
+
+/* ── Source Mix Bar ── */
+.source-mix {
+  display: flex;
+  height: 3px;
+  border-radius: 1px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+  gap: 1px;
+}
+.source-mix__segment--claude { background: var(--accent); }
+.source-mix__segment--cursor { background: var(--violet); }
+
+/* ── Aggregate Skills ── */
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+/* ── Footer ── */
+.radar-footer {
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--ghost);
+  text-align: center;
+}
+.radar-footer__text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Radar Nav ── */
+.radar-nav {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  z-index: 100;
+  box-shadow: 0 0 20px var(--accent-faint);
+}
+.radar-nav__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  background: radial-gradient(circle at center, var(--accent-faint) 0%, transparent 70%);
+}
+.radar-nav__sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(34, 211, 238, 0.25) 0%, transparent 12%);
+  opacity: 0.08;
+  animation: radar-spin 12s linear infinite;
+}
+.radar-nav__center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.radar-nav__dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--outline);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background-color 200ms ease-out, box-shadow 200ms ease-out;
+}
+.radar-nav__dot--active {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-dim);
+}
+.radar-nav__dot:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@keyframes radar-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-nav__sweep { animation: none; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .radar-container { padding: 1.5rem 1rem; }
+  .portfolio-header { flex-direction: column; gap: 1rem; }
+  .portfolio-photo { width: 80px; height: 100px; }
+  .portfolio-stats { gap: 0.5rem; }
+  .portfolio-stat { min-width: 80px; padding: 0.5rem 0.75rem; }
+  .portfolio-projects { grid-template-columns: 1fr; }
+  .radar-nav { display: none; }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<main id="main-content">
+<div class="radar-container">
+
+  <!-- Section 0: Header -->
+  <section class="radar-section" data-radar-section="0" aria-label="Profile">
+    <div class="portfolio-header">
+      <img src="../assets/headshot-man-2-400.jpg" alt="Alex Chen" class="portfolio-photo">
+      <div class="portfolio-info">
+        <h1 class="portfolio-name">Alex Chen</h1>
+        <div class="portfolio-handle">@alex</div>
+        <div class="portfolio-bio">Full-stack engineer building tools for personal finance and real-time collaboration. I care about schema design, performance, and building things that feel right. Previously at Stripe and a YC startup.</div>
+        <div class="portfolio-location">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          San Francisco, CA
+        </div>
+        <div class="contact-row">
+          <a href="mailto:alex@heyiam.com"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg> alex@heyiam.com</a>
+          <a href="https://linkedin.com/in/alexchen" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg> LinkedIn</a>
+          <a href="https://github.com/interactivecats/heyi.am" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg> GitHub</a>
+          <a href="https://x.com/alexchendev" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> @alexchendev</a>
+          <a href="https://alexchen.dev" target="_blank" rel="noopener">alexchen.dev</a>
+          <a href="./project.html" class="resume-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg> Resume (PDF)</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 1: Aggregate Stats -->
+  <section class="radar-section" data-radar-section="1" aria-label="Aggregate statistics" id="stats-section">
+    <div class="radar-label">Metrics</div>
+    <div class="portfolio-stats">
+      <div class="portfolio-stat">
+        <div class="portfolio-stat__value" data-count-to="3" data-format="int">0</div>
+        <div class="portfolio-stat__label">Projects</div>
+      </div>
+      <div class="portfolio-stat">
+        <div class="portfolio-stat__value" data-count-to="28" data-format="int">0</div>
+        <div class="portfolio-stat__label">Sessions</div>
+      </div>
+      <div class="portfolio-stat portfolio-stat--cyan">
+        <div class="portfolio-stat__value">24h</div>
+        <div class="portfolio-stat__label">You</div>
+      </div>
+      <div class="portfolio-stat portfolio-stat--cyan">
+        <div class="portfolio-stat__value">100h</div>
+        <div class="portfolio-stat__label">Agents</div>
+      </div>
+      <div class="portfolio-stat portfolio-stat--cyan">
+        <div class="portfolio-stat__value">4.2x</div>
+        <div class="portfolio-stat__label">Multiplier</div>
+      </div>
+      <div class="portfolio-stat">
+        <div class="portfolio-stat__value" data-count-to="18400" data-format="comma">0</div>
+        <div class="portfolio-stat__label">LOC</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2: Projects -->
+  <section class="radar-section" data-radar-section="2" aria-label="Projects">
+    <div class="radar-label">Projects</div>
+    <div class="portfolio-projects">
+
+      <!-- BudgetWise -->
+      <a class="portfolio-card" href="./project.html">
+        <div class="portfolio-card__bar portfolio-card__bar--cyan"></div>
+        <div class="portfolio-card__title">BudgetWise</div>
+        <div class="portfolio-card__desc">Personal finance app with recurring transaction detection, Plaid integration, and spending insights dashboard.</div>
+        <div class="portfolio-card__meta">8 sessions &middot; 42.5h &middot; 4,460 LOC</div>
+        <div class="portfolio-card__skills">
+          <span class="chip">TypeScript</span>
+          <span class="chip">React</span>
+          <span class="chip">Next.js</span>
+          <span class="chip">Prisma</span>
+        </div>
+        <div class="source-mix" aria-label="Source mix: Claude 62.5%, Cursor 37.5%">
+          <div class="source-mix__segment--claude" style="width: 62.5%"></div>
+          <div class="source-mix__segment--cursor" style="width: 37.5%"></div>
+        </div>
+      </a>
+
+      <!-- ShellHook -->
+      <a class="portfolio-card" href="./project.html">
+        <div class="portfolio-card__bar portfolio-card__bar--green"></div>
+        <div class="portfolio-card__title">ShellHook</div>
+        <div class="portfolio-card__desc">Rust CLI tool for managing git hooks with TOML configuration and automatic symlinking.</div>
+        <div class="portfolio-card__meta">7 sessions &middot; 32h &middot; 3,580 LOC</div>
+        <div class="portfolio-card__skills">
+          <span class="chip">Rust</span>
+          <span class="chip">CLI design</span>
+          <span class="chip">TOML parsing</span>
+        </div>
+        <div class="source-mix" aria-label="Source mix: Claude 85%, Cursor 15%">
+          <div class="source-mix__segment--claude" style="width: 85%"></div>
+          <div class="source-mix__segment--cursor" style="width: 15%"></div>
+        </div>
+      </a>
+
+      <!-- PixelBoard -->
+      <a class="portfolio-card" href="./project.html">
+        <div class="portfolio-card__bar portfolio-card__bar--violet"></div>
+        <div class="portfolio-card__title">PixelBoard</div>
+        <div class="portfolio-card__desc">Real-time collaborative drawing canvas with CRDT-based state sync and pressure-sensitive input.</div>
+        <div class="portfolio-card__meta">5 sessions &middot; 28h &middot; 2,940 LOC</div>
+        <div class="portfolio-card__skills">
+          <span class="chip">TypeScript</span>
+          <span class="chip">WebSocket</span>
+          <span class="chip">Canvas API</span>
+        </div>
+        <div class="source-mix" aria-label="Source mix: Claude 60%, Cursor 40%">
+          <div class="source-mix__segment--claude" style="width: 60%"></div>
+          <div class="source-mix__segment--cursor" style="width: 40%"></div>
+        </div>
+      </a>
+
+      <!-- DevLog -->
+      <a class="portfolio-card" href="./project.html">
+        <div class="portfolio-card__bar portfolio-card__bar--violet"></div>
+        <div class="portfolio-card__title">DevLog</div>
+        <div class="portfolio-card__desc">CLI tool for capturing development decisions and context as structured markdown notes.</div>
+        <div class="portfolio-card__meta">5 sessions &middot; 18h &middot; 1,840 LOC</div>
+        <div class="portfolio-card__skills">
+          <span class="chip">TypeScript</span>
+          <span class="chip">WebSocket</span>
+          <span class="chip">Canvas API</span>
+        </div>
+        <div class="source-mix" aria-label="Source mix: Claude 80%, Cursor 20%">
+          <div class="source-mix__segment--claude" style="width: 80%"></div>
+          <div class="source-mix__segment--cursor" style="width: 20%"></div>
+        </div>
+      </a>
+
+      <!-- Snapgrid -->
+      <a class="portfolio-card" href="./project.html">
+        <div class="portfolio-card__bar portfolio-card__bar--violet"></div>
+        <div class="portfolio-card__title">Snapgrid</div>
+        <div class="portfolio-card__desc">Responsive image gallery with masonry layout, lazy loading, and keyboard navigation.</div>
+        <div class="portfolio-card__meta">4 sessions &middot; 14h &middot; 1,520 LOC</div>
+        <div class="portfolio-card__skills">
+          <span class="chip">TypeScript</span>
+          <span class="chip">WebSocket</span>
+          <span class="chip">Canvas API</span>
+        </div>
+        <div class="source-mix" aria-label="Source mix: Claude 50%, Cursor 50%">
+          <div class="source-mix__segment--claude" style="width: 50%"></div>
+          <div class="source-mix__segment--cursor" style="width: 50%"></div>
+        </div>
+      </a>
+
+      <!-- Terracotta -->
+      <a class="portfolio-card" href="./project.html">
+        <div class="portfolio-card__bar portfolio-card__bar--violet"></div>
+        <div class="portfolio-card__title">Terracotta</div>
+        <div class="portfolio-card__desc">Design token pipeline that generates CSS custom properties, Tailwind config, and Figma tokens from a single YAML source.</div>
+        <div class="portfolio-card__meta">6 sessions &middot; 22h &middot; 2,680 LOC</div>
+        <div class="portfolio-card__skills">
+          <span class="chip">TypeScript</span>
+          <span class="chip">WebSocket</span>
+          <span class="chip">Canvas API</span>
+        </div>
+        <div class="source-mix" aria-label="Source mix: Claude 70%, Cursor 30%">
+          <div class="source-mix__segment--claude" style="width: 70%"></div>
+          <div class="source-mix__segment--cursor" style="width: 30%"></div>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- Section 3: All Skills -->
+  <section class="radar-section" data-radar-section="3" aria-label="Technologies">
+    <div class="radar-label">Technologies</div>
+    <div class="chip-list">
+      <span class="chip">TypeScript</span>
+      <span class="chip">React</span>
+      <span class="chip">Next.js</span>
+      <span class="chip">Prisma</span>
+      <span class="chip">PostgreSQL</span>
+      <span class="chip">Stripe API</span>
+      <span class="chip">Rust</span>
+      <span class="chip">CLI design</span>
+      <span class="chip">TOML parsing</span>
+      <span class="chip">Git internals</span>
+      <span class="chip">Shell scripting</span>
+      <span class="chip">WebSocket</span>
+      <span class="chip">Canvas API</span>
+      <span class="chip">Redis</span>
+      <span class="chip">Express</span>
+      <span class="chip">CRDT</span>
+    </div>
+  </section>
+
+  <!-- Section 4: Activity Chart -->
+  <section class="radar-section" data-radar-section="4" aria-label="Activity overview" id="activity-chart-section">
+    <div class="radar-label">Activity</div>
+    <div style="background: var(--surface-lowest); border: 1px solid var(--ghost); border-radius: var(--radius-sm); padding: 1rem; overflow: hidden;">
+      <svg viewBox="0 0 820 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Activity chart showing sessions across 3 projects over time">
+        <!-- Grid -->
+        <line x1="48" y1="10" x2="48" y2="130" stroke="rgba(34,211,238,0.08)" stroke-width="1"/>
+        <line x1="48" y1="130" x2="800" y2="130" stroke="rgba(34,211,238,0.08)" stroke-width="1"/>
+        <line x1="48" y1="90" x2="800" y2="90" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="48" y1="50" x2="800" y2="50" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+
+        <!-- Y-axis -->
+        <text x="42" y="133" text-anchor="end" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">0h</text>
+        <text x="42" y="93" text-anchor="end" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">50h</text>
+        <text x="42" y="53" text-anchor="end" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">100h</text>
+
+        <!-- BudgetWise sessions (cyan) -->
+        <rect class="wt-bar" x="80" y="62" width="80" height="3" rx="1" fill="#22d3ee" filter="url(#barGlowP)"/>
+        <rect class="wt-bar" x="200" y="55" width="90" height="3" rx="1" fill="#22d3ee" filter="url(#barGlowP)"/>
+
+        <!-- ShellHook sessions (green) -->
+        <rect class="wt-bar" x="340" y="70" width="75" height="3" rx="1" fill="#34d399" filter="url(#barGlowP)"/>
+        <rect class="wt-bar" x="450" y="64" width="70" height="3" rx="1" fill="#34d399" filter="url(#barGlowP)"/>
+
+        <!-- PixelBoard sessions (violet) -->
+        <rect class="wt-bar" x="560" y="78" width="65" height="3" rx="1" fill="#a78bfa" filter="url(#barGlowP)"/>
+        <rect class="wt-bar" x="660" y="72" width="80" height="3" rx="1" fill="#a78bfa" filter="url(#barGlowP)"/>
+
+        <!-- Labels -->
+        <text x="120" y="56" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="7">BudgetWise</text>
+        <text x="377" y="64" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="7">ShellHook</text>
+        <text x="700" y="66" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="7">PixelBoard</text>
+
+        <!-- X-axis -->
+        <text x="120" y="146" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Feb</text>
+        <text x="380" y="146" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Mar</text>
+        <text x="640" y="146" text-anchor="middle" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8">Apr</text>
+
+        <!-- Legend -->
+        <line x1="560" y1="12" x2="580" y2="12" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="585" y="15" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="7">BudgetWise</text>
+        <line x1="660" y1="12" x2="680" y2="12" stroke="#34d399" stroke-width="1.5"/>
+        <text x="685" y="15" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="7">ShellHook</text>
+        <line x1="750" y1="12" x2="770" y2="12" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="775" y="15" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="7">PixelBoard</text>
+
+        <defs>
+          <filter id="barGlowP" x="-20%" y="-200%" width="140%" height="600%">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+          </filter>
+        </defs>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Section 5: Footer -->
+  <section class="radar-section" data-radar-section="5" aria-label="Footer">
+    <footer class="radar-footer">
+      <nav aria-label="Page navigation">
+        <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--on-surface-variant);">
+          <a href="./portfolio.html">portfolio</a>
+          <span style="color: var(--on-surface-variant); margin: 0 0.375rem;">/</span>
+          <a href="./project.html">project</a>
+          <span style="color: var(--on-surface-variant); margin: 0 0.375rem;">/</span>
+          <a href="./session.html">session</a>
+        </span>
+      </nav>
+      <div class="radar-footer__text" style="margin-top: 0.75rem;">Built with heyi.am</div>
+    </footer>
+  </section>
+
+</div>
+</main>
+
+<!-- Radar Navigation Element -->
+<nav class="radar-nav" aria-label="Section navigation">
+  <div class="radar-nav__ring"></div>
+  <div class="radar-nav__sweep"></div>
+  <div class="radar-nav__center"></div>
+  <button class="radar-nav__dot" data-radar-dot="0" aria-label="Navigate to Profile"></button>
+  <button class="radar-nav__dot" data-radar-dot="1" aria-label="Navigate to Metrics"></button>
+  <button class="radar-nav__dot" data-radar-dot="2" aria-label="Navigate to Projects"></button>
+  <button class="radar-nav__dot" data-radar-dot="3" aria-label="Navigate to Technologies"></button>
+  <button class="radar-nav__dot" data-radar-dot="4" aria-label="Navigate to Activity"></button>
+  <button class="radar-nav__dot" data-radar-dot="5" aria-label="Navigate to Footer"></button>
+</nav>
+
+<script>
+(function() {
+  'use strict';
+
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── Radar HUD Navigation ──
+  var nav = document.querySelector('.radar-nav');
+  if (nav) {
+    var sections = document.querySelectorAll('[data-radar-section]');
+    var dots = document.querySelectorAll('[data-radar-dot]');
+    var totalDots = dots.length;
+
+    dots.forEach(function(dot, i) {
+      var angle = (i / totalDots) * 2 * Math.PI - Math.PI / 2;
+      var r = 54;
+      dot.style.left = (60 + r * Math.cos(angle) - 3) + 'px';
+      dot.style.top  = (60 + r * Math.sin(angle) - 3) + 'px';
+    });
+
+    var dotObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        var idx = entry.target.getAttribute('data-radar-section');
+        var dot = nav.querySelector('[data-radar-dot="' + idx + '"]');
+        if (dot) {
+          dot.classList.toggle('radar-nav__dot--active', entry.isIntersecting);
+        }
+      });
+    }, { threshold: 0.3 });
+
+    sections.forEach(function(s) { dotObserver.observe(s); });
+
+    dots.forEach(function(dot) {
+      dot.addEventListener('click', function() {
+        var idx = this.getAttribute('data-radar-dot');
+        var target = document.querySelector('[data-radar-section="' + idx + '"]');
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  }
+
+  // ── Section Fade-In ──
+  var allSections = document.querySelectorAll('.radar-section');
+  if (!prefersReducedMotion) {
+    var fadeObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          fadeObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    allSections.forEach(function(s) { fadeObserver.observe(s); });
+  } else {
+    allSections.forEach(function(s) { s.classList.add('is-visible'); });
+  }
+
+  // ── Stat Counter Animation ──
+  var statsSection = document.getElementById('stats-section');
+  if (statsSection) {
+    if (prefersReducedMotion) {
+      showFinalCounterValues(statsSection);
+    } else {
+      var statsObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            statsObserver.unobserve(entry.target);
+            setTimeout(function() { animateCounters(entry.target); }, 200);
+          }
+        });
+      }, { threshold: 0.15 });
+      statsObserver.observe(statsSection);
+    }
+  }
+
+  function showFinalCounterValues(container) {
+    var counters = container.querySelectorAll('[data-count-to]');
+    counters.forEach(function(el) {
+      var target = parseFloat(el.getAttribute('data-count-to'));
+      var format = el.getAttribute('data-format');
+      el.textContent = formatCounterValue(target, format);
+    });
+  }
+
+  function animateCounters(container) {
+    var counters = container.querySelectorAll('[data-count-to]');
+    counters.forEach(function(el) {
+      var target = parseFloat(el.getAttribute('data-count-to'));
+      var format = el.getAttribute('data-format');
+      var duration = 1200;
+      var start = performance.now();
+
+      function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+      function tick(now) {
+        var elapsed = now - start;
+        var progress = Math.min(elapsed / duration, 1);
+        var current = target * easeOut(progress);
+        el.textContent = formatCounterValue(current, format);
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+
+  function formatCounterValue(val, format) {
+    switch (format) {
+      case 'int': return Math.round(val).toString();
+      case 'comma': return Math.round(val).toLocaleString();
+      case 'hours': return val.toFixed(1) + 'h';
+      case 'tokens':
+        if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+        if (val >= 1000) return (val / 1000).toFixed(0) + 'K';
+        return Math.round(val).toString();
+      case 'multiplier': return val.toFixed(1) + 'x';
+      default: return Math.round(val).toString();
+    }
+  }
+
+  // ── Work Timeline Bar Animation ──
+  var activitySection = document.getElementById('activity-chart-section');
+  if (activitySection) {
+    if (prefersReducedMotion) {
+      activitySection.querySelectorAll('.wt-bar').forEach(function(b) { b.classList.add('is-animated'); });
+    } else {
+      var wtObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            wtObserver.unobserve(entry.target);
+            var bars = entry.target.querySelectorAll('.wt-bar');
+            bars.forEach(function(bar, i) {
+              setTimeout(function() { bar.classList.add('is-animated'); }, i * 80);
+            });
+          }
+        });
+      }, { threshold: 0.15 });
+      wtObserver.observe(activitySection);
+    }
+  }
+})();
+</script>
+
+<!-- Work timeline bar animation CSS (inline for standalone) -->
+<style>
+.wt-bar {
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.wt-bar.is-animated { transform: scaleX(1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .wt-bar { transform: scaleX(1); transition: none; }
+}
+</style>
+
+</body>
+</html>

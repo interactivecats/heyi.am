@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Set up Prisma schema — Session | Ember</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Ember Design Tokens ── */
+:root {
+  --bg: #1c1210;
+  --surface: #231916;
+  --surface-raised: #2a1f1b;
+  --surface-high: #332620;
+
+  --accent: #f97316;
+  --accent-secondary: #ef4444;
+  --accent-dim: rgba(249, 115, 22, 0.1);
+  --accent-mid: rgba(249, 115, 22, 0.15);
+  --accent-glow: rgba(249, 115, 22, 0.06);
+  --accent-border: rgba(249, 115, 22, 0.1);
+
+  --text: #faf5f0;
+  --text-secondary: rgba(250, 245, 240, 0.65);
+  --text-muted: rgba(250, 245, 240, 0.4);
+  --text-faint: rgba(250, 245, 240, 0.25);
+
+  --border: rgba(249, 115, 22, 0.1);
+  --border-subtle: rgba(250, 245, 240, 0.06);
+
+  --green: #4ade80;
+  --green-dim: rgba(74, 222, 128, 0.1);
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-section: 600ms;
+
+  /* Agent role colors */
+  --color-frontend: #7c3aed;
+  --color-backend: #0891b2;
+  --color-qa: #059669;
+  --color-security: #475569;
+  --color-reviewer: #e11d48;
+  --color-ux: #d97706;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--text);
+  background-color: var(--bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  inset-inline-start: -9999px;
+  top: 0;
+  background: var(--accent);
+  color: var(--bg);
+  padding: 8px 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  z-index: 100;
+  border-radius: var(--radius-sm);
+}
+.skip-link:focus {
+  inset-inline-start: 8px;
+  top: 8px;
+}
+
+/* ── Layout ── */
+.container {
+  max-width: 960px;
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
+/* ── Nav ── */
+.nav {
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+  background: rgba(28, 18, 16, 0.92);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nav-brand {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+.nav-brand .ember-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  margin-inline-end: 8px;
+  vertical-align: middle;
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.4);
+}
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+.nav-links a {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.nav-links a:hover,
+.nav-links a[aria-current="page"] {
+  color: var(--accent);
+}
+.nav-links a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+/* ── Section Animation ── */
+.ember-section {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity var(--dur-section) var(--ease-out),
+              transform var(--dur-section) var(--ease-out);
+  margin-bottom: 2rem;
+}
+.ember-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Breadcrumb ── */
+.breadcrumb {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 1.5rem 0 0;
+}
+.breadcrumb a {
+  color: var(--text-muted);
+  transition: color 0.15s;
+}
+.breadcrumb a:hover {
+  color: var(--accent);
+}
+.breadcrumb .sep {
+  margin: 0 6px;
+  color: var(--text-faint);
+}
+
+/* ── Session Header ── */
+.session-header {
+  padding: 2rem 0 1.5rem;
+}
+.session-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3.5vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.3;
+  position: relative;
+  display: inline-block;
+}
+.session-title::after {
+  content: '';
+  display: block;
+  height: 3px;
+  margin-top: 8px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.3);
+}
+.session-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.session-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.session-meta-item .ember-pip {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.session-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  border: 1px solid var(--accent-border);
+  margin-top: 0.75rem;
+}
+
+/* ── Content Layout ── */
+.content-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* ── Section Headers ── */
+.section-header {
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-header .ember-icon {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  box-shadow: 0 0 6px rgba(249, 115, 22, 0.4);
+  flex-shrink: 0;
+}
+
+/* ── Dev Take ── */
+.dev-take {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  border-inline-start: 3px solid;
+  border-image: linear-gradient(180deg, var(--accent), var(--accent-secondary)) 1;
+}
+.dev-take-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.dev-take p {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  font-style: italic;
+}
+
+/* ── Execution Path (Beats) ── */
+.beats {
+  position: relative;
+  padding-inline-start: 28px;
+}
+.beats::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 9px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-secondary));
+  opacity: 0.25;
+  border-radius: 1px;
+}
+.beat-item {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+.beat-item:last-child { margin-bottom: 0; }
+.beat-dot {
+  position: absolute;
+  inset-inline-start: -28px;
+  top: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.35);
+  border: 2px solid var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.beat-dot::after {
+  content: attr(data-num);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--bg);
+}
+.beat-title {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.beat-desc {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Q&A ── */
+.qa-list {
+  list-style: none;
+}
+.qa-item {
+  margin-bottom: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.qa-item:last-child { margin-bottom: 0; }
+.qa-question {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  gap: 8px;
+}
+.qa-question::before {
+  content: 'Q';
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-border);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.qa-answer {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.7;
+  padding-inline-start: 30px;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.sidebar-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.sidebar-card-title {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Tools Used Table ── */
+.tools-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.tools-table tr {
+  border-bottom: 1px solid var(--border-subtle);
+}
+.tools-table tr:last-child {
+  border-bottom: none;
+}
+.tools-table td {
+  padding: 6px 0;
+  font-size: 13px;
+}
+.tools-table td:first-child {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.tools-table td:last-child {
+  text-align: end;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.tool-bar {
+  display: inline-block;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+  vertical-align: middle;
+  margin-inline-start: 8px;
+}
+
+/* ── Files Changed ── */
+.files-list {
+  list-style: none;
+}
+.files-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 12px;
+}
+.files-list li:last-child { border-bottom: none; }
+.file-path {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+.file-diff {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+/* ── Skills (Sidebar) ── */
+.sidebar-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.skill-chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+}
+
+/* ── Agent Summary ── */
+.agent-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.agent-table tr {
+  border-bottom: 1px solid var(--border-subtle);
+}
+.agent-table tr:last-child { border-bottom: none; }
+.agent-table td {
+  padding: 6px 0;
+  font-size: 12px;
+}
+.agent-role {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.agent-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.agent-table td:nth-child(2),
+.agent-table td:nth-child(3) {
+  text-align: end;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.agent-bar-cell {
+  width: 100%;
+  padding-inline-start: 8px;
+}
+.agent-bar {
+  height: 4px;
+  border-radius: 2px;
+}
+
+/* ── Footer ── */
+.footer {
+  margin-top: 3rem;
+  padding: 2rem 0;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.footer a { color: var(--accent); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .content-layout {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    order: -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  .session-meta {
+    gap: 0.75rem;
+  }
+  .nav-links { gap: 16px; }
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .ember-section {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .tool-bar,
+  .agent-bar {
+    transition: none;
+  }
+}
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- Nav -->
+<nav class="nav" aria-label="Main navigation">
+  <div class="container nav-inner">
+    <a href="./portfolio.html" class="nav-brand"><span class="ember-dot" aria-hidden="true"></span>alex.heyi.am</a>
+    <ul class="nav-links">
+      <li><a href="./portfolio.html">Portfolio</a></li>
+      <li><a href="./project.html">Project</a></li>
+      <li><a href="./session.html" aria-current="page">Session</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main" class="container">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb ember-section" aria-label="Breadcrumb">
+    <a href="./portfolio.html">alex</a><span class="sep">/</span><a href="./project.html">budgetwise</a><span class="sep">/</span><span aria-current="page">Set up Prisma schema</span>
+  </div>
+
+  <!-- Header -->
+  <header class="session-header ember-section">
+    <h1 class="session-title">Set up Prisma schema with User, Account, and Transaction models</h1>
+    <div class="session-meta">
+      <span class="session-meta-item"><span class="ember-pip" aria-hidden="true"></span>February 3, 2026</span>
+      <span class="session-meta-item"><span class="ember-pip" aria-hidden="true"></span>72 min (87m wall)</span>
+      <span class="session-meta-item"><span class="ember-pip" aria-hidden="true"></span>45 turns</span>
+      <span class="session-meta-item"><span class="ember-pip" aria-hidden="true"></span>680 LOC</span>
+      <span class="session-meta-item"><span class="ember-pip" aria-hidden="true"></span>4 files</span>
+    </div>
+    <div class="session-source">Claude Code</div>
+  </header>
+
+  <!-- Dev Take -->
+  <section class="ember-section" aria-label="Developer take">
+    <div class="dev-take">
+      <div class="dev-take-label">Dev Take</div>
+      <p>Went with discriminated unions over STI &mdash; nullable columns everywhere felt wrong. The audit log instead of soft deletes was the right call too.</p>
+    </div>
+  </section>
+
+  <!-- Content + Sidebar Layout -->
+  <div class="content-layout">
+
+    <!-- Main Content Column -->
+    <div>
+      <!-- Execution Path -->
+      <section class="ember-section" aria-label="Execution path">
+        <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Execution Path</h2>
+        <div class="beats">
+          <div class="beat-item">
+            <div class="beat-dot" data-num="1" aria-hidden="true"></div>
+            <div class="beat-title">Schema design</div>
+            <div class="beat-desc">Sketched out the core models &mdash; User, Account, Transaction. Decided on a discriminated union for transaction types instead of STI.</div>
+          </div>
+          <div class="beat-item">
+            <div class="beat-dot" data-num="2" aria-hidden="true"></div>
+            <div class="beat-title">Prisma setup</div>
+            <div class="beat-desc">Initialized Prisma with PostgreSQL, wrote the schema file with proper relations and indexes.</div>
+          </div>
+          <div class="beat-item">
+            <div class="beat-dot" data-num="3" aria-hidden="true"></div>
+            <div class="beat-title">Migration</div>
+            <div class="beat-desc">Ran the initial migration, fixed a cascade delete issue on Account &rarr; Transaction.</div>
+          </div>
+          <div class="beat-item">
+            <div class="beat-dot" data-num="4" aria-hidden="true"></div>
+            <div class="beat-title">Seed data</div>
+            <div class="beat-desc">Created a seed script with realistic test data &mdash; multiple accounts, mixed transaction types.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Q&A -->
+      <section class="ember-section" aria-label="Questions and answers">
+        <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Q&amp;A</h2>
+        <ul class="qa-list">
+          <li class="qa-item">
+            <div class="qa-question">Why did you choose a discriminated union over single-table inheritance for transaction types?</div>
+            <div class="qa-answer">STI would have left nullable columns everywhere &mdash; transferTo only makes sense for transfers, recurringSchedule only for recurring. The union pattern keeps each type clean and the TypeScript compiler catches missing fields.</div>
+          </li>
+          <li class="qa-item">
+            <div class="qa-question">How does the cascade delete work between Account and Transaction?</div>
+            <div class="qa-answer">Deleting an account cascades to its transactions. Initially had it set to restrict, but that made account cleanup impossible without manual transaction deletion first.</div>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Agent Summary -->
+      <section class="ember-section" aria-label="Agent summary">
+        <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Agent Summary</h2>
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem;">
+          <table class="agent-table" aria-label="Agent role breakdown for this session">
+            <thead class="visually-hidden">
+              <tr><th>Role</th><th>Duration</th><th>LOC</th><th>Proportion</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <span class="agent-role">
+                    <span class="agent-dot" style="background: var(--color-backend)" aria-hidden="true"></span>
+                    backend-dev
+                  </span>
+                </td>
+                <td>25m</td>
+                <td>280</td>
+                <td class="agent-bar-cell"><div class="agent-bar" style="width: 70%; background: var(--color-backend)"></div></td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="agent-role">
+                    <span class="agent-dot" style="background: var(--color-qa)" aria-hidden="true"></span>
+                    qa-engineer
+                  </span>
+                </td>
+                <td>18m</td>
+                <td>190</td>
+                <td class="agent-bar-cell"><div class="agent-bar" style="width: 50%; background: var(--color-qa)"></div></td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="agent-role">
+                    <span class="agent-dot" style="background: var(--color-frontend)" aria-hidden="true"></span>
+                    frontend-dev
+                  </span>
+                </td>
+                <td>15m</td>
+                <td>125</td>
+                <td class="agent-bar-cell"><div class="agent-bar" style="width: 38%; background: var(--color-frontend)"></div></td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="agent-role">
+                    <span class="agent-dot" style="background: var(--color-security)" aria-hidden="true"></span>
+                    security-eng
+                  </span>
+                </td>
+                <td>12m</td>
+                <td>85</td>
+                <td class="agent-bar-cell"><div class="agent-bar" style="width: 28%; background: var(--color-security)"></div></td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="agent-role">
+                    <span class="agent-dot" style="background: var(--color-reviewer)" aria-hidden="true"></span>
+                    code-reviewer
+                  </span>
+                </td>
+                <td>8m</td>
+                <td>0</td>
+                <td class="agent-bar-cell"><div class="agent-bar" style="width: 5%; background: var(--color-reviewer)"></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" aria-label="Session details">
+
+      <!-- Tools Used -->
+      <div class="sidebar-card">
+        <div class="sidebar-card-title">Tools Used</div>
+        <table class="tools-table" aria-label="Tool usage counts">
+          <tbody>
+            <tr>
+              <td>Edit</td>
+              <td><span class="tool-bar" style="width: 72px" aria-hidden="true"></span> 18</td>
+            </tr>
+            <tr>
+              <td>Read</td>
+              <td><span class="tool-bar" style="width: 48px" aria-hidden="true"></span> 12</td>
+            </tr>
+            <tr>
+              <td>Bash</td>
+              <td><span class="tool-bar" style="width: 36px" aria-hidden="true"></span> 9</td>
+            </tr>
+            <tr>
+              <td>Write</td>
+              <td><span class="tool-bar" style="width: 16px" aria-hidden="true"></span> 4</td>
+            </tr>
+            <tr>
+              <td>Grep</td>
+              <td><span class="tool-bar" style="width: 8px" aria-hidden="true"></span> 2</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Files Changed -->
+      <div class="sidebar-card">
+        <div class="sidebar-card-title">Files Changed</div>
+        <ul class="files-list" aria-label="Files changed in this session">
+          <li>
+            <span class="file-path" title="prisma/schema.prisma">prisma/schema.prisma</span>
+            <span class="file-diff">+142</span>
+          </li>
+          <li>
+            <span class="file-path" title="prisma/seed.ts">prisma/seed.ts</span>
+            <span class="file-diff">+89</span>
+          </li>
+          <li>
+            <span class="file-path" title="prisma/migrations/20260203_init/migration.sql">migrations/.../migration.sql</span>
+            <span class="file-diff">+415</span>
+          </li>
+          <li>
+            <span class="file-path" title="src/lib/db.ts">src/lib/db.ts</span>
+            <span class="file-diff">+34</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Skills -->
+      <div class="sidebar-card">
+        <div class="sidebar-card-title">Skills</div>
+        <div class="sidebar-skills">
+          <span class="skill-chip">TypeScript</span>
+          <span class="skill-chip">Prisma</span>
+          <span class="skill-chip">PostgreSQL</span>
+        </div>
+      </div>
+
+    </aside>
+
+  </div>
+
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <p>Built with <a href="#">heyi.am</a></p>
+  </div>
+</footer>
+
+<script>
+/* ── Intersection Observer for section fade-in ── */
+(function() {
+  var sections = document.querySelectorAll('.ember-section');
+  if (!window.IntersectionObserver) {
+    sections.forEach(function(s) { s.classList.add('visible'); });
+    return;
+  }
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  sections.forEach(function(s) { observer.observe(s); });
+})();
+</script>
+
+</body>
+</html>

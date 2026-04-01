@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BudgetWise — Alex Chen | Daylight</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Daylight Design Tokens ── */
+    :root {
+      --dl-bg:             #ffffff;
+      --dl-surface:        #f8fafc;
+      --dl-card:           #ffffff;
+      --dl-card-tint:      #eff6ff;
+      --dl-text:           #0f172a;
+      --dl-text-secondary: #475569;
+      --dl-text-tertiary:  #94a3b8;
+      --dl-accent:         #0ea5e9;
+      --dl-accent-light:   #e0f2fe;
+      --dl-accent-dark:    #0284c7;
+      --dl-accent-green:   #10b981;
+      --dl-accent-green-light: #d1fae5;
+      --dl-border:         #e2e8f0;
+      --dl-shadow-blue:    0 1px 3px rgba(14, 165, 233, 0.08), 0 1px 2px rgba(14, 165, 233, 0.04);
+      --dl-shadow-blue-lg: 0 4px 16px rgba(14, 165, 233, 0.10), 0 2px 4px rgba(14, 165, 233, 0.06);
+
+      --dl-font-display:   'DM Sans', system-ui, sans-serif;
+      --dl-font-body:      'Inter', system-ui, sans-serif;
+      --dl-font-mono:      'IBM Plex Mono', monospace;
+
+      --dl-radius:         12px;
+      --dl-radius-lg:      16px;
+      --dl-max-width:      1080px;
+
+      --dl-anim-duration:  600ms;
+      --dl-anim-ease:      cubic-bezier(0.34, 1.56, 0.64, 1);
+      --dl-anim-ease-soft: cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      :root { --dl-anim-duration: 0ms; }
+      .dl-bounce { transform: none !important; opacity: 1 !important; }
+    }
+
+    /* ── Skip Link ── */
+    .dl-skip-link {
+      position: absolute;
+      top: -100%;
+      inset-inline-start: 1rem;
+      background: var(--dl-accent);
+      color: #ffffff;
+      padding: 0.5rem 1rem;
+      font-family: var(--dl-font-body);
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: var(--dl-radius);
+      z-index: 100;
+      text-decoration: none;
+    }
+    .dl-skip-link:focus { top: 1rem; }
+
+    /* ── Base ── */
+    body {
+      font-family: var(--dl-font-body);
+      color: var(--dl-text);
+      background: var(--dl-bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    a {
+      color: var(--dl-accent);
+      text-decoration: none;
+      transition: color 200ms var(--dl-anim-ease-soft);
+    }
+    a:hover { color: var(--dl-accent-dark); }
+    a:focus-visible {
+      outline: 2px solid var(--dl-accent);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    /* ── Layout ── */
+    .dl-container {
+      max-width: var(--dl-max-width);
+      margin-inline: auto;
+      padding-inline: 1.25rem;
+    }
+
+    /* ── Navigation ── */
+    .dl-nav {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      border-block-end: 1px solid var(--dl-border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding-block: 1rem;
+    }
+    .dl-nav-inner {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--dl-font-body);
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .dl-nav-brand {
+      font-family: var(--dl-font-display);
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--dl-accent);
+      text-decoration: none;
+    }
+    .dl-nav-brand:hover { color: var(--dl-accent-dark); }
+    .dl-nav-sep { color: var(--dl-text-tertiary); margin-inline: 0.25rem; }
+    .dl-nav-link {
+      color: var(--dl-text-secondary);
+      text-decoration: none;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      transition: background 200ms var(--dl-anim-ease-soft), color 200ms var(--dl-anim-ease-soft);
+    }
+    .dl-nav-link:hover { background: var(--dl-accent-light); color: var(--dl-accent); }
+    .dl-nav-link[aria-current="page"] { background: var(--dl-accent-light); color: var(--dl-accent); }
+
+    /* ── Project Header ── */
+    .dl-project-header {
+      padding-block: 3rem 2.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .dl-project-header { padding-block: 4rem 3rem; }
+    }
+
+    .dl-project-header h1 {
+      font-family: var(--dl-font-display);
+      font-weight: 700;
+      font-size: 2.25rem;
+      color: var(--dl-text);
+      margin-block-end: 0.75rem;
+    }
+
+    @media (min-width: 768px) {
+      .dl-project-header h1 { font-size: 2.75rem; }
+    }
+
+    .dl-project-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-family: var(--dl-font-mono);
+      font-size: 0.8125rem;
+      margin-block-end: 1.5rem;
+    }
+    .dl-project-links a {
+      color: var(--dl-accent);
+      padding: 0.375rem 0.75rem;
+      background: var(--dl-accent-light);
+      border-radius: 999px;
+    }
+    .dl-project-links a:hover {
+      background: var(--dl-accent);
+      color: #ffffff;
+    }
+
+    /* ── Screenshot placeholder ── */
+    .dl-screenshot {
+      background: linear-gradient(135deg, var(--dl-accent-light), var(--dl-surface));
+      border: 1px solid var(--dl-border);
+      border-radius: var(--dl-radius-lg);
+      overflow: hidden;
+      margin-block-end: 2.5rem;
+      box-shadow: var(--dl-shadow-blue-lg);
+    }
+    .dl-screenshot-bar {
+      background: var(--dl-surface);
+      border-block-end: 1px solid var(--dl-border);
+      padding: 0.625rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .dl-screenshot-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--dl-border);
+    }
+    .dl-screenshot-dot:first-child { background: #fca5a5; }
+    .dl-screenshot-dot:nth-child(2) { background: #fcd34d; }
+    .dl-screenshot-dot:nth-child(3) { background: #86efac; }
+    .dl-screenshot-body {
+      height: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--dl-font-mono);
+      font-size: 0.875rem;
+      color: var(--dl-text-tertiary);
+    }
+
+    @media (min-width: 768px) {
+      .dl-screenshot-body { height: 320px; }
+    }
+
+    /* ── Narrative ── */
+    .dl-narrative {
+      margin-block-end: 3rem;
+    }
+    .dl-narrative p {
+      font-size: 1rem;
+      line-height: 1.8;
+      color: var(--dl-text-secondary);
+      margin-block-end: 1.25rem;
+    }
+    .dl-narrative p:last-child { margin-block-end: 0; }
+
+    /* ── Section Heading ── */
+    .dl-section-heading {
+      font-family: var(--dl-font-display);
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: var(--dl-text);
+      margin-block-end: 1.5rem;
+      padding-block-end: 0.75rem;
+      border-block-end: 2px solid var(--dl-accent-light);
+    }
+
+    /* ── Stats Row ── */
+    .dl-stats-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin-block-end: 3rem;
+    }
+
+    @media (min-width: 768px) {
+      .dl-stats-row {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .dl-stat-card {
+      background: var(--dl-card);
+      border: 1px solid var(--dl-border);
+      border-radius: var(--dl-radius-lg);
+      padding: 1.25rem;
+      text-align: center;
+      box-shadow: var(--dl-shadow-blue);
+      transition: box-shadow 300ms var(--dl-anim-ease-soft), transform 300ms var(--dl-anim-ease-soft);
+    }
+    .dl-stat-card:hover {
+      box-shadow: var(--dl-shadow-blue-lg);
+      transform: translateY(-2px);
+    }
+    .dl-stat-number {
+      font-family: var(--dl-font-display);
+      font-weight: 700;
+      font-size: 1.75rem;
+      color: var(--dl-accent);
+      line-height: 1.2;
+      display: block;
+    }
+    .dl-stat-label {
+      font-family: var(--dl-font-body);
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--dl-text-tertiary);
+      margin-block-start: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Work Timeline Chart ── */
+    .dl-chart-container {
+      background: var(--dl-card);
+      border: 1px solid var(--dl-border);
+      border-radius: var(--dl-radius-lg);
+      padding: 1.5rem;
+      margin-block-end: 3rem;
+      box-shadow: var(--dl-shadow-blue);
+    }
+    .dl-chart-title {
+      font-family: var(--dl-font-display);
+      font-weight: 600;
+      font-size: 1rem;
+      margin-block-end: 1.25rem;
+      color: var(--dl-text);
+    }
+    .dl-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.5rem;
+      height: 160px;
+      padding-block-start: 0.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .dl-chart { gap: 0.75rem; }
+    }
+
+    .dl-chart-bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.375rem;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .dl-chart-bar {
+      width: 100%;
+      max-width: 56px;
+      border-radius: 6px 6px 2px 2px;
+      transition: opacity 200ms;
+      position: relative;
+    }
+    .dl-chart-bar:hover { opacity: 0.8; }
+    .dl-chart-bar-loc {
+      background: linear-gradient(180deg, var(--dl-accent), #38bdf8);
+    }
+    .dl-chart-bar-duration {
+      background: linear-gradient(180deg, var(--dl-accent-green), #34d399);
+    }
+    .dl-chart-label {
+      font-family: var(--dl-font-mono);
+      font-size: 0.625rem;
+      color: var(--dl-text-tertiary);
+      text-align: center;
+      white-space: nowrap;
+    }
+    .dl-chart-legend {
+      display: flex;
+      gap: 1.25rem;
+      margin-block-start: 1rem;
+      font-family: var(--dl-font-body);
+      font-size: 0.75rem;
+      color: var(--dl-text-tertiary);
+    }
+    .dl-chart-legend-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-inline-end: 0.375rem;
+      vertical-align: middle;
+    }
+
+    /* ── Phase Timeline ── */
+    .dl-phases {
+      margin-block-end: 3rem;
+    }
+    .dl-phase-list {
+      list-style: none;
+      position: relative;
+      padding-inline-start: 2rem;
+    }
+    .dl-phase-list::before {
+      content: '';
+      position: absolute;
+      inset-inline-start: 7px;
+      top: 4px;
+      bottom: 4px;
+      width: 3px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, var(--dl-accent), #38bdf8, var(--dl-accent-green));
+    }
+    .dl-phase-item {
+      position: relative;
+      margin-block-end: 1.5rem;
+    }
+    .dl-phase-item:last-child { margin-block-end: 0; }
+    .dl-phase-item::before {
+      content: '';
+      position: absolute;
+      inset-inline-start: -2rem;
+      top: 6px;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--dl-accent);
+      border: 3px solid var(--dl-bg);
+      box-shadow: 0 0 0 2px var(--dl-accent);
+    }
+    .dl-phase-name {
+      font-family: var(--dl-font-display);
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--dl-text);
+    }
+    .dl-phase-dates {
+      font-family: var(--dl-font-mono);
+      font-size: 0.75rem;
+      color: var(--dl-text-tertiary);
+      margin-block-start: 0.125rem;
+    }
+    .dl-phase-desc {
+      font-size: 0.875rem;
+      color: var(--dl-text-secondary);
+      margin-block-start: 0.375rem;
+      line-height: 1.6;
+    }
+
+    /* ── Skills ── */
+    .dl-skills-section {
+      margin-block-end: 3rem;
+    }
+    .dl-skill-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .dl-skill-chip {
+      display: inline-block;
+      font-family: var(--dl-font-body);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--dl-accent);
+      background: var(--dl-accent-light);
+      padding: 0.375rem 0.875rem;
+      border-radius: 999px;
+      line-height: 1.4;
+      transition: background 200ms var(--dl-anim-ease-soft), color 200ms var(--dl-anim-ease-soft);
+    }
+    .dl-skill-chip:hover {
+      background: var(--dl-accent);
+      color: #ffffff;
+    }
+
+    /* ── Key Decisions ── */
+    .dl-decisions {
+      margin-block-end: 3rem;
+    }
+    .dl-decision-list {
+      list-style: none;
+      counter-reset: decisions;
+    }
+    .dl-decision-item {
+      counter-increment: decisions;
+      position: relative;
+      padding-inline-start: 2.5rem;
+      margin-block-end: 1.25rem;
+      font-size: 0.9375rem;
+      line-height: 1.7;
+      color: var(--dl-text-secondary);
+    }
+    .dl-decision-item::before {
+      content: counter(decisions);
+      position: absolute;
+      inset-inline-start: 0;
+      top: 0;
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 50%;
+      background: var(--dl-accent-light);
+      color: var(--dl-accent);
+      font-family: var(--dl-font-display);
+      font-weight: 700;
+      font-size: 0.8125rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    /* ── Source Breakdown ── */
+    .dl-source-section {
+      margin-block-end: 3rem;
+    }
+    .dl-source-breakdown {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .dl-source-bar-large {
+      flex: 1;
+      min-width: 200px;
+      height: 12px;
+      border-radius: 6px;
+      background: var(--dl-border);
+      overflow: hidden;
+    }
+    .dl-source-fill-large {
+      height: 100%;
+      border-radius: 6px;
+      background: linear-gradient(90deg, var(--dl-accent), #38bdf8);
+    }
+    .dl-source-labels {
+      display: flex;
+      gap: 1.5rem;
+      font-family: var(--dl-font-mono);
+      font-size: 0.8125rem;
+      color: var(--dl-text-secondary);
+    }
+
+    /* ── Session Cards (Featured) ── */
+    .dl-sessions-section {
+      margin-block-end: 3rem;
+    }
+    .dl-session-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .dl-session-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .dl-session-card {
+      background: var(--dl-card);
+      border: 1px solid var(--dl-border);
+      border-radius: var(--dl-radius);
+      padding: 1.25rem;
+      box-shadow: var(--dl-shadow-blue);
+      transition: box-shadow 300ms var(--dl-anim-ease-soft), transform 300ms var(--dl-anim-ease-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .dl-session-card:hover {
+      box-shadow: var(--dl-shadow-blue-lg);
+      transform: translateY(-2px);
+    }
+    .dl-session-card-title {
+      font-family: var(--dl-font-display);
+      font-weight: 600;
+      font-size: 0.9375rem;
+      color: var(--dl-text);
+    }
+    .dl-session-card-title a {
+      color: var(--dl-text);
+    }
+    .dl-session-card-title a:hover { color: var(--dl-accent); }
+    .dl-session-card-meta {
+      font-family: var(--dl-font-mono);
+      font-size: 0.75rem;
+      color: var(--dl-text-tertiary);
+    }
+    .dl-session-card-tag {
+      display: inline-block;
+      font-family: var(--dl-font-body);
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: var(--dl-accent);
+      background: var(--dl-accent-light);
+      padding: 0.125rem 0.5rem;
+      border-radius: 999px;
+      align-self: flex-start;
+    }
+    .dl-session-card-agents {
+      display: flex;
+      gap: 0.25rem;
+      margin-block-start: auto;
+    }
+    .dl-agent-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* ── Footer ── */
+    .dl-footer {
+      margin-block-start: 2rem;
+      padding-block: 2rem;
+      border-block-start: 1px solid var(--dl-border);
+      text-align: center;
+      font-family: var(--dl-font-body);
+      font-size: 0.8125rem;
+      color: var(--dl-text-tertiary);
+    }
+    .dl-footer a {
+      color: var(--dl-accent);
+      font-weight: 500;
+    }
+
+    /* ── Bounce Animation ── */
+    .dl-bounce {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    .dl-bounce.dl-visible {
+      opacity: 1;
+      transform: translateY(0);
+      transition:
+        opacity var(--dl-anim-duration) var(--dl-anim-ease-soft),
+        transform var(--dl-anim-duration) var(--dl-anim-ease);
+    }
+    .dl-delay-1 { transition-delay: 80ms; }
+    .dl-delay-2 { transition-delay: 160ms; }
+    .dl-delay-3 { transition-delay: 240ms; }
+    .dl-delay-4 { transition-delay: 320ms; }
+  
+    /* ── Clickable session cards ── */
+    a.session-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    a.session-card:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="dl-skip-link">Skip to content</a>
+
+  <nav class="dl-nav" aria-label="Portfolio navigation">
+    <div class="dl-container dl-nav-inner">
+      <a href="./portfolio.html" class="dl-nav-brand">@alex</a>
+      <span class="dl-nav-sep">/</span>
+      <a href="./project.html" class="dl-nav-link" aria-current="page">budgetwise</a>
+      <span class="dl-nav-sep">/</span>
+      <a href="./session.html" class="dl-nav-link">session</a>
+    </div>
+  </nav>
+
+  <main id="main-content">
+    <div class="dl-container">
+
+      <!-- ── Project Header ── -->
+      <header class="dl-project-header dl-bounce">
+        <h1>BudgetWise</h1>
+        <div class="dl-project-links">
+          <a href="https://github.com/alex/budgetwise">github.com/alex/budgetwise</a>
+          <a href="https://budgetwise.app">budgetwise.app</a>
+        </div>
+      </header>
+
+      <!-- ── Screenshot ── -->
+      <div class="dl-screenshot dl-bounce dl-delay-1" role="img" aria-label="BudgetWise application screenshot">
+        <div class="dl-screenshot-bar">
+          <span class="dl-screenshot-dot"></span>
+          <span class="dl-screenshot-dot"></span>
+          <span class="dl-screenshot-dot"></span>
+        </div>
+        <div class="dl-screenshot-body">
+          budgetwise.app
+        </div>
+      </div>
+
+      <!-- ── Narrative ── -->
+      <section class="dl-narrative dl-bounce dl-delay-2" aria-label="Project narrative">
+        <h2 class="dl-section-heading">The Story</h2>
+        <p>
+          Started with a basic Prisma schema but realized halfway through that I needed
+          polymorphic transaction types. The AI kept suggesting single-table inheritance
+          but I pushed back &mdash; went with a discriminated union pattern instead.
+          Nullable fields for transfer-specific data, hard deletes with an audit log.
+        </p>
+        <p>
+          The recurring transaction detection was the hardest part. Had to figure out
+          the right tolerance windows &mdash; monthly transactions drift by a few days,
+          weekly ones are more precise. Settled on three consecutive interval matches
+          before marking something as recurring. The partial index on merchant_normalized
+          brought the detection query from 2 seconds to 120ms on 10k transactions.
+        </p>
+        <p>
+          Plaid integration went smoother than expected. The token exchange flow is
+          straightforward, but the webhook handling needed careful idempotency &mdash;
+          Plaid sends duplicate webhooks, so I used a processed-events table keyed on
+          webhook ID.
+        </p>
+      </section>
+
+      <!-- ── Stats ── -->
+      <section class="dl-stats-row dl-bounce dl-delay-1" aria-label="Project statistics">
+        <div class="dl-stat-card">
+          <span class="dl-stat-number" data-target="8">0</span>
+          <span class="dl-stat-label">Sessions</span>
+        </div>
+        <div class="dl-stat-card" style="position: relative;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <svg viewBox="0 0 80 80" width="80" height="80" role="img" aria-label="Donut chart: 19% human time, 81% agent time">
+              <circle cx="40" cy="40" r="30" fill="none" stroke="var(--dl-border)" stroke-width="10"/>
+              <circle cx="40" cy="40" r="30" fill="none" stroke="var(--dl-accent)" stroke-width="10"
+                stroke-dasharray="152.4 36.1" stroke-dashoffset="47.1" stroke-linecap="round" style="transform: rotate(-90deg); transform-origin: center;"/>
+              <circle cx="40" cy="40" r="30" fill="none" stroke="var(--dl-accent-green)" stroke-width="10"
+                stroke-dasharray="36.1 152.4" stroke-dashoffset="83.3" stroke-linecap="round" style="transform: rotate(-90deg); transform-origin: center;"/>
+              <text x="40" y="38" text-anchor="middle" font-family="var(--dl-font-display)" font-size="12" font-weight="700" fill="var(--dl-text)">4.2&times;</text>
+              <text x="40" y="50" text-anchor="middle" font-family="var(--dl-font-mono)" font-size="7" fill="var(--dl-text-muted)">multiplier</text>
+            </svg>
+            <div style="text-align: start;">
+              <div style="font-family: var(--dl-font-display); font-weight: 700; font-size: 1.25rem; color: var(--dl-accent-green);">8.1<span style="font-size: 0.75rem; font-weight: 500;">h</span></div>
+              <div style="font-family: var(--dl-font-mono); font-size: 0.625rem; color: var(--dl-text-muted); margin-bottom: 0.375rem;">you</div>
+              <div style="font-family: var(--dl-font-display); font-weight: 700; font-size: 1.25rem; color: var(--dl-accent);">34.4<span style="font-size: 0.75rem; font-weight: 500;">h</span></div>
+              <div style="font-family: var(--dl-font-mono); font-size: 0.625rem; color: var(--dl-text-muted);">agents</div>
+            </div>
+          </div>
+          <span class="dl-stat-label">Time Breakdown</span>
+        </div>
+        <div class="dl-stat-card">
+          <span class="dl-stat-number" data-target="4460" data-format="comma">0</span>
+          <span class="dl-stat-label">Lines of Code</span>
+        </div>
+        <div class="dl-stat-card">
+          <span class="dl-stat-number" data-target="156">0</span>
+          <span class="dl-stat-label">Files</span>
+        </div>
+        <div class="dl-stat-card">
+          <span class="dl-stat-number" data-target="2.1" data-suffix="M" data-decimal="true">0</span>
+          <span class="dl-stat-label">Tokens</span>
+        </div>
+      </section>
+
+      <!-- ── Work Timeline Chart ── -->
+      <section class="dl-chart-container dl-bounce dl-delay-2" aria-label="Work timeline">
+        <h2 class="dl-chart-title">Work Timeline</h2>
+        <div class="dl-chart" role="img" aria-label="Bar chart showing lines of code and duration across 8 sessions">
+          <div class="dl-chart-bar-group">
+            <div class="dl-chart-bar dl-chart-bar-loc" style="height: 76%" title="680 LOC"></div>
+            <span class="dl-chart-label">S1</span>
+          </div>
+          <div class="dl-chart-bar-group">
+            <div class="dl-chart-bar dl-chart-bar-loc" style="height: 58%" title="520 LOC"></div>
+            <span class="dl-chart-label">S2</span>
+          </div>
+          <div class="dl-chart-bar-group">
+            <div class="dl-chart-bar dl-chart-bar-loc" style="height: 100%" title="890 LOC"></div>
+            <span class="dl-chart-label">S3</span>
+          </div>
+          <div class="dl-chart-bar-group">
+            <div class="dl-chart-bar dl-chart-bar-loc" style="height: 47%" title="420 LOC"></div>
+            <span class="dl-chart-label">S4</span>
+          </div>
+          <div class="dl-chart-bar-group">
+            <div class="dl-chart-bar dl-chart-bar-loc" style="height: 43%" title="380 LOC"></div>
+            <span class="dl-chart-label">S5</span>
+          </div>
+          <div class="dl-chart-bar-group">
+            <div class="dl-chart-bar dl-chart-bar-loc" style="height: 57%" title="510 LOC"></div>
+            <span class="dl-chart-label">S6</span>
+          </div>
+          <div class="dl-chart-bar-group">
+            <div class="dl-chart-bar dl-chart-bar-loc" style="height: 81%" title="720 LOC"></div>
+            <span class="dl-chart-label">S7</span>
+          </div>
+          <div class="dl-chart-bar-group">
+            <div class="dl-chart-bar dl-chart-bar-loc" style="height: 38%" title="340 LOC"></div>
+            <span class="dl-chart-label">S8</span>
+          </div>
+        </div>
+        <div class="dl-chart-legend">
+          <span><span class="dl-chart-legend-dot" style="background: var(--dl-accent)"></span>Lines of Code</span>
+          <span><span class="dl-chart-legend-dot" style="background: var(--dl-accent-green)"></span>Duration</span>
+        </div>
+      </section>
+
+      <!-- ── Phase Timeline ── -->
+      <section class="dl-phases dl-bounce dl-delay-2" aria-label="Project phases">
+        <h2 class="dl-section-heading">Phases</h2>
+        <ol class="dl-phase-list" role="list">
+          <li class="dl-phase-item">
+            <span class="dl-phase-name">Foundation</span>
+            <span class="dl-phase-dates">Feb 3 &ndash; 14</span>
+            <p class="dl-phase-desc">Schema design, Prisma setup, transaction CRUD</p>
+          </li>
+          <li class="dl-phase-item">
+            <span class="dl-phase-name">Data Pipeline</span>
+            <span class="dl-phase-dates">Feb 17 &ndash; 26</span>
+            <p class="dl-phase-desc">CSV import, Plaid integration, recurring detection</p>
+          </li>
+          <li class="dl-phase-item">
+            <span class="dl-phase-name">Intelligence</span>
+            <span class="dl-phase-dates">Mar 1 &ndash; 14</span>
+            <p class="dl-phase-desc">Search, full-text indexing, spending insights</p>
+          </li>
+          <li class="dl-phase-item">
+            <span class="dl-phase-name">Hardening</span>
+            <span class="dl-phase-dates">Mar 16 &ndash; 26</span>
+            <p class="dl-phase-desc">2FA, mobile responsive, CI/CD, performance</p>
+          </li>
+        </ol>
+      </section>
+
+      <!-- ── Skills ── -->
+      <section class="dl-skills-section dl-bounce dl-delay-3" aria-label="Skills used">
+        <h2 class="dl-section-heading">Skills</h2>
+        <div class="dl-skill-chips">
+          <span class="dl-skill-chip">TypeScript</span>
+          <span class="dl-skill-chip">React</span>
+          <span class="dl-skill-chip">Next.js</span>
+          <span class="dl-skill-chip">Prisma</span>
+          <span class="dl-skill-chip">PostgreSQL</span>
+          <span class="dl-skill-chip">Tailwind CSS</span>
+          <span class="dl-skill-chip">Stripe API</span>
+          <span class="dl-skill-chip">Plaid API</span>
+          <span class="dl-skill-chip">Chart.js</span>
+          <span class="dl-skill-chip">Playwright</span>
+        </div>
+      </section>
+
+      <!-- ── Key Decisions ── -->
+      <section class="dl-decisions dl-bounce dl-delay-3" aria-label="Key decisions">
+        <h2 class="dl-section-heading">Key Decisions</h2>
+        <ol class="dl-decision-list">
+          <li class="dl-decision-item">
+            Discriminated union over single-table inheritance for transaction types
+          </li>
+          <li class="dl-decision-item">
+            Partial index on merchant_normalized for 16x query speedup
+          </li>
+          <li class="dl-decision-item">
+            Processed-events table for Plaid webhook idempotency
+          </li>
+        </ol>
+      </section>
+
+      <!-- ── Source Breakdown ── -->
+      <section class="dl-source-section dl-bounce dl-delay-3" aria-label="Source breakdown">
+        <h2 class="dl-section-heading">Source Breakdown</h2>
+        <div class="dl-source-breakdown">
+          <div class="dl-source-bar-large" role="img" aria-label="Claude Code 62.5%, Cursor 37.5%">
+            <div class="dl-source-fill-large" style="width: 62.5%"></div>
+          </div>
+          <div class="dl-source-labels">
+            <span>Claude Code 62.5% (5 sessions)</span>
+            <span>Cursor 37.5% (3 sessions)</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Featured Sessions ── -->
+      <section class="dl-sessions-section dl-bounce dl-delay-4" aria-label="Featured sessions">
+        <h2 class="dl-section-heading">Sessions</h2>
+        <div class="dl-session-grid">
+
+          <article class="dl-session-card">
+            <span class="dl-session-card-tag">schema</span>
+            <h3 class="dl-session-card-title"><a href="./session.html">Prisma schema</a></h3>
+            <p class="dl-session-card-meta">72m &middot; 680 LOC &middot; 7 agents</p>
+            <div class="dl-session-card-agents" aria-label="7 agents used">
+              <span class="dl-agent-dot" style="background: #7c3aed" title="frontend-dev"></span>
+              <span class="dl-agent-dot" style="background: #0891b2" title="backend-dev"></span>
+              <span class="dl-agent-dot" style="background: #059669" title="qa-engineer"></span>
+              <span class="dl-agent-dot" style="background: #475569" title="security-engineer"></span>
+              <span class="dl-agent-dot" style="background: #e11d48" title="code-reviewer"></span>
+              <span class="dl-agent-dot" style="background: #d97706" title="ux-designer"></span>
+              <span class="dl-agent-dot" style="background: #0891b2" title="backend-dev"></span>
+            </div>
+          </article>
+
+          <article class="dl-session-card">
+            <span class="dl-session-card-tag">frontend</span>
+            <h3 class="dl-session-card-title"><a href="./session.html">Transaction list</a></h3>
+            <p class="dl-session-card-meta">65m &middot; 520 LOC &middot; 5 agents</p>
+            <div class="dl-session-card-agents" aria-label="5 agents used">
+              <span class="dl-agent-dot" style="background: #7c3aed" title="frontend-dev"></span>
+              <span class="dl-agent-dot" style="background: #0891b2" title="backend-dev"></span>
+              <span class="dl-agent-dot" style="background: #059669" title="qa-engineer"></span>
+              <span class="dl-agent-dot" style="background: #e11d48" title="code-reviewer"></span>
+              <span class="dl-agent-dot" style="background: #d97706" title="ux-designer"></span>
+            </div>
+          </article>
+
+          <article class="dl-session-card">
+            <span class="dl-session-card-tag">algorithm</span>
+            <h3 class="dl-session-card-title"><a href="./session.html">Recurring detection</a></h3>
+            <p class="dl-session-card-meta">88m &middot; 890 LOC &middot; 6 agents</p>
+            <div class="dl-session-card-agents" aria-label="6 agents used">
+              <span class="dl-agent-dot" style="background: #0891b2" title="backend-dev"></span>
+              <span class="dl-agent-dot" style="background: #059669" title="qa-engineer"></span>
+              <span class="dl-agent-dot" style="background: #475569" title="security-engineer"></span>
+              <span class="dl-agent-dot" style="background: #e11d48" title="code-reviewer"></span>
+              <span class="dl-agent-dot" style="background: #7c3aed" title="frontend-dev"></span>
+              <span class="dl-agent-dot" style="background: #0891b2" title="backend-dev"></span>
+            </div>
+          </article>
+
+          <article class="dl-session-card">
+            <span class="dl-session-card-tag">import</span>
+            <h3 class="dl-session-card-title"><a href="./session.html">CSV import</a></h3>
+            <p class="dl-session-card-meta">78m &middot; 640 LOC &middot; 5 agents</p>
+            <div class="dl-session-card-agents" aria-label="5 agents used">
+              <span class="dl-agent-dot" style="background: #0891b2" title="backend-dev"></span>
+              <span class="dl-agent-dot" style="background: #059669" title="qa-engineer"></span>
+              <span class="dl-agent-dot" style="background: #475569" title="security-engineer"></span>
+              <span class="dl-agent-dot" style="background: #e11d48" title="code-reviewer"></span>
+              <span class="dl-agent-dot" style="background: #7c3aed" title="frontend-dev"></span>
+            </div>
+          </article>
+
+          <article class="dl-session-card">
+            <span class="dl-session-card-tag">integration</span>
+            <h3 class="dl-session-card-title"><a href="./session.html">Plaid integration</a></h3>
+            <p class="dl-session-card-meta">90m &middot; 780 LOC &middot; 8 agents</p>
+            <div class="dl-session-card-agents" aria-label="8 agents used">
+              <span class="dl-agent-dot" style="background: #0891b2" title="backend-dev"></span>
+              <span class="dl-agent-dot" style="background: #059669" title="qa-engineer"></span>
+              <span class="dl-agent-dot" style="background: #475569" title="security-engineer"></span>
+              <span class="dl-agent-dot" style="background: #e11d48" title="code-reviewer"></span>
+              <span class="dl-agent-dot" style="background: #7c3aed" title="frontend-dev"></span>
+              <span class="dl-agent-dot" style="background: #d97706" title="ux-designer"></span>
+              <span class="dl-agent-dot" style="background: #0891b2" title="backend-dev"></span>
+              <span class="dl-agent-dot" style="background: #059669" title="qa-engineer"></span>
+            </div>
+          </article>
+
+          <article class="dl-session-card">
+            <span class="dl-session-card-tag">insights</span>
+            <h3 class="dl-session-card-title"><a href="./session.html">Spending insights</a></h3>
+            <p class="dl-session-card-meta">70m &middot; 620 LOC &middot; 4 agents</p>
+            <div class="dl-session-card-agents" aria-label="4 agents used">
+              <span class="dl-agent-dot" style="background: #7c3aed" title="frontend-dev"></span>
+              <span class="dl-agent-dot" style="background: #0891b2" title="backend-dev"></span>
+              <span class="dl-agent-dot" style="background: #059669" title="qa-engineer"></span>
+              <span class="dl-agent-dot" style="background: #d97706" title="ux-designer"></span>
+            </div>
+          </article>
+
+        </div>
+      </section>
+
+      <footer class="dl-footer" role="contentinfo">
+        <p>Built with <a href="https://heyi.am">heyi.am</a> &middot; Daylight theme</p>
+      </footer>
+
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var prefersReduced = window.matchMedia(
+        '(prefers-reduced-motion: reduce)'
+      ).matches;
+
+      /* ── Bounce-in animation ── */
+      var bounceEls = document.querySelectorAll('.dl-bounce');
+
+      if (prefersReduced) {
+        for (var i = 0; i < bounceEls.length; i++) {
+          bounceEls[i].classList.add('dl-visible');
+        }
+      } else {
+        var observer = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('dl-visible');
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+        );
+
+        for (var j = 0; j < bounceEls.length; j++) {
+          observer.observe(bounceEls[j]);
+        }
+      }
+
+      /* ── Stat counter animation ── */
+      var counters = document.querySelectorAll('.dl-stat-number[data-target]');
+      var counterObserver = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            var el = entry.target;
+            var targetVal = parseFloat(el.getAttribute('data-target'));
+            var format = el.getAttribute('data-format');
+            var suffix = el.getAttribute('data-suffix') || '';
+            var isDecimal = el.getAttribute('data-decimal') === 'true';
+            var duration = prefersReduced ? 0 : 1200;
+            var start = performance.now();
+
+            function step(now) {
+              var elapsed = now - start;
+              var progress = Math.min(elapsed / duration, 1);
+              var eased = 1 - (1 - progress) * (1 - progress);
+              var current = isDecimal
+                ? (eased * targetVal).toFixed(1)
+                : Math.round(eased * targetVal);
+
+              if (format === 'comma') {
+                el.textContent = Number(current).toLocaleString();
+              } else {
+                el.textContent = current + suffix;
+              }
+
+              if (progress < 1) {
+                requestAnimationFrame(step);
+              }
+            }
+
+            if (duration === 0) {
+              var final = isDecimal ? targetVal.toFixed(1) : targetVal;
+              el.textContent = format === 'comma' ? Number(final).toLocaleString() : final + suffix;
+            } else {
+              requestAnimationFrame(step);
+            }
+            counterObserver.unobserve(el);
+          });
+        },
+        { threshold: 0.5 }
+      );
+
+      for (var k = 0; k < counters.length; k++) {
+        counterObserver.observe(counters[k]);
+      }
+    })();
+  </script>
+</body>
+</html>

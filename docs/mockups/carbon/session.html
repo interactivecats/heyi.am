@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carbon Template — Set up Prisma schema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Carbon Design Tokens ── */
+:root {
+  --carbon-bg:             #171717;
+  --carbon-surface:        #1f1f1f;
+  --carbon-card:           #262626;
+  --carbon-border:         rgba(148, 163, 184, 0.20);
+  --carbon-border-hover:   rgba(148, 163, 184, 0.45);
+  --carbon-accent:         #94a3b8;
+  --carbon-accent-dim:     rgba(148, 163, 184, 0.6);
+  --carbon-text:           #d4d4d8;
+  --carbon-text-secondary: #a1a1aa;
+  --carbon-text-muted:     #71717a;
+  --carbon-white:          #e4e4e7;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--carbon-text);
+  background-color: var(--carbon-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--carbon-accent); text-decoration: none; }
+a:hover { color: var(--carbon-white); }
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--carbon-accent);
+  color: var(--carbon-bg);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  z-index: 1000;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+.skip-link:focus { top: 1rem; }
+
+/* ── Page Shell ── */
+.carbon-page {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ── Navigation ── */
+.carbon-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block-end: 1.25rem;
+  border-bottom: 1px solid var(--carbon-border);
+  margin-block-end: 3rem;
+}
+
+.carbon-nav__brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--carbon-white);
+  letter-spacing: -0.02em;
+}
+
+.carbon-nav__links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+
+.carbon-nav__links a {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--carbon-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: color 0.2s;
+}
+.carbon-nav__links a:hover,
+.carbon-nav__links a[aria-current="page"] {
+  color: var(--carbon-accent);
+}
+
+/* ── Brushed Metal Texture ── */
+.brushed-header {
+  position: relative;
+  overflow: hidden;
+}
+.brushed-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 1px,
+    rgba(148, 163, 184, 0.03) 1px,
+    rgba(148, 163, 184, 0.03) 2px
+  );
+  pointer-events: none;
+}
+
+/* ── Fade-in ── */
+.fade-in {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in { opacity: 1; transform: none; transition: none; }
+  .card { transition: none !important; }
+}
+
+/* ── Focus styles ── */
+*:focus-visible {
+  outline: 2px solid var(--carbon-accent);
+  outline-offset: 2px;
+}
+
+/* ── Breadcrumb ── */
+.breadcrumb {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--carbon-text-muted);
+  margin-block-end: 1.5rem;
+}
+.breadcrumb a { color: var(--carbon-text-muted); }
+.breadcrumb a:hover { color: var(--carbon-accent); }
+.breadcrumb__sep { margin-inline: 0.375rem; opacity: 0.4; }
+
+/* ── Session Header ── */
+.session-header {
+  margin-block-end: 2.5rem;
+}
+
+.session-header__title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--carbon-white);
+  letter-spacing: -0.03em;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5), 0 1px 0 rgba(148,163,184,0.1);
+  line-height: 1.3;
+}
+
+.session-header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-block-start: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--carbon-text-muted);
+}
+
+.session-header__meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.meta-value {
+  color: var(--carbon-text-secondary);
+}
+
+/* ── Dev Take ── */
+.dev-take {
+  background: var(--carbon-surface);
+  border: 1px solid var(--carbon-border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+  margin-block-end: 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.dev-take::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 1px,
+    rgba(148, 163, 184, 0.02) 1px,
+    rgba(148, 163, 184, 0.02) 2px
+  );
+  pointer-events: none;
+}
+
+.dev-take__label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--carbon-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-block-end: 0.5rem;
+  position: relative;
+}
+
+.dev-take__text {
+  font-size: 0.9375rem;
+  color: var(--carbon-text);
+  line-height: 1.7;
+  font-style: italic;
+  position: relative;
+}
+
+/* ── Layout: Main + Sidebar ── */
+.session-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .session-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Section Headings ── */
+.section-heading {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--carbon-white);
+  margin-block-end: 1.25rem;
+  letter-spacing: -0.01em;
+}
+
+/* ── Execution Path ── */
+.execution-path {
+  margin-block-end: 2.5rem;
+}
+
+.beat {
+  position: relative;
+  padding-inline-start: 1.75rem;
+  margin-block-end: 1.5rem;
+}
+.beat:last-child { margin-block-end: 0; }
+
+.beat::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 6px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--carbon-bg);
+  border: 2px solid var(--carbon-accent);
+  box-shadow: 0 0 0 3px var(--carbon-bg), 0 0 8px rgba(148,163,184,0.2);
+}
+
+.beat::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 20px;
+  bottom: -1.5rem;
+  width: 1px;
+  background: rgba(148, 163, 184, 0.15);
+}
+.beat:last-child::after { display: none; }
+
+.beat__title {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--carbon-white);
+}
+
+.beat__desc {
+  font-size: 0.875rem;
+  color: var(--carbon-text-secondary);
+  margin-block-start: 0.25rem;
+  line-height: 1.6;
+}
+
+/* ── Q&A ── */
+.qa-section {
+  margin-block-end: 2.5rem;
+}
+
+.qa-item {
+  margin-block-end: 1.25rem;
+  background: var(--carbon-card);
+  border: 1px solid var(--carbon-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.qa-item__q {
+  padding: 1rem 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--carbon-white);
+  background: var(--carbon-surface);
+  border-bottom: 1px solid var(--carbon-border);
+  position: relative;
+  overflow: hidden;
+}
+.qa-item__q::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 1px,
+    rgba(148, 163, 184, 0.025) 1px,
+    rgba(148, 163, 184, 0.025) 2px
+  );
+  pointer-events: none;
+}
+
+.qa-item__q-prefix {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--carbon-accent);
+  margin-inline-end: 0.5rem;
+  position: relative;
+}
+
+.qa-item__q-text {
+  position: relative;
+}
+
+.qa-item__a {
+  padding: 1rem 1.25rem;
+  font-size: 0.875rem;
+  color: var(--carbon-text-secondary);
+  line-height: 1.7;
+}
+
+/* ── Agent Summary ── */
+.agent-summary {
+  margin-block-end: 2.5rem;
+}
+
+.agent-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--carbon-border);
+}
+.agent-row:last-child { border-bottom: none; }
+
+.agent-row__role {
+  font-size: 0.875rem;
+  color: var(--carbon-text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.agent-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.agent-row__dur,
+.agent-row__loc {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--carbon-text-muted);
+  text-align: end;
+}
+
+/* ── Agent Bar Chart ── */
+.agent-bar-chart {
+  display: flex;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-block-start: 1rem;
+  margin-block-end: 0.5rem;
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.agent-bar-chart__seg { height: 100%; }
+
+/* ── Sidebar Cards ── */
+.sidebar-card {
+  background: var(--carbon-card);
+  border: 1px solid var(--carbon-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-block-end: 1rem;
+  transition: border-color 0.25s;
+}
+.sidebar-card:hover { border-color: var(--carbon-border-hover); }
+
+.sidebar-card__header {
+  padding: 0.75rem 1rem;
+  background: var(--carbon-surface);
+  border-bottom: 1px solid var(--carbon-border);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--carbon-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  position: relative;
+  overflow: hidden;
+}
+.sidebar-card__header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 1px,
+    rgba(148, 163, 184, 0.03) 1px,
+    rgba(148, 163, 184, 0.03) 2px
+  );
+  pointer-events: none;
+}
+
+.sidebar-card__body {
+  padding: 0.75rem 1rem;
+}
+
+/* ── Tools Table ── */
+.tool-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.375rem 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.06);
+}
+.tool-row:last-child { border-bottom: none; }
+
+.tool-row__name {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--carbon-text);
+}
+
+.tool-row__count {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--carbon-text-muted);
+}
+
+/* ── Files Table ── */
+.file-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.375rem 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.06);
+  gap: 0.5rem;
+}
+.file-row:last-child { border-bottom: none; }
+
+.file-row__name {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--carbon-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.file-row__diff {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--carbon-accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Skill chips (sidebar) ── */
+.sidebar-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  list-style: none;
+}
+
+.sidebar-skill-chip {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--carbon-accent);
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  padding: 0.1875rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Footer ── */
+.carbon-footer {
+  margin-block-start: 4rem;
+  padding-block-start: 1.5rem;
+  border-top: 1px solid var(--carbon-border);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--carbon-text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .carbon-page { padding: 1.25rem 1rem; }
+  .carbon-nav { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+  .session-layout > aside { order: -1; }
+  .session-header__title { font-size: 1.375rem; }
+  .session-header__meta { gap: 0.75rem; }
+  .agent-row { grid-template-columns: 1fr auto; gap: 0.5rem; }
+  .agent-row__loc { display: none; }
+  .carbon-footer { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<div class="carbon-page">
+
+  <!-- Navigation -->
+  <nav class="carbon-nav" aria-label="Main navigation">
+    <a href="./portfolio.html" class="carbon-nav__brand">@alex</a>
+    <ul class="carbon-nav__links">
+      <li><a href="./portfolio.html">Portfolio</a></li>
+      <li><a href="./project.html">Project</a></li>
+      <li><a href="./session.html" aria-current="page">Session</a></li>
+    </ul>
+  </nav>
+
+  <main id="main-content">
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="./portfolio.html">alex</a>
+      <span class="breadcrumb__sep">/</span>
+      <a href="./project.html">budgetwise</a>
+      <span class="breadcrumb__sep">/</span>
+      <span aria-current="page">Set up Prisma schema</span>
+    </nav>
+
+    <!-- Session Header -->
+    <header class="session-header fade-in">
+      <h1 class="session-header__title">Set up Prisma schema with User, Account, and Transaction models</h1>
+      <div class="session-header__meta">
+        <span>Date: <span class="meta-value">February 3, 2026</span></span>
+        <span>Source: <span class="meta-value">Claude Code</span></span>
+        <span>Duration: <span class="meta-value">72m</span></span>
+        <span>Turns: <span class="meta-value">45</span></span>
+        <span>LOC: <span class="meta-value">680</span></span>
+        <span>Files: <span class="meta-value">4</span></span>
+      </div>
+    </header>
+
+    <!-- Dev Take -->
+    <div class="dev-take fade-in" aria-label="Developer commentary">
+      <div class="dev-take__label">Dev Take</div>
+      <p class="dev-take__text">Went with discriminated unions over STI -- nullable columns everywhere felt wrong. The audit log instead of soft deletes was the right call too.</p>
+    </div>
+
+    <!-- Main + Sidebar Layout -->
+    <div class="session-layout">
+
+      <!-- Main Content -->
+      <div>
+
+        <!-- Execution Path -->
+        <section class="execution-path fade-in" aria-label="Execution path">
+          <h2 class="section-heading">Execution Path</h2>
+
+          <div class="beat">
+            <div class="beat__title">Schema design</div>
+            <div class="beat__desc">Sketched out the core models -- User, Account, Transaction. Decided on a discriminated union for transaction types instead of STI.</div>
+          </div>
+
+          <div class="beat">
+            <div class="beat__title">Prisma setup</div>
+            <div class="beat__desc">Initialized Prisma with PostgreSQL, wrote the schema file with proper relations and indexes.</div>
+          </div>
+
+          <div class="beat">
+            <div class="beat__title">Migration</div>
+            <div class="beat__desc">Ran the initial migration, fixed a cascade delete issue on Account to Transaction.</div>
+          </div>
+
+          <div class="beat">
+            <div class="beat__title">Seed data</div>
+            <div class="beat__desc">Created a seed script with realistic test data -- multiple accounts, mixed transaction types.</div>
+          </div>
+        </section>
+
+        <!-- Q&A -->
+        <section class="qa-section fade-in" aria-label="Questions and answers">
+          <h2 class="section-heading">Q&amp;A</h2>
+
+          <article class="qa-item">
+            <div class="qa-item__q">
+              <span class="qa-item__q-prefix">Q</span>
+              <span class="qa-item__q-text">Why did you choose a discriminated union over single-table inheritance for transaction types?</span>
+            </div>
+            <div class="qa-item__a">STI would have left nullable columns everywhere -- transferTo only makes sense for transfers, recurringSchedule only for recurring. The union pattern keeps each type clean and the TypeScript compiler catches missing fields.</div>
+          </article>
+
+          <article class="qa-item">
+            <div class="qa-item__q">
+              <span class="qa-item__q-prefix">Q</span>
+              <span class="qa-item__q-text">How does the cascade delete work between Account and Transaction?</span>
+            </div>
+            <div class="qa-item__a">Deleting an account cascades to its transactions. Initially had it set to restrict, but that made account cleanup impossible without manual transaction deletion first.</div>
+          </article>
+        </section>
+
+        <!-- Agent Summary -->
+        <section class="agent-summary fade-in" aria-label="Agent breakdown">
+          <h2 class="section-heading">Agent Breakdown</h2>
+
+          <div class="agent-bar-chart" role="img" aria-label="Agent time distribution: backend-dev 32%, qa-engineer 23%, frontend-dev 19%, security-engineer 15%, code-reviewer 10%">
+            <div class="agent-bar-chart__seg" style="width: 32%; background: #0891b2;"></div>
+            <div class="agent-bar-chart__seg" style="width: 23%; background: #059669;"></div>
+            <div class="agent-bar-chart__seg" style="width: 19%; background: #7c3aed;"></div>
+            <div class="agent-bar-chart__seg" style="width: 15%; background: #475569;"></div>
+            <div class="agent-bar-chart__seg" style="width: 10%; background: #e11d48;"></div>
+          </div>
+
+          <div class="agent-row">
+            <span class="agent-row__role">
+              <span class="agent-dot" style="background: #0891b2;" aria-hidden="true"></span>
+              backend-dev
+            </span>
+            <span class="agent-row__dur">25m</span>
+            <span class="agent-row__loc">280 LOC</span>
+          </div>
+
+          <div class="agent-row">
+            <span class="agent-row__role">
+              <span class="agent-dot" style="background: #059669;" aria-hidden="true"></span>
+              qa-engineer
+            </span>
+            <span class="agent-row__dur">18m</span>
+            <span class="agent-row__loc">190 LOC</span>
+          </div>
+
+          <div class="agent-row">
+            <span class="agent-row__role">
+              <span class="agent-dot" style="background: #7c3aed;" aria-hidden="true"></span>
+              frontend-dev
+            </span>
+            <span class="agent-row__dur">15m</span>
+            <span class="agent-row__loc">125 LOC</span>
+          </div>
+
+          <div class="agent-row">
+            <span class="agent-row__role">
+              <span class="agent-dot" style="background: #475569;" aria-hidden="true"></span>
+              security-engineer
+            </span>
+            <span class="agent-row__dur">12m</span>
+            <span class="agent-row__loc">85 LOC</span>
+          </div>
+
+          <div class="agent-row">
+            <span class="agent-row__role">
+              <span class="agent-dot" style="background: #e11d48;" aria-hidden="true"></span>
+              code-reviewer
+            </span>
+            <span class="agent-row__dur">8m</span>
+            <span class="agent-row__loc">0 LOC</span>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Sidebar -->
+      <aside aria-label="Session details">
+
+        <!-- Tools Used -->
+        <div class="sidebar-card fade-in">
+          <div class="sidebar-card__header brushed-header">Tools Used</div>
+          <div class="sidebar-card__body">
+            <div class="tool-row">
+              <span class="tool-row__name">Edit</span>
+              <span class="tool-row__count">18</span>
+            </div>
+            <div class="tool-row">
+              <span class="tool-row__name">Read</span>
+              <span class="tool-row__count">12</span>
+            </div>
+            <div class="tool-row">
+              <span class="tool-row__name">Bash</span>
+              <span class="tool-row__count">9</span>
+            </div>
+            <div class="tool-row">
+              <span class="tool-row__name">Write</span>
+              <span class="tool-row__count">4</span>
+            </div>
+            <div class="tool-row">
+              <span class="tool-row__name">Grep</span>
+              <span class="tool-row__count">2</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Files Changed -->
+        <div class="sidebar-card fade-in">
+          <div class="sidebar-card__header brushed-header">Files Changed</div>
+          <div class="sidebar-card__body">
+            <div class="file-row">
+              <span class="file-row__name" title="prisma/schema.prisma">prisma/schema.prisma</span>
+              <span class="file-row__diff">+142</span>
+            </div>
+            <div class="file-row">
+              <span class="file-row__name" title="prisma/seed.ts">prisma/seed.ts</span>
+              <span class="file-row__diff">+89</span>
+            </div>
+            <div class="file-row">
+              <span class="file-row__name" title="prisma/migrations/20260203_init/migration.sql">migrations/.../migration.sql</span>
+              <span class="file-row__diff">+415</span>
+            </div>
+            <div class="file-row">
+              <span class="file-row__name" title="src/lib/db.ts">src/lib/db.ts</span>
+              <span class="file-row__diff">+34</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Skills -->
+        <div class="sidebar-card fade-in">
+          <div class="sidebar-card__header brushed-header">Skills</div>
+          <div class="sidebar-card__body">
+            <ul class="sidebar-skills">
+              <li class="sidebar-skill-chip">TypeScript</li>
+              <li class="sidebar-skill-chip">Prisma</li>
+              <li class="sidebar-skill-chip">PostgreSQL</li>
+            </ul>
+          </div>
+        </div>
+
+      </aside>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="carbon-footer">
+    <span>Built with heyi.am</span>
+    <span>Carbon template</span>
+  </footer>
+
+</div>
+
+<script>
+/* ── Intersection Observer for fade-in ── */
+(function() {
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var els = document.querySelectorAll('.fade-in');
+
+  if (prefersReduced) {
+    els.forEach(function(el) { el.classList.add('visible'); });
+    return;
+  }
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  els.forEach(function(el, i) {
+    el.style.transitionDelay = (i * 0.08) + 's';
+    observer.observe(el);
+  });
+})();
+</script>
+
+</body>
+</html>
