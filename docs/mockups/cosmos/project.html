@@ -324,13 +324,13 @@ a:focus-visible {
   stroke: var(--cos-border);
 }
 .cos-donut-ring .ring-human {
-  stroke: var(--cos-accent);
+  stroke: rgba(255, 255, 255, 0.25);
   stroke-dasharray: 0 100;
   stroke-dashoffset: 25;
   transition: stroke-dasharray 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .cos-donut-ring .ring-agent {
-  stroke: rgba(251, 191, 36, 0.3);
+  stroke: var(--cos-accent);
   stroke-dasharray: 0 100;
   stroke-dashoffset: 25;
   transition: stroke-dasharray 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
@@ -355,11 +355,11 @@ a:focus-visible {
   font-family: var(--font-display);
   font-size: 1rem;
   font-weight: 700;
-  color: var(--cos-accent);
+  color: var(--cos-text);
   line-height: 1.2;
 }
-.cos-donut-labels .donut-val--dim {
-  color: var(--cos-text-secondary);
+.cos-donut-labels .donut-val--agent {
+  color: var(--cos-accent);
 }
 .cos-donut-labels .donut-lbl {
   font-size: 0.625rem;
@@ -817,7 +817,7 @@ a:focus-visible {
             <div class="donut-line">
               <span class="donut-val">8.1h</span>
               <span class="donut-lbl">you</span>
-              <span class="donut-val donut-val--dim">34.4h</span>
+              <span class="donut-val donut-val--agent">34.4h</span>
               <span class="donut-lbl">agents</span>
             </div>
             <div class="donut-multi">4.2x leverage</div>

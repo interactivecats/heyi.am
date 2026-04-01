@@ -313,6 +313,35 @@ export async function saveTheme(template: string): Promise<void> {
   await post('/settings/theme', { template })
 }
 
+// ── Portfolio profile ────────────────────────────────────────
+
+export interface PortfolioProfile {
+  displayName?: string
+  bio?: string
+  photoBase64?: string
+  location?: string
+  email?: string
+  phone?: string
+  linkedinUrl?: string
+  githubUrl?: string
+  twitterHandle?: string
+  websiteUrl?: string
+  resumeBase64?: string
+  resumeFilename?: string
+}
+
+export async function fetchPortfolio(): Promise<PortfolioProfile> {
+  try {
+    return await get<PortfolioProfile>('/portfolio')
+  } catch {
+    return {}
+  }
+}
+
+export async function savePortfolio(data: PortfolioProfile): Promise<void> {
+  await post('/portfolio', data)
+}
+
 export async function deleteProjectScreenshot(dirName: string): Promise<void> {
   await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/screenshot`, { method: 'DELETE' })
 }

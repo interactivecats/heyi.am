@@ -685,18 +685,16 @@
         <div class="stat-item-value">8</div>
         <div class="stat-item-label">Sessions</div>
       </div>
-      <div class="stat-item" style="position: relative;">
-        <div style="display: flex; flex-direction: column; gap: 4px; align-items: center;">
-          <div style="display: flex; align-items: center; gap: 8px; width: 100%; max-width: 140px;">
-            <div style="flex: 19; height: 8px; background: var(--fg); border-radius: 4px; position: relative; transform: rotate(-0.5deg);">
-              <span style="position: absolute; top: -14px; left: 0; font-family: var(--font-mono); font-size: 9px; color: var(--fg-muted);">8.1h</span>
-            </div>
-            <div style="flex: 81; height: 8px; background: var(--fg); border-radius: 4px; opacity: 0.4; position: relative; transform: rotate(0.3deg);">
-              <span style="position: absolute; top: -14px; right: 0; font-family: var(--font-mono); font-size: 9px; color: var(--fg-muted);">34.4h</span>
-            </div>
-          </div>
+      <div class="stat-item" style="position: relative; grid-column: span 2;">
+        <div style="display: flex; align-items: baseline; gap: 1.5rem; margin-bottom: 0.5rem;">
+          <span style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--fg);">8.1h <span style="font-family: var(--font-mono); font-size: 9px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.08em;">you</span></span>
+          <span style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--accent);">34.4h <span style="font-family: var(--font-mono); font-size: 9px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.08em;">agents</span></span>
+          <span style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--accent);">4.2&times; <span style="font-family: var(--font-mono); font-size: 9px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.08em;">multiplier</span></span>
         </div>
-        <div class="stat-item-label" style="margin-top: 6px;">You &larr;&rarr; Agents &middot; 4.2&times;</div>
+        <div style="display: flex; width: 100%; height: 6px; border-radius: 3px; overflow: hidden; background: var(--border-light);">
+          <div style="flex: 19; height: 100%; background: rgba(0,0,0,0.15); border-radius: 3px 0 0 3px;"></div>
+          <div style="flex: 81; height: 100%; background: var(--accent); border-radius: 0 3px 3px 0;"></div>
+        </div>
       </div>
       <div class="stat-item">
         <div class="stat-item-value">4,460</div>

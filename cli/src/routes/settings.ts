@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express';
-import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, getSettings, setDefaultTemplate } from '../settings.js';
+import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, getSettings, setDefaultTemplate, getPortfolioProfile, savePortfolioProfile, type PortfolioProfile } from '../settings.js';
 import { hasApiKey } from '../llm/index.js';
 import { isValidTemplate, DEFAULT_TEMPLATE, BUILT_IN_TEMPLATES } from '../render/templates.js';
 import type { RouteContext } from './context.js';
@@ -60,6 +60,77 @@ export function createSettingsRouter(_ctx: RouteContext): Router {
     setDefaultTemplate(template);
     console.log(`[settings] Portfolio theme set to: ${template}`);
     res.json({ ok: true, template });
+  });
+
+  // Get portfolio profile data
+  router.get('/api/portfolio', (_req: Request, res: Response) => {
+    res.json(getPortfolioProfile());
+  });
+
+  // Save portfolio profile data
+  router.post('/api/portfolio', (req: Request, res: Response) => {
+    const body = req.body;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      res.status(400).json({ error: { code: 'INVALID_BODY', message: 'Request body must be a JSON object' } });
+      return;
+    }
+
+    const ALLOWED_FIELDS: Array<keyof PortfolioProfile> = [
+      'displayName', 'bio', 'photoBase64', 'location', 'email', 'phone',
+      'linkedinUrl', 'githubUrl', 'twitterHandle', 'websiteUrl',
+      'resumeBase64', 'resumeFilename',
+    ];
+
+    const errors: Array<{ field: string; message: string }> = [];
+
+    // Structural validation: only allow known string fields
+    const cleaned: PortfolioProfile = {};
+    for (const key of ALLOWED_FIELDS) {
+      const val = body[key];
+      if (val === undefined || val === null || val === '') continue;
+      if (typeof val !== 'string') {
+        errors.push({ field: key, message: `${key} must be a string` });
+        continue;
+      }
+      cleaned[key] = val;
+    }
+
+    // Length limits
+    if (cleaned.displayName && cleaned.displayName.length > 200) {
+      errors.push({ field: 'displayName', message: 'Display name must be under 200 characters' });
+    }
+    if (cleaned.bio && cleaned.bio.length > 2000) {
+      errors.push({ field: 'bio', message: 'Bio must be under 2000 characters' });
+    }
+    if (cleaned.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleaned.email)) {
+      errors.push({ field: 'email', message: 'Invalid email format' });
+    }
+    if (cleaned.linkedinUrl && !cleaned.linkedinUrl.startsWith('http')) {
+      errors.push({ field: 'linkedinUrl', message: 'LinkedIn URL must start with http' });
+    }
+    if (cleaned.githubUrl && !cleaned.githubUrl.startsWith('http')) {
+      errors.push({ field: 'githubUrl', message: 'GitHub URL must start with http' });
+    }
+    if (cleaned.websiteUrl && !cleaned.websiteUrl.startsWith('http')) {
+      errors.push({ field: 'websiteUrl', message: 'Website URL must start with http' });
+    }
+
+    // File size limits (base64 ~1.37x raw; cap photo at ~5MB, resume at ~10MB)
+    if (cleaned.photoBase64 && cleaned.photoBase64.length > 7_000_000) {
+      errors.push({ field: 'photoBase64', message: 'Photo must be under 5MB' });
+    }
+    if (cleaned.resumeBase64 && cleaned.resumeBase64.length > 14_000_000) {
+      errors.push({ field: 'resumeBase64', message: 'Resume must be under 10MB' });
+    }
+
+    if (errors.length > 0) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Validation failed', fields: errors } });
+      return;
+    }
+
+    savePortfolioProfile(cleaned);
+    console.log('[settings] Portfolio profile saved');
+    res.json({ ok: true });
   });
 
   return router;

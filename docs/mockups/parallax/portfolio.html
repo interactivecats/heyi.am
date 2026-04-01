@@ -390,6 +390,9 @@ body {
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 700;
+  color: var(--px-text);
+}
+.stats-bar__item--leverage .lev-val--agent {
   color: var(--px-accent);
 }
 .stats-bar__item--leverage .lev-val--big {
@@ -999,7 +1002,7 @@ body {
               <div class="lev-lbl">You</div>
             </div>
             <div class="lev-group">
-              <div class="lev-val" data-counter="100" data-suffix="h">0h</div>
+              <div class="lev-val lev-val--agent" data-counter="100" data-suffix="h">0h</div>
               <div class="lev-lbl">Agents</div>
             </div>
             <div class="lev-group">
@@ -1010,7 +1013,7 @@ body {
         </div>
         <div class="stat-card">
           <div class="stat-card__value" data-counter="18400" data-format="compact">0</div>
-          <div class="stat-card__label">Lines of code</div>
+          <div class="stat-card__label">Lines Changed</div>
         </div>
       </div>
     </section>

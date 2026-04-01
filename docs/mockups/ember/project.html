@@ -323,6 +323,14 @@ a:hover { text-decoration: underline; }
   font-family: var(--font-display);
   font-size: clamp(1rem, 2.5vw, 1.35rem);
   font-weight: 700;
+  color: var(--text);
+}
+.leverage-header .lev-val--agent {
+  color: var(--accent);
+  text-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+}
+.leverage-header .lev-val--multi {
+  color: var(--accent);
   text-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
 }
 .leverage-header .lev-lbl {
@@ -342,7 +350,7 @@ a:hover { text-decoration: underline; }
 .ember-leverage-bar__human {
   height: 100%;
   width: 19%;
-  background: var(--text);
+  background: rgba(255,255,255,0.25);
   border-radius: 2px 0 0 2px;
 }
 .ember-leverage-bar__agent {
@@ -763,8 +771,8 @@ a:hover { text-decoration: underline; }
       <div class="stat-cell stat-cell--leverage" role="listitem">
         <div class="leverage-header">
           <span><span class="lev-val">8.1h</span> <span class="lev-lbl">you</span></span>
-          <span><span class="lev-val">34.4h</span> <span class="lev-lbl">agents</span></span>
-          <span><span class="lev-val">4.2x</span></span>
+          <span><span class="lev-val lev-val--agent">34.4h</span> <span class="lev-lbl">agents</span></span>
+          <span><span class="lev-val lev-val--multi">4.2x</span></span>
         </div>
         <div class="ember-leverage-bar">
           <div class="ember-leverage-bar__human"></div>

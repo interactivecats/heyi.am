@@ -17,6 +17,23 @@ const ENHANCED_DIR = 'enhanced';
 const PROJECT_ENHANCE_DIR = 'project-enhance';
 const SETTINGS_FILE = 'settings.json';
 
+export interface PortfolioProfile {
+  displayName?: string;
+  bio?: string;
+  /** Base64-encoded profile photo (data URI). */
+  photoBase64?: string;
+  location?: string;
+  email?: string;
+  phone?: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  twitterHandle?: string;
+  websiteUrl?: string;
+  /** Base64-encoded resume PDF (data URI). */
+  resumeBase64?: string;
+  resumeFilename?: string;
+}
+
 export interface Settings {
   anthropicApiKey?: string;
   /** Auto-archive Claude sessions to prevent loss from 30-day cleanup. Default: true. */
@@ -25,6 +42,8 @@ export interface Settings {
   onboardingCompletedAt?: string;
   /** Default template for rendering project/session pages. */
   defaultTemplate?: string;
+  /** Portfolio profile data (bio, contact, social links). */
+  portfolio?: PortfolioProfile;
 }
 
 const SESSIONS_DIR = 'sessions';
@@ -77,6 +96,18 @@ export function completeOnboarding(configDir?: string): void {
 export function resetOnboarding(configDir?: string): void {
   const settings = getSettings(configDir);
   delete settings.onboardingCompletedAt;
+  writeConfig(SETTINGS_FILE, settings, configDir);
+}
+
+// ── Portfolio profile ────────────────────────────────────────
+
+export function getPortfolioProfile(configDir?: string): PortfolioProfile {
+  return getSettings(configDir).portfolio ?? {};
+}
+
+export function savePortfolioProfile(data: PortfolioProfile, configDir?: string): void {
+  const settings = getSettings(configDir);
+  settings.portfolio = data;
   writeConfig(SETTINGS_FILE, settings, configDir);
 }
 

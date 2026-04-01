@@ -385,6 +385,10 @@ a:hover { text-decoration: underline; }
   font-family: var(--font-mono);
   font-weight: 600;
   font-size: 1.375rem;
+  color: var(--mer-text);
+}
+.mer-leverage-nums .mlev-val--agent,
+.mer-leverage-nums .mlev-val--multi {
   color: var(--mer-accent);
 }
 .mer-leverage-nums .mlev-lbl {
@@ -404,7 +408,7 @@ a:hover { text-decoration: underline; }
 .mer-leverage-bar__human {
   height: 100%;
   width: 19%;
-  background: var(--mer-text);
+  background: rgba(0,0,0,0.15);
   border-radius: 2px 0 0 2px;
 }
 .mer-leverage-bar__agent {
@@ -709,8 +713,8 @@ a:hover { text-decoration: underline; }
           <div class="stat-cell__coord">leverage</div>
           <div class="mer-leverage-nums">
             <span><span class="mlev-val">24h</span> <span class="mlev-lbl">you</span></span>
-            <span><span class="mlev-val">100h</span> <span class="mlev-lbl">agents</span></span>
-            <span><span class="mlev-val">4.2x</span></span>
+            <span><span class="mlev-val mlev-val--agent">100h</span> <span class="mlev-lbl">agents</span></span>
+            <span><span class="mlev-val mlev-val--multi">4.2x</span></span>
           </div>
           <div class="mer-leverage-bar">
             <div class="mer-leverage-bar__human"></div>
@@ -720,7 +724,7 @@ a:hover { text-decoration: underline; }
         <div class="stat-cell stat-counter" role="group" aria-label="Lines of code">
           <div class="stat-cell__coord">datum 18.4k</div>
           <div class="stat-cell__value" data-target="18400">18,400</div>
-          <div class="stat-cell__label">lines of code</div>
+          <div class="stat-cell__label">lines changed</div>
         </div>
       </div>
     </section>

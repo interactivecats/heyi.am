@@ -274,10 +274,14 @@
   }
   .leverage-row .lev-val {
     font-family: var(--font-mono);
-    font-size: 20px;
+    font-size: 1.25rem;
     font-weight: 600;
-    color: var(--accent);
+    color: var(--fg);
     line-height: 1.1;
+  }
+  .leverage-row .lev-val--agent,
+  .leverage-row .lev-val--multi {
+    color: var(--accent);
   }
   .leverage-row .lev-lbl {
     font-family: var(--font-mono);
@@ -296,7 +300,7 @@
   .circuit-leverage-bar__human {
     height: 100%;
     width: 19%;
-    background: var(--fg);
+    background: rgba(255,255,255,0.25);
     border-radius: 1px 0 0 1px;
   }
   .circuit-leverage-bar__agent {
@@ -750,8 +754,8 @@
     <div class="stat-chip stat-chip--leverage" role="group" aria-label="8.1 hours you, 34.4 hours agents, 4.2x leverage">
       <div class="leverage-row">
         <span><span class="lev-val">8.1h</span> <span class="lev-lbl">you</span></span>
-        <span><span class="lev-val">34.4h</span> <span class="lev-lbl">agents</span></span>
-        <span><span class="lev-val">4.2x</span></span>
+        <span><span class="lev-val lev-val--agent">34.4h</span> <span class="lev-lbl">agents</span></span>
+        <span><span class="lev-val lev-val--multi">4.2x</span></span>
       </div>
       <div class="circuit-leverage-bar">
         <div class="circuit-leverage-bar__human"></div>
