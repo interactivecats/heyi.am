@@ -3,7 +3,7 @@
   <div class="mono-page">
 
     {%- comment -%} Breadcrumb {%- endcomment -%}
-    <div class="breadcrumb" aria-label="Breadcrumb">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="/{{ user.username }}">{{ user.username }}</a>
       {% if projectSlug %}
       <span class="sep">/</span>
@@ -11,7 +11,7 @@
       {% endif %}
       <span class="sep">/</span>
       <span>{{ session.title }}</span>
-    </div>
+    </nav>
 
     {%- comment -%} Hero {%- endcomment -%}
     <section class="mono-section" aria-label="Session header">
@@ -169,8 +169,8 @@
                         {{ agent.role }}
                       </div>
                     </td>
-                    <td class="value-accent">{{ agent.durationMinutes | formatDuration }}</td>
-                    <td>{{ agent.locChanged | localeNumber }}</td>
+                    <td class="value-accent">{{ agent.duration_minutes | formatDuration }}</td>
+                    <td>{{ agent.loc_changed | localeNumber }}</td>
                   </tr>
                   {% endfor %}
                 </tbody>

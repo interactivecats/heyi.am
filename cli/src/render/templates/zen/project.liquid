@@ -63,21 +63,28 @@
 
     <hr class="zen-rule zen-fade" aria-hidden="true">
 
-    <!-- Section 4: Work Timeline (chart mount point) -->
-    {% if sessionsJson %}
+    <!-- Section 4: Work Timeline (CSS-only bars) -->
+    {% if featuredSessions.size > 0 %}
+    {% assign maxDuration = 1 %}
+    {% for s in featuredSessions %}
+      {% if s.durationMinutes > maxDuration %}
+        {% assign maxDuration = s.durationMinutes %}
+      {% endif %}
+    {% endfor %}
     <section class="zen-section zen-fade" aria-label="Work timeline">
       <h2 class="zen-heading">Work Timeline</h2>
-      <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-    </section>
-
-    <hr class="zen-rule zen-fade" aria-hidden="true">
-    {% endif %}
-
-    <!-- Growth Chart (chart mount point) -->
-    {% if growthJson %}
-    <section class="zen-section zen-fade" aria-label="Growth chart">
-      <h2 class="zen-heading">Growth</h2>
-      <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+      <div class="zen-chart" role="img" aria-label="Session duration chart">
+        {% for s in featuredSessions %}
+        {% assign barWidth = s.durationMinutes | times: 100.0 | divided_by: maxDuration | round: 1 %}
+        <div class="zen-chart-row">
+          <span class="zen-chart-label">{{ s.recordedAt | formatDateShort }}</span>
+          <span class="zen-chart-bar-track">
+            <span class="zen-chart-bar" style="width: {{ barWidth }}%"></span>
+          </span>
+          <span class="zen-chart-value">{{ s.durationMinutes }}m</span>
+        </div>
+        {% endfor %}
+      </div>
     </section>
 
     <hr class="zen-rule zen-fade" aria-hidden="true">
@@ -90,6 +97,9 @@
       <div class="zen-timeline" role="list" aria-label="Project phase timeline">
         {% for phase in arc %}
         <div class="zen-timeline-item" role="listitem">
+          {% if phase.dates != blank %}
+          <p class="zen-timeline-date">{{ phase.dates }}</p>
+          {% endif %}
           <p class="zen-timeline-title">{{ phase.title }}</p>
           {% if phase.description != blank %}
           <p class="zen-timeline-desc">{{ phase.description }}</p>
@@ -137,7 +147,7 @@
     <section class="zen-section zen-fade" aria-label="Source breakdown">
       <h2 class="zen-heading">Source</h2>
       <p class="zen-source">
-        {% for sc in sourceCounts %}{% if forloop.index > 1 %} &middot; {% endif %}{{ sc.tool }} ({{ sc.count }} sessions){% endfor %}
+        {% for sc in sourceCounts %}{% if forloop.index > 1 %} &middot; {% endif %}{{ sc.tool }} {{ sc.count | times: 100.0 | divided_by: project.totalSessions | round }}% ({{ sc.count }} sessions){% endfor %}
       </p>
     </section>
 

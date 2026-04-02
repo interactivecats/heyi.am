@@ -3,6 +3,59 @@
  * Space Grotesk display, Inter body, JetBrains Mono code.
  */
 
+:root {
+  --aurora-bg: #020617;
+  --aurora-surface: #0f172a;
+  --aurora-surface-hover: #1e293b;
+  --aurora-accent: #2dd4bf;
+  --aurora-accent-green: #4ade80;
+  --aurora-accent-purple: #a78bfa;
+  --aurora-accent-dim: rgba(45, 212, 191, 0.15);
+  --aurora-accent-glow: rgba(45, 212, 191, 0.25);
+  --aurora-text: #f1f5f9;
+  --aurora-text-secondary: #94a3b8;
+  --aurora-text-tertiary: #64748b;
+  --aurora-border: #1e293b;
+  --aurora-border-accent: rgba(45, 212, 191, 0.2);
+  --aurora-font-display: 'Space Grotesk', system-ui, sans-serif;
+  --aurora-font-body: 'Inter', system-ui, sans-serif;
+  --aurora-font-mono: 'JetBrains Mono', monospace;
+  --aurora-radius: 8px;
+  --aurora-radius-lg: 12px;
+  --aurora-duration: 300ms;
+  --aurora-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Agent colors */
+  --agent-frontend: #7c3aed;
+  --agent-backend: #0891b2;
+  --agent-qa: #059669;
+  --agent-security: #475569;
+  --agent-reviewer: #e11d48;
+  --agent-ux: #d97706;
+}
+
+/* ── Dark wrapper ── */
+.aurora {
+  background: var(--aurora-bg);
+  color: var(--aurora-text);
+  font-family: var(--aurora-font-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.aurora a {
+  color: var(--aurora-accent);
+  text-decoration: none;
+  transition: color var(--aurora-duration) ease;
+}
+.aurora a:hover { color: var(--aurora-accent-green); }
+.aurora a:visited { color: var(--aurora-accent); }
+.aurora a:focus-visible {
+  outline: 2px solid var(--aurora-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 /* ── Aurora Gradient Header ── */
 .aurora .aurora-header {
   position: relative;
@@ -57,6 +110,8 @@
   .aurora .aurora-stat-number { animation: none !important; }
   .aurora .aurora-beat-dot { animation: none !important; }
   .aurora .aurora-phase-dot { animation: none !important; }
+  .aurora .aurora-chart-bar-fill { transition: none; }
+  .aurora .aurora-agent-bar-fill { transition: none; }
 }
 
 /* ── Hero (Portfolio) ── */
@@ -178,6 +233,18 @@
 .aurora .aurora-stats--project {
   grid-template-columns: repeat(6, 1fr);
   margin-bottom: 2rem;
+  gap: 0.75rem;
+}
+.aurora .aurora-stats--project .aurora-stat {
+  padding: 1rem;
+  border-radius: var(--aurora-radius);
+}
+.aurora .aurora-stats--project .aurora-stat-number {
+  font-size: 1.375rem;
+}
+.aurora .aurora-stats--project .aurora-stat-label {
+  font-size: 0.6875rem;
+  margin-top: 0.125rem;
 }
 .aurora .aurora-stat {
   background: var(--aurora-surface);
@@ -266,7 +333,8 @@
   margin-bottom: 1.5rem;
   text-shadow: 0 0 20px rgba(45, 212, 191, 0.15);
 }
-.aurora .aurora-section-title--sm {
+.aurora .aurora-section-title--sm,
+.heyiam-project.aurora .aurora-section-title {
   font-size: 1.25rem;
   margin-bottom: 1.25rem;
 }
@@ -349,6 +417,7 @@
 }
 .aurora .aurora-breadcrumb a { color: var(--aurora-text-tertiary); }
 .aurora .aurora-breadcrumb a:hover { color: var(--aurora-accent); }
+.aurora .aurora-breadcrumb a:visited { color: var(--aurora-text-tertiary); }
 .aurora .aurora-breadcrumb-sep { margin: 0 0.375rem; }
 
 /* ── Project Hero ── */
@@ -445,6 +514,63 @@
   border-radius: var(--aurora-radius-lg);
   padding: 1.5rem;
 }
+.aurora .aurora-chart-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+.aurora .aurora-chart-row {
+  display: grid;
+  grid-template-columns: 200px 1fr 60px;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.8125rem;
+}
+.aurora .aurora-chart-label {
+  color: var(--aurora-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.aurora .aurora-chart-label a { color: var(--aurora-text-secondary); }
+.aurora .aurora-chart-label a:hover { color: var(--aurora-accent); }
+.aurora .aurora-chart-label a:visited { color: var(--aurora-text-secondary); }
+.aurora .aurora-chart-bar-track {
+  height: 20px;
+  border-radius: 4px;
+  background: rgba(45, 212, 191, 0.06);
+  overflow: hidden;
+  position: relative;
+}
+.aurora .aurora-chart-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--aurora-accent), var(--aurora-accent-green));
+  transition: width 1s var(--aurora-ease);
+  position: relative;
+}
+.aurora .aurora-chart-bar-fill--cursor {
+  background: linear-gradient(90deg, var(--aurora-accent-purple), #c084fc);
+}
+.aurora .aurora-chart-bar-agents {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 2px;
+}
+.aurora .aurora-chart-agent-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.aurora .aurora-chart-value {
+  font-family: var(--aurora-font-mono);
+  font-size: 0.75rem;
+  color: var(--aurora-text-tertiary);
+  text-align: end;
+}
 
 /* ── Phases Timeline ── */
 .aurora .aurora-phases {
@@ -485,6 +611,12 @@
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--aurora-text);
+}
+.aurora .aurora-phase-dates {
+  font-family: var(--aurora-font-mono);
+  font-size: 0.75rem;
+  color: var(--aurora-text-tertiary);
+  margin-top: 0.125rem;
 }
 .aurora .aurora-phase-desc {
   font-size: 0.875rem;
@@ -584,6 +716,7 @@
   box-shadow: 0 4px 20px rgba(45, 212, 191, 0.08);
   transform: translateY(-2px);
 }
+.aurora .aurora-session-card:visited { color: inherit; }
 .aurora .aurora-session-card h3 {
   font-family: var(--aurora-font-display);
   font-size: 0.9375rem;
@@ -591,6 +724,7 @@
   color: var(--aurora-text);
   margin-bottom: 0.5rem;
 }
+.aurora .aurora-session-card h3 a:visited { color: var(--aurora-text); }
 .aurora .aurora-session-meta {
   display: flex;
   gap: 0.75rem;
@@ -941,6 +1075,7 @@
   font-size: 0.8125rem;
   color: var(--aurora-text-tertiary);
 }
+.aurora .aurora-footer a:visited { color: var(--aurora-accent); }
 
 /* ── Fade-up Animation ── */
 .aurora .fade-up {
@@ -1010,6 +1145,11 @@
     grid-template-columns: 110px 1fr 40px 40px;
     gap: 0.5rem;
   }
+  .aurora .aurora-chart-row {
+    grid-template-columns: 120px 1fr 50px;
+    gap: 0.5rem;
+  }
+  .aurora .aurora-nav-links { gap: 1rem; }
 }
 
 @media (max-width: 480px) {
@@ -1030,4 +1170,9 @@
   }
   .aurora .aurora-agent-bar-track { display: none; }
   .aurora .aurora-agent-name { justify-content: space-between; }
+  .aurora .aurora-chart-row {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+  .aurora .aurora-chart-value { text-align: start; }
 }

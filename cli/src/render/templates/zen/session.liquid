@@ -4,7 +4,7 @@
 
     <!-- Breadcrumb -->
     {% if user.username != blank %}
-    <div class="zen-breadcrumb zen-fade">
+    <nav class="zen-breadcrumb zen-fade" aria-label="Breadcrumb">
       <a href="/{{ user.username }}">{{ user.username }}</a>
       {% if projectSlug != blank %}
       <span class="zen-breadcrumb-sep" aria-hidden="true">/</span>
@@ -12,7 +12,7 @@
       {% endif %}
       <span class="zen-breadcrumb-sep" aria-hidden="true">/</span>
       <span aria-current="page">{{ session.title }}</span>
-    </div>
+    </nav>
     {% endif %}
 
     <!-- Section 1: Session Header -->
@@ -91,7 +91,7 @@
       <hr class="zen-beat-divider" aria-hidden="true">
       {% endif %}
       <div class="zen-beat zen-fade">
-        <p class="zen-beat-number">{{ beat.stepNumber | at_least: 1 | prepend: "" }}</p>
+        <p class="zen-beat-number">{% if forloop.index < 10 %}0{% endif %}{{ forloop.index }}</p>
         <p class="zen-beat-title">{{ beat.title }}</p>
         {% if beat.body != blank %}
         <p class="zen-beat-desc">{{ beat.body }}</p>
@@ -180,7 +180,7 @@
         {% for agent in session.agentSummary.agents %}
         <div class="zen-agent-row" role="listitem">
           <span class="zen-agent-role">{{ agent.role }}</span>
-          <span class="zen-agent-meta">{{ agent.durationMinutes | formatDuration }} &middot; {{ agent.locChanged | localeNumber }} LOC</span>
+          <span class="zen-agent-meta">{{ agent.duration_minutes | formatDuration }} &middot; {{ agent.loc_changed | localeNumber }} LOC</span>
         </div>
         {% endfor %}
       </div>

@@ -5,6 +5,23 @@
 
 /* ── Design Tokens (inherited from theme system, fallbacks here) ── */
 
+/* ── Dark Wrapper ── */
+.mono {
+  background: var(--mono-bg, #0a0a0a);
+  color: var(--mono-text, #e0e0e0);
+  font-family: var(--font, 'JetBrains Mono', monospace);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.mono a { color: var(--mono-accent, #4ade80); text-decoration: none; }
+.mono a:hover { text-decoration: underline; }
+.mono a:visited { color: var(--mono-accent, #4ade80); }
+.mono a:focus-visible {
+  outline: 2px solid var(--mono-accent, #4ade80);
+  outline-offset: 2px;
+}
+
 /* ── Page Container ── */
 .mono .mono-page {
   max-width: 960px;
@@ -22,6 +39,9 @@
 .mono .mono-section.visible {
   opacity: 1;
   transform: translateY(0);
+}
+.mono.heyiam-project .mono-section {
+  margin-bottom: 3rem;
 }
 
 /* ── Section Heading ── */
@@ -184,6 +204,7 @@
   color: var(--mono-text-dim, #666666);
   transition: color 0.15s;
 }
+.mono .hero-contact a:visited { color: var(--mono-text-dim, #666666); }
 .mono .hero-contact a:hover {
   color: var(--mono-accent, #4ade80);
   text-decoration: none;
@@ -322,6 +343,7 @@
   color: var(--mono-accent, #4ade80);
 }
 .mono .project-name a { color: inherit; }
+.mono .project-name a:visited { color: inherit; }
 .mono .project-source {
   font-size: 0.75rem;
   color: var(--mono-text-dim, #666666);
@@ -401,14 +423,14 @@
   gap: 0.75rem;
 }
 .mono .ascii-label {
-  width: 110px;
+  width: 80px;
   flex-shrink: 0;
   color: var(--mono-text-dim, #666666);
   text-align: end;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
 }
 .mono .ascii-bar {
   flex: 1;
@@ -423,7 +445,7 @@
 }
 .mono .ascii-bar-value {
   color: var(--mono-text-dim, #666666);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   white-space: nowrap;
 }
 
@@ -438,6 +460,7 @@
   margin-bottom: 1.5rem;
 }
 .mono .breadcrumb a { color: var(--mono-text-dim, #666666); }
+.mono .breadcrumb a:visited { color: var(--mono-text-dim, #666666); }
 .mono .breadcrumb a:hover { color: var(--mono-accent, #4ade80); }
 .mono .breadcrumb .sep {
   margin: 0 0.25rem;
@@ -610,13 +633,8 @@
   margin-bottom: 0.75rem;
   font-size: 0.875rem;
 }
-.mono .source-bar--project {
-  display: flex;
+.mono.heyiam-project .source-bar {
   height: 8px;
-  border-radius: 0px;
-  overflow: hidden;
-  background: var(--mono-surface-raised, #1a1a1a);
-  width: 100%;
 }
 
 /* ── Session Cards (project page) ── */
@@ -659,6 +677,7 @@
   margin-bottom: 0.5rem;
 }
 .mono .session-card-title a { color: inherit; }
+.mono .session-card-title a:visited { color: inherit; }
 .mono .session-kv {
   display: flex;
   justify-content: space-between;
@@ -966,8 +985,8 @@
     gap: 0.5rem;
   }
   .mono .ascii-label {
-    width: 80px;
-    font-size: 0.6875rem;
+    width: 60px;
+    font-size: 0.625rem;
   }
   .mono .agent-table { font-size: 0.75rem; }
   .mono .agent-table th,

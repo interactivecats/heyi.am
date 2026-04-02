@@ -94,6 +94,9 @@ a:focus-visible {
   outline-offset: 3px;
   border-radius: var(--zen-radius);
 }
+a:visited {
+  color: var(--zen-text);
+}
 a:active {
   color: var(--zen-accent-hover);
 }
@@ -115,6 +118,48 @@ a:active {
   .zen-container {
     padding: 6rem 2rem 8rem;
   }
+}
+
+/* ── Navigation ── */
+.zen-nav {
+  padding: 1.25rem;
+  max-width: var(--zen-max-width);
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .zen-nav {
+    padding: 1.5rem 2rem;
+  }
+}
+
+.zen-nav-inner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  font-family: var(--zen-font-mono);
+  font-size: 0.8125rem;
+  color: var(--zen-text-secondary);
+  letter-spacing: 0.01em;
+}
+
+.zen-nav a {
+  color: var(--zen-text-secondary);
+  text-decoration: none;
+  padding: 0.125rem 0;
+  transition: color 300ms ease;
+}
+.zen-nav a:hover {
+  color: var(--zen-text);
+}
+.zen-nav a[aria-current="page"] {
+  color: var(--zen-text);
+}
+
+.zen-nav-sep {
+  color: var(--zen-rule);
+  user-select: none;
 }
 
 /* ── Sections ── */
@@ -220,7 +265,7 @@ a:active {
   font-size: 1.125rem;
   line-height: 1.4;
   color: var(--zen-text);
-  margin-block-end: 0.5rem;
+  margin-block-end: 1rem;
 }
 
 @media (min-width: 768px) {
@@ -388,7 +433,7 @@ a:active {
   font-family: var(--zen-font-body);
   font-size: 0.9375rem;
   color: var(--zen-text-secondary);
-  line-height: 2;
+  line-height: 2.2;
 }
 
 .zen-stat-value {
@@ -940,6 +985,105 @@ a:active {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Skip Link ── */
+.zen-skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--zen-text);
+  color: var(--zen-bg);
+  padding: 0.5rem 1rem;
+  font-family: var(--zen-font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: var(--zen-radius);
+  z-index: 100;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.zen-skip-link:focus {
+  top: 1rem;
+  outline: 2px solid var(--zen-accent);
+  outline-offset: 2px;
+}
+
+/* ── Work Timeline Chart — minimal bars ── */
+.zen-chart {
+  margin-block-start: 0.5rem;
+}
+
+.zen-chart-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-block-end: 0.625rem;
+  font-family: var(--zen-font-mono);
+  font-size: 0.75rem;
+  color: var(--zen-text-tertiary);
+  letter-spacing: 0.01em;
+}
+
+.zen-chart-row:last-child {
+  margin-block-end: 0;
+}
+
+.zen-chart-label {
+  min-width: 4.5rem;
+  text-align: end;
+  flex-shrink: 0;
+}
+
+@media (min-width: 480px) {
+  .zen-chart-label {
+    min-width: 5rem;
+  }
+}
+
+.zen-chart-bar-track {
+  flex: 1;
+  min-width: 0;
+  height: 3px;
+  background: transparent;
+  position: relative;
+}
+
+.zen-chart-bar {
+  height: 3px;
+  background: var(--zen-rule);
+  border-radius: 1px;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+}
+
+.zen-chart-value {
+  min-width: 2.25rem;
+  flex-shrink: 0;
+}
+
+/* ── Screenshot Body Placeholder ── */
+.zen-screenshot-body {
+  background: linear-gradient(
+    160deg,
+    #e7e5e4 0%,
+    #d6d3d1 40%,
+    #e7e5e4 100%
+  );
+  height: 180px;
+}
+
+@media (min-width: 480px) {
+  .zen-screenshot-body {
+    height: 220px;
+  }
+}
+
+@media (min-width: 768px) {
+  .zen-screenshot-body {
+    height: 280px;
+  }
+}
+
 /* ════════════════════════════════════════════════
    FOOTER
    ════════════════════════════════════════════════ */
@@ -971,6 +1115,22 @@ a:active {
   letter-spacing: 0.01em;
 }
 
+.zen-footer-nav {
+  display: flex;
+  gap: 1.5rem;
+  font-family: var(--zen-font-mono);
+  font-size: 0.75rem;
+}
+
+.zen-footer-nav a {
+  color: var(--zen-text-tertiary);
+  text-decoration: none;
+  transition: color 300ms ease;
+}
+.zen-footer-nav a:hover {
+  color: var(--zen-text);
+}
+
 /* ════════════════════════════════════════════════
    PRINT STYLES
    ════════════════════════════════════════════════ */
@@ -982,7 +1142,9 @@ a:active {
     font-size: 11pt;
   }
 
-  .zen-skip-link {
+  .zen-nav,
+  .zen-skip-link,
+  .zen-footer-nav {
     display: none;
   }
 
@@ -1022,6 +1184,10 @@ a:active {
     content: " (" attr(href) ")";
     font-size: 0.75em;
     color: #666;
+  }
+
+  .zen-project-page .zen-display {
+    font-size: 24pt;
   }
 
   .zen-beat,

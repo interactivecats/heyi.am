@@ -3,11 +3,11 @@
   <div class="mono-page">
 
     {%- comment -%} Breadcrumb {%- endcomment -%}
-    <div class="breadcrumb" aria-label="Breadcrumb">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="/{{ user.username }}">{{ user.username }}</a>
       <span class="sep">/</span>
       <span>{{ project.slug }}</span>
-    </div>
+    </nav>
 
     {%- comment -%} Hero {%- endcomment -%}
     <section class="mono-section" aria-label="Project header">
@@ -122,6 +122,9 @@
               </div>
               <div class="git-log-content">
                 <div><span class="git-log-hash">{{ item.phase | prepend: '0' | slice: -2, 2 }}</span> <span class="git-log-msg">{{ item.title }}</span></div>
+                {% if item.dates != blank %}
+                <div class="git-log-date">{{ item.dates }}</div>
+                {% endif %}
                 <div class="git-log-detail">{{ item.description }}</div>
               </div>
             </div>
@@ -132,8 +135,12 @@
     </section>
     {% endif %}
 
-    {%- comment -%} Work Timeline chart mount {%- endcomment -%}
-    {% if sessionsJson %}
+    {%- comment -%} Work Timeline (ASCII bar chart) {%- endcomment -%}
+    {% if featuredSessions.size > 0 %}
+    {% assign maxLoc = 1 %}
+    {% for s in featuredSessions %}
+      {% if s.locChanged > maxLoc %}{% assign maxLoc = s.locChanged %}{% endif %}
+    {% endfor %}
     <section class="mono-section" aria-label="Session work timeline">
       <h2 class="mono-heading"># work_timeline</h2>
       <div class="terminal-block">
@@ -146,26 +153,20 @@
           <span>LOC per session</span>
         </div>
         <div class="terminal-body">
-          <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-        </div>
-      </div>
-    </section>
-    {% endif %}
-
-    {%- comment -%} Growth chart mount {%- endcomment -%}
-    {% if growthJson %}
-    <section class="mono-section" aria-label="Growth over time">
-      <div class="terminal-block">
-        <div class="terminal-header">
-          <div class="terminal-dots">
-            <span class="dot-red" aria-hidden="true"></span>
-            <span class="dot-yellow" aria-hidden="true"></span>
-            <span class="dot-green" aria-hidden="true"></span>
+          <div class="ascii-chart" role="img" aria-label="Lines of code per session bar chart">
+            {% for s in featuredSessions %}
+            {% assign barPct = s.locChanged | times: 100 | divided_by: maxLoc %}
+            {% assign fillCount = barPct | times: 40 | divided_by: 100 %}
+            {% if fillCount < 1 %}{% assign fillCount = 1 %}{% endif %}
+            <div class="ascii-row">
+              <span class="ascii-label">{{ s.title | truncate: 12 }}</span>
+              <div class="ascii-bar">
+                <span class="ascii-bar-fill" aria-hidden="true">{% for i in (1..fillCount) %}&#9619;{% endfor %}</span>
+                <span class="ascii-bar-value">{{ s.locChanged | localeNumber }}</span>
+              </div>
+            </div>
+            {% endfor %}
           </div>
-          <span>growth</span>
-        </div>
-        <div class="terminal-body">
-          <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
         </div>
       </div>
     </section>
@@ -221,13 +222,13 @@
       {% if totalSourceSessions > 0 %}
       <div class="source-breakdown">
         {% for src in sourceCounts %}
-        {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+        {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
         <span{% if forloop.first %} style="color: var(--mono-accent, #4ade80);"{% else %} style="color: var(--mono-text-dim, #666666);"{% endif %}>{{ src.tool }} {{ srcPct }}%</span>
         {% endfor %}
       </div>
-      <div class="source-bar--project" role="img" aria-label="Source mix">
+      <div class="source-bar" role="img" aria-label="Source mix">
         {% for src in sourceCounts %}
-        {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+        {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
         <div class="source-bar-segment{% if forloop.first %} claude{% else %} cursor{% endif %}" style="width: {{ srcPct }}%;"></div>
         {% endfor %}
       </div>
@@ -241,12 +242,12 @@
       <h2 class="mono-heading"># sessions</h2>
       <div class="session-grid">
         {% for s in featuredSessions %}
-        <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="session-card">
+        <article class="session-card">
           <div class="session-card-header">
             <span aria-hidden="true">$</span> session #{{ forloop.index }}
           </div>
           <div class="session-card-body">
-            <h3 class="session-card-title">{{ s.title }}</h3>
+            <h3 class="session-card-title"><a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a></h3>
             <div class="session-kv"><span class="session-kv-key">duration:</span><span class="session-kv-value">{{ s.durationMinutes | formatDuration }}</span></div>
             <div class="session-kv"><span class="session-kv-key">loc:</span><span class="session-kv-value">{{ s.locChanged | localeNumber }}</span></div>
             <div class="session-kv"><span class="session-kv-key">turns:</span><span class="session-kv-value">{{ s.turns }}</span></div>
@@ -254,7 +255,7 @@
             <span class="session-card-tag">[{{ s.skills | first }}]</span>
             {% endif %}
           </div>
-        </a>
+        </article>
         {% endfor %}
       </div>
     </section>

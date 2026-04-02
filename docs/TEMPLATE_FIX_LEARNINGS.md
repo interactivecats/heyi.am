@@ -6,7 +6,7 @@ Accumulated knowledge from fixing project/session liquid templates to match thei
 
 | Template   | Status | Notes |
 |------------|--------|-------|
-| aurora     | TODO   | |
+| aurora     | DONE   | Dark template. JS charts replaced with CSS-only bars, growth chart removed, session card article structure, phase dates, source percentage rounding, wrapper bg/color/visited, agent color tokens, stat size drift for project page, chart responsive breakpoints |
 | bauhaus    | TODO   | |
 | blueprint  | DONE   | Light template. Hero padding/font-size drift, missing decisions section, source bar, agent bar chart, 480px breakpoint, visited links |
 | canvas     | TODO   | |
@@ -20,7 +20,7 @@ Accumulated knowledge from fixing project/session liquid templates to match thei
 | grid       | TODO   | |
 | kinetic    | DONE   | Dark template. Title alignment, session card bg, visited links, percentage rounding, chart accent |
 | meridian   | DONE   | Dark template. Breadcrumb nav fix, JS charts replaced with CSS-only SVG elevation chart, growth chart removed, missing Key Decisions section + agent bar chart + agent-dots, source percentages with rounding, visited links, wrapper bg/color + agent color tokens, stat-cell font-size drift, section-heading size drift, skill-chip size drift, featured cards article structure, responsive agent-bar-row, reduced-motion for agent bars |
-| mono       | TODO   | |
+| mono       | DONE   | Dark template. Breadcrumb nav fix, JS charts replaced with CSS-only ASCII bar chart, growth chart removed, session cards article structure, source bar class fix + percentage rounding, phase dates added, wrapper bg/color/visited links, ascii-label width drift (110->80px), ascii-bar-value font-size drift, project section margin override (3rem), responsive ascii-label fix (60px) |
 | neon       | TODO   | |
 | noir       | DONE   | Dark template. Breadcrumb element, missing sections, CSS gaps, responsive gaps, removed JS charts (mockup uses CSS-only bars), visited links |
 | obsidian   | TODO   | Has float division bug in source breakdown |
@@ -32,7 +32,7 @@ Accumulated knowledge from fixing project/session liquid templates to match thei
 | signal     | TODO   | |
 | strata     | DONE   | Light template. Removed JS charts (CSS-only SVGs), nav element fix, agent chart added, session title size, percentage rounding, visited links |
 | verdant    | TODO   | |
-| zen        | TODO   | |
+| zen        | DONE   | Light template. JS charts replaced with CSS-only bars, growth chart removed, breadcrumb nav element fix, beat number zero-padding, source percentages with rounding, phase dates, visited links, missing chart/nav/footer-nav/skip-link/screenshot-body CSS, stats line-height drift, subheading margin drift, print styles |
 
 **Also fixed (cross-cutting):**
 - GrowthChart: dark mode colors, accent color for lines/dots/gradients
@@ -144,3 +144,28 @@ Accumulated knowledge from fixing project/session liquid templates to match thei
 - **CSS property value drift across multiple rules**: `section-heading` font-size was `1.75rem` vs mockup's `1.5rem`, `stat-cell__value` was `1.625rem` vs `1.375rem`, `stat-cell__coord` margin was `0.375rem` vs `0.25rem`, `stat-cell__label` was `0.8125rem` vs `0.75rem`, `skill-chip` was `0.6875rem` vs `0.75rem` with different padding. Session-scoped overrides needed for `stat-cell__value` (`1.25rem`) and `stat-cell__label` (`0.6875rem`).
 - **Agent color tokens missing**: Mockup `:root` had `--agent-frontend`, `--agent-backend`, etc. but they were dropped from `.meridian` token block. Agent dots and bar fills use these.
 - **Dark wrapper pattern confirmed again**: `.meridian` needed explicit `background: var(--mer-bg)` and `a:visited { color: var(--mer-accent) }` plus breadcrumb/card-specific visited rules.
+
+### Zen
+- **Light template, minimal design**: Zen is a light template so no wrapper bg/color needed, but still needs `a:visited` to prevent browser default purple. Added `a:visited { color: var(--zen-text) }` globally.
+- **JS charts replaced with CSS-only bars**: Project mockup uses CSS-only horizontal bars (`zen-chart-row` with `zen-chart-bar` spans) for Work Timeline, not `data-work-timeline` JS mount. Bar widths computed from `maxDuration` in Liquid. No growth chart at all in the mockup -- removed entirely.
+- **Many CSS class families missing from styles.css**: Chart classes (`zen-chart`, `zen-chart-row`, `zen-chart-label`, `zen-chart-bar-track`, `zen-chart-bar`, `zen-chart-value`), navigation classes (`zen-nav`, `zen-nav-inner`, `zen-nav-sep`), `zen-footer-nav`, `zen-skip-link`, and `zen-screenshot-body` were all in the mockup CSS but absent from styles.css. These are structural layout classes, not just decorative.
+- **Beat number zero-padding**: Mockup shows `01`, `02` for beat numbers. The Liquid template used `beat.stepNumber | at_least: 1 | prepend: ""` which doesn't zero-pad. Fixed with `{% if forloop.index < 10 %}0{% endif %}{{ forloop.index }}`.
+- **CSS value drift in small places**: `.zen-stats` line-height was `2` vs mockup's `2.2`, `.zen-subheading` margin-block-end was `0.5rem` vs mockup's `1rem`. Print `.zen-display` font-size was `20pt` vs project mockup's `24pt`.
+
+### Aurora
+- **JS charts replaced with CSS-only bars**: Project mockup has a CSS-only Work Timeline (`aurora-chart-bars` with `aurora-chart-row` grid layout), not `data-work-timeline` JS mount. Bar widths computed from `maxDuration` in Liquid. No growth chart in the mockup at all -- removed `data-growth-chart` entirely.
+- **Entire CSS class families missing**: `aurora-chart-bars`, `aurora-chart-row`, `aurora-chart-label`, `aurora-chart-bar-track`, `aurora-chart-bar-fill`, `aurora-chart-bar-fill--cursor`, `aurora-chart-bar-agents`, `aurora-chart-agent-dot`, `aurora-chart-value`, `aurora-phase-dates` -- 10 classes from the mockup had no rules in styles.css.
+- **Dark wrapper confirmed again**: `.aurora` wrapper needed explicit `background: var(--aurora-bg)`, `color: var(--aurora-text)`, `font-family`, `-webkit-font-smoothing`, and `a:visited { color: var(--aurora-accent) }` plus breadcrumb/session-card/footer-specific visited rules.
+- **Agent color tokens missing from `:root`**: Mockup defined `--agent-frontend`, `--agent-backend`, `--agent-qa`, `--agent-security`, `--agent-reviewer`, `--agent-ux` in `:root` but they were absent from styles.css.
+- **Session card structure mismatch**: Template wrapped each card in `<a class="aurora-session-card">`, but mockup uses `<article class="aurora-session-card">` with inner `<a>` only on the h3. Same pattern as cosmos, meridian.
+- **Stat size drift between portfolio and project pages**: Portfolio stats use larger values (`padding: 1.5rem`, `font-size: 2rem`, `border-radius-lg`), while project mockup uses smaller values (`padding: 1rem`, `font-size: 1.375rem`, `border-radius`). Added `.aurora-stats--project` scoped overrides.
+- **Source percentage rounding**: `divided_by` without `| round` produces floats like `62.5012987%`. Added `| times: 100.0 | divided_by: X | round` on both bar width and display values.
+
+### Mono
+- **JS charts replaced with CSS-only ASCII bar chart**: The project mockup uses a text-based ASCII bar chart with `ascii-chart`/`ascii-row`/`ascii-bar-fill` classes (using block characters like `&#9619;`), not `data-work-timeline` JS mount. No growth chart in the mockup at all -- removed `data-growth-chart` entirely. Built with Liquid loop computing `maxLoc` for proportional fill counts.
+- **Session card structure mismatch (again)**: Template wrapped each session card in `<a class="session-card">`, but mockup uses `<article class="session-card">` with inner `<a>` only on the h3. Same pattern as cosmos, meridian, aurora.
+- **Source bar class name mismatch**: Template used `source-bar--project` but mockup uses just `source-bar`. Added a project-scoped height override `.mono.heyiam-project .source-bar { height: 8px; }` since portfolio bar is 6px.
+- **CSS property value drift**: `ascii-label` width was `110px` in styles.css vs mockup's `80px`, `ascii-bar-value` font-size was `0.75rem` vs `0.6875rem`. Project `mono-section` margin-bottom was `2.5rem` vs mockup's `3rem` (session mockup uses `2.5rem` -- needed project-scoped override).
+- **Missing phase dates**: Mockup shows `git-log-date` with date ranges (e.g., "Feb 3 -- Feb 14") below each phase entry. Template was missing `item.dates` rendering.
+- **Dark wrapper pattern confirmed**: `.mono` needed explicit `background`, `color`, `font-family`, `line-height`, `-webkit-font-smoothing`, `a:visited`, and `a:focus-visible` rules. Also added specific visited rules on breadcrumb, session-card-title, project-name, and hero-contact links.
+- **Responsive ascii-label drift**: Mockup 768px breakpoint has `width: 60px; font-size: 0.625rem` but styles.css had `80px`/`0.6875rem`.
