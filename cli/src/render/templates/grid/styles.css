@@ -36,11 +36,90 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── Visited links ── */
+.grid a:visited {
+  color: inherit;
+}
+
+/* ── Skip link ── */
+.grid .skip-link {
+  position: absolute;
+  inset-inline-start: -9999px;
+  top: 0;
+  background: var(--accent);
+  color: #fff;
+  padding: 8px 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  z-index: 100;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+}
+.grid .skip-link:focus {
+  inset-inline-start: 8px;
+  top: 8px;
+}
+
 /* ── Layout ── */
 .grid .container {
   max-width: 1120px;
   margin-inline: auto;
   padding-inline: 24px;
+}
+
+/* ── Nav ── */
+.grid .nav {
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+  background: rgba(250,250,250,0.92);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.grid .nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.grid .nav-brand {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--fg);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+.grid .nav-brand span {
+  color: var(--accent);
+}
+.grid .nav-links {
+  display: flex;
+  gap: 8px;
+  list-style: none;
+}
+.grid .nav-links a {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s, background-color 0.15s;
+}
+.grid .nav-links a:hover {
+  color: var(--fg);
+  background: var(--border-light);
+}
+.grid .nav-links a[aria-current="page"] {
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+.grid .nav-links a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 /* ── Breadcrumb ── */
@@ -73,6 +152,11 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   padding: 32px 0 64px;
+}
+.grid.heyiam-project .bento,
+.grid.heyiam-session .bento {
+  padding-bottom: 64px;
+  padding-top: 0;
 }
 
 .grid .bento-cell {
@@ -114,6 +198,9 @@
 .grid .bento-cell:nth-child(10) { animation-delay: 0.54s; }
 .grid .bento-cell:nth-child(11) { animation-delay: 0.60s; }
 .grid .bento-cell:nth-child(12) { animation-delay: 0.66s; }
+
+/* Session stagger (mockup uses 0.06s for child 2&3 shared) */
+.grid.heyiam-session .bento-cell:nth-child(3) { animation-delay: 0.06s; }
 
 /* ── Cell heading utility ── */
 .grid .cell-heading {
@@ -280,6 +367,28 @@
   color: var(--accent);
 }
 
+/* Project stat overrides */
+.grid.heyiam-project .cell-stat {
+  min-height: 110px;
+}
+.grid.heyiam-project .stat-number {
+  font-size: 28px;
+}
+.grid.heyiam-project .stat-number .stat-unit {
+  font-size: 14px;
+}
+
+/* Session stat overrides */
+.grid.heyiam-session .cell-stat {
+  min-height: 100px;
+}
+.grid.heyiam-session .stat-number {
+  font-size: 28px;
+}
+.grid.heyiam-session .stat-number .stat-unit {
+  font-size: 14px;
+}
+
 /* ── Source Mix Cell ── */
 .grid .cell-source {
   grid-column: span 2;
@@ -330,6 +439,10 @@
   font-weight: 500;
   width: 40px;
   text-align: end;
+}
+/* Portfolio source-pct is slightly narrower */
+.grid.heyiam-portfolio .source-pct {
+  width: 36px;
 }
 
 /* ── Project Card Cell ── */
@@ -405,6 +518,164 @@
   font-weight: 500;
   white-space: nowrap;
 }
+/* Project/session pages use slightly larger skill chips */
+.grid.heyiam-project .skill-chip,
+.grid.heyiam-session .skill-chip {
+  padding: 4px 12px;
+}
+
+/* ── Project source bar (portfolio card) ── */
+.grid .project-source-bar {
+  display: flex;
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  gap: 2px;
+}
+.grid .project-source-segment {
+  height: 100%;
+  border-radius: 2px;
+}
+
+/* ── Skills Aggregate Cell (portfolio) ── */
+.grid .cell-all-skills {
+  grid-column: span 2;
+}
+.grid .cell-all-skills h2 {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--fg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.grid .cell-all-skills h2 svg {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.grid .all-skills-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ── Activity Heatmap Cell (portfolio) ── */
+.grid .cell-activity {
+  grid-column: span 2;
+}
+.grid .cell-activity h2 {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--fg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.grid .cell-activity h2 svg {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.grid .heatmap {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 4px;
+}
+.grid .heatmap-cell {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: var(--border-light);
+}
+.grid .heatmap-cell--l1 { background: #e0e7ff; }
+.grid .heatmap-cell--l2 { background: #c7d2fe; }
+.grid .heatmap-cell--l3 { background: #a5b4fc; }
+.grid .heatmap-cell--l4 { background: #6366f1; }
+.grid .heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  justify-content: flex-end;
+}
+.grid .heatmap-legend-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-faint);
+}
+.grid .heatmap-legend-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+/* ── Recent Sessions Cell (portfolio) ── */
+.grid .cell-recent {
+  grid-column: span 4;
+}
+.grid .cell-recent h2 {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--fg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.grid .cell-recent h2 svg {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.grid .recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.grid .recent-row {
+  display: grid;
+  grid-template-columns: 1fr 120px 60px 60px;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 13px;
+}
+.grid .recent-row:last-child {
+  border-bottom: none;
+}
+.grid .recent-title {
+  color: var(--fg);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.grid .recent-project {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+}
+.grid .recent-date {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-faint);
+  text-align: end;
+}
+.grid .recent-duration {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-muted);
+  text-align: end;
+}
 
 /* ── Title Cell (3-wide) ── */
 .grid .cell-title {
@@ -446,6 +717,15 @@
   width: 14px;
   height: 14px;
   flex-shrink: 0;
+}
+
+/* Session title overrides */
+.grid.heyiam-session .cell-title {
+  gap: 10px;
+}
+.grid.heyiam-session .cell-title h1 {
+  font-size: 26px;
+  line-height: 1.3;
 }
 
 /* ── Screenshot Cell ── */
@@ -493,6 +773,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.grid .browser-viewport-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  opacity: 0.6;
 }
 
 /* ── Narrative Cell (3-wide) ── */
@@ -562,6 +848,12 @@
   font-weight: 600;
   color: var(--fg);
 }
+.grid .phase-dates {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-faint);
+  margin-top: 2px;
+}
 .grid .phase-desc {
   font-size: 13px;
   color: var(--fg-muted);
@@ -576,6 +868,11 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+/* Session skills cell is 1-wide */
+.grid.heyiam-session .cell-skills {
+  grid-column: span 1;
 }
 
 /* ── Decisions Cell (2-wide) ── */
@@ -620,6 +917,63 @@
 /* ── Timeline Chart Cell (4-wide) ── */
 .grid .cell-timeline {
   grid-column: span 4;
+}
+.grid .timeline-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.grid .timeline-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 60px 50px 50px;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 13px;
+}
+.grid .timeline-row:last-child {
+  border-bottom: none;
+}
+.grid .timeline-header {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-faint);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+.grid .timeline-num {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-faint);
+  text-align: center;
+}
+.grid .timeline-title {
+  color: var(--fg);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.grid .timeline-date {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-faint);
+  text-align: end;
+}
+.grid .timeline-duration {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-muted);
+  text-align: end;
+}
+.grid .timeline-loc {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-muted);
+  text-align: end;
 }
 
 /* ── Session Subtitle ── */
@@ -807,6 +1161,9 @@
   background: var(--border);
   margin-top: 4px;
 }
+.grid .beat-item:last-child .beat-line {
+  display: none;
+}
 .grid .beat-content {
   flex: 1;
   min-width: 0;
@@ -959,6 +1316,45 @@
   font-size: 12px;
   color: var(--fg-muted);
 }
+.grid .session-agents {
+  display: flex;
+  gap: 4px;
+}
+.grid .agent-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* ── Clickable session cards ── */
+.grid a.session-card {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.grid a.session-card:hover {
+  transform: translateY(-2px);
+}
+
+/* ── Footer ── */
+.grid .footer {
+  border-top: 1px solid var(--border);
+  padding: 24px 0;
+  text-align: center;
+}
+.grid .footer p {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-faint);
+}
+.grid .footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.grid .footer a:hover {
+  text-decoration: underline;
+}
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
@@ -982,7 +1378,10 @@
   .grid .cell-files,
   .grid .cell-beats,
   .grid .cell-qa,
-  .grid .cell-agents {
+  .grid .cell-agents,
+  .grid .cell-all-skills,
+  .grid .cell-activity,
+  .grid .cell-recent {
     grid-column: span 1;
     grid-row: span 1;
   }
@@ -992,7 +1391,20 @@
   .grid .cell-title h1 {
     font-size: 22px;
   }
+  .grid.heyiam-project .cell-title h1 {
+    font-size: 24px;
+  }
+  .grid.heyiam-session .cell-title h1 {
+    font-size: 20px;
+  }
   .grid .stat-number {
+    font-size: 28px;
+  }
+  .grid.heyiam-portfolio .stat-number {
+    font-size: 28px;
+  }
+  .grid.heyiam-project .stat-number,
+  .grid.heyiam-session .stat-number {
     font-size: 24px;
   }
   .grid .identity-top {
@@ -1004,5 +1416,26 @@
   }
   .grid .agents-grid {
     grid-template-columns: 1fr;
+  }
+  .grid .recent-row {
+    grid-template-columns: 1fr 60px;
+  }
+  .grid .recent-date,
+  .grid .recent-project {
+    display: none;
+  }
+  .grid .timeline-row {
+    grid-template-columns: 24px 1fr 50px;
+  }
+  .grid .timeline-date,
+  .grid .timeline-loc {
+    display: none;
+  }
+  .grid .nav-links {
+    gap: 4px;
+  }
+  .grid .nav-links a {
+    font-size: 13px;
+    padding: 6px 10px;
   }
 }

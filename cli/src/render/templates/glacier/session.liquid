@@ -3,7 +3,7 @@
   <div class="container">
 
     {%- comment -%} Breadcrumb {%- endcomment -%}
-    <div class="breadcrumb" aria-label="Breadcrumb">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="/{{ user.username }}">{{ user.username }}</a>
       {% if projectSlug %}
       <span class="breadcrumb-sep">/</span>
@@ -11,7 +11,7 @@
       {% endif %}
       <span class="breadcrumb-sep">/</span>
       <span aria-current="page">{{ session.title }}</span>
-    </div>
+    </nav>
 
     {%- comment -%} Session header {%- endcomment -%}
     <header class="session-header">
@@ -140,11 +140,11 @@
                 {% for agent in session.agentSummary.agents %}
                 <tr>
                   <td>{% if agent.color %}<span class="agent-role-dot" style="background:{{ agent.color }}"></span>{% endif %}{{ agent.role }}</td>
-                  <td>{{ agent.durationMinutes | formatDuration }}</td>
-                  <td>{{ agent.linesOfCode | localeNumber }}</td>
+                  <td>{{ agent.duration_minutes | formatDuration }}</td>
+                  <td>{{ agent.loc_changed | localeNumber }}</td>
                   <td class="agent-bar-cell">
                     {% if session.agentSummary.agents[0].linesOfCode > 0 %}
-                    {% assign barPct = agent.linesOfCode | times: 100 | divided_by: session.agentSummary.agents[0].linesOfCode %}
+                    {% assign barPct = agent.loc_changed | times: 100.0 | divided_by: session.agentSummary.agents[0].linesOfCode | round %}
                     <div class="agent-bar"><div class="agent-bar-fill" style="width:{{ barPct }}%"></div></div>
                     {% endif %}
                   </td>

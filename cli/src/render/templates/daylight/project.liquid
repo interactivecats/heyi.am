@@ -83,19 +83,27 @@
     </div>
     {% endif %}
 
-    {%- comment -%} Work Timeline Chart {%- endcomment -%}
-    {% if sessionsJson %}
+    {%- comment -%} Work Timeline Chart (CSS-only bars matching mockup) {%- endcomment -%}
+    {% if featuredSessions.size > 0 %}
     <section class="dl-chart-container dl-bounce dl-delay-2" aria-label="Work timeline">
       <h2 class="dl-chart-title">Work Timeline</h2>
-      <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-    </section>
-    {% endif %}
-
-    {%- comment -%} Growth Chart {%- endcomment -%}
-    {% if growthJson %}
-    <section class="dl-chart-container dl-bounce dl-delay-2" aria-label="Growth over time">
-      <h2 class="dl-chart-title">Lines of Code Over Time</h2>
-      <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+      {% assign maxLoc = 1 %}
+      {% for s in featuredSessions %}
+        {% if s.locChanged > maxLoc %}{% assign maxLoc = s.locChanged %}{% endif %}
+      {% endfor %}
+      <div class="dl-chart" role="img" aria-label="Bar chart showing lines of code across {{ featuredSessions.size }} sessions">
+        {% for s in featuredSessions %}
+        <div class="dl-chart-bar-group">
+          {% assign barHeight = s.locChanged | times: 100 | divided_by: maxLoc %}
+          <div class="dl-chart-bar dl-chart-bar-loc" style="height: {{ barHeight }}%" title="{{ s.locChanged }} LOC"></div>
+          <span class="dl-chart-label">S{{ forloop.index }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="dl-chart-legend">
+        <span><span class="dl-chart-legend-dot" style="background: var(--dl-accent)"></span>Lines of Code</span>
+        <span><span class="dl-chart-legend-dot" style="background: var(--dl-accent-green)"></span>Duration</span>
+      </div>
     </section>
     {% endif %}
 
@@ -107,6 +115,9 @@
         {% for item in arc %}
         <li class="dl-phase-item">
           <span class="dl-phase-name">{{ item.title }}</span>
+          {% if item.dates %}
+          <span class="dl-phase-dates">{{ item.dates }}</span>
+          {% endif %}
           <p class="dl-phase-desc">{{ item.description }}</p>
         </li>
         {% endfor %}
@@ -148,7 +159,7 @@
       {% endfor %}
       <div class="dl-source-breakdown">
         {% if totalSourceSessions > 0 %}
-        {% assign firstPct = sourceCounts[0].count | times: 1000 | divided_by: totalSourceSessions | divided_by: 10 %}
+        {% assign firstPct = sourceCounts[0].count | times: 100.0 | divided_by: totalSourceSessions | round %}
         <div class="dl-source-bar-large" role="img" aria-label="Source tool distribution">
           <div class="dl-source-fill-large" style="width: {{ firstPct }}%"></div>
         </div>
@@ -156,7 +167,7 @@
         <div class="dl-source-labels">
           {% for src in sourceCounts %}
           {% if totalSourceSessions > 0 %}
-          {% assign srcPct = src.count | times: 1000 | divided_by: totalSourceSessions | divided_by: 10 %}
+          {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
           <span>{{ src.tool }} {{ srcPct }}% ({{ src.count }} session{% if src.count != 1 %}s{% endif %})</span>
           {% else %}
           <span>{{ src.tool }} ({{ src.count }} session{% if src.count != 1 %}s{% endif %})</span>
@@ -172,14 +183,23 @@
     <section class="dl-sessions-section dl-bounce dl-delay-4" aria-label="Featured sessions">
       <h2 class="dl-section-heading">Sessions</h2>
       <div class="dl-session-grid">
+        {% assign agent_colors = '#0891b2,#059669,#7c3aed,#475569,#e11d48,#d97706' | split: ',' %}
         {% for s in featuredSessions %}
-        <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="dl-session-card">
+        <article class="dl-session-card">
           {% if s.skills.size > 0 %}
           <span class="dl-session-card-tag">{{ s.skills | first }}</span>
           {% endif %}
-          <h3 class="dl-session-card-title">{{ s.title }}</h3>
+          <h3 class="dl-session-card-title"><a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a></h3>
           <p class="dl-session-card-meta">{{ s.durationMinutes | formatDuration }} &middot; {{ s.locChanged | localeNumber }} LOC{% if s.agentSummary %} &middot; {{ s.agentSummary.agents.size }} agents{% endif %}</p>
-        </a>
+          {% if s.agentSummary %}
+          <div class="dl-session-card-agents" aria-label="{{ s.agentSummary.agents.size }} agents used">
+            {% for agent in s.agentSummary.agents %}
+            {% assign colorIdx = forloop.index0 | modulo: 6 %}
+            <span class="dl-agent-dot" style="background: {{ agent_colors[colorIdx] }}" title="{{ agent.role }}"></span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </article>
         {% endfor %}
       </div>
     </section>

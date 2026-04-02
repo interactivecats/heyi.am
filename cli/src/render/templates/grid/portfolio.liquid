@@ -122,7 +122,35 @@
         </div>
       </section>
 
-      {%- comment -%} Cell 6: Project Cards (2-wide each) {%- endcomment -%}
+      {%- comment -%} Cell 6: Source Mix (2-wide) {%- endcomment -%}
+      {% if sourceCounts.size > 0 %}
+      <section class="bento-cell cell-source" aria-label="Source breakdown">
+        <h2>Source Mix</h2>
+        <div class="source-bars">
+          {% assign totalSourceSessions = 0 %}
+          {% for src in sourceCounts %}
+            {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
+          {% endfor %}
+          {% for src in sourceCounts %}
+          <div class="source-item">
+            <span class="source-name">{{ src.tool }}</span>
+            <div class="source-bar-track">
+              {% if totalSourceSessions > 0 %}
+              {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
+              <div class="source-bar-fill{% unless forloop.first %} source-bar-fill--secondary{% endunless %}" style="width: {{ srcPct }}%" role="progressbar" aria-valuenow="{{ srcPct }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ src.tool }} usage"></div>
+              {% endif %}
+            </div>
+            {% if totalSourceSessions > 0 %}
+            {% assign srcPctDisplay = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
+            <span class="source-pct">{{ srcPctDisplay }}%</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Cell 7: Project Cards (2-wide each) {%- endcomment -%}
       {% for p in projects %}
       <a href="/{{ user.username }}/{{ p.slug }}" class="bento-cell cell-project project-card" aria-label="View {{ p.title }} project">
         <div class="project-header">
@@ -144,8 +172,57 @@
           {% endfor %}
         </div>
         {% endif %}
+        {% if p.sourceCounts.size > 0 %}
+        {% assign pTotalSrc = 0 %}
+        {% for src in p.sourceCounts %}
+          {% assign pTotalSrc = pTotalSrc | plus: src.count %}
+        {% endfor %}
+        {% if pTotalSrc > 0 %}
+        <div class="project-source-bar" aria-label="Source breakdown">
+          {% for src in p.sourceCounts %}
+          {% assign pSrcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round: 1 %}
+          <div class="project-source-segment" style="width: {{ pSrcPct }}%; background: var(--accent{% unless forloop.first %}-light{% endunless %});"></div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endif %}
       </a>
       {% endfor %}
+
+      {%- comment -%} Cell: All Skills (2-wide) {%- endcomment -%}
+      {% if allSkills.size > 0 %}
+      <section class="bento-cell cell-all-skills" aria-label="All skills across projects">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Skills
+        </h2>
+        <div class="all-skills-grid">
+          {% for skill in allSkills %}
+          <span class="skill-chip">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Cell: Recent Sessions (4-wide) {%- endcomment -%}
+      {% if recentSessions.size > 0 %}
+      <section class="bento-cell cell-recent" aria-label="Recent sessions">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Recent Sessions
+        </h2>
+        <div class="recent-list" role="table" aria-label="Recent sessions list">
+          {% for rs in recentSessions %}
+          <div class="recent-row" role="row">
+            <span class="recent-title" role="cell">{{ rs.title }}</span>
+            <span class="recent-project" role="cell">{{ rs.projectTitle }}</span>
+            <span class="recent-date" role="cell">{% if rs.recordedAt %}{{ rs.recordedAt | formatDate: "short" }}{% endif %}</span>
+            <span class="recent-duration" role="cell">{{ rs.durationMinutes }}m</span>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
 
     </div>
   </div>

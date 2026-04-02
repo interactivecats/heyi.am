@@ -51,6 +51,7 @@
 }
 
 .ember a { color: var(--accent); text-decoration: none; }
+.ember a:visited { color: var(--accent); }
 .ember a:hover { text-decoration: underline; }
 
 /* ── Layout ── */
@@ -67,6 +68,9 @@
   transition: opacity var(--dur-section) var(--ease-out),
               transform var(--dur-section) var(--ease-out);
   margin-bottom: 2rem;
+}
+.ember.heyiam-project .ember-section {
+  margin-bottom: 2.5rem;
 }
 .ember .ember-section.visible {
   opacity: 1;
@@ -87,6 +91,9 @@
 .ember .breadcrumb a:hover {
   color: var(--accent);
 }
+.ember .breadcrumb a:visited {
+  color: var(--text-muted);
+}
 .ember .breadcrumb .sep {
   margin: 0 6px;
   color: var(--text-faint);
@@ -95,14 +102,22 @@
 /* ── Section Headers ── */
 .ember .section-header {
   font-family: var(--font-display);
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   font-weight: 600;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   gap: 10px;
+}
+.ember.heyiam-project .section-header {
+  font-size: 1.125rem;
+  margin-bottom: 1.25rem;
+}
+.ember.heyiam-session .section-header {
+  font-size: 1.0625rem;
+  margin-bottom: 1rem;
 }
 .ember .section-header .ember-icon {
   width: 6px;
@@ -179,6 +194,9 @@
   color: var(--accent);
   text-decoration: none;
 }
+.ember .hero-contact a:visited {
+  color: var(--text-muted);
+}
 .ember .hero-contact svg {
   flex-shrink: 0;
 }
@@ -242,7 +260,7 @@
 /* ── Stats Grid (Project) ── */
 .ember .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(6, 1fr);
   gap: 1px;
   background: var(--border);
   border-radius: var(--radius);
@@ -288,6 +306,19 @@
   letter-spacing: 0.05em;
   margin-top: 4px;
   display: block;
+}
+/* Project page uses smaller stat cells */
+.ember.heyiam-project .stat-cell {
+  padding: 1rem 0.75rem;
+}
+.ember.heyiam-project .stat-value {
+  font-size: clamp(1rem, 2.5vw, 1.35rem);
+  text-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+  white-space: nowrap;
+}
+.ember.heyiam-project .stat-label {
+  font-size: 10px;
+  margin-top: 2px;
 }
 
 /* ── Leverage ── */
@@ -357,6 +388,9 @@
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+.ember .project-card:visited {
+  color: inherit;
+}
 .ember .project-card-header {
   display: flex;
   align-items: flex-start;
@@ -401,6 +435,33 @@
   align-items: center;
   gap: 4px;
 }
+/* Portfolio card-level source bar */
+.ember .project-card .source-bar {
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  display: flex;
+  margin-top: 1rem;
+  background: var(--surface-high);
+}
+.ember .project-card .source-bar-segment {
+  height: 100%;
+  transition: width 0.6s var(--ease-out);
+}
+.ember .project-card .source-bar-segment.claude {
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+}
+.ember .project-card .source-bar-segment.cursor {
+  background: var(--text-muted);
+}
+.ember .project-card .source-legend {
+  display: flex;
+  gap: 1rem;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
 
 /* ── Skill Chips ── */
 .ember .skill-chip {
@@ -411,6 +472,10 @@
   background: var(--accent-dim);
   color: var(--accent);
   border: 1px solid var(--accent-border);
+}
+.ember.heyiam-project .skills-list .skill-chip {
+  font-size: 12px;
+  padding: 4px 10px;
 }
 
 /* ── Project Header ── */
@@ -452,6 +517,9 @@
   color: var(--accent);
   text-decoration: none;
 }
+.ember .project-links a:visited {
+  color: var(--text-secondary);
+}
 
 /* ── Screenshot ── */
 .ember .screenshot-frame {
@@ -490,6 +558,17 @@
   max-width: 300px;
 }
 
+.ember .screenshot-body {
+  height: 200px;
+  background: linear-gradient(135deg, rgba(249,115,22,0.08) 0%, rgba(239,68,68,0.05) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
 /* ── Narrative ── */
 .ember .narrative {
   background: var(--surface);
@@ -511,6 +590,54 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1.5rem;
+}
+.ember .chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 140px;
+  padding-bottom: 1rem;
+}
+.ember .chart-bar-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+}
+.ember .chart-bar {
+  width: 100%;
+  max-width: 48px;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, var(--accent), var(--accent-secondary));
+  transition: opacity 0.2s;
+  position: relative;
+}
+.ember .chart-bar:hover {
+  opacity: 0.85;
+}
+.ember .chart-bar-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  text-align: center;
+}
+.ember .chart-bar-value {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.ember .chart-bar:hover .chart-bar-value {
+  opacity: 1;
 }
 
 /* ── Phase Timeline ── */
@@ -550,6 +677,12 @@
   font-size: 0.9375rem;
   font-weight: 600;
   margin-bottom: 2px;
+}
+.ember .phase-dates {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
 }
 .ember .phase-desc {
   font-size: 0.875rem;
@@ -669,6 +802,9 @@
 .ember .session-card:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+.ember .session-card:visited {
+  color: inherit;
 }
 .ember .session-card-number {
   font-family: var(--font-mono);
@@ -1074,6 +1210,7 @@
   color: var(--text-muted);
 }
 .ember .footer a { color: var(--accent); }
+.ember .footer a:visited { color: var(--accent); }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
@@ -1113,10 +1250,13 @@
   .ember .session-meta {
     gap: 0.75rem;
   }
+  .ember .nav-links { gap: 16px; }
+  .ember .chart-bars { gap: 4px; }
 }
 
 @media (max-width: 480px) {
   .ember .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .ember .project-header h1 { font-size: 1.5rem; }
   .ember .ember-leverage__main {
     flex-direction: column;
     gap: 0.5rem;
@@ -1136,6 +1276,7 @@
   }
   .ember .tool-bar,
   .ember .agent-bar,
+  .ember .chart-bar,
   .ember .source-bar-segment {
     transition: none;
   }

@@ -164,6 +164,9 @@
             <span class="phase-number" aria-hidden="true">{{ item.phase }}</span>
             <div class="phase-content">
               <div class="phase-name">{{ item.title }}</div>
+              {% if item.dates %}
+              <div class="phase-dates">{{ item.dates }}</div>
+              {% endif %}
               <div class="phase-desc">{{ item.description }}</div>
             </div>
           </li>
@@ -221,12 +224,12 @@
             <span class="source-name">{{ src.tool }}</span>
             <div class="source-bar-track">
               {% if totalSourceSessions > 0 %}
-              {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+              {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round: 1 %}
               <div class="source-bar-fill{% unless forloop.first %} source-bar-fill--secondary{% endunless %}" style="width: {{ srcPct }}%"></div>
               {% endif %}
             </div>
             {% if totalSourceSessions > 0 %}
-            {% assign srcPctDisplay = src.count | times: 100 | divided_by: totalSourceSessions %}
+            {% assign srcPctDisplay = src.count | times: 100.0 | divided_by: totalSourceSessions | round: 1 %}
             <span class="source-pct">{{ srcPctDisplay }}%</span>
             {% endif %}
           </div>
@@ -235,25 +238,31 @@
       </section>
       {% endif %}
 
-      {%- comment -%} Work Timeline chart (4-wide) {%- endcomment -%}
-      {% if sessionsJson %}
+      {%- comment -%} Work Timeline table (4-wide) -- CSS-only, no JS charts {%- endcomment -%}
+      {% if featuredSessions.size > 0 %}
       <section class="bento-cell cell-timeline" aria-label="Work timeline">
         <h2 class="cell-heading">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
           Work Timeline
         </h2>
-        <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-      </section>
-      {% endif %}
-
-      {%- comment -%} Growth chart (4-wide) {%- endcomment -%}
-      {% if growthJson %}
-      <section class="bento-cell cell-timeline" aria-label="Growth over time">
-        <h2 class="cell-heading">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          Growth
-        </h2>
-        <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+        <div class="timeline-chart" role="table" aria-label="Session timeline">
+          <div class="timeline-row timeline-header" role="row">
+            <span role="columnheader">#</span>
+            <span role="columnheader">Session</span>
+            <span role="columnheader" style="text-align:end">Date</span>
+            <span role="columnheader" style="text-align:end">Time</span>
+            <span role="columnheader" style="text-align:end">LOC</span>
+          </div>
+          {% for s in featuredSessions %}
+          <div class="timeline-row" role="row">
+            <span class="timeline-num" role="cell">{{ forloop.index }}</span>
+            <span class="timeline-title" role="cell">{{ s.title }}</span>
+            <span class="timeline-date" role="cell">{% if s.recordedAt %}{{ s.recordedAt | formatDate: "short" }}{% endif %}</span>
+            <span class="timeline-duration" role="cell">{{ s.durationMinutes }}m</span>
+            <span class="timeline-loc" role="cell">{{ s.locChanged | localeNumber }}</span>
+          </div>
+          {% endfor %}
+        </div>
       </section>
       {% endif %}
 
@@ -270,10 +279,21 @@
         <div class="session-meta">
           <span>{{ s.durationMinutes | formatDuration }}</span>
           <span>{{ s.locChanged | localeNumber }} LOC</span>
-          {% if s.filesChanged %}
+          {% if s.agentSummary and s.agentSummary.agents.size > 0 %}
+          <span>{{ s.agentSummary.agents.size }} agents</span>
+          {% elsif s.filesChanged %}
           <span>{{ s.filesChanged }} files</span>
           {% endif %}
         </div>
+        {% if s.agentSummary and s.agentSummary.agents.size > 0 %}
+        <div class="session-agents" aria-label="Agent roles used">
+          {% assign agent_colors = '#7c3aed,#0891b2,#059669,#475569,#e11d48,#d97706' | split: ',' %}
+          {% for agent in s.agentSummary.agents %}
+          {% assign colorIdx = forloop.index0 | modulo: 6 %}
+          <span class="agent-dot" style="background: {{ agent_colors[colorIdx] }};" title="{{ agent.role }}"></span>
+          {% endfor %}
+        </div>
+        {% endif %}
       </a>
       {% endfor %}
       {% endif %}

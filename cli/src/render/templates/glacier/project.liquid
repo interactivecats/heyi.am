@@ -2,11 +2,11 @@
 
   {%- comment -%} Breadcrumb {%- endcomment -%}
   <div class="container">
-    <div class="breadcrumb" aria-label="Breadcrumb">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="/{{ user.username }}">{{ user.username }}</a>
       <span class="breadcrumb-sep">/</span>
       <span aria-current="page">{{ project.slug }}</span>
-    </div>
+    </nav>
 
     {%- comment -%} Header {%- endcomment -%}
     <header class="project-header">
@@ -92,22 +92,40 @@
       {% endif %}
     </section>
 
-    {%- comment -%} Work timeline chart {%- endcomment -%}
-    {% if sessionsJson %}
+    {%- comment -%} Work timeline chart (CSS-only SVG bar chart) {%- endcomment -%}
+    {% if featuredSessions.size > 0 %}
     <section class="chart-section fade-up" aria-label="Work timeline">
       <h2 class="section-heading">Work Timeline</h2>
       <div class="chart-container frost">
-        <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-      </div>
-    </section>
-    {% endif %}
-
-    {%- comment -%} Growth chart {%- endcomment -%}
-    {% if growthJson %}
-    <section class="chart-section fade-up" aria-label="Growth over time">
-      <h2 class="section-heading">Growth</h2>
-      <div class="chart-container frost">
-        <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+        {% assign maxLoc = 1 %}
+        {% for s in featuredSessions %}
+          {% if s.locChanged > maxLoc %}{% assign maxLoc = s.locChanged %}{% endif %}
+        {% endfor %}
+        {% assign barCount = featuredSessions.size %}
+        {% assign barWidth = 80 %}
+        {% assign barGap = 100 %}
+        {% assign chartW = barCount | times: barGap | plus: 60 %}
+        {% assign chartH = 200 %}
+        <svg class="chart-svg" viewBox="0 0 {{ chartW }} {{ chartH }}" role="img" aria-label="Bar chart of sessions by lines of code">
+          <line x1="60" y1="20" x2="60" y2="160" class="chart-grid-line"/>
+          <line x1="60" y1="160" x2="{{ chartW | minus: 20 }}" y2="160" class="chart-grid-line"/>
+          <line x1="60" y1="100" x2="{{ chartW | minus: 20 }}" y2="100" class="chart-grid-line"/>
+          <line x1="60" y1="40" x2="{{ chartW | minus: 20 }}" y2="40" class="chart-grid-line"/>
+          <text x="50" y="164" class="chart-label" text-anchor="end">0</text>
+          {% assign halfMax = maxLoc | divided_by: 2 %}
+          <text x="50" y="104" class="chart-label" text-anchor="end">{{ halfMax }}</text>
+          <text x="50" y="44" class="chart-label" text-anchor="end">{{ maxLoc }}</text>
+          {% for s in featuredSessions %}
+            {% assign barX = forloop.index0 | times: barGap | plus: 80 %}
+            {% assign barH = s.locChanged | times: 140 | divided_by: maxLoc %}
+            {% assign barY = 160 | minus: barH %}
+            {% assign labelX = barX | plus: 40 %}
+            {% assign labelY = barY | minus: 7 %}
+            <rect x="{{ barX }}" y="{{ barY }}" width="{{ barWidth }}" height="{{ barH }}" class="chart-bar" aria-label="{{ s.title }}: {{ s.locChanged }} LOC"/>
+            <text x="{{ labelX }}" y="{{ labelY }}" class="chart-value" text-anchor="middle">{{ s.locChanged }}</text>
+            <text x="{{ labelX }}" y="180" class="chart-label" text-anchor="middle">{{ s.recordedAt | formatDateShort }}</text>
+          {% endfor %}
+        </svg>
       </div>
     </section>
     {% endif %}
@@ -122,6 +140,9 @@
           <span class="phase-number">{{ item.phase }}</span>
           <div class="phase-content">
             <div class="phase-name">{{ item.title }}</div>
+            {% if item.dates %}
+            <div class="phase-dates">{{ item.dates }}</div>
+            {% endif %}
             {% if item.description %}
             <div class="phase-desc">{{ item.description }}</div>
             {% endif %}
@@ -169,17 +190,62 @@
           {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
         {% endfor %}
         {% if totalSourceSessions > 0 %}
-        {% assign firstPct = sourceCounts[0].count | times: 100 | divided_by: totalSourceSessions %}
+        {% assign firstPct = sourceCounts[0].count | times: 100.0 | divided_by: totalSourceSessions | round %}
         <div class="source-bar" role="img" aria-label="Source mix">
           <div class="source-bar-fill" style="width: {{ firstPct }}%"></div>
         </div>
         <div class="source-legend">
           {% for src in sourceCounts %}
-          {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+          {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
           <span><span class="source-legend-dot" style="background: {% if forloop.first %}var(--accent){% else %}#e2e8f0{% endif %}"></span>{{ src.tool }} {{ srcPct }}% ({{ src.count }} session{% if src.count != 1 %}s{% endif %})</span>
           {% endfor %}
         </div>
         {% endif %}
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Sessions table {%- endcomment -%}
+    {% if featuredSessions.size > 0 %}
+    <section class="sessions-section fade-up" aria-label="All sessions">
+      <h2 class="section-heading">Sessions</h2>
+      <div class="sessions-table-wrap frost">
+        <table class="sessions-table">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Title</th>
+              <th scope="col">Date</th>
+              <th scope="col">Duration</th>
+              <th scope="col">LOC</th>
+              <th scope="col">Source</th>
+              <th scope="col">Agents</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in featuredSessions %}
+            <tr>
+              <td>{{ forloop.index }}</td>
+              <td><a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="session-title-link">{{ s.title }}</a></td>
+              <td>{{ s.recordedAt | formatDateShort }}</td>
+              <td>{{ s.durationMinutes | formatDuration }}</td>
+              <td>{{ s.locChanged | localeNumber }}</td>
+              <td>{% if s.sourceTool %}<span class="session-source-badge">{{ s.sourceTool }}</span>{% endif %}</td>
+              <td>
+                {% if s.agentSummary %}
+                <div class="agent-dots" aria-label="{{ s.agentSummary.agents.size }} agents">
+                  {% for agent in s.agentSummary.agents %}
+                  <span class="agent-dot" style="background:{{ agent.color }}" title="{{ agent.role }}"></span>
+                  {% endfor %}
+                </div>
+                {% else %}
+                <span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-muted)">--</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </section>
     {% endif %}

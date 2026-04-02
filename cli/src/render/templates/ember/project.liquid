@@ -101,22 +101,26 @@
   </section>
   {% endif %}
 
-  {%- comment -%} Work Timeline Chart {%- endcomment -%}
-  {% if sessionsJson %}
+  {%- comment -%} Work Timeline Chart (CSS-only bars) {%- endcomment -%}
+  {% if featuredSessions.size > 0 %}
   <section class="ember-section" aria-label="Session timeline">
     <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Work Timeline</h2>
     <div class="timeline-chart">
-      <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-    </div>
-  </section>
-  {% endif %}
-
-  {%- comment -%} Growth Chart {%- endcomment -%}
-  {% if growthJson %}
-  <section class="ember-section" aria-label="Growth over time">
-    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Growth</h2>
-    <div class="timeline-chart">
-      <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+      {% assign maxDur = 0 %}
+      {% for s in featuredSessions %}
+        {% if s.durationMinutes > maxDur %}{% assign maxDur = s.durationMinutes %}{% endif %}
+      {% endfor %}
+      <div class="chart-bars" role="img" aria-label="Bar chart of session durations for {{ project.title }}">
+        {% for s in featuredSessions %}
+        {% if maxDur > 0 %}{% assign barPct = s.durationMinutes | times: 100 | divided_by: maxDur %}{% else %}{% assign barPct = 0 %}{% endif %}
+        <div class="chart-bar-group">
+          <div class="chart-bar" style="height: {{ barPct }}%">
+            <span class="chart-bar-value">{{ s.durationMinutes }}m</span>
+          </div>
+          <span class="chart-bar-label">S{{ forloop.index }}</span>
+        </div>
+        {% endfor %}
+      </div>
     </div>
   </section>
   {% endif %}
@@ -130,6 +134,9 @@
       <div class="phase-item">
         <div class="phase-dot" aria-hidden="true"></div>
         <div class="phase-title">{{ item.title }}</div>
+        {% if item.dates %}
+        <div class="phase-dates">{{ item.dates }}</div>
+        {% endif %}
         <div class="phase-desc">{{ item.description }}</div>
       </div>
       {% endfor %}
@@ -174,13 +181,13 @@
         {% if totalSourceSessions > 0 %}
         <div class="source-bar">
           {% for src in sourceCounts %}
-          {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+          {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
           <div class="source-bar-segment{% if forloop.first %} claude{% else %} cursor{% endif %}" style="width: {{ srcPct }}%"></div>
           {% endfor %}
         </div>
         <div class="source-labels">
           {% for src in sourceCounts %}
-          {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+          {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
           <span><span class="source-legend-dot{% if forloop.first %} claude{% else %} cursor{% endif %}" aria-hidden="true"></span>{{ src.tool }} {{ srcPct }}% ({{ src.count }} session{% if src.count != 1 %}s{% endif %})</span>
           {% endfor %}
         </div>

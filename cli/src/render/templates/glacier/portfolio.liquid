@@ -93,9 +93,9 @@
     <h2 class="section-heading">Projects</h2>
     <div class="project-list">
       {% for p in projects %}
-      <a href="/{{ user.username }}/{{ p.slug }}" class="project-card frost fade-up">
+      <article class="project-card frost fade-up">
         <div class="project-card-header">
-          <span class="project-name">{{ p.title }}</span>
+          <a href="/{{ user.username }}/{{ p.slug }}" class="project-name">{{ p.title }}</a>
         </div>
         {% if p.narrative %}
         <p class="project-narrative">{{ p.narrative }}</p>
@@ -112,7 +112,23 @@
           <span>{{ p.totalDurationMinutes | formatDuration }}</span>
           <span>{{ p.totalLoc | localeNumber }} LOC</span>
         </div>
-      </a>
+        {% if p.sourceCounts.size > 0 %}
+        {% assign pTotalSrc = 0 %}
+        {% for src in p.sourceCounts %}{% assign pTotalSrc = pTotalSrc | plus: src.count %}{% endfor %}
+        {% if pTotalSrc > 0 %}
+        {% assign pFirstPct = p.sourceCounts[0].count | times: 100.0 | divided_by: pTotalSrc | round %}
+        <div class="source-bar" role="img" aria-label="Source mix">
+          <div class="source-bar-fill" style="width: {{ pFirstPct }}%"></div>
+        </div>
+        <div class="source-legend">
+          {% for src in p.sourceCounts %}
+          {% assign pSrcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+          <span><span class="source-legend-dot" style="background: {% if forloop.first %}var(--accent){% else %}#e2e8f0{% endif %}"></span>{{ src.tool }} {{ pSrcPct }}%</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endif %}
+      </article>
       {% endfor %}
     </div>
   </section>

@@ -3,7 +3,7 @@
   <div class="dl-container">
 
     {%- comment -%} Breadcrumb {%- endcomment -%}
-    <div class="dl-breadcrumb" aria-label="Breadcrumb">
+    <nav class="dl-breadcrumb" aria-label="Breadcrumb">
       <a href="/{{ user.username }}">{{ user.username }}</a>
       <span aria-hidden="true">/</span>
       {% if projectSlug %}
@@ -11,7 +11,7 @@
       <span aria-hidden="true">/</span>
       {% endif %}
       <span class="dl-breadcrumb-current" aria-current="page">{{ session.title }}</span>
-    </div>
+    </nav>
 
     {%- comment -%} Session Header {%- endcomment -%}
     <header class="dl-session-header dl-bounce">

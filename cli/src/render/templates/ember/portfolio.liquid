@@ -111,6 +111,24 @@
           <span>{{ p.totalDurationMinutes | formatDuration }}</span>
           <span>{{ p.totalLoc | localeNumber }} LOC</span>
         </div>
+        {% if p.sourceCounts.size > 0 %}
+        {% assign pTotalSrc = 0 %}
+        {% for src in p.sourceCounts %}{% assign pTotalSrc = pTotalSrc | plus: src.count %}{% endfor %}
+        {% if pTotalSrc > 0 %}
+        <div class="source-bar" role="img" aria-label="Source breakdown">
+          {% for src in p.sourceCounts %}
+          {% assign pSrcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+          <div class="source-bar-segment{% if forloop.first %} claude{% else %} cursor{% endif %}" style="width: {{ pSrcPct }}%"></div>
+          {% endfor %}
+        </div>
+        <div class="source-legend">
+          {% for src in p.sourceCounts %}
+          {% assign pSrcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+          <span><span class="source-legend-dot{% if forloop.first %} claude{% else %} cursor{% endif %}" aria-hidden="true"></span>{{ src.tool }} {{ pSrcPct }}%</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endif %}
       </a>
       {% endfor %}
     </div>

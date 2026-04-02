@@ -94,8 +94,10 @@
       <h2 class="dl-section-heading">Projects</h2>
       <div class="dl-projects">
         {% for p in projects %}
-        <a href="/{{ user.username }}/{{ p.slug }}" class="dl-project-card dl-bounce dl-delay-2">
-          <h3 class="dl-project-title">{{ p.title }}</h3>
+        <article class="dl-project-card dl-bounce dl-delay-2">
+          <h3 class="dl-project-title">
+            <a href="/{{ user.username }}/{{ p.slug }}">{{ p.title }}</a>
+          </h3>
           {% if p.narrative %}
           <p class="dl-project-narrative">{{ p.narrative }}</p>
           {% endif %}
@@ -109,9 +111,65 @@
             {% endfor %}
           </div>
           {% endif %}
-        </a>
+          {% if p.sourceCounts.size > 0 %}
+          {% assign pTotalSrc = 0 %}
+          {% for src in p.sourceCounts %}{% assign pTotalSrc = pTotalSrc | plus: src.count %}{% endfor %}
+          {% if pTotalSrc > 0 %}
+          <div class="dl-project-source">
+            {% assign pFirstPct = p.sourceCounts[0].count | times: 100.0 | divided_by: pTotalSrc | round %}
+            <span>{{ p.sourceCounts[0].tool }} {{ pFirstPct }}%</span>
+            <div class="dl-source-bar" role="img" aria-label="Source tool distribution">
+              <div class="dl-source-fill" style="width: {{ pFirstPct }}%"></div>
+            </div>
+            {% if p.sourceCounts.size > 1 %}
+            {% assign pSecondPct = p.sourceCounts[1].count | times: 100.0 | divided_by: pTotalSrc | round %}
+            <span>{{ p.sourceCounts[1].tool }} {{ pSecondPct }}%</span>
+            {% endif %}
+          </div>
+          {% endif %}
+          {% endif %}
+        </article>
         {% endfor %}
       </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} All Skills {%- endcomment -%}
+    {% if allSkills.size > 0 %}
+    <section class="dl-all-skills-section dl-bounce dl-delay-3" aria-label="All skills across projects">
+      <h2 class="dl-section-heading">Skills</h2>
+      <div class="dl-all-skills">
+        {% for skill in allSkills %}
+        <span class="dl-skill-chip-lg">{{ skill.name }} <span class="dl-skill-count">{{ skill.count }} project{% if skill.count != 1 %}s{% endif %}</span></span>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Source Overview {%- endcomment -%}
+    {% if sourceCounts.size > 0 %}
+    <section class="dl-source-overview dl-bounce dl-delay-4" aria-label="Source tool breakdown">
+      <h2 class="dl-section-heading">Source Breakdown</h2>
+      {% assign totalSourceSessions = 0 %}
+      {% for src in sourceCounts %}{% assign totalSourceSessions = totalSourceSessions | plus: src.count %}{% endfor %}
+      <div class="dl-source-cards">
+        {% for src in sourceCounts %}
+        <div class="dl-source-card">
+          <div class="dl-source-card-name">{{ src.tool }}</div>
+          {% if totalSourceSessions > 0 %}
+          {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
+          <div class="dl-source-card-pct">{{ srcPct }}%</div>
+          {% endif %}
+          <div class="dl-source-card-sessions">{{ src.count }} session{% if src.count != 1 %}s{% endif %}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% if totalSourceSessions > 0 %}
+      {% assign firstSrcPct = sourceCounts[0].count | times: 100.0 | divided_by: totalSourceSessions | round %}
+      <div class="dl-source-bar-overview" role="img" aria-label="Source tool distribution">
+        <div class="dl-source-fill-overview" style="width: {{ firstSrcPct }}%"></div>
+      </div>
+      {% endif %}
     </section>
     {% endif %}
 
