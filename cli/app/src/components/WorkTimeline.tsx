@@ -5,6 +5,8 @@ export interface WorkTimelineProps {
   sessions: Session[]
   onSessionClick?: (session: Session) => void
   maxHeight?: number
+  accentColor?: string
+  isDark?: boolean
 }
 
 // ── Colors ───────────────────────────────────────────────────────
@@ -352,7 +354,9 @@ function bezierForkJoin(forkX: number, joinX: number, cY: number, laneY: number)
 
 const DEFAULT_MAX_CONCURRENT = 8
 
-function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CONCURRENT): Layout {
+function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CONCURRENT, mainColorOverride?: string, mutedColorOverride?: string): Layout {
+  const mc = mainColorOverride ?? MAIN_COLOR
+  const mutedC = mutedColorOverride ?? TEXT_MUTED
   const nodes: LNode[] = []
   const tracks: LTrack[] = []
   const sessionRanges: SessionRange[] = []
@@ -367,7 +371,7 @@ function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CON
   for (const seg of segments) {
     if (seg.type === 'gap') {
       const gapW = 72
-      tracks.push({ path: `M ${cx} ${cY} L ${cx + gapW} ${cY}`, color: TEXT_MUTED, width: 1.5, dashed: true })
+      tracks.push({ path: `M ${cx} ${cY} L ${cx + gapW} ${cY}`, color: mutedC, width: 1.5, dashed: true })
       nodes.push({ kind: 'gap', pos: { x: cx, y: cY + 16 }, label: formatGap(seg.durationMs), durationMs: seg.durationMs })
       bound(cY - 8, 40)
       cx += gapW + SEG_GAP
@@ -407,11 +411,11 @@ function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CON
 
         const titleY = topLaneY - 32
         const flatStartX = forkX + CURVE_CP * 2
-        nodes.push({ kind: 'label', pos: { x: flatStartX + 8, y: titleY }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip })
+        nodes.push({ kind: 'label', pos: { x: flatStartX + 8, y: titleY }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: mc, above: true, session: s, tooltip })
         bound(titleY - 4, 28)
 
-        nodes.push({ kind: 'dot', pos: { x: forkX, y: cY }, color: MAIN_COLOR, size: 'lg', tooltip })
-        tracks.push({ path: `M ${forkX} ${cY} L ${joinX} ${cY}`, color: MAIN_COLOR, width: 1.5 })
+        nodes.push({ kind: 'dot', pos: { x: forkX, y: cY }, color: mc, size: 'lg', tooltip })
+        tracks.push({ path: `M ${forkX} ${cY} L ${joinX} ${cY}`, color: mc, width: 1.5 })
 
         for (const wave of waves) {
           const n = wave.children.length
@@ -432,15 +436,15 @@ function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CON
           })
         }
 
-        nodes.push({ kind: 'dot', pos: { x: joinX, y: cY }, color: MAIN_COLOR, size: 'lg', tooltip })
+        nodes.push({ kind: 'dot', pos: { x: joinX, y: cY }, color: mc, size: 'lg', tooltip })
         sessionRanges.push({ session: s, xStart: forkX, xEnd: joinX })
         cx = joinX + SEG_GAP
       } else {
-        nodes.push({ kind: 'label', pos: { x: cx + 14, y: cY - 28 }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip })
+        nodes.push({ kind: 'label', pos: { x: cx + 14, y: cY - 28 }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: mc, above: true, session: s, tooltip })
         bound(cY - 32, 28)
-        nodes.push({ kind: 'dot', pos: { x: cx, y: cY }, color: MAIN_COLOR, size: 'sm', tooltip })
-        nodes.push({ kind: 'dot', pos: { x: cx + w, y: cY }, color: MAIN_COLOR, size: 'sm', tooltip })
-        tracks.push({ path: `M ${cx} ${cY} L ${cx + w} ${cY}`, color: MAIN_COLOR, width: 3 })
+        nodes.push({ kind: 'dot', pos: { x: cx, y: cY }, color: mc, size: 'sm', tooltip })
+        nodes.push({ kind: 'dot', pos: { x: cx + w, y: cY }, color: mc, size: 'sm', tooltip })
+        tracks.push({ path: `M ${cx} ${cY} L ${cx + w} ${cY}`, color: mc, width: 3 })
         sessionRanges.push({ session: s, xStart: cx, xEnd: cx + w })
         cx += w + SEG_GAP
       }
@@ -497,13 +501,13 @@ function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CON
           const titleY = topAgentY - 32
           const hasRoom = laneLabelRight[lane] === 0 || sXStart >= laneLabelRight[lane]
           if (hasRoom) {
-            nodes.push({ kind: 'label', pos: { x: sXStart + 8, y: titleY }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip })
+            nodes.push({ kind: 'label', pos: { x: sXStart + 8, y: titleY }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: mc, above: true, session: s, tooltip })
             laneLabelRight[lane] = sXStart + MIN_LABEL_GAP
           }
           bound(titleY - 4, 28)
 
-          nodes.push({ kind: 'dot', pos: { x: sXStart, y: trackY }, color: MAIN_COLOR, size: 'lg', tooltip })
-          tracks.push({ path: `M ${sXStart} ${trackY} L ${sXEnd} ${trackY}`, color: MAIN_COLOR, width: 1.5 })
+          nodes.push({ kind: 'dot', pos: { x: sXStart, y: trackY }, color: mc, size: 'lg', tooltip })
+          tracks.push({ path: `M ${sXStart} ${trackY} L ${sXEnd} ${trackY}`, color: mc, width: 1.5 })
 
           const agentOpacity = agentLaneCount > 15 ? 0.4 : agentLaneCount > 8 ? 0.6 : 0.8
           const agentWidth = agentLaneCount > 15 ? 1 : 1.5
@@ -522,19 +526,19 @@ function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CON
             bound(agentY - 2, 4)
           })
 
-          nodes.push({ kind: 'dot', pos: { x: sXEnd, y: trackY }, color: MAIN_COLOR, size: 'lg', tooltip })
+          nodes.push({ kind: 'dot', pos: { x: sXEnd, y: trackY }, color: mc, size: 'lg', tooltip })
           sessionRanges.push({ session: s, xStart: sXStart, xEnd: sXEnd })
         } else {
           const hasRoom = laneLabelRight[lane] === 0 || sXStart >= laneLabelRight[lane]
           if (hasRoom) {
-            nodes.push({ kind: 'label', pos: { x: sXStart + 8, y: trackY - 28 }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip })
+            nodes.push({ kind: 'label', pos: { x: sXStart + 8, y: trackY - 28 }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: mc, above: true, session: s, tooltip })
             laneLabelRight[lane] = sXStart + MIN_LABEL_GAP
           }
           bound(trackY - 32, 28)
 
-          nodes.push({ kind: 'dot', pos: { x: sXStart, y: trackY }, color: MAIN_COLOR, size: 'sm', tooltip })
-          nodes.push({ kind: 'dot', pos: { x: sXEnd, y: trackY }, color: MAIN_COLOR, size: 'sm', tooltip })
-          tracks.push({ path: `M ${sXStart} ${trackY} L ${sXEnd} ${trackY}`, color: MAIN_COLOR, width: 3 })
+          nodes.push({ kind: 'dot', pos: { x: sXStart, y: trackY }, color: mc, size: 'sm', tooltip })
+          nodes.push({ kind: 'dot', pos: { x: sXEnd, y: trackY }, color: mc, size: 'sm', tooltip })
+          tracks.push({ path: `M ${sXStart} ${trackY} L ${sXEnd} ${trackY}`, color: mc, width: 3 })
           sessionRanges.push({ session: s, xStart: sXStart, xEnd: sXEnd })
         }
 
@@ -543,7 +547,7 @@ function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CON
 
       if (hidden > 0) {
         const overflowY = cY + laneCount * dynamicTrackGap
-        nodes.push({ kind: 'label', pos: { x: segXStart + 8, y: overflowY }, title: `+${hidden} more sessions`, color: TEXT_MUTED, above: false })
+        nodes.push({ kind: 'label', pos: { x: segXStart + 8, y: overflowY }, title: `+${hidden} more sessions`, color: mutedC, above: false })
         bound(overflowY, 16)
       }
 
@@ -586,7 +590,7 @@ function findFocusedEntry(scrollLeft: number, viewportW: number, entries: Legend
 
 // ── Legend Component ─────────────────────────────────────────────
 
-function Legend({ entry }: { entry: LegendEntry | null }) {
+function Legend({ entry, textSecondaryColor, textMutedColor }: { entry: LegendEntry | null; textSecondaryColor: string; textMutedColor: string }) {
   if (!entry || entry.agents.length === 0) return null
 
   const visible = entry.agents.slice(0, MAX_LEGEND_ROLES)
@@ -604,7 +608,7 @@ function Legend({ entry }: { entry: LegendEntry | null }) {
           LEGENDARY AGENTIC USE — {entry.totalAgents} agents:
         </span>
       ) : (
-        <span style={{ fontSize: 10, color: TEXT_SECONDARY, fontWeight: 600, flexShrink: 0 }}>
+        <span style={{ fontSize: 10, color: textSecondaryColor, fontWeight: 600, flexShrink: 0 }}>
           {entry.totalAgents} agents:
         </span>
       )}
@@ -618,12 +622,12 @@ function Legend({ entry }: { entry: LegendEntry | null }) {
             <span style={{ fontWeight: 600, color: a.color, letterSpacing: '0.03em' }}>
               {a.role.toUpperCase()}
             </span>
-            {a.count > 1 && <span style={{ color: TEXT_MUTED }}>&times;{a.count}</span>}
-            <span style={{ color: TEXT_MUTED }}>{a.duration}</span>
+            {a.count > 1 && <span style={{ color: textMutedColor }}>&times;{a.count}</span>}
+            <span style={{ color: textMutedColor }}>{a.duration}</span>
           </div>
         ))}
         {hiddenRoles > 0 && (
-          <span style={{ color: TEXT_MUTED, fontStyle: 'italic' }}>+{hiddenRoles} more</span>
+          <span style={{ color: textMutedColor, fontStyle: 'italic' }}>+{hiddenRoles} more</span>
         )}
       </div>
     </div>
@@ -656,14 +660,19 @@ function Tooltip({ data, pos }: { data: TooltipData; pos: { x: number; y: number
 
 // ── Main Component ───────────────────────────────────────────────
 
-export function WorkTimeline({ sessions, onSessionClick, maxHeight }: WorkTimelineProps) {
+export function WorkTimeline({ sessions, onSessionClick, maxHeight, accentColor, isDark }: WorkTimelineProps) {
+  // Theme-aware colors — override defaults when template provides accent/dark mode
+  const mainColor = accentColor ?? (isDark ? '#f97316' : MAIN_COLOR)
+  const threadColor = isDark ? 'rgba(255,255,255,0.15)' : THREAD_COLOR
+  const textSecondary = isDark ? 'rgba(255,255,255,0.65)' : TEXT_SECONDARY
+  const textMuted = isDark ? 'rgba(255,255,255,0.4)' : TEXT_MUTED
   const segments = useMemo(() => computeSegments(sessions), [sessions])
   const [expanded, setExpanded] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
   const [playing, setPlaying] = useState(false)
   const playRef = useRef<number | null>(null)
   const concurrentLimit = expanded ? 999 : DEFAULT_MAX_CONCURRENT
-  const L = useMemo(() => layoutSegments(segments, concurrentLimit), [segments, concurrentLimit])
+  const L = useMemo(() => layoutSegments(segments, concurrentLimit, mainColor, textMuted), [segments, concurrentLimit, mainColor, textMuted])
   const legendEntries = useMemo(() => buildLegendEntries(segments, L.sessionRanges), [segments, L.sessionRanges])
 
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -723,7 +732,7 @@ export function WorkTimeline({ sessions, onSessionClick, maxHeight }: WorkTimeli
   if (!sessions.length) {
     return (
       <div data-testid="work-timeline-empty">
-        <p style={{ fontFamily: FONT, fontSize: '0.8125rem', color: TEXT_SECONDARY }}>No sessions to display.</p>
+        <p style={{ fontFamily: FONT, fontSize: '0.8125rem', color: textSecondary }}>No sessions to display.</p>
       </div>
     )
   }
@@ -732,9 +741,9 @@ export function WorkTimeline({ sessions, onSessionClick, maxHeight }: WorkTimeli
 
   const btnStyle = (active?: boolean): React.CSSProperties => ({
     padding: '3px 10px', fontSize: 10, fontWeight: 600,
-    border: `1px solid ${THREAD_COLOR}`, borderRadius: 4,
-    background: active ? MAIN_COLOR : '#fff',
-    color: active ? '#fff' : MAIN_COLOR,
+    border: `1px solid ${threadColor}`, borderRadius: 4,
+    background: active ? mainColor : (isDark ? 'rgba(255,255,255,0.08)' : '#fff'),
+    color: active ? '#fff' : mainColor,
     cursor: 'pointer', fontFamily: FONT, letterSpacing: '0.03em',
     flexShrink: 0,
   })
@@ -743,7 +752,7 @@ export function WorkTimeline({ sessions, onSessionClick, maxHeight }: WorkTimeli
     <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          {hasAgents && <Legend entry={focusedEntry} />}
+          {hasAgents && <Legend entry={focusedEntry} textSecondaryColor={textSecondary} textMutedColor={textMuted} />}
         </div>
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
           {L.totalW > 600 && (
@@ -759,7 +768,7 @@ export function WorkTimeline({ sessions, onSessionClick, maxHeight }: WorkTimeli
         <div style={{ position: 'relative', width: L.totalW, height: L.totalH, fontFamily: FONT }}>
           <svg style={{ position: 'absolute', inset: 0, width: L.totalW, height: L.totalH, pointerEvents: 'none' }}>
             <line x1={L.threadStart} y1={L.centerY} x2={L.threadEnd} y2={L.centerY}
-              stroke={THREAD_COLOR} strokeWidth={1.5} />
+              stroke={threadColor} strokeWidth={1.5} />
             {L.tracks.map((t, i) => (
               <path key={`t-${i}`} d={t.path} fill="none"
                 stroke={t.color} strokeWidth={t.width} opacity={t.opacity ?? 0.8}
@@ -783,9 +792,9 @@ export function WorkTimeline({ sessions, onSessionClick, maxHeight }: WorkTimeli
                   <span style={{ fontSize: 12, fontWeight: 700, color: node.color, letterSpacing: '0.01em', display: 'block' }}>
                     {node.title}
                   </span>
-                  <span style={{ fontSize: 10, color: TEXT_MUTED, display: 'flex', gap: 8, marginTop: 1 }}>
+                  <span style={{ fontSize: 10, color: textMuted, display: 'flex', gap: 8, marginTop: 1 }}>
                     {node.sub && <span>{node.sub}</span>}
-                    {node.timestamp && <span style={{ color: TEXT_SECONDARY }}>{node.timestamp}</span>}
+                    {node.timestamp && <span style={{ color: textSecondary }}>{node.timestamp}</span>}
                   </span>
                 </div>
               )
@@ -814,7 +823,7 @@ export function WorkTimeline({ sessions, onSessionClick, maxHeight }: WorkTimeli
                   position: 'absolute', left: node.pos.x, top: node.pos.y,
                   width: 72, height: 22,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 10, color: TEXT_MUTED, letterSpacing: '0.04em',
+                  fontSize: 10, color: textMuted, letterSpacing: '0.04em',
                 }}>
                   {node.label}
                 </div>
@@ -833,15 +842,15 @@ export function WorkTimeline({ sessions, onSessionClick, maxHeight }: WorkTimeli
     return (
       <div style={{
         position: 'fixed', inset: 0, zIndex: 9998,
-        background: '#f8f9fb',
+        background: isDark ? '#111' : '#f8f9fb',
         display: 'flex', flexDirection: 'column',
         padding: '16px 24px',
       }}>
         <button onClick={() => setFullscreen(false)} style={{
           position: 'absolute', top: 16, right: 24, zIndex: 1,
           padding: '6px 14px', fontSize: 12, fontWeight: 700,
-          border: `1px solid ${THREAD_COLOR}`, borderRadius: 4,
-          background: '#fff', color: MAIN_COLOR,
+          border: `1px solid ${threadColor}`, borderRadius: 4,
+          background: isDark ? 'rgba(255,255,255,0.08)' : '#fff', color: mainColor,
           cursor: 'pointer', fontFamily: FONT,
         }}>
           Close
@@ -863,14 +872,14 @@ export function WorkTimeline({ sessions, onSessionClick, maxHeight }: WorkTimeli
       {needsClip && (
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, height: 64,
-          background: 'linear-gradient(transparent, #f8f9fb)',
+          background: isDark ? 'linear-gradient(transparent, #111)' : 'linear-gradient(transparent, #f8f9fb)',
           display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
           paddingBottom: 10,
         }}>
           <button onClick={() => { setExpanded(true); setFullscreen(true) }} style={{
             padding: '5px 16px', fontSize: 11, fontWeight: 700,
-            border: `1px solid ${THREAD_COLOR}`, borderRadius: 4,
-            background: '#fff', color: MAIN_COLOR,
+            border: `1px solid ${threadColor}`, borderRadius: 4,
+            background: isDark ? 'rgba(255,255,255,0.08)' : '#fff', color: mainColor,
             cursor: 'pointer', fontFamily: FONT, letterSpacing: '0.03em',
             boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
           }}>

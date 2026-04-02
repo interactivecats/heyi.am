@@ -105,10 +105,10 @@
   {%- comment -%} Growth chart {%- endcomment -%}
   {% if growthJson %}
   <section class="section section--flush" aria-label="Growth over time">
-    <div class="section-tag">Growth</div>
-    <h2 class="section-title">Lines of code over time</h2>
+    <div class="section-tag">Lines Changed</div>
+    <h2 class="section-title">Lines changed over time</h2>
     <div class="growth-container">
-      <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+      <div data-growth-chart data-dual-positive data-variant="radar" data-project-slug="{{ project.slug }}" data-total-loc="{{ project.totalLoc }}" data-total-files="{{ project.totalFilesChanged }}" data-sessions='{{ growthJson | raw }}'></div>
     </div>
   </section>
   {% endif %}
@@ -144,12 +144,12 @@
           {% endif %}
           <div class="source-bar-wrap">
             {% if totalSourceSessions > 0 %}
-            {% assign srcPct = src.count | times: 1000 | divided_by: totalSourceSessions | times: 10 | divided_by: 100 %}
+            {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions | round %}
             <div class="source-bar"><div class="source-fill" style="width: {{ srcPct }}%;{% unless forloop.first %} background: var(--text-3);{% endunless %}"></div></div>
             {% endif %}
           </div>
           {% if totalSourceSessions > 0 %}
-          {% assign srcPctDisplay = src.count | times: 1000 | divided_by: totalSourceSessions | divided_by: 10 %}
+          {% assign srcPctDisplay = src.count | times: 100 | divided_by: totalSourceSessions | round %}
           <span class="source-pct">{{ srcPctDisplay }}%</span>
           {% endif %}
         </div>
@@ -209,7 +209,7 @@
           <div class="session-chrome-url">session {{ forloop.index }}</div>
         </div>
         <div class="session-body">
-          <h3 class="session-card-title">{{ s.title }}</h3>
+          <h3 class="session-title">{{ s.title }}</h3>
           <div class="session-meta">
             <span class="session-meta-item"><span class="session-meta-value">{{ s.durationMinutes | formatDuration }}</span></span>
             <span class="session-meta-item"><span class="session-meta-value">{{ s.locChanged | localeNumber }}</span> LOC</span>

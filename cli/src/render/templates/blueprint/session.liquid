@@ -151,12 +151,27 @@
                   {{ agent.role }}
                 </span>
               </td>
-              <td class="bp-mono-val">{{ agent.durationMinutes | formatDuration }}</td>
-              <td class="bp-mono-val">{{ agent.linesChanged | localeNumber }}</td>
+              <td class="bp-mono-val">{{ agent.duration_minutes | formatDuration }}</td>
+              <td class="bp-mono-val">{{ agent.loc_changed | localeNumber }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
+
+        {%- comment -%} Agent bar chart {%- endcomment -%}
+        {% if session.agentSummary.agents.size > 0 %}
+        <div class="bp-agent-bar-chart" aria-hidden="true">
+          {% for agent in session.agentSummary.agents %}
+          <div class="bp-agent-bar-row">
+            <span class="bp-agent-bar-label">{{ agent.role }}</span>
+            <div class="bp-agent-bar-track">
+              <div class="bp-agent-bar-fill" style="width: {{ agent.duration_percent | round }}%; background: var(--bp-accent);"></div>
+            </div>
+            <span class="bp-agent-bar-value">{{ agent.duration_minutes | formatDuration }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
       </section>
       {% endif %}
 

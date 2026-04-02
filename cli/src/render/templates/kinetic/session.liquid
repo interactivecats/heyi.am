@@ -192,6 +192,12 @@
             <span class="tools-name">Duration</span>
             <span class="tools-count" style="color: var(--text);">{{ session.durationMinutes | formatDuration }}</span>
           </div>
+          {% if session.wallClockMinutes %}
+          <div class="tools-row">
+            <span class="tools-name">Wall clock</span>
+            <span class="tools-count" style="color: var(--text);">{{ session.wallClockMinutes | formatDuration }}</span>
+          </div>
+          {% endif %}
           <div class="tools-row">
             <span class="tools-name">Turns</span>
             <span class="tools-count" style="color: var(--text);">{{ session.turns }}</span>

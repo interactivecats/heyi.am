@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { fetchSession } from '../api'
+import { fetchSession, fetchSessionRender } from '../api'
 import type { Session } from '../types'
 import { Chip } from './shared/Chip'
 import { WorkTimeline } from './WorkTimeline'
@@ -9,6 +9,7 @@ interface SessionDetailOverlayProps {
   session: Session
   projectDirName: string
   onClose: () => void
+  isDark?: boolean
 }
 
 function formatDuration(minutes: number): string {
@@ -26,10 +27,27 @@ function formatDate(iso: string): string {
   } catch { return iso }
 }
 
-export function SessionDetailOverlay({ session: initialSession, projectDirName, onClose }: SessionDetailOverlayProps) {
+/**
+ * Scope template CSS to the session overlay container.
+ * Same approach as ProjectDetail's scopeTemplateCss.
+ */
+function scopeSessionCss(css: string): string {
+  let scoped = css
+    .replace(/(?:^|\n)\s*:root\s*\{/g, '\n:scope {')
+    .replace(/(?:^|\n)\s*body\s*\{/g, '\n:scope {')
+    .replace(/\*\s*,\s*\*::before\s*,\s*\*::after\s*\{[^}]*\}/g, '')
+  return `@scope (#session-liquid-render) {\n${scoped}\n}`
+}
+
+export function SessionDetailOverlay({ session: initialSession, projectDirName, onClose, isDark }: SessionDetailOverlayProps) {
   const [session, setSession] = useState<Session>(initialSession)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
+
+  // Liquid-rendered session HTML (trusted — from our own Liquid engine with outputEscape)
+  const [renderHtml, setRenderHtml] = useState<string | null>(null)
+  const [renderCss, setRenderCss] = useState<string | null>(null)
+  const liquidRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchSession(projectDirName, initialSession.id)
@@ -37,6 +55,40 @@ export function SessionDetailOverlay({ session: initialSession, projectDirName, 
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [projectDirName, initialSession.id])
+
+  // Fetch Liquid-rendered session HTML
+  useEffect(() => {
+    fetchSessionRender(initialSession.id)
+      .then((r) => {
+        if (r) {
+          setRenderHtml(r.html)
+          setRenderCss(r.css)
+        }
+      })
+      .catch(() => {})
+  }, [initialSession.id])
+
+  // Inject rendered HTML via ref and activate template scripts
+  useEffect(() => {
+    const container = liquidRef.current
+    if (!renderHtml || !container) return
+    // Content is trusted — rendered by our Liquid engine with outputEscape: 'escape'
+    container.textContent = ''
+    const range = document.createRange()
+    range.selectNodeContents(container)
+    const fragment = range.createContextualFragment(renderHtml)
+    container.appendChild(fragment)
+
+    // Force-reveal animated elements
+    requestAnimationFrame(() => {
+      const animated = container.querySelectorAll(
+        '[class*="-section"], [class*="sc-"], [class*="-hero"], .fade-up, .fade-in, .reveal, [class*="anim-"]',
+      )
+      animated.forEach((el, i) => {
+        setTimeout(() => el.classList.add('visible'), i * 50)
+      })
+    })
+  }, [renderHtml])
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
@@ -54,7 +106,7 @@ export function SessionDetailOverlay({ session: initialSession, projectDirName, 
       className="fixed inset-0 z-50 flex justify-end bg-black/40"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-[600px] max-w-full h-full bg-surface overflow-y-auto shadow-[-8px_0_32px_rgba(25,28,30,0.1)]">
+      <div className={`w-[600px] max-w-full h-full overflow-y-auto shadow-[-8px_0_32px_rgba(25,28,30,0.1)] ${isDark ? '' : 'bg-surface'}`} style={isDark ? { background: '#000' } : undefined}>
         <div className="p-8">
           {/* Close + View full session */}
           <div className="flex items-center gap-3 mb-6">
@@ -77,116 +129,110 @@ export function SessionDetailOverlay({ session: initialSession, projectDirName, 
             </button>
           </div>
 
-          {/* Title + meta */}
-          <h2 className="font-display text-2xl font-bold text-on-surface mb-2">
-            {session.title}
-          </h2>
-          <div className="font-mono text-[0.6875rem] uppercase tracking-wider text-on-surface-variant mb-4">
-            {formatDate(session.date)}
-            {session.source && ` · ${session.source}`}
-            {session.context && ` · ${session.context}`}
-          </div>
+          {/* Liquid-rendered template content */}
+          {renderHtml ? (
+            <>
+              {renderCss && <style>{scopeSessionCss(renderCss)}</style>}
+              <div id="session-liquid-render" ref={liquidRef} />
+            </>
+          ) : (
+            <>
+              {/* Fallback: React-rendered session detail while Liquid loads */}
+              <h2 className="font-display text-2xl font-bold text-on-surface mb-2">
+                {session.title}
+              </h2>
+              <div className="font-mono text-[0.6875rem] uppercase tracking-wider text-on-surface-variant mb-4">
+                {formatDate(session.date)}
+                {session.source && ` · ${session.source}`}
+                {session.context && ` · ${session.context}`}
+              </div>
 
-          {/* Stats grid */}
-          <div className="grid grid-cols-4 gap-3 mb-5">
-            <StatBox label="Active Time" value={formatDuration(session.durationMinutes)} primary>
-              {hasChildren && <SplitLine you={formatDuration(Math.max(0, session.durationMinutes - session.children!.reduce((s, c) => s + c.durationMinutes, 0)))} agent={formatDuration(session.children!.reduce((s, c) => s + c.durationMinutes, 0))} />}
-            </StatBox>
-            <StatBox label="Turns" value={session.turns}>
-              {hasChildren && <SplitLine you="Human" agent={`${session.childCount ?? session.children!.length} agents`} />}
-            </StatBox>
-            <StatBox label="Files" value={session.filesChanged?.length === 1 && session.filesChanged[0]?.path === '(aggregate)' ? '—' : (session.filesChanged?.length ?? '—')} />
-            <StatBox label="Lines changed" value={formatLoc(session.linesOfCode)}>
-              {hasChildren && <SplitLine you={formatLoc(Math.max(0, session.linesOfCode - session.children!.reduce((s, c) => s + c.linesOfCode, 0)))} agent={formatLoc(session.children!.reduce((s, c) => s + c.linesOfCode, 0))} />}
-            </StatBox>
-          </div>
+              {/* Stats grid */}
+              <div className="grid grid-cols-4 gap-3 mb-5">
+                <StatBox label="Active Time" value={formatDuration(session.durationMinutes)} primary>
+                  {hasChildren && <SplitLine you={formatDuration(Math.max(0, session.durationMinutes - session.children!.reduce((s, c) => s + c.durationMinutes, 0)))} agent={formatDuration(session.children!.reduce((s, c) => s + c.durationMinutes, 0))} />}
+                </StatBox>
+                <StatBox label="Turns" value={session.turns}>
+                  {hasChildren && <SplitLine you="Human" agent={`${session.childCount ?? session.children!.length} agents`} />}
+                </StatBox>
+                <StatBox label="Files" value={session.filesChanged?.length === 1 && session.filesChanged[0]?.path === '(aggregate)' ? '—' : (session.filesChanged?.length ?? '—')} />
+                <StatBox label="Lines changed" value={formatLoc(session.linesOfCode)}>
+                  {hasChildren && <SplitLine you={formatLoc(Math.max(0, session.linesOfCode - session.children!.reduce((s, c) => s + c.linesOfCode, 0)))} agent={formatLoc(session.children!.reduce((s, c) => s + c.linesOfCode, 0))} />}
+                </StatBox>
+              </div>
 
-          {/* Developer take */}
-          {session.developerTake && (
-            <p className="text-[0.9375rem] leading-relaxed text-on-surface border-l-[3px] border-primary pl-3 mb-5">
-              {session.developerTake}
-            </p>
-          )}
+              {/* Developer take */}
+              {session.developerTake && (
+                <p className="text-[0.9375rem] leading-relaxed text-on-surface border-l-[3px] border-primary pl-3 mb-5">
+                  {session.developerTake}
+                </p>
+              )}
 
-          {/* Skills */}
-          {session.skills && session.skills.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-5">
-              {session.skills.map((skill) => (
-                <Chip key={skill} variant="violet">{skill}</Chip>
-              ))}
-            </div>
-          )}
-
-          {/* Session timeline (reuses WorkTimeline for orchestrated sessions with 50+ turns) */}
-          {session.turns >= 50 && (
-            <div className="mb-5">
-              <SectionLabel>Session Activity · {session.turns} turns over {formatDuration(session.durationMinutes)}</SectionLabel>
-              <WorkTimeline sessions={[session]} maxHeight={200} />
-            </div>
-          )}
-
-          {loading && (
-            <p className="text-sm text-on-surface-variant mb-4">Loading full session data...</p>
-          )}
-
-          {/* Execution path */}
-          {session.executionPath && session.executionPath.length > 0 && (
-            <div className="mb-5">
-              <SectionLabel>Execution Path</SectionLabel>
-              {session.executionPath.map((step) => (
-                <div key={step.stepNumber} className="flex gap-3 items-start py-2.5 border-b border-ghost last:border-b-0">
-                  <div className="w-6 h-6 rounded-full bg-primary text-white font-mono text-[0.625rem] font-bold flex items-center justify-center flex-shrink-0">
-                    {step.stepNumber}
-                  </div>
-                  <div>
-                    <div className="font-semibold text-sm text-on-surface mb-0.5">{step.title}</div>
-                    <div className="text-[0.8125rem] text-on-surface-variant leading-relaxed">{step.description}</div>
-                  </div>
+              {/* Skills */}
+              {session.skills && session.skills.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-5">
+                  {session.skills.map((skill) => (
+                    <Chip key={skill} variant="violet">{skill}</Chip>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              )}
 
-          {/* Tool usage */}
-          {session.toolBreakdown && session.toolBreakdown.length > 0 && (
-            <div className="mb-5">
-              <SectionLabel>Tool Usage</SectionLabel>
-              {session.toolBreakdown.map((t) => (
-                <div key={t.tool} className="flex justify-between items-center py-1.5 border-b border-ghost last:border-b-0 font-mono text-xs">
-                  <span className="text-on-surface truncate min-w-0">{t.tool}</span>
-                  <span className="text-on-surface-variant flex-shrink-0 ml-3">{t.count}</span>
+              {/* Session timeline */}
+              {session.turns >= 50 && (
+                <div className="mb-5">
+                  <SectionLabel>Session Activity · {session.turns} turns over {formatDuration(session.durationMinutes)}</SectionLabel>
+                  <WorkTimeline sessions={[session]} maxHeight={200} />
                 </div>
-              ))}
-            </div>
-          )}
+              )}
 
-          {/* Top files */}
-          {session.filesChanged && session.filesChanged.length > 0 && (
-            <div className="mb-5">
-              <SectionLabel>Top Files</SectionLabel>
-              {session.filesChanged.slice(0, 10).map((f) => (
-                <div key={f.path} className="flex justify-between items-center py-1.5 border-b border-ghost last:border-b-0 font-mono text-xs">
-                  <span className="text-on-surface truncate min-w-0">{f.path}</span>
-                  <span className="flex-shrink-0 ml-2 whitespace-nowrap">
-                    <span className="text-green-600 font-semibold">+{f.additions}</span>
-                    <span className="text-red-600 font-semibold ml-1">-{f.deletions}</span>
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+              {loading && (
+                <p className="text-sm text-on-surface-variant mb-4">Loading full session data...</p>
+              )}
 
-          {/* Q&A pairs */}
-          {session.qaPairs && session.qaPairs.length > 0 && (
-            <div className="mb-5">
-              <SectionLabel>Questions & Answers</SectionLabel>
-              {session.qaPairs.map((qa, i) => (
-                <div key={i} className="py-3 border-b border-ghost last:border-b-0">
-                  <div className="font-semibold text-[0.9375rem] text-on-surface mb-2">{qa.question}</div>
-                  <div className="text-sm text-on-surface-variant leading-relaxed">{qa.answer}</div>
+              {/* Execution path */}
+              {session.executionPath && session.executionPath.length > 0 && (
+                <div className="mb-5">
+                  <SectionLabel>Execution Path</SectionLabel>
+                  {session.executionPath.map((step) => (
+                    <div key={step.stepNumber} className="flex gap-3 items-start py-2.5 border-b border-ghost last:border-b-0">
+                      <div className="w-6 h-6 rounded-full bg-primary text-white font-mono text-[0.625rem] font-bold flex items-center justify-center flex-shrink-0">
+                        {step.stepNumber}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-sm text-on-surface mb-0.5">{step.title}</div>
+                        <div className="text-[0.8125rem] text-on-surface-variant leading-relaxed">{step.description}</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              )}
+
+              {/* Tool usage */}
+              {session.toolBreakdown && session.toolBreakdown.length > 0 && (
+                <div className="mb-5">
+                  <SectionLabel>Tool Usage</SectionLabel>
+                  {session.toolBreakdown.map((t) => (
+                    <div key={t.tool} className="flex justify-between items-center py-1.5 border-b border-ghost last:border-b-0 font-mono text-xs">
+                      <span className="text-on-surface truncate min-w-0">{t.tool}</span>
+                      <span className="text-on-surface-variant flex-shrink-0 ml-3">{t.count}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Q&A pairs */}
+              {session.qaPairs && session.qaPairs.length > 0 && (
+                <div className="mb-5">
+                  <SectionLabel>Questions & Answers</SectionLabel>
+                  {session.qaPairs.map((qa, i) => (
+                    <div key={i} className="py-3 border-b border-ghost last:border-b-0">
+                      <div className="font-semibold text-[0.9375rem] text-on-surface mb-2">{qa.question}</div>
+                      <div className="text-sm text-on-surface-variant leading-relaxed">{qa.answer}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

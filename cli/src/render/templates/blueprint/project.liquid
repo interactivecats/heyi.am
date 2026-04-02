@@ -10,7 +10,11 @@
   </svg>
 
   {%- comment -%} Breadcrumb {%- endcomment -%}
-  {% render 'partials/_breadcrumb', user: user, projectSlug: project.slug %}
+  <nav class="breadcrumb">
+    <a href="/@{{ user.username }}">{{ user.username }}</a>
+    <span class="breadcrumb__sep" aria-hidden="true">/</span>
+    <span>{{ project.slug }}</span>
+  </nav>
 
   {%- comment -%} Hero {%- endcomment -%}
   <section class="bp-hero" aria-label="Project overview">
@@ -100,20 +104,55 @@
   </section>
   {% endif %}
 
-  {%- comment -%} Work Timeline chart mount {%- endcomment -%}
-  {% if sessionsJson %}
+  {%- comment -%} Work Timeline table {%- endcomment -%}
+  {% if featuredSessions.size > 0 %}
   <section class="bp-timeline-section" aria-label="Work timeline">
     <div class="bp-section-ref">
       <span class="bp-ref-badge" aria-hidden="true">03</span>
       <span class="bp-section-label">Work Timeline</span>
     </div>
-    <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+    <div style="overflow-x: auto;">
+      <table class="bp-timeline-table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Session</th>
+            <th scope="col">Date</th>
+            <th scope="col">Duration</th>
+            <th scope="col">LOC</th>
+            <th scope="col">Source</th>
+            <th scope="col" class="bp-bar-cell">Timeline</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% assign maxLoc = featuredSessions[0].locChanged %}
+          {% for s in featuredSessions %}
+            {% if s.locChanged > maxLoc %}{% assign maxLoc = s.locChanged %}{% endif %}
+          {% endfor %}
+          {% for s in featuredSessions %}
+          <tr>
+            <td class="bp-session-num">{{ forloop.index | prepend: '00' | slice: -2, 2 }}</td>
+            <td>{% if sessionBaseUrl %}<a class="bp-session-title-link" href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a>{% else %}<span class="bp-session-title-link">{{ s.title }}</span>{% endif %}</td>
+            <td class="bp-session-date">{{ s.recordedAt | formatDateShort }}</td>
+            <td class="bp-session-date">{{ s.durationMinutes | formatDuration }}</td>
+            <td class="bp-session-date">{{ s.locChanged | localeNumber }}</td>
+            <td class="bp-session-source">{{ s.sourceTool }}</td>
+            <td class="bp-bar-cell">
+              <div class="bp-timeline-bar-wrap">
+                {% if maxLoc > 0 %}
+                {% assign barPct = s.locChanged | times: 100 | divided_by: maxLoc %}
+                <svg width="100%" height="20" aria-hidden="true">
+                  <rect x="0" y="0" width="{{ barPct }}%" height="20" class="bp-bar-crosshatch" fill="url(#crosshatch)" rx="2"/>
+                </svg>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </section>
-  {% endif %}
-
-  {%- comment -%} Growth chart mount {%- endcomment -%}
-  {% if growthJson %}
-  <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
   {% endif %}
 
   {%- comment -%} Project Arc (Phases) {%- endcomment -%}
@@ -154,16 +193,42 @@
   </section>
   {% endif %}
 
+  {%- comment -%} Key Decisions {%- endcomment -%}
+  {% if project.keyDecisions.size > 0 %}
+  <section class="bp-decisions-section" aria-label="Key decisions">
+    <div class="bp-section-ref">
+      <span class="bp-ref-badge" aria-hidden="true">06</span>
+      <span class="bp-section-label">Decision Log</span>
+    </div>
+    <ol class="bp-decision-list">
+      {% for decision in project.keyDecisions %}
+      <li class="bp-decision-item">
+        <span class="bp-decision-num">{{ forloop.index | prepend: '00' | slice: -2, 2 }}</span>
+        <span>{{ decision }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
+
   {%- comment -%} Source Breakdown {%- endcomment -%}
   {% if sourceCounts.size > 0 %}
   <section class="bp-source-section" aria-label="Source breakdown">
     <div class="bp-section-ref">
-      <span class="bp-ref-badge" aria-hidden="true">06</span>
+      <span class="bp-ref-badge" aria-hidden="true">07</span>
       <span class="bp-section-label">Source Distribution</span>
     </div>
+    {% if sourceBarPercent %}
+    <div class="bp-source-bar-large" role="img" aria-label="Source distribution">
+      <div class="bp-source-fill-large" style="width: {{ sourceBarPercent }}%"></div>
+    </div>
+    {% endif %}
     <div class="bp-source-legend">
+      {% assign totalSourceSessions = 0 %}
+      {% for sc in sourceCounts %}{% assign totalSourceSessions = totalSourceSessions | plus: sc.count %}{% endfor %}
       {% for sc in sourceCounts %}
-        <span>{{ sc.tool }} &mdash; {{ sc.count }} sessions</span>
+        {% assign srcPct = sc.count | times: 100 | divided_by: totalSourceSessions | round %}
+        <span>{{ sc.tool }} &mdash; {{ srcPct }}% ({{ sc.count }} session{% if sc.count != 1 %}s{% endif %})</span>
       {% endfor %}
     </div>
   </section>
@@ -173,7 +238,7 @@
   {% if featuredSessions.size > 0 %}
   <section class="bp-featured-section" aria-label="Featured sessions">
     <div class="bp-section-ref">
-      <span class="bp-ref-badge" aria-hidden="true">07</span>
+      <span class="bp-ref-badge" aria-hidden="true">08</span>
       <span class="bp-section-label">Featured Sessions</span>
     </div>
     <div class="bp-featured-grid">

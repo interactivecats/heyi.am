@@ -85,6 +85,8 @@ export interface SessionCard {
   durationMinutes: number;
   turns: number;
   locChanged: number;
+  linesAdded: number;
+  linesDeleted: number;
   filesChanged: number;
   skills: string[];
   recordedAt: string;

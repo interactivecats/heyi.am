@@ -5,7 +5,7 @@
 
   {%- comment -%} Links {%- endcomment -%}
   {% if project.repoUrl or project.projectUrl %}
-  <div class="strata-links" aria-label="Project links">
+  <nav class="strata-links" aria-label="Project links">
     {% if project.repoUrl %}
     <a class="strata-link" href="{{ project.repoUrl }}" target="_blank" rel="noopener">
       <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
@@ -18,7 +18,7 @@
       {{ project.projectUrl | stripProtocol }}
     </a>
     {% endif %}
-  </div>
+  </nav>
   {% endif %}
 
   {%- comment -%} Screenshot {%- endcomment -%}
@@ -87,35 +87,9 @@
     </div>
   </div>
 
-  {%- comment -%} Work Timeline {%- endcomment -%}
-  {% if sessionsJson %}
-  <div class="strata-layer" style="z-index: 4;">
-    <div class="strata-section-header">
-      <h2 class="strata-section-header__title">Work Timeline</h2>
-      <span class="strata-section-header__meta">{{ project.totalSessions }} sessions</span>
-    </div>
-    <div class="strata-chart">
-      <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-    </div>
-  </div>
-  {% endif %}
-
-  {%- comment -%} Growth Chart {%- endcomment -%}
-  {% if growthJson %}
-  <div class="strata-layer" style="z-index: 5;">
-    <div class="strata-section-header">
-      <h2 class="strata-section-header__title">Cumulative Growth</h2>
-      <span class="strata-section-header__meta">{{ project.totalLoc | localeNumber }} lines &middot; {{ project.totalFilesChanged }} files</span>
-    </div>
-    <div class="strata-growth-chart">
-      <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
-    </div>
-  </div>
-  {% endif %}
-
   {%- comment -%} Two-Column: Key Decisions + Source Breakdown {%- endcomment -%}
   {% if arc.size > 0 or sourceCounts.size > 0 %}
-  <div class="strata-layer" style="z-index: 6;">
+  <div class="strata-layer" style="z-index: 4;">
     <div class="strata-two-col">
       {% if arc.size > 0 %}
       <div>
@@ -154,13 +128,13 @@
               <td>
                 {{ src.tool }}
                 {% if totalSourceSessions > 0 %}
-                {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+                {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round: 1 %}
                 <span class="strata-source-bar" style="width: {{ srcPct }}%;"></span>
                 {% endif %}
               </td>
               <td>{{ src.count }}</td>
               {% if totalSourceSessions > 0 %}
-              {% assign srcPctDisplay = src.count | times: 100 | divided_by: totalSourceSessions %}
+              {% assign srcPctDisplay = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
               <td>{{ srcPctDisplay }}%</td>
               {% else %}
               <td></td>
@@ -177,7 +151,7 @@
 
   {%- comment -%} Phase Timeline {%- endcomment -%}
   {% if arc.size > 0 %}
-  <div class="strata-layer" style="z-index: 7;">
+  <div class="strata-layer" style="z-index: 5;">
     <div class="strata-section-header">
       <h2 class="strata-section-header__title">Project Phases</h2>
     </div>
@@ -196,7 +170,7 @@
 
   {%- comment -%} Skills {%- endcomment -%}
   {% if project.skills.size > 0 %}
-  <div class="strata-layer" style="z-index: 8;">
+  <div class="strata-layer" style="z-index: 6;">
     <div class="strata-section-header">
       <h2 class="strata-section-header__title">Technologies</h2>
     </div>
@@ -210,7 +184,7 @@
 
   {%- comment -%} Session Cards {%- endcomment -%}
   {% if featuredSessions.size > 0 %}
-  <div class="strata-layer" style="z-index: 9;">
+  <div class="strata-layer" style="z-index: 7;">
     <div class="strata-section-header">
       <h2 class="strata-section-header__title">Sessions</h2>
       <span class="strata-section-header__meta">{{ project.totalSessions }} total</span>

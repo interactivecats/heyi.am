@@ -1,11 +1,11 @@
 <div class="noir-page" data-render-version="2" data-template="noir"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
   <!-- Breadcrumb -->
-  <div class="noir-breadcrumb" aria-label="Breadcrumb">
+  <nav class="noir-breadcrumb" aria-label="Breadcrumb">
     <a href="/{{ user.username }}">{{ user.username }}</a>
     <span class="noir-breadcrumb__sep">/</span>
     <span>{{ project.slug }}</span>
-  </div>
+  </nav>
 
   <!-- Project Header -->
   <section class="noir-section noir-project-header" aria-label="Project header">
@@ -31,7 +31,7 @@
         <span class="noir-screenshot__dot"></span>
         <span class="noir-screenshot__dot"></span>
       </div>
-      <img src="{{ project.screenshotUrl }}" alt="{{ project.title }}" style="width: 100%; height: 100%; object-fit: cover;">
+      <img src="{{ project.screenshotUrl }}" alt="{{ project.title }}" class="noir-screenshot__img">
     </div>
   </section>
   {% endif %}
@@ -87,38 +87,18 @@
   <hr class="noir-rule">
   {% endif %}
 
-  <!-- Work Timeline Chart -->
-  {% if sessionsJson != blank %}
-  <section class="noir-section" aria-label="Work timeline">
-    <h2 class="noir-heading">Work Timeline</h2>
-    <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-  </section>
-
-  <hr class="noir-rule">
-  {% endif %}
-
-  <!-- Growth Chart -->
-  {% if growthJson != blank %}
-  <section class="noir-section" aria-label="Growth chart">
-    <h2 class="noir-heading">Growth</h2>
-    <div data-growth-chart data-project-slug="{{ project.slug }}" data-total-loc="{{ project.totalLoc }}" data-total-files="{{ project.totalFilesChanged }}" data-sessions='{{ growthJson | raw }}'></div>
-  </section>
-
-  <hr class="noir-rule">
-  {% endif %}
-
   <!-- Sessions -->
   {% if featuredSessions.size > 0 %}
   <section class="noir-section" aria-label="Sessions timeline">
     <h2 class="noir-heading">Sessions</h2>
     <div class="noir-session-timeline" role="list">
       {% for s in featuredSessions %}
-      <div class="noir-session-row" role="listitem">
+      <div class="noir-session-row" role="listitem" style="--bar-width: {% if featuredSessions[0].locChanged > 0 %}{{ s.locChanged | times: 100 | divided_by: featuredSessions[0].locChanged }}%{% else %}0%{% endif %};">
         <span class="noir-session-row__num">{{ forloop.index | prepend: '00' | slice: -2, 2 }}</span>
         <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="noir-session-row__title">{{ s.title }}</a>
         <div class="noir-session-row__bar-wrap">
           <div class="noir-session-row__bar-track">
-            <div class="noir-session-row__bar" style="width: {% if featuredSessions[0].locChanged > 0 %}{{ s.locChanged | times: 100 | divided_by: featuredSessions[0].locChanged }}%{% else %}0%{% endif %};"></div>
+            <div class="noir-session-row__bar"></div>
           </div>
           <span class="noir-session-row__loc">{{ s.locChanged | formatLoc }} LOC</span>
         </div>
@@ -141,6 +121,9 @@
         <span class="noir-phase__number">{{ phase.phase | prepend: '00' | slice: -2, 2 }}</span>
         <div>
           <h3 class="noir-phase__name">{{ phase.title }}</h3>
+          {% if phase.dates != blank %}
+          <p class="noir-phase__dates">{{ phase.dates }}</p>
+          {% endif %}
           {% if phase.description != blank %}
           <p class="noir-phase__desc">{{ phase.description }}</p>
           {% endif %}
@@ -167,11 +150,35 @@
   <hr class="noir-rule">
   {% endif %}
 
+  <!-- Key Decisions -->
+  {% if project.keyDecisions.size > 0 %}
+  <section class="noir-section" aria-label="Key decisions">
+    <h2 class="noir-heading">Key Decisions</h2>
+    <ol class="noir-decisions">
+      {% for decision in project.keyDecisions %}
+      <li class="noir-decision">
+        <span class="noir-decision__num">{{ forloop.index }}</span>
+        <p class="noir-decision__text">{{ decision }}</p>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <hr class="noir-rule">
+  {% endif %}
+
   <!-- Source Breakdown -->
   {% if sourceCounts.size > 0 %}
   <section class="noir-section" aria-label="Source breakdown">
     <h2 class="noir-heading">Source Breakdown</h2>
     <div class="noir-source-breakdown">
+      {% if sourceBarSegments.size > 0 %}
+      <div class="noir-source-bar-large" aria-label="Source distribution">
+        {% for seg in sourceBarSegments %}
+        <div class="noir-source-bar-large__fill{% unless forloop.first %}--secondary{% endunless %}" style="width: {{ seg.percent }}%;"></div>
+        {% endfor %}
+      </div>
+      {% endif %}
       <div class="noir-source-legend">
         {% for sc in sourceCounts %}
         <span class="noir-source-legend__item">
@@ -196,8 +203,8 @@
         <span class="noir-featured-card__tag">{{ s.sourceTool }}</span>
         <h3 class="noir-featured-card__title">{{ s.title }}</h3>
         <span class="noir-featured-card__meta">{{ s.durationMinutes | formatDuration }} &middot; {{ s.locChanged | formatLoc }} LOC</span>
-        {% if s.agentSummary.subSessions.size > 0 %}
-        <span class="noir-featured-card__agents">{{ s.agentSummary.subSessions.size }} agents</span>
+        {% if s.agentSummary.agents.size > 0 %}
+        <span class="noir-featured-card__agents">{{ s.agentSummary.agents.size }} agents</span>
         {% endif %}
       </a>
       {% endfor %}

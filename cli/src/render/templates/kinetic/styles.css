@@ -3,6 +3,43 @@
  * Dark theme with orange accent, Space Grotesk display font.
  */
 
+:root {
+  --bg: #09090b;
+  --surface: #111113;
+  --surface-2: #18181b;
+  --border: rgba(255,255,255,0.06);
+  --text: #fafafa;
+  --text-2: rgba(255,255,255,0.65);
+  --text-3: rgba(255,255,255,0.4);
+  --orange: #f97316;
+  --orange-dim: rgba(249,115,22,0.1);
+  --orange-glow: rgba(249,115,22,0.2);
+  --blue: #3b82f6;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+.kinetic {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.kinetic a { color: inherit; text-decoration: none; }
+.kinetic a:visited { color: inherit; }
+
+/* ── Focus ── */
+.kinetic :focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
 /* ── Hero (portfolio) ── */
 .kinetic .hero {
   min-height: 80vh;
@@ -18,7 +55,7 @@
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   font-family: var(--font-display);
-  font-size: clamp(15rem, 25vw, 30rem);
+  font-size: clamp(10rem, 20vw, 22rem);
   font-weight: 700;
   color: rgba(255,255,255,0.015);
   white-space: nowrap;
@@ -27,8 +64,6 @@
   letter-spacing: -0.05em;
 }
 .kinetic .hero-content {
-  max-width: 900px;
-  margin: 0 auto;
   position: relative;
   z-index: 1;
 }
@@ -239,7 +274,7 @@
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 700;
   letter-spacing: -0.03em;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   line-height: 1.1;
 }
 .kinetic .section-desc {
@@ -324,7 +359,7 @@
   color: var(--text-2);
   line-height: 1.75;
   margin-bottom: 1.5rem;
-  padding: 1rem 1.25rem;
+  padding: 1.25rem 1.5rem;
   border-left: 3px solid var(--orange);
   background: rgba(249,115,22,0.03);
   border-radius: 0 6px 6px 0;
@@ -342,6 +377,7 @@
 /* ── Phases ── */
 .kinetic .phases {
   display: flex; flex-direction: column; gap: 0;
+  margin-top: 2rem;
   margin-bottom: 1.5rem;
   padding-left: 0.5rem;
   border-left: 1px solid rgba(255,255,255,0.06);
@@ -356,7 +392,7 @@
 .kinetic .phases--large .phase-item { padding: 0.75rem 0; }
 .kinetic .phase-dot {
   width: 8px; height: 8px; border-radius: 50%;
-  flex-shrink: 0; margin-top: 3px;
+  flex-shrink: 0; margin-top: 4px;
 }
 .kinetic .dot-orange { background: var(--orange); }
 .kinetic .dot-blue { background: var(--blue); }
@@ -364,10 +400,11 @@
 .kinetic .dot-purple { background: #a78bfa; }
 .kinetic .phase-title {
   font-family: var(--font-display);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
+  margin-bottom: 0.125rem;
 }
-.kinetic .phases--large .phase-title { font-size: 0.875rem; }
+.kinetic .phases--large .phase-title { font-size: 0.9375rem; }
 .kinetic .phase-dates {
   font-family: var(--font-mono);
   font-size: 0.625rem;
@@ -375,11 +412,10 @@
   margin-bottom: 0.25rem;
 }
 .kinetic .phase-desc {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: var(--text-3);
   line-height: 1.5;
 }
-.kinetic .phases--large .phase-desc { font-size: 0.8125rem; }
 
 /* ── Source mix (project cards) ── */
 .kinetic .source-mix {
@@ -429,7 +465,7 @@
   margin-top: 3rem;
 }
 .kinetic .split-panel {
-  padding: 3rem;
+  padding: 2.5rem;
   background: var(--surface);
 }
 .kinetic .split-panel:first-child { border-right: 1px solid var(--border); }
@@ -437,7 +473,7 @@
   font-family: var(--font-display);
   font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 0.375rem;
+  margin-bottom: 1.5rem;
 }
 .kinetic .split-sub {
   font-size: 0.8125rem;
@@ -560,6 +596,7 @@
   margin-top: 2rem;
 }
 .kinetic .session-card {
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
@@ -568,10 +605,15 @@
   text-decoration: none;
   color: inherit;
   display: block;
+  outline: none;
 }
 .kinetic .session-card:hover {
   border-color: rgba(249,115,22,0.15);
   transform: translateY(-2px);
+}
+.kinetic .session-card:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
 }
 .kinetic .session-chrome {
   display: flex; align-items: center; gap: 0.75rem;
@@ -593,7 +635,7 @@
   padding: 1.25rem;
   background: var(--surface);
 }
-.kinetic .session-card-title {
+.kinetic .session-title {
   font-family: var(--font-display);
   font-size: 0.9375rem;
   font-weight: 600;
@@ -610,6 +652,7 @@
   color: var(--text-3);
 }
 .kinetic .session-meta-value { color: var(--text-2); font-weight: 500; }
+.kinetic .session-title a:hover { color: var(--orange); }
 .kinetic .session-tag {
   font-family: var(--font-mono);
   font-size: 0.5625rem;
@@ -621,8 +664,14 @@
   display: inline-block;
 }
 
+/* ── Session page section overrides ── */
+.kinetic .content-layout .section-title {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
 /* ── Session hero ── */
 .kinetic .hero--session {
+  min-height: auto;
   padding: 8rem 2.5rem 3rem;
   position: relative;
   overflow: hidden;
@@ -631,6 +680,8 @@
 }
 .kinetic .hero--session h1 {
   font-size: clamp(1.75rem, 4vw, 2.5rem);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
   max-width: 700px;
 }
 .kinetic .hero-meta {
@@ -844,6 +895,18 @@
 .kinetic .files-adds { color: #4ade80; }
 .kinetic .files-dels { color: #f87171; }
 
+/* ── Footer ── */
+.kinetic .footer {
+  padding: 3rem 2.5rem;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between;
+  font-size: 0.75rem; color: var(--text-3);
+  max-width: 1100px; margin: 0 auto;
+}
+.kinetic .footer a { color: var(--text-3); }
+.kinetic .footer a:hover { color: var(--orange); }
+.kinetic .footer-links { display: flex; gap: 1.5rem; }
+
 /* ── Counter animation ── */
 .kinetic .counter { display: inline-block; }
 
@@ -870,6 +933,7 @@
   .kinetic .qa-split { grid-template-columns: 1fr; }
   .kinetic .qa-panel:first-child { border-right: none; border-bottom: 1px solid var(--border); }
   .kinetic .hero-meta { gap: 0.75rem; font-size: 0.625rem; }
+  .kinetic .footer { flex-direction: column; gap: 1rem; padding: 2rem 1.25rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

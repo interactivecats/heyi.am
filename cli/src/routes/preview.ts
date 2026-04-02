@@ -6,12 +6,13 @@ import { getAuthToken } from '../auth.js';
 import { loadEnhancedData, loadProjectEnhanceResult, getDefaultTemplate, getPortfolioProfile } from '../settings.js';
 import { SCREENSHOTS_DIR } from '../screenshot.js';
 import { renderProjectHtml, renderSessionHtml, renderPortfolioHtml } from '../render/index.js';
-import { getTemplateCss, isValidTemplate } from '../render/templates.js';
+import { getTemplateCss, isValidTemplate, getTemplateInfo } from '../render/templates.js';
 import { getMockPortfolioData, getMockProjectData, getMockProjectArc, getMockFullSessions, getMockSessionData } from '../render/mock-data.js';
 import { buildSessionRenderData, buildSessionCard, buildProjectRenderData } from '../render/build-render-data.js';
 import type { SessionCard, ProjectRenderData, PortfolioRenderData, PortfolioProject } from '../render/types.js';
 import { buildAgentSummary, type RouteContext } from './context.js';
 import { displayNameFromDir } from '../sync.js';
+import { getSessionsByProject, type SessionRow } from '../db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -58,69 +59,77 @@ async function buildProjectPreviewData(
 
   const cached = loadProjectEnhanceResult((proj as { dirName: string }).dirName);
   const auth = getAuthToken();
+  const enhanceResult = cached?.result;
 
-  // Build session cards from parsed sessions + enhanced data
+  // ── Fast path: read ALL session data from SQLite (single query, no JSONL parsing) ──
+  const dbSessions = getSessionsByProject(ctx.db, rawProj.dirName);
+  const dbById = new Map(dbSessions.map((r) => [r.id, r]));
+
+  /** Convert a SQLite SessionRow + optional enhanced data into a SessionCard */
+  function rowToCard(row: SessionRow, sid: string): SessionCard {
+    const enhanced = loadEnhancedData(sid);
+    const skills: string[] = enhanced?.skills ?? (row.skills ? JSON.parse(row.skills) : []);
+    const title = enhanced?.title ?? row.title ?? sid;
+    const devTake = (enhanced?.developerTake ?? '').slice(0, 2000);
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+
+    // Check for child sessions (subagents) in DB
+    const children = dbSessions.filter((r) => r.parent_session_id === sid);
+    let agentSummary: SessionCard['agentSummary'];
+    if (children.length > 0) {
+      agentSummary = {
+        is_orchestrated: true as const,
+        agents: children.map((c) => ({
+          role: c.agent_role ?? 'agent',
+          duration_minutes: c.duration_minutes ?? 0,
+          loc_changed: (c.loc_added ?? 0) + (c.loc_removed ?? 0),
+        })),
+      };
+    }
+
+    return {
+      token: sid,
+      slug,
+      title,
+      devTake,
+      durationMinutes: row.duration_minutes ?? 0,
+      turns: row.turns ?? 0,
+      locChanged: (row.loc_added ?? 0) + (row.loc_removed ?? 0),
+      linesAdded: row.loc_added ?? 0,
+      linesDeleted: row.loc_removed ?? 0,
+      filesChanged: row.files_changed ?? 0,
+      skills,
+      recordedAt: row.start_time ?? new Date().toISOString(),
+      sourceTool: row.source ?? 'claude',
+      agentSummary,
+    };
+  }
+
+  // Build selected session cards from DB
   const sessionCards: SessionCard[] = [];
   if (cached?.selectedSessionIds) {
     for (const sid of cached.selectedSessionIds) {
-      const meta = rawProj.sessions.find((s) => s.sessionId === sid);
-      if (!meta) continue;
-      try {
-        const session = await ctx.loadSession(meta.path, rawProj.name, sid);
-        const enhanced = loadEnhancedData(sid);
-
-        const agentSummary = await buildAgentSummary(
-          meta.children ?? [],
-          (c) => ctx.getSessionStats(c, rawProj.name),
-          { deduplicate: true },
-        );
-
-        sessionCards.push(buildSessionCard({
-          sessionId: sid,
-          session,
-          enhanced,
-          username: auth?.username || 'preview',
-          projectSlug: (proj as { dirName: string }).dirName,
-          sessionSlug: sid,
-          sourceTool: session.source || 'claude',
-          agentSummary,
-        }));
-      } catch { /* skip sessions that fail to parse */ }
+      const row = dbById.get(sid);
+      if (!row) continue;
+      sessionCards.push(rowToCard(row, sid));
     }
   }
 
-  const enhanceResult = cached?.result;
-
-  // Build cards for ALL sessions (for work timeline + growth chart)
+  // Build ALL session cards from DB (for work timeline + growth chart)
+  // Only parent sessions (not subagents) — subagents are included via agentSummary
   const allSessionCards: SessionCard[] = [];
   const sessionStatsMap = new Map<string, { duration: number; date?: string; skills?: string[]; description?: string }>();
-  for (const meta of rawProj.sessions) {
-    try {
-      const s = await ctx.loadSession(meta.path, rawProj.name, meta.sessionId);
-      const enhanced = loadEnhancedData(meta.sessionId);
-      sessionStatsMap.set(meta.sessionId, {
-        duration: s.durationMinutes ?? 0,
-        date: s.date || undefined,
-        skills: enhanced?.skills ?? s.skills ?? [],
-        description: enhanced?.context || '',
-      });
-
-      const allAgentSummary = await buildAgentSummary(
-        meta.children ?? [],
-        (c) => ctx.getSessionStats(c, rawProj.name),
-      );
-
-      allSessionCards.push(buildSessionCard({
-        sessionId: meta.sessionId,
-        session: s,
-        enhanced,
-        username: auth?.username || 'preview',
-        projectSlug: (proj as { dirName: string }).dirName,
-        sessionSlug: meta.sessionId,
-        sourceTool: s.source || 'claude',
-        agentSummary: allAgentSummary,
-      }));
-    } catch { /* skip */ }
+  for (const row of dbSessions) {
+    if (row.is_subagent) continue;
+    const enhanced = loadEnhancedData(row.id);
+    const skills: string[] = enhanced?.skills ?? (row.skills ? JSON.parse(row.skills) : []);
+    sessionStatsMap.set(row.id, {
+      duration: row.duration_minutes ?? 0,
+      date: row.start_time || undefined,
+      skills,
+      description: enhanced?.context || '',
+    });
+    allSessionCards.push(rowToCard(row, row.id));
   }
 
   // Enrich timeline sessions with real stats
@@ -333,6 +342,7 @@ body { overflow: auto !important; min-height: auto !important; }
         projName,
         bodyHtml,
         'PREVIEW — this is how your project will appear on heyi.am',
+        templateName,
       ));
     } catch (err) {
       if (err instanceof ProjectNotFoundError) {
@@ -372,8 +382,13 @@ body { overflow: auto !important; min-height: auto !important; }
       }
       const css = getTemplateCss(templateName);
       const screenshotUrl = spaRenderData.project.screenshotUrl || undefined;
+      const templateInfo = getTemplateInfo(templateName);
 
-      res.json({ html, css, template: templateName, screenshotUrl });
+      res.json({
+        html, css, template: templateName, screenshotUrl,
+        accent: templateInfo?.accent ?? '#084471',
+        mode: templateInfo?.mode ?? 'light',
+      });
     } catch (err) {
       if (err instanceof ProjectNotFoundError) {
         res.status(404).json({ error: 'Project not found' });
@@ -405,6 +420,10 @@ body { overflow: auto !important; min-height: auto !important; }
         (c) => ctx.getSessionStats(c, rawProj.name),
       );
 
+      const templateName = (req.query.template as string | undefined) && isValidTemplate(req.query.template as string)
+        ? (req.query.template as string)
+        : (getDefaultTemplate() || 'editorial');
+
       const renderData = buildSessionRenderData({
         sessionId,
         session,
@@ -414,17 +433,88 @@ body { overflow: auto !important; min-height: auto !important; }
         sessionSlug: sessionId,
         sourceTool: session.source || 'claude',
         agentSummary,
+        template: templateName,
       });
 
-      const bodyHtml = renderSessionHtml(renderData);
+      const bodyHtml = renderSessionHtml(renderData, templateName);
       res.type('html').send(ctx.buildPreviewPage(
         session.title || sessionId,
         bodyHtml,
         'PREVIEW — this is how your session will appear on heyi.am',
+        templateName,
       ));
     } catch (err) {
       console.error('[session-preview] Error:', (err as Error).message);
       res.status(500).send('Session preview failed');
+    }
+  });
+
+  // JSON render endpoint for sessions — returns HTML fragment + CSS for embedding in React UI
+  router.get('/api/sessions/:sessionId/render', async (req: Request, res: Response) => {
+    try {
+      const sessionId = String(req.params.sessionId);
+      const templateOverride = req.query.template as string | undefined;
+
+      // Find the session across all projects
+      const rawProjects = await ctx.getProjects();
+      let foundMeta: (typeof rawProjects[number]['sessions'][number]) | undefined;
+      let foundProj: (typeof rawProjects[number]) | undefined;
+      for (const proj of rawProjects) {
+        const meta = proj.sessions.find((s) => s.sessionId === sessionId);
+        if (meta) {
+          foundMeta = meta;
+          foundProj = proj;
+          break;
+        }
+      }
+      if (!foundMeta || !foundProj) {
+        res.status(404).json({ error: 'Session not found' });
+        return;
+      }
+
+      const auth = getAuthToken();
+      const session = await ctx.loadSession(foundMeta.path, foundProj.name, sessionId);
+      const enhanced = loadEnhancedData(sessionId);
+
+      const agentSummary = await buildAgentSummary(
+        foundMeta.children ?? [],
+        (c) => ctx.getSessionStats(c, foundProj!.name),
+      );
+
+      let templateName = (templateOverride && isValidTemplate(templateOverride))
+        ? templateOverride
+        : (getDefaultTemplate() || 'editorial');
+
+      const renderData = buildSessionRenderData({
+        sessionId,
+        session,
+        enhanced,
+        username: auth?.username || 'preview',
+        projectSlug: foundProj.dirName,
+        sessionSlug: sessionId,
+        sourceTool: session.source || 'claude',
+        agentSummary,
+        template: templateName,
+      });
+
+      let html: string;
+      try {
+        html = renderSessionHtml(renderData, templateName);
+      } catch {
+        templateName = 'editorial';
+        html = renderSessionHtml(renderData, templateName);
+      }
+      const css = getTemplateCss(templateName);
+      const templateInfo = getTemplateInfo(templateName);
+
+      res.json({
+        html, css, template: templateName,
+        accent: templateInfo?.accent ?? '#084471',
+        mode: templateInfo?.mode ?? 'light',
+      });
+    } catch (err) {
+      console.error('[api/session/render] Error:', (err as Error).message);
+      res.status(500).json({ error: 'Session render failed' });
     }
   });
 
@@ -511,6 +601,7 @@ body { overflow: auto !important; min-height: auto !important; }
         `${renderData.user.displayName}'s Portfolio`,
         bodyHtml,
         'PREVIEW — this is how your portfolio will appear on heyi.am',
+        templateName,
       ));
     } catch (err) {
       console.error('[portfolio-preview] Error:', (err as Error).message);

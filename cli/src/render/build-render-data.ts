@@ -82,6 +82,10 @@ export function buildSessionCard(opts: BuildSessionRenderOpts): SessionCard {
   const sessionSkills = enhanced?.skills ?? session.skills ?? [];
   const sessionRecordedAt = session.date ? new Date(session.date).toISOString() : new Date().toISOString();
 
+  const files = session.filesChanged ?? [];
+  const totalAdded = files.reduce((sum, f) => sum + ((typeof f === 'string' ? 0 : f.additions) ?? 0), 0);
+  const totalDeleted = files.reduce((sum, f) => sum + ((typeof f === 'string' ? 0 : f.deletions) ?? 0), 0);
+
   return {
     token: sessionId,
     slug: sessionSlug,
@@ -90,7 +94,9 @@ export function buildSessionCard(opts: BuildSessionRenderOpts): SessionCard {
     durationMinutes: session.durationMinutes ?? 0,
     turns: session.turns ?? 0,
     locChanged: session.linesOfCode ?? 0,
-    filesChanged: session.filesChanged?.length ?? 0,
+    linesAdded: totalAdded,
+    linesDeleted: totalDeleted,
+    filesChanged: files.length,
     skills: sessionSkills,
     recordedAt: sessionRecordedAt,
     sourceTool,

@@ -61,6 +61,12 @@
         <span class="strata-stat__label">Files Changed</span>
         <span class="strata-stat__value">{{ session.filesChanged }}</span>
       </div>
+      {% if session.agentSummary and session.agentSummary.agents.size > 0 %}
+      <div class="strata-stat">
+        <span class="strata-stat__label">Sub-agents</span>
+        <span class="strata-stat__value">{{ session.agentSummary.agents.size }}</span>
+      </div>
+      {% endif %}
       {% if session.sourceTool %}
       <div class="strata-stat">
         <span class="strata-stat__label">Source</span>
@@ -94,7 +100,7 @@
               <td>
                 {{ t.tool }}
                 {% if maxToolCount > 0 %}
-                {% assign barPct = t.count | times: 100 | divided_by: maxToolCount %}
+                {% assign barPct = t.count | times: 100.0 | divided_by: maxToolCount | round: 1 %}
                 <span class="strata-tool-bar" style="width: {{ barPct }}%;"></span>
                 {% endif %}
               </td>
@@ -196,12 +202,36 @@
         {% for agent in session.agentSummary.agents %}
         <tr>
           <td><span class="strata-agent-dot" style="background: var(--strata-accent);"></span> {{ agent.role }}</td>
-          <td>{{ agent.durationMinutes | formatDuration }}</td>
-          <td>{{ agent.linesOfCode | localeNumber }}</td>
+          <td>{{ agent.duration_minutes | formatDuration }}</td>
+          <td>{{ agent.loc_changed | localeNumber }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+
+    {%- comment -%} Agent Timeline Bar Chart {%- endcomment -%}
+    {% assign totalAgentMinutes = 0 %}
+    {% for agent in session.agentSummary.agents %}
+      {% assign totalAgentMinutes = totalAgentMinutes | plus: agent.duration_minutes %}
+    {% endfor %}
+    {% if totalAgentMinutes > 0 %}
+    <div class="strata-agent-chart">
+      <div class="strata-agent-chart__track">
+        {% for agent in session.agentSummary.agents %}
+        {% assign barPct = agent.duration_minutes | times: 100.0 | divided_by: totalAgentMinutes | round: 1 %}
+        <div class="strata-agent-chart__bar strata-agent-bar" style="width: {{ barPct }}%; background: var(--strata-accent); opacity: {{ forloop.index | times: -0.1 | plus: 1.0 }};" title="{{ agent.role }}: {{ agent.duration_minutes | formatDuration }}"></div>
+        {% endfor %}
+      </div>
+      <div class="strata-agent-chart__labels">
+        {% for agent in session.agentSummary.agents %}
+        <div class="strata-agent-chart__label">
+          <span class="strata-agent-chart__label-name">{{ agent.role }}</span>
+          <span class="strata-agent-chart__label-time">{{ agent.duration_minutes | formatDuration }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
     {% endif %}
   </div>
   {% endif %}

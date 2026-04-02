@@ -539,6 +539,37 @@ describe.each(PORTFOLIO_TEMPLATES)('%s template — portfolio', (templateName) =
   });
 });
 
+// Templates known to render individual agent roles in their session.liquid
+const TEMPLATES_WITH_AGENT_DISPLAY = [
+  'editorial', 'kinetic', 'terminal', 'showcase', 'parallax', 'blueprint', 'strata',
+  'noir', 'verdant', 'neon', 'paper', 'cosmos', 'bauhaus', 'mono', 'glacier',
+  'ember', 'zen', 'circuit', 'parchment', 'aurora', 'grid', 'obsidian', 'chalk',
+  'canvas', 'meridian', 'carbon', 'daylight',
+] as const;
+
+describe.each(TEMPLATES_WITH_AGENT_DISPLAY)('%s template — session with agent summary', (templateName) => {
+  it('renders agent roles from agentSummary.agents with snake_case fields', () => {
+    const data = makeSessionData();
+    data.session.agentSummary = {
+      is_orchestrated: true as const,
+      agents: [
+        { role: 'backend-dev', duration_minutes: 35, loc_changed: 250 },
+        { role: 'code-reviewer', duration_minutes: 18, loc_changed: 0 },
+      ],
+    };
+    const html = renderSessionHtml(data, templateName);
+    expect(html).toContain('backend-dev');
+    expect(html).toContain('code-reviewer');
+  });
+});
+
+describe.each(CUSTOM_TEMPLATES)('%s template — session output quality', (templateName) => {
+  it('produces non-trivial output (>200 chars)', () => {
+    const html = renderSessionHtml(makeSessionData(), templateName);
+    expect(html.length).toBeGreaterThan(200);
+  });
+});
+
 describe.each(CUSTOM_TEMPLATES)('%s template — session', (templateName) => {
   it('renders with data-template and data-render-version attributes', () => {
     const html = renderSessionHtml(makeSessionData(), templateName);

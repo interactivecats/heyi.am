@@ -1,11 +1,11 @@
 <div class="heyiam-project radar" data-render-version="2" data-template="radar"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
   {%- comment -%} Breadcrumb {%- endcomment -%}
-  <div class="radar-breadcrumb" aria-label="Breadcrumb">
+  <nav class="radar-breadcrumb" aria-label="Breadcrumb">
     <a href="/{{ user.username }}">{{ user.username }}</a>
     <span class="radar-breadcrumb__sep">/</span>
     <span>{{ project.slug }}</span>
-  </div>
+  </nav>
 
   {%- comment -%} Title {%- endcomment -%}
   <section class="radar-section" aria-label="Project title">
@@ -98,9 +98,9 @@
     </div>
   </section>
 
-  {%- comment -%} Work Timeline {%- endcomment -%}
-  {% if sessionsJson %}
-  <section class="radar-section" aria-label="Work timeline" id="work-timeline-section">
+  {%- comment -%} Work Timeline — React component with radar accent {%- endcomment -%}
+  {% if sessionsJson != blank %}
+  <section class="radar-section" aria-label="Work timeline">
     <div class="radar-label">Work Timeline</div>
     <div class="chart-card">
       <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
@@ -108,12 +108,12 @@
   </section>
   {% endif %}
 
-  {%- comment -%} Growth Chart {%- endcomment -%}
-  {% if growthJson %}
-  <section class="radar-section" aria-label="Growth chart" id="growth-chart-section">
-    <div class="radar-label">Growth</div>
+  {%- comment -%} Lines Changed — React component with radar variant + dual positive {%- endcomment -%}
+  {% if sessionsJson != blank %}
+  <section class="radar-section" aria-label="Lines changed">
+    <div class="radar-label">Lines Changed</div>
     <div class="chart-card">
-      <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+      <div data-growth-chart data-dual-positive data-variant="radar" data-project-slug="{{ project.slug }}" data-total-loc="{{ project.totalLoc }}" data-total-files="{{ project.totalFilesChanged }}" data-sessions='{{ growthJson | raw }}'></div>
     </div>
   </section>
   {% endif %}
@@ -153,7 +153,7 @@
           </thead>
           <tbody>
             {% for src in sourceCounts %}
-            <tr><td>{{ src.tool }}</td><td>{{ src.count }}</td></tr>
+            <tr><td>{{ src.tool }}</td><td>{{ src.count }} ({{ src.count | times: 100.0 | divided_by: project.totalSessions | round }}%)</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -164,15 +164,18 @@
   {% endif %}
 
   {%- comment -%} Phase Timeline {%- endcomment -%}
-  {% if project.timeline.size > 0 %}
+  {% if arc.size > 0 %}
   <section class="radar-section" aria-label="Project phases">
     <div class="radar-label">Phases</div>
     <div class="phase-timeline">
       <div class="phase-timeline__line"></div>
-      {% for phase in project.timeline %}
+      {% for phase in arc %}
       <div class="phase-timeline__item">
         <div class="phase-timeline__dot"></div>
         <div class="phase-timeline__title">{{ phase.phase }}. {{ phase.title }}</div>
+        {% if phase.dates != blank %}
+        <div class="phase-timeline__dates">{{ phase.dates }}</div>
+        {% endif %}
         {% if phase.description != blank %}
         <div class="phase-timeline__desc">{{ phase.description }}</div>
         {% endif %}
@@ -231,6 +234,35 @@
 
   var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // Build area fill paths from polyline points (close path at bottom of chart)
+  ['add-line', 'del-line'].forEach(function(id) {
+    var polyline = document.getElementById(id);
+    var areaPath = document.querySelector('[data-area-for="' + id + '"]');
+    if (polyline && areaPath) {
+      var baseline = areaPath.getAttribute('data-baseline') || '280';
+      var pts = polyline.getAttribute('points');
+      if (pts && pts.trim()) {
+        var pairs = pts.trim().split(/\s+/);
+        var firstX = pairs[0].split(',')[0];
+        var lastX = pairs[pairs.length - 1].split(',')[0];
+        areaPath.setAttribute('d', 'M' + firstX + ',' + baseline + ' L' + pairs.join(' L') + ' L' + lastX + ',' + baseline + ' Z');
+      }
+    }
+  });
+
+  // Compute actual line lengths for stroke-dasharray animation
+  ['add-line', 'del-line'].forEach(function(id) {
+    var line = document.getElementById(id);
+    if (line && line.getTotalLength) {
+      try {
+        var len = Math.ceil(line.getTotalLength());
+        line.style.setProperty('--line-length', len);
+        line.style.strokeDasharray = len;
+        line.style.strokeDashoffset = len;
+      } catch (e) { /* SVG not rendered yet, keep defaults */ }
+    }
+  });
+
   // Section Fade-In
   var allSections = document.querySelectorAll('.radar-section');
   if (!prefersReducedMotion) {
@@ -243,8 +275,35 @@
       });
     }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
     allSections.forEach(function(s) { fadeObserver.observe(s); });
+
+    // Chart animation observer (wt-bar, growth-line, growth-area)
+    var chartEls = document.querySelectorAll('.wt-bar, .wt-agent-line, .growth-line, .growth-area');
+    if (chartEls.length > 0) {
+      var chartObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            var card = entry.target.closest('.chart-card');
+            if (card) {
+              card.querySelectorAll('.wt-bar, .wt-agent-line, .growth-line, .growth-area').forEach(function(el) {
+                el.classList.add('is-animated');
+              });
+            }
+            chartObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.2 });
+      // Observe each chart-card's first animatable child
+      document.querySelectorAll('.chart-card').forEach(function(card) {
+        var first = card.querySelector('.wt-bar, .growth-line');
+        if (first) chartObserver.observe(first);
+      });
+    }
   } else {
     allSections.forEach(function(s) { s.classList.add('is-visible'); });
+    // Immediately show chart animations when reduced motion is preferred
+    document.querySelectorAll('.wt-bar, .wt-agent-line, .growth-line, .growth-area').forEach(function(el) {
+      el.classList.add('is-animated');
+    });
   }
 })();
 </script>

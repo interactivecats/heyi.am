@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import type { Session } from '../types'
 
 // ── Growth Chart ─────────────────────────────────────────────────
@@ -11,6 +12,12 @@ interface GrowthChartProps {
   totalFiles: number
   keyMoments?: Array<{ sessionId: string; label: string }>
   onSessionClick?: (session: Session) => void
+  accentColor?: string
+  isDark?: boolean
+  /** When true, both additions and deletions render as positive upward lines on a shared scale */
+  dualPositive?: boolean
+  /** Visual variant: 'default' uses step-style paths, 'radar' uses polyline paths with line-draw animation and glow effects */
+  variant?: 'default' | 'radar'
 }
 
 const FONT = "'IBM Plex Mono', monospace"
@@ -163,12 +170,42 @@ function truncTitle(t: string, max: number = 14): string {
 
 // ── Component ────────────────────────────────────────────────────
 
-export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSessionClick }: GrowthChartProps) {
+export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSessionClick, isDark, accentColor, dualPositive, variant = 'default' }: GrowthChartProps) {
+  const isRadar = variant === 'radar'
+
+  // Refs for radar line-draw animation
+  const addLineRef = useRef<SVGPolylineElement>(null)
+  const delLineRef = useRef<SVGPolylineElement>(null)
+  const addAreaRef = useRef<SVGPathElement>(null)
+  const delAreaRef = useRef<SVGPathElement>(null)
+  const chartRef = useRef<HTMLDivElement>(null)
+
+  // Theme-aware colors
+  const colors = isDark ? {
+    textMuted: isRadar ? '#94a3b8' : 'rgba(255,255,255,0.4)',
+    textSecondary: isRadar ? '#cbd5e1' : 'rgba(255,255,255,0.65)',
+    grid: isRadar ? 'rgba(34,211,238,0.04)' : 'rgba(255,255,255,0.06)',
+    gridAxis: isRadar ? 'rgba(34,211,238,0.08)' : 'rgba(255,255,255,0.06)',
+    text: '#fafafa',
+    accent: isRadar ? '#22d3ee' : (accentColor || '#f97316'),
+    deletion: isRadar ? '#f87171' : RED,
+    dotStroke: 'rgba(0,0,0,0.3)',
+  } : {
+    textMuted: isRadar ? '#64748b' : TEXT_MUTED,
+    textSecondary: isRadar ? '#64748b' : TEXT_SECONDARY,
+    grid: isRadar ? 'rgba(100,116,139,0.08)' : GRID_COLOR,
+    gridAxis: isRadar ? 'rgba(100,116,139,0.15)' : GRID_COLOR,
+    text: '#191c1e',
+    accent: isRadar ? '#0891b2' : (accentColor || PRIMARY),
+    deletion: isRadar ? '#ef4444' : RED,
+    dotStroke: '#fff',
+  }
+
   const points = buildTimeSeries(sessions)
 
   if (points.length === 0) {
     return (
-      <div style={{ fontFamily: FONT, fontSize: '0.75rem', color: TEXT_SECONDARY, padding: 16 }}>
+      <div style={{ fontFamily: FONT, fontSize: '0.75rem', color: colors.textSecondary, padding: 16 }}>
         No session data available for growth chart.
       </div>
     )
@@ -185,33 +222,57 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
   const totalAdded = points[points.length - 1].cumulativeAdded
   const totalDeleted = points[points.length - 1].cumulativeDeleted
   const hasDeleteData = totalDeleted > 0
-  const maxVal = Math.max(totalAdded, 1)
-  const ticks = computeAxisTicks(maxVal)
-  const axisMax = ticks[ticks.length - 1] || 1
-
-  // Deletion ticks (separate scale below baseline)
-  const deleteTicks = hasDeleteData ? computeAxisTicks(totalDeleted) : []
-  const deleteAxisMax = hasDeleteData ? (deleteTicks[deleteTicks.length - 1] || 1) : 0
 
   const baseWidth = 700
-  const svgWidth = Math.max(baseWidth, Math.round(totalVisualTime / 60000 * 0.8) + 120)
+  // Width based on compressed time, but also ensure minimum spacing per session point
+  const timeBasedWidth = Math.round(totalVisualTime / 60000 * 0.8) + 120
+  const pointBasedWidth = points.length * 12 + 120
+  const svgWidth = Math.max(baseWidth, timeBasedWidth, pointBasedWidth)
   const padLeft = 48
   const padRight = 16
   const padTop = 24
-  const addChartH = 140
-  const delChartH = hasDeleteData ? 50 : 0
-  const gapH = hasDeleteData ? 2 : 0
   const padBottom = 36
-  const svgHeight = padTop + addChartH + gapH + delChartH + padBottom
-
-  const baseline = padTop + addChartH // zero line for additions
-
   const maxVT = totalVisualTime || 1
   const toX = (vt: number) => padLeft + (vt / maxVT) * (svgWidth - padLeft - padRight)
-  const toYAdd = (val: number) => baseline - (val / axisMax) * addChartH
-  const toYDel = (val: number) => baseline + gapH + (val / deleteAxisMax) * delChartH
 
-  // Build paths — straight line segments (monotonic, no bezier loops)
+  // Layout depends on mode
+  let addChartH: number, delChartH: number, gapH: number, svgHeight: number
+  let baseline: number
+  let axisMax: number, deleteAxisMax: number
+  let ticks: number[], deleteTicks: number[]
+  let toYAdd: (val: number) => number
+  let toYDel: (val: number) => number
+
+  if (dualPositive) {
+    // Both lines share one Y scale, both go upward
+    const maxVal = Math.max(totalAdded, totalDeleted, 1)
+    ticks = computeAxisTicks(maxVal)
+    axisMax = ticks[ticks.length - 1] || 1
+    deleteTicks = []
+    deleteAxisMax = 0
+    addChartH = 160
+    delChartH = 0
+    gapH = 0
+    svgHeight = padTop + addChartH + padBottom
+    baseline = padTop + addChartH
+    toYAdd = (val: number) => baseline - (val / axisMax) * addChartH
+    toYDel = toYAdd // same scale
+  } else {
+    // Split axis: additions above, deletions below
+    const maxVal = Math.max(totalAdded, 1)
+    ticks = computeAxisTicks(maxVal)
+    axisMax = ticks[ticks.length - 1] || 1
+    deleteTicks = hasDeleteData ? computeAxisTicks(totalDeleted) : []
+    deleteAxisMax = hasDeleteData ? (deleteTicks[deleteTicks.length - 1] || 1) : 0
+    addChartH = 140
+    delChartH = hasDeleteData ? 50 : 0
+    gapH = hasDeleteData ? 2 : 0
+    svgHeight = padTop + addChartH + gapH + delChartH + padBottom
+    baseline = padTop + addChartH
+    toYAdd = (val: number) => baseline - (val / axisMax) * addChartH
+    toYDel = (val: number) => baseline + gapH + (val / deleteAxisMax) * delChartH
+  }
+
   const addCoords = points.map((p, i) => ({ x: toX(visualTimes[i]), y: toYAdd(p.cumulativeAdded) }))
   const delCoords = hasDeleteData
     ? points.map((p, i) => ({ x: toX(visualTimes[i]), y: toYDel(p.cumulativeDeleted) }))
@@ -229,12 +290,20 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
     return path
   }
 
-  const addPath = stepPath(addCoords)
+  // Smooth polyline path: straight lines connecting each data point (no step)
+  function smoothPath(coords: Array<{ x: number; y: number }>): string {
+    if (coords.length === 0) return ''
+    return coords.map((c, i) => `${i === 0 ? 'M' : 'L'}${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ')
+  }
+
+  const buildPath = isRadar ? smoothPath : stepPath
+
+  const addPath = buildPath(addCoords)
   const addAreaPath = addPath +
     ` L${addCoords[addCoords.length - 1].x.toFixed(1)},${baseline}` +
     ` L${addCoords[0].x.toFixed(1)},${baseline} Z`
 
-  const delPath = hasDeleteData ? stepPath(delCoords) : ''
+  const delPath = hasDeleteData ? buildPath(delCoords) : ''
   const delAreaPath = hasDeleteData
     ? delPath +
       ` L${delCoords[delCoords.length - 1].x.toFixed(1)},${baseline + gapH}` +
@@ -259,20 +328,82 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
   const isScrollable = svgWidth > baseWidth
   const sortedSessions = [...sessions].filter(s => s.date).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
+  // Radar line-draw animation via IntersectionObserver
+  useEffect(() => {
+    if (!isRadar) return
+
+    const prefersReducedMotion = typeof window !== 'undefined'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    const lines = [addLineRef.current, delLineRef.current].filter(
+      (el): el is SVGPolylineElement => el !== null,
+    )
+    const areas = [addAreaRef.current, delAreaRef.current].filter(
+      (el): el is SVGPathElement => el !== null,
+    )
+
+    if (prefersReducedMotion) {
+      // Show everything immediately, no animation
+      for (const area of areas) {
+        area.style.opacity = '1'
+      }
+      return
+    }
+
+    // Set initial state: lines hidden via dashoffset, areas invisible
+    for (const line of lines) {
+      const len = line.getTotalLength()
+      line.style.strokeDasharray = `${len}`
+      line.style.strokeDashoffset = `${len}`
+      line.style.transition = 'none'
+    }
+    for (const area of areas) {
+      area.style.opacity = '0'
+      area.style.transition = 'none'
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            requestAnimationFrame(() => {
+              for (const line of lines) {
+                line.style.transition = 'stroke-dashoffset 1.2s ease-out'
+                line.style.strokeDashoffset = '0'
+              }
+              // Fade in areas after a delay
+              setTimeout(() => {
+                for (const area of areas) {
+                  area.style.transition = 'opacity 0.8s ease-out'
+                  area.style.opacity = '1'
+                }
+              }, 400)
+            })
+            observer.disconnect()
+          }
+        }
+      },
+      { threshold: 0.2 },
+    )
+
+    if (chartRef.current) observer.observe(chartRef.current)
+    return () => observer.disconnect()
+  }, [isRadar, points.length])
+
   return (
-    <div>
+    <div ref={chartRef}>
       {/* Header */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-        padding: '8px 12px', borderBottom: `1px solid ${GRID_COLOR}`, fontFamily: FONT,
+        padding: '8px 12px', borderBottom: `1px solid ${colors.grid}`, fontFamily: FONT,
       }}>
-        <span style={{ fontSize: 10, fontWeight: 700, color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Code Changes Over Time
+        <span style={{ fontSize: 10, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          {dualPositive ? 'Lines Changed' : 'Code Changes Over Time'}
         </span>
         <div style={{ display: 'flex', gap: 16, fontSize: 11, fontWeight: 600 }}>
-          <span style={{ color: GREEN }}>+{formatLoc(totalAdded)}</span>
-          {hasDeleteData && <span style={{ color: RED }}>-{formatLoc(totalDeleted)}</span>}
-          <span style={{ color: '#191c1e' }}>{formatLoc(totalLoc)} total</span>
+          <span style={{ color: colors.accent }}>+{formatLoc(totalAdded)}</span>
+          {hasDeleteData && <span style={{ color: colors.deletion }}>-{formatLoc(totalDeleted)}</span>}
+          <span style={{ color: colors.text }}>{formatLoc(totalLoc)} total</span>
         </div>
       </div>
 
@@ -287,42 +418,54 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
         >
           <defs>
             <linearGradient id="addGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={GREEN} stopOpacity={0.12} />
-              <stop offset="100%" stopColor={GREEN} stopOpacity={0.02} />
+              <stop offset="0%" stopColor={colors.accent} stopOpacity={isRadar ? 0.05 : 0.12} />
+              <stop offset="100%" stopColor={colors.accent} stopOpacity={isRadar ? 0.05 : 0.02} />
             </linearGradient>
             <linearGradient id="delGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={RED} stopOpacity={0.02} />
-              <stop offset="100%" stopColor={RED} stopOpacity={0.1} />
+              <stop offset="0%" stopColor={colors.deletion} stopOpacity={isRadar ? 0.05 : (dualPositive ? 0.12 : 0.02)} />
+              <stop offset="100%" stopColor={colors.deletion} stopOpacity={isRadar ? 0.05 : (dualPositive ? 0.02 : 0.1)} />
             </linearGradient>
+            {isRadar && (
+              <filter id="dotGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="2" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            )}
           </defs>
 
-          {/* Y-axis grid — additions */}
+          {/* Y-axis grid */}
           {ticks.map(tick => (
             <g key={`ya-${tick}`}>
               <line x1={padLeft} y1={toYAdd(tick)} x2={svgWidth - padRight} y2={toYAdd(tick)}
-                stroke={GRID_COLOR} strokeWidth="0.5" strokeDasharray="4,4" />
+                stroke={colors.grid} strokeWidth="0.5" strokeDasharray="4,4" />
               <text x={padLeft - 8} y={toYAdd(tick) + 3} textAnchor="end"
-                fontFamily={FONT} fontSize="8" fill={TEXT_MUTED}>
-                {tick === 0 ? '' : `+${formatLocAxis(tick)}`}
+                fontFamily={FONT} fontSize="8" fill={colors.textMuted}>
+                {tick === 0 ? '' : dualPositive ? formatLocAxis(tick) : `+${formatLocAxis(tick)}`}
               </text>
             </g>
           ))}
 
+          {/* Y-axis vertical line (radar only) */}
+          {isRadar && (
+            <line x1={padLeft} y1={padTop} x2={padLeft} y2={baseline + gapH + delChartH}
+              stroke={colors.gridAxis} strokeWidth="1" />
+          )}
+
           {/* Baseline */}
           <line x1={padLeft} y1={baseline} x2={svgWidth - padRight} y2={baseline}
-            stroke={GRID_COLOR} strokeWidth="1" />
+            stroke={isRadar ? colors.gridAxis : colors.grid} strokeWidth="1" />
           <text x={padLeft - 8} y={baseline + 3} textAnchor="end"
-            fontFamily={FONT} fontSize="8" fill={TEXT_SECONDARY} fontWeight="600">
+            fontFamily={FONT} fontSize="8" fill={colors.textSecondary} fontWeight="600">
             0
           </text>
 
-          {/* Y-axis grid — deletions */}
-          {hasDeleteData && deleteTicks.filter(t => t > 0).map(tick => (
+          {/* Y-axis grid — deletions (split mode only) */}
+          {!dualPositive && hasDeleteData && deleteTicks.filter(t => t > 0).map(tick => (
             <g key={`yd-${tick}`}>
               <line x1={padLeft} y1={toYDel(tick)} x2={svgWidth - padRight} y2={toYDel(tick)}
-                stroke={GRID_COLOR} strokeWidth="0.5" strokeDasharray="4,4" />
+                stroke={colors.grid} strokeWidth="0.5" strokeDasharray="4,4" />
               <text x={padLeft - 8} y={toYDel(tick) + 3} textAnchor="end"
-                fontFamily={FONT} fontSize="8" fill={TEXT_MUTED}>
+                fontFamily={FONT} fontSize="8" fill={colors.textMuted}>
                 {`-${formatLocAxis(tick)}`}
               </text>
             </g>
@@ -331,20 +474,44 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
           {/* Month dividers (vertical lines only, dates shown per-point) */}
           {monthDividers.map((div, i) => (
             <line key={`m-${i}`} x1={div.x} y1={padTop} x2={div.x} y2={baseline + gapH + delChartH}
-              stroke={GRID_COLOR} strokeWidth="0.5" strokeDasharray="2,4" />
+              stroke={colors.grid} strokeWidth="0.5" strokeDasharray="2,4" />
           ))}
 
           {/* Additions area + line */}
-          <path d={addAreaPath} fill="url(#addGrad)" />
-          <path d={addPath} fill="none" stroke={GREEN} strokeWidth="1.5" />
-
-          {/* Deletions area + line */}
-          {hasDeleteData && (
+          {isRadar ? (
             <>
-              <path d={delAreaPath} fill="url(#delGrad)" />
-              <path d={delPath} fill="none" stroke={RED} strokeWidth="1.5" />
+              <path ref={addAreaRef} d={addAreaPath} fill={`${colors.accent}0D`} />
+              <polyline
+                ref={addLineRef}
+                points={addCoords.map(c => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ')}
+                fill="none" stroke={colors.accent} strokeWidth="1.5"
+                strokeLinecap="round" strokeLinejoin="round"
+              />
+            </>
+          ) : (
+            <>
+              <path d={addAreaPath} fill="url(#addGrad)" />
+              <path d={addPath} fill="none" stroke={colors.accent} strokeWidth="1.5" />
             </>
           )}
+
+          {/* Deletions area + line */}
+          {hasDeleteData && (isRadar ? (
+            <>
+              <path ref={delAreaRef} d={delAreaPath} fill={`${colors.deletion}0D`} />
+              <polyline
+                ref={delLineRef}
+                points={delCoords.map(c => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ')}
+                fill="none" stroke={colors.deletion} strokeWidth="1.5"
+                strokeLinecap="round" strokeLinejoin="round"
+              />
+            </>
+          ) : (
+            <>
+              <path d={delAreaPath} fill="url(#delGrad)" />
+              <path d={delPath} fill="none" stroke={colors.deletion} strokeWidth="1.5" />
+            </>
+          ))}
 
           {/* Session dots + labels */}
           {points.map((p, i) => {
@@ -360,20 +527,23 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
                 {/* Addition dot */}
                 {isKey ? (
                   <circle cx={x} cy={toYAdd(p.cumulativeAdded)} r="5"
-                    fill={GREEN} stroke="#fff" strokeWidth="2" />
+                    fill={colors.accent} stroke={colors.dotStroke} strokeWidth="2"
+                    filter={isRadar ? 'url(#dotGlow)' : undefined} />
                 ) : showLabel ? (
-                  <circle cx={x} cy={toYAdd(p.cumulativeAdded)} r="3" fill={GREEN} />
+                  <circle cx={x} cy={toYAdd(p.cumulativeAdded)} r="3"
+                    fill={colors.accent} filter={isRadar ? 'url(#dotGlow)' : undefined} />
                 ) : null}
 
                 {/* Deletion dot */}
                 {hasDeleteData && p.cumulativeDeleted > 0 && showLabel && (
-                  <circle cx={x} cy={toYDel(p.cumulativeDeleted)} r="2.5" fill={RED} />
+                  <circle cx={x} cy={toYDel(p.cumulativeDeleted)} r="2.5"
+                    fill={colors.deletion} filter={isRadar ? 'url(#dotGlow)' : undefined} />
                 )}
 
                 {/* Key moment annotation */}
                 {isKey && (
                   <text x={x} y={toYAdd(p.cumulativeAdded) - 12}
-                    textAnchor="middle" fontFamily={FONT} fontSize="8" fill={TEXT_SECONDARY}>
+                    textAnchor="middle" fontFamily={FONT} fontSize="8" fill={colors.textSecondary}>
                     {momentMap.get(p.sessionId)}
                   </text>
                 )}
@@ -381,7 +551,7 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
                 {/* Date on x-axis */}
                 {showLabel && (
                   <text x={x} y={svgHeight - 8} textAnchor="middle"
-                    fontFamily={FONT} fontSize="8" fill={TEXT_MUTED}>
+                    fontFamily={FONT} fontSize="8" fill={colors.textMuted}>
                     {new Date(p.dateMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </text>
                 )}
@@ -394,30 +564,30 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
       {/* Summary bar */}
       <div style={{
         display: 'flex', gap: 24, padding: '8px 12px',
-        borderTop: `1px solid ${GRID_COLOR}`,
+        borderTop: `1px solid ${colors.grid}`,
         fontFamily: FONT, fontSize: 10,
       }}>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: GREEN }}>+{formatLoc(totalAdded)}</div>
-          <div style={{ color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Added</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: colors.accent }}>+{formatLoc(totalAdded)}</div>
+          <div style={{ color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Added</div>
         </div>
         {hasDeleteData && (
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: RED }}>-{formatLoc(totalDeleted)}</div>
-            <div style={{ color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Deleted</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: colors.deletion }}>-{formatLoc(totalDeleted)}</div>
+            <div style={{ color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Deleted</div>
           </div>
         )}
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#191c1e' }}>{formatLoc(totalLoc)}</div>
-          <div style={{ color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Lines changed</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: colors.text }}>{formatLoc(totalLoc)}</div>
+          <div style={{ color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Lines changed</div>
         </div>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#191c1e' }}>{totalFiles}</div>
-          <div style={{ color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Files</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: colors.text }}>{totalFiles}</div>
+          <div style={{ color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Files</div>
         </div>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#191c1e' }}>{points.length}</div>
-          <div style={{ color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Sessions</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: colors.text }}>{points.length}</div>
+          <div style={{ color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Sessions</div>
         </div>
       </div>
     </div>

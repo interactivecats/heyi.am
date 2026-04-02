@@ -1,5 +1,46 @@
 /* ── Radar Template Styles ── */
 
+:root {
+  --surface: #0f172a;
+  --surface-low: #131c31;
+  --surface-lowest: #1a2540;
+  --surface-high: #0b1120;
+  --on-surface: #e2e8f0;
+  --on-surface-variant: #64748b;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34, 211, 238, 0.15);
+  --accent-faint: rgba(34, 211, 238, 0.06);
+  --outline: #1e293b;
+  --ghost: rgba(34, 211, 238, 0.08);
+  --grid-line: rgba(34, 211, 238, 0.04);
+  --green: #34d399;
+  --green-bg: rgba(52, 211, 153, 0.1);
+  --violet: #a78bfa;
+  --violet-bg: rgba(167, 139, 250, 0.1);
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+}
+
+/* ── Dark Template Wrapper ── */
+.radar {
+  font-family: var(--font-body);
+  color: var(--on-surface);
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 40px 40px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+.radar a { color: var(--accent); text-decoration: none; }
+.radar a:visited { color: var(--accent); }
+.radar a:hover { text-decoration: underline; text-decoration-color: var(--accent-dim); }
+
 /* ── Section Fade-In ── */
 .radar-section {
   margin-bottom: 2.5rem;
@@ -54,6 +95,7 @@
   flex-wrap: wrap;
 }
 .radar .radar-breadcrumb a { color: var(--accent); }
+.radar .radar-breadcrumb a:visited { color: var(--accent); }
 .radar .radar-breadcrumb__sep { color: var(--on-surface-variant); }
 
 /* ── Title ── */
@@ -147,6 +189,9 @@
 .radar .contact-row a:hover {
   color: var(--accent);
 }
+.radar .contact-row a:visited {
+  color: var(--on-surface-variant);
+}
 .radar .contact-row a:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -237,6 +282,9 @@
   border-color: var(--accent-dim);
   text-decoration: none;
 }
+.radar .portfolio-card:visited {
+  color: inherit;
+}
 
 .radar .portfolio-card__bar {
   height: 2px;
@@ -312,6 +360,7 @@
   align-items: center;
   gap: 0.375rem;
 }
+.radar .radar-link:visited { color: var(--accent); }
 .radar .radar-link:hover {
   text-decoration: underline;
   text-decoration-color: var(--accent-dim);
@@ -329,6 +378,7 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--ghost);
   overflow: hidden;
+  background: var(--surface-low);
 }
 .radar .browser-chrome__bar {
   display: flex;
@@ -409,9 +459,7 @@
   border: 1px solid var(--ghost);
   border-radius: var(--radius-sm);
   padding: 1rem;
-  overflow: hidden;
 }
-.radar .chart-card svg { width: 100%; display: block; }
 
 /* ── Work Timeline Bars ── */
 .radar .wt-bar {
@@ -595,6 +643,9 @@
   color: inherit;
   display: block;
 }
+.radar .session-card:visited {
+  color: inherit;
+}
 .radar .session-card:hover {
   border-color: var(--accent-dim);
   text-decoration: none;
@@ -639,6 +690,30 @@
 }
 
 /* ── Session Meta (Session page) ── */
+.radar .session-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.radar .session-meta-item {
+  display: flex;
+  flex-direction: column;
+}
+.radar .session-meta-item__label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface-variant);
+}
+.radar .session-meta-item__value {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
 .radar .stat-grid-inline {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
@@ -839,6 +914,89 @@
   padding-left: 1.75rem;
 }
 
+/* ── Agent Summary ── */
+.radar .agent-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+.radar .agent-table { width: 100%; border-collapse: collapse; }
+.radar .agent-table th {
+  text-align: left;
+  padding: 0.5rem 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  border-bottom: 1px solid var(--ghost);
+  font-weight: 400;
+}
+.radar .agent-table td {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--ghost);
+  font-size: 0.8125rem;
+  color: var(--on-surface);
+}
+.radar .agent-table td:nth-child(2),
+.radar .agent-table td:nth-child(3) {
+  font-family: var(--font-mono);
+  text-align: right;
+  color: var(--on-surface-variant);
+}
+
+/* ── Agent Role Color Dots ── */
+.radar .agent-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+.radar .agent-dot--backend { background: #0891b2; }
+.radar .agent-dot--backend-dev { background: #0891b2; }
+.radar .agent-dot--qa { background: #059669; }
+.radar .agent-dot--qa-engineer { background: #059669; }
+.radar .agent-dot--frontend { background: #7c3aed; }
+.radar .agent-dot--frontend-dev { background: #7c3aed; }
+.radar .agent-dot--security { background: #475569; }
+.radar .agent-dot--security-engineer { background: #475569; }
+.radar .agent-dot--reviewer { background: #e11d48; }
+.radar .agent-dot--code-reviewer { background: #e11d48; }
+
+/* ── Agent Duration Bar Chart ── */
+.radar .agent-bar-chart {
+  margin-top: 1rem;
+}
+.radar .agent-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.375rem;
+}
+.radar .agent-bar-row__label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--on-surface-variant);
+  width: 100px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.radar .agent-bar-row__bar {
+  height: 3px;
+  border-radius: 1px;
+  flex: 1;
+  max-width: 200px;
+}
+.radar .agent-bar-row__value {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--on-surface-variant);
+  width: 40px;
+  flex-shrink: 0;
+}
+
 /* ── Footer ── */
 .radar .radar-footer {
   padding-top: 1.5rem;
@@ -852,6 +1010,22 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+
+/* ── Skip Link ── */
+.radar .skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--accent);
+  color: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  border-radius: var(--radius-sm);
+  z-index: 200;
+  text-decoration: none;
+}
+.radar .skip-link:focus { top: 1rem; }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
@@ -867,4 +1041,9 @@
   .radar .session-layout > aside { order: -1; }
   .radar .session-meta-row { gap: 1rem; }
   .radar .stat-grid-inline { grid-template-columns: repeat(2, 1fr); }
+  .radar .agent-layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .radar .agent-bar-row__label { width: 70px; }
 }

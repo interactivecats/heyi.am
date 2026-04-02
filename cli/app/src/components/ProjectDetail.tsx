@@ -40,7 +40,8 @@ function scopeTemplateCss(css: string): string {
     // Strip universal reset (Tailwind preflight handles this)
     .replace(/\*\s*,\s*\*::before\s*,\s*\*::after\s*\{[^}]*\}/g, '')
   // @scope confines ALL selectors to #liquid-render — nothing leaks out
-  return `@scope (#liquid-render) {\n${scoped}\n}`
+  // Add screenshot constraint so images don't dominate the page
+  return `@scope (#liquid-render) {\n${scoped}\n}\n#liquid-render img[alt*="screenshot" i], #liquid-render img[alt*="Screenshot" i], #liquid-render [class*="screenshot"] img { max-height: 24rem; width: 100%; object-fit: cover; object-position: top; border-radius: 6px; }`
 }
 
 export function ProjectDetail() {
@@ -53,6 +54,8 @@ export function ProjectDetail() {
   const [renderHtml, setRenderHtml] = useState<string | null>(null)
   const [renderCss, setRenderCss] = useState<string | null>(null)
   const [renderError, setRenderError] = useState<string | null>(null)
+  const [templateAccent, setTemplateAccent] = useState('#084471')
+  const [templateMode, setTemplateMode] = useState<'light' | 'dark'>('light')
 
   // Chart React roots for cleanup
   const chartRootsRef = useRef<Root[]>([])
@@ -80,6 +83,8 @@ export function ProjectDetail() {
         if (r) {
           setRenderHtml(r.html)
           setRenderCss(r.css)
+          if (r.accent) setTemplateAccent(r.accent)
+          if (r.mode) setTemplateMode(r.mode)
           if (r.screenshotUrl) {
             setScreenshotPreview((prev) => prev || r.screenshotUrl!)
           }
@@ -94,6 +99,11 @@ export function ProjectDetail() {
 
   useEffect(() => {
     if (!dirName) return
+    // Clear stale state from previous project so CSS/HTML don't flash
+    setRenderHtml(null)
+    setRenderCss(null)
+    setDetail(null)
+    setLoading(true)
     fetchProjectDetail(dirName)
       .then((d) => {
         setDetail(d)
@@ -119,13 +129,58 @@ export function ProjectDetail() {
     if (!renderHtml || !container) return
     container.innerHTML = renderHtml
 
-    // Animated templates use opacity:0 + IntersectionObserver (.visible class).
-    // That JS doesn't run inside the React shell, so force visibility with stagger.
-    const sections = container.querySelectorAll('[class*="-section"], [class*="sc-"], [class*="-hero"]')
-    sections.forEach((el, i) => {
-      setTimeout(() => el.classList.add('visible'), i * 50)
+    // Re-execute inline scripts (setting content via ref doesn't run <script> tags).
+    // This activates template-specific animations (counters, scroll reveals).
+    container.querySelectorAll('script').forEach((oldScript) => {
+      const newScript = document.createElement('script')
+      if (oldScript.src) {
+        newScript.src = oldScript.src
+      } else {
+        newScript.textContent = oldScript.textContent ?? ''
+      }
+      oldScript.parentNode?.replaceChild(newScript, oldScript)
+    })
+
+    // Force-reveal animated elements that use IntersectionObserver + .visible class.
+    // In the embedded React shell, viewport-based observers may not fire reliably.
+    requestAnimationFrame(() => {
+      const animated = container.querySelectorAll(
+        '[class*="-section"], [class*="sc-"], [class*="-hero"], .fade-up, .fade-in, .reveal, [class*="anim-"], .strata-layer, [class*="cos-"]',
+      )
+      animated.forEach((el, i) => {
+        setTimeout(() => el.classList.add('visible'), i * 50)
+      })
     })
   }, [renderHtml])
+
+  // Intercept session card link clicks → open drawer instead of navigating away.
+  // Session cards in Liquid templates are raw <a> tags that React Router doesn't manage.
+  useEffect(() => {
+    const container = liquidRef.current
+    if (!container || !detail) return
+
+    function handleClick(e: MouseEvent) {
+      const anchor = (e.target as HTMLElement).closest('a[href]') as HTMLAnchorElement | null
+      if (!anchor) return
+
+      const href = anchor.getAttribute('href') ?? ''
+      // Match session links: /session/:id or relative session/:id
+      const match = href.match(/\/session\/(.+)$/)
+      if (!match) return
+
+      e.preventDefault()
+      const sessionSlug = decodeURIComponent(match[1])
+      const session = detail.sessions.find(
+        (s) => s.id === sessionSlug || s.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') === sessionSlug,
+      )
+      if (session) {
+        setSelectedSession(session)
+      }
+    }
+
+    container.addEventListener('click', handleClick)
+    return () => container.removeEventListener('click', handleClick)
+  }, [detail])
 
   // Hydrate charts after HTML injection AND detail data is available
   useEffect(() => {
@@ -139,6 +194,8 @@ export function ProjectDetail() {
 
     const { sessions, project } = detail
 
+    const isDark = templateMode === 'dark'
+
     container.querySelectorAll<HTMLElement>('[data-work-timeline]').forEach((el) => {
       const root = createRoot(el)
       chartRootsRef.current.push(root)
@@ -147,6 +204,8 @@ export function ProjectDetail() {
           sessions={sessions}
           maxHeight={300}
           onSessionClick={(s) => setSelectedSession(s)}
+          accentColor={templateAccent}
+          isDark={isDark}
         />,
       )
     })
@@ -160,6 +219,10 @@ export function ProjectDetail() {
           totalLoc={project.totalLoc}
           totalFiles={project.totalFiles}
           onSessionClick={(s) => setSelectedSession(s)}
+          accentColor={templateAccent}
+          isDark={isDark}
+          dualPositive={el.hasAttribute('data-dual-positive')}
+          variant={(el.getAttribute('data-variant') as 'default' | 'radar') || 'default'}
         />,
       )
     })
@@ -369,7 +432,7 @@ export function ProjectDetail() {
       </aside>
 
       {/* Main content — Liquid-rendered template preview */}
-      <main className="p-6 overflow-y-auto max-w-[1200px] mx-auto">
+      <div className="p-6 max-w-[1200px] mx-auto min-h-0" style={templateMode === 'dark' ? { background: '#000' } : undefined}>
         {renderHtml ? (
           <>
             {renderCss && <style>{scopeTemplateCss(renderCss)}</style>}
@@ -390,7 +453,7 @@ export function ProjectDetail() {
             <span className="text-sm text-on-surface-variant">Rendering template...</span>
           </div>
         )}
-      </main>
+      </div>
 
       {/* Session overlay */}
       {selectedSession && dirName && (
@@ -398,6 +461,7 @@ export function ProjectDetail() {
           session={selectedSession}
           projectDirName={dirName}
           onClose={() => setSelectedSession(null)}
+          isDark={templateMode === 'dark'}
         />
       )}
     </div>

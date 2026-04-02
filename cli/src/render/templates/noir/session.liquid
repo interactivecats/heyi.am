@@ -1,7 +1,7 @@
 <div class="noir-page" data-render-version="2" data-template="noir">
 
   <!-- Breadcrumb -->
-  <div class="noir-breadcrumb" aria-label="Breadcrumb">
+  <nav class="noir-breadcrumb" aria-label="Breadcrumb">
     {% if user.username != blank %}
     <a href="/{{ user.username }}">{{ user.username }}</a>
     <span class="noir-breadcrumb__sep">/</span>
@@ -11,7 +11,7 @@
     <span class="noir-breadcrumb__sep">/</span>
     {% endif %}
     <span>{{ session.title }}</span>
-  </div>
+  </nav>
 
   <!-- Session Header -->
   <section class="noir-section noir-session-header" aria-label="Session header">
@@ -150,17 +150,30 @@
       {% endif %}
 
       <!-- Agent Summary -->
-      {% if session.agentSummary.subSessions.size > 0 %}
+      {% if session.agentSummary.agents.size > 0 %}
       <section class="noir-section" aria-label="Agent summary">
         <h2 class="noir-heading">Agent Summary</h2>
-        <p class="noir-agent-count">{{ session.agentSummary.subSessions.size }} sub-sessions</p>
+        <p class="noir-agent-count">{{ session.agentSummary.agents.size }} sub-sessions</p>
 
         <div class="noir-agents" role="table" aria-label="Agent breakdown">
-          {% for sub in session.agentSummary.subSessions %}
+          {% for sub in session.agentSummary.agents %}
           <div class="noir-agent-row" role="row">
             <span class="noir-agent-row__role" role="cell">{{ sub.role }}</span>
-            <span class="noir-agent-row__duration" role="cell">{{ sub.durationMinutes | formatDuration }}</span>
-            <span class="noir-agent-row__loc" role="cell">{{ sub.linesOfCode }} LOC</span>
+            <span class="noir-agent-row__duration" role="cell">{{ sub.duration_minutes | formatDuration }}</span>
+            <span class="noir-agent-row__loc" role="cell">{{ sub.loc_changed }} LOC</span>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Agent bar chart -->
+        <div class="noir-agent-bars" aria-label="Agent duration chart">
+          {% for sub in session.agentSummary.agents %}
+          <div class="noir-agent-bar-row">
+            <span class="noir-agent-bar-row__label">{{ sub.role }}</span>
+            <div class="noir-agent-bar-row__track">
+              <div class="noir-agent-bar-row__fill" style="width: {% if session.agentSummary.agents[0].duration_minutes > 0 %}{{ sub.duration_minutes | times: 100 | divided_by: session.agentSummary.agents[0].duration_minutes }}%{% else %}0%{% endif %};"></div>
+            </div>
+            <span class="noir-agent-bar-row__value">{{ sub.duration_minutes | formatDuration }}</span>
           </div>
           {% endfor %}
         </div>

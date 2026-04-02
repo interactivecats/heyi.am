@@ -42,6 +42,8 @@ vi.mock('./render/build-render-data.js', () => ({
     durationMinutes: 30,
     turns: 10,
     locChanged: 100,
+    linesAdded: 80,
+    linesDeleted: 20,
     filesChanged: 5,
     skills: [],
     recordedAt: '2026-03-20T10:00:00Z',

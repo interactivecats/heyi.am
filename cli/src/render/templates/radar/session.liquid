@@ -1,13 +1,13 @@
 <div class="heyiam-session radar" data-render-version="2" data-template="radar">
 
   {%- comment -%} Breadcrumb {%- endcomment -%}
-  <div class="radar-breadcrumb" aria-label="Breadcrumb">
+  <nav class="radar-breadcrumb" aria-label="Breadcrumb">
     <a href="/{{ user.username }}">{{ user.username }}</a>
     <span class="radar-breadcrumb__sep">/</span>
     <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
     <span class="radar-breadcrumb__sep">/</span>
     <span>{{ session.slug }}</span>
-  </div>
+  </nav>
 
   {%- comment -%} Title {%- endcomment -%}
   <section class="radar-section" aria-label="Session title">
@@ -189,12 +189,49 @@
   {% endif %}
 
   {%- comment -%} Agent Summary {%- endcomment -%}
-  {% if session.agentSummary != blank %}
+  {% if session.agentSummary != blank or session.agents.size > 0 %}
   <section class="radar-section" aria-label="Agent summary" id="agent-section">
     <div class="radar-label">Agent Summary</div>
-    <div class="radar-narrative">
+    {% if session.agents.size > 0 %}
+    <div class="agent-layout">
+      <div>
+        <table class="agent-table">
+          <thead>
+            <tr><th>Role</th><th style="text-align: right;">Duration</th><th style="text-align: right;">LOC</th></tr>
+          </thead>
+          <tbody>
+            {% for agent in session.agents %}
+            <tr>
+              <td><span class="agent-dot agent-dot--{{ agent.role | downcase }}"></span>{{ agent.role }}</td>
+              <td>{{ agent.durationMinutes | formatDuration }}</td>
+              <td>{{ agent.locChanged | formatLoc }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div class="agent-bar-chart">
+          {% assign maxAgentDuration = session.agents[0].durationMinutes %}
+          {% for agent in session.agents %}
+          {% if agent.durationMinutes > maxAgentDuration %}{% assign maxAgentDuration = agent.durationMinutes %}{% endif %}
+          {% endfor %}
+          {% for agent in session.agents %}
+          <div class="agent-bar-row">
+            <div class="agent-bar-row__label">{{ agent.role }}</div>
+            <div class="agent-bar-row__bar" style="width: {{ agent.durationMinutes | times: 100.0 | divided_by: maxAgentDuration | round }}%; background: var(--accent);"></div>
+            <div class="agent-bar-row__value">{{ agent.durationMinutes | formatDuration }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    {% if session.agentSummary != blank %}
+    <div class="radar-narrative" {% if session.agents.size > 0 %}style="margin-top: 1.5rem;"{% endif %}>
       {{ session.agentSummary }}
     </div>
+    {% endif %}
   </section>
   {% endif %}
 

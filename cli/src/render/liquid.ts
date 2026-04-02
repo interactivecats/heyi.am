@@ -104,7 +104,8 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
   const chartSessions = (extras?.fullSessions ?? allSessions.map((s) => ({
     id: s.token, slug: s.slug, title: s.title, date: s.recordedAt,
     durationMinutes: s.durationMinutes, turns: s.turns,
-    linesOfCode: s.locChanged, status: 'enhanced',
+    linesOfCode: s.locChanged, linesAdded: s.linesAdded, linesDeleted: s.linesDeleted,
+    status: 'enhanced',
     projectName: data.project.title, rawLog: [],
     skills: s.skills, source: s.sourceTool,
     filesChanged: s.filesChanged,
@@ -116,6 +117,49 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
   // Encode JSON safe for single-quoted HTML attributes
   const sessionsJson = JSON.stringify(chartSessions).replace(/'/g, '&#39;');
   const growthJson = sessionsJson; // same data for both charts
+
+  // Pre-compute chart coordinates for Liquid-rendered SVGs
+  // Sort all sessions by date, compress gaps, compute x positions
+  const sortedAll = [...(data.allSessions || data.sessions)]
+    .filter(s => s.recordedAt)
+    .sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime());
+
+  // Gap compression: gaps > 1 day compressed to fixed visual width
+  const GAP_THRESHOLD = 24 * 60 * 60 * 1000; // 1 day
+  const COMPRESSED_GAP = 2 * 60 * 60 * 1000;  // 2 hours visual
+  const visualTimes: number[] = [0];
+  for (let i = 1; i < sortedAll.length; i++) {
+    const gap = new Date(sortedAll[i].recordedAt).getTime() - new Date(sortedAll[i - 1].recordedAt).getTime();
+    visualTimes.push(visualTimes[i - 1] + (gap > GAP_THRESHOLD ? COMPRESSED_GAP : Math.max(gap, 0)));
+  }
+  const totalVisualTime = visualTimes[visualTimes.length - 1] || 1;
+
+  // Compute x positions (0-1000 range, template will scale to SVG width)
+  // Also compute cumulative additions/deletions for growth chart
+  let cumAdded = 0;
+  let cumDeleted = 0;
+  const chartPoints = sortedAll.map((s, i) => {
+    cumAdded += s.linesAdded || 0;
+    cumDeleted += s.linesDeleted || 0;
+    return {
+      title: s.title,
+      slug: s.slug,
+      date: s.recordedAt,
+      locChanged: s.locChanged,
+      linesAdded: s.linesAdded || 0,
+      linesDeleted: s.linesDeleted || 0,
+      durationMinutes: s.durationMinutes,
+      sourceTool: s.sourceTool || 'unknown',
+      cumAdded,
+      cumDeleted,
+      // x position as integer 0-1000 (template divides by 1000 and multiplies by plot width)
+      xPct: Math.round((visualTimes[i] / totalVisualTime) * 1000),
+    };
+  });
+
+  // SVG width hint: wider for more sessions (min 1200, scale with count)
+  // Match React GrowthChart sizing: base on compressed time, not raw session count
+  const chartSvgWidth = Math.max(700, Math.round(totalVisualTime / 60000 * 0.8) + 120);
 
   const durationLabel = data.project.totalAgentDurationMinutes ? 'Human / Agents' : 'Time';
   const efficiencyMultiplier = data.project.totalAgentDurationMinutes && data.project.totalDurationMinutes > 0
@@ -170,6 +214,8 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
     ...data,
     arc: extras?.arc ?? [],
     featuredSessions,
+    chartPoints,
+    chartSvgWidth,
     sourceCounts: Object.entries(sourceCounts).map(([tool, count]) => ({ tool, count })),
     sessionsJson,
     growthJson,
