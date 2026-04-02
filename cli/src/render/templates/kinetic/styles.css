@@ -550,7 +550,6 @@ body {
   border-radius: 8px;
   border: 1px solid var(--border);
 }
-.kinetic .growth-container svg { width: 100%; height: auto; }
 
 /* ── Decision items ── */
 .kinetic .decision-item {

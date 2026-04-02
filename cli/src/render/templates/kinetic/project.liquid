@@ -105,10 +105,10 @@
   {%- comment -%} Growth chart {%- endcomment -%}
   {% if growthJson %}
   <section class="section section--flush" aria-label="Growth over time">
-    <div class="section-tag">Lines Changed</div>
-    <h2 class="section-title">Lines changed over time</h2>
+    <div class="section-tag">Growth</div>
+    <h2 class="section-title">Lines of code over time</h2>
     <div class="growth-container">
-      <div data-growth-chart data-dual-positive data-variant="radar" data-project-slug="{{ project.slug }}" data-total-loc="{{ project.totalLoc }}" data-total-files="{{ project.totalFilesChanged }}" data-sessions='{{ growthJson | raw }}'></div>
+      <div data-growth-chart data-project-slug="{{ project.slug }}" data-total-loc="{{ project.totalLoc }}" data-total-files="{{ project.totalFilesChanged }}" data-sessions='{{ growthJson | raw }}'></div>
     </div>
   </section>
   {% endif %}
