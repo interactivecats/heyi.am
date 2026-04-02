@@ -32,7 +32,7 @@
     <main id="main-content">
 
       {%- comment -%} Breadcrumb {%- endcomment -%}
-      <div class="cos-breadcrumb" aria-label="Breadcrumb">
+      <nav class="cos-breadcrumb" aria-label="Breadcrumb">
         <a href="/{{ user.username }}">{{ user.username }}</a>
         {% if projectSlug %}
         <span class="cos-breadcrumb-sep" aria-hidden="true">/</span>
@@ -40,7 +40,7 @@
         {% endif %}
         <span class="cos-breadcrumb-sep" aria-hidden="true">/</span>
         <span aria-current="page">{{ session.title }}</span>
-      </div>
+      </nav>
 
       {%- comment -%} Session Header {%- endcomment -%}
       <header class="cos-section cos-session-header">

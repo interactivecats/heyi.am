@@ -101,7 +101,7 @@
         <div class="sc-leverage__context"><span>{{ durationLabel }}</span></div>
         {% if project.totalDurationMinutes > 0 and project.totalAgentDurationMinutes %}
         {% assign total_combined = project.totalDurationMinutes | plus: project.totalAgentDurationMinutes %}
-        {% assign human_pct = project.totalDurationMinutes | times: 100 | divided_by: total_combined %}
+        {% assign human_pct = project.totalDurationMinutes | times: 100.0 | divided_by: total_combined | round %}
         {% assign agent_pct = 100 | minus: human_pct %}
         <div class="sc-leverage__bar"><div class="sc-leverage__human" style="width:{{ human_pct }}%"></div><div class="sc-leverage__agent" style="width:{{ agent_pct }}%"></div></div>
         {% endif %}
@@ -144,7 +144,7 @@
               {% endfor %}
               {% for sc in sourceCounts %}
               {% if total_sessions > 0 %}
-              {% assign pct = sc.count | times: 100 | divided_by: total_sessions %}
+              {% assign pct = sc.count | times: 100.0 | divided_by: total_sessions | round %}
               {% endif %}
               <div class="sc-source-row">
                 <span class="sc-source-name">{{ sc.tool }}</span>
@@ -205,7 +205,7 @@
         </div>
         <div class="sc-session-grid">
           {% for s in featuredSessions %}
-          <a href="{{ sessionBaseUrl }}/{{ s.slug | default: s.token }}.html" class="sc-session-card sc-stagger">
+          <a href="{{ sessionBaseUrl }}/{{ s.slug | default: s.token }}" class="sc-session-card sc-stagger">
             <div class="sc-session-card__accent-bar" style="background: var(--accent);"></div>
             <div class="sc-session-card__title">{{ s.title }}</div>
             <div class="sc-session-card__meta">

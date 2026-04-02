@@ -30,11 +30,11 @@
     <main id="main-content">
 
       {%- comment -%} Breadcrumb {%- endcomment -%}
-      <div class="cos-breadcrumb" aria-label="Breadcrumb">
+      <nav class="cos-breadcrumb" aria-label="Breadcrumb">
         <a href="/{{ user.username }}">{{ user.username }}</a>
         <span class="cos-breadcrumb-sep" aria-hidden="true">/</span>
         <span aria-current="page">{{ project.slug }}</span>
-      </div>
+      </nav>
 
       {%- comment -%} Project Header {%- endcomment -%}
       <header class="cos-section cos-project-header">
@@ -127,22 +127,51 @@
       </section>
       {% endif %}
 
-      {%- comment -%} Work Timeline Chart {%- endcomment -%}
-      {% if sessionsJson %}
+      {%- comment -%} Work Timeline Chart (CSS-only SVG bars) {%- endcomment -%}
+      {% if featuredSessions.size > 0 %}
       <section class="cos-section" aria-label="Work timeline chart">
         <h2 class="cos-section-title">Work Timeline</h2>
         <div class="cos-chart-container">
-          <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-        </div>
-      </section>
-      {% endif %}
-
-      {%- comment -%} Growth Chart {%- endcomment -%}
-      {% if growthJson %}
-      <section class="cos-section" aria-label="Growth over time">
-        <h2 class="cos-section-title">Growth</h2>
-        <div class="cos-chart-container">
-          <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+          {% assign maxLoc = 0 %}
+          {% for s in featuredSessions %}
+            {% if s.locChanged > maxLoc %}{% assign maxLoc = s.locChanged %}{% endif %}
+          {% endfor %}
+          {% assign barCount = featuredSessions.size %}
+          {% assign barWidth = 55 %}
+          {% assign barGap = 75 %}
+          {% assign chartLeft = 80 %}
+          {% assign chartHeight = 180 %}
+          {% assign chartTop = 30 %}
+          {% assign chartBottom = 210 %}
+          {% assign svgWidth = chartLeft | plus: barCount | times: barGap | plus: 40 %}
+          <svg class="cos-chart-svg" viewBox="0 0 {{ svgWidth }} 240" role="img" aria-label="Bar chart showing lines of code written per session">
+            <line class="cos-chart-grid-line" x1="60" y1="30" x2="{{ svgWidth | minus: 20 }}" y2="30" />
+            <line class="cos-chart-grid-line" x1="60" y1="75" x2="{{ svgWidth | minus: 20 }}" y2="75" />
+            <line class="cos-chart-grid-line" x1="60" y1="120" x2="{{ svgWidth | minus: 20 }}" y2="120" />
+            <line class="cos-chart-grid-line" x1="60" y1="165" x2="{{ svgWidth | minus: 20 }}" y2="165" />
+            <line class="cos-chart-grid-line" x1="60" y1="210" x2="{{ svgWidth | minus: 20 }}" y2="210" />
+            {% assign yStep = maxLoc | divided_by: 4 %}
+            <text class="cos-chart-label" x="55" y="34" text-anchor="end">{{ maxLoc }}</text>
+            <text class="cos-chart-label" x="55" y="79" text-anchor="end">{{ maxLoc | times: 3 | divided_by: 4 }}</text>
+            <text class="cos-chart-label" x="55" y="124" text-anchor="end">{{ maxLoc | divided_by: 2 }}</text>
+            <text class="cos-chart-label" x="55" y="169" text-anchor="end">{{ maxLoc | divided_by: 4 }}</text>
+            <text class="cos-chart-label" x="55" y="214" text-anchor="end">0</text>
+            {% for s in featuredSessions %}
+            {% assign barX = forloop.index0 | times: barGap | plus: chartLeft %}
+            {% assign barCenterX = barX | plus: 27 %}
+            {% if maxLoc > 0 %}
+              {% assign barH = s.locChanged | times: chartHeight | divided_by: maxLoc %}
+            {% else %}
+              {% assign barH = 0 %}
+            {% endif %}
+            {% assign barY = chartBottom | minus: barH %}
+            <g class="cos-chart-bar">
+              <rect x="{{ barX }}" y="{{ barY }}" width="{{ barWidth }}" height="{{ barH }}" rx="4" fill="var(--cos-accent)" opacity="0.7" />
+              <text class="cos-chart-value" x="{{ barCenterX }}" y="{{ barY | minus: 6 }}" text-anchor="middle">{{ s.locChanged }}</text>
+              <text class="cos-chart-label" x="{{ barCenterX }}" y="228" text-anchor="middle">S{{ forloop.index }}</text>
+            </g>
+            {% endfor %}
+          </svg>
         </div>
       </section>
       {% endif %}
@@ -199,7 +228,7 @@
         {% if totalSourceSessions > 0 %}
         <div class="cos-source-bar-large">
           {% for src in sourceCounts %}
-          {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+          {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
           {% if forloop.first %}
           <div class="cos-source-fill-claude" style="width: {{ srcPct }}%"></div>
           {% else %}
@@ -209,7 +238,7 @@
         </div>
         <div class="cos-source-labels">
           {% for src in sourceCounts %}
-          {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+          {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
           <span>
             {% if forloop.first %}
             <span class="cos-source-dot claude" aria-hidden="true"></span>
@@ -230,21 +259,19 @@
         <h2 class="cos-section-title">Sessions</h2>
         <div class="cos-sessions">
           {% for s in featuredSessions %}
-          <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="session-card">
-            <article class="cos-session-card">
-              <h3>{{ s.title }}</h3>
-              <div class="cos-session-meta">
-                <span><strong>{{ s.durationMinutes | formatDuration }}</strong></span>
-                <span><strong>{{ s.locChanged | localeNumber }}</strong> LOC</span>
-                {% if s.agentSummary %}
-                <span><strong>{{ s.agentSummary.agents.size }}</strong> agents</span>
-                {% endif %}
-              </div>
-              {% if s.skills.size > 0 %}
-              <span class="cos-session-tag">{{ s.skills | first }}</span>
+          <article class="cos-session-card">
+            <h3><a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a></h3>
+            <div class="cos-session-meta">
+              <span><strong>{{ s.durationMinutes | formatDuration }}</strong></span>
+              <span><strong>{{ s.locChanged | localeNumber }}</strong> LOC</span>
+              {% if s.agentSummary %}
+              <span><strong>{{ s.agentSummary.agents.size }}</strong> agents</span>
               {% endif %}
-            </article>
-          </a>
+            </div>
+            {% if s.skills.size > 0 %}
+            <span class="cos-session-tag">{{ s.skills | first }}</span>
+            {% endif %}
+          </article>
           {% endfor %}
         </div>
       </section>

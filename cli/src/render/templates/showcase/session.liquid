@@ -126,7 +126,7 @@
                 <span class="sc-agent-row__dur">{{ agent.duration_minutes }}m</span>
                 <div class="sc-agent-bar-track">
                   {% if max_dur > 0 %}
-                  {% assign pct = agent.duration_minutes | times: 100 | divided_by: max_dur %}
+                  {% assign pct = agent.duration_minutes | times: 100.0 | divided_by: max_dur | round %}
                   <div class="sc-agent-bar-fill" style="width: {{ pct }}%;"></div>
                   {% endif %}
                 </div>

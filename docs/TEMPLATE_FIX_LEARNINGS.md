@@ -13,7 +13,7 @@ Accumulated knowledge from fixing project/session liquid templates to match thei
 | carbon     | TODO   | |
 | chalk      | TODO   | |
 | circuit    | TODO   | |
-| cosmos     | TODO   | |
+| cosmos     | DONE   | Dark template. Breadcrumb nav fix, JS charts replaced with CSS-only SVG bars, growth chart removed, source percentage rounding, session card structure, visited links, wrapper bg/color, orbital timeline CSS, chart SVG CSS, phase-dates, sidebar chip override |
 | daylight   | TODO   | Has float division bug in source breakdown |
 | ember      | TODO   | |
 | glacier    | TODO   | |
@@ -28,7 +28,7 @@ Accumulated knowledge from fixing project/session liquid templates to match thei
 | parallax   | TODO   | |
 | parchment  | TODO   | |
 | radar      | DONE   | Dark template. Breadcrumb nav fix, agent table+bar chart added, source percentages, visited links, wrapper bg/color |
-| showcase   | TODO   | |
+| showcase   | DONE   | Dark template. Visited links, percentage rounding, SVG width override removed, leverage bar color drift, screenshot ::before pseudo, phase-dates CSS |
 | signal     | TODO   | |
 | strata     | DONE   | Light template. Removed JS charts (CSS-only SVGs), nav element fix, agent chart added, session title size, percentage rounding, visited links |
 | verdant    | TODO   | |
@@ -114,3 +114,18 @@ Accumulated knowledge from fixing project/session liquid templates to match thei
 - **Missing agent table + bar chart in session**: Session mockup has a two-column agent layout with `agent-table` (role dots, duration, LOC) on the left and `agent-bar-chart` (horizontal bars) on the right. The liquid template only had a plain narrative. Added full agent section with Liquid data loops.
 - **Source breakdown missing percentages**: Mockup shows `"5 (62.5%)"` format but liquid had just `{{ src.count }}`. Added `| times: 100.0 | divided_by: project.totalSessions | round` for percentage display.
 - **Dark template wrapper**: Added `background-color`, `background-image` (grid pattern), `color`, `line-height`, `-webkit-font-smoothing` on `.radar` wrapper. Also added `a:visited` rules on wrapper, breadcrumb, links, and session cards to prevent browser-default blue.
+
+### Showcase
+- **Template already well-structured**: Unlike other templates, showcase's liquid templates closely matched their mockups structurally. The main issues were CSS property value drift and missing small rules rather than missing sections.
+- **SVG `width: 100%` on chart containers**: The `sc-chart-container svg { width: 100%; }` override prevents horizontal scrolling on chart SVGs. Removed `width: 100%` to just `display: block`. This is a recurring issue across templates.
+- **Leverage bar color drift**: `.sc-leverage__human` background was `rgba(255,255,255,0.25)` instead of mockup's `rgba(255,255,255,0.35)`. Small opacity differences are easy to miss.
+- **Missing `::before` pseudo-element**: `.sc-screenshot-body::before` with radial gradients was in the mockup but missing from styles.css. Pseudo-elements are easy to drop during extraction.
+- **Percentage rounding in both templates**: Source breakdown `divided_by` in project.liquid and agent bar `divided_by` in session.liquid both needed `| times: 100.0` (float) and `| round`.
+- **Missing `--red`/`--red-dim` tokens**: The mockup had these in `:root` but they were dropped from the `.showcase` token block. Always cross-check the full token list.
+
+### Cosmos
+- **JS charts replaced with CSS-only SVG**: The project mockup has a static SVG bar chart for Work Timeline, not `data-work-timeline` JS mount. Built with Liquid loop computing `maxLoc` and scaling bar heights proportionally. The mockup has NO growth chart at all -- removed `data-growth-chart` entirely.
+- **Session card structure mismatch**: Template wrapped each session card in `<a class="session-card"><article>`, but mockup uses `<article>` with inner `<a>` on the h3 only. The wrapper `<a>` approach changes hover semantics and can break keyboard navigation.
+- **Missing CSS class families from mockup**: Orbital timeline (`cos-orbit-*` -- 7 classes), chart SVG (`cos-chart-*` -- 5 classes), screenshot body/placeholder, phase-dates, and sidebar skill chip size override were all missing from styles.css. The orbital timeline is decorative and only appears in the mockup with hardcoded data, but the CSS must exist for when it's used.
+- **Agent role color tokens missing**: The mockup `:root` had `--color-frontend`, `--color-backend`, etc. but they were dropped during extraction to styles.css. Agent dots use these via `style="background: var(--color-backend)"` in session template.
+- **Dark wrapper pattern confirmed again**: Like kinetic, noir, and radar -- the `.cosmos` wrapper needs explicit `background`, `color`, `font-family`, and `a:visited` rules since `body` styles are scoped to `#liquid-render` via `@scope` and don't inherit into the template wrapper.
