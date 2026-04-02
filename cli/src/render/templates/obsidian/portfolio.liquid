@@ -113,12 +113,32 @@
           </div>
           {% endif %}
           <div class="project-footer">
+            {% if p.sourceCounts.size > 0 %}
+            <div class="source-bar">
+              {% assign pTotal = 0 %}
+              {% for src in p.sourceCounts %}
+                {% assign pTotal = pTotal | plus: src.count %}
+              {% endfor %}
+              {% for src in p.sourceCounts %}
+              {% if pTotal > 0 %}
+              {% assign sPct = src.count | times: 100.0 | divided_by: pTotal | round %}
+              {% else %}
+              {% assign sPct = 0 %}
+              {% endif %}
+              <span>{{ src.tool }} {{ sPct }}%</span>
+              {% if forloop.first and pTotal > 0 %}
+              <div class="source-track"><div class="source-fill" style="width: {{ sPct }}%"></div></div>
+              {% endif %}
+              {% endfor %}
+            </div>
+            {% else %}
             <div class="project-meta">
               <span>{{ p.totalFilesChanged }} files</span>
               {% if p.publishedCount > 0 %}
               <span>{{ p.publishedCount }} published</span>
               {% endif %}
             </div>
+            {% endif %}
             <span class="project-arrow" aria-hidden="true">&rarr;</span>
           </div>
         </a>
@@ -126,6 +146,103 @@
       </div>
     </section>
     {% endif %}
+
+    {%- comment -%} Skills Overview {%- endcomment -%}
+    {% if allSkills.size > 0 %}
+    <section class="container" aria-label="Skills overview">
+      <h2 class="section-heading fade-up">Skills</h2>
+      <div class="skills-overview fade-up">
+        {% if topSkills.size > 0 %}
+        <div class="skills-chart">
+          <div class="skills-chart-title">Most used technologies across all projects</div>
+          <div class="skills-bar-list">
+            {% assign maxSkillCount = topSkills[0].count %}
+            {% for sk in topSkills %}
+            {% if maxSkillCount > 0 %}
+            {% assign skPct = sk.count | times: 100 | divided_by: maxSkillCount %}
+            {% else %}
+            {% assign skPct = 0 %}
+            {% endif %}
+            <div class="skills-bar-row">
+              <span class="skills-bar-label">{{ sk.name }}</span>
+              <div class="skills-bar-track">
+                <div class="skills-bar-fill" style="width: {{ skPct }}%"></div>
+              </div>
+              <span class="skills-bar-value">{{ sk.count }} project{% if sk.count != 1 %}s{% endif %}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        <div class="skills-tags">
+          {% for skill in allSkills %}
+          <span class="skill-tag chip">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Activity {%- endcomment -%}
+    <section class="container activity-section" aria-label="Activity">
+      <h2 class="section-heading fade-up">Activity</h2>
+      <div class="activity-grid fade-up">
+        {% if sourceCounts.size > 0 %}
+        <div class="activity-card">
+          <div class="activity-chart" aria-label="Source breakdown chart">
+            <div class="activity-chart-title">Source Breakdown</div>
+            {% assign totalSrc = 0 %}
+            {% for src in sourceCounts %}
+              {% assign totalSrc = totalSrc | plus: src.count %}
+            {% endfor %}
+            {% if totalSrc > 0 %}
+            {% assign primaryPct = sourceCounts[0].count | times: 100.0 | divided_by: totalSrc | round %}
+            {% assign dashLen = primaryPct | times: 314 | divided_by: 100 %}
+            {% assign dashGap = 314 | minus: dashLen %}
+            <div class="source-ring" role="img" aria-label="{{ sourceCounts[0].tool }} {{ primaryPct }}%">
+              <svg viewBox="0 0 120 120" class="ring-svg">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="var(--card)" stroke-width="10"/>
+                <circle cx="60" cy="60" r="50" fill="none" stroke="var(--accent)" stroke-width="10"
+                  stroke-dasharray="{{ dashLen }} {{ dashGap }}" stroke-dashoffset="0" stroke-linecap="round"
+                  transform="rotate(-90 60 60)"/>
+              </svg>
+              <div class="ring-label">
+                <span class="ring-value">{{ primaryPct }}%</span>
+                <span class="ring-sub">{{ sourceCounts[0].tool }}</span>
+              </div>
+            </div>
+            <div class="source-legend">
+              {% for src in sourceCounts %}
+              {% assign srcPct = src.count | times: 100.0 | divided_by: totalSrc | round %}
+              <div class="legend-item">
+                <span class="legend-dot" style="background: {% if forloop.first %}var(--accent){% else %}var(--fg-dim){% endif %}"></span>
+                <span class="legend-label">{{ src.tool }}</span>
+                <span class="legend-value">{{ srcPct }}%</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+        {% if recentSessions.size > 0 %}
+        <div class="activity-card">
+          <div class="activity-chart-title">Recent Sessions</div>
+          <div class="recent-list">
+            {% for rs in recentSessions %}
+            <div class="recent-item">
+              <span class="recent-dot" aria-hidden="true"></span>
+              <span class="recent-title">{{ rs.title }}</span>
+              {% if rs.recordedAt %}
+              <span class="recent-date">{{ rs.recordedAt | formatDateShort }}</span>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </section>
   </main>
 
   <footer class="site-footer">

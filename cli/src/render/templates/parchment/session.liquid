@@ -151,13 +151,27 @@
             <tbody>
               {% for agent in session.agentSummary.agents %}
               <tr>
-                <td><span class="agent-dot" aria-hidden="true"></span>{{ agent.role }}</td>
-                <td>{{ agent.durationMinutes | formatDuration }}</td>
-                <td>{{ agent.linesChanged | localeNumber }}</td>
+                <td><span class="agent-dot agent-dot--{{ agent.role | slugify }}" aria-hidden="true"></span>{{ agent.role }}</td>
+                <td>{{ agent.duration_minutes | formatDuration }}</td>
+                <td>{{ agent.loc_changed | localeNumber }}</td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
+
+          {%- comment -%} Agent time distribution bar {%- endcomment -%}
+          {% assign totalAgentDur = 0 %}
+          {% for agent in session.agentSummary.agents %}
+            {% assign totalAgentDur = totalAgentDur | plus: agent.duration_minutes %}
+          {% endfor %}
+          {% if totalAgentDur > 0 %}
+          <div class="agent-bar" role="img" aria-label="Agent time distribution">
+            {% for agent in session.agentSummary.agents %}
+            {% assign agentPct = agent.duration_minutes | times: 100.0 | divided_by: totalAgentDur | round %}
+            <div class="agent-bar__seg" style="width: {{ agentPct }}%; background: var(--agent-{{ agent.role | slugify }});" title="{{ agent.role }} {{ agent.duration_minutes | formatDuration }}"></div>
+            {% endfor %}
+          </div>
+          {% endif %}
         </section>
 
         <div class="hr-triple" role="separator">
@@ -198,7 +212,7 @@
           {% if totalToolUses > 0 %}
           <div class="turn-bar" role="img" aria-label="Tool usage distribution">
             {% for tb in session.toolBreakdown %}
-            {% assign tbPct = tb.count | times: 100 | divided_by: totalToolUses %}
+            {% assign tbPct = tb.count | times: 100.0 | divided_by: totalToolUses | round %}
             {% if tbPct > 3 %}
             <div class="turn-bar__seg" style="width: {{ tbPct }}%; background: var(--parch-accent); opacity: {{ forloop.index0 | times: 15 | minus: 100 | abs | divided_by: 100.0 | plus: 0.4 }};">{{ tb.tool }}</div>
             {% else %}
@@ -215,6 +229,40 @@
             {% endfor %}
           </div>
           {% endif %}
+        </section>
+
+        <div class="hr-triple" role="separator">
+          <span class="hr-triple-inner"></span>
+        </div>
+        {% endif %}
+
+        {%- comment -%} Beat Timeline Table {%- endcomment -%}
+        {% if session.beats.size > 0 %}
+        <section aria-label="Beat timeline">
+          <h2 class="chapter-heading fade-in fade-in-d4">
+            <span class="chapter-heading__number">Chapter {% if session.toolBreakdown.size > 0 %}{% if session.highlights.size > 0 %}VI{% else %}V{% endif %}{% else %}{% if session.highlights.size > 0 %}V{% else %}IV{% endif %}{% endif %}</span>
+            Beat Timeline
+          </h2>
+          <table class="timeline-mini">
+            <thead>
+              <tr>
+                <th scope="col">Beat</th>
+                <th scope="col">Phase</th>
+                <th scope="col">Primary Tool</th>
+                <th scope="col">Files Touched</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for beat in session.beats %}
+              <tr>
+                <td><span class="timeline-mini__beat-num">{{ beat.stepNumber }}</span></td>
+                <td>{{ beat.title }}</td>
+                <td>{{ beat.primaryTools | default: "—" }}</td>
+                <td>{{ beat.filesTouched | default: "—" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </section>
         {% endif %}
       </main>

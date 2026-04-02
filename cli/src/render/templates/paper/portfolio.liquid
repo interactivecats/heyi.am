@@ -115,10 +115,10 @@
 
       <div class="projects-columns">
         {% for p in projects %}
-        <a href="/{{ user.username }}/{{ p.slug }}" class="project-card fade-in fade-in-d{{ forloop.index | plus: 4 }}">
+        <article class="project-card fade-in fade-in-d{{ forloop.index | plus: 4 }}">
           <p class="project-card__number">Project {{ forloop.index }}</p>
           <h3 class="project-card__headline">
-            {{ p.title }}
+            <a href="/{{ user.username }}/{{ p.slug }}">{{ p.title }}</a>
           </h3>
           {% if p.narrative %}
           <p class="project-card__narrative">{{ p.narrative | truncate: 120 }}</p>
@@ -128,6 +128,26 @@
             <span>{{ p.totalDurationMinutes | formatDuration }}</span>
             <span>{{ p.totalLoc | localeNumber }} LOC</span>
           </p>
+          {% if p.sourceCounts.size > 0 %}
+            {% assign pTotalSrc = 0 %}
+            {% for src in p.sourceCounts %}
+              {% assign pTotalSrc = pTotalSrc | plus: src.count %}
+            {% endfor %}
+            {% if pTotalSrc > 0 %}
+            <div class="project-card__source-bar" role="img" aria-label="Source distribution">
+              {% for src in p.sourceCounts %}
+              {% assign pSrcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+              <div class="project-card__source-bar-fill" style="width: {{ pSrcPct }}%"></div>
+              {% endfor %}
+            </div>
+            <p class="project-card__source">
+              {% for src in p.sourceCounts %}
+              {% assign pSrcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+              {% if forloop.first == false %} &middot; {% endif %}{{ src.tool }} {{ pSrcPct }}%
+              {% endfor %}
+            </p>
+            {% endif %}
+          {% endif %}
           {% if p.skills.size > 0 %}
           <div class="project-card__skills" aria-label="Skills used in {{ p.title }}">
             {% for skill in p.skills %}
@@ -135,7 +155,7 @@
             {% endfor %}
           </div>
           {% endif %}
-        </a>
+        </article>
         {% endfor %}
       </div>
     </section>
@@ -170,6 +190,34 @@
         </table>
       </div>
     </section>
+    {% endif %}
+
+    {%- comment -%} Source Summary {%- endcomment -%}
+    {% if sourceCounts.size > 0 %}
+    {% assign totalSourceSessions = 0 %}
+    {% for src in sourceCounts %}
+      {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
+    {% endfor %}
+    {% if totalSourceSessions > 0 %}
+    <section class="source-summary fade-in fade-in-d9" aria-label="Overall source breakdown">
+      <h2 class="section-label">Source Distribution</h2>
+      <div class="source-bar" role="img" aria-label="Aggregate source distribution across all projects">
+        {% for src in sourceCounts %}
+        {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
+        <div class="source-bar__segment source-bar__segment--{% if forloop.first %}dark{% else %}light{% endif %}" style="flex: {{ srcPct }};"></div>
+        {% endfor %}
+      </div>
+      <div class="source-labels">
+        {% for src in sourceCounts %}
+        {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
+        <span>
+          <span class="source-label__swatch source-label__swatch--{% if forloop.first %}dark{% else %}light{% endif %}"></span>
+          {{ src.tool }} {{ srcPct }}%
+        </span>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
     {% endif %}
 
     {%- comment -%} Aggregate Skills {%- endcomment -%}

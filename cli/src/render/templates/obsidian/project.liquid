@@ -104,17 +104,70 @@
         </div>
       </section>
 
-      {%- comment -%} Work Timeline {%- endcomment -%}
-      {% if sessionsJson %}
+      {%- comment -%} Work Timeline (CSS-only SVG chart) {%- endcomment -%}
+      {% if featuredSessions.size > 0 %}
       <section class="timeline-chart fade-up" aria-label="Work timeline">
-        <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-      </section>
-      {% endif %}
-
-      {%- comment -%} Growth Chart {%- endcomment -%}
-      {% if growthJson %}
-      <section class="fade-up" aria-label="Growth over time">
-        <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+        <div class="chart-title">Lines of code per session</div>
+        {% assign maxLoc = 1 %}
+        {% for s in featuredSessions %}
+          {% if s.locChanged > maxLoc %}{% assign maxLoc = s.locChanged %}{% endif %}
+        {% endfor %}
+        {% assign sessionCount = featuredSessions.size %}
+        {% assign chartW = 700 %}
+        {% assign chartH = 200 %}
+        <div class="chart-area">
+          <svg class="chart-svg" viewBox="0 0 {{ chartW }} {{ chartH }}" preserveAspectRatio="none" aria-label="Chart showing lines of code written across {{ sessionCount }} sessions">
+            <defs>
+              <linearGradient id="purpleGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <line class="chart-grid-line" x1="0" y1="50" x2="{{ chartW }}" y2="50"/>
+            <line class="chart-grid-line" x1="0" y1="100" x2="{{ chartW }}" y2="100"/>
+            <line class="chart-grid-line" x1="0" y1="150" x2="{{ chartW }}" y2="150"/>
+            {% assign points = "" %}
+            {% assign areaPoints = "" %}
+            {% for s in featuredSessions %}
+              {% assign idx = forloop.index0 %}
+              {% if sessionCount > 1 %}
+                {% assign x = idx | times: chartW | minus: 100 | divided_by: sessionCount | plus: 50 %}
+              {% else %}
+                {% assign x = 350 %}
+              {% endif %}
+              {% assign yRaw = s.locChanged | times: 180 | divided_by: maxLoc %}
+              {% assign y = chartH | minus: yRaw | minus: 10 %}
+              {% if forloop.first %}
+                {% assign points = x | append: "," | append: y %}
+                {% assign areaPoints = x | append: "," | append: y %}
+              {% else %}
+                {% assign points = points | append: " " | append: x | append: "," | append: y %}
+                {% assign areaPoints = areaPoints | append: " " | append: x | append: "," | append: y %}
+              {% endif %}
+              {% if forloop.last %}
+                {% assign areaPoints = areaPoints | append: " " | append: x | append: "," | append: chartH | append: " " | append: 50 | append: "," | append: chartH %}
+              {% endif %}
+            {% endfor %}
+            <polygon class="chart-area-fill" points="{{ areaPoints }}"/>
+            <polyline class="chart-line" points="{{ points }}"/>
+            {% for s in featuredSessions %}
+              {% assign idx = forloop.index0 %}
+              {% if sessionCount > 1 %}
+                {% assign cx = idx | times: chartW | minus: 100 | divided_by: sessionCount | plus: 50 %}
+              {% else %}
+                {% assign cx = 350 %}
+              {% endif %}
+              {% assign cyRaw = s.locChanged | times: 180 | divided_by: maxLoc %}
+              {% assign cy = chartH | minus: cyRaw | minus: 10 %}
+              <circle class="chart-dot" cx="{{ cx }}" cy="{{ cy }}" r="5"/>
+            {% endfor %}
+          </svg>
+        </div>
+        <div class="chart-labels">
+          {% for s in featuredSessions %}
+          <span>{{ s.recordedAt | formatDateShort }}</span>
+          {% endfor %}
+        </div>
       </section>
       {% endif %}
 
@@ -127,6 +180,9 @@
           <li class="phase-item">
             <span class="phase-dot" aria-hidden="true"></span>
             <div class="phase-title">{{ item.title }}</div>
+            {% if item.dates %}
+            <div class="phase-dates">{{ item.dates }}</div>
+            {% endif %}
             <div class="phase-desc">{{ item.description }}</div>
           </li>
           {% endfor %}
@@ -173,11 +229,11 @@
           {% if totalSourceSessions > 0 %}
           <div class="source-header">
             {% for src in sourceCounts %}
-            {% assign srcPct = src.count | times: 1000 | divided_by: totalSourceSessions | divided_by: 10 %}
+            {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
             <span>{{ src.tool }} &mdash; {{ srcPct }}% ({{ src.count }} session{% if src.count != 1 %}s{% endif %})</span>
             {% endfor %}
           </div>
-          {% assign firstPct = sourceCounts[0].count | times: 100 | divided_by: totalSourceSessions %}
+          {% assign firstPct = sourceCounts[0].count | times: 100.0 | divided_by: totalSourceSessions | round %}
           <div class="source-track-lg">
             <div class="source-fill-lg" style="width: {{ firstPct }}%"></div>
           </div>

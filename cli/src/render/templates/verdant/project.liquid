@@ -153,6 +153,9 @@
           <div class="vd-vine-phase" role="listitem">
             <div class="vd-vine-node" aria-hidden="true"><div class="vd-vine-node__inner"></div></div>
             <div class="vd-vine-phase__title">{{ phase.title }}</div>
+            {% if phase.dates %}
+            <div class="vd-vine-phase__dates">{{ phase.dates }}</div>
+            {% endif %}
             <div class="vd-vine-phase__desc">{{ phase.description }}</div>
           </div>
           {% endfor %}
@@ -169,8 +172,12 @@
       </div>
       {% endif %}
 
-      {%- comment -%} Work Timeline Chart {%- endcomment -%}
-      {% if sessionsJson %}
+      {%- comment -%} Work Timeline (CSS-only bars) {%- endcomment -%}
+      {% if featuredSessions.size > 0 %}
+      {% assign maxDur = 1 %}
+      {% for s in featuredSessions %}
+        {% if s.durationMinutes > maxDur %}{% assign maxDur = s.durationMinutes %}{% endif %}
+      {% endfor %}
       <section class="vd-section" aria-label="Work timeline">
         <div class="vd-section-header">
           <div class="vd-section-header__icon" aria-hidden="true">
@@ -178,14 +185,19 @@
           </div>
           <h2>Work Timeline</h2>
         </div>
-        <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-      </section>
-      {% endif %}
-
-      {%- comment -%} Growth Chart {%- endcomment -%}
-      {% if growthJson %}
-      <section class="vd-section" aria-label="Growth chart">
-        <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+        <div class="vd-work-timeline" aria-label="Session timeline chart">
+          {% for s in featuredSessions %}
+          {% assign barPct = s.durationMinutes | times: 100 | divided_by: maxDur %}
+          <div class="vd-timeline-row">
+            <span class="vd-timeline-row__num">{{ forloop.index }}</span>
+            <div class="vd-timeline-bar">
+              <div class="vd-timeline-bar-fill" data-width="{{ barPct }}" aria-hidden="true"></div>
+              <span class="vd-timeline-bar__label">{{ s.title }}</span>
+            </div>
+            <span class="vd-timeline-row__dur">{{ s.durationMinutes }}m</span>
+          </div>
+          {% endfor %}
+        </div>
       </section>
       {% endif %}
 
@@ -206,6 +218,23 @@
       </section>
       {% endif %}
 
+      {%- comment -%} Key Decisions {%- endcomment -%}
+      {% if project.keyDecisions.size > 0 %}
+      <section class="vd-section" aria-label="Key decisions">
+        <div class="vd-section-header">
+          <div class="vd-section-header__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+          </div>
+          <h2>Key Decisions</h2>
+        </div>
+        <div class="vd-decisions">
+          {% for decision in project.keyDecisions %}
+          <div class="vd-decision"><strong>{{ forloop.index }}.</strong> {{ decision }}</div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
       {%- comment -%} Source Breakdown {%- endcomment -%}
       {% if sourceCounts.size > 0 %}
       <section class="vd-section" aria-label="Source breakdown">
@@ -215,13 +244,18 @@
           </div>
           <h2>Source Breakdown</h2>
         </div>
-        <div class="vd-source-overview">
-          {% for source in sourceCounts %}
-          <div class="vd-source-card">
-            <div class="vd-source-card__label">{{ source.tool }}</div>
-            <div class="vd-source-card__sessions">{{ source.count }} sessions</div>
+        <div class="vd-source-breakdown">
+          {% assign firstSource = sourceCounts | first %}
+          {% assign firstPct = firstSource.count | times: 100.0 | divided_by: project.totalSessions | round %}
+          <div class="vd-source-bar-wide" aria-label="{{ firstSource.tool }} {{ firstPct }}%">
+            <div class="vd-source-bar-wide__fill" data-width="{{ firstPct }}"></div>
           </div>
-          {% endfor %}
+          <div class="vd-source-legend">
+            {% for source in sourceCounts %}
+            {% assign srcPct = source.count | times: 100.0 | divided_by: project.totalSessions | round %}
+            <span><span class="vd-source-legend__dot {% if forloop.first %}vd-source-legend__dot--claude{% else %}vd-source-legend__dot--cursor{% endif %}" aria-hidden="true"></span>{{ source.tool }} {{ srcPct }}%</span>
+            {% endfor %}
+          </div>
         </div>
       </section>
       {% endif %}
@@ -293,6 +327,46 @@
     sections.forEach(function(s) {
       if (!prefersReduced) sectionObserver.observe(s);
     });
+
+    // Timeline bar animation
+    var barObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var fills = entry.target.querySelectorAll('.vd-timeline-bar-fill');
+          fills.forEach(function(fill, index) {
+            var w = fill.getAttribute('data-width');
+            if (prefersReduced) {
+              fill.style.width = w + '%';
+            } else {
+              setTimeout(function() { fill.style.width = w + '%'; }, index * 80);
+            }
+          });
+          barObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    var timeline = document.querySelector('.vd-work-timeline');
+    if (timeline) barObserver.observe(timeline);
+
+    // Source bar animation
+    var sourceBarObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var fill = entry.target.querySelector('.vd-source-bar-wide__fill');
+          if (fill) fill.style.width = fill.getAttribute('data-width') + '%';
+          sourceBarObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+    var sourceBar = document.querySelector('.vd-source-bar-wide');
+    if (sourceBar) {
+      if (prefersReduced) {
+        var f = sourceBar.querySelector('.vd-source-bar-wide__fill');
+        if (f) f.style.width = f.getAttribute('data-width') + '%';
+      } else {
+        sourceBarObserver.observe(sourceBar);
+      }
+    }
   })();
   </script>
 

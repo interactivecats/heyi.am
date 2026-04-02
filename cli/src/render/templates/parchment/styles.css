@@ -3,6 +3,32 @@
  * Warm parchment aesthetic with Crimson Pro serif display font.
  */
 
+:root {
+  --parch-font-display: 'Crimson Pro', Georgia, serif;
+  --parch-font-body: 'Crimson Pro', Georgia, serif;
+  --parch-font-mono: 'IBM Plex Mono', monospace;
+  --parch-accent: #92400e;
+  --parch-bg: #fdf6e3;
+  --parch-surface: #f5ead0;
+  --parch-text: #3c2a14;
+  --parch-text-secondary: #6b5744;
+  --parch-text-tertiary: #8c7a66;
+  --parch-border: #92400e;
+  --parch-border-light: #d4c4a8;
+  --parch-border-faint: #e8dcc8;
+  --parch-radius: 0px;
+  --parch-duration: 500ms;
+  --parch-ease: ease-out;
+
+  /* Agent role colors */
+  --agent-frontend:  #7c3aed;
+  --agent-backend:   #0891b2;
+  --agent-qa:        #059669;
+  --agent-security:  #475569;
+  --agent-reviewer:  #e11d48;
+  --agent-ux:        #d97706;
+}
+
 /* ── Skip Link ── */
 .parchment .skip-link {
   position: absolute;
@@ -19,6 +45,46 @@
 }
 .parchment .skip-link:focus {
   top: 0.5rem;
+}
+
+/* ── Base Links ── */
+.parchment a {
+  color: var(--parch-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: opacity var(--parch-duration) var(--parch-ease);
+}
+.parchment a:hover { opacity: 0.75; }
+.parchment a:visited { color: var(--parch-accent); }
+.parchment a:focus-visible {
+  outline: 2px solid var(--parch-accent);
+  outline-offset: 3px;
+}
+
+/* ── Navigation ── */
+.parchment .nav {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--parch-border-light);
+  font-family: var(--parch-font-display);
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.parchment .nav a {
+  color: var(--parch-text-secondary);
+  text-decoration: none;
+}
+.parchment .nav a:visited { color: var(--parch-text-secondary); }
+.parchment .nav a:hover { color: var(--parch-accent); opacity: 1; }
+.parchment .nav a[aria-current="page"] {
+  color: var(--parch-accent);
+  border-bottom: 2px solid var(--parch-accent);
+  padding-bottom: 2px;
 }
 
 /* ── Fade In Animation ── */
@@ -56,6 +122,9 @@
   margin: 0 auto;
   padding: 0 1.5rem;
 }
+.parchment.heyiam-session .page-wrapper {
+  max-width: 960px;
+}
 
 /* ── Decorative HR — thin-thick-thin ── */
 .parchment .hr-triple {
@@ -81,6 +150,44 @@
 .parchment .hr-triple-inner {
   display: block;
   border-top: 2px solid var(--parch-accent);
+}
+
+/* ── Decorative HR — ornament variant (portfolio) ── */
+.parchment .hr-ornament {
+  border: none;
+  height: 5px;
+  background: transparent;
+  position: relative;
+  margin: 2rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.parchment .hr-ornament::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  top: 0;
+  height: 1px;
+  background: var(--parch-border-light);
+}
+.parchment .hr-ornament::after {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--parch-border-light);
+}
+.parchment .hr-ornament span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--parch-accent);
+  position: relative;
+  z-index: 1;
 }
 
 /* ── Breadcrumb ── */
@@ -228,6 +335,17 @@
   padding-inline-start: 0.5rem;
   color: var(--parch-text-tertiary);
 }
+.parchment .screenshot__body {
+  height: 220px;
+  background: linear-gradient(135deg, var(--parch-surface) 0%, #efe0c4 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--parch-font-display);
+  font-style: italic;
+  color: var(--parch-text-tertiary);
+  font-size: 1.125rem;
+}
 
 /* ── Margin Annotations (Stats) ── */
 .parchment .margin-stats {
@@ -327,6 +445,14 @@
   letter-spacing: 0.08em;
   margin: 0 0 1.75rem;
 }
+.parchment.heyiam-portfolio .chapter-heading {
+  font-size: 1.5rem;
+  margin: 0 0 2rem;
+}
+.parchment.heyiam-session .chapter-heading {
+  text-align: start;
+  margin: 0 0 1.5rem;
+}
 .parchment .chapter-heading__number {
   display: block;
   font-family: var(--parch-font-mono);
@@ -360,6 +486,17 @@
   font-weight: 700;
   color: var(--parch-accent);
   margin-bottom: 0.75rem;
+}
+.parchment .project-card__title a {
+  color: inherit;
+  text-decoration: none;
+}
+.parchment .project-card__title a:hover {
+  text-decoration: underline;
+  opacity: 1;
+}
+.parchment .project-card__title a:visited {
+  color: inherit;
 }
 .parchment .project-card__narrative {
   font-family: var(--parch-font-body);
@@ -415,6 +552,9 @@
   letter-spacing: 0.03em;
   background: var(--parch-bg);
 }
+.parchment.heyiam-project .skill-tag {
+  padding: 0.25rem 0.65rem;
+}
 
 /* ── Narrative (Drop Caps) ── */
 .parchment .narrative {
@@ -459,6 +599,12 @@
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--parch-accent);
+  margin-top: 0.25rem;
+}
+.parchment .phase__dates {
+  font-family: var(--parch-font-mono);
+  font-size: 0.6875rem;
+  color: var(--parch-text-tertiary);
   margin-top: 0.25rem;
 }
 .parchment .phase__desc {
@@ -576,6 +722,17 @@
   font-weight: 600;
   color: var(--parch-accent);
   margin-top: 0.25rem;
+}
+.parchment .session-card__title a {
+  color: inherit;
+  text-decoration: none;
+}
+.parchment .session-card__title a:hover {
+  text-decoration: underline;
+  opacity: 1;
+}
+.parchment .session-card__title a:visited {
+  color: inherit;
 }
 .parchment .session-card__meta {
   display: flex;
@@ -731,6 +888,10 @@
   flex-wrap: wrap;
   gap: 0.4rem;
 }
+.parchment.heyiam-session .sidebar-skills .skill-tag {
+  font-size: 0.625rem;
+  padding: 0.15rem 0.5rem;
+}
 
 /* ── Execution Path (Beats) ── */
 .parchment .beats {
@@ -845,6 +1006,90 @@
   vertical-align: middle;
   background: var(--parch-accent);
 }
+.parchment .agent-dot--backend  { background: var(--agent-backend); }
+.parchment .agent-dot--qa       { background: var(--agent-qa); }
+.parchment .agent-dot--frontend { background: var(--agent-frontend); }
+.parchment .agent-dot--security { background: var(--agent-security); }
+.parchment .agent-dot--reviewer { background: var(--agent-reviewer); }
+.parchment .agent-dot--ux       { background: var(--agent-ux); }
+
+/* ── Agent Time Distribution Bar ── */
+.parchment .agent-bar {
+  display: flex;
+  height: 8px;
+  border-radius: var(--parch-radius);
+  overflow: hidden;
+  margin-top: 1rem;
+  background: var(--parch-border-faint);
+}
+.parchment .agent-bar__seg { height: 100%; }
+
+/* ── Timeline Mini Table (Session) ── */
+.parchment .timeline-mini {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  margin: 0;
+}
+.parchment .timeline-mini th {
+  font-family: var(--parch-font-mono);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  color: var(--parch-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-align: start;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 2px solid var(--parch-accent);
+}
+.parchment .timeline-mini td {
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid var(--parch-border-faint);
+  font-family: var(--parch-font-body);
+  font-size: 0.8125rem;
+}
+.parchment .timeline-mini tr:last-child td {
+  border-bottom: none;
+}
+.parchment .timeline-mini__beat-num {
+  font-family: var(--parch-font-mono);
+  font-size: 0.6875rem;
+  color: var(--parch-text-tertiary);
+}
+
+/* ── Work Timeline Table (Project) ── */
+.parchment .timeline-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin: 0;
+}
+.parchment .timeline-table th {
+  font-family: var(--parch-font-mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--parch-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-align: start;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid var(--parch-accent);
+}
+.parchment .timeline-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--parch-border-faint);
+  font-family: var(--parch-font-body);
+  vertical-align: top;
+}
+.parchment .timeline-table td:first-child {
+  font-family: var(--parch-font-mono);
+  font-size: 0.75rem;
+  color: var(--parch-text-tertiary);
+  white-space: nowrap;
+}
+.parchment .timeline-table tr:last-child td {
+  border-bottom: none;
+}
 
 /* ── Turn Distribution ── */
 .parchment .turn-distribution {
@@ -886,6 +1131,144 @@
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+/* ── Portfolio Source Bar (per card) ── */
+.parchment.heyiam-portfolio .source-bar {
+  height: 4px;
+  margin-top: 0.75rem;
+}
+.parchment .source-bar__labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  font-family: var(--parch-font-mono);
+  font-size: 0.625rem;
+  color: var(--parch-text-tertiary);
+  letter-spacing: 0.05em;
+}
+
+/* ── Skills Compendium (Portfolio) ── */
+.parchment .skills-overview {
+  margin: 0 0 1rem;
+}
+.parchment .skills-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+.parchment .skills-grid__item {
+  background: var(--parch-surface);
+  border: 1px solid var(--parch-border-faint);
+  border-radius: var(--parch-radius);
+  padding: 0.75rem 1rem;
+  text-align: center;
+}
+.parchment .skills-grid__name {
+  font-family: var(--parch-font-mono);
+  font-size: 0.75rem;
+  color: var(--parch-accent);
+  letter-spacing: 0.03em;
+}
+.parchment .skills-grid__count {
+  font-family: var(--parch-font-display);
+  font-size: 0.6875rem;
+  color: var(--parch-text-tertiary);
+  margin-top: 0.15rem;
+}
+
+/* ── Recent Activity Table (Portfolio) ── */
+.parchment .activity-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin: 0;
+}
+.parchment .activity-table th {
+  font-family: var(--parch-font-mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--parch-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-align: start;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid var(--parch-accent);
+}
+.parchment .activity-table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--parch-border-faint);
+  font-family: var(--parch-font-body);
+  vertical-align: top;
+}
+.parchment .activity-table td:first-child {
+  font-family: var(--parch-font-mono);
+  font-size: 0.75rem;
+  color: var(--parch-text-tertiary);
+  white-space: nowrap;
+}
+.parchment .activity-table tr:last-child td {
+  border-bottom: none;
+}
+.parchment .activity-table__project {
+  font-family: var(--parch-font-display);
+  font-weight: 600;
+  color: var(--parch-accent);
+  font-size: 0.875rem;
+}
+
+/* ── Source Overview (Portfolio) ── */
+.parchment .source-overview {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.parchment .source-overview__item {
+  text-align: center;
+}
+.parchment .source-overview__value {
+  font-family: var(--parch-font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--parch-accent);
+}
+.parchment .source-overview__label {
+  font-family: var(--parch-font-mono);
+  font-size: 0.625rem;
+  color: var(--parch-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.15rem;
+}
+.parchment .source-overview__bar {
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+}
+.parchment .source-overview__bar-track {
+  display: flex;
+  height: 6px;
+  border-radius: var(--parch-radius);
+  overflow: hidden;
+  background: var(--parch-border-faint);
+}
+.parchment .source-overview__bar-fill--claude {
+  background: var(--parch-accent);
+  height: 100%;
+}
+.parchment .source-overview__bar-fill--cursor {
+  background: var(--parch-text-tertiary);
+  height: 100%;
+}
+.parchment .source-overview__bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--parch-font-mono);
+  font-size: 0.5625rem;
+  color: var(--parch-text-tertiary);
+  margin-top: 0.25rem;
 }
 
 /* ── About Section ── */
@@ -981,13 +1364,34 @@
   .parchment .beat {
     grid-template-columns: 2rem 1fr;
   }
+  .parchment .nav {
+    gap: 1.25rem;
+    font-size: 0.875rem;
+  }
   .parchment .narrative p:first-child::first-letter {
     font-size: 2.75rem;
+  }
+  .parchment .timeline-table {
+    font-size: 0.8125rem;
+  }
+  .parchment .timeline-table th,
+  .parchment .timeline-table td {
+    padding: 0.4rem 0.5rem;
+  }
+  .parchment .screenshot__body {
+    height: 160px;
   }
 }
 
 @media (max-width: 480px) {
   .parchment .project-stats {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parchment a.project-card,
+  .parchment a.session-card {
+    transition: none;
   }
 }

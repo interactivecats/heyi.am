@@ -131,6 +131,26 @@
               <span><strong>{{ p.totalDurationMinutes | formatDuration }}</strong></span>
               <span><strong>{{ p.totalLoc | formatLoc }}</strong> LOC</span>
             </div>
+            {% if p.sourceCounts.size > 0 %}
+            {% assign pTotalSrc = 0 %}
+            {% for src in p.sourceCounts %}
+              {% assign pTotalSrc = pTotalSrc | plus: src.count %}
+            {% endfor %}
+            {% if pTotalSrc > 0 %}
+            <div class="project-source-bar" aria-label="Source distribution">
+              {% for src in p.sourceCounts %}
+              {% assign pSrcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+              <div class="source-segment-{{ src.tool | downcase | replace: ' code', '' | replace: ' ', '-' }}" style="width: {{ pSrcPct }}%"></div>
+              {% endfor %}
+            </div>
+            <div class="project-source-legend">
+              {% for src in p.sourceCounts %}
+              {% assign pSrcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+              <span><span class="legend-dot {{ src.tool | downcase | replace: ' code', '' | replace: ' ', '-' }}" aria-hidden="true"></span>{{ src.tool }} {{ pSrcPct }}%</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% endif %}
           </div>
         </div>
       </a>

@@ -112,6 +112,7 @@
               <th scope="col">Sessions</th>
               <th scope="col">Hours</th>
               <th scope="col">LOC</th>
+              <th scope="col">Source Mix</th>
               <th scope="col">Skills</th>
             </tr>
           </thead>
@@ -127,6 +128,28 @@
               <td class="stat-mono">{{ p.totalSessions }}</td>
               <td class="stat-mono">{{ p.totalDurationMinutes | formatDuration }}</td>
               <td class="stat-mono stat-green">{{ p.totalLoc | localeNumber }}</td>
+              <td class="source-bar-wrap">
+                {% if p.sourceCounts.size > 0 %}
+                {% assign pTotalSrc = 0 %}
+                {% for src in p.sourceCounts %}
+                  {% assign pTotalSrc = pTotalSrc | plus: src.count %}
+                {% endfor %}
+                {% if pTotalSrc > 0 %}
+                <div class="source-bar">
+                  {% for src in p.sourceCounts %}
+                    {% assign pSrcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+                    <div class="segment-{{ src.tool | downcase }}" style="width: {{ pSrcPct }}%;" aria-label="{{ src.tool }} {{ pSrcPct }}%"></div>
+                  {% endfor %}
+                </div>
+                <div class="source-legend">
+                  {% for src in p.sourceCounts %}
+                    {% assign pSrcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+                    <span><span class="dot-{{ src.tool | downcase }}" aria-hidden="true">&#9632;</span> {{ pSrcPct }}%</span>
+                  {% endfor %}
+                </div>
+                {% endif %}
+                {% endif %}
+              </td>
               <td>
                 {% if p.skills.size > 0 %}
                 <div class="skill-badges">
@@ -140,6 +163,49 @@
             {% endfor %}
           </tbody>
         </table>
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Overall Source Breakdown {%- endcomment -%}
+    {% if sourceCounts.size > 0 %}
+    {% assign totalSourceSessions = 0 %}
+    {% for src in sourceCounts %}
+      {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
+    {% endfor %}
+    {% if totalSourceSessions > 0 %}
+    <section class="source-breakdown fade-in" aria-label="Source breakdown">
+      <h3>Source Breakdown — All Projects</h3>
+      <div class="source-stacked-bar" role="img" aria-label="Source breakdown">
+        {% for src in sourceCounts %}
+          {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
+          <div class="seg seg-{{ src.tool | downcase }}" style="flex-basis: {{ srcPct }}%;">{{ srcPct }}%</div>
+        {% endfor %}
+      </div>
+      <div class="source-breakdown-legend">
+        {% for src in sourceCounts %}
+        <div class="legend-item">
+          <div class="legend-dot {{ src.tool | downcase }}" aria-hidden="true"></div>
+          <span>{{ src.tool }} — {{ src.count }} sessions</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+    {% endif %}
+
+    {%- comment -%} Skills Summary {%- endcomment -%}
+    {% if allSkills.size > 0 %}
+    <section class="skills-summary fade-in" aria-label="Skills overview">
+      <div class="section-header">
+        <h2>Skills</h2>
+        <span class="section-tag">Status Board</span>
+        <div class="section-line" aria-hidden="true"></div>
+      </div>
+      <div class="skills-grid">
+        {% for skill in allSkills %}
+        <span class="skill-badge strong">{{ skill }}</span>
+        {% endfor %}
       </div>
     </section>
     {% endif %}

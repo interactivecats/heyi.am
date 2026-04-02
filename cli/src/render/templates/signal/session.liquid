@@ -4,13 +4,13 @@
 
   {%- comment -%} Breadcrumb {%- endcomment -%}
   <div class="container">
-    <div class="breadcrumb" aria-label="Breadcrumb">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="/{{ user.username }}">{{ user.username }}</a>
       <span class="sep" aria-hidden="true">/</span>
       <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
       <span class="sep" aria-hidden="true">/</span>
       <span aria-current="page">{{ session.title }}</span>
-    </div>
+    </nav>
   </div>
 
   {%- comment -%} Dashboard Strip {%- endcomment -%}
@@ -18,9 +18,15 @@
     <div class="container">
       <div class="stats-row">
         <div class="stat-cell">
-          <div class="stat-value" data-animate data-target="{{ session.durationMinutes }}">0</div>
+          <div class="stat-value" data-animate data-target="{{ session.durationMinutes }}" data-suffix="m">0</div>
           <div class="stat-label">Duration</div>
         </div>
+        {% if session.wallClockMinutes %}
+        <div class="stat-cell">
+          <div class="stat-value" data-animate data-target="{{ session.wallClockMinutes }}" data-suffix="m">0</div>
+          <div class="stat-label">Wall Clock</div>
+        </div>
+        {% endif %}
         <div class="stat-cell">
           <div class="stat-value" data-animate data-target="{{ session.turns }}">0</div>
           <div class="stat-label">Turns</div>
@@ -33,6 +39,12 @@
           <div class="stat-value" data-animate data-target="{{ session.filesChanged }}">0</div>
           <div class="stat-label">Files</div>
         </div>
+        {% if session.agentSessions.size > 0 %}
+        <div class="stat-cell">
+          <div class="stat-value" data-animate data-target="{{ session.agentSessions.size }}">0</div>
+          <div class="stat-label">Agents</div>
+        </div>
+        {% endif %}
       </div>
     </div>
   </section>
@@ -153,6 +165,42 @@
               </div>
             </article>
             {% endfor %}
+          </div>
+        </section>
+        {% endif %}
+
+        {%- comment -%} Agent Summary {%- endcomment -%}
+        {% if session.agentSessions.size > 0 %}
+        <section class="fade-in" aria-label="Agent summary">
+          <div class="section-header">
+            <h2>Agent Summary</h2>
+            <span class="section-tag">{{ session.agentSessions.size }} sub-sessions</span>
+            <div class="section-line" aria-hidden="true"></div>
+          </div>
+          <div class="agent-table-wrap" role="region" aria-label="Agent breakdown table" tabindex="0">
+            <table class="agent-table" aria-label="Agent roles and contributions">
+              <thead>
+                <tr>
+                  <th scope="col">Role</th>
+                  <th scope="col">Duration</th>
+                  <th scope="col">LOC</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for agent in session.agentSessions %}
+                <tr>
+                  <td>
+                    <div class="agent-role">
+                      <span class="agent-dot" style="background: {{ agent.color | default: 'var(--fg-dim)' }};" aria-hidden="true"></span>
+                      <span class="agent-role-name">{{ agent.role }}</span>
+                    </div>
+                  </td>
+                  <td class="stat-mono">{{ agent.durationMinutes | formatDuration }}</td>
+                  <td class="stat-mono stat-green">{{ agent.locChanged | localeNumber }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
         </section>
         {% endif %}

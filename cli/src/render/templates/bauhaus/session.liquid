@@ -1,7 +1,7 @@
 <div class="heyiam-session bauhaus" data-render-version="2" data-template="bauhaus">
 
   {%- comment -%} Breadcrumb {%- endcomment -%}
-  <div class="breadcrumb" aria-label="Breadcrumb">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
     <a href="/{{ user.username }}">{{ user.username }}</a>
     <span aria-hidden="true">/</span>
     {% if projectSlug %}
@@ -9,7 +9,7 @@
     <span aria-hidden="true">/</span>
     {% endif %}
     <strong>{{ session.title }}</strong>
-  </div>
+  </nav>
 
   <div class="page-layout">
     {%- comment -%} Main content column {%- endcomment -%}
@@ -185,13 +185,34 @@
                     <span class="agent-role-label">{{ agent.role }}</span>
                   </div>
                 </td>
-                <td>{{ agent.durationMinutes | formatDuration }}</td>
-                <td>{{ agent.locChanged | localeNumber }}</td>
+                <td>{{ agent.duration_minutes | formatDuration }}</td>
+                <td>{{ agent.loc_changed | localeNumber }}</td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
+
+        {%- comment -%} Agent bar chart {%- endcomment -%}
+        {% assign maxAgentDuration = 0 %}
+        {% for agent in session.agentSummary.agents %}
+          {% if agent.duration_minutes > maxAgentDuration %}
+            {% assign maxAgentDuration = agent.duration_minutes %}
+          {% endif %}
+        {% endfor %}
+        {% if maxAgentDuration > 0 %}
+        <div class="agent-bar-chart anim-fade-up anim-delay-4" aria-label="Agent duration visualization">
+          {% for agent in session.agentSummary.agents %}
+          <div class="agent-bar-row">
+            <div class="agent-bar-label">{{ agent.role }}</div>
+            <div class="agent-bar-track">
+              <div class="agent-bar-fill" style="width: {{ agent.duration_minutes | times: 100 | divided_by: maxAgentDuration }}%; background: {{ agent.color }};"></div>
+            </div>
+            <div class="agent-bar-value">{{ agent.duration_minutes | formatDuration }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
       </section>
       {% endif %}
 

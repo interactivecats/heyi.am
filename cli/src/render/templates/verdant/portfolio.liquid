@@ -167,6 +167,19 @@
               {% endfor %}
             </div>
             {% endif %}
+            {% if p.sourceCounts.size > 0 %}
+            {% assign pFirstSrc = p.sourceCounts | first %}
+            {% assign pFirstPct = pFirstSrc.count | times: 100.0 | divided_by: p.totalSessions | round %}
+            <div class="vd-source-bar" aria-label="Source mix: {{ pFirstSrc.tool }} {{ pFirstPct }}%">
+              <div class="vd-source-bar-fill" data-width="{{ pFirstPct }}"></div>
+            </div>
+            <div class="vd-source-labels">
+              {% for src in p.sourceCounts %}
+              {% assign sPct = src.count | times: 100.0 | divided_by: p.totalSessions | round %}
+              <span>{{ src.tool }} {{ sPct }}%</span>
+              {% endfor %}
+            </div>
+            {% endif %}
           </a>
           {% endfor %}
         </div>
@@ -202,6 +215,26 @@
     var sections = document.querySelectorAll('.vd-section');
     sections.forEach(function(s) {
       if (!prefersReduced) sectionObserver.observe(s);
+    });
+
+    // Source bar animation for project cards
+    var barObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var fill = entry.target.querySelector('.vd-source-bar-fill');
+          if (fill) fill.style.width = fill.getAttribute('data-width') + '%';
+          barObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+    var bars = document.querySelectorAll('.vd-source-bar');
+    bars.forEach(function(b) {
+      if (prefersReduced) {
+        var fill = b.querySelector('.vd-source-bar-fill');
+        if (fill) fill.style.width = fill.getAttribute('data-width') + '%';
+      } else {
+        barObserver.observe(b);
+      }
     });
   })();
   </script>

@@ -106,8 +106,73 @@
         <span>{{ p.totalDurationMinutes | formatDuration }}</span>
         <span>{{ p.totalLoc | localeNumber }} LOC</span>
       </div>
+      {% if p.sourceCounts.size > 0 %}
+      {% assign pTotalSource = 0 %}
+      {% for src in p.sourceCounts %}
+        {% assign pTotalSource = pTotalSource | plus: src.count %}
+      {% endfor %}
+      <div class="source-bar-container">
+        <div class="source-bar-label">Source mix</div>
+        <div class="source-bar" role="img">
+          {% for src in p.sourceCounts %}
+          {% if pTotalSource > 0 %}
+          {% assign pSrcPct = src.count | times: 100.0 | divided_by: pTotalSource | round %}
+          {% endif %}
+          <div class="{% if forloop.first %}claude{% else %}cursor{% endif %}" style="width: 0%" data-width="{{ pSrcPct }}"></div>
+          {% endfor %}
+        </div>
+        <div class="source-legend">
+          {% for src in p.sourceCounts %}
+          {% if pTotalSource > 0 %}
+          {% assign pSrcPctDisplay = src.count | times: 100.0 | divided_by: pTotalSource | round %}
+          {% endif %}
+          <span class="{% if forloop.first %}claude-label{% else %}cursor-label{% endif %}">{{ src.tool }} {{ pSrcPctDisplay }}%</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
     </article>
     {% endfor %}
+  </section>
+  {% endif %}
+
+  {%- comment -%} All Skills {%- endcomment -%}
+  {% assign allSkills = '' %}
+  {% for p in projects %}
+    {% for skill in p.skills %}
+      {% unless allSkills contains skill %}
+        {% if allSkills != '' %}{% assign allSkills = allSkills | append: ',' %}{% endif %}
+        {% assign allSkills = allSkills | append: skill %}
+      {% endunless %}
+    {% endfor %}
+  {% endfor %}
+  {% assign skillsArray = allSkills | split: ',' %}
+  {% if skillsArray.size > 0 %}
+  <section class="all-skills-section fade-in" aria-label="All skills across projects">
+    <h2 class="section-heading">All Skills</h2>
+    <ul class="skills-grid">
+      {% for skill in skillsArray %}
+      <li class="skill-chip">{{ skill }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Recent Activity {%- endcomment -%}
+  {% if recentSessions.size > 0 %}
+  <section class="activity-section fade-in" aria-label="Recent activity timeline">
+    <h2 class="section-heading">Recent Activity</h2>
+    <ol class="activity-list">
+      {% for s in recentSessions %}
+      <li class="activity-item">
+        {% if s.recordedAt %}
+        <div class="activity-date">{{ s.recordedAt | formatDate }}</div>
+        {% endif %}
+        <div class="activity-title"><a href="/{{ user.username }}/{{ s.projectSlug }}/{{ s.slug }}">{{ s.title }}</a></div>
+        <div class="activity-detail">{{ s.projectTitle }} &middot; {{ s.durationMinutes | formatDuration }} &middot; {{ s.locChanged | localeNumber }} LOC</div>
+      </li>
+      {% endfor %}
+    </ol>
   </section>
   {% endif %}
 
@@ -164,6 +229,19 @@
         });
       }, { threshold: 0.5 });
       counters.forEach(function (c) { counterObserver.observe(c); });
+
+      var sourceBars = document.querySelectorAll('.source-bar [data-width]');
+      var sourceObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            var w = entry.target.getAttribute('data-width');
+            if (prefersReducedMotion) { entry.target.style.width = w + '%'; }
+            else { requestAnimationFrame(function () { entry.target.style.width = w + '%'; }); }
+            sourceObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.2 });
+      sourceBars.forEach(function (b) { sourceObserver.observe(b); });
     })();
   </script>
 

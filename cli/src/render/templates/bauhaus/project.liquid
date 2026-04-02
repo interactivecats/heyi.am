@@ -1,11 +1,11 @@
 <div class="heyiam-project bauhaus" data-render-version="2" data-template="bauhaus"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
   {%- comment -%} Breadcrumb {%- endcomment -%}
-  <div class="breadcrumb" aria-label="Breadcrumb">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
     <a href="/{{ user.username }}">{{ user.username }}</a>
     <span aria-hidden="true">/</span>
     <strong>{{ project.slug }}</strong>
-  </div>
+  </nav>
 
   {%- comment -%} Project hero {%- endcomment -%}
   <section class="project-hero" aria-label="Project overview">
@@ -103,31 +103,24 @@
   </section>
   {% endif %}
 
-  {%- comment -%} Work timeline chart {%- endcomment -%}
-  {% if sessionsJson %}
-  <section class="sessions-section anim-slide-right anim-delay-3" aria-label="Agent work timeline">
+  {%- comment -%} Key decisions {%- endcomment -%}
+  {% if keyDecisions.size > 0 %}
+  <section class="decisions-section anim-slide-left anim-delay-3" aria-label="Key decisions">
     <div class="section-heading">
       <svg width="20" height="20" aria-hidden="true">
         <rect width="20" height="20" fill="var(--yellow)" />
       </svg>
-      <h2>Work Timeline</h2>
+      <h2>Key Decisions</h2>
       <div class="heading-line" aria-hidden="true"></div>
     </div>
-    <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-  </section>
-  {% endif %}
-
-  {%- comment -%} Growth chart {%- endcomment -%}
-  {% if growthJson %}
-  <section class="sessions-section anim-slide-left anim-delay-3" aria-label="Growth over time">
-    <div class="section-heading">
-      <svg width="20" height="20" aria-hidden="true">
-        <circle cx="10" cy="10" r="10" fill="var(--blue)" />
-      </svg>
-      <h2>Growth</h2>
-      <div class="heading-line" aria-hidden="true"></div>
-    </div>
-    <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+    <ol class="decisions-list">
+      {% for d in keyDecisions %}
+      <li class="decision-item">
+        <div class="decision-number" aria-hidden="true">{{ forloop.index }}</div>
+        <div class="decision-text">{{ d }}</div>
+      </li>
+      {% endfor %}
+    </ol>
   </section>
   {% endif %}
 
@@ -147,6 +140,9 @@
         <div class="phase-number">{{ item.phase }}</div>
         <div class="phase-content">
           <div class="phase-title">{{ item.title }}</div>
+          {% if item.dates %}
+          <div class="phase-dates">{{ item.dates }}</div>
+          {% endif %}
           <div class="phase-desc">{{ item.description }}</div>
         </div>
       </div>
@@ -191,18 +187,69 @@
     <div class="source-bar-wrapper">
       <div class="source-bar">
         {% for src in sourceCounts %}
-        {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+        {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
         <div class="source-segment" style="width: {{ srcPct }}%; background: var({% if forloop.first %}--blue{% else %}--yellow{% endif %});"></div>
         {% endfor %}
       </div>
     </div>
     <div class="source-legend">
       {% for src in sourceCounts %}
-      {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+      {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
       <span><span class="legend-swatch" style="background: var({% if forloop.first %}--blue{% else %}--yellow{% endif %});" aria-hidden="true"></span>{{ src.tool }} {{ srcPct }}% ({{ src.count }} session{% if src.count != 1 %}s{% endif %})</span>
       {% endfor %}
     </div>
     {% endif %}
+  </section>
+  {% endif %}
+
+  {%- comment -%} Work timeline (sessions table) {%- endcomment -%}
+  {% if featuredSessions.size > 0 %}
+  <section class="sessions-section anim-slide-right anim-delay-4" aria-label="Work timeline">
+    <div class="section-heading">
+      <svg width="20" height="20" aria-hidden="true">
+        <rect width="20" height="20" fill="var(--yellow)" />
+      </svg>
+      <h2>Work Timeline</h2>
+      <div class="heading-line" aria-hidden="true"></div>
+    </div>
+    <div class="sessions-table-wrapper">
+      <table class="sessions-table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Session</th>
+            <th scope="col">Date</th>
+            <th scope="col">Duration</th>
+            <th scope="col">LOC</th>
+            <th scope="col">Source</th>
+            <th scope="col">Agents</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in featuredSessions %}
+          <tr>
+            <td><span class="session-num">{{ forloop.index }}</span></td>
+            <td><a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="session-title-link">{{ s.title }}</a></td>
+            <td>{{ s.recordedAt | formatDateShort }}</td>
+            <td>{{ s.durationMinutes | formatDuration }}</td>
+            <td>{{ s.locChanged | localeNumber }}</td>
+            <td>{% if s.sourceTool %}<span class="session-source-badge badge-{{ s.sourceTool | downcase | replace: ' ', '-' }}">{{ s.sourceTool }}</span>{% endif %}</td>
+            <td>
+              {% if s.agentCount and s.agentCount > 0 %}
+              <div class="agent-dots" aria-label="{{ s.agentCount }} agents">
+                {% for agent in s.agents %}
+                <span class="agent-dot" style="background:{{ agent.color }}" title="{{ agent.role }}"></span>
+                {% endfor %}
+              </div>
+              {% else %}
+              <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-secondary)">0</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </section>
   {% endif %}
 

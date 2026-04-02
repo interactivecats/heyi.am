@@ -107,9 +107,11 @@
         </h2>
 
         {% for p in projects %}
-        <a href="/{{ user.username }}/{{ p.slug }}" class="project-card fade-in fade-in-delay-2">
+        <article class="project-card fade-in fade-in-delay-2">
           <span class="project-card__page-number">p. {{ forloop.index }}</span>
-          <h3 class="project-card__title">{{ p.title }}</h3>
+          <h3 class="project-card__title">
+            <a href="/{{ user.username }}/{{ p.slug }}">{{ p.title }}</a>
+          </h3>
           {% if p.narrative %}
           <p class="project-card__narrative">{{ p.narrative }}</p>
           {% endif %}
@@ -125,8 +127,130 @@
             <span class="project-card__meta-item">{{ p.totalDurationMinutes | formatDuration }}</span>
             <span class="project-card__meta-item">{{ p.totalLoc | localeNumber }} LOC</span>
           </div>
-        </a>
+          {% if p.sourceCounts.size > 0 %}
+          {% assign pTotalSrc = 0 %}
+          {% for src in p.sourceCounts %}
+            {% assign pTotalSrc = pTotalSrc | plus: src.count %}
+          {% endfor %}
+          {% if pTotalSrc > 0 %}
+          <div class="source-bar" role="img" aria-label="Source mix">
+            {% for src in p.sourceCounts %}
+            {% assign pSrcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+            <div class="source-bar__segment{% if forloop.first %} source-bar__segment--claude{% else %} source-bar__segment--cursor{% endif %}" style="width: {{ pSrcPct }}%"></div>
+            {% endfor %}
+          </div>
+          <div class="source-bar__labels">
+            {% for src in p.sourceCounts %}
+            {% assign pSrcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+            <span>{{ src.tool }} {{ pSrcPct }}%</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% endif %}
+        </article>
         {% endfor %}
+      </section>
+
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Chapter II: Skills Compendium {%- endcomment -%}
+      {% if allSkills.size > 0 %}
+      <section class="skills-overview" aria-label="Skills compendium">
+        <h2 class="chapter-heading fade-in fade-in-delay-3">
+          <span class="chapter-heading__number">Chapter II</span>
+          Skills Compendium
+        </h2>
+        <div class="skills-grid">
+          {% for skill in allSkills %}
+          <div class="skills-grid__item">
+            <div class="skills-grid__name">{{ skill.name }}</div>
+            <div class="skills-grid__count">{{ skill.projectCount }} project{% if skill.projectCount != 1 %}s{% endif %}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Chapter III: Recent Activity {%- endcomment -%}
+      {% if recentSessions.size > 0 %}
+      <section aria-label="Recent activity">
+        <h2 class="chapter-heading fade-in fade-in-delay-3">
+          <span class="chapter-heading__number">Chapter III</span>
+          Recent Activity
+        </h2>
+        <div style="overflow-x: auto;">
+          <table class="activity-table">
+            <thead>
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Session</th>
+                <th scope="col">Project</th>
+                <th scope="col">Duration</th>
+                <th scope="col">LOC</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for rs in recentSessions %}
+              <tr>
+                <td>{% if rs.recordedAt %}{{ rs.recordedAt | formatDateShort }}{% endif %}</td>
+                <td>{{ rs.title }}</td>
+                <td><span class="activity-table__project">{{ rs.projectTitle | default: rs.projectSlug }}</span></td>
+                <td>{{ rs.durationMinutes | formatDuration }}</td>
+                <td>{{ rs.locChanged | localeNumber }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Chapter IV: Source Overview {%- endcomment -%}
+      {% if sourceCounts.size > 0 %}
+      <section aria-label="Source overview">
+        <h2 class="chapter-heading fade-in fade-in-delay-3">
+          <span class="chapter-heading__number">Chapter IV</span>
+          Source
+        </h2>
+        {% assign totalPortSrc = 0 %}
+        {% for src in sourceCounts %}
+          {% assign totalPortSrc = totalPortSrc | plus: src.count %}
+        {% endfor %}
+        {% if totalPortSrc > 0 %}
+        <div class="source-overview">
+          {% for src in sourceCounts %}
+          {% assign portSrcPct = src.count | times: 100.0 | divided_by: totalPortSrc | round %}
+          <div class="source-overview__item">
+            <div class="source-overview__value">{{ portSrcPct }}%</div>
+            <div class="source-overview__label">{{ src.tool }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="source-overview__bar" style="margin-top: 1rem;">
+          <div class="source-overview__bar-track" role="img" aria-label="Overall source mix">
+            {% for src in sourceCounts %}
+            {% assign portSrcPct = src.count | times: 100.0 | divided_by: totalPortSrc | round %}
+            <div class="source-overview__bar-fill--{% if forloop.first %}claude{% else %}cursor{% endif %}" style="width: {{ portSrcPct }}%;"></div>
+            {% endfor %}
+          </div>
+          <div class="source-overview__bar-labels">
+            {% for src in sourceCounts %}
+            <span>{{ src.tool }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
       </section>
 
       <div class="hr-triple" role="separator">

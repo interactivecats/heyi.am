@@ -114,6 +114,9 @@
           <div class="phase">
             <div class="phase__number">Phase {{ item.phase }}</div>
             <h3 class="phase__title">{{ item.title }}</h3>
+            {% if item.dates %}
+            <div class="phase__dates">{{ item.dates }}</div>
+            {% endif %}
             <p class="phase__desc">{{ item.description }}</p>
           </div>
           {% endfor %}
@@ -179,13 +182,13 @@
             {% if totalSourceSessions > 0 %}
             <div class="source-bar" role="img" aria-label="Source breakdown">
               {% for src in sourceCounts %}
-              {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+              {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
               <div class="source-bar__segment{% if forloop.first %} source-bar__segment--claude{% else %} source-bar__segment--cursor{% endif %}" style="width: {{ srcPct }}%"></div>
               {% endfor %}
             </div>
             <div class="source-labels">
               {% for src in sourceCounts %}
-              {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+              {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
               <span>{{ src.tool }} &mdash; {{ src.count }} session{% if src.count != 1 %}s{% endif %} ({{ srcPct }}%)</span>
               {% endfor %}
             </div>
@@ -199,25 +202,39 @@
       </div>
       {% endif %}
 
-      {%- comment -%} Chapter VI: Work Timeline {%- endcomment -%}
-      {% if sessionsJson %}
+      {%- comment -%} Chapter VI: Work Timeline (static table) {%- endcomment -%}
+      {% if featuredSessions.size > 0 %}
       <section aria-label="Work timeline">
         <h2 class="chapter-heading fade-in fade-in-d4">
           <span class="chapter-heading__number">Chapter VI</span>
           Work Timeline
         </h2>
-        <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-      </section>
-
-      <div class="hr-triple" role="separator">
-        <span class="hr-triple-inner"></span>
-      </div>
-      {% endif %}
-
-      {%- comment -%} Growth Chart {%- endcomment -%}
-      {% if growthJson %}
-      <section aria-label="Growth over time">
-        <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+        <div style="overflow-x: auto;">
+          <table class="timeline-table">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Title</th>
+                <th scope="col">Date</th>
+                <th scope="col">Duration</th>
+                <th scope="col">LOC</th>
+                <th scope="col">Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in featuredSessions %}
+              <tr>
+                <td>{{ forloop.index }}</td>
+                <td>{{ s.title }}</td>
+                <td>{% if s.recordedAt %}{{ s.recordedAt | formatDateShort }}{% endif %}</td>
+                <td>{{ s.durationMinutes | formatDuration }}</td>
+                <td>{{ s.locChanged | localeNumber }}</td>
+                <td>{{ s.sourceTool | default: "—" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <div class="hr-triple" role="separator">
@@ -234,11 +251,11 @@
         </h2>
 
         {% for s in featuredSessions %}
-        <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="session-card">
+        <article class="session-card">
           <span class="session-card__page">p. {{ forloop.index }}</span>
           <div class="session-card__number">Session {{ forloop.index }}</div>
           <h3 class="session-card__title">
-            {{ s.title }}
+            <a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a>
             {% if s.skills.size > 0 %}
             <span class="session-card__tag">{{ s.skills | first }}</span>
             {% endif %}
@@ -250,7 +267,7 @@
             <span>{{ s.agentSummary.agents.size }} agents</span>
             {% endif %}
           </div>
-        </a>
+        </article>
         {% endfor %}
       </section>
       {% endif %}

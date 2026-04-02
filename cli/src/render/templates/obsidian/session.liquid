@@ -125,36 +125,39 @@
           <section class="agents-section fade-up" aria-label="Agent breakdown">
             <h2 class="section-heading">Agents</h2>
             {% if session.agentSummary.agents.size > 0 %}
+            {% assign agent_colors = '#7c3aed,#0891b2,#059669,#475569,#e11d48,#d97706' | split: ',' %}
             <div class="agent-chart">
               <div class="agent-chart-title">Time by role</div>
               {% assign maxAgentDuration = 0 %}
               {% for agent in session.agentSummary.agents %}
-                {% if agent.durationMinutes > maxAgentDuration %}
-                  {% assign maxAgentDuration = agent.durationMinutes %}
+                {% if agent.duration_minutes > maxAgentDuration %}
+                  {% assign maxAgentDuration = agent.duration_minutes %}
                 {% endif %}
               {% endfor %}
               {% for agent in session.agentSummary.agents %}
               {% if maxAgentDuration > 0 %}
-              {% assign barPct = agent.durationMinutes | times: 100 | divided_by: maxAgentDuration %}
+              {% assign barPct = agent.duration_minutes | times: 100 | divided_by: maxAgentDuration %}
               {% else %}
               {% assign barPct = 0 %}
               {% endif %}
+              {% assign colorIdx = forloop.index0 | modulo: 6 %}
               <div class="agent-bar-row">
                 <span class="agent-bar-label">{{ agent.role }}</span>
                 <div class="agent-bar-track">
-                  <div class="agent-bar-fill" style="width: {{ barPct }}%; background: var(--accent)"></div>
+                  <div class="agent-bar-fill" style="width: {{ barPct }}%; background: {{ agent_colors[colorIdx] }}"></div>
                 </div>
-                <span class="agent-bar-value">{{ agent.durationMinutes | formatDuration }}</span>
+                <span class="agent-bar-value">{{ agent.duration_minutes | formatDuration }}</span>
               </div>
               {% endfor %}
             </div>
             <div class="agent-list">
               {% for agent in session.agentSummary.agents %}
+              {% assign colorIdx = forloop.index0 | modulo: 6 %}
               <div class="agent-row">
-                <span class="agent-dot" style="background: var(--accent)" aria-hidden="true"></span>
+                <span class="agent-dot" style="background: {{ agent_colors[colorIdx] }}" aria-hidden="true"></span>
                 <span class="agent-name">{{ agent.role }}</span>
-                <span class="agent-duration">{{ agent.durationMinutes | formatDuration }}</span>
-                <span class="agent-loc">{{ agent.linesChanged | formatLoc }} LOC</span>
+                <span class="agent-duration">{{ agent.duration_minutes | formatDuration }}</span>
+                <span class="agent-loc">{{ agent.loc_changed | formatLoc }} LOC</span>
               </div>
               {% endfor %}
             </div>

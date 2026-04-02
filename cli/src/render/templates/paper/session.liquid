@@ -7,7 +7,7 @@
 
   <main id="main-content">
     {%- comment -%} Breadcrumb {%- endcomment -%}
-    <div class="breadcrumb" aria-label="Breadcrumb">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="/{{ user.username }}">{{ user.username }}</a>
       {% if projectSlug %}
       <span class="breadcrumb__separator" aria-hidden="true">/</span>
@@ -15,7 +15,7 @@
       {% endif %}
       <span class="breadcrumb__separator" aria-hidden="true">/</span>
       <span aria-current="page">{{ session.title }}</span>
-    </div>
+    </nav>
 
     {%- comment -%} Article Header {%- endcomment -%}
     <header class="article-header fade-in fade-in-d2">
@@ -35,6 +35,12 @@
         <p class="session-meta__label">Duration</p>
         <p class="session-meta__value">{{ session.durationMinutes | formatDuration }}</p>
       </div>
+      {% if session.wallClockMinutes %}
+      <div class="session-meta__item">
+        <p class="session-meta__label">Wall Clock</p>
+        <p class="session-meta__value">{{ session.wallClockMinutes | formatDuration }}</p>
+      </div>
+      {% endif %}
       <div class="session-meta__item">
         <p class="session-meta__label">Turns</p>
         <p class="session-meta__value">{{ session.turns }}</p>
@@ -47,6 +53,12 @@
         <p class="session-meta__label">Files</p>
         <p class="session-meta__value">{{ session.filesChanged }}</p>
       </div>
+      {% if session.agentSummary %}
+      <div class="session-meta__item">
+        <p class="session-meta__label">Agents</p>
+        <p class="session-meta__value">{{ session.agentSummary.agents.size }}</p>
+      </div>
+      {% endif %}
     </div>
 
     {%- comment -%} Content Layout (main + sidebar) {%- endcomment -%}
@@ -139,6 +151,14 @@
               {% endfor %}
             </tbody>
           </table>
+
+          {%- comment -%} Agent proportion bar {%- endcomment -%}
+          <div class="agent-bar" role="img" aria-label="Agent time distribution">
+            {% for agent in session.agentSummary.agents %}
+            {% assign colorIdx = forloop.index0 | modulo: 6 %}
+            <div class="agent-bar__segment" style="flex: {{ agent.duration_minutes }}; background: {{ agent_colors[colorIdx] }};"></div>
+            {% endfor %}
+          </div>
         </section>
         {% endif %}
       </div>
@@ -165,6 +185,12 @@
               <span class="sidebar-info__label">Duration</span>
               <span class="sidebar-info__value">{{ session.durationMinutes | formatDuration }}</span>
             </li>
+            {% if session.wallClockMinutes %}
+            <li>
+              <span class="sidebar-info__label">Wall Clock</span>
+              <span class="sidebar-info__value">{{ session.wallClockMinutes | formatDuration }}</span>
+            </li>
+            {% endif %}
             <li>
               <span class="sidebar-info__label">Turns</span>
               <span class="sidebar-info__value">{{ session.turns }}</span>

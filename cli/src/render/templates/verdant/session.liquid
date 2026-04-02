@@ -149,10 +149,10 @@
               <div class="vd-agent-row">
                 <div class="vd-agent-row__info">
                   <span class="vd-agent-row__name">{{ agent.role }}</span>
-                  <span class="vd-agent-row__meta">{{ agent.durationMinutes | formatDuration }} &middot; {{ agent.linesOfCode }} LOC</span>
+                  <span class="vd-agent-row__meta">{{ agent.duration_minutes | formatDuration }} &middot; {{ agent.loc_changed }} LOC</span>
                 </div>
                 <div class="vd-agent-bar">
-                  <div class="vd-agent-bar-fill" data-width="{{ agent.percentage }}" style="background: var(--vd-accent);" aria-hidden="true"></div>
+                  <div class="vd-agent-bar-fill" data-width="{{ agent.percentage }}" style="background: var(--color-{{ agent.role | slugify }});" aria-hidden="true"></div>
                 </div>
               </div>
               {% endfor %}
