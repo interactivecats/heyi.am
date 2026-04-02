@@ -85,22 +85,55 @@
     {% endif %}
   </section>
 
-  {%- comment -%} Work timeline chart {%- endcomment -%}
-  {% if sessionsJson %}
+  {%- comment -%} Work timeline chart (CSS-only SVG) {%- endcomment -%}
+  {% if featuredSessions.size > 0 %}
   <section class="timeline-section" aria-label="Work timeline">
     <h2 class="section-heading"><span class="sketch-underline">Work Timeline</span></h2>
-    <div class="timeline-chart">
-      <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-    </div>
-  </section>
-  {% endif %}
+    <div class="timeline-chart" role="img" aria-label="Bar chart showing session LOC over time">
+      {% assign maxLoc = 1 %}
+      {% for s in featuredSessions %}
+        {% if s.locChanged > maxLoc %}{% assign maxLoc = s.locChanged %}{% endif %}
+      {% endfor %}
+      {% assign barCount = featuredSessions.size %}
+      {% assign chartWidth = barCount | times: 90 | plus: 80 %}
+      {% assign chartHeight = 260 %}
+      <svg viewBox="0 0 {{ chartWidth }} {{ chartHeight }}" preserveAspectRatio="xMidYMid meet">
+        {%- comment -%} Grid lines {%- endcomment -%}
+        <line x1="60" y1="20" x2="60" y2="200" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="6 4" />
+        <line x1="60" y1="200" x2="{{ chartWidth | minus: 20 }}" y2="200" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="6 4" />
 
-  {%- comment -%} Growth chart {%- endcomment -%}
-  {% if growthJson %}
-  <section class="timeline-section" aria-label="Growth over time">
-    <h2 class="section-heading"><span class="sketch-underline">Growth</span></h2>
-    <div class="timeline-chart">
-      <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+        {%- comment -%} Y-axis labels {%- endcomment -%}
+        <text x="50" y="40" text-anchor="end" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#64748b">{{ maxLoc }}</text>
+        {% assign halfMax = maxLoc | divided_by: 2 %}
+        <text x="50" y="120" text-anchor="end" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#64748b">{{ halfMax }}</text>
+        <text x="50" y="200" text-anchor="end" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#64748b">0</text>
+        <text x="20" y="115" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#64748b" transform="rotate(-90 20 115)">LOC</text>
+
+        {%- comment -%} Bars {%- endcomment -%}
+        {% for s in featuredSessions %}
+          {% assign barX = forloop.index0 | times: 90 | plus: 80 %}
+          {% assign barHeight = s.locChanged | times: 180 | divided_by: maxLoc %}
+          {% assign barY = 200 | minus: barHeight %}
+          {% assign isClaude = s.sourceTool | downcase %}
+          {% if isClaude == "claude code" or isClaude == "claude" %}
+            {% assign barFill = "#334155" %}
+            {% assign barStroke = "#334155" %}
+          {% else %}
+            {% assign barFill = "#94a3b8" %}
+            {% assign barStroke = "#475569" %}
+          {% endif %}
+          <rect x="{{ barX }}" y="{{ barY }}" width="70" height="{{ barHeight }}" rx="4" fill="{{ barFill }}" opacity="0.85" stroke="{{ barStroke }}" stroke-width="1.5" stroke-dasharray="8 2 3 2" />
+          <text x="{{ barX | plus: 35 }}" y="220" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#64748b">{{ s.recordedAt | formatDateShort }}</text>
+        {% endfor %}
+
+        {%- comment -%} Legend {%- endcomment -%}
+        {% assign legendX = chartWidth | divided_by: 2 | minus: 80 %}
+        <rect x="{{ legendX }}" y="240" width="12" height="12" rx="3" fill="#334155" />
+        <text x="{{ legendX | plus: 18 }}" y="251" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#64748b">Claude</text>
+        {% assign legendX2 = legendX | plus: 80 %}
+        <rect x="{{ legendX2 }}" y="240" width="12" height="12" rx="3" fill="#94a3b8" />
+        <text x="{{ legendX2 | plus: 18 }}" y="251" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#64748b">Cursor</text>
+      </svg>
     </div>
   </section>
   {% endif %}
@@ -117,6 +150,7 @@
           <text x="12" y="12">{{ item.phase }}</text>
         </svg>
         <div class="phase-name">{{ item.title }}</div>
+        {% if item.dates %}<div class="phase-dates">{{ item.dates }}</div>{% endif %}
         <div class="phase-desc">{{ item.description }}</div>
       </li>
       {% endfor %}
@@ -145,13 +179,13 @@
       {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
     {% endfor %}
     {% if totalSourceSessions > 0 %}
-    {% assign firstPct = sourceCounts[0].count | times: 100 | divided_by: totalSourceSessions %}
+    {% assign firstPct = sourceCounts[0].count | times: 100.0 | divided_by: totalSourceSessions | round %}
     <div class="source-bar-lg" role="img" aria-label="Source distribution">
       <div class="source-fill-lg" style="width: {{ firstPct }}%"></div>
     </div>
     <div class="source-legend-lg">
       {% for src in sourceCounts %}
-      {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+      {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
       <span>{% if forloop.first %}<span class="dot-claude-lg"></span>{% else %}<span class="dot-cursor-lg"></span>{% endif %} {{ src.tool }} {{ srcPct }}% ({{ src.count }} session{% if src.count != 1 %}s{% endif %})</span>
       {% endfor %}
     </div>
@@ -185,6 +219,7 @@
             <th scope="col">Duration</th>
             <th scope="col">LOC</th>
             <th scope="col" class="hide-mobile">Source</th>
+            <th scope="col" class="hide-mobile">Agents</th>
           </tr>
         </thead>
         <tbody>
@@ -196,6 +231,7 @@
             <td>{{ s.durationMinutes | formatDuration }}</td>
             <td>{{ s.locChanged | localeNumber }}</td>
             <td class="hide-mobile"><span class="session-source">{{ s.sourceTool }}</span></td>
+            <td class="hide-mobile">{% if s.agentCount %}{{ s.agentCount }}{% else %}0{% endif %}</td>
           </tr>
           {% endfor %}
         </tbody>

@@ -32,6 +32,8 @@
   margin-inline: auto;
   padding-inline: 24px;
 }
+.circuit a { color: inherit; text-decoration: none; }
+.circuit a:visited { color: inherit; }
 
 /* ── Breadcrumb ── */
 .circuit .breadcrumb {
@@ -111,11 +113,24 @@
 .circuit .hero-info { flex: 1; min-width: 0; }
 .circuit .hero h1 {
   font-family: var(--font-display);
-  font-size: clamp(28px, 5vw, 48px);
+  font-size: clamp(32px, 5vw, 48px);
   font-weight: 700;
   color: var(--fg);
   letter-spacing: -0.03em;
   line-height: 1.15;
+  margin-bottom: 16px;
+}
+.circuit .hero h1 .accent { color: var(--accent); }
+.circuit.heyiam-project .hero h1 {
+  font-size: clamp(28px, 5vw, 40px);
+  margin-bottom: 12px;
+}
+.circuit.heyiam-project .hero { padding: 48px 0 40px; }
+.circuit.heyiam-session .hero { padding: 48px 0 40px; }
+.circuit.heyiam-session .hero h1 {
+  font-size: clamp(24px, 4vw, 36px);
+  line-height: 1.2;
+  max-width: 640px;
   margin-bottom: 16px;
 }
 .circuit .hero-bio {
@@ -187,6 +202,11 @@
   border-bottom: 1px solid var(--accent-dim);
 }
 .circuit .hero-links a:hover { border-color: var(--accent); }
+.circuit .hero-links a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
 
 /* ── Hero meta (session) ── */
 .circuit .hero-meta {
@@ -225,7 +245,7 @@
 }
 .circuit .hero.visible .hero-trace circle { opacity: 1; }
 
-/* ── Stat Chips ── */
+/* ── Stat Chips (portfolio defaults) ── */
 .circuit .stat-chips {
   display: flex;
   flex-wrap: wrap;
@@ -238,7 +258,7 @@
   border-radius: var(--radius);
   padding: 16px 24px;
   position: relative;
-  min-width: 100px;
+  min-width: 140px;
 }
 .circuit .stat-chip::before {
   content: '';
@@ -263,7 +283,7 @@
 }
 .circuit .stat-chip-value {
   font-family: var(--font-mono);
-  font-size: 20px;
+  font-size: 28px;
   font-weight: 600;
   color: var(--accent);
   display: block;
@@ -271,12 +291,68 @@
 }
 .circuit .stat-chip-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--fg-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-top: 4px;
   display: block;
+}
+
+/* Project stat chip overrides */
+.circuit.heyiam-project .stat-chips {
+  gap: 12px;
+  margin: 0 0 40px;
+}
+.circuit.heyiam-project .stat-chip {
+  padding: 12px 20px;
+  min-width: 100px;
+}
+.circuit.heyiam-project .stat-chip::before {
+  inset-inline-start: 10px;
+  width: 14px;
+  height: 3px;
+}
+.circuit.heyiam-project .stat-chip::after {
+  top: 6px;
+  inset-inline-end: 6px;
+  width: 3px;
+  height: 3px;
+}
+.circuit.heyiam-project .stat-chip-value {
+  font-size: 20px;
+}
+.circuit.heyiam-project .stat-chip-label {
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+/* Session stat chip overrides */
+.circuit.heyiam-session .stat-chips {
+  gap: 10px;
+  margin: 0 0 32px;
+}
+.circuit.heyiam-session .stat-chip {
+  padding: 10px 16px;
+  min-width: 80px;
+}
+.circuit.heyiam-session .stat-chip::before {
+  inset-inline-start: 8px;
+  width: 12px;
+  height: 3px;
+}
+.circuit.heyiam-session .stat-chip::after {
+  top: 5px;
+  inset-inline-end: 5px;
+  width: 3px;
+  height: 3px;
+}
+.circuit.heyiam-session .stat-chip-value {
+  font-size: 18px;
+}
+.circuit.heyiam-session .stat-chip-label {
+  font-size: 10px;
+  margin-top: 2px;
 }
 
 /* ── Leverage chip ── */
@@ -660,6 +736,19 @@
   position: relative;
   overflow: hidden;
 }
+.circuit .screenshot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 50h30v-30h40v60h30' fill='none' stroke='rgba(163,230,53,0.08)' stroke-width='1'/%3E%3Ccircle cx='30' cy='50' r='2' fill='rgba(163,230,53,0.12)'/%3E%3Ccircle cx='70' cy='20' r='2' fill='rgba(163,230,53,0.12)'/%3E%3C/svg%3E");
+}
+.circuit .screenshot-text {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--fg-muted);
+  opacity: 0.5;
+  z-index: 1;
+}
 .circuit .screenshot-chrome {
   position: absolute;
   top: 0;
@@ -802,6 +891,12 @@
   font-size: 11px;
   color: var(--accent);
   margin-inline-end: 8px;
+}
+.circuit .phase-dates {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-muted);
+  margin-bottom: 4px;
 }
 .circuit .phase-desc {
   font-size: 13px;
@@ -954,6 +1049,286 @@
 }
 .circuit .project-card-stats .val { color: var(--accent); }
 
+/* ── Session Table (project page) ── */
+.circuit .session-table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 40px;
+  -webkit-overflow-scrolling: touch;
+}
+.circuit .session-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.circuit .session-table th {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: start;
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+.circuit .session-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.circuit .session-table tr:hover td { background: var(--accent-dim); }
+.circuit .session-table .num {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  font-size: 12px;
+}
+.circuit .session-table .title-cell a {
+  color: var(--fg);
+  text-decoration: none;
+}
+.circuit .session-table .title-cell a:hover { color: var(--accent); }
+.circuit .session-table .title-cell a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+.circuit .session-table .mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+/* ── Agent Dots ── */
+.circuit .agent-dots {
+  display: flex;
+  gap: 3px;
+}
+.circuit .agent-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* ── Featured card article pattern ── */
+.circuit .featured-card h4 a {
+  color: var(--fg);
+  text-decoration: none;
+}
+.circuit .featured-card h4 a:hover { color: var(--accent); }
+.circuit .featured-card h4 a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Source Overview (portfolio) ── */
+.circuit .source-overview {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 40px;
+  position: relative;
+}
+.circuit .source-overview::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  inset-inline-start: 16px;
+  width: 20px;
+  height: 4px;
+  background: var(--bg);
+  border-bottom-left-radius: 2px;
+  border-bottom-right-radius: 2px;
+}
+.circuit .source-overview h3 {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+}
+.circuit .source-overview-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.circuit .source-overview-row:last-child { margin-bottom: 0; }
+.circuit .source-overview-name {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--fg);
+  min-width: 80px;
+}
+.circuit .source-overview-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.circuit .source-overview-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s ease;
+}
+.circuit .source-overview-fill.claude { background: var(--accent); }
+.circuit .source-overview-fill.cursor-fill { background: var(--fg-muted); }
+.circuit .source-overview-pct {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  min-width: 36px;
+  text-align: end;
+}
+
+/* ── Aggregate Skills (portfolio) ── */
+.circuit .all-skills-section { padding-bottom: 40px; }
+.circuit .all-skills-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+.circuit .skill-ic {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg);
+  position: relative;
+  transition: border-color 0.2s;
+}
+.circuit .skill-ic:hover { border-color: var(--border-accent); }
+.circuit .skill-ic::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  inset-inline-start: -1px;
+  width: 3px;
+  height: 10px;
+  transform: translateY(-50%);
+  background: var(--accent-dim);
+  border-radius: 0 2px 2px 0;
+}
+.circuit .skill-ic::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  inset-inline-end: -1px;
+  width: 3px;
+  height: 10px;
+  transform: translateY(-50%);
+  background: var(--accent-dim);
+  border-radius: 2px 0 0 2px;
+}
+.circuit .skill-ic-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.circuit .skill-ic-count {
+  margin-inline-start: auto;
+  color: var(--accent);
+  font-size: 11px;
+}
+
+/* ── Trace SVG Connector (portfolio) ── */
+.circuit .trace-svg-connector {
+  width: 100%;
+  height: 60px;
+  overflow: visible;
+  display: block;
+  margin: 8px 0;
+}
+.circuit .trace-svg-connector path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  opacity: 0.2;
+  stroke-dasharray: 300;
+  stroke-dashoffset: 300;
+  transition: stroke-dashoffset 0.8s ease;
+}
+.circuit .trace-svg-connector.drawn path { stroke-dashoffset: 0; }
+.circuit .trace-svg-connector circle {
+  fill: var(--accent);
+  opacity: 0;
+  transition: opacity 0.3s ease 0.6s;
+}
+.circuit .trace-svg-connector.drawn circle { opacity: 0.5; }
+
+/* ── Portfolio source bar variant ── */
+.circuit.heyiam-portfolio .source-bar-container { margin-top: 16px; }
+.circuit.heyiam-portfolio .source-bar-label {
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+.circuit.heyiam-portfolio .source-bar {
+  height: 4px;
+  border-radius: 2px;
+}
+
+/* ── Portfolio section-header size ── */
+.circuit.heyiam-portfolio .section-header { font-size: 22px; }
+
+/* ── Portfolio trace-connector height ── */
+.circuit.heyiam-portfolio .trace-connector { height: 40px; }
+
+/* ── Counter animation ── */
+.circuit .counter { font-variant-numeric: tabular-nums; }
+
+/* ── Skip link ── */
+.circuit .skip-link {
+  position: absolute;
+  inset-inline-start: -9999px;
+  top: 0;
+  background: var(--accent);
+  color: var(--bg);
+  padding: 8px 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  z-index: 100;
+  border-radius: var(--radius);
+}
+.circuit .skip-link:focus {
+  inset-inline-start: 8px;
+  top: 8px;
+}
+
+/* ── Footer ── */
+.circuit .footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 0;
+  margin-top: 64px;
+  text-align: center;
+}
+.circuit .footer p {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+/* ── Clickable session cards ── */
+.circuit a.session-card {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.circuit a.session-card:hover { transform: translateY(-2px); }
+
 /* ── Animations ── */
 .circuit .fade-in {
   opacity: 0;
@@ -968,6 +1343,11 @@
 @media (prefers-reduced-motion: reduce) {
   .circuit .fade-in { opacity: 1; transform: none; transition: none; }
   .circuit .source-bar-fill { transition: none; }
+  .circuit .source-overview-fill { transition: none; }
+  .circuit .stat-chip-value { transition: none; }
+  .circuit .trace-connector { background: var(--trace-bright); }
+  .circuit .trace-svg-connector path { transition: none; }
+  .circuit .trace-svg-connector circle { transition: none; }
 }
 
 /* ── Responsive ── */
@@ -989,13 +1369,29 @@
   .circuit .hero { padding: 48px 0 32px; }
   .circuit .hero-profile { flex-direction: column; }
   .circuit .hero-photo { width: 80px; height: 80px; }
+  .circuit .hero-contact { font-size: 12px; }
   .circuit .stat-chips { gap: 12px; }
   .circuit .stat-chip { min-width: 90px; padding: 10px 14px; flex: 1 1 calc(50% - 12px); }
   .circuit .stat-chip-value { font-size: 16px; }
+  .circuit.heyiam-portfolio .stat-chip { min-width: 120px; padding: 12px 16px; }
+  .circuit.heyiam-portfolio .stat-chip-value { font-size: 22px; }
   .circuit .featured-grid { grid-template-columns: 1fr; }
   .circuit .phase-bus { padding-inline-start: 24px; }
   .circuit .trace-connector { margin-inline-start: 24px; }
   .circuit .screenshot { height: 180px; }
+  .circuit .project-card { padding: 20px; }
+  .circuit .project-card-header { flex-direction: column; gap: 8px; }
+  .circuit .footer { margin-top: 40px; }
+  /* Session-specific responsive */
+  .circuit.heyiam-session .hero { padding: 32px 0 24px; }
+  .circuit.heyiam-session .stat-chips { gap: 8px; }
+  .circuit.heyiam-session .stat-chip { min-width: 70px; padding: 8px 12px; flex: 1 1 calc(33% - 8px); }
+  .circuit.heyiam-session .stat-chip-value { font-size: 15px; }
+  /* Project-specific responsive */
+  .circuit.heyiam-project .hero { padding: 32px 0 24px; }
+  .circuit.heyiam-project .stat-chips { gap: 8px; }
+  .circuit.heyiam-project .stat-chip { min-width: 90px; padding: 10px 14px; flex: 1 1 calc(50% - 8px); }
+  .circuit.heyiam-project .stat-chip-value { font-size: 16px; }
 }
 
 @media (max-width: 480px) {
@@ -1003,4 +1399,5 @@
   .circuit .hero-links { flex-direction: column; gap: 8px; }
   .circuit .sidebar { grid-template-columns: 1fr; }
   .circuit .hero-meta { flex-direction: column; gap: 4px; }
+  .circuit.heyiam-session .stat-chip { flex: 1 1 calc(50% - 8px); }
 }

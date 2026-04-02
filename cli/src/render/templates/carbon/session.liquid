@@ -1,7 +1,7 @@
 <div class="heyiam-session carbon" data-render-version="2" data-template="carbon">
 
   {%- comment -%} Breadcrumb {%- endcomment -%}
-  <div class="breadcrumb" aria-label="Breadcrumb">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
     <a href="/{{ user.username }}">{{ user.username }}</a>
     {% if projectSlug %}
     <span class="breadcrumb__sep">/</span>
@@ -9,7 +9,7 @@
     {% endif %}
     <span class="breadcrumb__sep">/</span>
     <span aria-current="page">{{ session.title }}</span>
-  </div>
+  </nav>
 
   {%- comment -%} Session Header {%- endcomment -%}
   <header class="session-header fade-in">
@@ -105,7 +105,7 @@
         {% if totalAgentDur > 0 %}
         <div class="agent-bar-chart" role="img" aria-label="Agent time distribution">
           {% for agent in session.agentSummary.agents %}
-          {% assign pct = agent.duration_minutes | times: 100 | divided_by: totalAgentDur %}
+          {% assign pct = agent.duration_minutes | times: 100.0 | divided_by: totalAgentDur | round %}
           {% assign colorIdx = forloop.index0 | modulo: 6 %}
           <div class="agent-bar-chart__seg" style="width: {{ pct }}%; background: {{ agent_colors[colorIdx] }};"></div>
           {% endfor %}

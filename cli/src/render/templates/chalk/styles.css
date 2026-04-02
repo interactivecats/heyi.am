@@ -24,6 +24,9 @@
   --agent-ux: #d97706;
 }
 
+/* ── Visited links ── */
+a:visited { color: inherit; }
+
 /* ── SVG filters ── */
 .svg-filters {
   position: absolute;
@@ -80,6 +83,12 @@
 .chalk-card:nth-child(even) {
   transform: rotate(0.4deg);
 }
+/* Session/project sidebar cards use tighter spacing */
+.heyiam-session .chalk-card,
+.heyiam-project .chalk-card {
+  padding: 20px;
+  margin-bottom: 20px;
+}
 
 /* ── Pin-to-board animation ── */
 @keyframes pin-in {
@@ -101,12 +110,14 @@
 
 /* ── Annotation arrow ── */
 .annotation {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   font-family: var(--font-display);
   font-size: 18px;
   color: var(--accent-light);
+  margin-top: 16px;
 }
 .annotation-arrow {
   width: 40px;
@@ -158,6 +169,24 @@
   line-height: 1.15;
   color: var(--accent);
   margin-bottom: 16px;
+}
+/* Portfolio hero overrides */
+.heyiam-portfolio .hero {
+  padding: 56px 0 40px;
+}
+.heyiam-portfolio .hero h1 {
+  font-size: clamp(40px, 7vw, 64px);
+  line-height: 1.1;
+  margin-bottom: 12px;
+}
+/* Project hero overrides */
+.heyiam-project .hero {
+  padding: 56px 0 40px;
+}
+.heyiam-project .hero h1 {
+  font-size: clamp(36px, 6vw, 56px);
+  line-height: 1.1;
+  margin-bottom: 8px;
 }
 .hero-bio {
   font-size: 16px;
@@ -375,6 +404,13 @@
   color: var(--accent);
   margin-bottom: 24px;
 }
+.heyiam-project .section-heading {
+  margin-bottom: 20px;
+}
+.heyiam-session .section-heading {
+  font-size: 28px;
+  margin-bottom: 16px;
+}
 
 /* ── Projects section ── */
 .projects-section {
@@ -386,6 +422,21 @@
   font-weight: 700;
   color: var(--accent);
   margin-bottom: 4px;
+}
+.project-name a {
+  color: inherit;
+  text-decoration: none;
+}
+.project-name a:hover {
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 3px;
+}
+.project-name a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
 }
 .project-narrative {
   font-size: 14px;
@@ -414,6 +465,49 @@
   height: 6px;
   border-radius: 50%;
   background: var(--accent);
+}
+
+/* ── Source bar (portfolio project cards) ── */
+.source-bar {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--border-light);
+  overflow: hidden;
+  margin-bottom: 8px;
+  border: 1.5px solid var(--border);
+  filter: url(#chalk-rough);
+}
+.source-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 5px;
+}
+.source-legend {
+  display: flex;
+  gap: 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-muted);
+  margin-bottom: 16px;
+}
+.source-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.source-legend .dot-claude {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: inline-block;
+}
+.source-legend .dot-cursor {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  display: inline-block;
 }
 
 /* ── Clickable cards ── */
@@ -446,6 +540,7 @@ a.project-card:hover, a.session-card:hover {
   background: linear-gradient(135deg, var(--border-light) 0%, var(--border) 100%);
   border: 2px solid var(--border);
   border-radius: var(--radius);
+  height: 280px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -484,6 +579,11 @@ a.project-card:hover, a.session-card:hover {
 .timeline-chart {
   width: 100%;
   overflow-x: auto;
+}
+.timeline-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 /* ── Phases ── */
@@ -535,6 +635,12 @@ a.project-card:hover, a.session-card:hover {
   font-size: 22px;
   font-weight: 700;
   color: var(--accent);
+}
+.phase-dates {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-muted);
+  margin-bottom: 4px;
 }
 .phase-desc {
   font-size: 14px;
@@ -642,6 +748,15 @@ a.project-card:hover, a.session-card:hover {
   text-decoration-color: var(--sketch-color);
   text-underline-offset: 3px;
   text-decoration-thickness: 1.5px;
+}
+/* Session sidebar uses smaller skill chips */
+.heyiam-session .sidebar .skill-chip {
+  font-size: 11px;
+  padding: 3px 10px;
+}
+/* Session sidebar uses smaller gap for skills */
+.heyiam-session .sidebar .skills-list {
+  gap: 6px;
 }
 
 /* ── Sessions table ── */
@@ -1029,5 +1144,14 @@ a.project-card:hover, a.session-card:hover {
   }
   .chalk-card {
     transform: none !important;
+  }
+  .footer-inner {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+  .nav-inner {
+    flex-direction: column;
+    gap: 12px;
   }
 }

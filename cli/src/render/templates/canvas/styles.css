@@ -23,6 +23,14 @@
   --canvas-duration:       800ms;
   --canvas-ease:           cubic-bezier(0.25, 0.46, 0.45, 0.94);
 
+  /* Agent role colors */
+  --agent-frontend:  #7c3aed;
+  --agent-backend:   #0891b2;
+  --agent-qa:        #059669;
+  --agent-security:  #475569;
+  --agent-reviewer:  #e11d48;
+  --agent-ux:        #d97706;
+
   font-family: var(--canvas-font-body);
   color: var(--canvas-text);
   line-height: 1.6;
@@ -56,6 +64,9 @@
     opacity: 1;
     transform: none;
   }
+  .canvas .agent-bar-fill {
+    transition: none;
+  }
 }
 
 /* ── Links ── */
@@ -67,10 +78,65 @@
 .canvas a:hover {
   color: var(--canvas-accent);
 }
+.canvas a:visited {
+  color: var(--canvas-accent-dark);
+}
 .canvas a:focus-visible {
   outline: 2px solid var(--canvas-accent);
   outline-offset: 3px;
   border-radius: 4px;
+}
+
+/* ── Skip Link ── */
+.canvas .skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--canvas-accent);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: var(--canvas-radius-sm);
+  z-index: 1000;
+  font-family: var(--canvas-font-mono);
+  font-size: 0.8125rem;
+  text-decoration: none;
+}
+.canvas .skip-link:focus {
+  top: 0.5rem;
+  color: #fff;
+}
+
+/* ── Navigation ── */
+.canvas .nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 0;
+  margin-block-end: 40px;
+}
+.canvas .nav__logo {
+  font-family: var(--canvas-font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--canvas-text);
+  text-decoration: none;
+}
+.canvas .nav__links {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+}
+.canvas .nav__links a {
+  font-family: var(--canvas-font-body);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--canvas-text-secondary);
+  text-decoration: none;
+  transition: color 200ms ease;
+}
+.canvas .nav__links a:hover,
+.canvas .nav__links a[aria-current="page"] {
+  color: var(--canvas-text);
 }
 
 /* ── Layout ── */
@@ -118,6 +184,9 @@
   letter-spacing: -0.02em;
   margin-block-end: 2.5rem;
 }
+.canvas.heyiam-session .section-title {
+  margin-block-end: 2rem;
+}
 
 /* ── Stat ── */
 .canvas .stat {
@@ -125,11 +194,14 @@
 }
 .canvas .stat__number {
   font-family: var(--canvas-font-display);
-  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
   font-weight: 700;
   line-height: 1;
   color: var(--canvas-text);
   letter-spacing: -0.03em;
+}
+.canvas.heyiam-project .stat__number {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
 }
 .canvas .stat__label {
   font-family: var(--canvas-font-mono);
@@ -480,6 +552,13 @@
   font-weight: 600;
   margin-block-end: 0.375rem;
 }
+.canvas .phase-card__dates {
+  font-family: var(--canvas-font-mono);
+  font-size: 0.6875rem;
+  color: var(--canvas-text-tertiary);
+  margin-block-end: 0.75rem;
+  letter-spacing: 0.02em;
+}
 .canvas .phase-card__desc {
   font-size: 0.9375rem;
   color: var(--canvas-text-secondary);
@@ -495,6 +574,11 @@
   border-radius: var(--canvas-radius-lg);
   padding: 2rem;
   overflow-x: auto;
+}
+.canvas .chart-container svg {
+  display: block;
+  width: 100%;
+  min-width: 600px;
 }
 
 /* ── Skills ── */
@@ -567,6 +651,19 @@
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+.canvas .source-bar-large {
+  flex: 1;
+  min-width: 200px;
+  height: 12px;
+  background: var(--canvas-gray);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.canvas .source-bar-large__fill {
+  height: 100%;
+  background: var(--canvas-accent);
+  border-radius: 6px;
 }
 
 /* ── Session Cards (Project) ── */
@@ -972,11 +1069,190 @@
   border-radius: var(--canvas-radius-pill);
 }
 
+/* ── Page Footer ── */
+.canvas .page-footer {
+  padding: 3rem 0;
+  text-align: center;
+  font-family: var(--canvas-font-mono);
+  font-size: 0.75rem;
+  color: var(--canvas-text-tertiary);
+}
+.canvas .page-footer a {
+  color: var(--canvas-text-tertiary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.canvas .page-footer a:hover {
+  color: var(--canvas-accent);
+}
+.canvas .page-footer a:visited {
+  color: var(--canvas-text-tertiary);
+}
+
+/* ── Source Bar (Portfolio project cards) ── */
+.canvas .source-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--canvas-font-mono);
+  font-size: 0.6875rem;
+  color: var(--canvas-text-tertiary);
+}
+.canvas .source-bar__track {
+  width: 80px;
+  height: 4px;
+  background: var(--canvas-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.canvas .source-bar__fill {
+  height: 100%;
+  background: var(--canvas-accent);
+  border-radius: 2px;
+}
+
+/* ── Skills Overview (Portfolio) ── */
+.canvas .skills-overview {
+  padding-block-end: 100px;
+}
+.canvas .skills-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* ── Source Overview (Portfolio) ── */
+.canvas .source-overview {
+  padding-block-end: 100px;
+}
+.canvas .source-overview__visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+  flex-wrap: wrap;
+}
+.canvas .source-donut {
+  width: 180px;
+  height: 180px;
+  flex-shrink: 0;
+}
+.canvas .source-overview .source-legend {
+  flex-direction: column;
+  gap: 1rem;
+}
+.canvas .source-overview .source-legend__item {
+  gap: 0.75rem;
+}
+.canvas .source-legend__dot--lg {
+  width: 14px;
+  height: 14px;
+}
+.canvas .source-legend__label {
+  font-family: var(--canvas-font-body);
+  font-size: 0.9375rem;
+  color: var(--canvas-text-secondary);
+}
+.canvas .source-legend__value {
+  font-family: var(--canvas-font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--canvas-text);
+  letter-spacing: -0.02em;
+}
+
+/* ── Activity Chart (Portfolio) ── */
+.canvas .activity-section {
+  padding-block-end: 100px;
+}
+.canvas .activity-chart {
+  background: var(--canvas-surface);
+  border-radius: var(--canvas-radius-lg);
+  padding: 2.5rem;
+  overflow-x: auto;
+}
+.canvas .activity-chart svg {
+  display: block;
+  width: 100%;
+  min-width: 500px;
+}
+
+/* ── Recent Sessions (Portfolio) ── */
+.canvas .recent-sessions {
+  padding-block-end: 100px;
+}
+.canvas .sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--canvas-border-light);
+  border-radius: var(--canvas-radius);
+  overflow: hidden;
+}
+.canvas .session-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1.25rem 1.75rem;
+  background: var(--canvas-surface);
+  text-decoration: none;
+  color: inherit;
+  transition: background 200ms ease;
+}
+.canvas .session-row:hover {
+  background: #f5f5f5;
+  color: inherit;
+}
+.canvas .session-row:focus-visible {
+  outline: 2px solid var(--canvas-accent);
+  outline-offset: -2px;
+}
+.canvas .session-row__title {
+  font-family: var(--canvas-font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+.canvas .session-row__project {
+  font-family: var(--canvas-font-mono);
+  font-size: 0.6875rem;
+  color: var(--canvas-text-tertiary);
+  margin-block-start: 0.125rem;
+}
+.canvas .session-row__date {
+  font-family: var(--canvas-font-mono);
+  font-size: 0.75rem;
+  color: var(--canvas-text-tertiary);
+  white-space: nowrap;
+}
+.canvas .session-row__duration {
+  font-family: var(--canvas-font-mono);
+  font-size: 0.75rem;
+  color: var(--canvas-text-secondary);
+  white-space: nowrap;
+}
+.canvas .session-row__loc {
+  font-family: var(--canvas-font-mono);
+  font-size: 0.75rem;
+  color: var(--canvas-text-tertiary);
+  white-space: nowrap;
+}
+
 /* ══════════════════════════════════════════════════
    RESPONSIVE
    ══════════════════════════════════════════════════ */
 
 @media (max-width: 767px) {
+  /* Navigation */
+  .canvas .nav {
+    flex-direction: column;
+    gap: 1rem;
+    margin-block-end: 20px;
+  }
+
   /* Portfolio */
   .canvas .hero-split {
     grid-template-columns: 1fr;
@@ -1007,6 +1283,31 @@
   .canvas .project-card__footer {
     flex-direction: column;
     align-items: flex-start;
+  }
+  .canvas .source-bar {
+    margin-block-start: 0.25rem;
+  }
+  .canvas .skills-overview,
+  .canvas .source-overview,
+  .canvas .activity-section,
+  .canvas .recent-sessions {
+    padding-block-end: 60px;
+  }
+  .canvas .activity-chart {
+    padding: 1.25rem;
+  }
+  .canvas .session-row {
+    grid-template-columns: 1fr auto;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+  }
+  .canvas .session-row__date,
+  .canvas .session-row__loc {
+    display: none;
+  }
+  .canvas .source-donut {
+    width: 140px;
+    height: 140px;
   }
 
   /* Project */
@@ -1085,6 +1386,14 @@
   }
   .canvas .agents-chart {
     padding: 1.25rem;
+  }
+  .canvas .agent-bar-label {
+    min-width: 80px;
+    font-size: 0.75rem;
+  }
+  .canvas .agent-bar-meta {
+    min-width: 70px;
+    font-size: 0.625rem;
   }
 }
 

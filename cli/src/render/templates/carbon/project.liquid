@@ -1,11 +1,11 @@
 <div class="heyiam-project carbon" data-render-version="2" data-template="carbon"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
   {%- comment -%} Breadcrumb {%- endcomment -%}
-  <div class="breadcrumb" aria-label="Breadcrumb">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
     <a href="/{{ user.username }}">{{ user.username }}</a>
     <span class="breadcrumb__sep">/</span>
     <span aria-current="page">{{ project.slug }}</span>
-  </div>
+  </nav>
 
   {%- comment -%} Project Header {%- endcomment -%}
   <header class="project-header fade-in">
@@ -36,16 +36,8 @@
   </figure>
   {% endif %}
 
-  {%- comment -%} Narrative {%- endcomment -%}
-  {% if project.narrative != blank %}
-  <section class="narrative fade-in" aria-label="Project narrative">
-    <h2 class="section-heading">Narrative</h2>
-    <p>{{ project.narrative }}</p>
-  </section>
-  {% endif %}
-
   {%- comment -%} Stats Bar {%- endcomment -%}
-  <section class="stats-bar fade-in" aria-label="Project statistics">
+  <section class="stats-bar stats-bar--project fade-in" aria-label="Project statistics">
     <div class="stat-cell">
       <div class="stat-cell__value">{{ project.totalSessions }}</div>
       <div class="stat-cell__label">Sessions</div>
@@ -87,6 +79,14 @@
     {% endif %}
   </section>
 
+  {%- comment -%} Narrative {%- endcomment -%}
+  {% if project.narrative != blank %}
+  <section class="narrative fade-in" aria-label="Project narrative">
+    <h2 class="section-heading">Narrative</h2>
+    <p>{{ project.narrative }}</p>
+  </section>
+  {% endif %}
+
   {%- comment -%} Phases Timeline {%- endcomment -%}
   {% if arc.size > 0 %}
   <section class="fade-in" aria-label="Project phases">
@@ -95,6 +95,9 @@
       {% for item in arc %}
       <div class="phase-item">
         <div class="phase-item__title">{{ item.phase }}. {{ item.title }}</div>
+        {% if item.dates %}
+        <div class="phase-item__dates">{{ item.dates }}</div>
+        {% endif %}
         <div class="phase-item__desc">{{ item.description }}</div>
       </div>
       {% endfor %}
@@ -102,22 +105,69 @@
   </section>
   {% endif %}
 
-  {%- comment -%} Work Timeline Chart {%- endcomment -%}
-  {% if sessionsJson %}
+  {%- comment -%} Work Timeline Chart (CSS-only SVG) {%- endcomment -%}
+  {% if featuredSessions.size > 0 %}
   <section class="timeline-chart fade-in" aria-label="Work timeline">
     <h2 class="section-heading">Work Timeline</h2>
     <div class="timeline-chart__canvas">
-      <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-    </div>
-  </section>
-  {% endif %}
+      {% assign maxDur = 1 %}
+      {% for s in featuredSessions %}
+        {% if s.durationMinutes > maxDur %}{% assign maxDur = s.durationMinutes %}{% endif %}
+      {% endfor %}
+      {% assign chartW = 800 %}
+      {% assign chartH = 200 %}
+      {% assign padL = 50 %}
+      {% assign padR = 30 %}
+      {% assign padT = 20 %}
+      {% assign padB = 30 %}
+      {% assign plotW = chartW | minus: padL | minus: padR %}
+      {% assign plotH = chartH | minus: padT | minus: padB %}
+      <svg viewBox="0 0 {{ chartW }} {{ chartH }}" aria-label="Chart showing session duration over time">
+        {%- comment -%} Grid lines {%- endcomment -%}
+        <line x1="{{ padL }}" y1="{{ padT }}" x2="{{ padL }}" y2="{{ chartH | minus: padB }}" stroke="rgba(148,163,184,0.08)" stroke-width="1"/>
+        <line x1="{{ padL }}" y1="{{ chartH | minus: padB }}" x2="{{ chartW | minus: padR }}" y2="{{ chartH | minus: padB }}" stroke="rgba(148,163,184,0.15)" stroke-width="1"/>
+        {% assign midY = plotH | divided_by: 2 | plus: padT %}
+        <line x1="{{ padL }}" y1="{{ midY }}" x2="{{ chartW | minus: padR }}" y2="{{ midY }}" stroke="rgba(148,163,184,0.06)" stroke-width="1" stroke-dasharray="4,4"/>
 
-  {%- comment -%} Growth Chart {%- endcomment -%}
-  {% if growthJson %}
-  <section class="timeline-chart fade-in" aria-label="Growth over time">
-    <h2 class="section-heading">Growth</h2>
-    <div class="timeline-chart__canvas">
-      <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+        {%- comment -%} Y-axis labels {%- endcomment -%}
+        <text x="{{ padL | minus: 6 }}" y="{{ chartH | minus: padB | plus: 4 }}" text-anchor="end" fill="#71717a" font-family="IBM Plex Mono, monospace" font-size="9">0</text>
+        {% assign halfDur = maxDur | divided_by: 2 %}
+        <text x="{{ padL | minus: 6 }}" y="{{ midY | plus: 4 }}" text-anchor="end" fill="#71717a" font-family="IBM Plex Mono, monospace" font-size="9">{{ halfDur }}m</text>
+        <text x="{{ padL | minus: 6 }}" y="{{ padT | plus: 4 }}" text-anchor="end" fill="#71717a" font-family="IBM Plex Mono, monospace" font-size="9">{{ maxDur }}m</text>
+
+        {%- comment -%} Duration line + points {%- endcomment -%}
+        {% assign points = '' %}
+        {% assign sessionCount = featuredSessions.size %}
+        {% for s in featuredSessions %}
+          {% assign idx = forloop.index0 %}
+          {% if sessionCount > 1 %}
+            {% assign stepX = plotW | times: idx | divided_by: sessionCount | minus: 1 | plus: padL %}
+          {% else %}
+            {% assign stepX = padL | plus: plotW | divided_by: 2 %}
+          {% endif %}
+          {% assign ratio = s.durationMinutes | times: 1000 | divided_by: maxDur %}
+          {% assign yOff = ratio | times: plotH | divided_by: 1000 %}
+          {% assign cy = chartH | minus: padB | minus: yOff %}
+          {% if points != '' %}{% assign points = points | append: ' ' %}{% endif %}
+          {% assign points = points | append: stepX | append: ',' | append: cy %}
+        {% endfor %}
+
+        <polyline fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="{{ points }}"/>
+
+        {% for s in featuredSessions %}
+          {% assign idx = forloop.index0 %}
+          {% if sessionCount > 1 %}
+            {% assign stepX = plotW | times: idx | divided_by: sessionCount | minus: 1 | plus: padL %}
+          {% else %}
+            {% assign stepX = padL | plus: plotW | divided_by: 2 %}
+          {% endif %}
+          {% assign ratio = s.durationMinutes | times: 1000 | divided_by: maxDur %}
+          {% assign yOff = ratio | times: plotH | divided_by: 1000 %}
+          {% assign cy = chartH | minus: padB | minus: yOff %}
+          <circle cx="{{ stepX }}" cy="{{ cy }}" r="5" fill="var(--carbon-bg)" stroke="#94a3b8" stroke-width="2"/>
+          <text x="{{ stepX }}" y="{{ chartH | minus: 4 }}" text-anchor="middle" fill="#71717a" font-family="IBM Plex Mono, monospace" font-size="8">{{ s.recordedAt | formatDateShort }}</text>
+        {% endfor %}
+      </svg>
     </div>
   </section>
   {% endif %}
@@ -135,22 +185,6 @@
   </section>
   {% endif %}
 
-  {%- comment -%} Source Breakdown {%- endcomment -%}
-  {% if sourceCounts.size > 0 %}
-  <section class="source-breakdown fade-in" aria-label="Source breakdown">
-    <h2 class="section-heading">Source Breakdown</h2>
-    {% assign totalSourceSessions = 0 %}
-    {% for src in sourceCounts %}
-      {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
-    {% endfor %}
-    <div class="source-labels">
-      {% for src in sourceCounts %}
-      <span>{{ src.tool }} ({{ src.count }} session{% if src.count != 1 %}s{% endif %})</span>
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
-
   {%- comment -%} Skills {%- endcomment -%}
   {% if project.skills.size > 0 %}
   <section class="fade-in" aria-label="Technologies used">
@@ -160,6 +194,31 @@
       <li class="skill-chip">{{ skill }}</li>
       {% endfor %}
     </ul>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Source Breakdown {%- endcomment -%}
+  {% if sourceCounts.size > 0 %}
+  <section class="source-breakdown fade-in" aria-label="Source breakdown">
+    <h2 class="section-heading">Source Breakdown</h2>
+    {% assign totalSourceSessions = 0 %}
+    {% for src in sourceCounts %}
+      {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
+    {% endfor %}
+    {% if totalSourceSessions > 0 %}
+    <div class="source-bar-lg" role="img" aria-label="Source distribution bar">
+      {% for src in sourceCounts %}
+      {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
+      <div class="source-bar-lg__segment source-bar-lg__segment--{{ src.tool | downcase | replace: ' ', '-' }}" style="width: {{ srcPct }}%"></div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="source-labels">
+      {% for src in sourceCounts %}
+      {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
+      <span><span class="source-labels__dot source-labels__dot--{{ src.tool | downcase | replace: ' ', '-' }}"></span>{{ src.tool }} {{ srcPct }}% ({{ src.count }} session{% if src.count != 1 %}s{% endif %})</span>
+      {% endfor %}
+    </div>
   </section>
   {% endif %}
 

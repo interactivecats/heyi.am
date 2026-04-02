@@ -3,11 +3,11 @@
   <div class="page-wrapper">
 
     {%- comment -%} Breadcrumb {%- endcomment -%}
-    <div class="breadcrumb fade-in" aria-label="Breadcrumb">
+    <nav class="breadcrumb fade-in" aria-label="Breadcrumb">
       <a href="/{{ user.username }}">{{ user.username }}</a>
       <span class="breadcrumb__sep">/</span>
       <span>{{ project.slug }}</span>
-    </div>
+    </nav>
 
     {%- comment -%} Project Hero {%- endcomment -%}
     <section class="project-hero fade-in fade-in-d1" aria-label="Project overview">
@@ -90,6 +90,9 @@
         <div class="phase-card" role="listitem">
           <div class="phase-card__number">{% if item.phase < 10 %}0{% endif %}{{ item.phase }}</div>
           <div class="phase-card__name">{{ item.title }}</div>
+          {% if item.dates %}
+          <div class="phase-card__dates">{{ item.dates }}</div>
+          {% endif %}
           <div class="phase-card__desc">{{ item.description }}</div>
         </div>
         {% endfor %}
@@ -97,22 +100,41 @@
     </section>
     {% endif %}
 
-    {%- comment -%} Work Timeline Chart {%- endcomment -%}
-    {% if sessionsJson %}
+    {%- comment -%} Work Timeline Chart (CSS-only SVG) {%- endcomment -%}
+    {% if featuredSessions.size > 0 %}
     <section class="timeline-section fade-in fade-in-d5" aria-label="Work timeline">
       <h2 class="section-title">Work Timeline</h2>
       <div class="chart-container">
-        <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-      </div>
-    </section>
-    {% endif %}
-
-    {%- comment -%} Growth Chart {%- endcomment -%}
-    {% if growthJson %}
-    <section class="timeline-section fade-in fade-in-d5" aria-label="Growth over time">
-      <h2 class="section-title">Growth</h2>
-      <div class="chart-container">
-        <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+        {% assign maxLoc = 0 %}
+        {% for s in featuredSessions %}
+          {% if s.locChanged > maxLoc %}{% assign maxLoc = s.locChanged %}{% endif %}
+        {% endfor %}
+        {% assign barCount = featuredSessions.size %}
+        {% assign chartWidth = barCount | times: 80 | plus: 60 %}
+        {% assign chartHeight = 260 %}
+        {% assign barMaxHeight = 200 %}
+        <svg viewBox="0 0 {{ chartWidth }} {{ chartHeight }}" aria-label="Bar chart showing lines of code per session">
+          <title>Work timeline chart showing LOC per session</title>
+          {%- comment -%} Grid lines {%- endcomment -%}
+          <line x1="40" y1="25" x2="{{ chartWidth | minus: 20 }}" y2="25" stroke="#f4f4f5" stroke-width="1"/>
+          <line x1="40" y1="75" x2="{{ chartWidth | minus: 20 }}" y2="75" stroke="#f4f4f5" stroke-width="1"/>
+          <line x1="40" y1="125" x2="{{ chartWidth | minus: 20 }}" y2="125" stroke="#f4f4f5" stroke-width="1"/>
+          <line x1="40" y1="175" x2="{{ chartWidth | minus: 20 }}" y2="175" stroke="#f4f4f5" stroke-width="1"/>
+          <line x1="40" y1="225" x2="{{ chartWidth | minus: 20 }}" y2="225" stroke="#e4e4e7" stroke-width="1"/>
+          {%- comment -%} Bars {%- endcomment -%}
+          {% for s in featuredSessions %}
+            {% if maxLoc > 0 %}
+              {% assign barHeight = s.locChanged | times: barMaxHeight | divided_by: maxLoc %}
+            {% else %}
+              {% assign barHeight = 0 %}
+            {% endif %}
+            {% assign barY = 225 | minus: barHeight %}
+            {% assign barX = forloop.index0 | times: 80 | plus: 55 %}
+            {% assign labelX = barX | plus: 28 %}
+            <rect x="{{ barX }}" y="{{ barY }}" width="56" height="{{ barHeight }}" rx="8" fill="var(--canvas-accent)"/>
+            <text x="{{ labelX }}" y="245" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a1a1aa" text-anchor="middle">S{{ forloop.index }}</text>
+          {% endfor %}
+        </svg>
       </div>
     </section>
     {% endif %}
@@ -123,7 +145,7 @@
       <h2 class="section-title">Skills</h2>
       <div class="skills-list">
         {% for skill in project.skills %}
-        <span class="skill-pill">{{ skill }}</span>
+        <span class="skill-pill skill-pill--lg">{{ skill }}</span>
         {% endfor %}
       </div>
     </section>
@@ -149,6 +171,13 @@
     <section class="source-section fade-in fade-in-d7" aria-label="Source breakdown">
       <h2 class="section-title">Source Breakdown</h2>
       <div class="source-visual">
+        {% if sourceCounts.size > 0 %}
+        <div class="source-bar-large">
+          {% assign firstSrc = sourceCounts | first %}
+          {% assign firstPct = firstSrc.count | times: 100.0 | divided_by: project.totalSessions | round %}
+          <div class="source-bar-large__fill" style="width: {{ firstPct }}%"></div>
+        </div>
+        {% endif %}
         <div class="source-legend">
           {% for src in sourceCounts %}
           <div class="source-legend__item">
@@ -157,7 +186,8 @@
             {% else %}
             <span class="source-legend__dot" style="background: var(--canvas-gray)"></span>
             {% endif %}
-            {{ src.tool }} ({{ src.count }} session{% if src.count != 1 %}s{% endif %})
+            {% assign srcPct = src.count | times: 100.0 | divided_by: project.totalSessions | round %}
+            {{ src.tool }} {{ srcPct }}%
           </div>
           {% endfor %}
         </div>

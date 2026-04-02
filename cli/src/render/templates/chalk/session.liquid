@@ -11,7 +11,7 @@
   </svg>
 
   {%- comment -%} Breadcrumb {%- endcomment -%}
-  <div class="breadcrumb" aria-label="Breadcrumb">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
     <a href="/{{ user.username }}">{{ user.username }}</a>
     {% if projectSlug %}
     <span class="breadcrumb-sep" aria-hidden="true">/</span>
@@ -19,7 +19,7 @@
     {% endif %}
     <span class="breadcrumb-sep" aria-hidden="true">/</span>
     <span aria-current="page">{{ session.title }}</span>
-  </div>
+  </nav>
 
   {%- comment -%} Hero {%- endcomment -%}
   <section class="hero" aria-label="Session header">
@@ -55,7 +55,7 @@
       {% if session.beats.size > 0 %}
       <section class="beats-section" aria-label="Execution path">
         <h2 class="section-heading"><span class="sketch-underline">Execution Path</span></h2>
-        <ol class="beat-list beats-list">
+        <ol class="beat-list">
           {% for beat in session.beats %}
           <li class="beat-item">
             <svg class="beat-circle" viewBox="0 0 24 24" aria-hidden="true">

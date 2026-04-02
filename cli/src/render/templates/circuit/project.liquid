@@ -128,6 +128,9 @@
       {% for item in arc %}
       <div class="phase-item" role="listitem">
         <div class="phase-label"><span class="phase-num">{{ item.phase | prepend: '0' | slice: -2, 2 }}</span> {{ item.title }}</div>
+        {% if item.dates %}
+        <div class="phase-dates">{{ item.dates }}</div>
+        {% endif %}
         <div class="phase-desc">{{ item.description }}</div>
       </div>
       {% endfor %}
@@ -149,13 +152,13 @@
       {% if totalSourceSessions > 0 %}
       <div class="source-bar-label">
         {% for src in sourceCounts %}
-        {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
-        <span>{{ src.tool }} {{ srcPct }}%</span>
+        {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
+        <span>{{ src.tool }} &mdash; {{ srcPct }}% ({{ src.count }} sessions)</span>
         {% endfor %}
       </div>
       <div class="source-bar" role="img" aria-label="Source breakdown">
         {% for src in sourceCounts %}
-        {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+        {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
         <div class="source-bar-fill{% unless forloop.first %} cursor{% endunless %}" style="width: {{ srcPct }}%"></div>
         {% endfor %}
       </div>
@@ -166,21 +169,50 @@
   <div class="trace-connector" aria-hidden="true"></div>
   {% endif %}
 
-  {%- comment -%} Work Timeline chart {%- endcomment -%}
-  {% if sessionsJson %}
-  <section class="fade-in" aria-label="Work timeline">
-    <h2 class="section-header">Work Timeline</h2>
-    <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-  </section>
-
-  <div class="trace-connector" aria-hidden="true"></div>
-  {% endif %}
-
-  {%- comment -%} Growth chart {%- endcomment -%}
-  {% if growthJson %}
-  <section class="fade-in" aria-label="Growth over time">
-    <h2 class="section-header">Growth</h2>
-    <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+  {%- comment -%} Session Table (replaces JS Work Timeline) {%- endcomment -%}
+  {% if featuredSessions.size > 0 %}
+  <section class="fade-in" aria-label="Session timeline">
+    <h2 class="section-header">Sessions</h2>
+    <div class="session-table-wrapper">
+      <table class="session-table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Title</th>
+            <th scope="col">Date</th>
+            <th scope="col">Duration</th>
+            <th scope="col">LOC</th>
+            <th scope="col">Source</th>
+            <th scope="col">Agents</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% assign agent_colors = '#0891b2,#059669,#7c3aed,#475569,#e11d48,#d97706' | split: ',' %}
+          {% for s in featuredSessions %}
+          <tr>
+            <td class="num">{{ forloop.index }}</td>
+            <td class="title-cell"><a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a></td>
+            <td class="mono">{% if s.recordedAt %}{{ s.recordedAt | formatDate }}{% endif %}</td>
+            <td class="mono">{{ s.durationMinutes | formatDuration }}</td>
+            <td class="mono">{{ s.locChanged | localeNumber }}</td>
+            <td class="mono">{% if s.sourceTool %}{{ s.sourceTool }}{% endif %}</td>
+            <td>
+              {% if s.agentSummary and s.agentSummary.agents.size > 0 %}
+              <div class="agent-dots" aria-label="{{ s.agentSummary.agents.size }} agents">
+                {% for agent in s.agentSummary.agents %}
+                {% assign colorIdx = forloop.index0 | modulo: 6 %}
+                <span class="agent-dot" style="background:{{ agent_colors[colorIdx] }}" title="{{ agent.role }}"></span>
+                {% endfor %}
+              </div>
+              {% else %}
+              <span class="mono" style="font-size:11px;color:var(--fg-muted)">&mdash;</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </section>
 
   <div class="trace-connector" aria-hidden="true"></div>
@@ -192,11 +224,11 @@
     <h2 class="section-header">Featured Sessions</h2>
     <div class="featured-grid">
       {% for s in featuredSessions %}
-      <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="featured-card">
+      <article class="featured-card">
         {% if s.skills.size > 0 %}
         <span class="featured-card-tag">{{ s.skills | first }}</span>
         {% endif %}
-        <h4>{{ s.title }}</h4>
+        <h4><a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a></h4>
         <div class="featured-card-stats">
           <span><span class="val">{{ s.durationMinutes | formatDuration }}</span></span>
           <span><span class="val">{{ s.locChanged | localeNumber }}</span> LOC</span>
@@ -204,7 +236,7 @@
           <span><span class="val">{{ s.agentSummary.agents.size }}</span> agents</span>
           {% endif %}
         </div>
-      </a>
+      </article>
       {% endfor %}
     </div>
   </section>

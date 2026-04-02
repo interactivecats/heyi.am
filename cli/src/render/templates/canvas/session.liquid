@@ -3,7 +3,7 @@
   <div class="page-wrapper">
 
     {%- comment -%} Breadcrumb {%- endcomment -%}
-    <div class="breadcrumb fade-in" aria-label="Breadcrumb">
+    <nav class="breadcrumb fade-in" aria-label="Breadcrumb">
       <a href="/{{ user.username }}">{{ user.username }}</a>
       {% if projectSlug %}
       <span class="breadcrumb__sep">/</span>
@@ -11,7 +11,7 @@
       {% endif %}
       <span class="breadcrumb__sep">/</span>
       <span>{{ session.title }}</span>
-    </div>
+    </nav>
 
     {%- comment -%} Session Header {%- endcomment -%}
     <header class="session-header fade-in fade-in-d1">

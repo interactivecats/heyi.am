@@ -77,30 +77,48 @@
     <h2 class="section-heading">Projects</h2>
     <div class="projects-grid">
       {% for p in projects %}
-      <a href="/{{ user.username }}/{{ p.slug }}" class="project-card">
-        <article class="card fade-in">
-          <div class="card__header brushed-header">
-            <h3 class="card__title">{{ p.title }}</h3>
+      <article class="card fade-in">
+        <div class="card__header brushed-header">
+          <h3 class="card__title"><a href="/{{ user.username }}/{{ p.slug }}">{{ p.title }}</a></h3>
+        </div>
+        <div class="card__body">
+          {% if p.narrative != blank %}
+          <p class="card__narrative">{{ p.narrative | truncate: 120 }}</p>
+          {% endif %}
+          {% if p.skills.size > 0 %}
+          <ul class="skill-list" aria-label="Skills used in {{ p.title }}">
+            {% for skill in p.skills limit: 6 %}
+            <li class="skill-chip">{{ skill }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          <div class="card-stats">
+            <span><span class="card-stats__value">{{ p.totalSessions }}</span> sessions</span>
+            <span><span class="card-stats__value">{{ p.totalDurationMinutes | formatDuration }}</span> time</span>
+            <span><span class="card-stats__value">{{ p.totalLoc | formatLoc }}</span> LOC</span>
           </div>
-          <div class="card__body">
-            {% if p.narrative != blank %}
-            <p class="card__narrative">{{ p.narrative | truncate: 120 }}</p>
-            {% endif %}
-            {% if p.skills.size > 0 %}
-            <ul class="skill-list" aria-label="Skills used in {{ p.title }}">
-              {% for skill in p.skills limit: 6 %}
-              <li class="skill-chip">{{ skill }}</li>
-              {% endfor %}
-            </ul>
-            {% endif %}
-            <div class="card-stats">
-              <span><span class="card-stats__value">{{ p.totalSessions }}</span> sessions</span>
-              <span><span class="card-stats__value">{{ p.totalDurationMinutes | formatDuration }}</span> time</span>
-              <span><span class="card-stats__value">{{ p.totalLoc | formatLoc }}</span> LOC</span>
-            </div>
+          {% if p.sourceCounts.size > 0 %}
+          {% assign pTotalSrc = 0 %}
+          {% for src in p.sourceCounts %}
+            {% assign pTotalSrc = pTotalSrc | plus: src.count %}
+          {% endfor %}
+          {% if pTotalSrc > 0 %}
+          <div class="source-bar" role="img" aria-label="Source breakdown for {{ p.title }}">
+            {% for src in p.sourceCounts %}
+            {% assign srcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+            <div class="source-bar__segment source-bar__segment--{{ src.tool | downcase | replace: ' ', '-' }}" style="width: {{ srcPct }}%"></div>
+            {% endfor %}
           </div>
-        </article>
-      </a>
+          <div class="source-legend">
+            {% for src in p.sourceCounts %}
+            {% assign srcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+            <span><span class="source-legend__dot source-legend__dot--{{ src.tool | downcase | replace: ' ', '-' }}"></span>{{ src.tool }} {{ srcPct }}%</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% endif %}
+        </div>
+      </article>
       {% endfor %}
     </div>
   </section>
