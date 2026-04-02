@@ -1,66 +1,139 @@
 <div class="heyiam-portfolio carbon" data-render-version="2" data-template="carbon" data-username="{{ user.username }}">
 
-  <h1 class="project-title">{{ user.displayName }}</h1>
-  {% if user.bio != blank %}
-  <p class="narrative-text">{{ user.bio }}</p>
-  {% endif %}
+  {%- comment -%} Profile Header {%- endcomment -%}
+  <header class="profile fade-in" aria-label="Profile">
+    {% if user.photoUrl %}
+    <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="profile__photo" width="120" height="120">
+    {% endif %}
+    <h1 class="profile__name">{{ user.displayName }}</h1>
+    {% if user.bio != blank %}
+    <p class="profile__bio">{{ user.bio }}</p>
+    {% endif %}
+    {% if user.location != blank %}
+    <p class="profile__location">{{ user.location }}</p>
+    {% endif %}
+    <div class="profile__links">
+      {% if user.email != blank %}
+      <a href="mailto:{{ user.email }}">{{ user.email }}</a>
+      {% endif %}
+      {% if user.linkedinUrl != blank %}
+      <a href="{{ user.linkedinUrl }}" target="_blank" rel="noopener">LinkedIn</a>
+      {% endif %}
+      {% if user.githubUrl != blank %}
+      <a href="{{ user.githubUrl }}" target="_blank" rel="noopener">GitHub</a>
+      {% endif %}
+      {% if user.twitterHandle != blank %}
+      <a href="https://x.com/{{ user.twitterHandle }}" target="_blank" rel="noopener">@{{ user.twitterHandle }}</a>
+      {% endif %}
+      {% if user.websiteUrl != blank %}
+      <a href="{{ user.websiteUrl }}" target="_blank" rel="noopener">{{ user.websiteUrl | stripProtocol }}</a>
+      {% endif %}
+      {% if user.resumeUrl != blank %}
+      <a href="{{ user.resumeUrl }}" class="profile__link--resume" download>Resume (PDF)</a>
+      {% endif %}
+    </div>
+  </header>
 
-  {%- comment -%} Stats grid {%- endcomment -%}
-  <div class="stat-grid" role="list" aria-label="Portfolio statistics">
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Projects</div>
-      <div class="stat-card__value">{{ projects.size }}</div>
+  {%- comment -%} Aggregate Stats Bar {%- endcomment -%}
+  <section class="stats-bar fade-in" aria-label="Portfolio statistics">
+    <div class="stat-cell">
+      <div class="stat-cell__value">{{ projects.size }}</div>
+      <div class="stat-cell__label">Projects</div>
     </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Sessions</div>
-      <div class="stat-card__value">{{ totalSessions }}</div>
+    <div class="stat-cell">
+      <div class="stat-cell__value">{{ totalSessions }}</div>
+      <div class="stat-cell__label">Sessions</div>
     </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Lines</div>
-      <div class="stat-card__value">{{ totalLoc | formatLoc }}</div>
-    </div>
-  </div>
-
-  {%- comment -%} Leverage: horizontal strip {%- endcomment -%}
-  {% if efficiencyMultiplier %}
-  <div class="carbon-leverage-strip" role="status" aria-label="Leverage multiplier: {{ efficiencyMultiplier }}">
-    <div class="carbon-leverage-strip__left">
-      <span class="carbon-leverage-strip__multiplier" style="color: var(--accent, #94a3b8);">{{ efficiencyMultiplier }}</span>
-    </div>
-    <div class="carbon-leverage-strip__divider" aria-hidden="true"></div>
-    <div class="carbon-leverage-strip__right">
-      <div class="carbon-leverage-strip__row">
-        <span class="carbon-leverage-strip__label" style="opacity: 0.5;">you</span>
-        <span class="carbon-leverage-strip__value" style="opacity: 0.5;">{{ totalDurationMinutes | formatDuration }}</span>
+    {% if efficiencyMultiplier %}
+    <div class="stat-cell stat-cell--leverage">
+      <div class="leverage-cell">
+        <div class="leverage-cell__value">{{ totalDurationMinutes | formatDuration }}</div>
+        <div class="leverage-cell__label">You</div>
       </div>
-      <div class="carbon-leverage-strip__row">
-        <span class="carbon-leverage-strip__label" style="color: var(--accent, #94a3b8);">agents</span>
-        <span class="carbon-leverage-strip__value" style="color: var(--accent, #94a3b8);">{{ totalAgentDurationMinutes | formatDuration }}</span>
+      <div class="leverage-cell">
+        <div class="leverage-cell__value leverage-cell__value--accent">{{ totalAgentDurationMinutes | formatDuration }}</div>
+        <div class="leverage-cell__label">Agents</div>
+      </div>
+      <div class="leverage-cell">
+        <div class="leverage-cell__value leverage-cell__value--accent">{{ efficiencyMultiplier }}</div>
+        <div class="leverage-cell__label">Multiplier</div>
       </div>
     </div>
-    <div class="carbon-leverage-strip__bar" aria-hidden="true">
-      <div class="carbon-leverage-strip__bar-fill" style="background: var(--accent, #94a3b8);"></div>
+    {% else %}
+    <div class="stat-cell">
+      <div class="stat-cell__value">{{ totalDurationMinutes | formatDuration }}</div>
+      <div class="stat-cell__label">Total Time</div>
     </div>
-  </div>
-  {% endif %}
+    {% endif %}
+    <div class="stat-cell">
+      <div class="stat-cell__value">{{ totalLoc | formatLoc }}</div>
+      <div class="stat-cell__label">Lines Changed</div>
+    </div>
+  </section>
 
-  {%- comment -%} Projects list {%- endcomment -%}
+  {%- comment -%} Projects {%- endcomment -%}
   {% if projects.size > 0 %}
-  <div class="card">
-    <div class="section-header">
-      <h3 class="section-header__title">Projects</h3>
-    </div>
-    <div class="session-grid">
-      {% for project in projects %}
-      <div class="session-card">
-        <h4 class="session-card__title">{{ project.title }}</h4>
-        <span class="session-card__meta">{{ project.totalSessions }} sessions &middot; {{ project.totalLoc | formatLoc }} lines</span>
-      </div>
+  <section aria-label="Projects">
+    <h2 class="section-heading">Projects</h2>
+    <div class="projects-grid">
+      {% for p in projects %}
+      <a href="/{{ user.username }}/{{ p.slug }}" class="project-card">
+        <article class="card fade-in">
+          <div class="card__header brushed-header">
+            <h3 class="card__title">{{ p.title }}</h3>
+          </div>
+          <div class="card__body">
+            {% if p.narrative != blank %}
+            <p class="card__narrative">{{ p.narrative | truncate: 120 }}</p>
+            {% endif %}
+            {% if p.skills.size > 0 %}
+            <ul class="skill-list" aria-label="Skills used in {{ p.title }}">
+              {% for skill in p.skills limit: 6 %}
+              <li class="skill-chip">{{ skill }}</li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+            <div class="card-stats">
+              <span><span class="card-stats__value">{{ p.totalSessions }}</span> sessions</span>
+              <span><span class="card-stats__value">{{ p.totalDurationMinutes | formatDuration }}</span> time</span>
+              <span><span class="card-stats__value">{{ p.totalLoc | formatLoc }}</span> LOC</span>
+            </div>
+          </div>
+        </article>
+      </a>
       {% endfor %}
     </div>
-  </div>
+  </section>
   {% endif %}
 
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  {%- comment -%} Footer {%- endcomment -%}
+  <footer class="carbon-footer">
+    <span>Built with <a href="https://heyiam.com" target="_blank" rel="noopener noreferrer">heyi.am</a></span>
+    <span>Carbon template</span>
+  </footer>
+
+  {%- comment -%} Fade-in animation {%- endcomment -%}
+  <script>
+  (function() {
+    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var els = document.querySelectorAll('.fade-in');
+    if (prefersReduced) {
+      els.forEach(function(el) { el.classList.add('visible'); });
+      return;
+    }
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    els.forEach(function(el, i) {
+      el.style.transitionDelay = (i * 0.08) + 's';
+      observer.observe(el);
+    });
+  })();
+  </script>
 
 </div>

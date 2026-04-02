@@ -1,36 +1,60 @@
-<div class="heyiam-session" data-render-version="2" data-template="editorial">
+<div class="heyiam-session editorial" data-render-version="2" data-template="editorial">
 
-  <div class="session-layout">
+  {%- comment -%} Breadcrumb {%- endcomment -%}
+  <div class="ed-breadcrumb" aria-label="Breadcrumb">
+    <a href="/{{ user.username }}">{{ user.username }}</a>
+    {% if projectSlug %}
+    <span class="ed-breadcrumb-sep">/</span>
+    <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
+    {% endif %}
+    <span class="ed-breadcrumb-sep">/</span>
+    <span>{{ session.title }}</span>
+  </div>
 
-    {% render 'partials/_session-sidebar', session: session %}
-
-    <main class="session-main">
-
-      {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
-
-      {% render 'partials/_session-header', session: session %}
-
-      {% if session.skills.size > 0 %}
-      <section class="content-section">
-        <div class="chip-list">
-          {% for skill in session.skills %}
-          <span class="chip chip--violet">{{ skill }}</span>
-          {% endfor %}
-        </div>
-      </section>
+  {%- comment -%} Header {%- endcomment -%}
+  <header class="ed-session-header">
+    <h1 class="ed-session-title">{{ session.title }}</h1>
+    <div class="ed-session-meta">
+      {% if session.recordedAt %}
+      <span class="ed-meta-item">{{ session.recordedAt | formatDate }}</span>
       {% endif %}
+      {% if session.sourceTool %}
+      <span class="ed-meta-badge">{{ session.sourceTool }}</span>
+      {% endif %}
+      <span class="ed-meta-item">{{ session.durationMinutes | formatDuration }}</span>
+      <span class="ed-meta-item">{{ session.turns }} turns</span>
+      <span class="ed-meta-item">{{ session.locChanged | localeNumber }} LOC</span>
+      <span class="ed-meta-item">{{ session.filesChanged }} files</span>
+    </div>
+  </header>
 
+  {%- comment -%} Dev Take {%- endcomment -%}
+  {% if session.devTake %}
+  <div class="ed-dev-take">
+    <div class="ed-dev-take-label">Dev take</div>
+    <p>{{ session.devTake }}</p>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Two-column layout: Main + Sidebar {%- endcomment -%}
+  <div class="ed-content-layout">
+
+    {%- comment -%} Main column {%- endcomment -%}
+    <main class="ed-main">
+
+      {%- comment -%} Narrative {%- endcomment -%}
       {% if session.narrative != blank %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Narrative</h2>
-        <p>{{ session.narrative }}</p>
+      <section class="ed-card-section" aria-label="Session narrative">
+        <h2 class="ed-section-title">Narrative</h2>
+        <p class="ed-narrative">{{ session.narrative }}</p>
       </section>
       {% endif %}
 
+      {%- comment -%} Highlights {%- endcomment -%}
       {% if session.highlights.size > 0 %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Highlights</h2>
-        <ul class="highlights-list">
+      <section class="ed-card-section" aria-label="Session highlights">
+        <h2 class="ed-section-title">Highlights</h2>
+        <ul class="ed-highlights-list">
           {% for h in session.highlights %}
           <li>{{ h }}</li>
           {% endfor %}
@@ -38,10 +62,110 @@
       </section>
       {% endif %}
 
-      {% render 'partials/_beats', session: session %}
+      {%- comment -%} Beats (Execution Path) {%- endcomment -%}
+      {% if session.beats.size > 0 %}
+      <section class="ed-card-section" aria-label="Execution path">
+        <h2 class="ed-section-title">Execution Path</h2>
+        <div class="ed-beats">
+          {% for beat in session.beats %}
+          <div class="ed-beat">
+            <div class="ed-beat-number">{{ beat.stepNumber }}</div>
+            <div class="ed-beat-content">
+              <div class="ed-beat-title">{{ beat.title }}</div>
+              <div class="ed-beat-body">{{ beat.body }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
 
-      {% render 'partials/_qa', session: session %}
+      {%- comment -%} Q&A {%- endcomment -%}
+      {% if session.qaPairs.size > 0 %}
+      <section class="ed-card-section" aria-label="Questions and answers">
+        <h2 class="ed-section-title">Q&amp;A</h2>
+        <div class="ed-qa-list">
+          {% for qa in session.qaPairs %}
+          <div class="ed-qa-pair">
+            <div class="ed-qa-question">{{ qa.question }}</div>
+            <div class="ed-qa-answer">{{ qa.answer }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Agent Summary {%- endcomment -%}
+      {% if session.agentSummary %}
+      <section class="ed-card-section" aria-label="Agent summary">
+        <h2 class="ed-section-title">{{ session.agentSummary.agents.size }} Sub-session{% if session.agentSummary.agents.size != 1 %}s{% endif %}</h2>
+        {% assign maxAgentLoc = 0 %}
+        {% for agent in session.agentSummary.agents %}
+          {% if agent.loc_changed > maxAgentLoc %}
+            {% assign maxAgentLoc = agent.loc_changed %}
+          {% endif %}
+        {% endfor %}
+        {% for agent in session.agentSummary.agents %}
+        <div class="ed-agent-row">
+          <span class="ed-agent-label">{{ agent.role }}</span>
+          <div class="ed-agent-bar-track">
+            {% if maxAgentLoc > 0 %}
+            {% assign barPct = agent.loc_changed | times: 100 | divided_by: maxAgentLoc %}
+            {% else %}
+            {% assign barPct = 0 %}
+            {% endif %}
+            <div class="ed-agent-bar-fill" style="width: {{ barPct }}%;"></div>
+          </div>
+          <span class="ed-agent-meta">{{ agent.duration_minutes }}m / {{ agent.loc_changed }} LOC</span>
+        </div>
+        {% endfor %}
+      </section>
+      {% endif %}
 
     </main>
+
+    {%- comment -%} Sidebar {%- endcomment -%}
+    <aside class="ed-sidebar" aria-label="Session details">
+
+      {%- comment -%} Tools Used {%- endcomment -%}
+      {% if session.toolBreakdown.size > 0 %}
+      <div class="ed-sidebar-card">
+        <h3 class="ed-sidebar-card-title">Tools Used</h3>
+        {% for t in session.toolBreakdown %}
+        <div class="ed-sidebar-row">
+          <span class="ed-sidebar-row-name">{{ t.tool }}</span>
+          <span class="ed-sidebar-row-value">{{ t.count }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {%- comment -%} Files Changed {%- endcomment -%}
+      {% if session.topFiles.size > 0 %}
+      <div class="ed-sidebar-card">
+        <h3 class="ed-sidebar-card-title">Files Changed</h3>
+        {% for f in session.topFiles %}
+        <div class="ed-sidebar-row ed-sidebar-row--file">
+          <span class="ed-sidebar-file-path">{{ f.path }}</span>
+          <span class="ed-sidebar-file-diff"><span class="ed-file-adds">+{{ f.additions }}</span>{% if f.deletions > 0 %} <span class="ed-file-dels">-{{ f.deletions }}</span>{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {%- comment -%} Skills {%- endcomment -%}
+      {% if session.skills.size > 0 %}
+      <div class="ed-sidebar-card">
+        <h3 class="ed-sidebar-card-title">Skills</h3>
+        <div class="chip-list">
+          {% for skill in session.skills %}
+          <span class="chip chip--violet">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </aside>
   </div>
+
 </div>

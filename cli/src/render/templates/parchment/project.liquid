@@ -1,30 +1,292 @@
 <div class="heyiam-project parchment" data-render-version="2" data-template="parchment"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
+  <a href="#main-content" class="skip-link">Skip to content</a>
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+  <div class="page-wrapper">
 
-  {% render 'partials/_links', project: project %}
+    {%- comment -%} Breadcrumb {%- endcomment -%}
+    <div class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/{{ user.username }}">{{ user.username }}</a>
+      <span class="breadcrumb__sep" aria-hidden="true">/</span>
+      <span>{{ project.slug }}</span>
+    </div>
 
-  {% render 'partials/_screenshot', project: project %}
+    {%- comment -%} Title Page {%- endcomment -%}
+    <header class="title-page fade-in" role="banner">
+      <h1 class="title-page__heading" data-editable="title">{{ project.title }}</h1>
+      {% if project.repoUrl or project.projectUrl %}
+      <div class="title-page__links">
+        {% if project.repoUrl %}
+        <a href="{{ project.repoUrl }}" target="_blank" rel="noopener noreferrer">{{ project.repoUrl | stripProtocol }}</a>
+        {% endif %}
+        {% if project.projectUrl %}
+        <a href="{{ project.projectUrl }}" target="_blank" rel="noopener noreferrer">{{ project.projectUrl | stripProtocol }}</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </header>
 
-  {% render 'partials/_narrative', narrative: project.narrative %}
+    {%- comment -%} Screenshot {%- endcomment -%}
+    {% if project.screenshotUrl %}
+    <figure class="screenshot fade-in fade-in-d1" aria-label="Application screenshot">
+      <div class="screenshot__chrome">
+        <span class="screenshot__dot" aria-hidden="true"></span>
+        <span class="screenshot__dot" aria-hidden="true"></span>
+        <span class="screenshot__dot" aria-hidden="true"></span>
+        {% if project.projectUrl %}
+        <span class="screenshot__bar">{{ project.projectUrl | stripProtocol }}</span>
+        {% else %}
+        <span class="screenshot__bar">{{ project.slug }}</span>
+        {% endif %}
+      </div>
+      <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} preview" style="width:100%;display:block;">
+    </figure>
+    {% endif %}
 
-  {% render 'partials/_stats', project: project, durationLabel: durationLabel, efficiencyMultiplier: efficiencyMultiplier %}
+    <div class="hr-triple" role="separator">
+      <span class="hr-triple-inner"></span>
+    </div>
 
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
+    <main id="main-content">
 
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
+      {%- comment -%} Narrative with Drop Cap {%- endcomment -%}
+      {% if project.narrative %}
+      <section class="narrative fade-in fade-in-d2" aria-label="Project narrative">
+        <p>{{ project.narrative }}</p>
+      </section>
 
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Stats {%- endcomment -%}
+      <section class="project-stats fade-in fade-in-d2" aria-label="Project statistics">
+        <div class="project-stat">
+          <div class="project-stat__value">{{ project.totalSessions }}</div>
+          <div class="project-stat__label">Sessions</div>
+        </div>
+        {% if efficiencyMultiplier %}
+        <div class="project-stat">
+          <div class="project-stat__label">the author</div>
+          <div class="project-stat__value" style="opacity:0.7">{{ project.totalDurationMinutes | formatDuration }}</div>
+          <div class="project-stat__label" style="margin-top:0.25rem">the machines</div>
+          <div class="project-stat__value" style="color:var(--parch-accent)">{{ project.totalAgentDurationMinutes | formatDuration }}</div>
+        </div>
+        <div class="project-stat project-stat--featured">
+          <div class="project-stat__value" style="font-size:1.5rem;color:var(--parch-accent)">{{ efficiencyMultiplier }}&times;</div>
+          <div class="project-stat__label">leverage</div>
+        </div>
+        {% else %}
+        <div class="project-stat">
+          <div class="project-stat__value">{{ project.totalDurationMinutes | formatDuration }}</div>
+          <div class="project-stat__label">{{ durationLabel }}</div>
+        </div>
+        {% endif %}
+        <div class="project-stat">
+          <div class="project-stat__value">{{ project.totalLoc | localeNumber }}</div>
+          <div class="project-stat__label">Lines Changed</div>
+        </div>
+        <div class="project-stat">
+          <div class="project-stat__value">{{ project.totalFilesChanged | localeNumber }}</div>
+          <div class="project-stat__label">Files</div>
+        </div>
+        {% if project.totalTokens %}
+        <div class="project-stat">
+          <div class="project-stat__value">{{ project.totalTokens | formatTokens }}</div>
+          <div class="project-stat__label">Tokens</div>
+        </div>
+        {% endif %}
+      </section>
+
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+
+      {%- comment -%} Chapter II: Phases {%- endcomment -%}
+      {% if arc.size > 0 %}
+      <section aria-label="Project phases">
+        <h2 class="chapter-heading fade-in fade-in-d3">
+          <span class="chapter-heading__number">Chapter II</span>
+          Phases
+        </h2>
+        <div class="phases">
+          {% for item in arc %}
+          <div class="phase">
+            <div class="phase__number">Phase {{ item.phase }}</div>
+            <h3 class="phase__title">{{ item.title }}</h3>
+            <p class="phase__desc">{{ item.description }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Chapter III: Key Decisions {%- endcomment -%}
+      {% if arc.size > 0 %}
+      <section aria-label="Key decisions">
+        <h2 class="chapter-heading fade-in fade-in-d3">
+          <span class="chapter-heading__number">Chapter III</span>
+          Key Decisions
+        </h2>
+        <ol class="decisions-list">
+          {% for item in arc %}
+          <li>{{ item.description }}</li>
+          {% endfor %}
+        </ol>
+      </section>
+
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Chapter IV: Skills {%- endcomment -%}
+      {% if project.skills.size > 0 %}
+      <section class="skills-section" aria-label="Skills used">
+        <h2 class="chapter-heading fade-in fade-in-d3">
+          <span class="chapter-heading__number">Chapter IV</span>
+          Skills
+        </h2>
+        <div class="skill-list">
+          {% for skill in project.skills %}
+          <span class="skill-tag">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </section>
+
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Chapter V: Source Breakdown {%- endcomment -%}
+      {% if sourceCounts.size > 0 %}
+      <section aria-label="Source breakdown">
+        <h2 class="chapter-heading fade-in fade-in-d3">
+          <span class="chapter-heading__number">Chapter V</span>
+          Source
+        </h2>
+        <div class="source-breakdown">
+          <div class="source-bar-container">
+            {% assign totalSourceSessions = 0 %}
+            {% for src in sourceCounts %}
+              {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
+            {% endfor %}
+            {% if totalSourceSessions > 0 %}
+            <div class="source-bar" role="img" aria-label="Source breakdown">
+              {% for src in sourceCounts %}
+              {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+              <div class="source-bar__segment{% if forloop.first %} source-bar__segment--claude{% else %} source-bar__segment--cursor{% endif %}" style="width: {{ srcPct }}%"></div>
+              {% endfor %}
+            </div>
+            <div class="source-labels">
+              {% for src in sourceCounts %}
+              {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+              <span>{{ src.tool }} &mdash; {{ src.count }} session{% if src.count != 1 %}s{% endif %} ({{ srcPct }}%)</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Chapter VI: Work Timeline {%- endcomment -%}
+      {% if sessionsJson %}
+      <section aria-label="Work timeline">
+        <h2 class="chapter-heading fade-in fade-in-d4">
+          <span class="chapter-heading__number">Chapter VI</span>
+          Work Timeline
+        </h2>
+        <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+      </section>
+
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Growth Chart {%- endcomment -%}
+      {% if growthJson %}
+      <section aria-label="Growth over time">
+        <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+      </section>
+
+      <div class="hr-triple" role="separator">
+        <span class="hr-triple-inner"></span>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Chapter VII: Featured Sessions {%- endcomment -%}
+      {% if featuredSessions.size > 0 %}
+      <section class="session-list" aria-label="Featured sessions">
+        <h2 class="chapter-heading fade-in fade-in-d4">
+          <span class="chapter-heading__number">Chapter VII</span>
+          Featured Sessions
+        </h2>
+
+        {% for s in featuredSessions %}
+        <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="session-card">
+          <span class="session-card__page">p. {{ forloop.index }}</span>
+          <div class="session-card__number">Session {{ forloop.index }}</div>
+          <h3 class="session-card__title">
+            {{ s.title }}
+            {% if s.skills.size > 0 %}
+            <span class="session-card__tag">{{ s.skills | first }}</span>
+            {% endif %}
+          </h3>
+          <div class="session-card__meta">
+            <span>{{ s.durationMinutes | formatDuration }}</span>
+            <span>{{ s.locChanged | localeNumber }} LOC</span>
+            {% if s.agentSummary %}
+            <span>{{ s.agentSummary.agents.size }} agents</span>
+            {% endif %}
+          </div>
+        </a>
+        {% endfor %}
+      </section>
+      {% endif %}
+    </main>
+
+    <div class="hr-triple" role="separator">
+      <span class="hr-triple-inner"></span>
+    </div>
+
+    {%- comment -%} Colophon {%- endcomment -%}
+    <footer class="colophon" role="contentinfo">
+      <div class="colophon__mark" aria-hidden="true">&sect;</div>
+      <p>Set in Crimson Pro &amp; IBM Plex Mono</p>
+      <p>Composed with AI-assisted development tools</p>
+      <p>Published on heyi.am</p>
+    </footer>
   </div>
 
-  {% render 'partials/_phases', arc: arc %}
-
-  {% render 'partials/_skills', skills: project.skills %}
-
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
-
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
-
+  <script>
+    (function() {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      document.querySelectorAll('.session-card, .phase').forEach(function(el) {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(8px)';
+        el.style.transition = 'opacity 500ms ease-out, transform 500ms ease-out';
+        observer.observe(el);
+      });
+    })();
+  </script>
 </div>

@@ -1,30 +1,277 @@
 <div class="heyiam-project bauhaus" data-render-version="2" data-template="bauhaus"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
-
-  {% render 'partials/_links', project: project %}
-
-  {% render 'partials/_screenshot', project: project %}
-
-  {% render 'partials/_narrative', narrative: project.narrative %}
-
-  {% render 'partials/_stats', project: project, durationLabel: durationLabel, efficiencyMultiplier: efficiencyMultiplier %}
-
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
-
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
-
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+  {%- comment -%} Breadcrumb {%- endcomment -%}
+  <div class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/{{ user.username }}">{{ user.username }}</a>
+    <span aria-hidden="true">/</span>
+    <strong>{{ project.slug }}</strong>
   </div>
 
-  {% render 'partials/_phases', arc: arc %}
+  {%- comment -%} Project hero {%- endcomment -%}
+  <section class="project-hero" aria-label="Project overview">
+    <div class="project-hero-content anim-slide-left">
+      <h1 data-editable="title">{{ project.title }}</h1>
+      {% if project.repoUrl or project.projectUrl %}
+      <div class="project-links">
+        {% if project.repoUrl %}
+        <a href="{{ project.repoUrl }}" target="_blank" rel="noopener">{{ project.repoUrl | stripProtocol }}</a>
+        {% endif %}
+        {% if project.projectUrl %}
+        <a href="{{ project.projectUrl }}" target="_blank" rel="noopener">{{ project.projectUrl | stripProtocol }}</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="project-hero-shapes anim-scale-in anim-delay-2" aria-hidden="true">
+      <div class="hero-shape-circle"></div>
+      <div class="hero-shape-rect"></div>
+      <div class="hero-shape-line-h"></div>
+      <div class="hero-shape-small-sq"></div>
+    </div>
+  </section>
 
-  {% render 'partials/_skills', skills: project.skills %}
+  {%- comment -%} Stats grid {%- endcomment -%}
+  <section class="stats-grid anim-fade-up anim-delay-1" aria-label="Project statistics">
+    <div class="stat-cell">
+      <div class="stat-cell-number">{{ project.totalSessions }}</div>
+      <div class="stat-cell-label">Sessions</div>
+    </div>
+    {% if efficiencyMultiplier %}
+    <div class="stat-cell" style="background: var(--yellow); color: var(--black);">
+      <div class="stat-cell-number">{{ efficiencyMultiplier }}</div>
+      <div class="stat-cell-label">Multiplier</div>
+    </div>
+    <div class="stat-cell" style="background: var(--red); color: #fff;">
+      <div class="stat-cell-number">{{ project.totalDurationMinutes | formatDuration }}</div>
+      <div class="stat-cell-label">You</div>
+    </div>
+    <div class="stat-cell" style="background: var(--blue); color: #fff;">
+      <div class="stat-cell-number">{{ project.totalAgentDurationMinutes | formatDuration }}</div>
+      <div class="stat-cell-label">Agents</div>
+    </div>
+    {% else %}
+    <div class="stat-cell">
+      <div class="stat-cell-number">{{ project.totalDurationMinutes | formatDuration }}</div>
+      <div class="stat-cell-label">{{ durationLabel }}</div>
+    </div>
+    {% endif %}
+    <div class="stat-cell">
+      <div class="stat-cell-number">{{ project.totalLoc | formatLoc }}</div>
+      <div class="stat-cell-label">LOC</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-cell-number">{{ project.totalFilesChanged | localeNumber }}</div>
+      <div class="stat-cell-label">Files</div>
+    </div>
+    {% if project.totalTokens %}
+    <div class="stat-cell">
+      <div class="stat-cell-number">{{ project.totalTokens | formatTokens }}</div>
+      <div class="stat-cell-label">Tokens</div>
+    </div>
+    {% endif %}
+  </section>
 
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
+  {%- comment -%} Screenshot {%- endcomment -%}
+  {% if project.screenshotUrl %}
+  <section class="screenshot-section anim-slide-right anim-delay-2" aria-label="Project screenshot">
+    <div class="screenshot-frame">
+      <div class="screenshot-chrome" aria-hidden="true">
+        <span class="chrome-dot"></span>
+        <span class="chrome-dot"></span>
+        <span class="chrome-dot"></span>
+      </div>
+      <div class="screenshot-body">
+        <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" style="width:100%; height:100%; object-fit:cover;">
+      </div>
+    </div>
+  </section>
+  {% endif %}
 
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  {%- comment -%} Narrative {%- endcomment -%}
+  {% if project.narrative %}
+  <section class="narrative-section anim-slide-left anim-delay-2" aria-label="Project narrative">
+    <div class="section-heading">
+      <svg width="20" height="20" aria-hidden="true">
+        <rect width="20" height="20" fill="var(--red)" />
+      </svg>
+      <h2>Narrative</h2>
+      <div class="heading-line" aria-hidden="true"></div>
+    </div>
+    <div class="narrative-block">
+      {{ project.narrative }}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Work timeline chart {%- endcomment -%}
+  {% if sessionsJson %}
+  <section class="sessions-section anim-slide-right anim-delay-3" aria-label="Agent work timeline">
+    <div class="section-heading">
+      <svg width="20" height="20" aria-hidden="true">
+        <rect width="20" height="20" fill="var(--yellow)" />
+      </svg>
+      <h2>Work Timeline</h2>
+      <div class="heading-line" aria-hidden="true"></div>
+    </div>
+    <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Growth chart {%- endcomment -%}
+  {% if growthJson %}
+  <section class="sessions-section anim-slide-left anim-delay-3" aria-label="Growth over time">
+    <div class="section-heading">
+      <svg width="20" height="20" aria-hidden="true">
+        <circle cx="10" cy="10" r="10" fill="var(--blue)" />
+      </svg>
+      <h2>Growth</h2>
+      <div class="heading-line" aria-hidden="true"></div>
+    </div>
+    <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Phases {%- endcomment -%}
+  {% if arc.size > 0 %}
+  <section class="phases-section anim-slide-right anim-delay-3" aria-label="Project phases">
+    <div class="section-heading">
+      <svg width="20" height="20" aria-hidden="true">
+        <circle cx="10" cy="10" r="10" fill="var(--blue)" />
+      </svg>
+      <h2>Phases</h2>
+      <div class="heading-line" aria-hidden="true"></div>
+    </div>
+    <div class="phases-grid">
+      {% for item in arc %}
+      <div class="phase-row">
+        <div class="phase-number">{{ item.phase }}</div>
+        <div class="phase-content">
+          <div class="phase-title">{{ item.title }}</div>
+          <div class="phase-desc">{{ item.description }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Skills {%- endcomment -%}
+  {% if project.skills.size > 0 %}
+  <section class="skills-section anim-slide-right anim-delay-3" aria-label="Skills used">
+    <div class="section-heading">
+      <svg width="20" height="20" aria-hidden="true">
+        <circle cx="10" cy="10" r="10" fill="var(--red)" />
+      </svg>
+      <h2>Skills</h2>
+      <div class="heading-line" aria-hidden="true"></div>
+    </div>
+    <div class="skills-grid">
+      {% for skill in project.skills %}
+      <span class="skill-tag">{{ skill }}</span>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Source breakdown {%- endcomment -%}
+  {% if sourceCounts.size > 0 %}
+  <section class="source-section anim-slide-left anim-delay-4" aria-label="Source breakdown">
+    <div class="section-heading">
+      <svg width="20" height="20" aria-hidden="true">
+        <rect width="20" height="20" fill="var(--blue)" />
+      </svg>
+      <h2>Source Breakdown</h2>
+      <div class="heading-line" aria-hidden="true"></div>
+    </div>
+    {% assign totalSourceSessions = 0 %}
+    {% for src in sourceCounts %}
+      {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
+    {% endfor %}
+    {% if totalSourceSessions > 0 %}
+    <div class="source-bar-wrapper">
+      <div class="source-bar">
+        {% for src in sourceCounts %}
+        {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+        <div class="source-segment" style="width: {{ srcPct }}%; background: var({% if forloop.first %}--blue{% else %}--yellow{% endif %});"></div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="source-legend">
+      {% for src in sourceCounts %}
+      {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+      <span><span class="legend-swatch" style="background: var({% if forloop.first %}--blue{% else %}--yellow{% endif %});" aria-hidden="true"></span>{{ src.tool }} {{ srcPct }}% ({{ src.count }} session{% if src.count != 1 %}s{% endif %})</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {%- comment -%} Featured sessions {%- endcomment -%}
+  {% if featuredSessions.size > 0 %}
+  <section class="featured-section anim-fade-up anim-delay-4" aria-label="Featured sessions">
+    <div class="section-heading">
+      <svg width="20" height="20" aria-hidden="true">
+        <circle cx="10" cy="10" r="10" fill="var(--red)" />
+      </svg>
+      <h2>Featured Sessions</h2>
+      <div class="heading-line" aria-hidden="true"></div>
+    </div>
+    <div class="featured-grid">
+      {% for s in featuredSessions %}
+      <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="featured-card">
+        <div class="featured-card-accent" aria-hidden="true"></div>
+        <div class="featured-card-body">
+          {% if s.skills.size > 0 %}
+          <div class="featured-card-tag">{{ s.skills | first }}</div>
+          {% endif %}
+          <h3 class="featured-card-title">{{ s.title }}</h3>
+          <div class="featured-card-stats">
+            <span><strong>{{ s.durationMinutes | formatDuration }}</strong></span>
+            <span><strong>{{ s.locChanged | localeNumber }}</strong> LOC</span>
+            <span><strong>{{ s.filesChanged }}</strong> files</span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Footer {%- endcomment -%}
+  <footer class="bauhaus-footer">
+    <div class="footer-inner">
+      <span class="footer-text">Built with heyi.am</span>
+      <div class="footer-shapes" aria-hidden="true">
+        <span class="footer-shape footer-sq-red"></span>
+        <span class="footer-shape footer-circle-blue"></span>
+        <span class="footer-shape footer-sq-yellow"></span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var targets = document.querySelectorAll(
+        '.anim-slide-left, .anim-slide-right, .anim-scale-in, .anim-fade-up'
+      );
+      if (!('IntersectionObserver' in window)) {
+        targets.forEach(function (el) { el.style.opacity = '1'; });
+        return;
+      }
+      targets.forEach(function (el) { el.style.animationPlayState = 'paused'; });
+      var observer = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.style.animationPlayState = 'running';
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.1 }
+      );
+      targets.forEach(function (el) { observer.observe(el); });
+    })();
+  </script>
 
 </div>

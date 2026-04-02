@@ -1,47 +1,290 @@
 <div class="heyiam-session mono" data-render-version="2" data-template="mono">
 
-  <div class="session-layout">
+  <div class="mono-page">
 
-    {% render 'partials/_session-sidebar', session: session %}
+    {%- comment -%} Breadcrumb {%- endcomment -%}
+    <div class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/{{ user.username }}">{{ user.username }}</a>
+      {% if projectSlug %}
+      <span class="sep">/</span>
+      <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
+      {% endif %}
+      <span class="sep">/</span>
+      <span>{{ session.title }}</span>
+    </div>
 
-    <main class="session-main">
-
-      {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
-
-      {% render 'partials/_session-header', session: session %}
-
-      {% if session.skills.size > 0 %}
-      <section class="content-section">
-        <div class="chip-list">
-          {% for skill in session.skills %}
-          <span class="chip chip--violet">{{ skill }}</span>
-          {% endfor %}
+    {%- comment -%} Hero {%- endcomment -%}
+    <section class="mono-section" aria-label="Session header">
+      <h1 class="hero-title--session cursor-blink">{{ session.title }}</h1>
+      <div class="hero-meta">
+        {% if session.recordedAt %}
+        <div class="hero-meta-item">
+          <span class="hero-meta-key">date:</span>
+          <span class="hero-meta-value">{{ session.recordedAt | formatDate }}</span>
         </div>
-      </section>
+        {% endif %}
+        {% if session.sourceTool %}
+        <div class="hero-meta-item">
+          <span class="hero-meta-key">source:</span>
+          <span class="hero-meta-value">{{ session.sourceTool }}</span>
+        </div>
+        {% endif %}
+      </div>
+
+      {%- comment -%} Dev Take {%- endcomment -%}
+      {% if session.devTake %}
+      <div class="dev-take">{{ session.devTake }}</div>
       {% endif %}
 
-      {% if session.narrative != blank %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Narrative</h2>
-        <p>{{ session.narrative }}</p>
-      </section>
-      {% endif %}
+      {%- comment -%} Stats {%- endcomment -%}
+      <div class="stats-row" role="list">
+        <div class="stat-cell" role="listitem">
+          <div class="stat-key">duration:</div>
+          <div class="stat-value">{{ session.durationMinutes | formatDuration }}</div>
+        </div>
+        <div class="stat-cell" role="listitem">
+          <div class="stat-key">turns:</div>
+          <div class="stat-value">{{ session.turns }}</div>
+        </div>
+        <div class="stat-cell" role="listitem">
+          <div class="stat-key">loc:</div>
+          <div class="stat-value">{{ session.locChanged | localeNumber }}</div>
+        </div>
+        <div class="stat-cell" role="listitem">
+          <div class="stat-key">files:</div>
+          <div class="stat-value">{{ session.filesChanged }}</div>
+        </div>
+      </div>
+    </section>
 
-      {% if session.highlights.size > 0 %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Highlights</h2>
-        <ul class="highlights-list">
-          {% for h in session.highlights %}
-          <li>{{ h }}</li>
-          {% endfor %}
-        </ul>
-      </section>
-      {% endif %}
+    {%- comment -%} Main + Sidebar Layout {%- endcomment -%}
+    <div class="session-layout">
 
-      {% render 'partials/_beats', session: session %}
+      {%- comment -%} Main Content {%- endcomment -%}
+      <div class="main-content">
 
-      {% render 'partials/_qa', session: session %}
+        {%- comment -%} Execution Path (Beats) {%- endcomment -%}
+        {% if session.beats.size > 0 %}
+        <section class="mono-section" aria-label="Execution path">
+          <h2 class="mono-heading"># execution_path</h2>
+          <div class="terminal-block">
+            <div class="terminal-header">
+              <div class="terminal-dots">
+                <span class="dot-red" aria-hidden="true"></span>
+                <span class="dot-yellow" aria-hidden="true"></span>
+                <span class="dot-green" aria-hidden="true"></span>
+              </div>
+              <span>cat execution.log</span>
+            </div>
+            <div class="terminal-body">
+              <ol class="beat-list">
+                {% for beat in session.beats %}
+                <li class="beat-item">
+                  <span class="beat-num" aria-hidden="true">{{ beat.stepNumber | prepend: '0' | slice: -2, 2 }}</span>
+                  <div class="beat-title">{{ beat.title }}</div>
+                  {% if beat.body %}
+                  <div class="beat-desc">{{ beat.body }}</div>
+                  {% endif %}
+                </li>
+                {% endfor %}
+              </ol>
+            </div>
+          </div>
+        </section>
+        {% endif %}
 
-    </main>
+        {%- comment -%} Narrative {%- endcomment -%}
+        {% if session.narrative %}
+        <section class="mono-section" aria-label="Narrative">
+          <h2 class="mono-heading"># narrative</h2>
+          <div class="terminal-block">
+            <div class="terminal-header">
+              <div class="terminal-dots">
+                <span class="dot-red" aria-hidden="true"></span>
+                <span class="dot-yellow" aria-hidden="true"></span>
+                <span class="dot-green" aria-hidden="true"></span>
+              </div>
+              <span>cat narrative.md</span>
+            </div>
+            <div class="narrative-block">
+              <p class="narrative-line">{{ session.narrative }}</p>
+            </div>
+          </div>
+        </section>
+        {% endif %}
+
+        {%- comment -%} Q&A {%- endcomment -%}
+        {% if session.qaPairs.size > 0 %}
+        <section class="mono-section" aria-label="Questions and answers">
+          <h2 class="mono-heading"># q_and_a</h2>
+          <div class="terminal-block">
+            <div class="terminal-header">
+              <div class="terminal-dots">
+                <span class="dot-red" aria-hidden="true"></span>
+                <span class="dot-yellow" aria-hidden="true"></span>
+                <span class="dot-green" aria-hidden="true"></span>
+              </div>
+              <span>cat qa.md</span>
+            </div>
+            <div class="qa-block">
+              {% for qa in session.qaPairs %}
+              <div class="qa-item">
+                <div class="qa-question">{{ qa.question }}</div>
+                <div class="qa-answer">{{ qa.answer }}</div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </section>
+        {% endif %}
+
+        {%- comment -%} Agent Summary {%- endcomment -%}
+        {% if session.agentSummary %}
+        <section class="mono-section" aria-label="Agent summary">
+          <h2 class="mono-heading"># agent_summary</h2>
+          <div class="terminal-block">
+            <div class="terminal-header">
+              <div class="terminal-dots">
+                <span class="dot-red" aria-hidden="true"></span>
+                <span class="dot-yellow" aria-hidden="true"></span>
+                <span class="dot-green" aria-hidden="true"></span>
+              </div>
+              <span>agents --stats</span>
+            </div>
+            <div class="terminal-body" style="padding: 0;">
+              <table class="agent-table">
+                <thead>
+                  <tr>
+                    <th scope="col">role</th>
+                    <th scope="col">duration</th>
+                    <th scope="col">loc</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for agent in session.agentSummary.agents %}
+                  <tr>
+                    <td>
+                      <div class="agent-role">
+                        <span class="agent-dot" style="background: {{ agent.color | default: '#666' }};" aria-hidden="true"></span>
+                        {{ agent.role }}
+                      </div>
+                    </td>
+                    <td class="value-accent">{{ agent.durationMinutes | formatDuration }}</td>
+                    <td>{{ agent.locChanged | localeNumber }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+        {% endif %}
+
+        {%- comment -%} Highlights {%- endcomment -%}
+        {% if session.highlights.size > 0 %}
+        <section class="mono-section" aria-label="Highlights">
+          <h2 class="mono-heading"># highlights</h2>
+          <div class="terminal-block">
+            <div class="terminal-header">
+              <div class="terminal-dots">
+                <span class="dot-red" aria-hidden="true"></span>
+                <span class="dot-yellow" aria-hidden="true"></span>
+                <span class="dot-green" aria-hidden="true"></span>
+              </div>
+              <span>cat highlights.md</span>
+            </div>
+            <div class="terminal-body">
+              <ol class="decisions-list">
+                {% for h in session.highlights %}
+                <li>
+                  <span class="decision-num">[{{ forloop.index }}]</span>
+                  <span>{{ h }}</span>
+                </li>
+                {% endfor %}
+              </ol>
+            </div>
+          </div>
+        </section>
+        {% endif %}
+
+      </div>
+
+      {%- comment -%} Sidebar {%- endcomment -%}
+      <aside class="sidebar" aria-label="Session details">
+
+        {%- comment -%} Tools Used {%- endcomment -%}
+        {% if session.toolBreakdown.size > 0 %}
+        <div class="sidebar-block">
+          <div class="sidebar-block-header">// tools_used</div>
+          <div class="sidebar-block-body">
+            {% for tool in session.toolBreakdown %}
+            <div class="tool-row">
+              <span class="tool-name">{{ tool.tool }}</span>
+              <span class="tool-count">{{ tool.count }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {%- comment -%} Files Changed {%- endcomment -%}
+        {% if session.topFiles.size > 0 %}
+        <div class="sidebar-block">
+          <div class="sidebar-block-header">// files_changed</div>
+          <div class="sidebar-block-body">
+            {% for f in session.topFiles %}
+            <div class="file-row">
+              <span class="file-name" title="{{ f.path }}">{{ f.path }}</span>
+              <span class="file-diff">+{{ f.additions }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {%- comment -%} Skills {%- endcomment -%}
+        {% if session.skills.size > 0 %}
+        <div class="sidebar-block">
+          <div class="sidebar-block-header">// skills</div>
+          <div class="sidebar-block-body">
+            <div class="sidebar-tags">
+              {% for skill in session.skills %}
+              <span class="tag">[{{ skill }}]</span>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+      </aside>
+
+    </div>
+
   </div>
+
+  <footer class="mono-footer">
+    <p>// generated by heyi.am &middot; mono template</p>
+  </footer>
+
+  <script>
+  (function() {
+    'use strict';
+    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var sections = document.querySelectorAll('.mono-section');
+    if (prefersReducedMotion) {
+      sections.forEach(function(s) { s.classList.add('visible'); });
+    } else {
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+      sections.forEach(function(s) { observer.observe(s); });
+    }
+  })();
+  </script>
+
 </div>

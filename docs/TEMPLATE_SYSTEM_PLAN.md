@@ -4,108 +4,113 @@ Branch: `feature/template-system`
 
 ---
 
-## Phase 1: Replace React project page with Liquid-rendered editorial template
+## Phase 1: Replace React project page with Liquid-rendered editorial template ✅
 
-**Goal:** Project detail main content renders via Liquid instead of React components. Same data, same look. No template switching yet.
+**Status: COMPLETE** — Commit `de3b0b3`
 
-**Key Principle:** The render endpoint calls `buildProjectDetail(ctx.db, proj)` — the EXACT same function the React page uses. No separate data pipeline.
-
-**Steps:**
-
-1. **Add render endpoint** (`cli/src/routes/preview.ts`)
-   - `GET /api/projects/:project/render`
-   - Call `buildProjectDetail(ctx.db, proj)` to get `{ project, sessions, enhanceCache }`
-   - Map sessions through `buildSessionCard()` to get `SessionCard[]`
-   - Call `buildProjectRenderData()` then `renderProjectHtml(data, extras, 'editorial')`
-   - Load `styles.css` once at startup (not per request)
-   - In-memory cache keyed by `dirName + fingerprint` — cache hit <10ms
-   - Return `{ html, css }`
-
-2. **Add frontend API** (`cli/app/src/api.ts`)
-   - `fetchProjectRender(dirName): Promise<{ html: string; css: string } | null>`
-
-3. **Replace main content** (`cli/app/src/components/ProjectDetail.tsx`)
-   - Fetch rendered HTML alongside existing project detail
-   - Main content area: inject Liquid HTML into `#liquid-render` container
-   - CSS isolation: `@layer template { #liquid-render { ...css... } }` — lower specificity than Tailwind
-   - Remap `:root` and `body` selectors to `#liquid-render`
-   - Strip universal reset (Tailwind preflight handles it)
-   - Chart hydration: after innerHTML injection, query `[data-work-timeline]` and `[data-growth-chart]` elements, call `createRoot()` with WorkTimeline/GrowthChart components directly
-   - Clean up chart roots before re-injection and on unmount
-   - Sidebar stays React (editing controls unchanged)
-
-4. **Source breakdown fix** (`cli/src/render/liquid.ts`)
-   - Compute `sourceCounts` from `data.allSessions` (all sessions), not `data.sessions` (featured only)
-
-**Code review criteria:** Same visual output as current React page. Charts render. Source breakdown shows all sessions. Page loads fast (<500ms cached).
+**What was built:**
+- `GET /api/projects/:project/render` JSON endpoint returns `{ html, css, template, screenshotUrl }`
+- `fetchProjectRender()` frontend API function in `api.ts`
+- `ProjectDetail.tsx` injects Liquid HTML into `#liquid-render` container with CSS scoping
+- Chart hydration: WorkTimeline and GrowthChart React components mount into Liquid placeholders
+- Source breakdown uses `allSessions` (all sessions) not just featured sessions
+- In-memory render cache with 30s TTL for fast reloads
 
 ---
 
-## Phase 2: Template picker in Settings with preview
+## Phase 2: Template picker in Settings with preview ✅
 
-**Goal:** Ghost/WordPress-style template picker. Each template has a preview. Saves globally.
+**Status: COMPLETE** — Commits `3022301`, `9c1b52b`
 
-**Steps:**
-1. Settings page: template cards with preview for each of 5 templates (Classic, Kinetic, Terminal, Typography, Showcase)
-2. "Preview" button per template opens full-page rendered preview in new tab
-3. `GET/POST /api/settings/theme` saves `defaultTemplate` to settings.json
-4. Already partially built: Settings.tsx has theme picker card, settings.ts has `defaultTemplate` field
-
-**Code review criteria:** Can select a template in settings. Selection persists across page reloads. Preview opens in new tab with correct template.
-
----
-
-## Phase 3: Template changes update the project detail page
-
-**Goal:** Changing template in Settings changes how the project detail page renders.
-
-**Steps:**
-1. Per-template CSS overrides in `styles.css` scoped under `[data-template="kinetic"]` etc.
-2. Render endpoint reads `getSettings().defaultTemplate` and passes to `renderProjectHtml()`
-3. Different Liquid templates produce different HTML structure (layouts already exist)
-4. Project page picks up template change on navigation
-
-**Code review criteria:** Switching between editorial/kinetic/terminal/minimal shows visually distinct pages. CSS doesn't leak. Charts work in all templates.
+**What was built:**
+- 30 templates registered in `templates.ts` with metadata (name, label, accent, mode, tags)
+- `TemplateBrowser.tsx` — category filtering (all, minimal, animated, data-dense), sorting, live iframe previews
+- `Settings.tsx` — template picker card with scaled-down iframe preview of selected template
+- `GET/POST /api/settings/theme` endpoints persist `defaultTemplate` to `~/.config/heyiam/settings.json`
+- 27 template mockup HTML files in `docs/mockups/` for preview
 
 ---
 
-## Phase 4: Portfolio page rendering
+## Phase 3: Template changes update the project detail page ✅
 
-**Goal:** CLI renders the portfolio page (heyi.am/@username) using Liquid. Template applies consistently across portfolio + project + session pages.
+**Status: COMPLETE** — Included in Phase 1/2 commits
 
-**Steps:**
-1. Portfolio Liquid template (new)
-2. Portfolio render endpoint
-3. Portfolio editing in CLI (bio, project ordering, display name)
-4. Template applies to portfolio page too
-
-**Code review criteria:** Portfolio page renders with chosen template. Editing bio/ordering works.
+**What was built:**
+- Render endpoint reads `?template=` query param, falls back to `getDefaultTemplate()`
+- `ProjectDetail.tsx` fetches render with current template, re-renders on template change
+- Per-template CSS loaded via `getTemplateCss()` (base + template-specific styles)
+- Graceful fallback to 'editorial' if selected template fails to render
 
 ---
 
-## Phase 5: Showcase template (scroll animations)
+## Phase 3A: Convert all template mockups to Liquid templates ✅
 
-**Goal:** Fifth template with IntersectionObserver entrance animations.
+**Status: COMPLETE** — Commits `56bbac4`, `dafad22`, `66d3dd7`, `0648161`, `55ee316`
 
-**Steps:**
-1. `showcase/project.liquid` and `showcase/session.liquid`
-2. CSS animations triggered by `.visible` class added via IntersectionObserver
-3. Inline `<script>` in the template for the observer (no external dependencies)
+**What was built:**
+- All 30 templates have `portfolio.liquid`, `project.liquid`, `session.liquid` files
+- Each template is fully self-contained (no shared partials except editorial/terminal/minimal legacy)
+- Template-specific `styles.css` for all 30 templates
+- Mock data system (`mock-data.ts`) for previewing templates without real user data
+- Preview fallback: `/preview/template/:name` tries static mockup first, falls back to Liquid + mock data
+- Multi-agent data in mock sessions (children arrays with agent roles)
+- Google Fonts + `heyiam-mount.js` included in standalone preview HTML
+- All custom Liquid filters: formatDuration, formatLoc, formatTokens, formatDate, formatDateShort, localeNumber, stripProtocol, jsonAttr, durationColor
 
-**Code review criteria:** Sections fade/slide in on scroll. Works in exported HTML too.
+---
+
+## Phase 4: Portfolio page rendering ✅
+
+**Status: COMPLETE** — Commits `9c1b52b`, `66d3dd7`
+
+**What was built:**
+- Portfolio Liquid templates for all 30 templates
+- Portfolio profile editor in `Settings.tsx` (bio, photo, location, email, phone, social links, resume)
+- `GET/POST /api/portfolio` endpoints with validation
+- `getPortfolioProfile()` / `savePortfolioProfile()` persistence in settings
+- Portfolio preview: `/preview/template/:name?page=portfolio` renders with mock data
+- Leverage display (You vs Agents time) with efficiency multiplier
+
+---
+
+## Phase 5: Showcase template (scroll animations) ✅
+
+**Status: COMPLETE** — Commit `66d3dd7`
+
+**What was built:**
+- `showcase/project.liquid` with inline IntersectionObserver script
+- Scroll-triggered `.visible` class on `.sc-section` elements (threshold: 0.15)
+- Animated counters with `easeOutCubic` easing (1200ms duration, staggered starts)
+- CSS stagger effects — child elements fade in with cascading 80ms delays
+- Respects `prefers-reduced-motion` (skips animations if enabled)
+- Self-contained: no external dependencies, works in exported HTML
 
 ---
 
 ## Phase 6: Wire through publish/export flow
 
-**Goal:** Publishing uses the selected template. What you see in the CLI is what gets published.
+**Status: NOT STARTED**
 
-**Steps:**
-1. `publish.ts` reads `getSettings().defaultTemplate`, passes to render functions
-2. `export.ts` does the same for HTML export
-3. Server-side `share.ex` already validates template names
+**Goal:** Publishing and exporting use the selected template. What you see in the CLI is what gets published.
 
-**Code review criteria:** Published pages on heyi.am use the chosen template. Exported HTML uses it too.
+**What needs to happen:**
+
+1. **`export.ts`** — Pass `getDefaultTemplate()` to `renderProjectHtml()` and `renderSessionHtml()`
+   - Currently renders with DEFAULT_TEMPLATE ('editorial') regardless of user selection
+   - Need to import and call `getDefaultTemplate()`
+
+2. **`routes/publish.ts`** — Pass template to render-preview endpoint
+   - `/api/projects/:project/render-preview` currently calls `renderProjectHtml(renderData)` without template
+   - Should read template from settings or query param
+
+3. **Verify upload flow** — Ensure the published HTML on heyi.am uses the selected template
+   - Server-side `share.ex` already validates template names
+   - Need to confirm template name is included in upload payload
+
+**Verification:**
+- Export HTML files use selected template (not always editorial)
+- Publish preview matches what's shown in project detail
+- Published pages on heyi.am render with chosen template
 
 ---
 

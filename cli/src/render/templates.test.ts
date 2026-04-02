@@ -6,6 +6,7 @@ import {
   resolveTemplate,
   getTemplateNames,
   getTemplateInfo,
+  getTemplateCss,
 } from './templates.js';
 
 describe('templates', () => {
@@ -97,6 +98,34 @@ describe('templates', () => {
 
     it('returns undefined for unknown template', () => {
       expect(getTemplateInfo('nonexistent')).toBeUndefined();
+    });
+  });
+
+  describe('getTemplateCss', () => {
+    it('returns base + editorial CSS', () => {
+      const css = getTemplateCss('editorial');
+      expect(css.length).toBeGreaterThan(0);
+      expect(css).toContain('editorial template styles');
+      expect(css).not.toContain('kinetic template styles');
+    });
+
+    it('returns base + template CSS for templates with styles.css', () => {
+      const TEMPLATES_WITH_CSS = [
+        'aurora', 'bauhaus', 'blueprint', 'canvas', 'carbon', 'chalk', 'circuit', 'cosmos',
+        'daylight', 'editorial', 'ember', 'glacier', 'grid', 'kinetic', 'meridian', 'mono', 'neon',
+        'noir', 'obsidian', 'paper', 'parallax', 'parchment', 'radar', 'showcase',
+        'signal', 'strata', 'verdant', 'zen',
+      ];
+      for (const name of TEMPLATES_WITH_CSS) {
+        const css = getTemplateCss(name);
+        expect(css).toContain(`${name} template styles`);
+      }
+    });
+
+    it('falls back to editorial for invalid template name', () => {
+      const css = getTemplateCss('nonexistent');
+      const editorialCss = getTemplateCss('editorial');
+      expect(css).toBe(editorialCss);
     });
   });
 });

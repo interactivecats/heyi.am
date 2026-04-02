@@ -1,47 +1,269 @@
 <div class="heyiam-session cosmos" data-render-version="2" data-template="cosmos">
 
-  <div class="session-layout">
+  <div class="starfield" aria-hidden="true"></div>
 
-    {% render 'partials/_session-sidebar', session: session %}
+  <div class="cos-page">
 
-    <main class="session-main">
+    {%- comment -%} Constellation SVG {%- endcomment -%}
+    <svg class="cos-constellation" aria-hidden="true">
+      <circle class="cos-constellation-dot" cx="70" cy="180" r="2" />
+      <circle class="cos-constellation-dot" cx="220" cy="130" r="1.5" />
+      <circle class="cos-constellation-dot" cx="400" cy="200" r="2" />
+      <circle class="cos-constellation-dot" cx="600" cy="160" r="1.5" />
+      <circle class="cos-constellation-dot" cx="800" cy="210" r="2" />
+      <circle class="cos-constellation-dot" cx="130" cy="450" r="1.5" />
+      <circle class="cos-constellation-dot" cx="350" cy="550" r="2" />
+      <circle class="cos-constellation-dot" cx="550" cy="480" r="1.5" />
+      <circle class="cos-constellation-dot" cx="750" cy="600" r="2" />
+      <circle class="cos-constellation-dot" cx="200" cy="800" r="1.5" />
+      <circle class="cos-constellation-dot" cx="500" cy="850" r="2" />
+      <circle class="cos-constellation-dot" cx="700" cy="780" r="1.5" />
+      <path class="cos-constellation-line" d="M70,180 Q145,148 220,130" />
+      <path class="cos-constellation-line" d="M220,130 Q310,170 400,200" />
+      <path class="cos-constellation-line" d="M400,200 Q500,175 600,160" />
+      <path class="cos-constellation-line" d="M600,160 Q700,190 800,210" />
+      <path class="cos-constellation-line" d="M130,450 Q240,505 350,550" />
+      <path class="cos-constellation-line" d="M350,550 Q450,510 550,480" />
+      <path class="cos-constellation-line" d="M550,480 Q650,545 750,600" />
+      <path class="cos-constellation-line" d="M200,800 Q350,830 500,850" />
+      <path class="cos-constellation-line" d="M500,850 Q600,810 700,780" />
+    </svg>
 
-      {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
+    <main id="main-content">
 
-      {% render 'partials/_session-header', session: session %}
+      {%- comment -%} Breadcrumb {%- endcomment -%}
+      <div class="cos-breadcrumb" aria-label="Breadcrumb">
+        <a href="/{{ user.username }}">{{ user.username }}</a>
+        {% if projectSlug %}
+        <span class="cos-breadcrumb-sep" aria-hidden="true">/</span>
+        <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
+        {% endif %}
+        <span class="cos-breadcrumb-sep" aria-hidden="true">/</span>
+        <span aria-current="page">{{ session.title }}</span>
+      </div>
 
-      {% if session.skills.size > 0 %}
-      <section class="content-section">
-        <div class="chip-list">
-          {% for skill in session.skills %}
-          <span class="chip chip--violet">{{ skill }}</span>
-          {% endfor %}
+      {%- comment -%} Session Header {%- endcomment -%}
+      <header class="cos-section cos-session-header">
+        <h1>{{ session.title }}</h1>
+      </header>
+
+      {%- comment -%} Meta Grid {%- endcomment -%}
+      <section class="cos-section" aria-label="Session metadata">
+        <div class="cos-meta-grid">
+          {% if session.recordedAt %}
+          <div class="cos-meta-item">
+            <span class="cos-meta-label">Date</span>
+            <span class="cos-meta-value">{{ session.recordedAt | formatDate }}</span>
+          </div>
+          {% endif %}
+          {% if session.sourceTool %}
+          <div class="cos-meta-item">
+            <span class="cos-meta-label">Source</span>
+            <span class="cos-meta-value">{{ session.sourceTool }}</span>
+          </div>
+          {% endif %}
+          <div class="cos-meta-item">
+            <span class="cos-meta-label">Duration</span>
+            <span class="cos-meta-value">{{ session.durationMinutes | formatDuration }}</span>
+          </div>
+          <div class="cos-meta-item">
+            <span class="cos-meta-label">Turns</span>
+            <span class="cos-meta-value">{{ session.turns }}</span>
+          </div>
+          <div class="cos-meta-item">
+            <span class="cos-meta-label">LOC</span>
+            <span class="cos-meta-value">{{ session.locChanged | localeNumber }}</span>
+          </div>
+          <div class="cos-meta-item">
+            <span class="cos-meta-label">Files</span>
+            <span class="cos-meta-value">{{ session.filesChanged }}</span>
+          </div>
         </div>
       </section>
-      {% endif %}
 
-      {% if session.narrative != blank %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Narrative</h2>
-        <p>{{ session.narrative }}</p>
+      {%- comment -%} Dev Take {%- endcomment -%}
+      {% if session.devTake %}
+      <section class="cos-section cos-dev-take" aria-label="Developer take">
+        <div class="cos-dev-take-label">Dev Take</div>
+        <blockquote>{{ session.devTake }}</blockquote>
       </section>
       {% endif %}
 
-      {% if session.highlights.size > 0 %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Highlights</h2>
-        <ul class="highlights-list">
-          {% for h in session.highlights %}
-          <li>{{ h }}</li>
-          {% endfor %}
-        </ul>
-      </section>
-      {% endif %}
+      {%- comment -%} Layout: Main + Sidebar {%- endcomment -%}
+      <div class="cos-layout">
+        <div>
 
-      {% render 'partials/_beats', session: session %}
+          {%- comment -%} Narrative {%- endcomment -%}
+          {% if session.narrative %}
+          <section class="cos-section cos-narrative" aria-label="Session narrative">
+            <h2 class="cos-section-title">Narrative</h2>
+            <p>{{ session.narrative }}</p>
+          </section>
+          {% endif %}
 
-      {% render 'partials/_qa', session: session %}
+          {%- comment -%} Highlights {%- endcomment -%}
+          {% if session.highlights.size > 0 %}
+          <section class="cos-section" aria-label="Session highlights">
+            <h2 class="cos-section-title">Highlights</h2>
+            <ul class="cos-highlights">
+              {% for h in session.highlights %}
+              <li>{{ h }}</li>
+              {% endfor %}
+            </ul>
+          </section>
+          {% endif %}
+
+          {%- comment -%} Execution Path (Beats) {%- endcomment -%}
+          {% if session.beats.size > 0 %}
+          <section class="cos-section cos-beats" aria-label="Execution path">
+            <h2 class="cos-section-title">Execution Path</h2>
+            {% for beat in session.beats %}
+            <div class="cos-beat">
+              <h3>{{ beat.title }}</h3>
+              <p>{{ beat.body }}</p>
+            </div>
+            {% endfor %}
+          </section>
+          {% endif %}
+
+          {%- comment -%} Q&A {%- endcomment -%}
+          {% if session.qaPairs.size > 0 %}
+          <section class="cos-section cos-qa" aria-label="Questions and answers">
+            <h2 class="cos-section-title">Q&amp;A</h2>
+            {% for qa in session.qaPairs %}
+            <div class="cos-qa-item">
+              <p class="cos-qa-question">{{ qa.question }}</p>
+              <p class="cos-qa-answer">{{ qa.answer }}</p>
+            </div>
+            {% endfor %}
+          </section>
+          {% endif %}
+
+          {%- comment -%} Agent Summary {%- endcomment -%}
+          {% if session.agentSummary %}
+          <section class="cos-section cos-agents" aria-label="Agent summary">
+            <h2 class="cos-section-title">Agent Summary</h2>
+            {% assign maxAgentLoc = 0 %}
+            {% for agent in session.agentSummary.agents %}
+              {% if agent.loc_changed > maxAgentLoc %}
+                {% assign maxAgentLoc = agent.loc_changed %}
+              {% endif %}
+            {% endfor %}
+            {% assign agent_colors = '#7c3aed,#0891b2,#059669,#475569,#e11d48,#d97706' | split: ',' %}
+            {% for agent in session.agentSummary.agents %}
+            <div class="cos-agent-row">
+              {% assign colorIdx = forloop.index0 | modulo: 6 %}
+              <span class="cos-agent-dot" style="background: {{ agent_colors[colorIdx] }}" aria-hidden="true"></span>
+              <span class="cos-agent-name">{{ agent.role }}</span>
+              <span class="cos-agent-meta">
+                <span>{{ agent.duration_minutes }}m</span>
+                <span>{{ agent.loc_changed }} LOC</span>
+              </span>
+              <div class="cos-agent-bar-track" aria-hidden="true">
+                {% if maxAgentLoc > 0 %}
+                {% assign barPct = agent.loc_changed | times: 100 | divided_by: maxAgentLoc %}
+                {% else %}
+                {% assign barPct = 0 %}
+                {% endif %}
+                <div class="cos-agent-bar-fill" style="width: {{ barPct }}%; background: {{ agent_colors[colorIdx] }}"></div>
+              </div>
+            </div>
+            {% endfor %}
+          </section>
+          {% endif %}
+
+        </div>
+
+        {%- comment -%} Sidebar {%- endcomment -%}
+        <aside class="cos-sidebar" aria-label="Session details">
+
+          {%- comment -%} Tools Used {%- endcomment -%}
+          {% if session.toolBreakdown.size > 0 %}
+          <div class="cos-sidebar-card">
+            <h2 class="cos-sidebar-title">Tools Used</h2>
+            <table class="cos-tools-table" aria-label="Tool usage counts">
+              <tbody>
+                {% for t in session.toolBreakdown %}
+                <tr><td>{{ t.tool }}</td><td>{{ t.count }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+
+          {%- comment -%} Files Changed {%- endcomment -%}
+          {% if session.topFiles.size > 0 %}
+          <div class="cos-sidebar-card">
+            <h2 class="cos-sidebar-title">Files Changed</h2>
+            <table class="cos-files-table" aria-label="Changed files with line counts">
+              <tbody>
+                {% for f in session.topFiles %}
+                <tr><td>{{ f.path }}</td><td>+{{ f.additions }}{% if f.deletions > 0 %} -{{ f.deletions }}{% endif %}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+
+          {%- comment -%} Skills {%- endcomment -%}
+          {% if session.skills.size > 0 %}
+          <div class="cos-sidebar-card">
+            <h2 class="cos-sidebar-title">Skills</h2>
+            <div class="cos-sidebar-skills">
+              {% for skill in session.skills %}
+              <span class="cos-skill-chip">{{ skill }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+        </aside>
+      </div>
 
     </main>
+
+    <footer class="cos-footer">
+      <p>Built with <a href="https://heyi.am">heyi.am</a></p>
+    </footer>
+
   </div>
+
+  {%- comment -%} Animation scripts {%- endcomment -%}
+  <script>
+  (function() {
+    'use strict';
+    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var sections = document.querySelectorAll('.cos-section');
+    if (prefersReducedMotion) {
+      sections.forEach(function(s) { s.classList.add('visible'); });
+    } else {
+      var sectionObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            sectionObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      sections.forEach(function(s) { sectionObserver.observe(s); });
+    }
+
+    var lines = document.querySelectorAll('.cos-constellation-line');
+    if (prefersReducedMotion) {
+      lines.forEach(function(l) { l.classList.add('drawn'); });
+    } else {
+      var lineObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('drawn');
+            lineObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0, rootMargin: '0px 0px -50px 0px' });
+      lines.forEach(function(l) { lineObserver.observe(l); });
+    }
+  })();
+  </script>
+
 </div>

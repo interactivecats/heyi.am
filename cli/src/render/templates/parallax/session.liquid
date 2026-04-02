@@ -1,47 +1,434 @@
 <div class="heyiam-session parallax" data-render-version="2" data-template="parallax">
 
-  <div class="session-layout">
+  <a href="#main-content" class="skip-link">Skip to content</a>
 
-    {% render 'partials/_session-sidebar', session: session %}
-
-    <main class="session-main">
-
-      {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
-
-      {% render 'partials/_session-header', session: session %}
-
-      {% if session.skills.size > 0 %}
-      <section class="content-section">
-        <div class="chip-list">
-          {% for skill in session.skills %}
-          <span class="chip chip--violet">{{ skill }}</span>
-          {% endfor %}
-        </div>
-      </section>
-      {% endif %}
-
-      {% if session.narrative != blank %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Narrative</h2>
-        <p>{{ session.narrative }}</p>
-      </section>
-      {% endif %}
-
-      {% if session.highlights.size > 0 %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Highlights</h2>
-        <ul class="highlights-list">
-          {% for h in session.highlights %}
-          <li>{{ h }}</li>
-          {% endfor %}
-        </ul>
-      </section>
-      {% endif %}
-
-      {% render 'partials/_beats', session: session %}
-
-      {% render 'partials/_qa', session: session %}
-
-    </main>
+  <!-- Background Shapes -->
+  <div class="bg-shapes" aria-hidden="true">
+    <div class="bg-shape bg-shape--1"></div>
+    <div class="bg-shape bg-shape--2"></div>
+    <div class="bg-shape bg-shape--3"></div>
+    <div class="bg-shape bg-shape--4"></div>
+    <div class="bg-shape bg-shape--5"></div>
+    <div class="bg-shape bg-shape--6"></div>
+    <div class="bg-shape bg-shape--7"></div>
   </div>
+
+  <!-- Session Header -->
+  <header class="session-header" aria-label="Session overview">
+    <div class="session-header__breadcrumb">
+      <a href="/{{ user.username }}">{{ user.username }}</a>
+      {% if projectSlug != blank %}
+      <span class="session-header__breadcrumb-sep" aria-hidden="true">/</span>
+      <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
+      {% endif %}
+      <span class="session-header__breadcrumb-sep" aria-hidden="true">/</span>
+      <span>{{ session.title }}</span>
+    </div>
+
+    <h1 class="session-header__title">{{ session.title }}</h1>
+
+    <div class="session-header__meta">
+      {% if session.recordedAt != blank %}
+      <div class="session-header__meta-item">
+        <span class="session-header__meta-label">Date</span>
+        <span class="session-header__meta-value">{{ session.recordedAt | formatDate }}</span>
+      </div>
+      {% endif %}
+      {% if session.sourceTool != blank %}
+      <div class="session-header__meta-item">
+        <span class="session-header__meta-label">Source</span>
+        <span class="session-header__meta-value">{{ session.sourceTool }}</span>
+      </div>
+      {% endif %}
+      <div class="session-header__meta-item">
+        <span class="session-header__meta-label">Duration</span>
+        <span class="session-header__meta-value">{{ session.durationMinutes | formatDuration }}</span>
+      </div>
+      {% if session.turns > 0 %}
+      <div class="session-header__meta-item">
+        <span class="session-header__meta-label">Turns</span>
+        <span class="session-header__meta-value">{{ session.turns }}</span>
+      </div>
+      {% endif %}
+      <div class="session-header__meta-item">
+        <span class="session-header__meta-label">LOC</span>
+        <span class="session-header__meta-value">{{ session.locChanged | formatLoc }}</span>
+      </div>
+      {% if session.filesChanged > 0 %}
+      <div class="session-header__meta-item">
+        <span class="session-header__meta-label">Files</span>
+        <span class="session-header__meta-value">{{ session.filesChanged }}</span>
+      </div>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="main-content">
+    <div class="page-layout">
+
+      <!-- Primary Column -->
+      <div>
+
+        <!-- Dev Take -->
+        {% if session.devTake != blank %}
+        <div class="dev-take reveal">
+          <div class="dev-take__label">Dev Take</div>
+          <p class="dev-take__text">{{ session.devTake }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Context -->
+        {% if session.context != blank %}
+        <section aria-label="Context" class="reveal" style="margin-block-end: 3rem;">
+          <h2 class="section-label">Context</h2>
+          <p style="font-size: 0.9375rem; color: var(--px-text-secondary); line-height: 1.7;">{{ session.context }}</p>
+        </section>
+        {% endif %}
+
+        <!-- Narrative -->
+        {% if session.narrative != blank %}
+        <section aria-label="Narrative" class="reveal" style="margin-block-end: 3rem;">
+          <h2 class="section-label">Narrative</h2>
+          <div class="narrative">
+            <p>{{ session.narrative }}</p>
+          </div>
+        </section>
+        {% endif %}
+
+        <!-- Execution Path (Beats) -->
+        {% if session.beats.size > 0 %}
+        <section aria-label="Execution path">
+          <h2 class="section-label reveal">Execution Path</h2>
+          <ol class="beats-list" data-beats>
+            {% for beat in session.beats %}
+            <li class="beat-item" data-beat-index="{{ forloop.index0 }}">
+              <div class="beat-item__dot" aria-hidden="true"></div>
+              <div class="beat-item__num">Beat {{ beat.stepNumber }}</div>
+              <h3 class="beat-item__title">{{ beat.title }}</h3>
+              {% if beat.body != blank %}
+              <p class="beat-item__desc">{{ beat.body }}</p>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ol>
+        </section>
+        {% endif %}
+
+        <!-- Q&A -->
+        {% if session.qaPairs.size > 0 %}
+        <section aria-label="Questions and answers">
+          <h2 class="section-label reveal">Q&amp;A</h2>
+          <div class="qa-list" data-qa-list>
+            {% for qa in session.qaPairs %}
+            <article class="qa-card" data-qa-index="{{ forloop.index0 }}">
+              <h3 class="qa-card__q">{{ qa.question }}</h3>
+              <p class="qa-card__a">{{ qa.answer }}</p>
+            </article>
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
+
+        <!-- Highlights -->
+        {% if session.highlights.size > 0 %}
+        <section aria-label="Highlights" class="reveal" style="margin-block-end: 3rem;">
+          <h2 class="section-label">Highlights</h2>
+          <ol class="decisions-list">
+            {% for h in session.highlights %}
+            <li>{{ h }}</li>
+            {% endfor %}
+          </ol>
+        </section>
+        {% endif %}
+
+        <!-- Agent Summary -->
+        {% if session.agentSummary %}
+        <section class="agent-section" aria-label="Agent summary">
+          <h2 class="section-label reveal">Agent Summary</h2>
+          {% if session.agentSummary.agents.size > 0 %}
+          <div class="agent-bars" data-agent-bars>
+            {% for agent in session.agentSummary.agents %}
+            <div class="agent-bar reveal">
+              <span class="agent-bar__role">{{ agent.role }}</span>
+              <div class="agent-bar__track">
+                <div class="agent-bar__fill" data-bar-width="{{ agent.percentage | default: 50 }}" style="width: 0%; background: var(--px-accent-blue);"></div>
+              </div>
+              {% if agent.durationMinutes %}
+              <span class="agent-bar__duration">{{ agent.durationMinutes | formatDuration }}</span>
+              {% endif %}
+              {% if agent.locChanged %}
+              <span class="agent-bar__loc">{{ agent.locChanged }}</span>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </section>
+        {% endif %}
+
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="sidebar" aria-label="Session details">
+
+        {% if session.toolBreakdown.size > 0 %}
+        <div class="sidebar-card">
+          <h2 class="sidebar-card__title">Tools Used</h2>
+          <ul class="tool-list">
+            {% for tool in session.toolBreakdown %}
+            <li class="tool-item">
+              <span class="tool-item__name">{{ tool.tool }}</span>
+              <span class="tool-item__count">{{ tool.count }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        {% if session.topFiles.size > 0 %}
+        <div class="sidebar-card">
+          <h2 class="sidebar-card__title">Files Changed</h2>
+          <ul class="file-list">
+            {% for file in session.topFiles %}
+            <li class="file-item">
+              <span class="file-item__path">{{ file.path }}</span>
+              <span class="file-item__diff">+{{ file.additions }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        {% if session.skills.size > 0 %}
+        <div class="sidebar-card">
+          <h2 class="sidebar-card__title">Skills</h2>
+          <div class="sidebar-skills">
+            {% for skill in session.skills %}
+            <span class="sidebar-skill">{{ skill }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="sidebar-card">
+          <h2 class="sidebar-card__title">Session Info</h2>
+          <dl class="session-info-list">
+            <div class="session-info-row">
+              <dt class="session-info-label">Duration</dt>
+              <dd class="session-info-value">{{ session.durationMinutes | formatDuration }}</dd>
+            </div>
+            {% if session.turns > 0 %}
+            <div class="session-info-row">
+              <dt class="session-info-label">Turns</dt>
+              <dd class="session-info-value">{{ session.turns }}</dd>
+            </div>
+            {% endif %}
+            <div class="session-info-row">
+              <dt class="session-info-label">LOC Changed</dt>
+              <dd class="session-info-value">{{ session.locChanged | formatLoc }}</dd>
+            </div>
+            {% if session.filesChanged > 0 %}
+            <div class="session-info-row">
+              <dt class="session-info-label">Files Changed</dt>
+              <dd class="session-info-value">{{ session.filesChanged }}</dd>
+            </div>
+            {% endif %}
+            {% if session.sourceTool != blank %}
+            <div class="session-info-row">
+              <dt class="session-info-label">Source</dt>
+              <dd class="session-info-value">{{ session.sourceTool }}</dd>
+            </div>
+            {% endif %}
+          </dl>
+        </div>
+
+      </aside>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <p>Built with <a href="https://heyi.am">heyi.am</a> &mdash; signal over noise.</p>
+  </footer>
+
+  <!-- JavaScript: Parallax, Entrance Animations -->
+  <script>
+  (function() {
+    'use strict';
+
+    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var isMobile = window.innerWidth < 769;
+    var ticking = false;
+
+    var parallaxElements = [];
+
+    function cacheParallaxElements() {
+      parallaxElements = [];
+      var els = document.querySelectorAll('[data-parallax]');
+      for (var i = 0; i < els.length; i++) {
+        parallaxElements.push({
+          el: els[i],
+          speed: parseFloat(els[i].dataset.parallax)
+        });
+      }
+    }
+
+    function updateParallax() {
+      if (prefersReducedMotion.matches || isMobile) {
+        ticking = false;
+        return;
+      }
+      var vh = window.innerHeight;
+      for (var i = 0; i < parallaxElements.length; i++) {
+        var item = parallaxElements[i];
+        var rect = item.el.getBoundingClientRect();
+        var elementCenter = rect.top + rect.height * 0.5;
+        var viewportCenter = vh * 0.5;
+        var centerOffset = (elementCenter - viewportCenter) / vh;
+        var offset = centerOffset * item.speed * 100;
+        if (offset > 30) offset = 30;
+        if (offset < -30) offset = -30;
+        item.el.style.transform = 'translateY(' + offset + 'px)';
+      }
+      ticking = false;
+    }
+
+    function onScroll() {
+      if (!ticking) {
+        requestAnimationFrame(updateParallax);
+        ticking = true;
+      }
+    }
+
+    function initReveal() {
+      var reveals = document.querySelectorAll('.reveal');
+      if (!reveals.length) return;
+      if (prefersReducedMotion.matches) {
+        for (var i = 0; i < reveals.length; i++) {
+          reveals[i].classList.add('reveal--visible');
+        }
+        return;
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('reveal--visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+      for (var j = 0; j < reveals.length; j++) {
+        observer.observe(reveals[j]);
+      }
+    }
+
+    function initBeats() {
+      var beats = document.querySelectorAll('.beat-item');
+      if (!beats.length) return;
+      if (prefersReducedMotion.matches || isMobile) {
+        for (var i = 0; i < beats.length; i++) {
+          beats[i].classList.add('beat-visible');
+        }
+        return;
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            var idx = parseInt(entry.target.dataset.beatIndex, 10);
+            setTimeout(function() {
+              entry.target.classList.add('beat-visible');
+            }, idx * 150);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+      for (var j = 0; j < beats.length; j++) {
+        observer.observe(beats[j]);
+      }
+    }
+
+    function initQACards() {
+      var cards = document.querySelectorAll('.qa-card');
+      if (!cards.length) return;
+      if (prefersReducedMotion.matches || isMobile) {
+        for (var i = 0; i < cards.length; i++) {
+          cards[i].classList.add('qa-visible');
+        }
+        return;
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            var idx = parseInt(entry.target.dataset.qaIndex, 10);
+            setTimeout(function() {
+              entry.target.classList.add('qa-visible');
+            }, idx * 200);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+      for (var j = 0; j < cards.length; j++) {
+        observer.observe(cards[j]);
+      }
+    }
+
+    function initBars() {
+      var bars = document.querySelectorAll('[data-bar-width]');
+      if (!bars.length) return;
+      if (prefersReducedMotion.matches) {
+        for (var i = 0; i < bars.length; i++) {
+          bars[i].style.width = bars[i].dataset.barWidth + '%';
+        }
+        return;
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            var bar = entry.target;
+            bar.style.width = bar.dataset.barWidth + '%';
+            observer.unobserve(bar);
+          }
+        });
+      }, { threshold: 0.1 });
+      for (var i = 0; i < bars.length; i++) {
+        observer.observe(bars[i]);
+      }
+    }
+
+    function onResize() {
+      isMobile = window.innerWidth < 769;
+      if (isMobile) {
+        for (var i = 0; i < parallaxElements.length; i++) {
+          parallaxElements[i].el.style.transform = '';
+        }
+      }
+    }
+
+    function init() {
+      cacheParallaxElements();
+      initReveal();
+      initBeats();
+      initQACards();
+      initBars();
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onResize, { passive: true });
+      prefersReducedMotion.addEventListener('change', function() {
+        if (prefersReducedMotion.matches) {
+          for (var i = 0; i < parallaxElements.length; i++) {
+            parallaxElements[i].el.style.transform = '';
+          }
+        }
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+  </script>
+
 </div>

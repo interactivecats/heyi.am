@@ -1,35 +1,56 @@
 <div class="heyiam-session ember" data-render-version="2" data-template="ember">
 
-  <div class="session-layout">
+  {%- comment -%} Breadcrumb {%- endcomment -%}
+  <div class="breadcrumb ember-section" aria-label="Breadcrumb">
+    <a href="/{{ user.username }}">{{ user.username }}</a>{% if projectSlug %}<span class="sep">/</span><a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>{% endif %}<span class="sep">/</span><span aria-current="page">{{ session.title }}</span>
+  </div>
 
-    {% render 'partials/_session-sidebar', session: session %}
+  {%- comment -%} Header {%- endcomment -%}
+  <header class="session-header ember-section">
+    <h1 class="session-title">{{ session.title }}</h1>
+    <div class="session-meta">
+      {% if session.recordedAt %}
+      <span class="session-meta-item"><span class="ember-pip" aria-hidden="true"></span>{{ session.recordedAt | formatDate }}</span>
+      {% endif %}
+      <span class="session-meta-item"><span class="ember-pip" aria-hidden="true"></span>{{ session.durationMinutes | formatDuration }}</span>
+      <span class="session-meta-item"><span class="ember-pip" aria-hidden="true"></span>{{ session.turns }} turns</span>
+      <span class="session-meta-item"><span class="ember-pip" aria-hidden="true"></span>{{ session.locChanged | localeNumber }} LOC</span>
+      <span class="session-meta-item"><span class="ember-pip" aria-hidden="true"></span>{{ session.filesChanged }} file{% if session.filesChanged != 1 %}s{% endif %}</span>
+    </div>
+    {% if session.sourceTool %}
+    <div class="session-source">{{ session.sourceTool }}</div>
+    {% endif %}
+  </header>
 
-    <main class="session-main">
+  {%- comment -%} Dev Take {%- endcomment -%}
+  {% if session.devTake %}
+  <section class="ember-section" aria-label="Developer take">
+    <div class="dev-take">
+      <div class="dev-take-label">Dev Take</div>
+      <p>{{ session.devTake }}</p>
+    </div>
+  </section>
+  {% endif %}
 
-      {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
+  {%- comment -%} Content + Sidebar Layout {%- endcomment -%}
+  <div class="content-layout">
 
-      {% render 'partials/_session-header', session: session %}
-
-      {% if session.skills.size > 0 %}
-      <section class="content-section">
-        <div class="chip-list">
-          {% for skill in session.skills %}
-          <span class="chip chip--violet">{{ skill }}</span>
-          {% endfor %}
+    {%- comment -%} Main Content Column {%- endcomment -%}
+    <div>
+      {%- comment -%} Narrative {%- endcomment -%}
+      {% if session.narrative %}
+      <section class="ember-section" aria-label="Session narrative">
+        <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Narrative</h2>
+        <div class="narrative">
+          <p>{{ session.narrative }}</p>
         </div>
       </section>
       {% endif %}
 
-      {% if session.narrative != blank %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Narrative</h2>
-        <p>{{ session.narrative }}</p>
-      </section>
-      {% endif %}
-
+      {%- comment -%} Highlights {%- endcomment -%}
       {% if session.highlights.size > 0 %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Highlights</h2>
+      <section class="ember-section" aria-label="Session highlights">
+        <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Highlights</h2>
         <ul class="highlights-list">
           {% for h in session.highlights %}
           <li>{{ h }}</li>
@@ -38,10 +59,162 @@
       </section>
       {% endif %}
 
-      {% render 'partials/_beats', session: session %}
+      {%- comment -%} Execution Path (Beats) {%- endcomment -%}
+      {% if session.beats.size > 0 %}
+      <section class="ember-section" aria-label="Execution path">
+        <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Execution Path</h2>
+        <div class="beats">
+          {% for beat in session.beats %}
+          <div class="beat-item">
+            <div class="beat-dot" data-num="{{ beat.stepNumber }}" aria-hidden="true"></div>
+            <div class="beat-title">{{ beat.title }}</div>
+            <div class="beat-desc">{{ beat.body }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
 
-      {% render 'partials/_qa', session: session %}
+      {%- comment -%} Q&A {%- endcomment -%}
+      {% if session.qaPairs.size > 0 %}
+      <section class="ember-section" aria-label="Questions and answers">
+        <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Q&amp;A</h2>
+        <ul class="qa-list">
+          {% for qa in session.qaPairs %}
+          <li class="qa-item">
+            <div class="qa-question">{{ qa.question }}</div>
+            <div class="qa-answer">{{ qa.answer }}</div>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
 
-    </main>
+      {%- comment -%} Agent Summary {%- endcomment -%}
+      {% if session.agentSummary %}
+      <section class="ember-section" aria-label="Agent summary">
+        <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Agent Summary</h2>
+        <div class="agent-summary-card">
+          {% assign agent_colors = '#7c3aed,#0891b2,#059669,#475569,#e11d48,#d97706' | split: ',' %}
+          {% assign maxAgentLoc = 0 %}
+          {% for agent in session.agentSummary.agents %}
+            {% if agent.loc_changed > maxAgentLoc %}
+              {% assign maxAgentLoc = agent.loc_changed %}
+            {% endif %}
+          {% endfor %}
+          <table class="agent-table" aria-label="Agent role breakdown for this session">
+            <thead class="visually-hidden">
+              <tr><th>Role</th><th>Duration</th><th>LOC</th><th>Proportion</th></tr>
+            </thead>
+            <tbody>
+              {% for agent in session.agentSummary.agents %}
+              {% assign colorIdx = forloop.index0 | modulo: 6 %}
+              <tr>
+                <td>
+                  <span class="agent-role">
+                    <span class="agent-dot" style="background: {{ agent_colors[colorIdx] }}" aria-hidden="true"></span>
+                    {{ agent.role }}
+                  </span>
+                </td>
+                <td>{{ agent.duration_minutes }}m</td>
+                <td>{{ agent.loc_changed }}</td>
+                <td class="agent-bar-cell">
+                  {% if maxAgentLoc > 0 %}
+                  {% assign barPct = agent.loc_changed | times: 100 | divided_by: maxAgentLoc %}
+                  {% else %}
+                  {% assign barPct = 0 %}
+                  {% endif %}
+                  <div class="agent-bar" style="width: {{ barPct }}%; background: {{ agent_colors[colorIdx] }}"></div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      {% endif %}
+    </div>
+
+    {%- comment -%} Sidebar {%- endcomment -%}
+    <aside class="sidebar" aria-label="Session details">
+
+      {%- comment -%} Tools Used {%- endcomment -%}
+      {% if session.toolBreakdown.size > 0 %}
+      <div class="sidebar-card">
+        <div class="sidebar-card-title">Tools Used</div>
+        {% assign maxToolCount = 0 %}
+        {% for t in session.toolBreakdown %}
+          {% if t.count > maxToolCount %}
+            {% assign maxToolCount = t.count %}
+          {% endif %}
+        {% endfor %}
+        <table class="tools-table" aria-label="Tool usage counts">
+          <tbody>
+            {% for t in session.toolBreakdown %}
+            <tr>
+              <td>{{ t.tool }}</td>
+              <td>{% if maxToolCount > 0 %}{% assign barWidth = t.count | times: 72 | divided_by: maxToolCount %}<span class="tool-bar" style="width: {{ barWidth }}px" aria-hidden="true"></span> {% endif %}{{ t.count }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Files Changed {%- endcomment -%}
+      {% if session.topFiles.size > 0 %}
+      <div class="sidebar-card">
+        <div class="sidebar-card-title">Files Changed</div>
+        <ul class="files-list" aria-label="Files changed in this session">
+          {% for f in session.topFiles %}
+          <li>
+            <span class="file-path" title="{{ f.path }}">{{ f.path }}</span>
+            <span class="file-diff">+{{ f.additions }}{% if f.deletions > 0 %} -{{ f.deletions }}{% endif %}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Skills {%- endcomment -%}
+      {% if session.skills.size > 0 %}
+      <div class="sidebar-card">
+        <div class="sidebar-card-title">Skills</div>
+        <div class="sidebar-skills">
+          {% for skill in session.skills %}
+          <span class="skill-chip">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </aside>
+
   </div>
+
+  {%- comment -%} Footer {%- endcomment -%}
+  <footer class="footer">
+    <p>Built with <a href="https://heyi.am">heyi.am</a></p>
+  </footer>
+
+  {%- comment -%} Section fade-in animation {%- endcomment -%}
+  <script>
+  (function() {
+    var sections = document.querySelectorAll('.ember-section');
+    if (!window.IntersectionObserver) {
+      sections.forEach(function(s) { s.classList.add('visible'); });
+      return;
+    }
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    sections.forEach(function(s) { observer.observe(s); });
+  })();
+  </script>
+
 </div>

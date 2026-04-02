@@ -1,60 +1,215 @@
 <div class="heyiam-portfolio signal" data-render-version="2" data-template="signal" data-username="{{ user.username }}">
 
-  <h1 class="project-title">{{ user.displayName }}</h1>
-  {% if user.bio != blank %}
-  <p class="narrative-text">{{ user.bio }}</p>
-  {% endif %}
+  <a href="#main" class="skip-link">Skip to content</a>
 
-  {%- comment -%} Stats grid {%- endcomment -%}
-  <div class="stat-grid" role="list" aria-label="Portfolio statistics">
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Projects</div>
-      <div class="stat-card__value">{{ projects.size }}</div>
-    </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Sessions</div>
-      <div class="stat-card__value">{{ totalSessions }}</div>
-    </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Lines</div>
-      <div class="stat-card__value">{{ totalLoc | formatLoc }}</div>
-    </div>
-  </div>
-
-  {%- comment -%} Leverage: single-line status readout {%- endcomment -%}
-  {% if efficiencyMultiplier %}
-  <div class="signal-leverage-readout" role="status" aria-label="Leverage status">
-    <span class="signal-leverage-readout__label">LEVERAGE</span>
-    <span class="signal-leverage-readout__multiplier" style="color: var(--accent, #ef4444);">{{ efficiencyMultiplier }}</span>
-    <span class="signal-leverage-readout__sep" aria-hidden="true">|</span>
-    <span class="signal-leverage-readout__human" style="opacity: 0.5;">you {{ totalDurationMinutes | formatDuration }}</span>
-    <span class="signal-leverage-readout__sep" aria-hidden="true">|</span>
-    <span class="signal-leverage-readout__agent" style="color: var(--accent, #ef4444);">agents {{ totalAgentDurationMinutes | formatDuration }}</span>
-  </div>
-  {% else %}
-  <div class="signal-leverage-readout" role="status">
-    <span class="signal-leverage-readout__label">TIME</span>
-    <span class="signal-leverage-readout__multiplier">{{ totalDurationMinutes | formatDuration }}</span>
-  </div>
-  {% endif %}
-
-  {%- comment -%} Projects list {%- endcomment -%}
-  {% if projects.size > 0 %}
-  <div class="card">
-    <div class="section-header">
-      <h3 class="section-header__title">Projects</h3>
-    </div>
-    <div class="session-grid">
-      {% for project in projects %}
-      <div class="session-card">
-        <h4 class="session-card__title">{{ project.title }}</h4>
-        <span class="session-card__meta">{{ project.totalSessions }} sessions &middot; {{ project.totalLoc | formatLoc }} lines</span>
+  {%- comment -%} Dashboard Strip {%- endcomment -%}
+  <section class="dashboard-strip" aria-label="Portfolio statistics">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat-cell">
+          <div class="stat-value" data-animate data-target="{{ projects.size }}">0</div>
+          <div class="stat-label">Projects</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value" data-animate data-target="{{ totalSessions }}">0</div>
+          <div class="stat-label">Sessions</div>
+        </div>
+        {% if efficiencyMultiplier %}
+        <div class="stat-cell--leverage-group">
+          <div class="stat-cell">
+            <div class="stat-value">{{ totalDurationMinutes | formatDuration }}</div>
+            <div class="stat-label">You</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-value green">{{ totalAgentDurationMinutes | formatDuration }}</div>
+            <div class="stat-label">Agents</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-value green">{{ efficiencyMultiplier }}</div>
+            <div class="stat-label">Multi</div>
+          </div>
+        </div>
+        {% else %}
+        <div class="stat-cell">
+          <div class="stat-value">{{ totalDurationMinutes | formatDuration }}</div>
+          <div class="stat-label">Time</div>
+        </div>
+        {% endif %}
+        <div class="stat-cell">
+          <div class="stat-value" data-animate data-target="{{ totalLoc }}">0</div>
+          <div class="stat-label">Lines Changed</div>
+        </div>
       </div>
-      {% endfor %}
     </div>
-  </div>
-  {% endif %}
+  </section>
 
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  {%- comment -%} Main Content {%- endcomment -%}
+  <main id="main" class="container">
+
+    {%- comment -%} Identity {%- endcomment -%}
+    <section class="identity fade-in" aria-label="Developer identity">
+      <div class="identity-profile">
+        {% if user.photoUrl %}
+        <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="identity-photo" width="100" height="100">
+        {% endif %}
+        <div class="identity-details">
+          <div class="identity-top">
+            <div>
+              <h1>{{ user.displayName }}</h1>
+              {% if user.bio != blank %}
+              <p class="identity-bio">{{ user.bio }}</p>
+              {% endif %}
+              {% if user.location != blank %}
+              <p class="identity-location">{{ user.location }}</p>
+              {% endif %}
+            </div>
+            {% if user.status != blank %}
+            <div class="identity-status" aria-label="Status: {{ user.status }}">
+              <span class="status-dot" aria-hidden="true"></span>
+              {{ user.status }}
+            </div>
+            {% endif %}
+          </div>
+          {% if user.email or user.linkedinUrl or user.githubUrl or user.twitterHandle or user.websiteUrl %}
+          <ul class="identity-contact" aria-label="Contact and social links">
+            {% if user.email %}
+            <li><a href="mailto:{{ user.email }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg>{{ user.email }}</a></li>
+            {% endif %}
+            {% if user.linkedinUrl %}
+            <li><a href="{{ user.linkedinUrl }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>LinkedIn</a></li>
+            {% endif %}
+            {% if user.githubUrl %}
+            <li><a href="{{ user.githubUrl }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>GitHub</a></li>
+            {% endif %}
+            {% if user.twitterHandle %}
+            <li><a href="https://x.com/{{ user.twitterHandle }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>@{{ user.twitterHandle }}</a></li>
+            {% endif %}
+            {% if user.websiteUrl %}
+            <li><a href="{{ user.websiteUrl }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>{{ user.websiteUrl | stripProtocol }}</a></li>
+            {% endif %}
+          </ul>
+          {% endif %}
+          {% if user.resumeUrl %}
+          <a href="{{ user.resumeUrl }}" class="identity-resume"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>Download Resume</a>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    {%- comment -%} Projects Table {%- endcomment -%}
+    {% if projects.size > 0 %}
+    <section class="fade-in" aria-label="Projects">
+      <div class="section-header">
+        <h2>Projects</h2>
+        <span class="section-tag">{{ projects.size }} total</span>
+        <div class="section-line" aria-hidden="true"></div>
+      </div>
+      <div class="project-table-wrap" role="region" aria-label="Projects table" tabindex="0">
+        <table class="project-table">
+          <thead>
+            <tr>
+              <th scope="col">Project</th>
+              <th scope="col">Sessions</th>
+              <th scope="col">Hours</th>
+              <th scope="col">LOC</th>
+              <th scope="col">Skills</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in projects %}
+            <tr>
+              <td>
+                <div class="project-name"><a href="/{{ user.username }}/{{ p.slug }}">{{ p.title }}</a></div>
+                {% if p.narrative != blank %}
+                <div class="project-narrative">{{ p.narrative }}</div>
+                {% endif %}
+              </td>
+              <td class="stat-mono">{{ p.totalSessions }}</td>
+              <td class="stat-mono">{{ p.totalDurationMinutes | formatDuration }}</td>
+              <td class="stat-mono stat-green">{{ p.totalLoc | localeNumber }}</td>
+              <td>
+                {% if p.skills.size > 0 %}
+                <div class="skill-badges">
+                  {% for skill in p.skills %}
+                  <span class="skill-badge strong">{{ skill }}</span>
+                  {% endfor %}
+                </div>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% endif %}
+
+  </main>
+
+  {%- comment -%} Footer {%- endcomment -%}
+  <footer class="footer">
+    <div class="container">
+      signal template &middot; heyi.am
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      var DURATION = 600;
+      var counters = document.querySelectorAll('.stat-value[data-animate]');
+
+      function formatNumber(n) {
+        return n >= 1000 ? n.toLocaleString() : String(n);
+      }
+
+      function animateCounter(el) {
+        var target = parseInt(el.getAttribute('data-target'), 10);
+        if (isNaN(target)) return;
+        var start = performance.now();
+        el.classList.add('counted');
+
+        function tick(now) {
+          var elapsed = now - start;
+          var progress = Math.min(elapsed / DURATION, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          var current = Math.round(eased * target);
+          el.textContent = formatNumber(current);
+          if (progress < 1) {
+            requestAnimationFrame(tick);
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+
+      if ('IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              animateCounter(entry.target);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.5 });
+        counters.forEach(function(el) { observer.observe(el); });
+      } else {
+        counters.forEach(function(el) { animateCounter(el); });
+      }
+
+      var fadeEls = document.querySelectorAll('.fade-in');
+      if ('IntersectionObserver' in window) {
+        var fadeObserver = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              fadeObserver.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.1 });
+        fadeEls.forEach(function(el) { fadeObserver.observe(el); });
+      } else {
+        fadeEls.forEach(function(el) { el.classList.add('visible'); });
+      }
+    })();
+  </script>
 
 </div>

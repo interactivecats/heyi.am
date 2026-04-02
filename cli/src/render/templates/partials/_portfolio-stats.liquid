@@ -3,6 +3,17 @@
   <div class="stat-card" role="listitem"><div class="stat-card__value">{{ totalSessions }}</div><div class="stat-card__label">Sessions</div></div>
   <div class="stat-card" role="listitem"><div class="stat-card__value">{{ totalLoc | formatLoc }}</div><div class="stat-card__label">Lines Changed</div></div>
   {% unless hideDuration %}
+  {% if efficiencyMultiplier %}
+  <div class="stat-card" role="listitem">
+    <div class="stat-card__value">{{ totalDurationMinutes | formatDuration }}</div>
+    <div class="stat-card__label">You</div>
+  </div>
+  <div class="stat-card" role="listitem">
+    <div class="stat-card__value" style="color: var(--accent, #084471);">{{ totalAgentDurationMinutes | formatDuration }}</div>
+    <div class="stat-card__label">Agents</div>
+  </div>
+  {% else %}
   <div class="stat-card" role="listitem"><div class="stat-card__value">{{ totalDurationMinutes | formatDuration }}</div><div class="stat-card__label">Total Time</div></div>
+  {% endif %}
   {% endunless %}
 </div>

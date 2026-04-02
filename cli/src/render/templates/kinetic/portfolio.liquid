@@ -1,17 +1,182 @@
 <div class="heyiam-portfolio kinetic" data-render-version="2" data-template="kinetic" data-username="{{ user.username }}">
 
-  {%- comment -%} Hero row: header + stats side by side {%- endcomment -%}
-  <div class="kinetic-hero">
-    <div class="kinetic-hero__title-block">
-      {% render 'partials/_portfolio-header', user: user %}
+  {%- comment -%} Hero {%- endcomment -%}
+  <section class="hero" aria-label="Developer profile">
+    <div class="hero-bg-text" aria-hidden="true">{{ user.username }}</div>
+    <div class="hero-content">
+      <div class="eyebrow">Developer Portfolio</div>
+      <div class="hero-profile-row">
+        {% if user.photoUrl %}
+        <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="profile-photo">
+        {% endif %}
+        <div>
+          <h1>{{ user.displayName }}</h1>
+          {% if user.bio %}
+          <p class="hero-bio">{{ user.bio }}</p>
+          {% endif %}
+          {% if user.location %}
+          <span class="hero-location">{{ user.location }}</span>
+          {% endif %}
+          <div class="contact-row">
+            {% if user.email %}
+            <a href="mailto:{{ user.email }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg> {{ user.email }}</a>
+            {% endif %}
+            {% if user.linkedinUrl %}
+            <a href="{{ user.linkedinUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg> LinkedIn</a>
+            {% endif %}
+            {% if user.githubUrl %}
+            <a href="{{ user.githubUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg> GitHub</a>
+            {% endif %}
+            {% if user.twitterHandle %}
+            <a href="https://x.com/{{ user.twitterHandle }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> @{{ user.twitterHandle }}</a>
+            {% endif %}
+            {% if user.websiteUrl %}
+            <a href="{{ user.websiteUrl }}" target="_blank" rel="noopener">{{ user.websiteUrl | stripProtocol }}</a>
+            {% endif %}
+            {% if user.resumeUrl %}
+            <a href="{{ user.resumeUrl }}" class="resume-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg> Resume (PDF)</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="kinetic-hero__stats">
-      {% render 'partials/_portfolio-stats', projects: projects, totalSessions: totalSessions, totalDurationMinutes: totalDurationMinutes, totalAgentDurationMinutes: totalAgentDurationMinutes, totalLoc: totalLoc, efficiencyMultiplier: efficiencyMultiplier %}
+  </section>
+
+  {%- comment -%} Stats row {%- endcomment -%}
+  <div class="stats-row" aria-label="Portfolio statistics">
+    <div class="stat-item">
+      <span class="stat-value"><span class="counter" data-target="{{ projects.size }}">0</span></span>
+      <span class="stat-label">Projects</span>
     </div>
+    <div class="stat-item">
+      <span class="stat-value"><span class="counter" data-target="{{ totalSessions }}">0</span></span>
+      <span class="stat-label">Sessions</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value"><span class="counter" data-target="{{ totalLoc }}" data-format="comma">0</span></span>
+      <span class="stat-label">Lines Changed</span>
+    </div>
+    {% if efficiencyMultiplier %}
+    <div class="stat-item stat-item--leverage">
+      <div class="leverage-row">
+        <span><span class="leverage-num">{{ totalDurationMinutes | formatDuration }}</span> <span class="leverage-sub">/ you</span></span>
+        <span><span class="leverage-num leverage-num--agent">{{ totalAgentDurationMinutes | formatDuration }}</span> <span class="leverage-sub">/ agents</span></span>
+        <span><span class="leverage-num leverage-num--multi">{{ efficiencyMultiplier }}</span> <span class="leverage-sub">leverage</span></span>
+      </div>
+      {% assign totalCombined = totalDurationMinutes | plus: totalAgentDurationMinutes %}
+      {% if totalCombined > 0 %}
+      {% assign humanPct = totalDurationMinutes | times: 100 | divided_by: totalCombined %}
+      {% assign agentPct = 100 | minus: humanPct %}
+      <div class="leverage-bar">
+        <div class="leverage-bar__human" style="width: {{ humanPct }}%;"></div>
+        <div class="leverage-bar__agent" style="width: {{ agentPct }}%;"></div>
+      </div>
+      <div class="leverage-legend">
+        <span>you &middot; {{ humanPct }}%</span>
+        <span>agents &middot; {{ agentPct }}%</span>
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="stat-item">
+      <span class="stat-value">{{ totalDurationMinutes | formatDuration }}</span>
+      <span class="stat-label">Total Time</span>
+    </div>
+    {% endif %}
   </div>
 
-  {% render 'partials/_portfolio-projects', projects: projects %}
+  {%- comment -%} Projects section {%- endcomment -%}
+  {% if projects.size > 0 %}
+  <section class="section" aria-label="Projects">
+    <div class="section-tag">Projects</div>
+    <h2 class="section-title">{{ projects.size }} project{{ projects.size | minus: 1 | at_least: 1 | times: 0 | plus: projects.size | minus: 1 }}{% if projects.size != 1 %}s{% endif %} built with AI</h2>
+    <p class="section-desc">Each project is a case study with real sessions, real decisions, and real stats.</p>
 
-  {% render 'partials/_footer' %}
+    <div class="projects-grid">
+      {% for p in projects %}
+      <a href="/{{ user.username }}/{{ p.slug }}" class="project-card">
+        <div class="project-chrome">
+          <div class="project-chrome-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div class="project-chrome-url">heyi.am/{{ user.username }}/{{ p.slug }}</div>
+        </div>
+        <div class="project-body">
+          <h3 class="project-card-title">{{ p.title }}</h3>
+          <div class="project-stats-row">
+            <div class="project-stat-item">
+              <span class="project-stat-value">{{ p.totalSessions }}</span>
+              <span class="project-stat-label">Sessions</span>
+            </div>
+            <div class="project-stat-item">
+              <span class="project-stat-value">{{ p.totalDurationMinutes | formatDuration }}</span>
+              <span class="project-stat-label">Total time</span>
+            </div>
+            <div class="project-stat-item">
+              <span class="project-stat-value">{{ p.totalLoc | localeNumber }}</span>
+              <span class="project-stat-label">Lines changed</span>
+            </div>
+          </div>
+          {% if p.narrative %}
+          <div class="narrative-card">{{ p.narrative }}</div>
+          {% endif %}
+          {% if p.skills.size > 0 %}
+          <div class="chips">
+            {% for skill in p.skills %}
+            <span>{{ skill }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Counter animation script {%- endcomment -%}
+  <script>
+    (function() {
+      var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var counters = document.querySelectorAll('.counter');
+
+      function formatNumber(n, fmt) {
+        if (fmt === 'comma') return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return n.toString();
+      }
+
+      function animateCounter(el) {
+        var target = parseInt(el.getAttribute('data-target'), 10);
+        var fmt = el.getAttribute('data-format') || '';
+
+        if (reducedMotion) {
+          el.textContent = formatNumber(target, fmt);
+          return;
+        }
+
+        var duration = 1200;
+        var startTime = null;
+
+        function step(timestamp) {
+          if (!startTime) startTime = timestamp;
+          var progress = Math.min((timestamp - startTime) / duration, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          var current = Math.round(eased * target);
+          el.textContent = formatNumber(current, fmt);
+          if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            animateCounter(entry.target);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.5 });
+
+      counters.forEach(function(c) { observer.observe(c); });
+    })();
+  </script>
 
 </div>

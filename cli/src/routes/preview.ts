@@ -3,12 +3,13 @@ import path from 'node:path';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { getAuthToken } from '../auth.js';
-import { loadEnhancedData, loadProjectEnhanceResult, getDefaultTemplate } from '../settings.js';
+import { loadEnhancedData, loadProjectEnhanceResult, getDefaultTemplate, getPortfolioProfile } from '../settings.js';
 import { SCREENSHOTS_DIR } from '../screenshot.js';
-import { renderProjectHtml, renderSessionHtml } from '../render/index.js';
+import { renderProjectHtml, renderSessionHtml, renderPortfolioHtml } from '../render/index.js';
 import { getTemplateCss, isValidTemplate } from '../render/templates.js';
+import { getMockPortfolioData, getMockProjectData, getMockProjectArc, getMockFullSessions, getMockSessionData } from '../render/mock-data.js';
 import { buildSessionRenderData, buildSessionCard, buildProjectRenderData } from '../render/build-render-data.js';
-import type { SessionCard, ProjectRenderData } from '../render/types.js';
+import type { SessionCard, ProjectRenderData, PortfolioRenderData, PortfolioProject } from '../render/types.js';
 import { buildAgentSummary, type RouteContext } from './context.js';
 import { displayNameFromDir } from '../sync.js';
 
@@ -22,6 +23,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  */
 const previewDataCache = new Map<string, { data: { renderData: ProjectRenderData; enhanceResult: any; projName: string }; ts: number }>();
 const PREVIEW_CACHE_TTL = 30_000;
+
+/** Clear the preview data cache. Exported for testing. */
+export function clearPreviewCache(): void {
+  previewDataCache.clear();
+}
 
 /**
  * Build project render data and enhance result from a project parameter.
@@ -187,8 +193,8 @@ class ProjectNotFoundError extends Error {
 export function createPreviewRouter(ctx: RouteContext): Router {
   const router = Router();
 
-  // Serve template mockup previews (static HTML with mock data — instant, no processing)
-  // Used by the template browser for fast previews
+  // Serve template previews with mock data.
+  // Tries static mockup HTML first (fast), falls back to Liquid rendering.
   router.get('/preview/template/:name', (req: Request, res: Response) => {
     const name = String(req.params.name);
     if (!isValidTemplate(name)) {
@@ -196,13 +202,12 @@ export function createPreviewRouter(ctx: RouteContext): Router {
       return;
     }
     const page = (req.query.page as string) || 'project';
-    // Look for mockup files in docs/mockups/{name}/{page}.html
+
+    // 1. Try static mockup HTML (instant, from docs/mockups/)
     const mockupPath = path.resolve(__dirname, '..', '..', '..', 'docs', 'mockups', name, `${page}.html`);
     if (existsSync(mockupPath)) {
       let html = readFileSync(mockupPath, 'utf-8');
-      // Rewrite relative asset paths so images load correctly
       html = html.replace(/\.\.\/assets\//g, '/preview/template-assets/');
-      // Rewrite relative page links to point to the mockup versions
       html = html.replace(/\.\/portfolio\.html/g, `/preview/template/${name}?page=portfolio`);
       html = html.replace(/\.\/project\.html/g, `/preview/template/${name}?page=project`);
       html = html.replace(/\.\/session\.html/g, `/preview/template/${name}?page=session`);
@@ -210,8 +215,48 @@ export function createPreviewRouter(ctx: RouteContext): Router {
       res.setHeader('Cache-Control', 'public, max-age=3600');
       res.setHeader('X-Frame-Options', 'SAMEORIGIN');
       res.send(html);
-    } else {
-      res.status(404).send('Mockup not found');
+      return;
+    }
+
+    // 2. Fall back to Liquid rendering with mock data
+    try {
+      let bodyHtml: string;
+      if (page === 'portfolio') {
+        bodyHtml = renderPortfolioHtml(getMockPortfolioData(), name);
+      } else if (page === 'session') {
+        bodyHtml = renderSessionHtml(getMockSessionData(), name);
+      } else {
+        bodyHtml = renderProjectHtml(getMockProjectData(), { arc: getMockProjectArc(), fullSessions: getMockFullSessions() }, name);
+      }
+      const css = getTemplateCss(name);
+      const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="heyiam-api-base" content="/api" />
+  <title>${name} — ${page} preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Newsreader:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>${css}
+/* Preview override */
+body { overflow: auto !important; min-height: auto !important; }
+#root { min-height: auto !important; }
+</style>
+</head>
+<body>
+  ${bodyHtml}
+  <script src="/heyiam-mount.js"></script>
+</body>
+</html>`;
+      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+      res.send(fullHtml);
+    } catch (err) {
+      console.error(`[preview/template] Liquid render failed for ${name}/${page}:`, (err as Error).message);
+      res.status(500).send('Template render failed');
     }
   });
 
@@ -309,20 +354,24 @@ export function createPreviewRouter(ctx: RouteContext): Router {
         projectUrl: req.query.projectUrl as string | undefined,
       });
 
+      // Override sessionBaseUrl so Liquid generates SPA-friendly /session/:id links
+      // (the cached renderData uses /preview/project/... URLs for the standalone preview)
+      const spaRenderData = { ...renderData, sessionBaseUrl: '/session' };
+
       // Use template override if valid, otherwise fall back to user default
       let templateName = (templateOverride && isValidTemplate(templateOverride))
         ? templateOverride
         : (getDefaultTemplate() || 'editorial');
       let html: string;
       try {
-        html = renderProjectHtml(renderData, { arc: enhanceResult?.arc }, templateName);
+        html = renderProjectHtml(spaRenderData, { arc: enhanceResult?.arc }, templateName);
       } catch {
         // Template files may not exist yet (e.g. showcase) -- fall back to editorial
         templateName = 'editorial';
-        html = renderProjectHtml(renderData, { arc: enhanceResult?.arc }, templateName);
+        html = renderProjectHtml(spaRenderData, { arc: enhanceResult?.arc }, templateName);
       }
       const css = getTemplateCss(templateName);
-      const screenshotUrl = renderData.project.screenshotUrl || undefined;
+      const screenshotUrl = spaRenderData.project.screenshotUrl || undefined;
 
       res.json({ html, css, template: templateName, screenshotUrl });
     } catch (err) {
@@ -376,6 +425,96 @@ export function createPreviewRouter(ctx: RouteContext): Router {
     } catch (err) {
       console.error('[session-preview] Error:', (err as Error).message);
       res.status(500).send('Session preview failed');
+    }
+  });
+
+  // Portfolio preview -- serves full standalone HTML page with real user data
+  router.get('/preview/portfolio', async (_req: Request, res: Response) => {
+    try {
+      const profile = getPortfolioProfile();
+      const auth = getAuthToken();
+      const templateName = getDefaultTemplate() || 'editorial';
+
+      // Build portfolio projects from real project data
+      const rawProjects = await ctx.getProjects();
+      const portfolioProjects: PortfolioProject[] = [];
+      let totalDuration = 0;
+      let totalAgentDuration = 0;
+      let totalLoc = 0;
+      let totalSessions = 0;
+
+      for (const rawProj of rawProjects) {
+        try {
+          const proj = await ctx.getProjectWithStats(rawProj) as Record<string, unknown>;
+          const cached = loadProjectEnhanceResult(rawProj.dirName);
+          const projDuration = (proj.totalDuration as number) || 0;
+          const projAgentDuration = (proj.totalAgentDuration as number) || 0;
+          const projLoc = (proj.totalLoc as number) || 0;
+          const projSessions = (proj.sessionCount as number) || 0;
+
+          totalDuration += projDuration;
+          totalAgentDuration += projAgentDuration;
+          totalLoc += projLoc;
+          totalSessions += projSessions;
+
+          const title = (cached as Record<string, unknown> | null)?.title as string | undefined
+            || (proj.name as string) || displayNameFromDir(rawProj.dirName);
+
+          portfolioProjects.push({
+            slug: rawProj.dirName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+            title,
+            narrative: cached?.result?.narrative || (proj.description as string) || '',
+            totalSessions: projSessions,
+            totalLoc: projLoc,
+            totalDurationMinutes: projDuration,
+            totalAgentDurationMinutes: projAgentDuration,
+            totalFilesChanged: (proj.totalFiles as number) || 0,
+            skills: cached?.result?.skills || (proj.skills as string[]) || [],
+            publishedCount: 0,
+          });
+        } catch { /* skip projects that fail */ }
+      }
+
+      // Build PortfolioRenderData from real profile or fall back to mock
+      let renderData: PortfolioRenderData;
+      if (profile.displayName) {
+        renderData = {
+          user: {
+            username: auth?.username || 'preview',
+            accent: '#084471',
+            displayName: profile.displayName,
+            bio: profile.bio || '',
+            location: profile.location || '',
+            status: 'active',
+            email: profile.email,
+            phone: profile.phone,
+            photoUrl: profile.photoBase64 || undefined,
+            linkedinUrl: profile.linkedinUrl,
+            githubUrl: profile.githubUrl,
+            twitterHandle: profile.twitterHandle,
+            websiteUrl: profile.websiteUrl,
+            resumeUrl: profile.resumeBase64 ? '#' : undefined,
+          },
+          projects: portfolioProjects,
+          totalDurationMinutes: totalDuration,
+          totalAgentDurationMinutes: totalAgentDuration || undefined,
+          totalLoc,
+          totalSessions,
+        };
+      } else {
+        // No profile yet — use mock data so the preview still renders
+        renderData = getMockPortfolioData();
+      }
+
+      const bodyHtml = renderPortfolioHtml(renderData, templateName);
+      res.type('html').send(ctx.buildPreviewPage(
+        `${renderData.user.displayName}'s Portfolio`,
+        bodyHtml,
+        'PREVIEW — this is how your portfolio will appear on heyi.am',
+      ));
+    } catch (err) {
+      console.error('[portfolio-preview] Error:', (err as Error).message);
+      res.status(500).send('Portfolio preview failed');
     }
   });
 

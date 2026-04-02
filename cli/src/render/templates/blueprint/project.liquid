@@ -1,0 +1,221 @@
+<div class="heyiam-project blueprint" data-render-version="2" data-template="blueprint"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
+
+  {%- comment -%} Crosshatch SVG defs {%- endcomment -%}
+  <svg class="bp-crosshatch-defs" aria-hidden="true">
+    <defs>
+      <pattern id="crosshatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="8" stroke="var(--accent, #64748b)" stroke-width="0.8" stroke-opacity="0.4"/>
+      </pattern>
+    </defs>
+  </svg>
+
+  {%- comment -%} Breadcrumb {%- endcomment -%}
+  {% render 'partials/_breadcrumb', user: user, projectSlug: project.slug %}
+
+  {%- comment -%} Hero {%- endcomment -%}
+  <section class="bp-hero" aria-label="Project overview">
+    <div class="bp-section-ref">
+      <span class="bp-ref-badge" aria-hidden="true">01</span>
+      <span class="bp-section-label">Project Spec</span>
+    </div>
+    <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+    {% if project.repoUrl or project.projectUrl %}
+    <p class="bp-hero-links">
+      {% if project.repoUrl %}
+        <a href="{{ project.repoUrl }}">{{ project.repoUrl | stripProtocol }}</a>
+      {% endif %}
+      {% if project.repoUrl and project.projectUrl %}
+        <span aria-hidden="true"> &middot; </span>
+      {% endif %}
+      {% if project.projectUrl %}
+        <a href="{{ project.projectUrl }}">{{ project.projectUrl | stripProtocol }}</a>
+      {% endif %}
+    </p>
+    {% endif %}
+
+    {% if project.screenshotUrl %}
+    <div class="bp-screenshot-frame">
+      <div class="bp-screenshot-chrome" aria-hidden="true">
+        <span class="bp-chrome-dot"></span>
+        <span class="bp-chrome-dot"></span>
+        <span class="bp-chrome-dot"></span>
+      </div>
+      <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" class="bp-screenshot-img">
+    </div>
+    {% endif %}
+  </section>
+
+  {%- comment -%} Stats {%- endcomment -%}
+  <section aria-label="Project statistics">
+    <div class="bp-stats-grid" role="list">
+      <div class="bp-stat-cell" role="listitem">
+        <div class="bp-stat-value">{{ project.totalSessions }}</div>
+        <div class="bp-stat-label">Sessions</div>
+      </div>
+      <div class="bp-stat-cell" role="listitem">
+        <div class="bp-stat-value">{{ project.totalLoc | localeNumber }}</div>
+        <div class="bp-stat-label">LOC</div>
+      </div>
+      <div class="bp-stat-cell" role="listitem">
+        <div class="bp-stat-value">{{ project.totalFilesChanged }}</div>
+        <div class="bp-stat-label">Files</div>
+      </div>
+      {% if project.totalTokens %}
+      <div class="bp-stat-cell" role="listitem">
+        <div class="bp-stat-value">{{ project.totalTokens | formatTokens }}</div>
+        <div class="bp-stat-label">Tokens</div>
+      </div>
+      {% endif %}
+    </div>
+    {% if efficiencyMultiplier %}
+    <div class="bp-dimension-leverage" role="img" aria-label="Leverage: {{ project.totalDurationMinutes | formatDuration }} human time, {{ project.totalAgentDurationMinutes | formatDuration }} agent time, {{ efficiencyMultiplier }} multiplier">
+      <div class="bp-dimension-leverage__labels">
+        <span class="bp-dimension-leverage__human">{{ project.totalDurationMinutes | formatDuration }} <small>you</small></span>
+        <span class="bp-dimension-leverage__value">{{ efficiencyMultiplier }}</span>
+        <span class="bp-dimension-leverage__agent">{{ project.totalAgentDurationMinutes | formatDuration }} <small>agents</small></span>
+      </div>
+      <div class="bp-dimension-leverage__line">
+        <div class="bp-dimension-leverage__tick"></div>
+        <div class="bp-dimension-leverage__bar">
+          <div class="bp-dimension-leverage__fill-human"></div>
+          <div class="bp-dimension-leverage__fill-agent"></div>
+        </div>
+        <div class="bp-dimension-leverage__tick"></div>
+      </div>
+    </div>
+    {% endif %}
+    <div class="bp-dim-line" aria-hidden="true">project metrics</div>
+  </section>
+
+  {%- comment -%} Narrative {%- endcomment -%}
+  {% if project.narrative != blank %}
+  <section class="bp-narrative-section" aria-label="Project narrative">
+    <div class="bp-section-ref">
+      <span class="bp-ref-badge" aria-hidden="true">02</span>
+      <span class="bp-section-label">Narrative</span>
+    </div>
+    <div class="bp-narrative">
+      <p>{{ project.narrative }}</p>
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Work Timeline chart mount {%- endcomment -%}
+  {% if sessionsJson %}
+  <section class="bp-timeline-section" aria-label="Work timeline">
+    <div class="bp-section-ref">
+      <span class="bp-ref-badge" aria-hidden="true">03</span>
+      <span class="bp-section-label">Work Timeline</span>
+    </div>
+    <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Growth chart mount {%- endcomment -%}
+  {% if growthJson %}
+  <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+  {% endif %}
+
+  {%- comment -%} Project Arc (Phases) {%- endcomment -%}
+  {% if arc.size > 0 %}
+  <section class="bp-phases-section" aria-label="Project phases">
+    <div class="bp-section-ref">
+      <span class="bp-ref-badge" aria-hidden="true">04</span>
+      <span class="bp-section-label">Project Arc</span>
+    </div>
+    <ol class="bp-phase-list">
+      {% for phase in arc %}
+      <li class="bp-phase-item">
+        <span class="bp-phase-num" aria-hidden="true">{{ phase.phase }}</span>
+        <div class="bp-phase-content">
+          <div class="bp-phase-name">{{ phase.title }}</div>
+          {% if phase.description != blank %}
+            <div class="bp-phase-desc">{{ phase.description }}</div>
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Skills {%- endcomment -%}
+  {% if project.skills.size > 0 %}
+  <section class="bp-skills-section" aria-label="Skills used">
+    <div class="bp-section-ref">
+      <span class="bp-ref-badge" aria-hidden="true">05</span>
+      <span class="bp-section-label">Skill Matrix</span>
+    </div>
+    <ul class="bp-skills-list">
+      {% for skill in project.skills %}
+        <li class="bp-skill-chip">{{ skill }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Source Breakdown {%- endcomment -%}
+  {% if sourceCounts.size > 0 %}
+  <section class="bp-source-section" aria-label="Source breakdown">
+    <div class="bp-section-ref">
+      <span class="bp-ref-badge" aria-hidden="true">06</span>
+      <span class="bp-section-label">Source Distribution</span>
+    </div>
+    <div class="bp-source-legend">
+      {% for sc in sourceCounts %}
+        <span>{{ sc.tool }} &mdash; {{ sc.count }} sessions</span>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Featured Sessions {%- endcomment -%}
+  {% if featuredSessions.size > 0 %}
+  <section class="bp-featured-section" aria-label="Featured sessions">
+    <div class="bp-section-ref">
+      <span class="bp-ref-badge" aria-hidden="true">07</span>
+      <span class="bp-section-label">Featured Sessions</span>
+    </div>
+    <div class="bp-featured-grid">
+      {% for s in featuredSessions %}
+      <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="bp-featured-card">
+        <div class="bp-featured-card-header">
+          <h3>{{ s.title }}</h3>
+          {% if s.sourceTool != blank %}
+            <span class="bp-featured-tag">{{ s.sourceTool }}</span>
+          {% endif %}
+        </div>
+        <div class="bp-featured-meta">
+          <span>{{ s.durationMinutes | formatDuration }}</span>
+          <span>{{ s.locChanged | localeNumber }} LOC</span>
+          <span>{{ s.filesChanged }} files</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Footer title block {%- endcomment -%}
+  <footer class="bp-footer" role="contentinfo">
+    <div class="bp-title-block">
+      <div class="bp-title-block-cell">
+        <div class="bp-title-block-label">DWG NO.</div>
+        <div class="bp-title-block-value">PROJECT-{{ project.slug | upcase }}-001</div>
+      </div>
+      <div class="bp-title-block-cell">
+        <div class="bp-title-block-label">REV</div>
+        <div class="bp-title-block-value">A</div>
+      </div>
+      <div class="bp-title-block-cell">
+        <div class="bp-title-block-label">Date</div>
+        <div class="bp-title-block-value">{{ "now" | date: "%Y-%m-%d" }}</div>
+      </div>
+    </div>
+    <div class="bp-footer-bottom">
+      <span>Blueprint Template</span>
+      <span>heyi.am</span>
+    </div>
+  </footer>
+
+</div>

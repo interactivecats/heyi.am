@@ -1,47 +1,233 @@
 <div class="heyiam-session glacier" data-render-version="2" data-template="glacier">
 
-  <div class="session-layout">
+  <div class="container">
 
-    {% render 'partials/_session-sidebar', session: session %}
+    {%- comment -%} Breadcrumb {%- endcomment -%}
+    <div class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/{{ user.username }}">{{ user.username }}</a>
+      {% if projectSlug %}
+      <span class="breadcrumb-sep">/</span>
+      <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
+      {% endif %}
+      <span class="breadcrumb-sep">/</span>
+      <span aria-current="page">{{ session.title }}</span>
+    </div>
 
-    <main class="session-main">
+    {%- comment -%} Session header {%- endcomment -%}
+    <header class="session-header">
+      <h1 class="session-title">{{ session.title }}</h1>
+      <div class="session-meta">
+        {% if session.recordedAt %}
+        <span class="session-meta-item">
+          <span class="session-meta-label">Date:</span>
+          <span class="session-meta-value">{{ session.recordedAt | formatDate }}</span>
+        </span>
+        {% endif %}
+        {% if session.sourceTool %}
+        <span class="session-meta-item">
+          <span class="source-badge">{{ session.sourceTool }}</span>
+        </span>
+        {% endif %}
+        <span class="session-meta-item">
+          <span class="session-meta-label">Duration:</span>
+          <span class="session-meta-value">{{ session.durationMinutes | formatDuration }}</span>
+        </span>
+        <span class="session-meta-item">
+          <span class="session-meta-label">Turns:</span>
+          <span class="session-meta-value">{{ session.turns }}</span>
+        </span>
+      </div>
+    </header>
 
-      {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
+    {%- comment -%} Inline stats {%- endcomment -%}
+    <section class="session-stats fade-up" aria-label="Session statistics">
+      <div class="session-stat-card frost">
+        <span class="session-stat-value">{{ session.durationMinutes | formatDuration }}</span>
+        <span class="session-stat-label">Duration</span>
+      </div>
+      <div class="session-stat-card frost">
+        <span class="session-stat-value">{{ session.locChanged | localeNumber }}</span>
+        <span class="session-stat-label">Lines of code</span>
+      </div>
+      <div class="session-stat-card frost">
+        <span class="session-stat-value">{{ session.filesChanged }}</span>
+        <span class="session-stat-label">Files changed</span>
+      </div>
+    </section>
 
-      {% render 'partials/_session-header', session: session %}
+    <div class="content-layout">
+      {%- comment -%} Main content {%- endcomment -%}
+      <div class="main-col">
 
-      {% if session.skills.size > 0 %}
-      <section class="content-section">
-        <div class="chip-list">
-          {% for skill in session.skills %}
-          <span class="chip chip--violet">{{ skill }}</span>
-          {% endfor %}
+        {%- comment -%} Dev take {%- endcomment -%}
+        {% if session.devTake %}
+        <div class="dev-take frost fade-up">
+          <span class="dev-take-label">Dev Take</span>
+          <p class="dev-take-text">{{ session.devTake }}</p>
         </div>
-      </section>
-      {% endif %}
+        {% endif %}
 
-      {% if session.narrative != blank %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Narrative</h2>
-        <p>{{ session.narrative }}</p>
-      </section>
-      {% endif %}
+        {%- comment -%} Narrative {%- endcomment -%}
+        {% if session.narrative %}
+        <section class="narrative-section fade-up">
+          <h2 class="section-heading">Narrative</h2>
+          <p>{{ session.narrative }}</p>
+        </section>
+        {% endif %}
 
-      {% if session.highlights.size > 0 %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Highlights</h2>
-        <ul class="highlights-list">
-          {% for h in session.highlights %}
-          <li>{{ h }}</li>
-          {% endfor %}
-        </ul>
-      </section>
-      {% endif %}
+        {%- comment -%} Highlights {%- endcomment -%}
+        {% if session.highlights.size > 0 %}
+        <section class="highlights-section fade-up">
+          <h2 class="section-heading">Highlights</h2>
+          <ul class="highlights-list">
+            {% for h in session.highlights %}
+            <li>{{ h }}</li>
+            {% endfor %}
+          </ul>
+        </section>
+        {% endif %}
 
-      {% render 'partials/_beats', session: session %}
+        {%- comment -%} Execution path / beats {%- endcomment -%}
+        {% if session.beats.size > 0 %}
+        <section class="beats fade-up" aria-label="Execution path">
+          <h2 class="section-heading">Execution Path</h2>
+          <div class="beat-list">
+            {% for beat in session.beats %}
+            <div class="beat-item">
+              <div class="beat-dot">{{ beat.stepNumber }}</div>
+              <div class="beat-content">
+                <div class="beat-title">{{ beat.title }}</div>
+                {% if beat.body %}
+                <p class="beat-desc">{{ beat.body }}</p>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
 
-      {% render 'partials/_qa', session: session %}
+        {%- comment -%} Q&A {%- endcomment -%}
+        {% if session.qaPairs.size > 0 %}
+        <section class="qa-section fade-up" aria-label="Questions and answers">
+          <h2 class="section-heading">Q&amp;A</h2>
+          <div class="qa-list">
+            {% for qa in session.qaPairs %}
+            <article class="qa-item frost">
+              <p class="qa-question">{{ qa.question }}</p>
+              <p class="qa-answer">{{ qa.answer }}</p>
+            </article>
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
 
-    </main>
+        {%- comment -%} Agent summary {%- endcomment -%}
+        {% if session.agentSummary %}
+        <section class="agents-section fade-up" aria-label="Agent summary">
+          <h2 class="section-heading">Agent Summary</h2>
+          <div class="agent-table-wrap frost">
+            <table class="agent-table">
+              <thead>
+                <tr>
+                  <th scope="col">Role</th>
+                  <th scope="col">Duration</th>
+                  <th scope="col">LOC</th>
+                  <th scope="col" class="agent-bar-cell">Contribution</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for agent in session.agentSummary.agents %}
+                <tr>
+                  <td>{% if agent.color %}<span class="agent-role-dot" style="background:{{ agent.color }}"></span>{% endif %}{{ agent.role }}</td>
+                  <td>{{ agent.durationMinutes | formatDuration }}</td>
+                  <td>{{ agent.linesOfCode | localeNumber }}</td>
+                  <td class="agent-bar-cell">
+                    {% if session.agentSummary.agents[0].linesOfCode > 0 %}
+                    {% assign barPct = agent.linesOfCode | times: 100 | divided_by: session.agentSummary.agents[0].linesOfCode %}
+                    <div class="agent-bar"><div class="agent-bar-fill" style="width:{{ barPct }}%"></div></div>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+        {% endif %}
+      </div>
+
+      {%- comment -%} Sidebar {%- endcomment -%}
+      <aside class="sidebar" aria-label="Session details">
+        {%- comment -%} Tools used {%- endcomment -%}
+        {% if session.toolBreakdown.size > 0 %}
+        <div class="sidebar-card frost fade-up">
+          <h2 class="sidebar-title">Tools Used</h2>
+          <div class="tool-list">
+            {% assign maxToolCount = session.toolBreakdown[0].count %}
+            {% for tool in session.toolBreakdown %}
+            <div class="tool-item">
+              <span class="tool-name">{{ tool.tool }}</span>
+              <span class="tool-count">{{ tool.count }}</span>
+            </div>
+            {% if maxToolCount > 0 %}
+            {% assign toolPct = tool.count | times: 100 | divided_by: maxToolCount %}
+            <div class="tool-bar"><div class="tool-bar-fill" style="width:{{ toolPct }}%"></div></div>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {%- comment -%} Files changed {%- endcomment -%}
+        {% if session.topFiles.size > 0 %}
+        <div class="sidebar-card frost fade-up">
+          <h2 class="sidebar-title">Files Changed</h2>
+          <div class="file-list">
+            {% for file in session.topFiles %}
+            <div class="file-item">
+              <span class="file-name">{{ file.path }}</span>
+              <span class="file-diff">+{{ file.additions }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {%- comment -%} Skills {%- endcomment -%}
+        {% if session.skills.size > 0 %}
+        <div class="sidebar-card frost fade-up">
+          <h2 class="sidebar-title">Skills</h2>
+          <div class="sidebar-skills">
+            {% for skill in session.skills %}
+            <span class="skill-chip">{{ skill }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </aside>
+    </div>
   </div>
+
+  {%- comment -%} Fade-up animation {%- endcomment -%}
+  <script>
+    (function() {
+      var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var els = document.querySelectorAll('.fade-up');
+      if (prefersReduced) {
+        els.forEach(function(el) { el.classList.add('visible'); });
+        return;
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      els.forEach(function(el) { observer.observe(el); });
+    })();
+  </script>
+
 </div>

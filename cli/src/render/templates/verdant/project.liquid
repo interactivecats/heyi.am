@@ -1,66 +1,299 @@
 <div class="heyiam-project verdant" data-render-version="2" data-template="verdant"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+  <div class="vd-page">
 
-  {% render 'partials/_links', project: project %}
+    <main id="main-content">
 
-  {% render 'partials/_screenshot', project: project %}
+      {%- comment -%} Breadcrumb {%- endcomment -%}
+      <nav class="vd-breadcrumb" aria-label="Breadcrumb">
+        <a href="/{{ user.username }}">{{ user.username }}</a>
+        <span class="vd-breadcrumb__sep" aria-hidden="true">/</span>
+        <span>{{ project.slug }}</span>
+      </nav>
 
-  {% render 'partials/_narrative', narrative: project.narrative %}
+      {%- comment -%} Project Header {%- endcomment -%}
+      <section class="vd-section vd-project-header" aria-label="Project header">
+        <h1>{{ project.title }}</h1>
+        {% if project.repoUrl or project.projectUrl %}
+        <div class="vd-project-links">
+          {% if project.repoUrl %}
+          <a href="{{ project.repoUrl }}" class="vd-project-link" target="_blank" rel="noopener">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+            {{ project.repoUrl | stripProtocol }}
+          </a>
+          {% endif %}
+          {% if project.projectUrl %}
+          <a href="{{ project.projectUrl }}" class="vd-project-link" target="_blank" rel="noopener">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            {{ project.projectUrl | stripProtocol }}
+          </a>
+          {% endif %}
+        </div>
+        {% endif %}
+      </section>
 
-  {%- comment -%} Stats grid with merged leverage card {%- endcomment -%}
-  <div class="stat-grid" role="list" aria-label="Project statistics">
-    {% if efficiencyMultiplier %}
-    <div class="verdant-leverage-card" role="listitem" aria-label="Leverage: {{ efficiencyMultiplier }}, you {{ project.totalDurationMinutes | formatDuration }}, agents {{ project.totalAgentDurationMinutes | formatDuration }}">
-      <div class="verdant-leverage-card__bar" aria-hidden="true" style="background: var(--accent, #15803d);"></div>
-      <div class="verdant-leverage-card__multiplier" style="color: var(--accent, #15803d);">{{ efficiencyMultiplier }}</div>
-      <div class="verdant-leverage-card__annotation">
-        <span style="opacity: 0.5;">{{ project.totalDurationMinutes | formatDuration }}</span>
-        <span style="opacity: 0.35;" aria-hidden="true">/</span>
-        <span style="color: var(--accent, #15803d);">{{ project.totalAgentDurationMinutes | formatDuration }}</span>
+      {%- comment -%} Screenshot {%- endcomment -%}
+      {% if project.screenshotUrl %}
+      <section class="vd-section" aria-label="Screenshot">
+        <div class="vd-browser-chrome">
+          <div class="vd-browser-chrome__bar">
+            <span class="vd-browser-chrome__dot vd-browser-chrome__dot--red" aria-hidden="true"></span>
+            <span class="vd-browser-chrome__dot vd-browser-chrome__dot--yellow" aria-hidden="true"></span>
+            <span class="vd-browser-chrome__dot vd-browser-chrome__dot--green" aria-hidden="true"></span>
+            {% if project.projectUrl %}
+            <span class="vd-browser-chrome__url">{{ project.projectUrl | stripProtocol }}</span>
+            {% endif %}
+          </div>
+          <div class="vd-browser-chrome__viewport">
+            <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Leaf Divider {%- endcomment -%}
+      <div class="vd-leaf-divider" role="separator">
+        <div class="vd-leaf-divider__line"></div>
+        <svg class="vd-leaf-divider__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75"/>
+        </svg>
+        <div class="vd-leaf-divider__line"></div>
       </div>
-    </div>
-    {% else %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Time</div>
-      <div class="stat-card__value">{{ project.totalDurationMinutes | formatDuration }}</div>
-    </div>
-    {% endif %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Sessions</div>
-      <div class="stat-card__value">{{ project.totalSessions }}</div>
-    </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Lines changed</div>
-      <div class="stat-card__value">{{ project.totalLoc | formatLoc }}</div>
-    </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Files</div>
-      <div class="stat-card__value">{{ project.totalFilesChanged }}</div>
-    </div>
-    {% if project.totalTokens %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Tokens</div>
-      <div class="stat-card__value">{{ project.totalTokens | formatTokens }}</div>
-    </div>
-    {% endif %}
+
+      {%- comment -%} Narrative {%- endcomment -%}
+      {% if project.narrative != blank %}
+      <section class="vd-section" aria-label="Narrative">
+        <div class="vd-section-header">
+          <div class="vd-section-header__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </div>
+          <h2>Narrative</h2>
+        </div>
+        <div class="vd-narrative">
+          {{ project.narrative }}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Leaf Divider {%- endcomment -%}
+      <div class="vd-leaf-divider" role="separator">
+        <div class="vd-leaf-divider__line"></div>
+        <svg class="vd-leaf-divider__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6.5 21.5s2-3 2-6c0-4-3-6-3-6s3 1 6 1 7-2 7-2-1 4-1 7-1.5 6-1.5 6"/>
+          <path d="M8 14s-1.5-2-1.5-4 2-4.5 2-4.5"/>
+        </svg>
+        <div class="vd-leaf-divider__line"></div>
+      </div>
+
+      {%- comment -%} Stats {%- endcomment -%}
+      <section class="vd-section" aria-label="Project statistics">
+        <div class="vd-stat-grid">
+          <div class="vd-stat-card">
+            <div class="vd-stat-value">{{ project.totalSessions }}</div>
+            <div class="vd-stat-label">Sessions</div>
+          </div>
+          {% if efficiencyMultiplier %}
+          <div class="vd-stat-card">
+            {% assign totalCombined = project.totalDurationMinutes | plus: project.totalAgentDurationMinutes %}
+            {% if totalCombined > 0 %}
+            {% assign humanPct = project.totalDurationMinutes | times: 100 | divided_by: totalCombined %}
+            {% assign agentPct = 100 | minus: humanPct %}
+            <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px;">
+              <div style="flex: {{ humanPct }}; height: 6px; border-radius: 3px; background: rgba(0,0,0,0.12);"></div>
+              <div style="flex: {{ agentPct }}; height: 6px; border-radius: 3px; background: var(--vd-accent);"></div>
+            </div>
+            {% endif %}
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+              <div class="vd-stat-value" style="font-size: 1.125rem;">{{ project.totalDurationMinutes | formatDuration }}</div>
+              <div class="vd-stat-value" style="font-size: 1.125rem; color: var(--vd-accent);">{{ project.totalAgentDurationMinutes | formatDuration }}</div>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <div class="vd-stat-label">You</div>
+              <div class="vd-stat-label">Agents</div>
+            </div>
+          </div>
+          <div class="vd-stat-card">
+            <div class="vd-stat-value" style="color: var(--vd-accent);">{{ efficiencyMultiplier }}</div>
+            <div class="vd-stat-label">Multiplier</div>
+          </div>
+          {% else %}
+          <div class="vd-stat-card">
+            <div class="vd-stat-value">{{ project.totalDurationMinutes | formatDuration }}</div>
+            <div class="vd-stat-label">Time</div>
+          </div>
+          {% endif %}
+          <div class="vd-stat-card">
+            <div class="vd-stat-value">{{ project.totalLoc | formatLoc }}</div>
+            <div class="vd-stat-label">Lines Changed</div>
+          </div>
+          <div class="vd-stat-card">
+            <div class="vd-stat-value">{{ project.totalFilesChanged }}</div>
+            <div class="vd-stat-label">Files</div>
+          </div>
+          {% if project.totalTokens %}
+          <div class="vd-stat-card">
+            <div class="vd-stat-value">{{ project.totalTokens | formatTokens }}</div>
+            <div class="vd-stat-label">Tokens</div>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+
+      {%- comment -%} Phase Vine Timeline {%- endcomment -%}
+      {% if arc.size > 0 %}
+      <section class="vd-section" aria-label="Project phases">
+        <div class="vd-section-header">
+          <div class="vd-section-header__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+          </div>
+          <h2>Growth Phases</h2>
+        </div>
+        <div class="vd-vine-timeline" role="list" aria-label="Phase timeline">
+          {% for phase in arc %}
+          <div class="vd-vine-phase" role="listitem">
+            <div class="vd-vine-node" aria-hidden="true"><div class="vd-vine-node__inner"></div></div>
+            <div class="vd-vine-phase__title">{{ phase.title }}</div>
+            <div class="vd-vine-phase__desc">{{ phase.description }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      {%- comment -%} Leaf Divider {%- endcomment -%}
+      <div class="vd-leaf-divider" role="separator">
+        <div class="vd-leaf-divider__line"></div>
+        <svg class="vd-leaf-divider__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75"/>
+        </svg>
+        <div class="vd-leaf-divider__line"></div>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Work Timeline Chart {%- endcomment -%}
+      {% if sessionsJson %}
+      <section class="vd-section" aria-label="Work timeline">
+        <div class="vd-section-header">
+          <div class="vd-section-header__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h2>Work Timeline</h2>
+        </div>
+        <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Growth Chart {%- endcomment -%}
+      {% if growthJson %}
+      <section class="vd-section" aria-label="Growth chart">
+        <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Skills {%- endcomment -%}
+      {% if project.skills.size > 0 %}
+      <section class="vd-section" aria-label="Skills">
+        <div class="vd-section-header">
+          <div class="vd-section-header__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <h2>Skills</h2>
+        </div>
+        <div class="vd-skills">
+          {% for skill in project.skills %}
+          <span class="vd-skill-chip">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Source Breakdown {%- endcomment -%}
+      {% if sourceCounts.size > 0 %}
+      <section class="vd-section" aria-label="Source breakdown">
+        <div class="vd-section-header">
+          <div class="vd-section-header__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>
+          </div>
+          <h2>Source Breakdown</h2>
+        </div>
+        <div class="vd-source-overview">
+          {% for source in sourceCounts %}
+          <div class="vd-source-card">
+            <div class="vd-source-card__label">{{ source.tool }}</div>
+            <div class="vd-source-card__sessions">{{ source.count }} sessions</div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Leaf Divider {%- endcomment -%}
+      <div class="vd-leaf-divider" role="separator">
+        <div class="vd-leaf-divider__line"></div>
+        <svg class="vd-leaf-divider__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6.5 21.5s2-3 2-6c0-4-3-6-3-6s3 1 6 1 7-2 7-2-1 4-1 7-1.5 6-1.5 6"/>
+          <path d="M8 14s-1.5-2-1.5-4 2-4.5 2-4.5"/>
+        </svg>
+        <div class="vd-leaf-divider__line"></div>
+      </div>
+
+      {%- comment -%} Featured Sessions {%- endcomment -%}
+      {% if featuredSessions.size > 0 %}
+      <section class="vd-section" aria-label="Featured sessions">
+        <div class="vd-section-header">
+          <div class="vd-section-header__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <h2>Featured Sessions</h2>
+        </div>
+        <div class="vd-sessions-grid">
+          {% for s in featuredSessions %}
+          <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="vd-session-card">
+            {% if s.sourceTool %}
+            <span class="vd-session-card__tag">{{ s.sourceTool }}</span>
+            {% endif %}
+            <h3>{{ s.title }}</h3>
+            <div class="vd-session-card__meta">
+              <span>{{ s.durationMinutes | formatDuration }}</span>
+              <span>{{ s.locChanged | formatLoc }} LOC</span>
+              <span>{{ s.filesChanged }} files</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+    </main>
+
+    <footer class="vd-footer">
+      <p>Built with <a href="https://heyi.am">heyi.am</a> &mdash; the signal-first portfolio</p>
+    </footer>
+
   </div>
 
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
-
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
-
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
-  </div>
-
-  {% render 'partials/_phases', arc: arc %}
-
-  {% render 'partials/_skills', skills: project.skills %}
-
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
-
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  <script>
+  (function() {
+    'use strict';
+    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      var allSections = document.querySelectorAll('.vd-section');
+      for (var i = 0; i < allSections.length; i++) {
+        allSections[i].classList.add('visible');
+      }
+    }
+    var sectionObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          sectionObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    var sections = document.querySelectorAll('.vd-section');
+    sections.forEach(function(s) {
+      if (!prefersReduced) sectionObserver.observe(s);
+    });
+  })();
+  </script>
 
 </div>

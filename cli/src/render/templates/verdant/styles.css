@@ -1,0 +1,948 @@
+/* ── Verdant template styles ──
+ * Organic, nature-inspired design with green accent.
+ * Fraunces display font, Inter body, IBM Plex Mono.
+ */
+
+/* ── Design Tokens ── */
+.verdant {
+  --vd-bg:              #fefdfb;
+  --vd-surface:         #f5f3ef;
+  --vd-surface-warm:    #f0ece4;
+  --vd-on-surface:      #1a1a17;
+  --vd-on-surface-2:    #4a4a40;
+  --vd-on-surface-3:    #7a7a6e;
+  --vd-accent:          #15803d;
+  --vd-accent-light:    #22c55e;
+  --vd-accent-bg:       rgba(21,128,61,0.08);
+  --vd-accent-border:   rgba(21,128,61,0.2);
+  --vd-border:          #e5e0d5;
+  --vd-border-light:    #ece8df;
+  --vd-brown:           #92400e;
+  --vd-brown-light:     #b45309;
+  --vd-cream:           #faf7f0;
+
+  --font-display: 'Fraunces', serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  16px;
+  --radius-xl:  24px;
+
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-section: 600ms;
+
+  font-family: var(--font-body);
+  color: var(--vd-on-surface);
+  background-color: var(--vd-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.verdant a { color: var(--vd-accent); text-decoration: none; }
+.verdant a:hover { text-decoration: underline; }
+
+/* ── Section Fade-Up ── */
+.verdant .vd-section {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity var(--dur-section) var(--ease-out),
+              transform var(--dur-section) var(--ease-out);
+}
+.verdant .vd-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .verdant .vd-section {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .verdant .vd-stat-value,
+  .verdant .vd-project-card,
+  .verdant .vd-source-bar-fill,
+  .verdant .vd-vine-segment,
+  .verdant .vd-timeline-bar-fill,
+  .verdant .vd-agent-bar-fill,
+  .verdant .vd-beat-connector {
+    transition: none !important;
+  }
+}
+
+/* ── Page Layout ── */
+.verdant .vd-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* ── Breadcrumb ── */
+.verdant .vd-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--vd-on-surface-3);
+  margin-bottom: 1.5rem;
+  font-family: var(--font-mono);
+}
+.verdant .vd-breadcrumb a { color: var(--vd-accent); }
+.verdant .vd-breadcrumb__sep { color: var(--vd-on-surface-3); opacity: 0.5; }
+
+/* ── Leaf Divider ── */
+.verdant .vd-leaf-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2.5rem 0;
+  gap: 1rem;
+}
+.verdant .vd-leaf-divider__line {
+  flex: 1;
+  height: 1px;
+  background: var(--vd-border);
+}
+.verdant .vd-leaf-divider__icon {
+  color: var(--vd-accent);
+  opacity: 0.4;
+  flex-shrink: 0;
+}
+
+/* ── Hero / Profile ── */
+.verdant .vd-hero {
+  text-align: center;
+  padding: 2rem 0 1rem;
+}
+.verdant .vd-hero__avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--vd-accent), var(--vd-accent-light));
+  margin: 0 auto 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #fff;
+}
+.verdant .vd-hero h1 {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--vd-on-surface);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+.verdant .vd-hero__bio {
+  font-size: 1rem;
+  color: var(--vd-on-surface-2);
+  max-width: 560px;
+  margin: 0 auto 0.75rem;
+  line-height: 1.7;
+}
+.verdant .vd-hero__photo {
+  width: 100px;
+  height: 130px;
+  border-radius: 12px;
+  object-fit: cover;
+  object-position: 55% 10%;
+  border: 2px solid var(--vd-border);
+  margin: 0 auto 1.25rem;
+  display: block;
+}
+.verdant .vd-hero__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1rem;
+  margin-top: 1rem;
+}
+.verdant .vd-hero__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--vd-on-surface-2);
+  text-decoration: none;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  transition: color 150ms, border-color 150ms, background-color 150ms;
+}
+.verdant .vd-hero__links a:hover {
+  color: var(--vd-accent);
+  border-color: var(--vd-accent-border);
+  background: var(--vd-accent-bg);
+  text-decoration: none;
+}
+.verdant .vd-hero__links a svg { flex-shrink: 0; }
+.verdant .vd-hero__location {
+  font-size: 0.8125rem;
+  color: var(--vd-on-surface-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+/* ── Stat Cards (Portfolio) ── */
+.verdant .vd-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+/* ── Stat Grid (Project/Session) ── */
+.verdant .vd-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.verdant .vd-stat-card {
+  background: var(--vd-surface);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  text-align: center;
+  border: 1px solid var(--vd-border-light);
+}
+.verdant .vd-stat-value {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--vd-accent);
+  line-height: 1.2;
+}
+.verdant .vd-stat-label {
+  font-size: 0.75rem;
+  color: var(--vd-on-surface-3);
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Section Headers ── */
+.verdant .vd-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.verdant .vd-section-header__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--vd-accent-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vd-accent);
+  flex-shrink: 0;
+}
+.verdant .vd-section-header h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--vd-on-surface);
+}
+.verdant .vd-section-header h3 {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--vd-on-surface);
+}
+
+/* ── Project Cards ── */
+.verdant .vd-projects-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.verdant .vd-project-card {
+  background: var(--vd-surface);
+  border: 1px solid var(--vd-border-light);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  transition: transform 300ms var(--ease-out), box-shadow 300ms var(--ease-out);
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.verdant .vd-project-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  text-decoration: none;
+}
+.verdant .vd-project-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.verdant .vd-project-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--vd-on-surface);
+}
+.verdant .vd-project-card__arrow {
+  color: var(--vd-on-surface-3);
+  font-size: 1.25rem;
+  transition: transform 200ms, color 200ms;
+}
+.verdant .vd-project-card:hover .vd-project-card__arrow {
+  transform: translateX(3px);
+  color: var(--vd-accent);
+}
+.verdant .vd-project-card__narrative {
+  font-size: 0.875rem;
+  color: var(--vd-on-surface-2);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+.verdant .vd-project-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--vd-on-surface-3);
+  font-family: var(--font-mono);
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.verdant .vd-project-card__meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* ── Leaf-Shaped Skill Chips ── */
+.verdant .vd-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.verdant .vd-skill-chip {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--vd-accent);
+  background: var(--vd-accent-bg);
+  border: 1px solid var(--vd-accent-border);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px 16px 9999px 4px;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+/* ── Project Header ── */
+.verdant .vd-project-header {
+  margin-bottom: 1rem;
+}
+.verdant .vd-project-header h1 {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--vd-on-surface);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+.verdant .vd-project-links {
+  display: flex;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+}
+.verdant .vd-project-link {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--vd-accent);
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* ── Browser Chrome Screenshot ── */
+.verdant .vd-browser-chrome {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--vd-border);
+  overflow: hidden;
+  margin: 1.5rem 0;
+}
+.verdant .vd-browser-chrome__bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.625rem 0.875rem;
+  background: var(--vd-surface);
+  border-bottom: 1px solid var(--vd-border-light);
+}
+.verdant .vd-browser-chrome__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.verdant .vd-browser-chrome__dot--red    { background: #ef4444; }
+.verdant .vd-browser-chrome__dot--yellow { background: #eab308; }
+.verdant .vd-browser-chrome__dot--green  { background: #22c55e; }
+.verdant .vd-browser-chrome__url {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--vd-on-surface-3);
+  margin-left: 0.5rem;
+}
+.verdant .vd-browser-chrome__viewport {
+  background: linear-gradient(135deg, var(--vd-surface) 0%, var(--vd-surface-warm) 50%, var(--vd-cream) 100%);
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Narrative ── */
+.verdant .vd-narrative {
+  font-size: 0.9375rem;
+  line-height: 1.8;
+  color: var(--vd-on-surface-2);
+}
+.verdant .vd-narrative p {
+  margin-bottom: 1rem;
+}
+.verdant .vd-narrative p:last-child { margin-bottom: 0; }
+
+/* ── Phase Vine Timeline ── */
+.verdant .vd-vine-timeline {
+  position: relative;
+  padding-left: 2.5rem;
+}
+.verdant .vd-vine-timeline::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--vd-accent), var(--vd-accent-light), #a3e635);
+  border-radius: 1px;
+}
+.verdant .vd-vine-phase {
+  position: relative;
+  padding-bottom: 1.75rem;
+}
+.verdant .vd-vine-phase:last-child { padding-bottom: 0; }
+.verdant .vd-vine-node {
+  position: absolute;
+  left: -2.5rem;
+  top: 0.125rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--vd-bg);
+  border: 2px solid var(--vd-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.verdant .vd-vine-node__inner {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--vd-accent);
+}
+/* Leaf decorations on vine */
+.verdant .vd-vine-phase:nth-child(odd) .vd-vine-node::after {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 4px;
+  width: 8px;
+  height: 12px;
+  border-radius: 0 80% 0 80%;
+  background: var(--vd-accent);
+  opacity: 0.25;
+  transform: rotate(-30deg);
+}
+.verdant .vd-vine-phase:nth-child(even) .vd-vine-node::after {
+  content: '';
+  position: absolute;
+  right: -10px;
+  top: 4px;
+  width: 8px;
+  height: 12px;
+  border-radius: 80% 0 80% 0;
+  background: var(--vd-accent-light);
+  opacity: 0.25;
+  transform: rotate(30deg);
+}
+.verdant .vd-vine-phase__title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--vd-on-surface);
+  margin-bottom: 0.125rem;
+}
+.verdant .vd-vine-phase__dates {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--vd-on-surface-3);
+  margin-bottom: 0.375rem;
+}
+.verdant .vd-vine-phase__desc {
+  font-size: 0.8125rem;
+  color: var(--vd-on-surface-2);
+  line-height: 1.6;
+}
+
+/* ── Source Overview ── */
+.verdant .vd-source-overview {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+.verdant .vd-source-card {
+  background: var(--vd-surface);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  border: 1px solid var(--vd-border-light);
+  text-align: center;
+}
+.verdant .vd-source-card__label {
+  font-size: 0.75rem;
+  color: var(--vd-on-surface-3);
+  margin-top: 0.25rem;
+}
+.verdant .vd-source-card__sessions {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--vd-on-surface-3);
+  margin-top: 0.375rem;
+}
+
+/* ── Featured Sessions (Project) ── */
+.verdant .vd-sessions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+.verdant .vd-session-card {
+  background: var(--vd-surface);
+  border: 1px solid var(--vd-border-light);
+  border-radius: var(--radius-lg);
+  padding: 1.125rem;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: transform 300ms var(--ease-out), box-shadow 300ms var(--ease-out);
+}
+.verdant .vd-session-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+  text-decoration: none;
+}
+.verdant .vd-session-card__tag {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--vd-accent);
+  background: var(--vd-accent-bg);
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+.verdant .vd-session-card h3 {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--vd-on-surface);
+  margin-bottom: 0.375rem;
+  line-height: 1.3;
+}
+.verdant .vd-session-card__meta {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--vd-on-surface-3);
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* ── Session Header ── */
+.verdant .vd-session-header {
+  margin-bottom: 1rem;
+}
+.verdant .vd-session-header h1 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--vd-on-surface);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+
+/* ── Meta Row ── */
+.verdant .vd-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  font-size: 0.8125rem;
+  color: var(--vd-on-surface-3);
+  margin-bottom: 1rem;
+}
+.verdant .vd-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+.verdant .vd-meta-item svg { flex-shrink: 0; }
+.verdant .vd-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  background: var(--vd-accent-bg);
+  color: var(--vd-accent);
+  padding: 0.1875rem 0.625rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--vd-accent-border);
+}
+
+/* ── Dev Take (quote) ── */
+.verdant .vd-dev-take {
+  background: var(--vd-surface);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  border-left: 3px solid var(--vd-accent);
+  margin: 1.5rem 0;
+}
+.verdant .vd-dev-take__label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vd-accent);
+  margin-bottom: 0.375rem;
+}
+.verdant .vd-dev-take blockquote {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--vd-on-surface-2);
+  line-height: 1.7;
+}
+
+/* ── Two Column Layout (Content + Sidebar) ── */
+.verdant .vd-two-col {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* ── Execution Path (Beats) — Vine Style ── */
+.verdant .vd-beats {
+  position: relative;
+  padding-left: 2.5rem;
+}
+.verdant .vd-beats::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--vd-accent), var(--vd-accent-light), #a3e635);
+  border-radius: 1px;
+}
+.verdant .vd-beat {
+  position: relative;
+  padding-bottom: 1.5rem;
+}
+.verdant .vd-beat:last-child { padding-bottom: 0; }
+.verdant .vd-beat__node {
+  position: absolute;
+  left: -2.5rem;
+  top: 0.125rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--vd-bg);
+  border: 2px solid var(--vd-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.verdant .vd-beat__node-num {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 500;
+  color: var(--vd-accent);
+}
+/* Leaf decorations on beat vine */
+.verdant .vd-beat:nth-child(odd) .vd-beat__node::after {
+  content: '';
+  position: absolute;
+  left: -9px;
+  top: 5px;
+  width: 7px;
+  height: 10px;
+  border-radius: 0 80% 0 80%;
+  background: var(--vd-accent);
+  opacity: 0.2;
+  transform: rotate(-30deg);
+}
+.verdant .vd-beat:nth-child(even) .vd-beat__node::after {
+  content: '';
+  position: absolute;
+  right: -9px;
+  top: 5px;
+  width: 7px;
+  height: 10px;
+  border-radius: 80% 0 80% 0;
+  background: var(--vd-accent-light);
+  opacity: 0.2;
+  transform: rotate(30deg);
+}
+.verdant .vd-beat__title {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--vd-on-surface);
+  margin-bottom: 0.25rem;
+}
+.verdant .vd-beat__desc {
+  font-size: 0.8125rem;
+  color: var(--vd-on-surface-2);
+  line-height: 1.6;
+}
+
+/* ── Q&A ── */
+.verdant .vd-qa-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.verdant .vd-qa-item {
+  background: var(--vd-surface);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  border: 1px solid var(--vd-border-light);
+}
+.verdant .vd-qa-item__q {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--vd-on-surface);
+  margin-bottom: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+}
+.verdant .vd-qa-item__q-marker {
+  color: var(--vd-accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.verdant .vd-qa-item__a {
+  font-size: 0.8125rem;
+  color: var(--vd-on-surface-2);
+  line-height: 1.7;
+  padding-left: 1.375rem;
+}
+
+/* ── Sidebar ── */
+.verdant .vd-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.verdant .vd-sidebar-card {
+  background: var(--vd-surface);
+  border: 1px solid var(--vd-border-light);
+  border-radius: var(--radius-lg);
+  padding: 1.125rem;
+}
+.verdant .vd-sidebar-card__title {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vd-on-surface-3);
+  margin-bottom: 0.75rem;
+}
+
+/* ── Tools Table ── */
+.verdant .vd-tools-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.verdant .vd-tools-table tr {
+  border-bottom: 1px solid var(--vd-border-light);
+}
+.verdant .vd-tools-table tr:last-child { border-bottom: none; }
+.verdant .vd-tools-table td {
+  padding: 0.375rem 0;
+  font-size: 0.8125rem;
+}
+.verdant .vd-tools-table td:first-child {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--vd-on-surface);
+  font-weight: 500;
+}
+.verdant .vd-tools-table td:last-child {
+  text-align: right;
+  color: var(--vd-on-surface-3);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+/* ── Files Changed ── */
+.verdant .vd-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+.verdant .vd-file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  padding: 0.25rem 0;
+}
+.verdant .vd-file-item__name {
+  font-family: var(--font-mono);
+  color: var(--vd-on-surface);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 170px;
+}
+.verdant .vd-file-item__diff {
+  font-family: var(--font-mono);
+  color: var(--vd-accent);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+/* ── Sidebar Skills ── */
+.verdant .vd-sidebar-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+/* ── Agent Summary ── */
+.verdant .vd-agents {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.verdant .vd-agent-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+.verdant .vd-agent-row__info {
+  display: flex;
+  flex-direction: column;
+}
+.verdant .vd-agent-row__name {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--vd-on-surface);
+}
+.verdant .vd-agent-row__meta {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--vd-on-surface-3);
+}
+.verdant .vd-agent-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--vd-border);
+  overflow: hidden;
+  grid-column: 1 / -1;
+}
+.verdant .vd-agent-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s var(--ease-out);
+  width: 0;
+}
+
+/* ── Key Decisions ── */
+.verdant .vd-decisions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.verdant .vd-decision {
+  background: var(--vd-surface);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--vd-border-light);
+  border-left: 3px solid var(--vd-accent);
+  font-size: 0.875rem;
+  color: var(--vd-on-surface-2);
+  line-height: 1.6;
+}
+.verdant .vd-decision strong {
+  color: var(--vd-on-surface);
+  font-weight: 600;
+}
+
+/* ── Footer ── */
+.verdant .vd-footer {
+  text-align: center;
+  padding: 2rem 0 1rem;
+  font-size: 0.75rem;
+  color: var(--vd-on-surface-3);
+  border-top: 1px solid var(--vd-border-light);
+  margin-top: 3rem;
+}
+.verdant .vd-footer a { color: var(--vd-accent); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .verdant .vd-page { padding: 1.25rem 1rem 3rem; }
+  .verdant .vd-hero h1 { font-size: 1.75rem; }
+  .verdant .vd-hero__photo { width: 80px; height: 100px; }
+  .verdant .vd-hero__links { font-size: 0.75rem; }
+  .verdant .vd-stats { grid-template-columns: repeat(2, 1fr); }
+  .verdant .vd-stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .verdant .vd-project-card { padding: 1.25rem; }
+  .verdant .vd-project-card__header { flex-direction: column; gap: 0.5rem; }
+  .verdant .vd-project-card__meta { flex-wrap: wrap; gap: 0.75rem; }
+  .verdant .vd-section-header h2 { font-size: 1.25rem; }
+  .verdant .vd-project-header h1 { font-size: 1.75rem; }
+  .verdant .vd-sessions-grid { grid-template-columns: 1fr; }
+  .verdant .vd-vine-timeline { padding-left: 2rem; }
+  .verdant .vd-session-header h1 { font-size: 1.5rem; }
+  .verdant .vd-two-col {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .verdant .vd-sidebar {
+    order: -1;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  .verdant .vd-sidebar-card:first-child {
+    grid-column: 1 / -1;
+  }
+  .verdant .vd-beats { padding-left: 2rem; }
+  .verdant .vd-file-item__name { max-width: 120px; }
+}

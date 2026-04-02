@@ -1,173 +1,233 @@
 <div class="heyiam-session showcase" data-render-version="2" data-template="showcase">
 
-  {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
+  <div class="sc-page">
+    <main id="main-content">
 
-  {% render 'partials/_session-header', session: session %}
+      <!-- Breadcrumb -->
+      <div class="sc-breadcrumb" aria-label="Breadcrumb">
+        <a href="/@{{ user.username }}">{{ user.username }}</a>
+        {% if projectSlug %}
+        <span class="sc-breadcrumb__sep" aria-hidden="true">/</span>
+        <a href="/@{{ user.username }}/p/{{ projectSlug }}">{{ projectSlug }}</a>
+        {% endif %}
+        <span class="sc-breadcrumb__sep" aria-hidden="true">/</span>
+        <span aria-current="page">{{ session.title }}</span>
+      </div>
 
-  {% if session.skills.size > 0 %}
-  <section class="content-section sc-section" aria-label="Skills">
-    <div class="chip-list">
-      {% for skill in session.skills %}
-      <span class="chip chip--violet sc-stagger">{{ skill }}</span>
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
-
-  {% if session.narrative != blank %}
-  <section class="content-section sc-section" aria-label="Developer take">
-    <div class="dev-take">
-      <p>{{ session.narrative }}</p>
-    </div>
-  </section>
-  {% endif %}
-
-  <div class="session-layout">
-    <div>
-      {% if session.beats.size > 0 %}
-      <section class="content-section sc-section" aria-label="Execution path">
-        <div class="section-header">
-          <h2 class="section-header__title">Execution Path</h2>
-          <span class="section-header__meta">{{ session.beats.size }} beats</span>
-        </div>
-        <ol class="beats-list sc-beats-list">
-          {% for beat in session.beats %}
-          <li class="beat-item sc-stagger">
-            <span class="beat-number" aria-hidden="true">{{ beat.stepNumber }}</span>
-            <div class="beat-title">{{ beat.title }}</div>
-            <div class="beat-desc">{{ beat.body }}</div>
-          </li>
-          {% endfor %}
-        </ol>
-      </section>
-      {% endif %}
-
-      {% if session.qaPairs.size > 0 %}
-      <section class="content-section sc-section" aria-label="Questions and answers">
-        <div class="section-header">
-          <h2 class="section-header__title">Q&amp;A</h2>
-          <span class="section-header__meta">{{ session.qaPairs.size }} questions</span>
-        </div>
-        {% for qa in session.qaPairs %}
-        <div class="qa-item sc-stagger">
-          <div class="qa-question">
-            <span class="qa-question__marker" aria-hidden="true">Q</span>
-            <span>{{ qa.question }}</span>
+      <!-- Title + Meta -->
+      <section class="sc-section section-gap" style="transition-delay: 100ms;" aria-label="Session header">
+        <h1 class="sc-session-title">{{ session.title }}</h1>
+        <div class="sc-meta-row">
+          {% if session.recordedAt != blank %}
+          <div class="sc-meta-item">
+            <span class="sc-meta-item__label">Date</span>
+            <span class="sc-meta-item__value">{{ session.recordedAt | formatDate }}</span>
           </div>
-          <div class="qa-answer">{{ qa.answer }}</div>
+          {% endif %}
+          {% if session.sourceTool != blank %}
+          <span class="sc-meta-pill">{{ session.sourceTool }}</span>
+          {% endif %}
+          {% if session.durationMinutes %}
+          <div class="sc-meta-item">
+            <span class="sc-meta-item__label">Duration</span>
+            <span class="sc-meta-item__value">{{ session.durationMinutes | formatDuration }}</span>
+          </div>
+          {% endif %}
+          {% if session.turns %}
+          <div class="sc-meta-item">
+            <span class="sc-meta-item__label">Turns</span>
+            <span class="sc-meta-item__value">{{ session.turns }}</span>
+          </div>
+          {% endif %}
+          {% if session.locChanged %}
+          <div class="sc-meta-item">
+            <span class="sc-meta-item__label">LOC</span>
+            <span class="sc-meta-item__value">{{ session.locChanged | localeNumber }}</span>
+          </div>
+          {% endif %}
+          {% if session.filesChanged %}
+          <div class="sc-meta-item">
+            <span class="sc-meta-item__label">Files</span>
+            <span class="sc-meta-item__value">{{ session.filesChanged }}</span>
+          </div>
+          {% endif %}
         </div>
-        {% endfor %}
+      </section>
+
+      <!-- Dev Take -->
+      {% if session.devTake != blank %}
+      <section class="sc-section section-gap" aria-label="Developer take">
+        <div class="sc-dev-take">
+          <p>{{ session.devTake }}</p>
+        </div>
       </section>
       {% endif %}
 
-      {% if session.agentSummary %}
-      <section class="content-section sc-section" aria-label="Agent summary">
-        <div class="section-header">
-          <h2 class="section-header__title">Agent Activity</h2>
-          <span class="section-header__meta">{{ session.agentSummary.agents.size }} agents</span>
-        </div>
-        <div class="agent-timeline">
-          {% assign max_dur = 0 %}
-          {% for agent in session.agentSummary.agents %}
-            {% if agent.duration_minutes > max_dur %}
-              {% assign max_dur = agent.duration_minutes %}
-            {% endif %}
-          {% endfor %}
-          {% for agent in session.agentSummary.agents %}
-          <div class="agent-row">
-            <div class="agent-row__dot" aria-hidden="true"></div>
-            <span class="agent-row__name">{{ agent.role }}</span>
-            <span class="agent-row__dur">{{ agent.duration_minutes }}m</span>
-            <div class="agent-bar-track">
-              {% if max_dur > 0 %}
-              {% assign pct = agent.duration_minutes | times: 100 | divided_by: max_dur %}
-              <div class="agent-bar-fill" style="width: {{ pct }}%;"></div>
-              {% endif %}
+      <!-- Two-Column Layout: main + sidebar -->
+      <div class="sc-session-layout section-gap-lg">
+        <!-- Main Column -->
+        <div>
+          <!-- Execution Path (Beats) -->
+          {% if session.beats.size > 0 %}
+          <section class="sc-section section-gap-lg" aria-label="Execution path">
+            <div class="sc-section-header">
+              <h2>Execution Path</h2>
+              <span class="sc-section-label">{{ session.beats.size }} beats</span>
             </div>
-            <span class="agent-row__loc">{{ agent.loc_changed }} LOC</span>
+            <ol class="sc-beats-list">
+              {% for beat in session.beats %}
+              <li class="sc-beat-item sc-stagger">
+                <span class="sc-beat-number" aria-hidden="true">{{ beat.stepNumber }}</span>
+                <div class="sc-beat-title">{{ beat.title }}</div>
+                <div class="sc-beat-desc">{{ beat.body }}</div>
+              </li>
+              {% endfor %}
+            </ol>
+          </section>
+          {% endif %}
+
+          <!-- Q&A -->
+          {% if session.qaPairs.size > 0 %}
+          <section class="sc-section section-gap-lg" aria-label="Questions and answers">
+            <div class="sc-section-header">
+              <h2>Q&amp;A</h2>
+              <span class="sc-section-label">{{ session.qaPairs.size }} questions</span>
+            </div>
+            {% for qa in session.qaPairs %}
+            <div class="sc-qa-item sc-stagger">
+              <div class="sc-qa-question">
+                <span class="sc-qa-question__marker" aria-hidden="true">Q</span>
+                <span>{{ qa.question }}</span>
+              </div>
+              <div class="sc-qa-answer">{{ qa.answer }}</div>
+            </div>
+            {% endfor %}
+          </section>
+          {% endif %}
+
+          <!-- Agent Summary -->
+          {% if session.agentSummary %}
+          <section class="sc-section section-gap-lg" aria-label="Agent summary">
+            <div class="sc-section-header">
+              <h2>Agent Activity</h2>
+              <span class="sc-section-label">{{ session.agentSummary.agents.size }} agents</span>
+            </div>
+            <div class="sc-agent-timeline">
+              {% assign max_dur = 0 %}
+              {% for agent in session.agentSummary.agents %}
+                {% if agent.duration_minutes > max_dur %}
+                  {% assign max_dur = agent.duration_minutes %}
+                {% endif %}
+              {% endfor %}
+              {% for agent in session.agentSummary.agents %}
+              <div class="sc-agent-row">
+                <div class="sc-agent-row__dot" aria-hidden="true"></div>
+                <span class="sc-agent-row__name">{{ agent.role }}</span>
+                <span class="sc-agent-row__dur">{{ agent.duration_minutes }}m</span>
+                <div class="sc-agent-bar-track">
+                  {% if max_dur > 0 %}
+                  {% assign pct = agent.duration_minutes | times: 100 | divided_by: max_dur %}
+                  <div class="sc-agent-bar-fill" style="width: {{ pct }}%;"></div>
+                  {% endif %}
+                </div>
+                <span class="sc-agent-row__loc">{{ agent.loc_changed }} LOC</span>
+              </div>
+              {% endfor %}
+            </div>
+          </section>
+          {% endif %}
+
+          <!-- Highlights -->
+          {% if session.highlights.size > 0 %}
+          <section class="sc-section section-gap-lg" aria-label="Highlights">
+            <div class="sc-section-header">
+              <h2>Highlights</h2>
+            </div>
+            <ul class="sc-highlights-list">
+              {% for h in session.highlights %}
+              <li class="sc-stagger">{{ h }}</li>
+              {% endfor %}
+            </ul>
+          </section>
+          {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="sc-sidebar" aria-label="Session details">
+          {% if session.toolBreakdown.size > 0 %}
+          <div class="sc-sidebar-card">
+            <h4>Tools Used</h4>
+            <table class="sc-tools-table" aria-label="Tool usage counts">
+              <tbody>
+                {% for t in session.toolBreakdown %}
+                <tr>
+                  <td>{{ t.tool }}</td>
+                  <td>{{ t.count }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
-          {% endfor %}
-        </div>
-      </section>
-      {% endif %}
+          {% endif %}
 
-      {% if session.highlights.size > 0 %}
-      <section class="content-section sc-section">
-        <h2 class="content-section__heading">Highlights</h2>
-        <ul class="highlights-list">
-          {% for h in session.highlights %}
-          <li class="sc-stagger">{{ h }}</li>
-          {% endfor %}
-        </ul>
-      </section>
-      {% endif %}
-    </div>
+          {% if session.topFiles.size > 0 %}
+          <div class="sc-sidebar-card">
+            <h4>Files Changed</h4>
+            <table class="sc-files-table" aria-label="Changed files">
+              <tbody>
+                {% for f in session.topFiles %}
+                <tr>
+                  <td>{{ f.path }}</td>
+                  <td>+{{ f.additions }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
 
-    <aside class="sidebar" aria-label="Session details">
-      {% if session.toolBreakdown.size > 0 %}
-      <div class="sidebar-card">
-        <h4>Tools Used</h4>
-        <table class="tools-table" aria-label="Tool usage counts">
-          <tbody>
-            {% for t in session.toolBreakdown %}
-            <tr>
-              <td>{{ t.tool }}</td>
-              <td>{{ t.count }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+          {% if session.skills.size > 0 %}
+          <div class="sc-sidebar-card">
+            <h4>Skills</h4>
+            <div class="sc-sidebar-skills">
+              {% for skill in session.skills %}
+              <span class="sc-skill-chip">{{ skill }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </aside>
       </div>
-      {% endif %}
 
-      {% if session.topFiles.size > 0 %}
-      <div class="sidebar-card">
-        <h4>Files Changed</h4>
-        <table class="files-table" aria-label="Changed files">
-          <tbody>
-            {% for f in session.topFiles %}
-            <tr>
-              <td>{{ f.path }}</td>
-              <td>+{{ f.additions }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% endif %}
+    </main>
 
-      {% if session.skills.size > 0 %}
-      <div class="sidebar-card">
-        <h4>Skills</h4>
-        <div class="sidebar-skills">
-          {% for skill in session.skills %}
-          <span class="skill-chip">{{ skill }}</span>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-    </aside>
+    <footer class="sc-footer">
+      <span>built with <a href="https://heyi.am">heyi.am</a></span>
+    </footer>
   </div>
 
   <script>
   (function() {
     'use strict';
+
+    // IntersectionObserver for scroll animations
     var sections = document.querySelectorAll('.sc-section');
-    if (!sections.length) return;
-    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) {
-      sections.forEach(function(s) { s.classList.add('visible'); });
-      return;
+    if (sections.length) {
+      var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReduced) {
+        sections.forEach(function(s) { s.classList.add('visible'); });
+      } else {
+        var observer = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+        sections.forEach(function(s) { observer.observe(s); });
+      }
     }
-    var observer = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
-    sections.forEach(function(s) { observer.observe(s); });
   })();
   </script>
 

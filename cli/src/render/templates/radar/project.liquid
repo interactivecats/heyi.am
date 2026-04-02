@@ -1,67 +1,250 @@
 <div class="heyiam-project radar" data-render-version="2" data-template="radar"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+  {%- comment -%} Breadcrumb {%- endcomment -%}
+  <div class="radar-breadcrumb" aria-label="Breadcrumb">
+    <a href="/{{ user.username }}">{{ user.username }}</a>
+    <span class="radar-breadcrumb__sep">/</span>
+    <span>{{ project.slug }}</span>
+  </div>
 
-  {% render 'partials/_links', project: project %}
+  {%- comment -%} Title {%- endcomment -%}
+  <section class="radar-section" aria-label="Project title">
+    <h1 class="radar-title" data-editable="title">{{ project.title }}</h1>
+  </section>
 
-  {% render 'partials/_screenshot', project: project %}
+  {%- comment -%} Links {%- endcomment -%}
+  {% if project.repoUrl or project.projectUrl %}
+  <section class="radar-section" style="margin-bottom: 2rem;" aria-label="Project links">
+    <div class="radar-links">
+      {% if project.repoUrl %}
+      <a class="radar-link" href="{{ project.repoUrl }}" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        {{ project.repoUrl | stripProtocol }}
+      </a>
+      {% endif %}
+      {% if project.projectUrl %}
+      <a class="radar-link" href="{{ project.projectUrl }}" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        {{ project.projectUrl | stripProtocol }}
+      </a>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
 
-  {% render 'partials/_narrative', narrative: project.narrative %}
-
-  {%- comment -%} Stats with leverage as SVG arc {%- endcomment -%}
-  <div class="stat-grid" role="list" aria-label="Project statistics">
-    {% if efficiencyMultiplier %}
-    <div class="radar-leverage-arc" role="listitem" aria-label="Leverage multiplier: {{ efficiencyMultiplier }}">
-      <svg class="radar-leverage-arc__svg" viewBox="0 0 48 48" width="48" height="48" aria-hidden="true">
-        <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" stroke-width="2" opacity="0.15"/>
-        <path d="M 24 4 A 20 20 0 1 1 4 24" fill="none" stroke="var(--accent, #22d3ee)" stroke-width="3" stroke-linecap="round"/>
-      </svg>
-      <div class="radar-leverage-arc__text">
-        <span class="radar-leverage-arc__multiplier" style="color: var(--accent, #22d3ee);">{{ efficiencyMultiplier }}</span>
-        <span class="radar-leverage-arc__detail"><span style="opacity: 0.5;">{{ project.totalDurationMinutes | formatDuration }} you</span> / <span style="color: var(--accent, #22d3ee);">{{ project.totalAgentDurationMinutes | formatDuration }} agents</span></span>
+  {%- comment -%} Screenshot {%- endcomment -%}
+  {% if project.screenshotUrl %}
+  <section class="radar-section" aria-label="Project screenshot">
+    <div class="browser-chrome">
+      <div class="browser-chrome__bar">
+        <div class="browser-chrome__dot browser-chrome__dot--red"></div>
+        <div class="browser-chrome__dot browser-chrome__dot--yellow"></div>
+        <div class="browser-chrome__dot browser-chrome__dot--green"></div>
+      </div>
+      <div class="browser-chrome__viewport">
+        <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" style="width: 100%; height: 100%; object-fit: cover;">
       </div>
     </div>
-    {% else %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Time</div>
-      <div class="stat-card__value">{{ project.totalDurationMinutes | formatDuration }}</div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Narrative {%- endcomment -%}
+  {% if project.narrative != blank %}
+  <section class="radar-section" aria-label="Project narrative">
+    <div class="radar-narrative">
+      {{ project.narrative }}
     </div>
-    {% endif %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Sessions</div>
-      <div class="stat-card__value">{{ project.totalSessions }}</div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Stats {%- endcomment -%}
+  <section class="radar-section" aria-label="Project statistics" id="stats-section">
+    <div class="radar-label">Metrics</div>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-card__label">Sessions</div>
+        <div class="stat-card__value">{{ project.totalSessions }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">You</div>
+        <div class="stat-card__value">{{ project.totalDurationMinutes | formatDuration }}</div>
+      </div>
+      {% if project.totalAgentDurationMinutes %}
+      <div class="stat-card stat-card--cyan">
+        <div class="stat-card__label">Agents</div>
+        <div class="stat-card__value">{{ project.totalAgentDurationMinutes | formatDuration }}</div>
+      </div>
+      {% endif %}
+      {% if efficiencyMultiplier %}
+      <div class="stat-card stat-card--cyan">
+        <div class="stat-card__label">Multiplier</div>
+        <div class="stat-card__value">{{ efficiencyMultiplier }}</div>
+      </div>
+      {% endif %}
+      <div class="stat-card">
+        <div class="stat-card__label">Lines Changed</div>
+        <div class="stat-card__value">{{ project.totalLoc | formatLoc }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Files Changed</div>
+        <div class="stat-card__value">{{ project.totalFilesChanged | localeNumber }}</div>
+      </div>
+      {% if project.totalTokens %}
+      <div class="stat-card">
+        <div class="stat-card__label">Tokens</div>
+        <div class="stat-card__value">{{ project.totalTokens | formatTokens }}</div>
+      </div>
+      {% endif %}
     </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Lines changed</div>
-      <div class="stat-card__value">{{ project.totalLoc | formatLoc }}</div>
+  </section>
+
+  {%- comment -%} Work Timeline {%- endcomment -%}
+  {% if sessionsJson %}
+  <section class="radar-section" aria-label="Work timeline" id="work-timeline-section">
+    <div class="radar-label">Work Timeline</div>
+    <div class="chart-card">
+      <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
     </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Files</div>
-      <div class="stat-card__value">{{ project.totalFilesChanged }}</div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Growth Chart {%- endcomment -%}
+  {% if growthJson %}
+  <section class="radar-section" aria-label="Growth chart" id="growth-chart-section">
+    <div class="radar-label">Growth</div>
+    <div class="chart-card">
+      <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
     </div>
-    {% if project.totalTokens %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Tokens</div>
-      <div class="stat-card__value">{{ project.totalTokens | formatTokens }}</div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Two-Column: Key Decisions + Source Breakdown {%- endcomment -%}
+  {% if arc.size > 0 or sourceCounts.size > 0 %}
+  <section class="radar-section" aria-label="Key decisions and source breakdown">
+    <div class="two-col">
+      {% if arc.size > 0 %}
+      <div>
+        <div class="radar-label">Key Decisions</div>
+        <ul class="decision-list">
+          {% for item in arc %}
+          <li class="decision-item">
+            <div class="decision-bullet">
+              <div>
+                <div class="decision-title">{{ item.title }}</div>
+                {% if item.description != blank %}
+                <div class="decision-desc">{{ item.description }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% if sourceCounts.size > 0 %}
+      <div>
+        <div class="radar-label">Source Breakdown</div>
+        <table class="source-table">
+          <thead>
+            <tr>
+              <th>Tool</th>
+              <th style="text-align: right;">Sessions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for src in sourceCounts %}
+            <tr><td>{{ src.tool }}</td><td>{{ src.count }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
     </div>
-    {% endif %}
-  </div>
+  </section>
+  {% endif %}
 
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
+  {%- comment -%} Phase Timeline {%- endcomment -%}
+  {% if project.timeline.size > 0 %}
+  <section class="radar-section" aria-label="Project phases">
+    <div class="radar-label">Phases</div>
+    <div class="phase-timeline">
+      <div class="phase-timeline__line"></div>
+      {% for phase in project.timeline %}
+      <div class="phase-timeline__item">
+        <div class="phase-timeline__dot"></div>
+        <div class="phase-timeline__title">{{ phase.phase }}. {{ phase.title }}</div>
+        {% if phase.description != blank %}
+        <div class="phase-timeline__desc">{{ phase.description }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
+  {%- comment -%} Skills {%- endcomment -%}
+  {% if project.skills.size > 0 %}
+  <section class="radar-section" aria-label="Technologies used">
+    <div class="radar-label">Technologies</div>
+    <div class="chip-list">
+      {% for skill in project.skills %}
+      <span class="chip">{{ skill }}</span>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
-  </div>
+  {%- comment -%} Featured Sessions {%- endcomment -%}
+  {% if featuredSessions.size > 0 %}
+  <section class="radar-section" aria-label="Featured sessions">
+    <div class="section-header">
+      <div class="radar-label" style="margin-bottom: 0;">Sessions</div>
+      <div class="section-header__meta">{{ project.totalSessions }} total</div>
+    </div>
+    <div class="session-grid">
+      {% for s in featuredSessions %}
+      <a class="session-card" href="{{ sessionBaseUrl }}/{{ s.slug }}">
+        <div class="session-card__bar session-card__bar--cyan"></div>
+        <div class="session-card__title">{{ s.title }}</div>
+        <div class="session-card__meta">{{ s.durationMinutes | formatDuration }} &middot; {{ s.locChanged | formatLoc }} LOC &middot; {{ s.filesChanged }} files</div>
+        {% if s.skills.size > 0 %}
+        <span class="session-card__tag">{{ s.skills[0] }}</span>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
-  {% render 'partials/_phases', arc: arc %}
-
-  {% render 'partials/_skills', skills: project.skills %}
-
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
-
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  {%- comment -%} Footer {%- endcomment -%}
+  <section class="radar-section" aria-label="Footer">
+    <footer class="radar-footer">
+      <div class="radar-footer__text">Built with heyi.am</div>
+    </footer>
+  </section>
 
 </div>
+
+<script>
+(function() {
+  'use strict';
+
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Section Fade-In
+  var allSections = document.querySelectorAll('.radar-section');
+  if (!prefersReducedMotion) {
+    var fadeObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          fadeObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    allSections.forEach(function(s) { fadeObserver.observe(s); });
+  } else {
+    allSections.forEach(function(s) { s.classList.add('is-visible'); });
+  }
+})();
+</script>

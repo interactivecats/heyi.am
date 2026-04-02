@@ -1,11 +1,271 @@
 <div class="heyiam-portfolio showcase" data-render-version="2" data-template="showcase" data-username="{{ user.username }}">
 
-  {% render 'partials/_portfolio-header', user: user %}
+  <!-- Cinematic Hero -->
+  <section class="sc-hero" id="hero-section" aria-label="Portfolio header">
+    {% if user.photoUrl %}
+    <div class="sc-hero__bg" style="background-image: url('{{ user.photoUrl }}');" aria-hidden="true"></div>
+    {% endif %}
+    <div class="sc-hero__overlay" aria-hidden="true"></div>
 
-  {% render 'partials/_portfolio-stats', projects: projects, totalSessions: totalSessions, totalDurationMinutes: totalDurationMinutes, totalAgentDurationMinutes: totalAgentDurationMinutes, totalLoc: totalLoc, efficiencyMultiplier: efficiencyMultiplier %}
+    <div class="sc-hero__content sc-hero-fade">
+      {% if user.photoUrl %}
+      <img
+        src="{{ user.photoUrl }}"
+        alt="{{ user.displayName }}"
+        class="sc-hero__photo"
+        width="160"
+        height="200"
+      >
+      {% endif %}
+      <div class="sc-hero__info">
+        <h1 class="sc-hero__name">{{ user.displayName }}</h1>
+        {% if user.location != blank %}
+        <div class="sc-hero__location">{{ user.location }}</div>
+        {% endif %}
+        {% if user.bio != blank %}
+        <p class="sc-hero__bio">{{ user.bio }}</p>
+        {% endif %}
+      </div>
+    </div>
 
-  {% render 'partials/_portfolio-projects', projects: projects %}
+    <!-- Contact links -->
+    <div class="sc-hero__contact sc-hero-fade">
+      {% if user.email != blank %}
+      <a href="mailto:{{ user.email }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg> {{ user.email }}</a>
+      {% endif %}
+      {% if user.linkedinUrl != blank %}
+      <a href="{{ user.linkedinUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg> LinkedIn</a>
+      {% endif %}
+      {% if user.githubUrl != blank %}
+      <a href="{{ user.githubUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg> GitHub</a>
+      {% endif %}
+      {% if user.twitterHandle != blank %}
+      <a href="https://x.com/{{ user.twitterHandle }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> @{{ user.twitterHandle }}</a>
+      {% endif %}
+      {% if user.websiteUrl != blank %}
+      <a href="{{ user.websiteUrl }}" target="_blank" rel="noopener">{{ user.websiteUrl | stripProtocol }}</a>
+      {% endif %}
+      {% if user.resumeUrl != blank %}
+      <a href="{{ user.resumeUrl }}" class="sc-hero__resume-btn" download><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg> Resume (PDF)</a>
+      {% endif %}
+    </div>
 
-  {% render 'partials/_footer' %}
+    <!-- Stats counters -->
+    <div class="sc-hero__stats sc-hero-fade" id="hero-stats">
+      <div class="sc-hero-stat">
+        <div class="sc-hero-stat__value" data-count-to="{{ projects.size }}" data-format="int">0</div>
+        <div class="sc-hero-stat__label">Projects</div>
+      </div>
+      <div class="sc-hero-stat">
+        <div class="sc-hero-stat__value" data-count-to="{{ totalSessions }}" data-format="int">0</div>
+        <div class="sc-hero-stat__label">Sessions</div>
+      </div>
+      <div class="sc-hero-stat">
+        <div class="sc-hero-stat__value" data-count-to="{{ totalLoc }}" data-format="comma">0</div>
+        <div class="sc-hero-stat__label">Lines Changed</div>
+      </div>
+      {% if totalDurationMinutes %}
+      <div class="sc-hero-stat">
+        <div class="sc-hero-stat__value" data-count-to="{{ totalDurationMinutes }}" data-format="duration">0</div>
+        <div class="sc-hero-stat__label">Total Time</div>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <div class="sc-page">
+    <main id="main-content">
+
+      <!-- Leverage -->
+      {% if efficiencyMultiplier %}
+      <section class="sc-leverage sc-section section-gap" aria-label="AI leverage" role="figure">
+        <div class="sc-leverage__multi">{{ efficiencyMultiplier }}&times;</div>
+        <div class="sc-leverage__context"><span>{{ totalDurationMinutes | formatDuration }} you</span> &middot; <span style="color:var(--accent)">{{ totalAgentDurationMinutes | formatDuration }} agents</span></div>
+        {% assign total_combined = totalDurationMinutes | plus: totalAgentDurationMinutes %}
+        {% if total_combined > 0 %}
+        {% assign human_pct = totalDurationMinutes | times: 100 | divided_by: total_combined %}
+        {% assign agent_pct = 100 | minus: human_pct %}
+        <div class="sc-leverage__bar"><div class="sc-leverage__human" style="width:{{ human_pct }}%"></div><div class="sc-leverage__agent" style="width:{{ agent_pct }}%"></div></div>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      <!-- Project Cards -->
+      {% if projects.size > 0 %}
+      <section class="sc-section section-gap-lg" aria-label="Projects">
+        <div class="sc-section-header">
+          <h2>Projects</h2>
+          <span class="sc-section-label">{{ projects.size }} projects</span>
+        </div>
+
+        {% for p in projects %}
+        <a href="/{{ user.username }}/{{ p.slug }}" class="sc-project-card sc-stagger" style="display: block; margin-bottom: 0.75rem;">
+          <div class="sc-project-card__accent-bar" style="background: var(--accent);"></div>
+          <div class="sc-project-card__title">{{ p.title }}</div>
+          {% if p.narrative != blank %}
+          <p class="sc-project-card__narrative">{{ p.narrative }}</p>
+          {% endif %}
+          <div class="sc-project-card__meta">
+            <span>{{ p.totalSessions }} sessions</span>
+            <span>{{ p.totalDurationMinutes | formatDuration }}</span>
+            <span>{{ p.totalLoc | localeNumber }} LOC</span>
+          </div>
+          {% if p.skills.size > 0 %}
+          <div class="sc-project-card__skills">
+            {% for skill in p.skills limit: 6 %}
+            <span class="sc-skill-chip">{{ skill }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </section>
+      {% endif %}
+
+      <!-- Aggregate Skills -->
+      {% assign all_skills = "" %}
+      {% for p in projects %}
+        {% for skill in p.skills %}
+          {% unless all_skills contains skill %}
+            {% if all_skills != "" %}{% assign all_skills = all_skills | append: "|||" %}{% endif %}
+            {% assign all_skills = all_skills | append: skill %}
+          {% endunless %}
+        {% endfor %}
+      {% endfor %}
+      {% assign unique_skills = all_skills | split: "|||" %}
+      {% if unique_skills.size > 0 %}
+      <section class="sc-section section-gap-lg" aria-label="All skills">
+        <div class="sc-section-header">
+          <h2>Skills Across Projects</h2>
+          <span class="sc-section-label">{{ unique_skills.size }} technologies</span>
+        </div>
+        <div class="sc-skills-section-card">
+          <div class="sc-skills-grid">
+            {% for skill in unique_skills %}
+            <span class="sc-skill-chip--lg sc-stagger">{{ skill }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+      {% endif %}
+
+    </main>
+
+    <footer class="sc-footer">
+      <span>built with <a href="https://heyi.am">heyi.am</a></span>
+    </footer>
+  </div>
+
+  <script>
+  (function() {
+    'use strict';
+
+    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Hero entrance animation
+    var hero = document.getElementById('hero-section');
+    if (hero) {
+      if (prefersReduced) {
+        hero.classList.add('visible');
+      } else {
+        requestAnimationFrame(function() {
+          requestAnimationFrame(function() {
+            hero.classList.add('visible');
+          });
+        });
+      }
+    }
+
+    // IntersectionObserver for scroll animations
+    var sections = document.querySelectorAll('.sc-section');
+    if (sections.length) {
+      if (prefersReduced) {
+        sections.forEach(function(s) { s.classList.add('visible'); });
+      } else {
+        var observer = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+        sections.forEach(function(s) { observer.observe(s); });
+      }
+    }
+
+    // Animated Counters
+    var COUNTER_DURATION = 1200;
+    var heroStats = document.getElementById('hero-stats');
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    function formatCounter(value, format) {
+      switch (format) {
+        case 'int':
+          return String(Math.round(value));
+        case 'comma':
+          return Math.round(value).toLocaleString('en-US');
+        case 'duration': {
+          var totalMin = Math.round(value);
+          var h = Math.floor(totalMin / 60);
+          var m = totalMin % 60;
+          if (h === 0) return m + 'm';
+          if (m === 0) return h + 'h';
+          return h + 'h ' + m + 'm';
+        }
+        default:
+          return String(Math.round(value));
+      }
+    }
+
+    function animateCounters(container) {
+      var values = container.querySelectorAll('[data-count-to]');
+      values.forEach(function(el, index) {
+        var target = parseFloat(el.getAttribute('data-count-to'));
+        var format = el.getAttribute('data-format');
+        var delay = index * 100;
+
+        setTimeout(function() {
+          var startTime = null;
+          function tick(timestamp) {
+            if (!startTime) startTime = timestamp;
+            var elapsed = timestamp - startTime;
+            var progress = Math.min(elapsed / COUNTER_DURATION, 1);
+            var easedProgress = easeOutCubic(progress);
+            var currentValue = target * easedProgress;
+            el.textContent = formatCounter(currentValue, format);
+            if (progress < 1) {
+              requestAnimationFrame(tick);
+            }
+          }
+          requestAnimationFrame(tick);
+        }, delay);
+      });
+    }
+
+    if (heroStats) {
+      if (prefersReduced) {
+        heroStats.querySelectorAll('[data-count-to]').forEach(function(el) {
+          var target = parseFloat(el.getAttribute('data-count-to'));
+          var format = el.getAttribute('data-format');
+          el.textContent = formatCounter(target, format);
+        });
+      } else {
+        var counterObserver = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              animateCounters(heroStats);
+              counterObserver.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+        counterObserver.observe(heroStats);
+      }
+    }
+  })();
+  </script>
 
 </div>

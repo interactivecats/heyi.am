@@ -1,11 +1,228 @@
 <div class="heyiam-portfolio cosmos" data-render-version="2" data-template="cosmos" data-username="{{ user.username }}">
 
-  {% render 'partials/_portfolio-header', user: user %}
+  <div class="starfield" aria-hidden="true"></div>
 
-  {% render 'partials/_portfolio-stats', projects: projects, totalSessions: totalSessions, totalDurationMinutes: totalDurationMinutes, totalAgentDurationMinutes: totalAgentDurationMinutes, totalLoc: totalLoc, efficiencyMultiplier: efficiencyMultiplier %}
+  <div class="cos-page">
 
-  {% render 'partials/_portfolio-projects', projects: projects %}
+    {%- comment -%} Constellation SVG {%- endcomment -%}
+    <svg class="cos-constellation" aria-hidden="true">
+      <circle class="cos-constellation-dot" cx="80" cy="120" r="2" />
+      <circle class="cos-constellation-dot" cx="200" cy="80" r="1.5" />
+      <circle class="cos-constellation-dot" cx="340" cy="160" r="2" />
+      <circle class="cos-constellation-dot" cx="500" cy="100" r="1.5" />
+      <circle class="cos-constellation-dot" cx="650" cy="200" r="2" />
+      <circle class="cos-constellation-dot" cx="780" cy="140" r="1.5" />
+      <circle class="cos-constellation-dot" cx="150" cy="400" r="2" />
+      <circle class="cos-constellation-dot" cx="420" cy="480" r="1.5" />
+      <circle class="cos-constellation-dot" cx="700" cy="520" r="2" />
+      <circle class="cos-constellation-dot" cx="300" cy="700" r="1.5" />
+      <circle class="cos-constellation-dot" cx="600" cy="750" r="2" />
+      <circle class="cos-constellation-dot" cx="850" cy="680" r="1.5" />
+      <path class="cos-constellation-line" d="M80,120 Q140,90 200,80" />
+      <path class="cos-constellation-line" d="M200,80 Q270,120 340,160" />
+      <path class="cos-constellation-line" d="M340,160 Q420,120 500,100" />
+      <path class="cos-constellation-line" d="M500,100 Q575,160 650,200" />
+      <path class="cos-constellation-line" d="M650,200 Q715,160 780,140" />
+      <path class="cos-constellation-line" d="M150,400 Q285,430 420,480" />
+      <path class="cos-constellation-line" d="M420,480 Q560,490 700,520" />
+      <path class="cos-constellation-line" d="M300,700 Q450,720 600,750" />
+      <path class="cos-constellation-line" d="M600,750 Q725,710 850,680" />
+    </svg>
 
-  {% render 'partials/_footer' %}
+    <main id="main-content">
+
+      {%- comment -%} Hero / Profile {%- endcomment -%}
+      <section class="cos-section cos-hero" aria-label="Profile">
+        {% if user.photoUrl %}
+        <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="cos-hero-photo" width="120" height="150">
+        {% endif %}
+        <h1>{{ user.displayName }}</h1>
+        <p class="cos-hero-handle">@{{ user.username }}</p>
+        {% if user.bio %}
+        <p class="cos-hero-bio">{{ user.bio }}</p>
+        {% endif %}
+        {% if user.location %}
+        <p class="cos-hero-location">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          {{ user.location }}
+        </p>
+        {% endif %}
+        {% if user.email or user.linkedinUrl or user.githubUrl or user.twitterHandle or user.websiteUrl %}
+        <ul class="cos-hero-contact" aria-label="Contact and social links">
+          {% if user.email %}
+          <li><a href="mailto:{{ user.email }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg>{{ user.email }}</a></li>
+          {% endif %}
+          {% if user.linkedinUrl %}
+          <li><a href="{{ user.linkedinUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>LinkedIn</a></li>
+          {% endif %}
+          {% if user.githubUrl %}
+          <li><a href="{{ user.githubUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>GitHub</a></li>
+          {% endif %}
+          {% if user.twitterHandle %}
+          <li><a href="https://x.com/{{ user.twitterHandle }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>@{{ user.twitterHandle }}</a></li>
+          {% endif %}
+          {% if user.websiteUrl %}
+          <li><a href="{{ user.websiteUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>{{ user.websiteUrl | stripProtocol }}</a></li>
+          {% endif %}
+        </ul>
+        {% endif %}
+        {% if user.resumeUrl %}
+        <a href="{{ user.resumeUrl }}" class="cos-hero-resume"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>Download Resume</a>
+        {% endif %}
+      </section>
+
+      {%- comment -%} Stats {%- endcomment -%}
+      <section class="cos-section" aria-label="Aggregate statistics">
+        <div class="cos-stats">
+          <div class="cos-stat-card">
+            <span class="stat-value" data-target="{{ projects.size }}">0</span>
+            <span class="stat-label">Projects</span>
+          </div>
+          <div class="cos-stat-card">
+            <span class="stat-value" data-target="{{ totalSessions }}">0</span>
+            <span class="stat-label">Sessions</span>
+          </div>
+          <div class="cos-stat-card">
+            <span class="stat-value" data-target="{{ totalLoc }}" data-format="comma">0</span>
+            <span class="stat-label">Lines Changed</span>
+          </div>
+        </div>
+        {% if efficiencyMultiplier %}
+        <div class="cos-leverage" role="figure" aria-label="Leverage multiplier">
+          <div class="cos-leverage__ring">
+            {% assign totalCombined = totalDurationMinutes | plus: totalAgentDurationMinutes %}
+            {% if totalCombined > 0 %}
+            {% assign agentPct = totalAgentDurationMinutes | times: 163 | divided_by: totalCombined %}
+            {% assign humanPct = 163 | minus: agentPct %}
+            {% endif %}
+            <svg width="64" height="64" viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="5"/>
+              <circle cx="32" cy="32" r="26" fill="none" stroke="var(--cos-accent)" stroke-width="5" stroke-dasharray="{{ agentPct }} {{ humanPct }}" stroke-dashoffset="-33" stroke-linecap="round" style="filter:drop-shadow(0 0 4px var(--cos-accent))"/>
+              <text x="32" y="36" text-anchor="middle" font-family="var(--font-display)" font-size="14" font-weight="700" fill="var(--cos-accent)">{{ efficiencyMultiplier }}</text>
+            </svg>
+          </div>
+          <div class="cos-leverage__labels">
+            <span class="cos-leverage__human">{{ totalDurationMinutes | formatDuration }} <small>you</small></span>
+            <span class="cos-leverage__agent">{{ totalAgentDurationMinutes | formatDuration }} <small>agents</small></span>
+          </div>
+        </div>
+        {% else %}
+        <div class="cos-leverage">
+          <div class="cos-leverage__labels">
+            <span class="cos-leverage__human">{{ totalDurationMinutes | formatDuration }} <small>total</small></span>
+          </div>
+        </div>
+        {% endif %}
+      </section>
+
+      {%- comment -%} Projects {%- endcomment -%}
+      {% if projects.size > 0 %}
+      <section class="cos-section" aria-label="Projects">
+        <h2 class="cos-section-title">Projects</h2>
+        <div class="cos-projects">
+          {% for p in projects %}
+          <article class="cos-project-card">
+            <div class="cos-project-card-header">
+              <h3><a href="/{{ user.username }}/{{ p.slug }}">{{ p.title }}</a></h3>
+            </div>
+            {% if p.narrative %}
+            <p class="cos-project-card-narrative">{{ p.narrative }}</p>
+            {% endif %}
+            <div class="cos-project-card-meta">
+              <span><strong>{{ p.totalSessions }}</strong> sessions</span>
+              <span><strong>{{ p.totalDurationMinutes | formatDuration }}</strong></span>
+              <span><strong>{{ p.totalLoc | localeNumber }}</strong> LOC</span>
+            </div>
+            {% if p.skills.size > 0 %}
+            <div class="cos-skill-chips">
+              {% for skill in p.skills %}
+              <span class="cos-skill-chip">{{ skill }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+    </main>
+
+    <footer class="cos-footer">
+      <p>Built with <a href="https://heyi.am">heyi.am</a></p>
+    </footer>
+
+  </div>
+
+  {%- comment -%} Animation scripts {%- endcomment -%}
+  <script>
+  (function() {
+    'use strict';
+    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var sections = document.querySelectorAll('.cos-section');
+    if (prefersReducedMotion) {
+      sections.forEach(function(s) { s.classList.add('visible'); });
+    } else {
+      var sectionObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            sectionObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+      sections.forEach(function(s) { sectionObserver.observe(s); });
+    }
+
+    var lines = document.querySelectorAll('.cos-constellation-line');
+    if (prefersReducedMotion) {
+      lines.forEach(function(l) { l.classList.add('drawn'); });
+    } else {
+      var lineObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('drawn');
+            lineObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0, rootMargin: '0px 0px -50px 0px' });
+      lines.forEach(function(l) { lineObserver.observe(l); });
+    }
+
+    var statValues = document.querySelectorAll('.stat-value[data-target]');
+    function animateCounter(el) {
+      var target = parseInt(el.getAttribute('data-target'), 10);
+      var format = el.getAttribute('data-format');
+      var duration = 1800;
+      var start = performance.now();
+      function update(now) {
+        var elapsed = now - start;
+        var progress = Math.min(elapsed / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        var current = Math.round(eased * target);
+        el.textContent = format === 'comma' ? current.toLocaleString() : current;
+        if (progress < 1) requestAnimationFrame(update);
+      }
+      if (prefersReducedMotion) {
+        el.textContent = format === 'comma' ? target.toLocaleString() : target;
+      } else {
+        requestAnimationFrame(update);
+      }
+    }
+
+    var statsObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.querySelectorAll('.stat-value[data-target]').forEach(animateCounter);
+          statsObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+
+    var statsSection = document.querySelector('.cos-stats');
+    if (statsSection) statsObserver.observe(statsSection);
+  })();
+  </script>
 
 </div>

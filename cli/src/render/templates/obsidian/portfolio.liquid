@@ -1,52 +1,156 @@
 <div class="heyiam-portfolio obsidian" data-render-version="2" data-template="obsidian" data-username="{{ user.username }}">
 
-  <h1 class="project-title">{{ user.displayName }}</h1>
-  {% if user.bio != blank %}
-  <p class="narrative-text">{{ user.bio }}</p>
-  {% endif %}
+  <a href="#main" class="skip-link">Skip to content</a>
 
-  {%- comment -%} Stats with single accent-border leverage card {%- endcomment -%}
-  <div class="stat-grid" role="list" aria-label="Portfolio statistics">
-    {% if efficiencyMultiplier %}
-    <div class="obsidian-leverage-card" role="listitem" aria-label="Leverage: {{ efficiencyMultiplier }}">
-      <div class="obsidian-leverage-card__hero" style="color: var(--accent, #a855f7);">{{ efficiencyMultiplier }}</div>
-      <div class="obsidian-leverage-card__detail">
-        <span style="opacity: 0.5;">{{ totalDurationMinutes | formatDuration }} you</span>
-        <span style="opacity: 0.35;" aria-hidden="true">/</span>
-        <span style="color: var(--accent, #a855f7);">{{ totalAgentDurationMinutes | formatDuration }} agents</span>
+  <main id="main">
+    <section class="hero hero--portfolio container fade-up" aria-label="Profile">
+      <div class="hero-row">
+        {% if user.photoUrl %}
+        <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="hero-photo portfolio-photo">
+        {% endif %}
+        <div class="hero-row-text">
+          <h1>{{ user.displayName }}</h1>
+          {% if user.bio != blank %}
+          <p class="hero-bio portfolio-bio">{{ user.bio }}</p>
+          {% endif %}
+          {% if user.location != blank %}
+          <p class="hero-location portfolio-location">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            {{ user.location }}
+          </p>
+          {% endif %}
+          {% if user.email or user.linkedinUrl or user.githubUrl or user.twitterHandle or user.websiteUrl or user.resumeUrl %}
+          <ul class="hero-links" aria-label="Contact and social links">
+            {% if user.email %}
+            <li><a href="mailto:{{ user.email }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg>{{ user.email }}</a></li>
+            {% endif %}
+            {% if user.linkedinUrl %}
+            <li><a href="{{ user.linkedinUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>LinkedIn</a></li>
+            {% endif %}
+            {% if user.githubUrl %}
+            <li><a href="{{ user.githubUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>GitHub</a></li>
+            {% endif %}
+            {% if user.twitterHandle %}
+            <li><a href="https://x.com/{{ user.twitterHandle }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>@{{ user.twitterHandle }}</a></li>
+            {% endif %}
+            {% if user.websiteUrl %}
+            <li><a href="{{ user.websiteUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>{{ user.websiteUrl | stripProtocol }}</a></li>
+            {% endif %}
+            {% if user.resumeUrl %}
+            <li><a href="{{ user.resumeUrl }}" download><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>Resume (PDF)</a></li>
+            {% endif %}
+          </ul>
+          {% endif %}
+        </div>
       </div>
-    </div>
+    </section>
+
+    {%- comment -%} Stats {%- endcomment -%}
+    <section class="container fade-up" aria-label="Statistics">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">{{ projects.size }}</div>
+          <div class="stat-label">Projects</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ totalSessions }}</div>
+          <div class="stat-label">Sessions</div>
+        </div>
+        {% if efficiencyMultiplier %}
+        <div class="stat-card stat-card--leverage">
+          <div class="leverage-row">
+            <div class="leverage-cell">
+              <div class="leverage-cell__value">{{ totalDurationMinutes | formatDuration }}</div>
+              <div class="leverage-cell__label">You</div>
+            </div>
+            <div class="leverage-cell">
+              <div class="leverage-cell__value leverage-cell__value--accent">{{ totalAgentDurationMinutes | formatDuration }}</div>
+              <div class="leverage-cell__label">Agents</div>
+            </div>
+            <div class="leverage-cell">
+              <div class="leverage-cell__value leverage-cell__value--accent">{{ efficiencyMultiplier }}</div>
+              <div class="leverage-cell__label">Multiplier</div>
+            </div>
+          </div>
+          <div class="leverage-rule"></div>
+        </div>
+        {% else %}
+        <div class="stat-card">
+          <div class="stat-value">{{ totalDurationMinutes | formatDuration }}</div>
+          <div class="stat-label">Total Time</div>
+        </div>
+        {% endif %}
+        <div class="stat-card">
+          <div class="stat-value">{{ totalLoc | formatLoc }}</div>
+          <div class="stat-label">Lines Changed</div>
+        </div>
+      </div>
+    </section>
+
+    {%- comment -%} Projects {%- endcomment -%}
+    {% if projects.size > 0 %}
+    <section class="container" aria-label="Projects">
+      <h2 class="section-heading fade-up">Projects</h2>
+      <div class="projects-list">
+        {% for p in projects %}
+        <a href="/{{ user.username }}/{{ p.slug }}" class="project-card shimmer-transition fade-up">
+          <div class="project-header">
+            <span class="project-name">{{ p.title }}</span>
+            <div class="project-meta">
+              <span>{{ p.totalSessions }} session{% if p.totalSessions != 1 %}s{% endif %}</span>
+              <span>{{ p.totalDurationMinutes | formatDuration }}</span>
+              <span>{{ p.totalLoc | formatLoc }} LOC</span>
+            </div>
+          </div>
+          {% if p.narrative != blank %}
+          <p class="project-narrative">{{ p.narrative | truncate: 120 }}</p>
+          {% endif %}
+          {% if p.skills.size > 0 %}
+          <div class="project-skills">
+            {% for skill in p.skills %}
+            <span class="skill-tag chip">{{ skill }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <div class="project-footer">
+            <div class="project-meta">
+              <span>{{ p.totalFilesChanged }} files</span>
+              {% if p.publishedCount > 0 %}
+              <span>{{ p.publishedCount }} published</span>
+              {% endif %}
+            </div>
+            <span class="project-arrow" aria-hidden="true">&rarr;</span>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
     {% endif %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Projects</div>
-      <div class="stat-card__value">{{ projects.size }}</div>
-    </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Sessions</div>
-      <div class="stat-card__value">{{ totalSessions }}</div>
-    </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Lines</div>
-      <div class="stat-card__value">{{ totalLoc | formatLoc }}</div>
-    </div>
-  </div>
+  </main>
 
-  {% if projects.size > 0 %}
-  <div class="card">
-    <div class="section-header">
-      <h3 class="section-header__title">Projects</h3>
-    </div>
-    <div class="session-grid">
-      {% for project in projects %}
-      <div class="session-card">
-        <h4 class="session-card__title">{{ project.title }}</h4>
-        <span class="session-card__meta">{{ project.totalSessions }} sessions &middot; {{ project.totalLoc | formatLoc }} lines</span>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
+  <footer class="site-footer">
+    <div class="container">Built with heyi.am</div>
+  </footer>
 
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  <script>
+  (function() {
+    'use strict';
+    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var fadeEls = document.querySelectorAll('.fade-up');
+    if (prefersReducedMotion) {
+      fadeEls.forEach(function(el) { el.classList.add('visible'); });
+    } else {
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      fadeEls.forEach(function(el) { observer.observe(el); });
+    }
+  })();
+  </script>
 
 </div>

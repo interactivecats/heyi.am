@@ -1,30 +1,299 @@
 <div class="heyiam-project cosmos" data-render-version="2" data-template="cosmos"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+  <div class="starfield" aria-hidden="true"></div>
 
-  {% render 'partials/_links', project: project %}
+  <div class="cos-page">
 
-  {% render 'partials/_screenshot', project: project %}
+    {%- comment -%} Constellation SVG {%- endcomment -%}
+    <svg class="cos-constellation" aria-hidden="true">
+      <circle class="cos-constellation-dot" cx="60" cy="200" r="2" />
+      <circle class="cos-constellation-dot" cx="250" cy="150" r="1.5" />
+      <circle class="cos-constellation-dot" cx="450" cy="220" r="2" />
+      <circle class="cos-constellation-dot" cx="700" cy="180" r="1.5" />
+      <circle class="cos-constellation-dot" cx="150" cy="500" r="2" />
+      <circle class="cos-constellation-dot" cx="400" cy="600" r="1.5" />
+      <circle class="cos-constellation-dot" cx="650" cy="550" r="2" />
+      <circle class="cos-constellation-dot" cx="850" cy="450" r="1.5" />
+      <circle class="cos-constellation-dot" cx="100" cy="850" r="2" />
+      <circle class="cos-constellation-dot" cx="500" cy="900" r="1.5" />
+      <circle class="cos-constellation-dot" cx="800" cy="800" r="2" />
+      <path class="cos-constellation-line" d="M60,200 Q155,165 250,150" />
+      <path class="cos-constellation-line" d="M250,150 Q350,190 450,220" />
+      <path class="cos-constellation-line" d="M450,220 Q575,195 700,180" />
+      <path class="cos-constellation-line" d="M150,500 Q275,555 400,600" />
+      <path class="cos-constellation-line" d="M400,600 Q525,570 650,550" />
+      <path class="cos-constellation-line" d="M650,550 Q750,495 850,450" />
+      <path class="cos-constellation-line" d="M100,850 Q300,880 500,900" />
+      <path class="cos-constellation-line" d="M500,900 Q650,845 800,800" />
+    </svg>
 
-  {% render 'partials/_narrative', narrative: project.narrative %}
+    <main id="main-content">
 
-  {% render 'partials/_stats', project: project, durationLabel: durationLabel, efficiencyMultiplier: efficiencyMultiplier %}
+      {%- comment -%} Breadcrumb {%- endcomment -%}
+      <div class="cos-breadcrumb" aria-label="Breadcrumb">
+        <a href="/{{ user.username }}">{{ user.username }}</a>
+        <span class="cos-breadcrumb-sep" aria-hidden="true">/</span>
+        <span aria-current="page">{{ project.slug }}</span>
+      </div>
 
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
+      {%- comment -%} Project Header {%- endcomment -%}
+      <header class="cos-section cos-project-header">
+        <h1 data-editable="title">{{ project.title }}</h1>
+        {% if project.repoUrl or project.projectUrl %}
+        <div class="cos-project-links">
+          {% if project.repoUrl %}
+          <a href="{{ project.repoUrl }}" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+            {{ project.repoUrl | stripProtocol }}
+          </a>
+          {% endif %}
+          {% if project.projectUrl %}
+          <a href="{{ project.projectUrl }}" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            {{ project.projectUrl | stripProtocol }}
+          </a>
+          {% endif %}
+        </div>
+        {% endif %}
+      </header>
 
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
+      {%- comment -%} Screenshot {%- endcomment -%}
+      {% if project.screenshotUrl %}
+      <div class="cos-section cos-screenshot">
+        <div class="cos-screenshot-bar" aria-hidden="true">
+          <span class="cos-screenshot-dot"></span>
+          <span class="cos-screenshot-dot"></span>
+          <span class="cos-screenshot-dot"></span>
+        </div>
+        <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" style="width: 100%; display: block;">
+      </div>
+      {% endif %}
 
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+      {%- comment -%} Stats {%- endcomment -%}
+      <section class="cos-section" aria-label="Project statistics">
+        <div class="cos-stats-row">
+          <div class="cos-stat-pill">
+            <span class="stat-value">{{ project.totalSessions }}</span>
+            <span class="stat-label">Sessions</span>
+          </div>
+          <div class="cos-stat-pill">
+            <span class="stat-value">{{ project.totalLoc | localeNumber }}</span>
+            <span class="stat-label">LOC</span>
+          </div>
+          <div class="cos-stat-pill">
+            <span class="stat-value">{{ project.totalFilesChanged }}</span>
+            <span class="stat-label">Files</span>
+          </div>
+          {% if project.totalTokens %}
+          <div class="cos-stat-pill">
+            <span class="stat-value">{{ project.totalTokens | formatTokens }}</span>
+            <span class="stat-label">Tokens</span>
+          </div>
+          {% endif %}
+        </div>
+        {% if efficiencyMultiplier %}
+        <div class="cos-leverage" role="figure" aria-label="Leverage multiplier">
+          <div class="cos-leverage__ring">
+            {% assign totalCombined = project.totalDurationMinutes | plus: project.totalAgentDurationMinutes %}
+            {% if totalCombined > 0 %}
+            {% assign agentPct = project.totalAgentDurationMinutes | times: 163 | divided_by: totalCombined %}
+            {% assign humanPct = 163 | minus: agentPct %}
+            {% endif %}
+            <svg width="64" height="64" viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="5"/>
+              <circle cx="32" cy="32" r="26" fill="none" stroke="var(--cos-accent)" stroke-width="5" stroke-dasharray="{{ agentPct }} {{ humanPct }}" stroke-dashoffset="-33" stroke-linecap="round" style="filter:drop-shadow(0 0 4px var(--cos-accent))"/>
+              <text x="32" y="36" text-anchor="middle" font-family="var(--font-display)" font-size="14" font-weight="700" fill="var(--cos-accent)">{{ efficiencyMultiplier }}</text>
+            </svg>
+          </div>
+          <div class="cos-leverage__labels">
+            <span class="cos-leverage__human">{{ project.totalDurationMinutes | formatDuration }} <small>you</small></span>
+            <span class="cos-leverage__agent">{{ project.totalAgentDurationMinutes | formatDuration }} <small>agents</small></span>
+          </div>
+        </div>
+        {% else %}
+        <div class="cos-leverage">
+          <div class="cos-leverage__labels">
+            <span class="cos-leverage__human">{{ project.totalDurationMinutes | formatDuration }} <small>total</small></span>
+          </div>
+        </div>
+        {% endif %}
+      </section>
+
+      {%- comment -%} Narrative {%- endcomment -%}
+      {% if project.narrative %}
+      <section class="cos-section cos-narrative" aria-label="Project narrative">
+        <h2 class="cos-section-title">Narrative</h2>
+        <p>{{ project.narrative }}</p>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Work Timeline Chart {%- endcomment -%}
+      {% if sessionsJson %}
+      <section class="cos-section" aria-label="Work timeline chart">
+        <h2 class="cos-section-title">Work Timeline</h2>
+        <div class="cos-chart-container">
+          <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Growth Chart {%- endcomment -%}
+      {% if growthJson %}
+      <section class="cos-section" aria-label="Growth over time">
+        <h2 class="cos-section-title">Growth</h2>
+        <div class="cos-chart-container">
+          <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Phase Cards {%- endcomment -%}
+      {% if arc.size > 0 %}
+      <section class="cos-section" aria-label="Phase details">
+        <h2 class="cos-section-title">Phases</h2>
+        <div class="cos-phases">
+          {% for item in arc %}
+          <div class="cos-phase-card">
+            <div class="cos-phase-number">Phase {{ item.phase }}</div>
+            <h3>{{ item.title }}</h3>
+            <p class="cos-phase-desc">{{ item.description }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Key Decisions {%- endcomment -%}
+      {% if arc.size > 0 %}
+      <section class="cos-section cos-decisions" aria-label="Key decisions">
+        <h2 class="cos-section-title">Key Decisions</h2>
+        {% for item in arc %}
+        <div class="cos-decision">
+          <span class="cos-decision-number" aria-hidden="true">{{ item.phase }}</span>
+          <p>{{ item.description }}</p>
+        </div>
+        {% endfor %}
+      </section>
+      {% endif %}
+
+      {%- comment -%} Skills {%- endcomment -%}
+      {% if project.skills.size > 0 %}
+      <section class="cos-section" aria-label="Skills used">
+        <h2 class="cos-section-title">Skills</h2>
+        <div class="cos-skill-chips" style="margin-block-end: 2.5rem;">
+          {% for skill in project.skills %}
+          <span class="cos-skill-chip">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Source Breakdown {%- endcomment -%}
+      {% if sourceCounts.size > 0 %}
+      <section class="cos-section cos-source-section" aria-label="Source breakdown">
+        <h2 class="cos-section-title">Source Breakdown</h2>
+        {% assign totalSourceSessions = 0 %}
+        {% for src in sourceCounts %}
+          {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
+        {% endfor %}
+        {% if totalSourceSessions > 0 %}
+        <div class="cos-source-bar-large">
+          {% for src in sourceCounts %}
+          {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+          {% if forloop.first %}
+          <div class="cos-source-fill-claude" style="width: {{ srcPct }}%"></div>
+          {% else %}
+          <div class="cos-source-fill-cursor" style="width: {{ srcPct }}%"></div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        <div class="cos-source-labels">
+          {% for src in sourceCounts %}
+          {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+          <span>
+            {% if forloop.first %}
+            <span class="cos-source-dot claude" aria-hidden="true"></span>
+            {% else %}
+            <span class="cos-source-dot cursor" aria-hidden="true"></span>
+            {% endif %}
+            {{ src.tool }} {{ srcPct }}% ({{ src.count }} session{% if src.count != 1 %}s{% endif %})
+          </span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      {%- comment -%} Featured Sessions {%- endcomment -%}
+      {% if featuredSessions.size > 0 %}
+      <section class="cos-section" aria-label="Featured sessions">
+        <h2 class="cos-section-title">Sessions</h2>
+        <div class="cos-sessions">
+          {% for s in featuredSessions %}
+          <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="session-card">
+            <article class="cos-session-card">
+              <h3>{{ s.title }}</h3>
+              <div class="cos-session-meta">
+                <span><strong>{{ s.durationMinutes | formatDuration }}</strong></span>
+                <span><strong>{{ s.locChanged | localeNumber }}</strong> LOC</span>
+                {% if s.agentSummary %}
+                <span><strong>{{ s.agentSummary.agents.size }}</strong> agents</span>
+                {% endif %}
+              </div>
+              {% if s.skills.size > 0 %}
+              <span class="cos-session-tag">{{ s.skills | first }}</span>
+              {% endif %}
+            </article>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+    </main>
+
+    <footer class="cos-footer">
+      <p>Built with <a href="https://heyi.am">heyi.am</a></p>
+    </footer>
+
   </div>
 
-  {% render 'partials/_phases', arc: arc %}
+  {%- comment -%} Animation scripts {%- endcomment -%}
+  <script>
+  (function() {
+    'use strict';
+    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  {% render 'partials/_skills', skills: project.skills %}
+    var sections = document.querySelectorAll('.cos-section');
+    if (prefersReducedMotion) {
+      sections.forEach(function(s) { s.classList.add('visible'); });
+    } else {
+      var sectionObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            sectionObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      sections.forEach(function(s) { sectionObserver.observe(s); });
+    }
 
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
-
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+    var lines = document.querySelectorAll('.cos-constellation-line');
+    if (prefersReducedMotion) {
+      lines.forEach(function(l) { l.classList.add('drawn'); });
+    } else {
+      var lineObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('drawn');
+            lineObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0, rootMargin: '0px 0px -50px 0px' });
+      lines.forEach(function(l) { lineObserver.observe(l); });
+    }
+  })();
+  </script>
 
 </div>

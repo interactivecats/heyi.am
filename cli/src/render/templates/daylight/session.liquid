@@ -1,47 +1,236 @@
 <div class="heyiam-session daylight" data-render-version="2" data-template="daylight">
 
-  <div class="session-layout">
+  <div class="dl-container">
 
-    {% render 'partials/_session-sidebar', session: session %}
+    {%- comment -%} Breadcrumb {%- endcomment -%}
+    <div class="dl-breadcrumb" aria-label="Breadcrumb">
+      <a href="/{{ user.username }}">{{ user.username }}</a>
+      <span aria-hidden="true">/</span>
+      {% if projectSlug %}
+      <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
+      <span aria-hidden="true">/</span>
+      {% endif %}
+      <span class="dl-breadcrumb-current" aria-current="page">{{ session.title }}</span>
+    </div>
 
-    <main class="session-main">
+    {%- comment -%} Session Header {%- endcomment -%}
+    <header class="dl-session-header dl-bounce">
+      <h1>{{ session.title }}</h1>
+      <div class="dl-session-meta-row">
+        {% if session.recordedAt %}
+        <span class="dl-session-meta-item">
+          <svg class="dl-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          {{ session.recordedAt | formatDate }}
+        </span>
+        {% endif %}
+        {% if session.sourceTool %}
+        <span class="dl-source-badge">{{ session.sourceTool }}</span>
+        {% endif %}
+        <span class="dl-session-meta-item">
+          <svg class="dl-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          {{ session.durationMinutes | formatDuration }}
+        </span>
+        <span class="dl-session-meta-item">
+          <svg class="dl-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          {{ session.turns }} turns
+        </span>
+        <span class="dl-session-meta-item">
+          <svg class="dl-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          {{ session.locChanged | localeNumber }} LOC
+        </span>
+        <span class="dl-session-meta-item">
+          <svg class="dl-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          {{ session.filesChanged }} file{% if session.filesChanged != 1 %}s{% endif %}
+        </span>
+      </div>
+    </header>
 
-      {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
+    {%- comment -%} Two-column layout {%- endcomment -%}
+    <div class="dl-session-layout">
 
-      {% render 'partials/_session-header', session: session %}
+      {%- comment -%} Main Column {%- endcomment -%}
+      <div>
 
-      {% if session.skills.size > 0 %}
-      <section class="content-section">
-        <div class="chip-list">
-          {% for skill in session.skills %}
-          <span class="chip chip--violet">{{ skill }}</span>
-          {% endfor %}
+        {%- comment -%} Dev Take {%- endcomment -%}
+        {% if session.devTake %}
+        <div class="dl-dev-take dl-bounce dl-delay-1">
+          <div class="dl-dev-take-label">Dev Take</div>
+          <p>{{ session.devTake }}</p>
         </div>
-      </section>
-      {% endif %}
+        {% endif %}
 
-      {% if session.narrative != blank %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Narrative</h2>
-        <p>{{ session.narrative }}</p>
-      </section>
-      {% endif %}
+        {%- comment -%} Narrative {%- endcomment -%}
+        {% if session.narrative %}
+        <section class="dl-narrative-section dl-bounce dl-delay-1" aria-label="Session narrative">
+          <h2 class="dl-session-section-heading">Narrative</h2>
+          <p>{{ session.narrative }}</p>
+        </section>
+        {% endif %}
 
-      {% if session.highlights.size > 0 %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Highlights</h2>
-        <ul class="highlights-list">
-          {% for h in session.highlights %}
-          <li>{{ h }}</li>
+        {%- comment -%} Highlights {%- endcomment -%}
+        {% if session.highlights.size > 0 %}
+        <section class="dl-highlights dl-bounce dl-delay-1" aria-label="Highlights">
+          <h2 class="dl-session-section-heading">Highlights</h2>
+          <ul class="dl-highlights-list">
+            {% for h in session.highlights %}
+            <li>{{ h }}</li>
+            {% endfor %}
+          </ul>
+        </section>
+        {% endif %}
+
+        {%- comment -%} Execution Path {%- endcomment -%}
+        {% if session.beats.size > 0 %}
+        <section class="dl-beats dl-bounce dl-delay-2" aria-label="Execution path">
+          <h2 class="dl-session-section-heading">Execution Path</h2>
+          <ol class="dl-beat-list" role="list">
+            {% for beat in session.beats %}
+            <li class="dl-beat-item">
+              <span class="dl-beat-title">{{ beat.title }}</span>
+              <p class="dl-beat-desc">{{ beat.body }}</p>
+            </li>
+            {% endfor %}
+          </ol>
+        </section>
+        {% endif %}
+
+        {%- comment -%} Q&A {%- endcomment -%}
+        {% if session.qaPairs.size > 0 %}
+        <section class="dl-qa dl-bounce dl-delay-3" aria-label="Questions and answers">
+          <h2 class="dl-session-section-heading">Q&amp;A</h2>
+          {% for qa in session.qaPairs %}
+          <div class="dl-qa-pair">
+            <div class="dl-qa-question">
+              <span class="dl-qa-q-marker">Q</span>
+              <span>{{ qa.question }}</span>
+            </div>
+            <p class="dl-qa-answer">{{ qa.answer }}</p>
+          </div>
           {% endfor %}
-        </ul>
-      </section>
-      {% endif %}
+        </section>
+        {% endif %}
 
-      {% render 'partials/_beats', session: session %}
+        {%- comment -%} Agent Summary {%- endcomment -%}
+        {% if session.agentSummary %}
+        <section class="dl-agents dl-bounce dl-delay-4" aria-label="Agent summary">
+          <h2 class="dl-session-section-heading">Agent Summary</h2>
+          {% assign maxAgentLoc = 0 %}
+          {% for agent in session.agentSummary.agents %}
+            {% if agent.loc_changed > maxAgentLoc %}
+              {% assign maxAgentLoc = agent.loc_changed %}
+            {% endif %}
+          {% endfor %}
+          {% assign agent_colors = '#0891b2,#059669,#7c3aed,#475569,#e11d48,#d97706' | split: ',' %}
+          <table class="dl-agent-table">
+            <thead>
+              <tr>
+                <th scope="col">Role</th>
+                <th scope="col">Duration</th>
+                <th scope="col">LOC</th>
+                <th scope="col" class="dl-agent-bar-cell">Contribution</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for agent in session.agentSummary.agents %}
+              <tr>
+                <td>
+                  <div class="dl-agent-role-cell">
+                    {% assign colorIdx = forloop.index0 | modulo: 6 %}
+                    <span class="dl-agent-color-dot" style="background: {{ agent_colors[colorIdx] }}"></span>
+                    {{ agent.role }}
+                  </div>
+                </td>
+                <td><span style="font-family: var(--dl-font-mono); font-size: 0.8125rem">{{ agent.duration_minutes }}m</span></td>
+                <td><span style="font-family: var(--dl-font-mono); font-size: 0.8125rem">{{ agent.loc_changed }}</span></td>
+                <td class="dl-agent-bar-cell">
+                  {% if maxAgentLoc > 0 %}
+                  {% assign barPct = agent.loc_changed | times: 100 | divided_by: maxAgentLoc %}
+                  {% else %}
+                  {% assign barPct = 0 %}
+                  {% endif %}
+                  <div class="dl-agent-bar"><div class="dl-agent-bar-fill" style="width: {{ barPct }}%"></div></div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </section>
+        {% endif %}
 
-      {% render 'partials/_qa', session: session %}
+      </div>
 
-    </main>
+      {%- comment -%} Sidebar {%- endcomment -%}
+      <aside class="dl-sidebar dl-bounce dl-delay-2" aria-label="Session details">
+
+        {%- comment -%} Tools Used {%- endcomment -%}
+        {% if session.toolBreakdown.size > 0 %}
+        <div class="dl-sidebar-card">
+          <h2 class="dl-sidebar-title">Tools Used</h2>
+          <ul class="dl-tool-list">
+            {% for t in session.toolBreakdown %}
+            <li class="dl-tool-item">
+              <span class="dl-tool-name">{{ t.tool }}</span>
+              <span class="dl-tool-count">{{ t.count }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        {%- comment -%} Files Changed {%- endcomment -%}
+        {% if session.topFiles.size > 0 %}
+        <div class="dl-sidebar-card">
+          <h2 class="dl-sidebar-title">Files Changed</h2>
+          <ul class="dl-file-list">
+            {% for f in session.topFiles %}
+            <li class="dl-file-item">
+              <span class="dl-file-name" title="{{ f.path }}">{{ f.path }}</span>
+              <span class="dl-file-diff"><span class="dl-file-adds">+{{ f.additions }}</span>{% if f.deletions > 0 %} <span class="dl-file-dels">-{{ f.deletions }}</span>{% endif %}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        {%- comment -%} Skills {%- endcomment -%}
+        {% if session.skills.size > 0 %}
+        <div class="dl-sidebar-card">
+          <h2 class="dl-sidebar-title">Skills</h2>
+          <div class="dl-sidebar-skills">
+            {% for skill in session.skills %}
+            <span class="dl-skill-chip">{{ skill }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+      </aside>
+
+    </div>
+
+    <footer class="dl-footer" role="contentinfo">
+      <p>Built with <a href="https://heyi.am">heyi.am</a> &middot; Daylight theme</p>
+    </footer>
+
   </div>
+
+  {%- comment -%} Animations {%- endcomment -%}
+  <script>
+    (function () {
+      'use strict';
+      var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var bounceEls = document.querySelectorAll('.dl-bounce');
+      if (prefersReduced) {
+        for (var i = 0; i < bounceEls.length; i++) { bounceEls[i].classList.add('dl-visible'); }
+      } else {
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) { entry.target.classList.add('dl-visible'); observer.unobserve(entry.target); }
+          });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+        for (var j = 0; j < bounceEls.length; j++) { observer.observe(bounceEls[j]); }
+      }
+    })();
+  </script>
+
 </div>

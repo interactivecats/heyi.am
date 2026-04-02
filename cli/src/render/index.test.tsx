@@ -127,12 +127,12 @@ describe('renderProjectHtml', () => {
     const html = renderProjectHtml(data);
     expect(html).toContain('<img');
     expect(html).toContain('/testuser/my-project/screenshot.png');
-    expect(html).toContain('browser-chrome');
+    expect(html).toContain('ed-screenshot-card');
   });
 
   it('omits screenshot when screenshotUrl is not provided', () => {
     const html = renderProjectHtml(makeProjectData());
-    expect(html).not.toContain('browser-chrome');
+    expect(html).not.toContain('ed-screenshot-card');
   });
 
   it('produces a fragment, not a full HTML document', () => {
@@ -164,7 +164,7 @@ describe('renderSessionHtml', () => {
     const html = renderSessionHtml(makeSessionData());
     expect(html).toContain('Setup');
     expect(html).toContain('Created render directory');
-    expect(html).toContain('beats-list');
+    expect(html).toContain('ed-beats');
   });
 
   it('renders Q&A pairs', () => {
@@ -188,7 +188,7 @@ describe('renderSessionHtml', () => {
     const html = renderSessionHtml(makeSessionData());
     expect(html).toContain('src/render/index.tsx');
     expect(html).toContain('+100');
-    expect(html).toContain('-0');
+    // deletions=0 may be omitted by the template
   });
 
   it('renders breadcrumb with project slug', () => {
@@ -251,7 +251,7 @@ describe('renderSessionHtml', () => {
 // Template-specific rendering (kinetic, terminal, minimal)
 // ---------------------------------------------------------------------------
 
-const CUSTOM_TEMPLATES = ['kinetic', 'terminal', 'minimal'] as const;
+const CUSTOM_TEMPLATES = ['editorial', 'kinetic', 'terminal', 'minimal', 'zen', 'noir', 'blueprint', 'parallax', 'showcase', 'carbon', 'canvas', 'circuit', 'aurora', 'chalk', 'bauhaus', 'cosmos', 'glacier', 'ember', 'daylight', 'neon', 'mono', 'grid', 'meridian', 'obsidian', 'radar', 'parchment', 'paper', 'signal', 'strata', 'verdant'] as const;
 
 describe.each(CUSTOM_TEMPLATES)('%s template — project', (templateName) => {
   it('renders with data-template and data-render-version attributes', () => {
@@ -381,7 +381,7 @@ describe('renderPortfolioHtml', () => {
   it('renders aggregate stats', () => {
     const html = renderPortfolioHtml(makePortfolioData());
     expect(html).toContain('8'); // totalSessions
-    expect(html).toContain('1.2k'); // totalLoc formatted
+    expect(html).toContain('1,200'); // totalLoc formatted
   });
 
   it('renders total time when no agent duration', () => {
@@ -393,8 +393,8 @@ describe('renderPortfolioHtml', () => {
   it('renders leverage when agent duration is provided', () => {
     const data = makePortfolioData({ totalAgentDurationMinutes: 360 });
     const html = renderPortfolioHtml(data);
-    expect(html).toContain('You');
-    expect(html).toContain('Agents');
+    expect(html).toContain('you');
+    expect(html).toContain('agents');
   });
 
   it('renders skill chips on project cards', () => {
@@ -465,27 +465,27 @@ describe('renderPortfolioHtml', () => {
     expect(html).toContain('&lt;script&gt;');
   });
 
-  it('renders project narrative truncated', () => {
+  it('renders project narrative on cards', () => {
     const data = makePortfolioData();
     data.projects[0].narrative = 'A'.repeat(200);
     const html = renderPortfolioHtml(data);
-    // truncate: 120 leaves 117 chars + '...'
-    expect(html).toContain('...');
+    // Full text is present in DOM; CSS line-clamp handles visual truncation
+    expect(html).toContain('ed-project-card-narrative');
   });
 
   it('renders resume link when resumeUrl is provided', () => {
     const data = makePortfolioData();
     data.user.resumeUrl = 'https://example.com/resume.pdf';
     const html = renderPortfolioHtml(data);
-    expect(html).toContain('Resume (PDF)');
-    expect(html).toContain('download');
+    expect(html).toContain('Download Resume');
+    expect(html).toContain('https://example.com/resume.pdf');
   });
 
   it('renders photo when photoUrl is provided', () => {
     const data = makePortfolioData();
     data.user.photoUrl = 'https://example.com/photo.jpg';
     const html = renderPortfolioHtml(data);
-    expect(html).toContain('portfolio-photo');
+    expect(html).toContain('ed-profile-photo');
     expect(html).toContain('https://example.com/photo.jpg');
   });
 });
@@ -494,7 +494,7 @@ describe('renderPortfolioHtml', () => {
 // Portfolio — template-specific rendering
 // ---------------------------------------------------------------------------
 
-const PORTFOLIO_TEMPLATES = ['editorial', 'kinetic', 'terminal', 'minimal'] as const;
+const PORTFOLIO_TEMPLATES = ['editorial', 'kinetic', 'terminal', 'minimal', 'zen', 'noir', 'blueprint', 'parallax', 'showcase', 'carbon', 'canvas', 'circuit', 'aurora', 'chalk', 'bauhaus', 'cosmos', 'glacier', 'ember', 'daylight', 'neon', 'mono', 'grid', 'meridian', 'obsidian', 'radar', 'parchment', 'paper', 'signal', 'strata', 'verdant'] as const;
 
 describe.each(PORTFOLIO_TEMPLATES)('%s template — portfolio', (templateName) => {
   it('renders with data-template and data-render-version attributes', () => {

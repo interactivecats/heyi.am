@@ -1,30 +1,376 @@
 <div class="heyiam-project parallax" data-render-version="2" data-template="parallax"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+  <a href="#main-content" class="skip-link">Skip to content</a>
 
-  {% render 'partials/_links', project: project %}
-
-  {% render 'partials/_screenshot', project: project %}
-
-  {% render 'partials/_narrative', narrative: project.narrative %}
-
-  {% render 'partials/_stats', project: project, durationLabel: durationLabel, efficiencyMultiplier: efficiencyMultiplier %}
-
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
-
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
-
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+  <!-- Background Shapes -->
+  <div class="bg-shapes" aria-hidden="true">
+    <div class="bg-shape bg-shape--1"></div>
+    <div class="bg-shape bg-shape--2"></div>
+    <div class="bg-shape bg-shape--3"></div>
+    <div class="bg-shape bg-shape--4"></div>
+    <div class="bg-shape bg-shape--5"></div>
+    <div class="bg-shape bg-shape--6"></div>
   </div>
 
-  {% render 'partials/_phases', arc: arc %}
+  <!-- Main Content -->
+  <main id="main-content">
 
-  {% render 'partials/_skills', skills: project.skills %}
+    <!-- Project Hero -->
+    <section class="project-hero" aria-label="Project overview">
+      {% if project.screenshotUrl != blank %}
+      <div class="project-hero__screenshot" data-parallax="0.06" role="img" aria-label="{{ project.title }} screenshot">
+        <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot">
+      </div>
+      {% else %}
+      <div class="project-hero__screenshot" data-parallax="0.06" role="img" aria-label="{{ project.title }} placeholder"></div>
+      {% endif %}
 
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
+      <h1 class="project-hero__title">{{ project.title }}</h1>
 
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+      {% if project.repoUrl != blank or project.projectUrl != blank %}
+      <div class="project-hero__links">
+        {% if project.repoUrl != blank %}
+        <a href="{{ project.repoUrl }}" class="project-hero__link" rel="noopener noreferrer" target="_blank">{{ project.repoUrl | stripProtocol }}</a>
+        {% endif %}
+        {% if project.repoUrl != blank and project.projectUrl != blank %}
+        <span style="color: var(--px-text-tertiary);" aria-hidden="true">&middot;</span>
+        {% endif %}
+        {% if project.projectUrl != blank %}
+        <a href="{{ project.projectUrl }}" class="project-hero__link" rel="noopener noreferrer" target="_blank">{{ project.projectUrl | stripProtocol }}</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- Narrative -->
+    {% if project.narrative != blank %}
+    <section class="section" aria-label="Project narrative">
+      <h2 class="section__label reveal">Narrative</h2>
+      <div class="narrative reveal">
+        <p>{{ project.narrative }}</p>
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Stats -->
+    <section class="section" aria-label="Project statistics">
+      <div class="stats-bar" data-stats-fly>
+        <div class="stats-bar__item fly-left">
+          <div class="stats-bar__value">{{ project.totalSessions }}</div>
+          <div class="stats-bar__label">Sessions</div>
+        </div>
+        <div class="stats-bar__item fly-right">
+          <div class="stats-bar__value">{{ project.totalLoc | formatLoc }}</div>
+          <div class="stats-bar__label">LOC</div>
+        </div>
+        <div class="stats-bar__item fly-right">
+          <div class="stats-bar__value">{{ project.totalFilesChanged | localeNumber }}</div>
+          <div class="stats-bar__label">Files</div>
+        </div>
+        {% if project.totalTokens %}
+        <div class="stats-bar__item fly-left">
+          <div class="stats-bar__value">{{ project.totalTokens | formatTokens }}</div>
+          <div class="stats-bar__label">Tokens</div>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if efficiencyMultiplier %}
+      <div class="px-leverage" role="figure" aria-label="{{ project.totalDurationMinutes | formatDuration }} you, {{ project.totalAgentDurationMinutes | formatDuration }} agents, {{ efficiencyMultiplier }} leverage">
+        <span class="px-leverage__multi">{{ efficiencyMultiplier }}&times;</span>
+        <div class="px-leverage__line" aria-hidden="true"></div>
+        <div class="px-leverage__values">
+          <span>{{ project.totalDurationMinutes | formatDuration }} <small>you</small></span>
+          <span style="color:var(--px-accent-blue)">{{ project.totalAgentDurationMinutes | formatDuration }} <small>agents</small></span>
+        </div>
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- Work Timeline -->
+    {% if sessionsJson %}
+    <section class="section" aria-label="Work timeline">
+      <h2 class="section__label reveal">Work Timeline</h2>
+      <div class="reveal">
+        <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Growth Chart -->
+    {% if growthJson %}
+    <section class="section" aria-label="Cumulative LOC growth">
+      <h2 class="section__label reveal">Growth</h2>
+      <div class="reveal">
+        <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Phases -->
+    {% if arc.size > 0 %}
+    <section class="section" aria-label="Project phases">
+      <h2 class="section__label reveal">Phases</h2>
+      <div class="phase-timeline">
+        {% for phase in arc %}
+        <article class="phase-item" data-phase-index="{{ forloop.index0 }}">
+          <div class="phase-item__dot" aria-hidden="true"></div>
+          <div class="phase-item__num">Phase {{ phase.phase }}</div>
+          <h3 class="phase-item__title">{{ phase.title }}</h3>
+          {% if phase.description != blank %}
+          <p class="phase-item__desc">{{ phase.description }}</p>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Skills -->
+    {% if project.skills.size > 0 %}
+    <section class="section" aria-label="Skills used">
+      <h2 class="section__label reveal">Skills</h2>
+      <div class="skills-wrap reveal">
+        {% for skill in project.skills %}
+        <span class="skill-tag">{{ skill }}</span>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Source Breakdown -->
+    {% if sourceCounts.size > 0 %}
+    <section class="section" aria-label="Source breakdown">
+      <h2 class="section__label reveal">Source Breakdown</h2>
+      <div class="source-breakdown reveal">
+        <div class="source-legend">
+          {% for src in sourceCounts %}
+          <div class="source-legend__item">
+            <div class="source-legend__dot" style="background: var(--px-accent-blue);"></div>
+            <span>{{ src.tool }} &mdash; {{ src.count }} sessions</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Featured Sessions -->
+    {% if featuredSessions.size > 0 %}
+    <section class="section" aria-label="Featured sessions">
+      <h2 class="section__label reveal">Sessions</h2>
+      <div class="session-grid" data-session-grid>
+        {% for s in featuredSessions %}
+        <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="session-card">
+          <div class="session-card__num">Session {{ forloop.index }}</div>
+          <h3 class="session-card__title">{{ s.title }}</h3>
+          {% if s.devTake != blank %}
+          <p class="session-card__take">{{ s.devTake }}</p>
+          {% endif %}
+          <div class="session-card__meta">
+            <span>{{ s.durationMinutes | formatDuration }}</span>
+            <span>{{ s.locChanged | formatLoc }} LOC</span>
+            <span>{{ s.filesChanged }} files</span>
+          </div>
+          {% if s.skills.size > 0 %}
+          <span class="session-card__tag">{{ s.skills.first }}</span>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <p>Built with <a href="https://heyi.am">heyi.am</a> &mdash; signal over noise.</p>
+  </footer>
+
+  <!-- JavaScript: Parallax, Entrance Animations -->
+  <script>
+  (function() {
+    'use strict';
+
+    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var isMobile = window.innerWidth < 769;
+    var ticking = false;
+
+    var parallaxElements = [];
+
+    function cacheParallaxElements() {
+      parallaxElements = [];
+      var els = document.querySelectorAll('[data-parallax]');
+      for (var i = 0; i < els.length; i++) {
+        parallaxElements.push({
+          el: els[i],
+          speed: parseFloat(els[i].dataset.parallax)
+        });
+      }
+    }
+
+    function updateParallax() {
+      if (prefersReducedMotion.matches || isMobile) {
+        ticking = false;
+        return;
+      }
+      var vh = window.innerHeight;
+      for (var i = 0; i < parallaxElements.length; i++) {
+        var item = parallaxElements[i];
+        var rect = item.el.getBoundingClientRect();
+        var elementCenter = rect.top + rect.height * 0.5;
+        var viewportCenter = vh * 0.5;
+        var centerOffset = (elementCenter - viewportCenter) / vh;
+        var offset = centerOffset * item.speed * 100;
+        if (offset > 30) offset = 30;
+        if (offset < -30) offset = -30;
+        item.el.style.transform = 'translateY(' + offset + 'px)';
+      }
+      ticking = false;
+    }
+
+    function onScroll() {
+      if (!ticking) {
+        requestAnimationFrame(updateParallax);
+        ticking = true;
+      }
+    }
+
+    function initReveal() {
+      var reveals = document.querySelectorAll('.reveal');
+      if (!reveals.length) return;
+      if (prefersReducedMotion.matches) {
+        for (var i = 0; i < reveals.length; i++) {
+          reveals[i].classList.add('reveal--visible');
+        }
+        return;
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('reveal--visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+      for (var j = 0; j < reveals.length; j++) {
+        observer.observe(reveals[j]);
+      }
+    }
+
+    function initStatsFly() {
+      var container = document.querySelector('[data-stats-fly]');
+      if (!container) return;
+      if (prefersReducedMotion.matches || isMobile) {
+        var items = container.querySelectorAll('.stats-bar__item');
+        for (var i = 0; i < items.length; i++) {
+          items[i].classList.add('fly-visible');
+        }
+        return;
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            var items = entry.target.querySelectorAll('.stats-bar__item');
+            for (var i = 0; i < items.length; i++) {
+              (function(idx) {
+                setTimeout(function() {
+                  items[idx].classList.add('fly-visible');
+                }, idx * 120);
+              })(i);
+            }
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.2 });
+      observer.observe(container);
+    }
+
+    function initPhaseTimeline() {
+      var phases = document.querySelectorAll('.phase-item');
+      if (!phases.length) return;
+      if (prefersReducedMotion.matches || isMobile) {
+        for (var i = 0; i < phases.length; i++) {
+          phases[i].classList.add('phase-visible');
+        }
+        return;
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            var idx = parseInt(entry.target.dataset.phaseIndex, 10);
+            setTimeout(function() {
+              entry.target.classList.add('phase-visible');
+            }, idx * 150);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+      for (var j = 0; j < phases.length; j++) {
+        observer.observe(phases[j]);
+      }
+    }
+
+    function initSessionCards() {
+      var grid = document.querySelector('[data-session-grid]');
+      if (!grid) return;
+      var cards = grid.querySelectorAll('.session-card');
+      if (prefersReducedMotion.matches || isMobile) {
+        for (var i = 0; i < cards.length; i++) {
+          cards[i].classList.add('card-visible');
+        }
+        return;
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            for (var i = 0; i < cards.length; i++) {
+              (function(idx) {
+                setTimeout(function() {
+                  cards[idx].classList.add('card-visible');
+                }, idx * 100);
+              })(i);
+            }
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      observer.observe(grid);
+    }
+
+    function onResize() {
+      isMobile = window.innerWidth < 769;
+      if (isMobile) {
+        for (var i = 0; i < parallaxElements.length; i++) {
+          parallaxElements[i].el.style.transform = '';
+        }
+      }
+    }
+
+    function init() {
+      cacheParallaxElements();
+      initReveal();
+      initStatsFly();
+      initPhaseTimeline();
+      initSessionCards();
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onResize, { passive: true });
+      prefersReducedMotion.addEventListener('change', function() {
+        if (prefersReducedMotion.matches) {
+          for (var i = 0; i < parallaxElements.length; i++) {
+            parallaxElements[i].el.style.transform = '';
+          }
+        }
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+  </script>
 
 </div>

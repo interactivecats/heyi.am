@@ -1,35 +1,102 @@
 <div class="heyiam-session chalk" data-render-version="2" data-template="chalk">
 
-  <div class="session-layout">
+  {%- comment -%} SVG filters {%- endcomment -%}
+  <svg class="svg-filters" aria-hidden="true">
+    <defs>
+      <filter id="chalk-rough">
+        <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" seed="1" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+    </defs>
+  </svg>
 
-    {% render 'partials/_session-sidebar', session: session %}
+  {%- comment -%} Breadcrumb {%- endcomment -%}
+  <div class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/{{ user.username }}">{{ user.username }}</a>
+    {% if projectSlug %}
+    <span class="breadcrumb-sep" aria-hidden="true">/</span>
+    <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
+    {% endif %}
+    <span class="breadcrumb-sep" aria-hidden="true">/</span>
+    <span aria-current="page">{{ session.title }}</span>
+  </div>
 
-    <main class="session-main">
+  {%- comment -%} Hero {%- endcomment -%}
+  <section class="hero" aria-label="Session header">
+    <h1>{{ session.title }}</h1>
+    <div class="hero-meta">
+      {% if session.recordedAt %}
+      <span class="hero-meta-item">{{ session.recordedAt | formatDate }}</span>
+      {% endif %}
+      {% if session.sourceTool %}
+      <span class="hero-meta-item">{{ session.sourceTool }}</span>
+      {% endif %}
+      <span class="hero-meta-item">{{ session.durationMinutes | formatDuration }}</span>
+      <span class="hero-meta-item">{{ session.turns }} turns</span>
+      <span class="hero-meta-item">{{ session.locChanged | localeNumber }} LOC</span>
+      <span class="hero-meta-item">{{ session.filesChanged }} files</span>
+    </div>
+  </section>
 
-      {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
+  {%- comment -%} Dev Take {%- endcomment -%}
+  {% if session.devTake %}
+  <div class="dev-take fade-in">
+    <div class="dev-take-label">Dev Take</div>
+    <p>{{ session.devTake }}</p>
+  </div>
+  {% endif %}
 
-      {% render 'partials/_session-header', session: session %}
+  {%- comment -%} Two-column layout {%- endcomment -%}
+  <div class="layout-grid">
+    {%- comment -%} Main content {%- endcomment -%}
+    <div>
 
-      {% if session.skills.size > 0 %}
-      <section class="content-section">
-        <div class="chip-list">
-          {% for skill in session.skills %}
-          <span class="chip chip--violet">{{ skill }}</span>
+      {%- comment -%} Execution Path (Beats) {%- endcomment -%}
+      {% if session.beats.size > 0 %}
+      <section class="beats-section" aria-label="Execution path">
+        <h2 class="section-heading"><span class="sketch-underline">Execution Path</span></h2>
+        <ol class="beat-list beats-list">
+          {% for beat in session.beats %}
+          <li class="beat-item">
+            <svg class="beat-circle" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <text x="12" y="12">{{ beat.stepNumber }}</text>
+            </svg>
+            <div class="beat-title">{{ beat.title }}</div>
+            <div class="beat-desc">{{ beat.body }}</div>
+          </li>
           {% endfor %}
+        </ol>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Q&A {%- endcomment -%}
+      {% if session.qaPairs.size > 0 %}
+      <section class="qa-section" aria-label="Questions and answers">
+        <h2 class="section-heading"><span class="sketch-underline">Q&amp;A</span></h2>
+        {% for qa in session.qaPairs %}
+        <div class="qa-item qa-pair">
+          <h3 class="qa-question">{{ qa.question }}</h3>
+          <p class="qa-answer">{{ qa.answer }}</p>
+        </div>
+        {% endfor %}
+      </section>
+      {% endif %}
+
+      {%- comment -%} Narrative {%- endcomment -%}
+      {% if session.narrative %}
+      <section class="narrative-section" aria-label="Session narrative">
+        <h2 class="section-heading"><span class="sketch-underline">Narrative</span></h2>
+        <div class="narrative">
+          <p>{{ session.narrative }}</p>
         </div>
       </section>
       {% endif %}
 
-      {% if session.narrative != blank %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Narrative</h2>
-        <p>{{ session.narrative }}</p>
-      </section>
-      {% endif %}
-
+      {%- comment -%} Highlights {%- endcomment -%}
       {% if session.highlights.size > 0 %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Highlights</h2>
+      <section class="beats-section" aria-label="Session highlights">
+        <h2 class="section-heading"><span class="sketch-underline">Highlights</span></h2>
         <ul class="highlights-list">
           {% for h in session.highlights %}
           <li>{{ h }}</li>
@@ -38,10 +105,190 @@
       </section>
       {% endif %}
 
-      {% render 'partials/_beats', session: session %}
+      {%- comment -%} Agent Summary {%- endcomment -%}
+      {% if session.agentSummary %}
+      <section class="agents-section" aria-label="Agent summary">
+        <h2 class="section-heading"><span class="sketch-underline">Agents</span></h2>
+        <p class="annotation">{{ session.agentSummary.agents.size }} sub-session{% if session.agentSummary.agents.size != 1 %}s{% endif %}</p>
 
-      {% render 'partials/_qa', session: session %}
+        {% assign maxAgentLoc = 0 %}
+        {% for agent in session.agentSummary.agents %}
+          {% if agent.loc_changed > maxAgentLoc %}
+            {% assign maxAgentLoc = agent.loc_changed %}
+          {% endif %}
+        {% endfor %}
 
-    </main>
+        {% assign agent_colors = 'var(--agent-backend),var(--agent-qa),var(--agent-frontend),var(--agent-security),var(--agent-reviewer),var(--agent-ux)' | split: ',' %}
+        <div class="agent-bar-chart" role="list" aria-label="Agent contribution breakdown">
+          {% for agent in session.agentSummary.agents %}
+          <div class="agent-row" role="listitem">
+            <span class="agent-name">{{ agent.role }}</span>
+            <div class="agent-bar">
+              {% if maxAgentLoc > 0 %}
+              {% assign barPct = agent.loc_changed | times: 100 | divided_by: maxAgentLoc %}
+              {% else %}
+              {% assign barPct = 0 %}
+              {% endif %}
+              {% assign colorIdx = forloop.index0 | modulo: 6 %}
+              <div class="agent-bar-fill" style="width: {{ barPct }}%; background: {{ agent_colors[colorIdx] }};"></div>
+            </div>
+            <span class="agent-stats">{{ agent.duration_minutes }}m / {{ agent.loc_changed }} LOC</span>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+    </div>
+
+    {%- comment -%} Sidebar {%- endcomment -%}
+    <aside class="sidebar" aria-label="Session details">
+
+      {%- comment -%} Tools Used {%- endcomment -%}
+      {% if session.toolBreakdown.size > 0 %}
+      <section class="sidebar-section chalk-card">
+        <h2 class="sidebar-heading">Tools Used</h2>
+        <table class="tools-table tool-list" aria-label="Tool usage counts">
+          <thead>
+            <tr>
+              <th scope="col">Tool</th>
+              <th scope="col">Count</th>
+              <th scope="col" aria-label="Relative usage">Usage</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% assign maxToolCount = 0 %}
+            {% for t in session.toolBreakdown %}
+              {% if t.count > maxToolCount %}
+                {% assign maxToolCount = t.count %}
+              {% endif %}
+            {% endfor %}
+            {% for t in session.toolBreakdown %}
+            <tr>
+              <td>{{ t.tool }}</td>
+              <td>{{ t.count }}</td>
+              <td>
+                {% if maxToolCount > 0 %}
+                {% assign toolPct = t.count | times: 100 | divided_by: maxToolCount %}
+                <div class="tool-bar"><div class="tool-bar-fill" style="width: {{ toolPct }}%"></div></div>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Files Changed {%- endcomment -%}
+      {% if session.topFiles.size > 0 %}
+      <section class="sidebar-section chalk-card">
+        <h2 class="sidebar-heading">Files Changed</h2>
+        <ul class="files-list file-list" aria-label="Modified files">
+          {% for f in session.topFiles %}
+          <li class="file-item">
+            <span class="file-name">{{ f.path }}</span>
+            <span class="file-diff">+{{ f.additions }}{% if f.deletions > 0 %} -{{ f.deletions }}{% endif %}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Skills {%- endcomment -%}
+      {% if session.skills.size > 0 %}
+      <section class="sidebar-section chalk-card">
+        <h2 class="sidebar-heading">Skills</h2>
+        <ul class="skills-list" aria-label="Skills used in session">
+          {% for skill in session.skills %}
+          <li class="skill-chip chip">{{ skill }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+    </aside>
   </div>
+
+  {%- comment -%} Animation scripts {%- endcomment -%}
+  <script>
+  (function() {
+    'use strict';
+    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function setupFadeIn() {
+      var items = document.querySelectorAll('.beat-item, .qa-item, .chalk-card, .agent-row');
+      if (prefersReducedMotion || !items.length) return;
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0) rotate(0deg)';
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      items.forEach(function(el, i) {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(12px) rotate(-0.5deg)';
+        el.style.transition = 'opacity 0.4s ease-out ' + (i * 0.05) + 's, transform 0.4s ease-out ' + (i * 0.05) + 's';
+        observer.observe(el);
+      });
+    }
+
+    function setupBarAnimation() {
+      var bars = document.querySelectorAll('.agent-bar-fill');
+      if (prefersReducedMotion || !bars.length) return;
+      bars.forEach(function(bar) {
+        bar.dataset.width = bar.style.width;
+        bar.style.width = '0';
+      });
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            bars.forEach(function(bar, i) {
+              setTimeout(function() {
+                bar.style.transition = 'width 0.6s ease-out';
+                bar.style.width = bar.dataset.width;
+              }, i * 100);
+            });
+            observer.disconnect();
+          }
+        });
+      }, { threshold: 0.2 });
+      var chart = document.querySelector('.agent-bar-chart');
+      if (chart) observer.observe(chart);
+    }
+
+    function setupToolBarAnimation() {
+      var bars = document.querySelectorAll('.tool-bar-fill');
+      if (prefersReducedMotion || !bars.length) return;
+      bars.forEach(function(bar) {
+        bar.dataset.width = bar.style.width;
+        bar.style.width = '0';
+      });
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            var fills = entry.target.querySelectorAll('.tool-bar-fill');
+            fills.forEach(function(bar, i) {
+              setTimeout(function() {
+                bar.style.transition = 'width 0.5s ease-out';
+                bar.style.width = bar.dataset.width;
+              }, i * 80);
+            });
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.2 });
+      var table = document.querySelector('.tools-table');
+      if (table) observer.observe(table);
+    }
+
+    setupFadeIn();
+    setupBarAnimation();
+    setupToolBarAnimation();
+  })();
+  </script>
+
 </div>

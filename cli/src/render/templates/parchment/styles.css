@@ -1,0 +1,993 @@
+/* ── Parchment template styles ──
+ * Extracted from mockup HTML files.
+ * Warm parchment aesthetic with Crimson Pro serif display font.
+ */
+
+/* ── Skip Link ── */
+.parchment .skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--parch-accent);
+  color: var(--parch-bg);
+  padding: 0.5rem 1rem;
+  z-index: 1000;
+  font-family: var(--parch-font-mono);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  border-radius: var(--parch-radius);
+}
+.parchment .skip-link:focus {
+  top: 0.5rem;
+}
+
+/* ── Fade In Animation ── */
+@keyframes parchmentFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.parchment .fade-in {
+  animation: parchmentFadeIn var(--parch-duration) var(--parch-ease) both;
+}
+.parchment .fade-in-delay-1 { animation-delay: 100ms; }
+.parchment .fade-in-delay-2 { animation-delay: 200ms; }
+.parchment .fade-in-delay-3 { animation-delay: 300ms; }
+.parchment .fade-in-d1 { animation-delay: 100ms; }
+.parchment .fade-in-d2 { animation-delay: 200ms; }
+.parchment .fade-in-d3 { animation-delay: 300ms; }
+.parchment .fade-in-d4 { animation-delay: 400ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .parchment .fade-in,
+  .parchment .fade-in-delay-1,
+  .parchment .fade-in-delay-2,
+  .parchment .fade-in-delay-3,
+  .parchment .fade-in-d1,
+  .parchment .fade-in-d2,
+  .parchment .fade-in-d3,
+  .parchment .fade-in-d4 {
+    animation: none;
+  }
+}
+
+/* ── Layout ── */
+.parchment .page-wrapper {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* ── Decorative HR — thin-thick-thin ── */
+.parchment .hr-triple {
+  border: none;
+  margin: 2.5rem 0;
+  padding: 0;
+  height: auto;
+  text-align: center;
+  overflow: visible;
+}
+.parchment .hr-triple::before {
+  content: '';
+  display: block;
+  border-top: 1px solid var(--parch-border-light);
+  margin-bottom: 2px;
+}
+.parchment .hr-triple::after {
+  content: '';
+  display: block;
+  border-top: 1px solid var(--parch-border-light);
+  margin-top: 2px;
+}
+.parchment .hr-triple-inner {
+  display: block;
+  border-top: 2px solid var(--parch-accent);
+}
+
+/* ── Breadcrumb ── */
+.parchment .breadcrumb {
+  font-family: var(--parch-font-mono);
+  font-size: 0.75rem;
+  color: var(--parch-text-tertiary);
+  padding: 1rem 0 0;
+  letter-spacing: 0.03em;
+}
+.parchment .breadcrumb a {
+  color: var(--parch-text-tertiary);
+}
+.parchment .breadcrumb__sep {
+  margin: 0 0.35rem;
+  color: var(--parch-border-light);
+}
+
+/* ── Title Page / Masthead (Portfolio) ── */
+.parchment .masthead {
+  text-align: center;
+  padding: 3.5rem 0 2rem;
+}
+.parchment .masthead__title {
+  font-family: var(--parch-font-display);
+  font-size: clamp(2.5rem, 7vw, 4rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  color: var(--parch-accent);
+}
+.parchment .masthead__subtitle {
+  font-family: var(--parch-font-body);
+  font-size: 1.125rem;
+  font-style: italic;
+  color: var(--parch-text-secondary);
+  margin-top: 1rem;
+  max-width: 540px;
+  margin-inline: auto;
+  line-height: 1.6;
+}
+.parchment .masthead__location {
+  font-family: var(--parch-font-mono);
+  font-size: 0.75rem;
+  color: var(--parch-text-tertiary);
+  margin-top: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.parchment .masthead__photo {
+  width: 100px;
+  height: 130px;
+  border-radius: 8px;
+  object-fit: cover;
+  object-position: 55% 10%;
+  border: 2px solid var(--parch-border-light);
+  margin: 0 auto 1.25rem;
+  display: block;
+  filter: sepia(0.6) contrast(0.9);
+}
+.parchment .masthead__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1.25rem;
+  margin-top: 1rem;
+  font-family: var(--parch-font-mono);
+  font-size: 0.6875rem;
+}
+.parchment .masthead__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--parch-text-secondary);
+  text-decoration: none;
+  letter-spacing: 0.03em;
+}
+.parchment .masthead__links a:hover {
+  color: var(--parch-accent);
+  opacity: 1;
+}
+.parchment .masthead__links a svg {
+  flex-shrink: 0;
+}
+
+/* ── Title Page (Project) ── */
+.parchment .title-page {
+  text-align: center;
+  padding: 2.5rem 0 1.5rem;
+}
+.parchment .title-page__heading {
+  font-family: var(--parch-font-display);
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--parch-accent);
+  line-height: 1.15;
+}
+.parchment .title-page__links {
+  font-family: var(--parch-font-mono);
+  font-size: 0.75rem;
+  color: var(--parch-text-tertiary);
+  margin-top: 0.75rem;
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+}
+.parchment .title-page__links a {
+  color: var(--parch-accent);
+  font-size: 0.75rem;
+}
+
+/* ── Screenshot ── */
+.parchment .screenshot {
+  margin: 2rem 0;
+  border: 1px solid var(--parch-border-light);
+  border-radius: var(--parch-radius);
+  overflow: hidden;
+}
+.parchment .screenshot__chrome {
+  background: var(--parch-surface);
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--parch-border-faint);
+}
+.parchment .screenshot__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--parch-border-light);
+}
+.parchment .screenshot__bar {
+  flex: 1;
+  height: 18px;
+  background: var(--parch-bg);
+  border: 1px solid var(--parch-border-faint);
+  border-radius: 3px;
+  margin-inline-start: 0.5rem;
+  font-family: var(--parch-font-mono);
+  font-size: 0.625rem;
+  line-height: 18px;
+  padding-inline-start: 0.5rem;
+  color: var(--parch-text-tertiary);
+}
+
+/* ── Margin Annotations (Stats) ── */
+.parchment .margin-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2.5rem;
+  padding: 1.5rem 0;
+  flex-wrap: wrap;
+}
+.parchment .margin-stat {
+  text-align: center;
+}
+.parchment .margin-stat__value {
+  font-family: var(--parch-font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--parch-accent);
+  line-height: 1.2;
+}
+.parchment .margin-stat__label {
+  font-family: var(--parch-font-mono);
+  font-size: 0.6875rem;
+  color: var(--parch-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.25rem;
+}
+
+/* ── Project Stats ── */
+.parchment .project-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--parch-surface);
+  border: 1px solid var(--parch-border-light);
+  border-radius: var(--parch-radius);
+  margin: 2rem 0;
+}
+.parchment .project-stat {
+  text-align: center;
+}
+.parchment .project-stat__value {
+  font-family: var(--parch-font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--parch-accent);
+  line-height: 1.2;
+}
+.parchment .project-stat__label {
+  font-family: var(--parch-font-mono);
+  font-size: 0.625rem;
+  color: var(--parch-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.15rem;
+}
+
+/* ── Session Stats Row ── */
+.parchment .session-stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: var(--parch-surface);
+  border: 1px solid var(--parch-border-light);
+  border-radius: var(--parch-radius);
+  margin: 0 0 1.5rem;
+}
+.parchment .session-stats-row__item {
+  text-align: center;
+}
+.parchment .session-stats-row__value {
+  font-family: var(--parch-font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--parch-accent);
+  line-height: 1.2;
+}
+.parchment .session-stats-row__label {
+  font-family: var(--parch-font-mono);
+  font-size: 0.5625rem;
+  color: var(--parch-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.1rem;
+}
+
+/* ── Chapter Headings ── */
+.parchment .chapter-heading {
+  font-family: var(--parch-font-display);
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: var(--parch-accent);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 1.75rem;
+}
+.parchment .chapter-heading__number {
+  display: block;
+  font-family: var(--parch-font-mono);
+  font-size: 0.6875rem;
+  color: var(--parch-text-tertiary);
+  letter-spacing: 0.15em;
+  margin-bottom: 0.25rem;
+}
+
+/* ── Project Cards ── */
+.parchment .project-card {
+  background: var(--parch-surface);
+  border: 1px solid var(--parch-border-light);
+  border-radius: var(--parch-radius);
+  padding: 2rem 2rem 1.5rem;
+  margin-bottom: 2rem;
+  position: relative;
+}
+.parchment .project-card__page-number {
+  position: absolute;
+  top: 1rem;
+  inset-inline-end: 1.5rem;
+  font-family: var(--parch-font-mono);
+  font-size: 0.6875rem;
+  color: var(--parch-text-tertiary);
+  letter-spacing: 0.1em;
+}
+.parchment .project-card__title {
+  font-family: var(--parch-font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--parch-accent);
+  margin-bottom: 0.75rem;
+}
+.parchment .project-card__narrative {
+  font-family: var(--parch-font-body);
+  font-size: 1rem;
+  font-style: italic;
+  color: var(--parch-text-secondary);
+  line-height: 1.7;
+  margin-bottom: 1.25rem;
+}
+.parchment .project-card__skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+.parchment .project-card__meta {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  font-family: var(--parch-font-mono);
+  font-size: 0.75rem;
+  color: var(--parch-text-tertiary);
+  border-top: 1px solid var(--parch-border-faint);
+  padding-top: 1rem;
+}
+.parchment .project-card__meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Clickable cards */
+.parchment a.project-card,
+.parchment a.session-card {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.parchment a.project-card:hover,
+.parchment a.session-card:hover {
+  transform: translateY(-2px);
+}
+
+/* ── Skill Tags ── */
+.parchment .skill-tag {
+  font-family: var(--parch-font-mono);
+  font-size: 0.6875rem;
+  color: var(--parch-accent);
+  border: 1px solid var(--parch-border-light);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--parch-radius);
+  letter-spacing: 0.03em;
+  background: var(--parch-bg);
+}
+
+/* ── Narrative (Drop Caps) ── */
+.parchment .narrative {
+  margin: 2rem 0;
+}
+.parchment .narrative p {
+  margin-bottom: 1.25rem;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+}
+.parchment .narrative p:first-child::first-letter {
+  font-family: var(--parch-font-display);
+  font-size: 3.5rem;
+  font-weight: 700;
+  float: left;
+  line-height: 0.8;
+  padding-inline-end: 0.5rem;
+  padding-top: 0.15rem;
+  color: var(--parch-accent);
+}
+
+/* ── Phase Timeline ── */
+.parchment .phases {
+  margin: 0 0 1rem;
+}
+.parchment .phase {
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--parch-border-faint);
+}
+.parchment .phase:last-child {
+  border-bottom: none;
+}
+.parchment .phase__number {
+  font-family: var(--parch-font-mono);
+  font-size: 0.625rem;
+  color: var(--parch-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+.parchment .phase__title {
+  font-family: var(--parch-font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--parch-accent);
+  margin-top: 0.25rem;
+}
+.parchment .phase__desc {
+  font-family: var(--parch-font-body);
+  color: var(--parch-text-secondary);
+  font-size: 0.9375rem;
+  margin-top: 0.5rem;
+  line-height: 1.65;
+}
+
+/* ── Key Decisions ── */
+.parchment .decisions-list {
+  list-style: none;
+  counter-reset: decision;
+  margin: 0;
+}
+.parchment .decisions-list li {
+  counter-increment: decision;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--parch-border-faint);
+  font-size: 1rem;
+  line-height: 1.6;
+  display: flex;
+  gap: 0.75rem;
+}
+.parchment .decisions-list li:last-child {
+  border-bottom: none;
+}
+.parchment .decisions-list li::before {
+  content: counter(decision) ".";
+  font-family: var(--parch-font-display);
+  font-weight: 700;
+  color: var(--parch-accent);
+  font-size: 1.125rem;
+  flex-shrink: 0;
+  min-width: 1.5rem;
+}
+
+/* ── Skills Section ── */
+.parchment .skills-section {
+  margin: 0;
+}
+.parchment .skill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* ── Source Breakdown ── */
+.parchment .source-breakdown {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin: 0;
+}
+.parchment .source-bar-container {
+  flex: 1;
+}
+.parchment .source-bar {
+  display: flex;
+  height: 6px;
+  border-radius: var(--parch-radius);
+  overflow: hidden;
+  background: var(--parch-border-faint);
+}
+.parchment .source-bar__segment {
+  height: 100%;
+}
+.parchment .source-bar__segment--claude {
+  background: var(--parch-accent);
+}
+.parchment .source-bar__segment--cursor {
+  background: var(--parch-text-tertiary);
+}
+.parchment .source-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  font-family: var(--parch-font-mono);
+  font-size: 0.625rem;
+  color: var(--parch-text-tertiary);
+}
+
+/* ── Session Cards ── */
+.parchment .session-list {
+  margin: 0 0 1rem;
+}
+.parchment .session-card {
+  background: var(--parch-surface);
+  border: 1px solid var(--parch-border-light);
+  border-radius: var(--parch-radius);
+  padding: 1.5rem 1.5rem 1.25rem;
+  margin-bottom: 1.25rem;
+  position: relative;
+}
+.parchment .session-card__page {
+  position: absolute;
+  top: 0.75rem;
+  inset-inline-end: 1rem;
+  font-family: var(--parch-font-mono);
+  font-size: 0.625rem;
+  color: var(--parch-text-tertiary);
+  letter-spacing: 0.1em;
+}
+.parchment .session-card__number {
+  font-family: var(--parch-font-mono);
+  font-size: 0.625rem;
+  color: var(--parch-text-tertiary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.parchment .session-card__title {
+  font-family: var(--parch-font-display);
+  font-size: 1.1875rem;
+  font-weight: 600;
+  color: var(--parch-accent);
+  margin-top: 0.25rem;
+}
+.parchment .session-card__meta {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  font-family: var(--parch-font-mono);
+  font-size: 0.6875rem;
+  color: var(--parch-text-tertiary);
+  margin-top: 0.5rem;
+}
+.parchment .session-card__tag {
+  display: inline-block;
+  font-family: var(--parch-font-mono);
+  font-size: 0.5625rem;
+  color: var(--parch-accent);
+  border: 1px solid var(--parch-border-light);
+  padding: 0.1rem 0.4rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-inline-start: 0.5rem;
+}
+
+/* ── Session Header ── */
+.parchment .session-header {
+  padding: 2rem 0 1.5rem;
+}
+.parchment .session-header__title {
+  font-family: var(--parch-font-display);
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-weight: 700;
+  color: var(--parch-accent);
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+.parchment .session-header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-top: 0.75rem;
+  font-family: var(--parch-font-mono);
+  font-size: 0.75rem;
+  color: var(--parch-text-tertiary);
+}
+.parchment .session-header__meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* ── Dev Take (Epigraph) ── */
+.parchment .dev-take {
+  background: var(--parch-surface);
+  border-inline-start: 3px solid var(--parch-accent);
+  padding: 1.25rem 1.5rem;
+  margin: 0 0 2rem;
+  font-family: var(--parch-font-body);
+  font-style: italic;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--parch-text-secondary);
+}
+.parchment .dev-take::before {
+  content: '\201C';
+  font-family: var(--parch-font-display);
+  font-size: 2.5rem;
+  line-height: 0;
+  vertical-align: -0.45em;
+  color: var(--parch-accent);
+  margin-inline-end: 0.15rem;
+}
+
+/* ── Two Column Layout (Session) ── */
+.parchment .content-layout {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+/* ── Sidebar ── */
+.parchment .sidebar {
+  position: sticky;
+  top: 1.5rem;
+}
+.parchment .sidebar-section {
+  margin-bottom: 2rem;
+}
+.parchment .sidebar-section__title {
+  font-family: var(--parch-font-mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--parch-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--parch-border-faint);
+  padding-bottom: 0.5rem;
+}
+
+/* ── Sidebar: Tools Used ── */
+.parchment .tool-list {
+  list-style: none;
+}
+.parchment .tool-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  font-family: var(--parch-font-mono);
+  font-size: 0.75rem;
+  color: var(--parch-text-secondary);
+  border-bottom: 1px dotted var(--parch-border-faint);
+}
+.parchment .tool-list li:last-child {
+  border-bottom: none;
+}
+.parchment .tool-list__count {
+  color: var(--parch-accent);
+  font-weight: 500;
+}
+
+/* ── Sidebar: Files Changed ── */
+.parchment .file-list {
+  list-style: none;
+}
+.parchment .file-list li {
+  padding: 0.35rem 0;
+  border-bottom: 1px dotted var(--parch-border-faint);
+  font-family: var(--parch-font-mono);
+  font-size: 0.6875rem;
+  color: var(--parch-text-secondary);
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.parchment .file-list li:last-child {
+  border-bottom: none;
+}
+.parchment .file-list__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.parchment .file-list__diff {
+  color: var(--parch-accent);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Sidebar: Skills ── */
+.parchment .sidebar-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* ── Execution Path (Beats) ── */
+.parchment .beats {
+  list-style: none;
+  counter-reset: beat;
+  margin: 0 0 1rem;
+}
+.parchment .beat {
+  counter-increment: beat;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--parch-border-faint);
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  gap: 0;
+}
+.parchment .beat:last-child {
+  border-bottom: none;
+}
+.parchment .beat__number {
+  font-family: var(--parch-font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--parch-accent);
+  line-height: 1.3;
+}
+.parchment .beat__title {
+  font-family: var(--parch-font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--parch-text);
+  margin-bottom: 0.35rem;
+}
+.parchment .beat__desc {
+  font-family: var(--parch-font-body);
+  font-size: 0.9375rem;
+  color: var(--parch-text-secondary);
+  line-height: 1.65;
+}
+
+/* ── Q&A ── */
+.parchment .qa-list {
+  margin: 0 0 1rem;
+}
+.parchment .qa-item {
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--parch-border-faint);
+}
+.parchment .qa-item:last-child {
+  border-bottom: none;
+}
+.parchment .qa-question {
+  font-family: var(--parch-font-display);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--parch-text);
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+.parchment .qa-question::before {
+  content: 'Q. ';
+  font-family: var(--parch-font-display);
+  font-weight: 700;
+  color: var(--parch-accent);
+  font-size: 1.125rem;
+}
+.parchment .qa-answer {
+  font-family: var(--parch-font-body);
+  font-size: 0.9375rem;
+  color: var(--parch-text-secondary);
+  line-height: 1.7;
+  padding-inline-start: 0;
+}
+.parchment .qa-answer::before {
+  content: 'A. ';
+  font-family: var(--parch-font-display);
+  font-weight: 700;
+  color: var(--parch-accent);
+  font-size: 1rem;
+}
+
+/* ── Agent Summary ── */
+.parchment .agent-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.parchment .agent-table th {
+  font-family: var(--parch-font-mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--parch-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-align: start;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid var(--parch-accent);
+}
+.parchment .agent-table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--parch-border-faint);
+  font-family: var(--parch-font-body);
+}
+.parchment .agent-table tr:last-child td {
+  border-bottom: none;
+}
+.parchment .agent-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-inline-end: 0.4rem;
+  vertical-align: middle;
+  background: var(--parch-accent);
+}
+
+/* ── Turn Distribution ── */
+.parchment .turn-distribution {
+  margin: 0;
+}
+.parchment .turn-bar {
+  display: flex;
+  height: 20px;
+  border-radius: var(--parch-radius);
+  overflow: hidden;
+  background: var(--parch-border-faint);
+}
+.parchment .turn-bar__seg {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--parch-font-mono);
+  font-size: 0.5rem;
+  color: var(--parch-bg);
+  overflow: hidden;
+}
+.parchment .turn-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+.parchment .turn-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--parch-font-mono);
+  font-size: 0.625rem;
+  color: var(--parch-text-tertiary);
+}
+.parchment .turn-legend__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── About Section ── */
+.parchment .about-section {
+  margin: 0;
+}
+.parchment .about-section__text {
+  font-family: var(--parch-font-body);
+  font-size: 1.0625rem;
+  font-style: italic;
+  color: var(--parch-text-secondary);
+  line-height: 1.75;
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ── Colophon (Footer) ── */
+.parchment .colophon {
+  text-align: center;
+  padding: 2rem 0 3rem;
+  font-family: var(--parch-font-mono);
+  font-size: 0.6875rem;
+  color: var(--parch-text-tertiary);
+  letter-spacing: 0.05em;
+}
+.parchment .colophon__mark {
+  font-family: var(--parch-font-display);
+  font-size: 1.25rem;
+  color: var(--parch-accent);
+  margin-bottom: 0.5rem;
+}
+.parchment .colophon p {
+  margin-top: 0.25rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .parchment .page-wrapper {
+    padding: 0 1rem;
+  }
+  .parchment .masthead {
+    padding: 2.5rem 0 1.5rem;
+  }
+  .parchment .masthead__photo {
+    width: 80px;
+    height: 100px;
+  }
+  .parchment .margin-stats {
+    gap: 1.5rem;
+  }
+  .parchment .margin-stat__value {
+    font-size: 1.375rem;
+  }
+  .parchment .project-card {
+    padding: 1.5rem 1.25rem 1.25rem;
+  }
+  .parchment .project-card__meta {
+    gap: 1rem;
+  }
+  .parchment .title-page {
+    padding: 2rem 0 1rem;
+  }
+  .parchment .title-page__links {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .parchment .project-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .parchment .session-card {
+    padding: 1.25rem 1rem 1rem;
+  }
+  .parchment .content-layout {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .parchment .sidebar {
+    position: static;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--parch-border-light);
+  }
+  .parchment .sidebar-section:last-child {
+    grid-column: 1 / -1;
+  }
+  .parchment .session-header {
+    padding: 1.5rem 0 1rem;
+  }
+  .parchment .beat {
+    grid-template-columns: 2rem 1fr;
+  }
+  .parchment .narrative p:first-child::first-letter {
+    font-size: 2.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .parchment .project-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

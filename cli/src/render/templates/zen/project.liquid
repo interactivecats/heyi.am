@@ -1,30 +1,177 @@
-<div class="heyiam-project zen" data-render-version="2" data-template="zen"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
+<div class="zen-project-page" data-render-version="2" data-template="zen"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+  <main class="zen-container">
 
-  {% render 'partials/_links', project: project %}
+    <!-- Section 1: Project Header -->
+    <section class="zen-section zen-fade" aria-label="Project header">
+      <h1 class="zen-display">{{ project.title }}</h1>
+      {% if project.repoUrl != blank or project.projectUrl != blank %}
+      <div class="zen-project-links">
+        {% if project.repoUrl != blank %}
+        <a href="{{ project.repoUrl }}">{{ project.repoUrl | stripProtocol }}</a>
+        {% endif %}
+        {% if project.projectUrl != blank %}
+        <a href="{{ project.projectUrl }}">{{ project.projectUrl | stripProtocol }}</a>
+        {% endif %}
+      </div>
+      {% endif %}
 
-  {% render 'partials/_screenshot', project: project %}
+      {% if project.screenshotUrl != blank %}
+      <div class="zen-screenshot" role="img" aria-label="{{ project.title }} application screenshot">
+        <div class="zen-screenshot-chrome">
+          <span class="zen-screenshot-dot"></span>
+          <span class="zen-screenshot-dot"></span>
+          <span class="zen-screenshot-dot"></span>
+          {% if project.projectUrl != blank %}
+          <span class="zen-screenshot-url">{{ project.projectUrl | stripProtocol }}</span>
+          {% endif %}
+        </div>
+        <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" style="width:100%;display:block;">
+      </div>
+      {% endif %}
+    </section>
 
-  {% render 'partials/_narrative', narrative: project.narrative %}
+    <hr class="zen-rule zen-fade" aria-hidden="true">
 
-  {% render 'partials/_stats', project: project, durationLabel: durationLabel, efficiencyMultiplier: efficiencyMultiplier %}
+    <!-- Section 2: Narrative -->
+    {% if project.narrative != blank %}
+    <section class="zen-section zen-fade" aria-label="Project narrative">
+      <h2 class="zen-heading">Narrative</h2>
+      <div class="zen-narrative">
+        <p>{{ project.narrative }}</p>
+      </div>
+    </section>
 
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+    {% endif %}
 
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
+    <!-- Section 3: Stats -->
+    <section class="zen-section zen-fade" aria-label="Project statistics">
+      <h2 class="zen-heading">Numbers</h2>
+      <p class="zen-stats">
+        <span class="zen-stat-value">{{ project.totalSessions }}</span> sessions.
+        <span class="zen-stat-value">{{ project.totalLoc | localeNumber }}</span> lines changed.
+        {% if efficiencyMultiplier %}
+        I spent <span class="zen-stat-value">{{ project.totalDurationMinutes | formatDuration }}</span> directing
+        <span class="zen-stat-value" style="font-weight:500">{{ project.totalAgentDurationMinutes | formatDuration }}</span> of agent work &mdash;
+        a <span class="zen-stat-value" style="font-size:1.375rem;font-weight:600">{{ efficiencyMultiplier }}&times;</span> multiplier.
+        {% else %}
+        <span class="zen-stat-value">{{ project.totalDurationMinutes | formatDuration }}</span> of work.
+        {% endif %}
+      </p>
+    </section>
 
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
-  </div>
+    <hr class="zen-rule zen-fade" aria-hidden="true">
 
-  {% render 'partials/_phases', arc: arc %}
+    <!-- Section 4: Work Timeline (chart mount point) -->
+    {% if sessionsJson %}
+    <section class="zen-section zen-fade" aria-label="Work timeline">
+      <h2 class="zen-heading">Work Timeline</h2>
+      <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+    </section>
 
-  {% render 'partials/_skills', skills: project.skills %}
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+    {% endif %}
 
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
+    <!-- Growth Chart (chart mount point) -->
+    {% if growthJson %}
+    <section class="zen-section zen-fade" aria-label="Growth chart">
+      <h2 class="zen-heading">Growth</h2>
+      <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+    </section>
 
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+    {% endif %}
+
+    <!-- Section 5: Phases -->
+    {% if arc.size > 0 %}
+    <section class="zen-section zen-fade" aria-label="Project phases">
+      <h2 class="zen-heading">Phases</h2>
+      <div class="zen-timeline" role="list" aria-label="Project phase timeline">
+        {% for phase in arc %}
+        <div class="zen-timeline-item" role="listitem">
+          <p class="zen-timeline-title">{{ phase.title }}</p>
+          {% if phase.description != blank %}
+          <p class="zen-timeline-desc">{{ phase.description }}</p>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+    {% endif %}
+
+    <!-- Section 6: Skills -->
+    {% if project.skills.size > 0 %}
+    <section class="zen-section zen-fade" aria-label="Skills used">
+      <h2 class="zen-heading">Skills</h2>
+      <p class="zen-skills-text">
+        {{ project.skills | join: ", " }}
+      </p>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+    {% endif %}
+
+    <!-- Section 7: Key Decisions -->
+    {% if arc.size > 0 %}
+    <section class="zen-section zen-fade" aria-label="Key decisions">
+      <h2 class="zen-heading">Key Decisions</h2>
+      <ul class="zen-decisions" role="list">
+        {% for phase in arc %}
+        {% if phase.description != blank %}
+        <li class="zen-decision-item">
+          <p class="zen-decision-text">{{ phase.description }}</p>
+        </li>
+        {% endif %}
+        {% endfor %}
+      </ul>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+    {% endif %}
+
+    <!-- Section 8: Source Breakdown -->
+    {% if sourceCounts.size > 0 %}
+    <section class="zen-section zen-fade" aria-label="Source breakdown">
+      <h2 class="zen-heading">Source</h2>
+      <p class="zen-source">
+        {% for sc in sourceCounts %}{% if forloop.index > 1 %} &middot; {% endif %}{{ sc.tool }} ({{ sc.count }} sessions){% endfor %}
+      </p>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+    {% endif %}
+
+    <!-- Section 9: Featured Sessions -->
+    {% if featuredSessions.size > 0 %}
+    <section class="zen-section zen-fade" aria-label="Featured sessions">
+      <h2 class="zen-heading">Sessions</h2>
+
+      {% for s in featuredSessions %}
+      {% if forloop.index > 1 %}
+      <hr class="zen-session-divider" aria-hidden="true">
+      {% endif %}
+      <div class="zen-session-item zen-fade">
+        <p class="zen-session-title">
+          <a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a>
+        </p>
+        <p class="zen-session-meta">
+          {{ s.recordedAt | formatDateShort }} &middot; {{ s.durationMinutes | formatDuration }} &middot; {{ s.locChanged | localeNumber }} LOC{% if s.skills.size > 0 %} &middot; {{ s.skills | join: ", " }}{% endif %}
+        </p>
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- Footer -->
+    <footer class="zen-footer zen-fade" role="contentinfo">
+      <div class="zen-footer-inner">
+        <p class="zen-footer-text">heyi.am</p>
+      </div>
+    </footer>
+
+  </main>
 
 </div>

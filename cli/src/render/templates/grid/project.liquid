@@ -1,73 +1,327 @@
 <div class="heyiam-project grid" data-render-version="2" data-template="grid"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+  <div class="container">
+    <div class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/{{ user.username }}">{{ user.username }}</a>
+      <span class="breadcrumb-sep" aria-hidden="true">/</span>
+      <span aria-current="page">{{ project.slug }}</span>
+    </div>
 
-  {% render 'partials/_links', project: project %}
+    <div class="bento" aria-label="Project dashboard">
 
-  {% render 'partials/_screenshot', project: project %}
-
-  {% render 'partials/_narrative', narrative: project.narrative %}
-
-  {%- comment -%} Bento stat grid with leverage as span-2 cell {%- endcomment -%}
-  <div class="grid-bento" role="list" aria-label="Project statistics">
-    {% if efficiencyMultiplier %}
-    <div class="grid-leverage-cell" role="listitem" aria-label="Leverage: {{ efficiencyMultiplier }}">
-      <div class="grid-leverage-cell__left">
-        <span class="grid-leverage-cell__multiplier" style="color: var(--accent, #6366f1);">{{ efficiencyMultiplier }}</span>
+      {%- comment -%} Cell 1: Title (3-wide) {%- endcomment -%}
+      <div class="bento-cell cell-title">
+        <h1 data-editable="title">{{ project.title }}</h1>
+        {% if project.repoUrl or project.projectUrl %}
+        <div class="project-links">
+          {% if project.repoUrl %}
+          <a href="{{ project.repoUrl }}" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+            {{ project.repoUrl | stripProtocol }}
+          </a>
+          {% endif %}
+          {% if project.projectUrl %}
+          <a href="{{ project.projectUrl }}" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            {{ project.projectUrl | stripProtocol }}
+          </a>
+          {% endif %}
+        </div>
+        {% endif %}
       </div>
-      <div class="grid-leverage-cell__right">
-        <div class="grid-leverage-cell__row">
-          <span style="opacity: 0.5;">{{ project.totalDurationMinutes | formatDuration }} you</span>
+
+      {%- comment -%} Cell 2: Screenshot (spans 2 rows) {%- endcomment -%}
+      {% if project.screenshotUrl %}
+      <div class="bento-cell cell-screenshot">
+        <div class="browser-chrome">
+          <span class="browser-dot" aria-hidden="true"></span>
+          <span class="browser-dot" aria-hidden="true"></span>
+          <span class="browser-dot" aria-hidden="true"></span>
+          {% if project.projectUrl %}
+          <span class="browser-bar">{{ project.projectUrl | stripProtocol }}</span>
+          {% else %}
+          <span class="browser-bar">{{ project.slug }}</span>
+          {% endif %}
         </div>
-        <div class="grid-leverage-cell__row">
-          <span style="color: var(--accent, #6366f1);">{{ project.totalAgentDurationMinutes | formatDuration }} agents</span>
-        </div>
-        <div class="grid-leverage-cell__bar" aria-hidden="true">
-          <div class="grid-leverage-cell__bar-fill" style="background: var(--accent, #6366f1);"></div>
+        <div class="browser-viewport">
+          <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" style="width: 100%; height: 100%; object-fit: cover; border-radius: 0 0 var(--radius-sm) var(--radius-sm);">
         </div>
       </div>
+      {% endif %}
+
+      {%- comment -%} Cell 3: Stat -- Sessions {%- endcomment -%}
+      <section class="bento-cell cell-stat" aria-label="Sessions count">
+        <div class="stat-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div>
+          <div class="stat-number" data-target="{{ project.totalSessions }}">0</div>
+          <div class="stat-label">Sessions</div>
+        </div>
+      </section>
+
+      {%- comment -%} Cell 4: Stat -- Human Time {%- endcomment -%}
+      {% if efficiencyMultiplier %}
+      <section class="bento-cell cell-stat" aria-label="Human time">
+        <div class="stat-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div>
+          <div class="stat-number">{{ project.totalDurationMinutes | formatDuration }}</div>
+          <div class="stat-label">You</div>
+        </div>
+      </section>
+
+      {%- comment -%} Cell 4b: Stat -- Agent Time {%- endcomment -%}
+      <section class="bento-cell cell-stat" aria-label="Agent time">
+        <div class="stat-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="9" x2="9" y2="9.01"/><line x1="15" y1="9" x2="15" y2="9.01"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg>
+        </div>
+        <div>
+          <div class="stat-number" style="color: var(--accent);">{{ project.totalAgentDurationMinutes | formatDuration }}</div>
+          <div class="stat-label">Agents</div>
+        </div>
+      </section>
+
+      {%- comment -%} Cell 4c: Stat -- Multiplier {%- endcomment -%}
+      <section class="bento-cell cell-stat" aria-label="Multiplier">
+        <div class="stat-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+        <div>
+          <div class="stat-number">{{ efficiencyMultiplier }}</div>
+          <div class="stat-label">Multiplier</div>
+        </div>
+      </section>
+      {% else %}
+      <section class="bento-cell cell-stat" aria-label="Total time">
+        <div class="stat-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div>
+          <div class="stat-number">{{ project.totalDurationMinutes | formatDuration }}</div>
+          <div class="stat-label">Time</div>
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Cell 5: Stat -- LOC {%- endcomment -%}
+      <section class="bento-cell cell-stat" aria-label="Lines changed">
+        <div class="stat-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </div>
+        <div>
+          <div class="stat-number" data-target="{{ project.totalLoc }}" data-format="comma">0</div>
+          <div class="stat-label">Lines Changed</div>
+        </div>
+      </section>
+
+      {%- comment -%} Cell 6: Stat -- Files {%- endcomment -%}
+      <section class="bento-cell cell-stat" aria-label="Files changed">
+        <div class="stat-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div>
+          <div class="stat-number" data-target="{{ project.totalFilesChanged }}">0</div>
+          <div class="stat-label">Files</div>
+        </div>
+      </section>
+
+      {%- comment -%} Cell 7: Stat -- Tokens {%- endcomment -%}
+      {% if project.totalTokens %}
+      <section class="bento-cell cell-stat" aria-label="Tokens used">
+        <div class="stat-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div>
+          <div class="stat-number">{{ project.totalTokens | formatTokens }}</div>
+          <div class="stat-label">Tokens</div>
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Narrative (3-wide) {%- endcomment -%}
+      {% if project.narrative %}
+      <section class="bento-cell cell-narrative" aria-label="Project narrative">
+        <h2 class="cell-heading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Narrative
+        </h2>
+        <p>{{ project.narrative }}</p>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Phases (2-wide) {%- endcomment -%}
+      {% if arc.size > 0 %}
+      <section class="bento-cell cell-phases" aria-label="Project phases">
+        <h2 class="cell-heading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Phases
+        </h2>
+        <ol class="phase-list" role="list">
+          {% for item in arc %}
+          <li class="phase-item">
+            <span class="phase-number" aria-hidden="true">{{ item.phase }}</span>
+            <div class="phase-content">
+              <div class="phase-name">{{ item.title }}</div>
+              <div class="phase-desc">{{ item.description }}</div>
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Skills (2-wide) {%- endcomment -%}
+      {% if project.skills.size > 0 %}
+      <section class="bento-cell cell-skills" aria-label="Skills used">
+        <h2 class="cell-heading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Skills
+        </h2>
+        <div class="skills-grid">
+          {% for skill in project.skills %}
+          <span class="skill-chip chip">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Key Decisions (2-wide) {%- endcomment -%}
+      {% if arc.size > 0 %}
+      <section class="bento-cell cell-decisions" aria-label="Key decisions">
+        <h2 class="cell-heading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          Key Decisions
+        </h2>
+        <ol class="decision-list" role="list">
+          {% for item in arc %}
+          <li class="decision-item">
+            <span class="decision-text">{{ item.description }}</span>
+          </li>
+          {% endfor %}
+        </ol>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Source Breakdown (2-wide) {%- endcomment -%}
+      {% if sourceCounts.size > 0 %}
+      <section class="bento-cell cell-source" aria-label="Source breakdown">
+        <h2 class="cell-heading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Source Breakdown
+        </h2>
+        <div class="source-bars">
+          {% assign totalSourceSessions = 0 %}
+          {% for src in sourceCounts %}
+            {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
+          {% endfor %}
+          {% for src in sourceCounts %}
+          <div class="source-item">
+            <span class="source-name">{{ src.tool }}</span>
+            <div class="source-bar-track">
+              {% if totalSourceSessions > 0 %}
+              {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+              <div class="source-bar-fill{% unless forloop.first %} source-bar-fill--secondary{% endunless %}" style="width: {{ srcPct }}%"></div>
+              {% endif %}
+            </div>
+            {% if totalSourceSessions > 0 %}
+            {% assign srcPctDisplay = src.count | times: 100 | divided_by: totalSourceSessions %}
+            <span class="source-pct">{{ srcPctDisplay }}%</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Work Timeline chart (4-wide) {%- endcomment -%}
+      {% if sessionsJson %}
+      <section class="bento-cell cell-timeline" aria-label="Work timeline">
+        <h2 class="cell-heading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+          Work Timeline
+        </h2>
+        <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Growth chart (4-wide) {%- endcomment -%}
+      {% if growthJson %}
+      <section class="bento-cell cell-timeline" aria-label="Growth over time">
+        <h2 class="cell-heading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Growth
+        </h2>
+        <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Featured Session Cards (2-wide each) {%- endcomment -%}
+      {% if featuredSessions.size > 0 %}
+      {% for s in featuredSessions %}
+      <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="bento-cell cell-session session-card" aria-label="View session: {{ s.title }}">
+        <div class="session-header">
+          <span class="session-title">{{ s.title }}</span>
+          {% if s.skills.size > 0 %}
+          <span class="session-tag">{{ s.skills | first }}</span>
+          {% endif %}
+        </div>
+        <div class="session-meta">
+          <span>{{ s.durationMinutes | formatDuration }}</span>
+          <span>{{ s.locChanged | localeNumber }} LOC</span>
+          {% if s.filesChanged %}
+          <span>{{ s.filesChanged }} files</span>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+      {% endif %}
+
     </div>
-    {% else %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Time</div>
-      <div class="stat-card__value">{{ project.totalDurationMinutes | formatDuration }}</div>
-    </div>
-    {% endif %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Sessions</div>
-      <div class="stat-card__value">{{ project.totalSessions }}</div>
-    </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Lines changed</div>
-      <div class="stat-card__value">{{ project.totalLoc | formatLoc }}</div>
-    </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Files</div>
-      <div class="stat-card__value">{{ project.totalFilesChanged }}</div>
-    </div>
-    {% if project.totalTokens %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Tokens</div>
-      <div class="stat-card__value">{{ project.totalTokens | formatTokens }}</div>
-    </div>
-    {% endif %}
   </div>
 
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
+  {%- comment -%} Stat counter animation {%- endcomment -%}
+  <script>
+    (function() {
+      var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var stats = document.querySelectorAll('.stat-number[data-target]');
 
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
+      stats.forEach(function(el) {
+        var target = parseInt(el.getAttribute('data-target'), 10);
+        var format = el.getAttribute('data-format');
+        var unit = el.querySelector('.stat-unit');
 
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
-  </div>
+        if (reducedMotion) {
+          el.textContent = format === 'comma' ? target.toLocaleString() : String(target);
+          if (unit) el.appendChild(unit);
+          return;
+        }
 
-  {% render 'partials/_phases', arc: arc %}
+        var duration = 1200;
+        var start = null;
 
-  {% render 'partials/_skills', skills: project.skills %}
+        function step(timestamp) {
+          if (!start) start = timestamp;
+          var progress = Math.min((timestamp - start) / duration, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          var current = Math.round(eased * target);
+          el.textContent = format === 'comma' ? current.toLocaleString() : String(current);
+          if (unit) el.appendChild(unit);
+          if (progress < 1) requestAnimationFrame(step);
+        }
 
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
-
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+        var observer = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              requestAnimationFrame(step);
+              observer.unobserve(el);
+            }
+          });
+        }, { threshold: 0.5 });
+        observer.observe(el);
+      });
+    })();
+  </script>
 
 </div>

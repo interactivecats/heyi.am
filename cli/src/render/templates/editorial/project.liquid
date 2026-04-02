@@ -1,30 +1,192 @@
-<div class="heyiam-project" data-render-version="2" data-template="editorial"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
+<div class="heyiam-project editorial" data-render-version="2" data-template="editorial"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
-
-  {% render 'partials/_links', project: project %}
-
-  {% render 'partials/_screenshot', project: project %}
-
-  {% render 'partials/_narrative', narrative: project.narrative %}
-
-  {% render 'partials/_stats', project: project, durationLabel: durationLabel, efficiencyMultiplier: efficiencyMultiplier %}
-
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
-
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
-
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+  {%- comment -%} Breadcrumb {%- endcomment -%}
+  <div class="ed-breadcrumb" aria-label="Breadcrumb">
+    <a href="/{{ user.username }}">{{ user.username }}</a>
+    <span class="ed-breadcrumb-sep">/</span>
+    <span>{{ project.slug }}</span>
   </div>
 
-  {% render 'partials/_phases', arc: arc %}
+  {%- comment -%} Header {%- endcomment -%}
+  <header class="ed-project-header">
+    <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+    {% if project.repoUrl or project.projectUrl %}
+    <div class="ed-project-links">
+      {% if project.repoUrl %}
+      <a href="{{ project.repoUrl }}" target="_blank" rel="noopener" class="ed-project-link"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg> {{ project.repoUrl | stripProtocol }}</a>
+      {% endif %}
+      {% if project.projectUrl %}
+      <a href="{{ project.projectUrl }}" target="_blank" rel="noopener" class="ed-project-link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> {{ project.projectUrl | stripProtocol }}</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </header>
 
-  {% render 'partials/_skills', skills: project.skills %}
+  {%- comment -%} Screenshot {%- endcomment -%}
+  {% if project.screenshotUrl %}
+  <div class="ed-screenshot-card">
+    <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" class="ed-screenshot-img">
+  </div>
+  {% endif %}
 
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
+  {%- comment -%} Narrative {%- endcomment -%}
+  {% if project.narrative %}
+  <section class="ed-card-section" aria-label="Project narrative">
+    <h2 class="ed-section-title">Narrative</h2>
+    <div class="ed-narrative">{{ project.narrative }}</div>
+  </section>
+  {% endif %}
 
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  {%- comment -%} Stats {%- endcomment -%}
+  <section class="ed-card-section" aria-label="Project statistics">
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-card__label">Sessions</div>
+        <div class="stat-card__value">{{ project.totalSessions }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Lines Changed</div>
+        <div class="stat-card__value">{{ project.totalLoc | localeNumber }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Files</div>
+        <div class="stat-card__value">{{ project.totalFilesChanged }}</div>
+      </div>
+      {% if project.totalTokens %}
+      <div class="stat-card">
+        <div class="stat-card__label">Tokens</div>
+        <div class="stat-card__value">{{ project.totalTokens | formatTokens }}</div>
+      </div>
+      {% endif %}
+      {% if efficiencyMultiplier %}
+      <div class="stat-card">
+        <div class="stat-card__label">{{ durationLabel }}</div>
+        <div class="stat-card__value">{{ project.totalDurationMinutes | formatDuration }}</div>
+        <div class="ed-leverage-inline">
+          <span class="ed-leverage-num--agent">{{ project.totalAgentDurationMinutes | formatDuration }}</span> agents
+          <span class="ed-leverage-num--multi">{{ efficiencyMultiplier }}</span> leverage
+        </div>
+      </div>
+      {% else %}
+      <div class="stat-card">
+        <div class="stat-card__label">Time</div>
+        <div class="stat-card__value">{{ project.totalDurationMinutes | formatDuration }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  {%- comment -%} Work timeline chart {%- endcomment -%}
+  {% if sessionsJson %}
+  <section class="ed-card-section" aria-label="Agent work timeline">
+    <h2 class="ed-section-title">Work Timeline</h2>
+    <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Growth chart {%- endcomment -%}
+  {% if growthJson %}
+  <section class="ed-card-section" aria-label="Growth over time">
+    <h2 class="ed-section-title">Growth</h2>
+    <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Key decisions + Source breakdown {%- endcomment -%}
+  {% if arc.size > 0 or sourceCounts.size > 0 %}
+  <div class="two-col">
+    {% if arc.size > 0 %}
+    <section class="ed-card-section" aria-label="Key decisions">
+      <h2 class="ed-section-title">Key Decisions</h2>
+      {% for item in arc %}
+      <div class="ed-decision-item">
+        <span class="ed-decision-num">{{ item.phase | prepend: '0' | slice: -2, 2 }}</span>
+        <span class="ed-decision-text">{{ item.description }}</span>
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+    {% if sourceCounts.size > 0 %}
+    <section class="ed-card-section" aria-label="Source breakdown">
+      <h2 class="ed-section-title">Source Breakdown</h2>
+      {% assign totalSourceSessions = 0 %}
+      {% for src in sourceCounts %}
+        {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
+      {% endfor %}
+      {% for src in sourceCounts %}
+      <div class="ed-source-item">
+        <span class="ed-source-name">{{ src.tool }}</span>
+        <div class="ed-source-bar-wrap">
+          {% if totalSourceSessions > 0 %}
+          {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+          <div class="ed-source-bar"><div class="ed-source-fill" style="width: {{ srcPct }}%;"></div></div>
+          {% endif %}
+        </div>
+        <span class="ed-source-count">{{ src.count }} session{% if src.count != 1 %}s{% endif %}</span>
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {%- comment -%} Phases {%- endcomment -%}
+  {% if arc.size > 0 %}
+  <section class="ed-card-section" aria-label="Project phases">
+    <h2 class="ed-section-title">Project Phases</h2>
+    <div class="ed-phases">
+      {% for item in arc %}
+      <div class="ed-phase-item">
+        <div class="ed-phase-marker">{{ forloop.index }}</div>
+        <div class="ed-phase-content">
+          <div class="ed-phase-title">{{ item.title }}</div>
+          <div class="ed-phase-desc">{{ item.description }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Skills {%- endcomment -%}
+  {% if project.skills.size > 0 %}
+  <section class="ed-card-section" aria-label="Skills used">
+    <h2 class="ed-section-title">Technologies</h2>
+    <div class="chip-list">
+      {% for skill in project.skills %}
+      <span class="chip chip--violet">{{ skill }}</span>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Featured session cards {%- endcomment -%}
+  {% if featuredSessions.size > 0 %}
+  <section class="ed-card-section" aria-label="Featured sessions">
+    <h2 class="ed-section-title">{{ featuredSessions.size }} Featured Session{% if featuredSessions.size != 1 %}s{% endif %}</h2>
+    <div class="ed-sessions-grid">
+      {% for s in featuredSessions %}
+      <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="ed-session-card">
+        <h3 class="ed-session-card-title">{{ s.title }}</h3>
+        <div class="ed-session-card-meta">
+          <span>{{ s.durationMinutes | formatDuration }}</span>
+          <span>{{ s.locChanged | localeNumber }} LOC</span>
+          <span>{{ s.turns }} turns</span>
+        </div>
+        {% if s.devTake %}
+        <p class="ed-session-card-take">{{ s.devTake }}</p>
+        {% endif %}
+        {% if s.skills.size > 0 %}
+        <div class="ed-chip-list">
+          {% for skill in s.skills limit: 3 %}
+          <span class="chip chip--violet">{{ skill }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
 </div>

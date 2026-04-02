@@ -1,47 +1,258 @@
 <div class="heyiam-session obsidian" data-render-version="2" data-template="obsidian">
 
-  <div class="session-layout">
+  <a href="#main" class="skip-link">Skip to content</a>
 
-    {% render 'partials/_session-sidebar', session: session %}
+  <main id="main">
+    <div class="container">
 
-    <main class="session-main">
+      {%- comment -%} Breadcrumb {%- endcomment -%}
+      <div class="breadcrumb fade-up" aria-label="Breadcrumb">
+        <a href="/{{ user.username }}">{{ user.username }}</a>
+        {% if projectSlug %}
+        <span class="breadcrumb-sep">/</span>
+        <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
+        {% endif %}
+        <span class="breadcrumb-sep">/</span>
+        <span aria-current="page">{{ session.title }}</span>
+      </div>
 
-      {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
-
-      {% render 'partials/_session-header', session: session %}
-
-      {% if session.skills.size > 0 %}
-      <section class="content-section">
-        <div class="chip-list">
-          {% for skill in session.skills %}
-          <span class="chip chip--violet">{{ skill }}</span>
-          {% endfor %}
+      {%- comment -%} Hero {%- endcomment -%}
+      <section class="hero hero--session fade-up" aria-label="Session header">
+        <h1>{{ session.title }}</h1>
+        <div class="hero-meta">
+          {% if session.recordedAt %}
+          <span class="hero-meta-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            {{ session.recordedAt | formatDate }}
+          </span>
+          {% endif %}
+          <span class="hero-meta-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            {{ session.durationMinutes | formatDuration }}
+          </span>
+          <span class="hero-meta-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            {{ session.turns }} turns
+          </span>
+          <span class="hero-meta-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+            {{ session.locChanged | localeNumber }} LOC
+          </span>
+          <span class="hero-meta-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+            {{ session.filesChanged }} files
+          </span>
         </div>
+        {% if session.sourceTool %}
+        <span class="source-badge">{{ session.sourceTool }}</span>
+        {% endif %}
       </section>
+
+      {%- comment -%} Dev Take {%- endcomment -%}
+      {% if session.devTake != blank %}
+      <div class="dev-take fade-up">
+        <div class="dev-take-label">Dev Take</div>
+        <p>{{ session.devTake }}</p>
+      </div>
       {% endif %}
 
-      {% if session.narrative != blank %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Narrative</h2>
-        <p>{{ session.narrative }}</p>
-      </section>
-      {% endif %}
+      {%- comment -%} Two-column layout {%- endcomment -%}
+      <div class="content-grid">
+        {%- comment -%} Main content {%- endcomment -%}
+        <div>
 
-      {% if session.highlights.size > 0 %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Highlights</h2>
-        <ul class="highlights-list">
-          {% for h in session.highlights %}
-          <li>{{ h }}</li>
-          {% endfor %}
-        </ul>
-      </section>
-      {% endif %}
+          {%- comment -%} Execution Path (Beats) {%- endcomment -%}
+          {% if session.beats.size > 0 %}
+          <section class="beats fade-up" aria-label="Execution path">
+            <h2 class="section-heading">Execution Path</h2>
+            <ol class="beat-list beats-list">
+              {% for beat in session.beats %}
+              <li class="beat-item">
+                <span class="beat-dot" aria-hidden="true"></span>
+                <div class="beat-title">{{ beat.title }}</div>
+                <div class="beat-desc">{{ beat.body }}</div>
+              </li>
+              {% endfor %}
+            </ol>
+          </section>
+          {% endif %}
 
-      {% render 'partials/_beats', session: session %}
+          {%- comment -%} Q&A {%- endcomment -%}
+          {% if session.qaPairs.size > 0 %}
+          <section class="qa-section fade-up" aria-label="Questions and answers">
+            <h2 class="section-heading">Q&amp;A</h2>
+            <div class="qa-list">
+              {% for qa in session.qaPairs %}
+              <article class="qa-item qa-pair">
+                <div class="qa-question">
+                  <span class="qa-label qa-label--q">Q</span>
+                  <span>{{ qa.question }}</span>
+                </div>
+                <div class="qa-answer">
+                  <span class="qa-label qa-label--a">A</span>
+                  <span>{{ qa.answer }}</span>
+                </div>
+              </article>
+              {% endfor %}
+            </div>
+          </section>
+          {% endif %}
 
-      {% render 'partials/_qa', session: session %}
+          {%- comment -%} Narrative {%- endcomment -%}
+          {% if session.narrative != blank %}
+          <section class="fade-up" aria-label="Narrative">
+            <h2 class="section-heading">Narrative</h2>
+            <div class="narrative">
+              <p>{{ session.narrative }}</p>
+            </div>
+          </section>
+          {% endif %}
 
-    </main>
-  </div>
+          {%- comment -%} Highlights {%- endcomment -%}
+          {% if session.highlights.size > 0 %}
+          <section class="fade-up" aria-label="Highlights">
+            <h2 class="section-heading">Highlights</h2>
+            <ul class="highlights-list">
+              {% for h in session.highlights %}
+              <li>{{ h }}</li>
+              {% endfor %}
+            </ul>
+          </section>
+          {% endif %}
+
+          {%- comment -%} Agent Summary {%- endcomment -%}
+          {% if session.agentSummary %}
+          <section class="agents-section fade-up" aria-label="Agent breakdown">
+            <h2 class="section-heading">Agents</h2>
+            {% if session.agentSummary.agents.size > 0 %}
+            <div class="agent-chart">
+              <div class="agent-chart-title">Time by role</div>
+              {% assign maxAgentDuration = 0 %}
+              {% for agent in session.agentSummary.agents %}
+                {% if agent.durationMinutes > maxAgentDuration %}
+                  {% assign maxAgentDuration = agent.durationMinutes %}
+                {% endif %}
+              {% endfor %}
+              {% for agent in session.agentSummary.agents %}
+              {% if maxAgentDuration > 0 %}
+              {% assign barPct = agent.durationMinutes | times: 100 | divided_by: maxAgentDuration %}
+              {% else %}
+              {% assign barPct = 0 %}
+              {% endif %}
+              <div class="agent-bar-row">
+                <span class="agent-bar-label">{{ agent.role }}</span>
+                <div class="agent-bar-track">
+                  <div class="agent-bar-fill" style="width: {{ barPct }}%; background: var(--accent)"></div>
+                </div>
+                <span class="agent-bar-value">{{ agent.durationMinutes | formatDuration }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            <div class="agent-list">
+              {% for agent in session.agentSummary.agents %}
+              <div class="agent-row">
+                <span class="agent-dot" style="background: var(--accent)" aria-hidden="true"></span>
+                <span class="agent-name">{{ agent.role }}</span>
+                <span class="agent-duration">{{ agent.durationMinutes | formatDuration }}</span>
+                <span class="agent-loc">{{ agent.linesChanged | formatLoc }} LOC</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </section>
+          {% endif %}
+
+        </div>
+
+        {%- comment -%} Sidebar {%- endcomment -%}
+        <aside class="sidebar" aria-label="Session details">
+
+          {%- comment -%} Tools Used {%- endcomment -%}
+          {% if session.toolBreakdown.size > 0 %}
+          <div class="sidebar-card fade-up">
+            <div class="sidebar-title">Tools Used</div>
+            <div class="tools-table tool-list">
+              {% assign maxToolCount = 0 %}
+              {% for t in session.toolBreakdown %}
+                {% if t.count > maxToolCount %}
+                  {% assign maxToolCount = t.count %}
+                {% endif %}
+              {% endfor %}
+              {% for t in session.toolBreakdown %}
+              {% if maxToolCount > 0 %}
+              {% assign toolPct = t.count | times: 100 | divided_by: maxToolCount %}
+              {% else %}
+              {% assign toolPct = 0 %}
+              {% endif %}
+              <div class="tools-row">
+                <span class="tools-name">{{ t.tool }}</span>
+                <span class="tools-count">
+                  {{ t.count }}
+                  <span class="tools-bar"><span class="tools-bar-fill" style="width: {{ toolPct }}%"></span></span>
+                </span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          {%- comment -%} Files Changed {%- endcomment -%}
+          {% if session.topFiles.size > 0 %}
+          <div class="sidebar-card fade-up">
+            <div class="sidebar-title">Files Changed</div>
+            <div class="files-table file-list">
+              {% for f in session.topFiles %}
+              <div class="files-row">
+                <span class="files-name" title="{{ f.path }}">{{ f.path }}</span>
+                <span class="files-diff files-diff--add">+{{ f.additions }}</span>
+                <span class="files-diff files-diff--del">-{{ f.deletions }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          {%- comment -%} Skills {%- endcomment -%}
+          {% if session.skills.size > 0 %}
+          <div class="sidebar-card fade-up">
+            <div class="sidebar-title">Skills</div>
+            <div class="sidebar-skills">
+              {% for skill in session.skills %}
+              <span class="sidebar-skill-tag chip">{{ skill }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+        </aside>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">Built with heyi.am</div>
+  </footer>
+
+  <script>
+  (function() {
+    'use strict';
+    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var fadeEls = document.querySelectorAll('.fade-up');
+    if (prefersReducedMotion) {
+      fadeEls.forEach(function(el) { el.classList.add('visible'); });
+    } else {
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      fadeEls.forEach(function(el) { observer.observe(el); });
+    }
+  })();
+  </script>
+
 </div>

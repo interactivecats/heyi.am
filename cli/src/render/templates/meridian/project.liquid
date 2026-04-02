@@ -1,66 +1,320 @@
 <div class="heyiam-project meridian" data-render-version="2" data-template="meridian"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+  {%- comment -%} Topographic contour background {%- endcomment -%}
+  <div class="topo-bg" aria-hidden="true">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid slice">
+      <g class="topo-contours" fill="none" stroke-width="0.75">
+        <ellipse cx="350" cy="300" rx="280" ry="180" stroke="var(--mer-contour)" />
+        <ellipse cx="355" cy="305" rx="240" ry="150" stroke="var(--mer-contour)" />
+        <ellipse cx="360" cy="310" rx="200" ry="120" stroke="var(--mer-contour-strong)" />
+        <ellipse cx="365" cy="315" rx="160" ry="90" stroke="var(--mer-contour)" />
+        <ellipse cx="370" cy="320" rx="120" ry="65" stroke="var(--mer-contour-strong)" />
+        <ellipse cx="850" cy="550" rx="300" ry="200" stroke="var(--mer-contour)" />
+        <ellipse cx="845" cy="545" rx="250" ry="165" stroke="var(--mer-contour)" />
+        <ellipse cx="840" cy="540" rx="200" ry="130" stroke="var(--mer-contour-strong)" />
+        <ellipse cx="835" cy="535" rx="150" ry="95" stroke="var(--mer-contour)" />
+        <ellipse cx="950" cy="150" rx="220" ry="140" stroke="var(--mer-contour)" />
+        <ellipse cx="955" cy="155" rx="170" ry="105" stroke="var(--mer-contour-strong)" />
+        <ellipse cx="960" cy="160" rx="120" ry="70" stroke="var(--mer-contour)" />
+        <ellipse cx="150" cy="700" rx="250" ry="160" stroke="var(--mer-contour)" />
+        <ellipse cx="155" cy="695" rx="200" ry="125" stroke="var(--mer-contour-strong)" />
+        <ellipse cx="160" cy="690" rx="150" ry="90" stroke="var(--mer-contour)" />
+      </g>
+    </svg>
+  </div>
 
-  {% render 'partials/_links', project: project %}
+  <a class="skip-link" href="#main-content">Skip to content</a>
 
-  {% render 'partials/_screenshot', project: project %}
+  <div class="mer-page">
+    <main id="main-content">
 
-  {% render 'partials/_narrative', narrative: project.narrative %}
-
-  {%- comment -%} Stats grid with leverage as a coordinate-label stat card {%- endcomment -%}
-  <div class="stat-grid" role="list" aria-label="Project statistics">
-    {% if efficiencyMultiplier %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Leverage</div>
-      <div class="stat-card__value" style="color: var(--accent, #34d399);">{{ efficiencyMultiplier }}</div>
-      <div class="meridian-leverage-annotation">
-        <span style="opacity: 0.5;">{{ project.totalDurationMinutes | formatDuration }}</span>
-        <span style="opacity: 0.35;" aria-hidden="true">/</span>
-        <span style="color: var(--accent, #34d399);">{{ project.totalAgentDurationMinutes | formatDuration }}</span>
+      {%- comment -%} Breadcrumb {%- endcomment -%}
+      <div class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/{{ user.username }}">{{ user.username }}</a>
+        <span class="breadcrumb__sep">/</span>
+        <span aria-current="page">{{ project.slug }}</span>
       </div>
-    </div>
-    {% else %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Time</div>
-      <div class="stat-card__value">{{ project.totalDurationMinutes | formatDuration }}</div>
-    </div>
-    {% endif %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Sessions</div>
-      <div class="stat-card__value">{{ project.totalSessions }}</div>
-    </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Lines changed</div>
-      <div class="stat-card__value">{{ project.totalLoc | formatLoc }}</div>
-    </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Files</div>
-      <div class="stat-card__value">{{ project.totalFilesChanged }}</div>
-    </div>
-    {% if project.totalTokens %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Tokens</div>
-      <div class="stat-card__value">{{ project.totalTokens | formatTokens }}</div>
-    </div>
-    {% endif %}
+
+      {%- comment -%} Hero {%- endcomment -%}
+      <section class="project-hero section-reveal" aria-label="Project overview">
+        <div class="section-label">
+          <span>&#167;01 &mdash; base camp</span>
+        </div>
+        <h1 class="project-hero__title" data-editable="title">{{ project.title }}</h1>
+        {% if project.repoUrl or project.projectUrl %}
+        <div class="project-hero__links">
+          {% if project.repoUrl %}
+          <a href="{{ project.repoUrl }}" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            {{ project.repoUrl | stripProtocol }}
+          </a>
+          {% endif %}
+          {% if project.projectUrl %}
+          <a href="{{ project.projectUrl }}" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            {{ project.projectUrl | stripProtocol }}
+          </a>
+          {% endif %}
+        </div>
+        {% endif %}
+      </section>
+
+      {%- comment -%} Screenshot {%- endcomment -%}
+      {% if project.screenshotUrl %}
+      <div class="screenshot section-reveal" role="img" aria-label="{{ project.title }} screenshot">
+        <div class="screenshot__chrome">
+          <span class="screenshot__dot"></span>
+          <span class="screenshot__dot"></span>
+          <span class="screenshot__dot"></span>
+          {% if project.projectUrl %}
+          <span class="screenshot__url">{{ project.projectUrl | stripProtocol }}</span>
+          {% endif %}
+        </div>
+        <div class="screenshot__body">
+          <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Stats {%- endcomment -%}
+      <section class="section-reveal" aria-label="Project statistics">
+        <div class="section-label">
+          <span>&#167;02 &mdash; survey data</span>
+        </div>
+        <div class="stats-row">
+          <div class="stat-cell" role="group" aria-label="Sessions">
+            <div class="stat-cell__coord">waypts</div>
+            <div class="stat-cell__value">{{ project.totalSessions }}</div>
+            <div class="stat-cell__label">sessions</div>
+          </div>
+          {% if efficiencyMultiplier %}
+          <div class="stat-cell stat-cell--leverage" role="group" aria-label="Leverage">
+            <div class="stat-cell__coord">leverage</div>
+            <div class="mer-leverage-nums">
+              <span><span class="mlev-val">{{ project.totalDurationMinutes | formatDuration }}</span> <span class="mlev-lbl">you</span></span>
+              <span><span class="mlev-val mlev-val--agent">{{ project.totalAgentDurationMinutes | formatDuration }}</span> <span class="mlev-lbl">agents</span></span>
+              <span><span class="mlev-val mlev-val--multi">{{ efficiencyMultiplier }}</span></span>
+            </div>
+            {% assign totalCombined = project.totalDurationMinutes | plus: project.totalAgentDurationMinutes %}
+            {% if totalCombined > 0 %}
+            {% assign humanPct = project.totalDurationMinutes | times: 100 | divided_by: totalCombined %}
+            {% assign agentPct = 100 | minus: humanPct %}
+            <div class="mer-leverage-bar">
+              <div class="mer-leverage-bar__human" style="width: {{ humanPct }}%"></div>
+              <div class="mer-leverage-bar__agent" style="width: {{ agentPct }}%"></div>
+            </div>
+            {% endif %}
+          </div>
+          {% else %}
+          <div class="stat-cell" role="group" aria-label="Duration">
+            <div class="stat-cell__coord">time</div>
+            <div class="stat-cell__value">{{ project.totalDurationMinutes | formatDuration }}</div>
+            <div class="stat-cell__label">total</div>
+          </div>
+          {% endif %}
+          <div class="stat-cell" role="group" aria-label="Lines of code">
+            <div class="stat-cell__coord">datum</div>
+            <div class="stat-cell__value">{{ project.totalLoc | localeNumber }}</div>
+            <div class="stat-cell__label">LOC</div>
+          </div>
+          <div class="stat-cell" role="group" aria-label="Files changed">
+            <div class="stat-cell__coord">feat</div>
+            <div class="stat-cell__value">{{ project.totalFilesChanged }}</div>
+            <div class="stat-cell__label">files</div>
+          </div>
+          {% if project.totalTokens %}
+          <div class="stat-cell" role="group" aria-label="Tokens used">
+            <div class="stat-cell__coord">flux</div>
+            <div class="stat-cell__value">{{ project.totalTokens | formatTokens }}</div>
+            <div class="stat-cell__label">tokens</div>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+
+      {%- comment -%} Narrative {%- endcomment -%}
+      {% if project.narrative != blank %}
+      <section class="narrative section-reveal" aria-label="Project narrative">
+        <div class="section-label">
+          <span>&#167;03 &mdash; field notes</span>
+        </div>
+        <h2 class="section-heading">Narrative</h2>
+        <p>{{ project.narrative }}</p>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Phases / Route {%- endcomment -%}
+      {% if arc.size > 0 %}
+      <section class="route-section section-reveal" aria-label="Project phases">
+        <div class="section-label">
+          <span>&#167;04 &mdash; route map</span>
+        </div>
+        <h2 class="section-heading">Phases</h2>
+        <div class="route" role="list">
+          {% for item in arc %}
+          <div class="route-waypoint" role="listitem">
+            <div class="route-waypoint__marker"><div class="route-waypoint__marker-dot"></div></div>
+            <div class="route-waypoint__phase">Phase {{ item.phase }} &mdash; {{ item.title }}</div>
+            <div class="route-waypoint__desc">{{ item.description }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Work Timeline Chart {%- endcomment -%}
+      {% if sessionsJson %}
+      <section class="elevation-section section-reveal" aria-label="Work timeline chart">
+        <div class="section-label">
+          <span>&#167;05 &mdash; elevation profile</span>
+        </div>
+        <h2 class="section-heading">Work Timeline</h2>
+        <div class="elevation-chart">
+          <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Growth Chart {%- endcomment -%}
+      {% if growthJson %}
+      <section class="elevation-section section-reveal" aria-label="Growth over time">
+        <div class="section-label">
+          <span>&#167;06 &mdash; accumulation</span>
+        </div>
+        <h2 class="section-heading">Growth</h2>
+        <div class="elevation-chart">
+          <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Sessions Table {%- endcomment -%}
+      {% if featuredSessions.size > 0 %}
+      <section class="sessions-section section-reveal" aria-label="All sessions">
+        <div class="section-label">
+          <span>&#167;07 &mdash; waypoint log</span>
+        </div>
+        <h2 class="section-heading">Sessions</h2>
+        <div class="session-table-wrap">
+          <table class="session-table">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Title</th>
+                <th scope="col">Date</th>
+                <th scope="col">Duration</th>
+                <th scope="col">LOC</th>
+                <th scope="col">Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in featuredSessions %}
+              <tr>
+                <td>{{ forloop.index | prepend: '0' | slice: -2, 2 }}</td>
+                <td class="session-table__title-cell"><a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a></td>
+                <td>{{ s.recordedAt | formatDateShort }}</td>
+                <td class="mono-val">{{ s.durationMinutes | formatDuration }}</td>
+                <td class="mono-val">{{ s.locChanged | localeNumber }}</td>
+                <td>{{ s.sourceTool }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Skills {%- endcomment -%}
+      {% if project.skills.size > 0 %}
+      <section class="skills-section section-reveal" aria-label="Skills used">
+        <div class="section-label">
+          <span>&#167;08 &mdash; instrument readings</span>
+        </div>
+        <h2 class="section-heading">Skills</h2>
+        <div class="skills-grid">
+          {% for skill in project.skills %}
+          <span class="skill-chip">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Source Breakdown {%- endcomment -%}
+      {% if sourceCounts.size > 0 %}
+      <section class="source-section section-reveal" aria-label="Source breakdown">
+        <div class="section-label">
+          <span>&#167;09 &mdash; signal source</span>
+        </div>
+        <h2 class="section-heading">Source Breakdown</h2>
+        {% assign totalSourceSessions = 0 %}
+        {% for src in sourceCounts %}
+          {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
+        {% endfor %}
+        {% if totalSourceSessions > 0 %}
+        <div class="source-bar-large" role="img" aria-label="Source breakdown">
+          {% for src in sourceCounts %}
+          {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+          <div class="source-bar-large__segment{% if forloop.first %} source-bar-large__segment--claude{% else %} source-bar-large__segment--cursor{% endif %}" style="width: {{ srcPct }}%"></div>
+          {% endfor %}
+        </div>
+        <div class="source-legend">
+          {% for src in sourceCounts %}
+          <span><span class="source-legend__dot" style="background: {% if forloop.first %}var(--mer-accent){% else %}var(--mer-text-muted){% endif %}"></span>{{ src.tool }} &mdash; {{ src.count }} session{% if src.count != 1 %}s{% endif %}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      {%- comment -%} Featured Sessions Cards {%- endcomment -%}
+      {% if featuredSessions.size > 0 %}
+      <section class="featured-section section-reveal" aria-label="Featured sessions">
+        <div class="section-label">
+          <span>&#167;10 &mdash; peak waypoints</span>
+        </div>
+        <h2 class="section-heading">Featured Sessions</h2>
+        <div class="featured-grid">
+          {% for s in featuredSessions %}
+          <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="featured-card">
+            {% if s.skills.size > 0 %}
+            <div class="featured-card__tag">{{ s.skills | first }}</div>
+            {% endif %}
+            <h3 class="featured-card__title">{{ s.title }}</h3>
+            <div class="featured-card__meta">
+              <span><strong>{{ s.durationMinutes | formatDuration }}</strong></span>
+              <span><strong>{{ s.locChanged | localeNumber }}</strong> LOC</span>
+              <span><strong>{{ s.filesChanged }}</strong> files</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    </main>
+
+    <footer class="mer-footer">
+      <p class="mer-footer__text">surveyed with heyi.am &middot; meridian template</p>
+    </footer>
   </div>
 
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
-
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
-
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
-  </div>
-
-  {% render 'partials/_phases', arc: arc %}
-
-  {% render 'partials/_skills', skills: project.skills %}
-
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
-
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  <script>
+  (function() {
+    var sections = document.querySelectorAll('.section-reveal');
+    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      sections.forEach(function(s) { s.classList.add('visible'); });
+      return;
+    }
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    sections.forEach(function(s) { observer.observe(s); });
+  })();
+  </script>
 
 </div>

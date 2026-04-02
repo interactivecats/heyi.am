@@ -1,93 +1,290 @@
 <div class="heyiam-project mono" data-render-version="2" data-template="mono"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  {%- comment -%} Terminal prompt {%- endcomment -%}
-  <div class="term-prompt">
-    <span class="term-prompt__char">&#10095;</span> <span class="term-prompt__path">@{{ user.username }}/{{ project.slug }}</span>
-  </div>
+  <div class="mono-page">
 
-  <h1 class="term-heading" data-editable="title"># {{ project.title }}</h1>
-
-  {% render 'partials/_links', project: project %}
-
-  {% render 'partials/_screenshot', project: project %}
-
-  {%- comment -%} Stats as terminal table with compact leverage {%- endcomment -%}
-  <div class="term-section">
-    <div class="term-comment"># stats</div>
-    <table class="term-table">
-      {% if efficiencyMultiplier %}
-      <tr>
-        <td class="term-table__key">Leverage</td>
-        <td class="term-table__val"><span style="color: var(--accent, #4ade80); font-weight: 700;">{{ efficiencyMultiplier }}</span> <span style="opacity: 0.5;">{{ project.totalDurationMinutes | formatDuration }} you</span> <span style="color: var(--accent, #4ade80);">{{ project.totalAgentDurationMinutes | formatDuration }} agents</span></td>
-      </tr>
-      {% else %}
-      <tr><td class="term-table__key">Time</td><td class="term-table__val">{{ project.totalDurationMinutes | formatDuration }}</td></tr>
-      {% endif %}
-      <tr><td class="term-table__key">Sessions</td><td class="term-table__val">{{ project.totalSessions }}</td></tr>
-      <tr><td class="term-table__key">Lines changed</td><td class="term-table__val">{{ project.totalLoc | formatLoc }}</td></tr>
-      <tr><td class="term-table__key">Files</td><td class="term-table__val">{{ project.totalFilesChanged }}</td></tr>
-      {% if project.totalTokens %}<tr><td class="term-table__key">Tokens</td><td class="term-table__val">{{ project.totalTokens | formatTokens }}</td></tr>{% endif %}
-    </table>
-  </div>
-
-  {%- comment -%} Narrative {%- endcomment -%}
-  {% if project.narrative != blank %}
-  <div class="term-section">
-    <div class="term-comment"># narrative</div>
-    <blockquote class="term-blockquote">{{ project.narrative }}</blockquote>
-  </div>
-  {% endif %}
-
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
-
-  {%- comment -%} Key decisions {%- endcomment -%}
-  {% if arc.size > 0 %}
-  <div class="term-section">
-    <div class="term-comment"># key decisions</div>
-    {% for phase in arc limit: 3 %}
-    <div class="term-decision">
-      <span class="term-decision__bullet">*</span>
-      <strong>{{ phase.title }}</strong> &mdash; {{ phase.description }}
+    {%- comment -%} Breadcrumb {%- endcomment -%}
+    <div class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/{{ user.username }}">{{ user.username }}</a>
+      <span class="sep">/</span>
+      <span>{{ project.slug }}</span>
     </div>
-    {% endfor %}
-  </div>
-  {% endif %}
 
-  {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
-
-  {% if arc.size > 0 %}
-  <div class="term-section">
-    <div class="term-comment"># phases</div>
-    <div class="term-tree">
-      {% for phase in arc %}
-      <div class="term-tree__node">
-        {% if forloop.last %}<span class="term-tree__branch">&#9492;&#9472;&#9472;</span>{% else %}<span class="term-tree__branch">&#9500;&#9472;&#9472;</span>{% endif %}
-        <span class="term-tree__label">{{ phase.title }}</span>
-        <span class="term-tree__desc">&mdash; {{ phase.description }}</span>
+    {%- comment -%} Hero {%- endcomment -%}
+    <section class="mono-section" aria-label="Project header">
+      <h1 class="hero-title--project" aria-label="{{ project.title }}">{{ project.title }}</h1>
+      {% if project.repoUrl or project.projectUrl %}
+      <div class="hero-links">
+        {% if project.repoUrl %}
+        <a href="{{ project.repoUrl }}" target="_blank" rel="noopener">{{ project.repoUrl | stripProtocol }}</a>
+        {% endif %}
+        {% if project.projectUrl %}
+        <a href="{{ project.projectUrl }}" target="_blank" rel="noopener">{{ project.projectUrl | stripProtocol }}</a>
+        {% endif %}
       </div>
+      {% endif %}
+
+      {% if project.screenshotUrl %}
+      <div class="screenshot-frame">
+        <div class="screenshot-chrome">
+          <div class="dots">
+            <span class="dot-r" aria-hidden="true"></span>
+            <span class="dot-y" aria-hidden="true"></span>
+            <span class="dot-g" aria-hidden="true"></span>
+          </div>
+          {% if project.projectUrl %}
+          <div class="url-bar">{{ project.projectUrl | stripProtocol }}</div>
+          {% endif %}
+        </div>
+        <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" class="screenshot-body">
+      </div>
+      {% endif %}
+    </section>
+
+    {%- comment -%} Stats {%- endcomment -%}
+    <section class="mono-section" aria-label="Project statistics">
+      <h2 class="mono-heading"># stats</h2>
+      <div class="stats-grid" role="list">
+        <div class="stat-cell" role="listitem">
+          <div class="stat-key">sessions:</div>
+          <div class="stat-value">{{ project.totalSessions }}</div>
+        </div>
+        {% if efficiencyMultiplier %}
+        <div class="stat-cell stat-cell--leverage" role="listitem">
+          <div class="leverage-terminal">
+            <div class="lev-line"><span class="lev-key">human:</span> <span class="lev-val">{{ project.totalDurationMinutes | formatDuration }}</span></div>
+            <div class="lev-line"><span class="lev-key">agents:</span> <span class="lev-val lev-val--agent">{{ project.totalAgentDurationMinutes | formatDuration }}</span></div>
+            <div class="lev-line"><span class="lev-key">multi:</span> <span class="lev-val lev-val--multi">{{ efficiencyMultiplier }}</span></div>
+          </div>
+        </div>
+        {% else %}
+        <div class="stat-cell" role="listitem">
+          <div class="stat-key">time:</div>
+          <div class="stat-value">{{ project.totalDurationMinutes | formatDuration }}</div>
+        </div>
+        {% endif %}
+        <div class="stat-cell" role="listitem">
+          <div class="stat-key">loc:</div>
+          <div class="stat-value">{{ project.totalLoc | localeNumber }}</div>
+        </div>
+        <div class="stat-cell" role="listitem">
+          <div class="stat-key">files:</div>
+          <div class="stat-value">{{ project.totalFilesChanged | localeNumber }}</div>
+        </div>
+        {% if project.totalTokens %}
+        <div class="stat-cell" role="listitem">
+          <div class="stat-key">tokens:</div>
+          <div class="stat-value">{{ project.totalTokens | formatTokens }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+
+    {%- comment -%} Narrative {%- endcomment -%}
+    {% if project.narrative %}
+    <section class="mono-section" aria-label="Project narrative">
+      <h2 class="mono-heading"># narrative</h2>
+      <div class="terminal-block">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="dot-red" aria-hidden="true"></span>
+            <span class="dot-yellow" aria-hidden="true"></span>
+            <span class="dot-green" aria-hidden="true"></span>
+          </div>
+          <span>cat narrative.md</span>
+        </div>
+        <div class="narrative-block">
+          <p class="narrative-line">{{ project.narrative }}</p>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Phases (Git Log) {%- endcomment -%}
+    {% if arc.size > 0 %}
+    <section class="mono-section" aria-label="Project phases">
+      <h2 class="mono-heading"># git log --phases</h2>
+      <div class="terminal-block">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="dot-red" aria-hidden="true"></span>
+            <span class="dot-yellow" aria-hidden="true"></span>
+            <span class="dot-green" aria-hidden="true"></span>
+          </div>
+          <span>git log --oneline --graph</span>
+        </div>
+        <div class="terminal-body">
+          <div class="git-log" role="list" aria-label="Project phases as git log">
+            {% for item in arc %}
+            <div class="git-log-entry" role="listitem">
+              <div class="git-log-graph" aria-hidden="true">
+                <div class="git-log-node"></div>
+                {% unless forloop.last %}<div class="git-log-line"></div>{% endunless %}
+              </div>
+              <div class="git-log-content">
+                <div><span class="git-log-hash">{{ item.phase | prepend: '0' | slice: -2, 2 }}</span> <span class="git-log-msg">{{ item.title }}</span></div>
+                <div class="git-log-detail">{{ item.description }}</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Work Timeline chart mount {%- endcomment -%}
+    {% if sessionsJson %}
+    <section class="mono-section" aria-label="Session work timeline">
+      <h2 class="mono-heading"># work_timeline</h2>
+      <div class="terminal-block">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="dot-red" aria-hidden="true"></span>
+            <span class="dot-yellow" aria-hidden="true"></span>
+            <span class="dot-green" aria-hidden="true"></span>
+          </div>
+          <span>LOC per session</span>
+        </div>
+        <div class="terminal-body">
+          <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Growth chart mount {%- endcomment -%}
+    {% if growthJson %}
+    <section class="mono-section" aria-label="Growth over time">
+      <div class="terminal-block">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="dot-red" aria-hidden="true"></span>
+            <span class="dot-yellow" aria-hidden="true"></span>
+            <span class="dot-green" aria-hidden="true"></span>
+          </div>
+          <span>growth</span>
+        </div>
+        <div class="terminal-body">
+          <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Skills {%- endcomment -%}
+    {% if project.skills.size > 0 %}
+    <section class="mono-section" aria-label="Skills used">
+      <h2 class="mono-heading"># skills</h2>
+      <div class="tag-list">
+        {% for skill in project.skills %}
+        <span class="tag">[{{ skill }}]</span>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Key Decisions {%- endcomment -%}
+    {% if arc.size > 0 %}
+    <section class="mono-section" aria-label="Key decisions">
+      <h2 class="mono-heading"># key_decisions</h2>
+      <div class="terminal-block">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="dot-red" aria-hidden="true"></span>
+            <span class="dot-yellow" aria-hidden="true"></span>
+            <span class="dot-green" aria-hidden="true"></span>
+          </div>
+          <span>cat decisions.log</span>
+        </div>
+        <div class="terminal-body">
+          <ol class="decisions-list">
+            {% for item in arc %}
+            <li>
+              <span class="decision-num">[{{ forloop.index }}]</span>
+              <span>{{ item.description }}</span>
+            </li>
+            {% endfor %}
+          </ol>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Source Breakdown {%- endcomment -%}
+    {% if sourceCounts.size > 0 %}
+    <section class="mono-section" aria-label="Source breakdown">
+      <h2 class="mono-heading"># source_breakdown</h2>
+      {% assign totalSourceSessions = 0 %}
+      {% for src in sourceCounts %}
+        {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
       {% endfor %}
-    </div>
+      {% if totalSourceSessions > 0 %}
+      <div class="source-breakdown">
+        {% for src in sourceCounts %}
+        {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+        <span{% if forloop.first %} style="color: var(--mono-accent, #4ade80);"{% else %} style="color: var(--mono-text-dim, #666666);"{% endif %}>{{ src.tool }} {{ srcPct }}%</span>
+        {% endfor %}
+      </div>
+      <div class="source-bar--project" role="img" aria-label="Source mix">
+        {% for src in sourceCounts %}
+        {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+        <div class="source-bar-segment{% if forloop.first %} claude{% else %} cursor{% endif %}" style="width: {{ srcPct }}%;"></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {%- comment -%} Featured Sessions {%- endcomment -%}
+    {% if featuredSessions.size > 0 %}
+    <section class="mono-section" aria-label="Featured sessions">
+      <h2 class="mono-heading"># sessions</h2>
+      <div class="session-grid">
+        {% for s in featuredSessions %}
+        <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="session-card">
+          <div class="session-card-header">
+            <span aria-hidden="true">$</span> session #{{ forloop.index }}
+          </div>
+          <div class="session-card-body">
+            <h3 class="session-card-title">{{ s.title }}</h3>
+            <div class="session-kv"><span class="session-kv-key">duration:</span><span class="session-kv-value">{{ s.durationMinutes | formatDuration }}</span></div>
+            <div class="session-kv"><span class="session-kv-key">loc:</span><span class="session-kv-value">{{ s.locChanged | localeNumber }}</span></div>
+            <div class="session-kv"><span class="session-kv-key">turns:</span><span class="session-kv-value">{{ s.turns }}</span></div>
+            {% if s.skills.size > 0 %}
+            <span class="session-card-tag">[{{ s.skills | first }}]</span>
+            {% endif %}
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
   </div>
-  {% endif %}
 
-  {% render 'partials/_skills', skills: project.skills %}
+  <footer class="mono-footer">
+    <p>// generated by heyi.am &middot; mono template</p>
+  </footer>
 
-  {% if featuredSessions.size > 0 %}
-  <div class="term-section">
-    <div class="term-comment"># sessions ({{ sessions.size }} total)</div>
-    {% for session in featuredSessions %}
-    <div class="term-session-entry">
-      {% if sessionBaseUrl %}<a href="{{ sessionBaseUrl }}/{{ session.slug | default: session.token }}.html" class="term-session-link">{% endif %}
-      <span class="term-session-entry__idx">[{{ forloop.index }}]</span>
-      <span class="term-session-entry__title">{{ session.title }}</span>
-      <span class="term-session-entry__meta">{{ session.durationMinutes | formatDuration }} &middot; {{ session.turns }} turns &middot; {{ session.locChanged | formatLoc }} loc</span>
-      {% if sessionBaseUrl %}</a>{% endif %}
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  <script>
+  (function() {
+    'use strict';
+    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var sections = document.querySelectorAll('.mono-section');
+    if (prefersReducedMotion) {
+      sections.forEach(function(s) { s.classList.add('visible'); });
+    } else {
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+      sections.forEach(function(s) { observer.observe(s); });
+    }
+  })();
+  </script>
 
 </div>

@@ -1,30 +1,243 @@
 <div class="heyiam-project ember" data-render-version="2" data-template="ember"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
-
-  {% render 'partials/_links', project: project %}
-
-  {% render 'partials/_screenshot', project: project %}
-
-  {% render 'partials/_narrative', narrative: project.narrative %}
-
-  {% render 'partials/_stats', project: project, durationLabel: durationLabel, efficiencyMultiplier: efficiencyMultiplier %}
-
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
-
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
-
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+  {%- comment -%} Breadcrumb {%- endcomment -%}
+  <div class="breadcrumb ember-section" aria-label="Breadcrumb">
+    <a href="/{{ user.username }}">{{ user.username }}</a><span class="sep">/</span><span aria-current="page">{{ project.slug }}</span>
   </div>
 
-  {% render 'partials/_phases', arc: arc %}
+  {%- comment -%} Header {%- endcomment -%}
+  <header class="project-header ember-section">
+    <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+    {% if project.repoUrl or project.projectUrl %}
+    <div class="project-links">
+      {% if project.repoUrl %}
+      <a href="{{ project.repoUrl }}" target="_blank" rel="noopener">{{ project.repoUrl | stripProtocol }}</a>
+      {% endif %}
+      {% if project.projectUrl %}
+      <a href="{{ project.projectUrl }}" target="_blank" rel="noopener">{{ project.projectUrl | stripProtocol }}</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </header>
 
-  {% render 'partials/_skills', skills: project.skills %}
+  {%- comment -%} Screenshot {%- endcomment -%}
+  {% if project.screenshotUrl %}
+  <section class="ember-section" aria-label="Project screenshot">
+    <div class="screenshot-frame">
+      <div class="screenshot-chrome">
+        <span class="screenshot-dot" aria-hidden="true"></span>
+        <span class="screenshot-dot" aria-hidden="true"></span>
+        <span class="screenshot-dot" aria-hidden="true"></span>
+        {% if project.projectUrl %}
+        <span class="screenshot-url">{{ project.projectUrl | stripProtocol }}</span>
+        {% endif %}
+      </div>
+      <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" style="width: 100%; display: block;">
+    </div>
+  </section>
+  {% endif %}
 
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
+  {%- comment -%} Stats {%- endcomment -%}
+  <section class="ember-section" aria-label="Project statistics">
+    <div class="stats-grid" role="list">
+      <div class="stat-cell" role="listitem">
+        <span class="stat-value">{{ project.totalSessions }}</span>
+        <span class="stat-label">Sessions</span>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <span class="stat-value">{{ project.totalLoc | localeNumber }}</span>
+        <span class="stat-label">LOC</span>
+      </div>
+      <div class="stat-cell" role="listitem">
+        <span class="stat-value">{{ project.totalFilesChanged }}</span>
+        <span class="stat-label">Files</span>
+      </div>
+      {% if project.totalTokens %}
+      <div class="stat-cell" role="listitem">
+        <span class="stat-value">{{ project.totalTokens | formatTokens }}</span>
+        <span class="stat-label">Tokens</span>
+      </div>
+      {% endif %}
+      <div class="stat-cell" role="listitem">
+        <span class="stat-value">{{ project.totalDurationMinutes | formatDuration }}</span>
+        <span class="stat-label">{{ durationLabel }}</span>
+      </div>
+      {% if efficiencyMultiplier %}
+      <div class="stat-cell" role="listitem">
+        <span class="stat-value" style="color: var(--accent);">{{ efficiencyMultiplier }}</span>
+        <span class="stat-label">Leverage</span>
+      </div>
+      {% endif %}
+    </div>
+  </section>
 
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  {%- comment -%} Leverage {%- endcomment -%}
+  {% if efficiencyMultiplier %}
+  <section class="ember-section" aria-label="AI leverage" role="figure">
+    <div class="ember-leverage">
+      <div class="ember-leverage__main">
+        <span class="ember-leverage__multi">{{ efficiencyMultiplier }}</span>
+        <div class="ember-leverage__detail">
+          <span>{{ project.totalDurationMinutes | formatDuration }} <small>you</small></span>
+          <span style="color:var(--accent)">{{ project.totalAgentDurationMinutes | formatDuration }} <small>agents</small></span>
+        </div>
+      </div>
+      {% assign totalCombined = project.totalDurationMinutes | plus: project.totalAgentDurationMinutes %}
+      {% if totalCombined > 0 %}
+      {% assign agentPct = project.totalAgentDurationMinutes | times: 100 | divided_by: totalCombined %}
+      <div class="ember-leverage__bar"><div class="ember-leverage__fill" style="width:{{ agentPct }}%"></div></div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Narrative {%- endcomment -%}
+  {% if project.narrative %}
+  <section class="ember-section" aria-label="Project narrative">
+    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Narrative</h2>
+    <div class="narrative">
+      <p>{{ project.narrative }}</p>
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Work Timeline Chart {%- endcomment -%}
+  {% if sessionsJson %}
+  <section class="ember-section" aria-label="Session timeline">
+    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Work Timeline</h2>
+    <div class="timeline-chart">
+      <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Growth Chart {%- endcomment -%}
+  {% if growthJson %}
+  <section class="ember-section" aria-label="Growth over time">
+    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Growth</h2>
+    <div class="timeline-chart">
+      <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Phases {%- endcomment -%}
+  {% if arc.size > 0 %}
+  <section class="ember-section" aria-label="Project phases">
+    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Phases</h2>
+    <div class="phases">
+      {% for item in arc %}
+      <div class="phase-item">
+        <div class="phase-dot" aria-hidden="true"></div>
+        <div class="phase-title">{{ item.title }}</div>
+        <div class="phase-desc">{{ item.description }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Skills {%- endcomment -%}
+  {% if project.skills.size > 0 %}
+  <section class="ember-section" aria-label="Technologies used">
+    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Skills</h2>
+    <div class="skills-list">
+      {% for skill in project.skills %}
+      <span class="skill-chip">{{ skill }}</span>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Key Decisions {%- endcomment -%}
+  {% if arc.size > 0 %}
+  <section class="ember-section" aria-label="Key decisions">
+    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Key Decisions</h2>
+    <ol class="decisions-list">
+      {% for item in arc %}
+      <li>{{ item.description }}</li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Source Breakdown {%- endcomment -%}
+  {% if sourceCounts.size > 0 %}
+  <section class="ember-section" aria-label="Source breakdown">
+    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Source Breakdown</h2>
+    <div class="source-breakdown">
+      <div class="source-bar-container">
+        {% assign totalSourceSessions = 0 %}
+        {% for src in sourceCounts %}
+          {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
+        {% endfor %}
+        {% if totalSourceSessions > 0 %}
+        <div class="source-bar">
+          {% for src in sourceCounts %}
+          {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+          <div class="source-bar-segment{% if forloop.first %} claude{% else %} cursor{% endif %}" style="width: {{ srcPct }}%"></div>
+          {% endfor %}
+        </div>
+        <div class="source-labels">
+          {% for src in sourceCounts %}
+          {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+          <span><span class="source-legend-dot{% if forloop.first %} claude{% else %} cursor{% endif %}" aria-hidden="true"></span>{{ src.tool }} {{ srcPct }}% ({{ src.count }} session{% if src.count != 1 %}s{% endif %})</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Featured Sessions {%- endcomment -%}
+  {% if featuredSessions.size > 0 %}
+  <section class="ember-section" aria-label="Featured sessions">
+    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Featured Sessions</h2>
+    <div class="sessions-grid">
+      {% for s in featuredSessions %}
+      <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="session-card">
+        <div class="session-card-number">#{{ forloop.index }}</div>
+        <h3 class="session-card-title">{{ s.title }}</h3>
+        <div class="session-card-meta">
+          <span>{{ s.durationMinutes | formatDuration }}</span>
+          <span>{{ s.locChanged | localeNumber }} LOC</span>
+          {% if s.agentSummary %}
+          <span>{{ s.agentSummary.agents.size }} agent{% if s.agentSummary.agents.size != 1 %}s{% endif %}</span>
+          {% endif %}
+        </div>
+        {% if s.skills.size > 0 %}
+        <span class="session-card-tag">{{ s.skills | first }}</span>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Footer {%- endcomment -%}
+  <footer class="footer">
+    <p>Built with <a href="https://heyi.am">heyi.am</a></p>
+  </footer>
+
+  {%- comment -%} Section fade-in animation {%- endcomment -%}
+  <script>
+  (function() {
+    var sections = document.querySelectorAll('.ember-section');
+    if (!window.IntersectionObserver) {
+      sections.forEach(function(s) { s.classList.add('visible'); });
+      return;
+    }
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    sections.forEach(function(s) { observer.observe(s); });
+  })();
+  </script>
 
 </div>

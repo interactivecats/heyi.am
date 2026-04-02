@@ -2,23 +2,61 @@
 
   {%- comment -%} Prompt-style breadcrumb {%- endcomment -%}
   <div class="term-prompt">
-    <span class="term-prompt__char">&#10095;</span> <span class="term-prompt__path">@{{ user.username }}</span>
+    <span class="term-prompt__char">&#10095;</span> <span class="term-prompt__path">~/@{{ user.username }}</span>
   </div>
 
-  {%- comment -%} # Title {%- endcomment -%}
-  <h1 class="term-heading"># {{ user.displayName }}</h1>
-  {% if user.bio != blank %}
-  <blockquote class="term-blockquote">{{ user.bio }}</blockquote>
-  {% endif %}
+  {%- comment -%} Header: photo + identity {%- endcomment -%}
+  <div class="term-header">
+    {% if user.photoUrl != blank %}
+    <div class="term-photo">
+      <div class="term-photo__border">
+        <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="term-photo__img portfolio-photo" loading="lazy" />
+      </div>
+    </div>
+    {% endif %}
+    <div class="term-identity">
+      <h1 class="term-heading"># {{ user.displayName }}</h1>
+      {% if user.status != blank %}
+      <div class="term-status">[ {{ user.status }} ]</div>
+      {% endif %}
+      {% if user.bio != blank %}
+      <blockquote class="term-blockquote">&gt; {{ user.bio }}</blockquote>
+      {% endif %}
+    </div>
+  </div>
 
-  {%- comment -%} Contact links as inline list {%- endcomment -%}
+  {%- comment -%} Contact as key=value pairs {%- endcomment -%}
+  {% if user.location != blank or user.email != blank or user.phone != blank or user.githubUrl != blank or user.linkedinUrl != blank or user.twitterHandle != blank or user.websiteUrl != blank or user.resumeUrl != blank %}
   <div class="term-section">
-    {% if user.location != blank %}<span class="term-meta">{{ user.location }}</span>{% endif %}
-    {% if user.email != blank %}<span class="term-meta"><a href="mailto:{{ user.email }}">{{ user.email }}</a></span>{% endif %}
-    {% if user.githubUrl != blank %}<span class="term-meta"><a href="{{ user.githubUrl }}" target="_blank" rel="noopener">GitHub</a></span>{% endif %}
-    {% if user.linkedinUrl != blank %}<span class="term-meta"><a href="{{ user.linkedinUrl }}" target="_blank" rel="noopener">LinkedIn</a></span>{% endif %}
-    {% if user.websiteUrl != blank %}<span class="term-meta"><a href="{{ user.websiteUrl }}" target="_blank" rel="noopener">{{ user.websiteUrl | stripProtocol }}</a></span>{% endif %}
+    <div class="term-comment"># contact</div>
+    <table class="term-table term-table--contact">
+      {% if user.location != blank %}
+      <tr><td class="term-table__key">location</td><td class="term-table__eq">=</td><td class="term-table__val">{{ user.location }}</td></tr>
+      {% endif %}
+      {% if user.email != blank %}
+      <tr><td class="term-table__key">email</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="mailto:{{ user.email }}">{{ user.email }}</a></td></tr>
+      {% endif %}
+      {% if user.phone != blank %}
+      <tr><td class="term-table__key">phone</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="tel:{{ user.phone }}">{{ user.phone }}</a></td></tr>
+      {% endif %}
+      {% if user.githubUrl != blank %}
+      <tr><td class="term-table__key">github</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="{{ user.githubUrl }}" target="_blank" rel="noopener">{{ user.githubUrl | stripProtocol }}</a></td></tr>
+      {% endif %}
+      {% if user.linkedinUrl != blank %}
+      <tr><td class="term-table__key">linkedin</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="{{ user.linkedinUrl }}" target="_blank" rel="noopener">{{ user.linkedinUrl | stripProtocol }}</a></td></tr>
+      {% endif %}
+      {% if user.twitterHandle != blank %}
+      <tr><td class="term-table__key">twitter</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="https://twitter.com/{{ user.twitterHandle }}" target="_blank" rel="noopener">@{{ user.twitterHandle }}</a></td></tr>
+      {% endif %}
+      {% if user.websiteUrl != blank %}
+      <tr><td class="term-table__key">web</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="{{ user.websiteUrl }}" target="_blank" rel="noopener">{{ user.websiteUrl | stripProtocol }}</a></td></tr>
+      {% endif %}
+      {% if user.resumeUrl != blank %}
+      <tr><td class="term-table__key">resume</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="{{ user.resumeUrl }}" target="_blank" rel="noopener" download>Resume (PDF)</a></td></tr>
+      {% endif %}
+    </table>
   </div>
+  {% endif %}
 
   {%- comment -%} Stats as tabular output {%- endcomment -%}
   <div class="term-section">
@@ -26,31 +64,51 @@
     <table class="term-table">
       {% if efficiencyMultiplier %}
       <tr>
-        <td class="term-table__key">Leverage</td>
-        <td class="term-table__val"><span style="color: var(--accent, #4ade80); font-weight: 700;">{{ efficiencyMultiplier }}</span> <span style="opacity: 0.5;">{{ totalDurationMinutes | formatDuration }} you</span> <span style="color: var(--accent, #4ade80);">{{ totalAgentDurationMinutes | formatDuration }} agents</span></td>
+        <td class="term-table__key">leverage</td>
+        <td class="term-table__val"><span class="term-accent">{{ efficiencyMultiplier }}</span> <span class="term-dim">{{ totalDurationMinutes | formatDuration }} you</span> <span class="term-accent">{{ totalAgentDurationMinutes | formatDuration }} agents</span></td>
       </tr>
       {% else %}
-      <tr><td class="term-table__key">Time</td><td class="term-table__val">{{ totalDurationMinutes | formatDuration }}</td></tr>
+      <tr><td class="term-table__key">time</td><td class="term-table__val">{{ totalDurationMinutes | formatDuration }}</td></tr>
       {% endif %}
-      <tr><td class="term-table__key">Sessions</td><td class="term-table__val">{{ totalSessions }}</td></tr>
-      <tr><td class="term-table__key">Lines</td><td class="term-table__val">{{ totalLoc | formatLoc }}</td></tr>
+      <tr><td class="term-table__key">sessions</td><td class="term-table__val">{{ totalSessions }}</td></tr>
+      <tr><td class="term-table__key">lines</td><td class="term-table__val">{{ totalLoc | formatLoc }}</td></tr>
     </table>
   </div>
 
-  {%- comment -%} Projects as numbered list entries {%- endcomment -%}
+  {%- comment -%} Projects as numbered clickable entries {%- endcomment -%}
   {% if projects.size > 0 %}
   <div class="term-section">
     <div class="term-comment"># projects ({{ projects.size }})</div>
     {% for project in projects %}
-    <div class="term-session-entry">
-      <span class="term-session-entry__idx">[{{ forloop.index }}]</span>
-      <span class="term-session-entry__title">{{ project.title }}</span>
-      <span class="term-session-entry__meta">{{ project.totalSessions }} sessions &middot; {{ project.totalDurationMinutes | formatDuration }} &middot; {{ project.totalLoc | formatLoc }} loc</span>
-    </div>
+    <a href="/{{ user.username }}/{{ project.slug }}" class="term-project-entry">
+      <div class="term-project-entry__row">
+        <span class="term-project-entry__idx">[{{ forloop.index }}]</span>
+        <span class="term-project-entry__title">{{ project.title }}</span>
+      </div>
+      <div class="term-project-entry__meta">
+        <span>{{ project.totalSessions }} sessions</span>
+        <span class="term-sep">&middot;</span>
+        <span>{{ project.totalDurationMinutes | formatDuration }}</span>
+        <span class="term-sep">&middot;</span>
+        <span>{{ project.totalLoc | formatLoc }} loc</span>
+        <span class="term-sep">&middot;</span>
+        <span>{{ project.totalFilesChanged }} files</span>
+      </div>
+      {% if project.skills.size > 0 %}
+      <div class="term-project-entry__skills">
+        {% for skill in project.skills %}
+        <span class="term-skill-tag">{{ skill }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </a>
     {% endfor %}
   </div>
   {% endif %}
 
-  {% render 'partials/_footer' %}
+  {%- comment -%} Footer {%- endcomment -%}
+  <div class="term-footer">
+    <span class="term-dim">built with <a href="https://heyiam.com" target="_blank" rel="noopener noreferrer">heyiam.com</a></span>
+  </div>
 
 </div>

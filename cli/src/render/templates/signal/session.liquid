@@ -1,30 +1,292 @@
 <div class="heyiam-session signal" data-render-version="2" data-template="signal">
-  <div class="session-layout">
-    {% render 'partials/_session-sidebar', session: session %}
-    <main class="session-main">
-      {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
-      {% render 'partials/_session-header', session: session %}
-      {% if session.skills.size > 0 %}
-      <section class="content-section">
-        <div class="chip-list">
-          {% for skill in session.skills %}<span class="chip chip--violet">{{ skill }}</span>{% endfor %}
-        </div>
-      </section>
-      {% endif %}
-      {% if session.narrative != blank %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Narrative</h2>
-        <p>{{ session.narrative }}</p>
-      </section>
-      {% endif %}
-      {% if session.highlights.size > 0 %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Highlights</h2>
-        <ul class="highlights-list">{% for h in session.highlights %}<li>{{ h }}</li>{% endfor %}</ul>
-      </section>
-      {% endif %}
-      {% render 'partials/_beats', session: session %}
-      {% render 'partials/_qa', session: session %}
-    </main>
+
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  {%- comment -%} Breadcrumb {%- endcomment -%}
+  <div class="container">
+    <div class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/{{ user.username }}">{{ user.username }}</a>
+      <span class="sep" aria-hidden="true">/</span>
+      <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
+      <span class="sep" aria-hidden="true">/</span>
+      <span aria-current="page">{{ session.title }}</span>
+    </div>
   </div>
+
+  {%- comment -%} Dashboard Strip {%- endcomment -%}
+  <section class="dashboard-strip" aria-label="Session statistics">
+    <div class="container">
+      <div class="stats-row">
+        <div class="stat-cell">
+          <div class="stat-value" data-animate data-target="{{ session.durationMinutes }}">0</div>
+          <div class="stat-label">Duration</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value" data-animate data-target="{{ session.turns }}">0</div>
+          <div class="stat-label">Turns</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value green" data-animate data-target="{{ session.locChanged }}">0</div>
+          <div class="stat-label">LOC</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value" data-animate data-target="{{ session.filesChanged }}">0</div>
+          <div class="stat-label">Files</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {%- comment -%} Main Content {%- endcomment -%}
+  <main id="main" class="container">
+
+    {%- comment -%} Session Header {%- endcomment -%}
+    <header class="session-header fade-in">
+      <h1>{{ session.title }}</h1>
+      <div class="session-meta">
+        {% if session.recordedAt %}
+        <div class="meta-item">
+          <span class="meta-label">Date</span>
+          <span>{{ session.recordedAt | formatDate }}</span>
+        </div>
+        {% endif %}
+        {% if session.sourceTool %}
+        <div class="meta-item">
+          <span class="meta-label">Source</span>
+          <span class="source-tag {{ session.sourceTool | downcase }}">{{ session.sourceTool }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </header>
+
+    {%- comment -%} Dev Take {%- endcomment -%}
+    {% if session.devTake != blank %}
+    <div class="dev-take fade-in">
+      <div class="dev-take-label">Dev Take</div>
+      <p>{{ session.devTake }}</p>
+    </div>
+    {% endif %}
+
+    {%- comment -%} Two-column layout {%- endcomment -%}
+    <div class="layout-grid">
+
+      {%- comment -%} Main column {%- endcomment -%}
+      <div>
+
+        {%- comment -%} Skills {%- endcomment -%}
+        {% if session.skills.size > 0 %}
+        <section class="fade-in" aria-label="Skills" style="padding-top: 20px;">
+          <div class="skill-badges">
+            {% for skill in session.skills %}
+            <span class="skill-badge strong">{{ skill }}</span>
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
+
+        {%- comment -%} Narrative {%- endcomment -%}
+        {% if session.narrative != blank %}
+        <section class="narrative fade-in" aria-label="Session narrative">
+          <div class="section-header">
+            <h2>Narrative</h2>
+            <div class="section-line" aria-hidden="true"></div>
+          </div>
+          <p>{{ session.narrative }}</p>
+        </section>
+        {% endif %}
+
+        {%- comment -%} Highlights {%- endcomment -%}
+        {% if session.highlights.size > 0 %}
+        <section class="fade-in" aria-label="Highlights">
+          <div class="section-header">
+            <h2>Highlights</h2>
+            <div class="section-line" aria-hidden="true"></div>
+          </div>
+          <ul class="highlights-list">
+            {% for h in session.highlights %}
+            <li>{{ h }}</li>
+            {% endfor %}
+          </ul>
+        </section>
+        {% endif %}
+
+        {%- comment -%} Execution Path / Beats {%- endcomment -%}
+        {% if session.beats.size > 0 %}
+        <section class="fade-in" aria-label="Execution path">
+          <div class="section-header">
+            <h2>Execution Path</h2>
+            <span class="section-tag">{{ session.beats.size }} beats</span>
+            <div class="section-line" aria-hidden="true"></div>
+          </div>
+          <div class="beats">
+            {% for beat in session.beats %}
+            <div class="beat">
+              <div class="beat-dot" aria-hidden="true"><div class="beat-dot-inner"></div></div>
+              <div class="beat-title">{{ beat.title }}</div>
+              {% if beat.body != blank %}
+              <div class="beat-desc">{{ beat.body }}</div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
+
+        {%- comment -%} Q&A {%- endcomment -%}
+        {% if session.qaPairs.size > 0 %}
+        <section class="fade-in" aria-label="Questions and answers">
+          <div class="section-header">
+            <h2>Q&amp;A</h2>
+            <span class="section-tag">{{ session.qaPairs.size }} questions</span>
+            <div class="section-line" aria-hidden="true"></div>
+          </div>
+          <div class="qa-list">
+            {% for qa in session.qaPairs %}
+            <article class="qa-item">
+              <div class="qa-question">
+                <span class="q-mark" aria-hidden="true">Q</span>
+                <span>{{ qa.question }}</span>
+              </div>
+              <div class="qa-answer">
+                <span class="a-mark" aria-hidden="true">A</span>
+                <span>{{ qa.answer }}</span>
+              </div>
+            </article>
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
+
+      </div>
+
+      {%- comment -%} Sidebar {%- endcomment -%}
+      <aside class="sidebar" aria-label="Session details">
+
+        {%- comment -%} Tools Used {%- endcomment -%}
+        {% if session.toolBreakdown.size > 0 %}
+        <div class="sidebar-card fade-in">
+          <div class="sidebar-card-header">Tools Used</div>
+          <div class="sidebar-card-body">
+            {% assign maxToolCount = session.toolBreakdown[0].count %}
+            {% for tool in session.toolBreakdown %}
+              {% if tool.count > maxToolCount %}
+                {% assign maxToolCount = tool.count %}
+              {% endif %}
+            {% endfor %}
+            {% for tool in session.toolBreakdown %}
+            <div class="tool-row">
+              <span class="tool-name">{{ tool.tool }}</span>
+              <div class="tool-bar-bg">
+                {% if maxToolCount > 0 %}
+                {% assign toolPct = tool.count | times: 100 | divided_by: maxToolCount %}
+                <div class="tool-bar-fill" style="width: {{ toolPct }}%;"></div>
+                {% endif %}
+              </div>
+              <span class="tool-count">{{ tool.count }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {%- comment -%} Files Changed {%- endcomment -%}
+        {% if session.topFiles.size > 0 %}
+        <div class="sidebar-card fade-in">
+          <div class="sidebar-card-header">Files Changed</div>
+          <div class="sidebar-card-body">
+            {% for file in session.topFiles %}
+            <div class="file-row">
+              <span class="file-name" title="{{ file.path }}">{{ file.path }}</span>
+              <span class="file-diff">+{{ file.additions }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {%- comment -%} Skills {%- endcomment -%}
+        {% if session.skills.size > 0 %}
+        <div class="sidebar-card fade-in">
+          <div class="sidebar-card-header">Skills</div>
+          <div class="sidebar-card-body">
+            <div class="sidebar-skills">
+              {% for skill in session.skills %}
+              <span class="skill-badge strong">{{ skill }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+      </aside>
+
+    </div>
+  </main>
+
+  {%- comment -%} Footer {%- endcomment -%}
+  <footer class="footer">
+    <div class="container">
+      signal template &middot; heyi.am
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      var DURATION = 600;
+      var counters = document.querySelectorAll('.stat-value[data-animate]');
+
+      function formatNumber(n) {
+        return n >= 1000 ? n.toLocaleString() : String(n);
+      }
+
+      function animateCounter(el) {
+        var target = parseInt(el.getAttribute('data-target'), 10);
+        if (isNaN(target)) return;
+        var start = performance.now();
+        el.classList.add('counted');
+
+        function tick(now) {
+          var elapsed = now - start;
+          var progress = Math.min(elapsed / DURATION, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          var current = Math.round(eased * target);
+          el.textContent = formatNumber(current);
+          if (progress < 1) {
+            requestAnimationFrame(tick);
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+
+      if ('IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              animateCounter(entry.target);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.5 });
+        counters.forEach(function(el) { observer.observe(el); });
+      } else {
+        counters.forEach(function(el) { animateCounter(el); });
+      }
+
+      var fadeEls = document.querySelectorAll('.fade-in');
+      if ('IntersectionObserver' in window) {
+        var fadeObserver = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              fadeObserver.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.1 });
+        fadeEls.forEach(function(el) { fadeObserver.observe(el); });
+      } else {
+        fadeEls.forEach(function(el) { el.classList.add('visible'); });
+      }
+    })();
+  </script>
+
 </div>

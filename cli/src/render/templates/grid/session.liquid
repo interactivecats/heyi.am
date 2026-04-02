@@ -1,35 +1,192 @@
 <div class="heyiam-session grid" data-render-version="2" data-template="grid">
 
-  <div class="session-layout">
+  <div class="container">
+    <div class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/{{ user.username }}">{{ user.username }}</a>
+      {% if projectSlug %}
+      <span class="breadcrumb-sep" aria-hidden="true">/</span>
+      <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
+      {% endif %}
+      <span class="breadcrumb-sep" aria-hidden="true">/</span>
+      <span aria-current="page">{{ session.title }}</span>
+    </div>
 
-    {% render 'partials/_session-sidebar', session: session %}
+    <div class="bento" aria-label="Session dashboard">
 
-    <main class="session-main">
+      {%- comment -%} Cell 1: Title (3-wide) {%- endcomment -%}
+      <div class="bento-cell cell-title">
+        <h1>{{ session.title }}</h1>
+        <div class="session-subtitle">
+          {% if session.recordedAt %}
+          <span>{{ session.recordedAt | formatDate }}</span>
+          {% endif %}
+          {% if session.sourceTool %}
+          <span class="source-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            {{ session.sourceTool }}
+          </span>
+          {% endif %}
+        </div>
+      </div>
 
-      {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
+      {%- comment -%} Cell 2: Stat -- Duration {%- endcomment -%}
+      <section class="bento-cell cell-stat" aria-label="Duration">
+        <div class="stat-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div>
+          <div class="stat-number">{{ session.durationMinutes | formatDuration }}</div>
+          <div class="stat-label">Duration</div>
+        </div>
+      </section>
 
-      {% render 'partials/_session-header', session: session %}
+      {%- comment -%} Cell 3: Dev Take (4-wide) {%- endcomment -%}
+      {% if session.devTake %}
+      <div class="bento-cell cell-devtake">
+        <div class="devtake-label">Dev Take</div>
+        <blockquote>{{ session.devTake }}</blockquote>
+      </div>
+      {% endif %}
 
-      {% if session.skills.size > 0 %}
-      <section class="content-section">
-        <div class="chip-list">
-          {% for skill in session.skills %}
-          <span class="chip chip--violet">{{ skill }}</span>
+      {%- comment -%} Cell 4: Stat -- Turns {%- endcomment -%}
+      <section class="bento-cell cell-stat" aria-label="Conversation turns">
+        <div class="stat-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div>
+          <div class="stat-number" data-target="{{ session.turns }}">0</div>
+          <div class="stat-label">Turns</div>
+        </div>
+      </section>
+
+      {%- comment -%} Cell 5: Stat -- LOC {%- endcomment -%}
+      <section class="bento-cell cell-stat" aria-label="Lines changed">
+        <div class="stat-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </div>
+        <div>
+          <div class="stat-number" data-target="{{ session.locChanged }}">0</div>
+          <div class="stat-label">Lines Changed</div>
+        </div>
+      </section>
+
+      {%- comment -%} Cell 6: Stat -- Files {%- endcomment -%}
+      <section class="bento-cell cell-stat" aria-label="Files changed">
+        <div class="stat-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div>
+          <div class="stat-number" data-target="{{ session.filesChanged }}">0</div>
+          <div class="stat-label">Files Changed</div>
+        </div>
+      </section>
+
+      {%- comment -%} Cell 7: Tools Used (2-wide) {%- endcomment -%}
+      {% if session.toolBreakdown.size > 0 %}
+      <section class="bento-cell cell-tools" aria-label="Tools used">
+        <h2 class="cell-heading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          Tools Used
+        </h2>
+        <div class="tools-list">
+          {% assign maxToolCount = 0 %}
+          {% for t in session.toolBreakdown %}
+            {% if t.count > maxToolCount %}
+              {% assign maxToolCount = t.count %}
+            {% endif %}
+          {% endfor %}
+          {% for t in session.toolBreakdown %}
+          <div class="tool-row">
+            <span class="tool-name">{{ t.tool }}</span>
+            <div class="tool-bar-wrap">
+              <div class="tool-bar-track">
+                {% if maxToolCount > 0 %}
+                {% assign toolPct = t.count | times: 100 | divided_by: maxToolCount %}
+                <div class="tool-bar-fill" style="width: {{ toolPct }}%"></div>
+                {% endif %}
+              </div>
+              <span class="tool-count">{{ t.count }}</span>
+            </div>
+          </div>
           {% endfor %}
         </div>
       </section>
       {% endif %}
 
-      {% if session.narrative != blank %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Narrative</h2>
+      {%- comment -%} Cell 8: Files Changed (2-wide) {%- endcomment -%}
+      {% if session.topFiles.size > 0 %}
+      <section class="bento-cell cell-files" aria-label="Files changed">
+        <h2 class="cell-heading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Files Changed
+        </h2>
+        <div class="files-list">
+          {% for f in session.topFiles %}
+          <div class="file-row">
+            <span class="file-name">{{ f.path }}</span>
+            <span class="file-diff">+{{ f.additions }}{% if f.deletions > 0 %} -{{ f.deletions }}{% endif %}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Cell 9: Execution Path (3-wide) {%- endcomment -%}
+      {% if session.beats.size > 0 %}
+      <section class="bento-cell cell-beats" aria-label="Execution path">
+        <h2 class="cell-heading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Execution Path
+        </h2>
+        <ol class="beats-list" role="list">
+          {% for beat in session.beats %}
+          <li class="beat-item">
+            <div class="beat-indicator" aria-hidden="true">
+              <span class="beat-dot"></span>
+              {% unless forloop.last %}
+              <span class="beat-line"></span>
+              {% endunless %}
+            </div>
+            <div class="beat-content">
+              <div class="beat-title">{{ beat.title }}</div>
+              <div class="beat-desc">{{ beat.body }}</div>
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Cell 10: Skills {%- endcomment -%}
+      {% if session.skills.size > 0 %}
+      <section class="bento-cell cell-skills" aria-label="Skills">
+        <h2 class="cell-heading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Skills
+        </h2>
+        <div class="skills-grid">
+          {% for skill in session.skills %}
+          <span class="skill-chip chip chip--violet">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Cell 11: Narrative {%- endcomment -%}
+      {% if session.narrative %}
+      <section class="bento-cell cell-narrative" aria-label="Narrative">
+        <h2 class="cell-heading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Narrative
+        </h2>
         <p>{{ session.narrative }}</p>
       </section>
       {% endif %}
 
+      {%- comment -%} Cell 12: Highlights {%- endcomment -%}
       {% if session.highlights.size > 0 %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Highlights</h2>
+      <section class="bento-cell cell-narrative" aria-label="Highlights">
+        <h2 class="cell-heading">Highlights</h2>
         <ul class="highlights-list">
           {% for h in session.highlights %}
           <li>{{ h }}</li>
@@ -38,10 +195,95 @@
       </section>
       {% endif %}
 
-      {% render 'partials/_beats', session: session %}
+      {%- comment -%} Cell 13: Q&A (4-wide) {%- endcomment -%}
+      {% if session.qaPairs.size > 0 %}
+      <section class="bento-cell cell-qa" aria-label="Questions and answers">
+        <h2 class="cell-heading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Q&amp;A
+        </h2>
+        <div class="qa-list">
+          {% for qa in session.qaPairs %}
+          <div class="qa-item qa-pair">
+            <div class="qa-question">
+              <span class="qa-q-badge" aria-hidden="true">Q</span>
+              <span>{{ qa.question }}</span>
+            </div>
+            <p class="qa-answer">{{ qa.answer }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
 
-      {% render 'partials/_qa', session: session %}
+      {%- comment -%} Cell 14: Agent Summary (4-wide) {%- endcomment -%}
+      {% if session.agentSummary %}
+      <section class="bento-cell cell-agents" aria-label="Agent summary">
+        <h2 class="cell-heading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Agent Summary
+          <span style="font-family: var(--font-mono); font-size: 11px; color: var(--fg-faint); font-weight: 400; margin-inline-start: auto;">{{ session.agentSummary.agents.size }} sub-sessions</span>
+        </h2>
+        <div class="agents-grid">
+          {% assign agent_colors = '#7c3aed,#0891b2,#059669,#475569,#e11d48,#d97706' | split: ',' %}
+          {% for agent in session.agentSummary.agents %}
+          <div class="agent-card">
+            {% assign colorIdx = forloop.index0 | modulo: 6 %}
+            <span class="agent-color" style="background: {{ agent_colors[colorIdx] }};" aria-hidden="true"></span>
+            <div class="agent-info">
+              <div class="agent-role">{{ agent.role }}</div>
+              <div class="agent-meta">{{ agent.duration_minutes }}m &middot; {{ agent.loc_changed }} LOC</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
 
-    </main>
+    </div>
   </div>
+
+  {%- comment -%} Stat counter animation {%- endcomment -%}
+  <script>
+    (function() {
+      var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var stats = document.querySelectorAll('.stat-number[data-target]');
+
+      stats.forEach(function(el) {
+        var target = parseInt(el.getAttribute('data-target'), 10);
+        var format = el.getAttribute('data-format');
+        var unit = el.querySelector('.stat-unit');
+
+        if (reducedMotion) {
+          el.textContent = format === 'comma' ? target.toLocaleString() : String(target);
+          if (unit) el.appendChild(unit);
+          return;
+        }
+
+        var duration = 1200;
+        var start = null;
+
+        function step(timestamp) {
+          if (!start) start = timestamp;
+          var progress = Math.min((timestamp - start) / duration, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          var current = Math.round(eased * target);
+          el.textContent = format === 'comma' ? current.toLocaleString() : String(current);
+          if (unit) el.appendChild(unit);
+          if (progress < 1) requestAnimationFrame(step);
+        }
+
+        var observer = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              requestAnimationFrame(step);
+              observer.unobserve(el);
+            }
+          });
+        }, { threshold: 0.5 });
+        observer.observe(el);
+      });
+    })();
+  </script>
+
 </div>

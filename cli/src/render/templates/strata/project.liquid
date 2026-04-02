@@ -1,65 +1,311 @@
-<div class="heyiam-project strata" data-render-version="2" data-template="strata"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
+<div class="strata-project" data-render-version="2" data-template="strata"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+  {%- comment -%} Title {%- endcomment -%}
+  <h1 class="strata-title" data-editable="title">{{ project.title }}</h1>
 
-  {% render 'partials/_links', project: project %}
+  {%- comment -%} Links {%- endcomment -%}
+  {% if project.repoUrl or project.projectUrl %}
+  <div class="strata-links" aria-label="Project links">
+    {% if project.repoUrl %}
+    <a class="strata-link" href="{{ project.repoUrl }}" target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      {{ project.repoUrl | stripProtocol }}
+    </a>
+    {% endif %}
+    {% if project.projectUrl %}
+    <a class="strata-link" href="{{ project.projectUrl }}" target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/><path d="M3.5 8h9M8 1.75c-1.5 1.75-2 3.75-2 6.25s.5 4.5 2 6.25M8 1.75c1.5 1.75 2 3.75 2 6.25s-.5 4.5-2 6.25"/></svg>
+      {{ project.projectUrl | stripProtocol }}
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
 
-  {% render 'partials/_screenshot', project: project %}
-
-  {% render 'partials/_narrative', narrative: project.narrative %}
-
-  {%- comment -%} Stats with collapsed leverage card {%- endcomment -%}
-  <div class="stat-grid" role="list" aria-label="Project statistics">
-    {% if efficiencyMultiplier %}
-    <div class="strata-leverage-card" role="listitem" aria-label="Leverage: {{ efficiencyMultiplier }}">
-      <div class="strata-leverage-card__value" style="color: var(--accent, #d97706);">{{ efficiencyMultiplier }}</div>
-      <div class="strata-leverage-card__annotation">
-        <span style="opacity: 0.5;">{{ project.totalDurationMinutes | formatDuration }}</span>
-        <span style="opacity: 0.35;" aria-hidden="true">/</span>
-        <span style="color: var(--accent, #d97706);">{{ project.totalAgentDurationMinutes | formatDuration }}</span>
+  {%- comment -%} Screenshot {%- endcomment -%}
+  {% if project.screenshotUrl %}
+  <div class="strata-layer strata-layer--screenshot" style="z-index: 1;">
+    <div class="browser-chrome">
+      <div class="browser-chrome__bar">
+        <span class="browser-chrome__dot browser-chrome__dot--red"></span>
+        <span class="browser-chrome__dot browser-chrome__dot--yellow"></span>
+        <span class="browser-chrome__dot browser-chrome__dot--green"></span>
+        {% if project.projectUrl %}
+        <span class="browser-chrome__url">{{ project.projectUrl | stripProtocol }}</span>
+        {% endif %}
+      </div>
+      <div class="browser-chrome__viewport">
+        <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" style="width: 100%; display: block;">
       </div>
     </div>
-    {% else %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Time</div>
-      <div class="stat-card__value">{{ project.totalDurationMinutes | formatDuration }}</div>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Narrative {%- endcomment -%}
+  {% if project.narrative %}
+  <div class="strata-layer" style="z-index: 2; padding: 2.5rem 3rem;">
+    <div class="strata-narrative">
+      <p>{{ project.narrative }}</p>
     </div>
-    {% endif %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Sessions</div>
-      <div class="stat-card__value">{{ project.totalSessions }}</div>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Stats {%- endcomment -%}
+  <div class="strata-layer" style="z-index: 3;" id="stats-section">
+    <div class="strata-stats-grid">
+      <div class="strata-stat">
+        <span class="strata-stat__label">Sessions</span>
+        <span class="strata-stat__value">{{ project.totalSessions }}</span>
+      </div>
+      <div class="strata-stat">
+        <span class="strata-stat__label">{{ durationLabel }}</span>
+        <span class="strata-stat__value">{{ project.totalDurationMinutes | formatDuration }}</span>
+      </div>
+      {% if efficiencyMultiplier %}
+      <div class="strata-stat">
+        <span class="strata-stat__label">Agents</span>
+        <span class="strata-stat__value strata-stat__value--accent">{{ project.totalAgentDurationMinutes | formatDuration }}</span>
+      </div>
+      <div class="strata-stat">
+        <span class="strata-stat__label">Multiplier</span>
+        <span class="strata-stat__value strata-stat__value--accent">{{ efficiencyMultiplier }}</span>
+      </div>
+      {% endif %}
+      <div class="strata-stat">
+        <span class="strata-stat__label">Lines Changed</span>
+        <span class="strata-stat__value">{{ project.totalLoc | localeNumber }}</span>
+      </div>
+      <div class="strata-stat">
+        <span class="strata-stat__label">Files</span>
+        <span class="strata-stat__value">{{ project.totalFilesChanged }}</span>
+      </div>
+      {% if project.totalTokens %}
+      <div class="strata-stat">
+        <span class="strata-stat__label">Tokens</span>
+        <span class="strata-stat__value">{{ project.totalTokens | formatTokens }}</span>
+      </div>
+      {% endif %}
     </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Lines changed</div>
-      <div class="stat-card__value">{{ project.totalLoc | formatLoc }}</div>
-    </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Files</div>
-      <div class="stat-card__value">{{ project.totalFilesChanged }}</div>
-    </div>
-    {% if project.totalTokens %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Tokens</div>
-      <div class="stat-card__value">{{ project.totalTokens | formatTokens }}</div>
-    </div>
-    {% endif %}
   </div>
 
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
-
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
-
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+  {%- comment -%} Work Timeline {%- endcomment -%}
+  {% if sessionsJson %}
+  <div class="strata-layer" style="z-index: 4;">
+    <div class="strata-section-header">
+      <h2 class="strata-section-header__title">Work Timeline</h2>
+      <span class="strata-section-header__meta">{{ project.totalSessions }} sessions</span>
+    </div>
+    <div class="strata-chart">
+      <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+    </div>
   </div>
+  {% endif %}
 
-  {% render 'partials/_phases', arc: arc %}
+  {%- comment -%} Growth Chart {%- endcomment -%}
+  {% if growthJson %}
+  <div class="strata-layer" style="z-index: 5;">
+    <div class="strata-section-header">
+      <h2 class="strata-section-header__title">Cumulative Growth</h2>
+      <span class="strata-section-header__meta">{{ project.totalLoc | localeNumber }} lines &middot; {{ project.totalFilesChanged }} files</span>
+    </div>
+    <div class="strata-growth-chart">
+      <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+    </div>
+  </div>
+  {% endif %}
 
-  {% render 'partials/_skills', skills: project.skills %}
+  {%- comment -%} Two-Column: Key Decisions + Source Breakdown {%- endcomment -%}
+  {% if arc.size > 0 or sourceCounts.size > 0 %}
+  <div class="strata-layer" style="z-index: 6;">
+    <div class="strata-two-col">
+      {% if arc.size > 0 %}
+      <div>
+        <h2 class="strata-col-heading">Key Decisions</h2>
+        <div class="strata-decisions">
+          {% for item in arc %}
+          <div class="strata-decision">
+            <div class="strata-decision__title">{{ item.title }}</div>
+            <div class="strata-decision__desc">{{ item.description }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% if arc.size > 0 and sourceCounts.size > 0 %}
+      <div class="strata-col-divider"></div>
+      {% endif %}
+      {% if sourceCounts.size > 0 %}
+      <div>
+        <h2 class="strata-col-heading">Source Breakdown</h2>
+        {% assign totalSourceSessions = 0 %}
+        {% for src in sourceCounts %}
+          {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
+        {% endfor %}
+        <table class="strata-source-table">
+          <thead>
+            <tr>
+              <th>Source</th>
+              <th>Sessions</th>
+              <th>%</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for src in sourceCounts %}
+            <tr>
+              <td>
+                {{ src.tool }}
+                {% if totalSourceSessions > 0 %}
+                {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+                <span class="strata-source-bar" style="width: {{ srcPct }}%;"></span>
+                {% endif %}
+              </td>
+              <td>{{ src.count }}</td>
+              {% if totalSourceSessions > 0 %}
+              {% assign srcPctDisplay = src.count | times: 100 | divided_by: totalSourceSessions %}
+              <td>{{ srcPctDisplay }}%</td>
+              {% else %}
+              <td></td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
 
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
+  {%- comment -%} Phase Timeline {%- endcomment -%}
+  {% if arc.size > 0 %}
+  <div class="strata-layer" style="z-index: 7;">
+    <div class="strata-section-header">
+      <h2 class="strata-section-header__title">Project Phases</h2>
+    </div>
+    <div class="strata-phases">
+      <div class="strata-phases__line"></div>
+      {% for item in arc %}
+      <div class="strata-phase">
+        <div class="strata-phase__dot"></div>
+        <div class="strata-phase__title">{{ item.title }}</div>
+        <div class="strata-phase__desc">{{ item.description }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  {%- comment -%} Skills {%- endcomment -%}
+  {% if project.skills.size > 0 %}
+  <div class="strata-layer" style="z-index: 8;">
+    <div class="strata-section-header">
+      <h2 class="strata-section-header__title">Technologies</h2>
+    </div>
+    <div class="strata-chips">
+      {% for skill in project.skills %}
+      <span class="strata-chip">{{ skill }}</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Session Cards {%- endcomment -%}
+  {% if featuredSessions.size > 0 %}
+  <div class="strata-layer" style="z-index: 9;">
+    <div class="strata-section-header">
+      <h2 class="strata-section-header__title">Sessions</h2>
+      <span class="strata-section-header__meta">{{ project.totalSessions }} total</span>
+    </div>
+    <div class="strata-session-grid strata-session-grid--stacked">
+      {% for s in featuredSessions %}
+      <a class="strata-session-card" href="{{ sessionBaseUrl }}/{{ s.slug }}">
+        <div class="strata-session-card__bar" style="background: var(--strata-accent);"></div>
+        <div class="strata-session-card__body">
+          <div class="strata-session-card__title">{{ s.title }}</div>
+          <div class="strata-session-card__meta">{{ s.durationMinutes | formatDuration }} &middot; {{ s.recordedAt | formatDateShort }}</div>
+          <div class="strata-session-card__lines">{{ s.locChanged | localeNumber }} lines</div>
+          {% if s.sourceTool %}
+          <div class="strata-session-card__source">{{ s.sourceTool }}{% if s.agentSummary %} &middot; {{ s.agentSummary.agents.size }} agents{% endif %}</div>
+          {% endif %}
+          {% if s.skills.size > 0 %}
+          <div class="strata-session-card__chips">
+            {% for skill in s.skills limit: 3 %}
+            <span class="strata-session-card__chip">{{ skill }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Footer {%- endcomment -%}
+  <footer class="strata-footer">
+    <div class="strata-footer__text">
+      Built with <a href="https://heyi.am">heyi.am</a>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      'use strict';
+
+      var layers = document.querySelectorAll('.strata-layer');
+
+      var entranceObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('strata-visible');
+            entranceObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+
+      layers.forEach(function(layer, i) {
+        layer.style.transitionDelay = (i * 80) + 'ms';
+        entranceObserver.observe(layer);
+      });
+
+      var activeObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('strata-active');
+          } else {
+            entry.target.classList.remove('strata-active');
+          }
+        });
+      }, { threshold: 0.4 });
+
+      layers.forEach(function(layer) {
+        activeObserver.observe(layer);
+      });
+
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      if (!prefersReducedMotion.matches) {
+        var ticking = false;
+        window.addEventListener('scroll', function() {
+          if (!ticking) {
+            requestAnimationFrame(function() {
+              var vh = window.innerHeight;
+              layers.forEach(function(layer, i) {
+                var rect = layer.getBoundingClientRect();
+                var offset = (rect.top + rect.height / 2 - vh / 2);
+                var parallax = Math.max(-20, Math.min(20, offset * 0.03 * (i + 1) * 0.5));
+                if (layer.classList.contains('strata-visible')) {
+                  var lift = layer.classList.contains('strata-active') ? -4 : 0;
+                  layer.style.transform = 'translateY(' + (parallax + lift) + 'px)';
+                }
+              });
+              ticking = false;
+            });
+            ticking = true;
+          }
+        });
+      }
+
+      window.dispatchEvent(new Event('scroll'));
+    })();
+  </script>
 
 </div>

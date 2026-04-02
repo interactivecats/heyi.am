@@ -1,30 +1,233 @@
 <div class="heyiam-project glacier" data-render-version="2" data-template="glacier"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+  {%- comment -%} Breadcrumb {%- endcomment -%}
+  <div class="container">
+    <div class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/{{ user.username }}">{{ user.username }}</a>
+      <span class="breadcrumb-sep">/</span>
+      <span aria-current="page">{{ project.slug }}</span>
+    </div>
 
-  {% render 'partials/_links', project: project %}
+    {%- comment -%} Header {%- endcomment -%}
+    <header class="project-header">
+      <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+      {% if project.repoUrl or project.projectUrl %}
+      <div class="project-links">
+        {% if project.repoUrl %}
+        <a href="{{ project.repoUrl }}" target="_blank" rel="noopener">{{ project.repoUrl | stripProtocol }}</a>
+        {% endif %}
+        {% if project.projectUrl %}
+        <a href="{{ project.projectUrl }}" target="_blank" rel="noopener">{{ project.projectUrl | stripProtocol }}</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </header>
 
-  {% render 'partials/_screenshot', project: project %}
+    {%- comment -%} Screenshot {%- endcomment -%}
+    {% if project.screenshotUrl %}
+    <div class="screenshot fade-up" role="img" aria-label="{{ project.title }} screenshot">
+      <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" style="width: 100%; display: block;">
+    </div>
+    {% endif %}
 
-  {% render 'partials/_narrative', narrative: project.narrative %}
+    {%- comment -%} Narrative {%- endcomment -%}
+    {% if project.narrative %}
+    <section class="narrative fade-up" aria-label="Project narrative">
+      <h2 class="section-heading">Narrative</h2>
+      <p>{{ project.narrative }}</p>
+    </section>
+    {% endif %}
 
-  {% render 'partials/_stats', project: project, durationLabel: durationLabel, efficiencyMultiplier: efficiencyMultiplier %}
+    {%- comment -%} Stats {%- endcomment -%}
+    <section class="fade-up" aria-label="Project statistics">
+      <div class="stats">
+        <div class="stat-card frost">
+          <span class="stat-value">{{ project.totalSessions }}</span>
+          <span class="stat-label">Sessions</span>
+        </div>
+        <div class="stat-card frost">
+          <span class="stat-value">{{ project.totalLoc | localeNumber }}</span>
+          <span class="stat-label">LOC</span>
+        </div>
+        <div class="stat-card frost">
+          <span class="stat-value">{{ project.totalFilesChanged }}</span>
+          <span class="stat-label">Files</span>
+        </div>
+        {% if project.totalTokens %}
+        <div class="stat-card frost">
+          <span class="stat-value">{{ project.totalTokens | formatTokens }}</span>
+          <span class="stat-label">Tokens</span>
+        </div>
+        {% endif %}
+        {% if efficiencyMultiplier %}
+        <div class="stat-card frost">
+          <span class="stat-value">{{ project.totalDurationMinutes | formatDuration }}</span>
+          <span class="stat-label">{{ durationLabel }}</span>
+        </div>
+        {% else %}
+        <div class="stat-card frost">
+          <span class="stat-value">{{ project.totalDurationMinutes | formatDuration }}</span>
+          <span class="stat-label">Time</span>
+        </div>
+        {% endif %}
+      </div>
 
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
+      {% if efficiencyMultiplier %}
+      {% assign totalCombined = project.totalDurationMinutes | plus: project.totalAgentDurationMinutes %}
+      {% if totalCombined > 0 %}
+      {% assign humanPct = project.totalDurationMinutes | times: 100 | divided_by: totalCombined %}
+      {% assign agentPct = 100 | minus: humanPct %}
+      <div class="gl-leverage frost" role="figure" aria-label="Leverage: {{ efficiencyMultiplier }} multiplier">
+        <svg width="64" height="64" viewBox="0 0 64 64">
+          <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(56,189,248,0.12)" stroke-width="5"/>
+          <circle cx="32" cy="32" r="26" fill="none" stroke="var(--accent)" stroke-width="5" stroke-dasharray="{{ humanPct | times: 163 | divided_by: 100 }} 163" stroke-dashoffset="-33" stroke-linecap="round"/>
+          <text x="32" y="36" text-anchor="middle" font-family="var(--font-display)" font-size="14" font-weight="700" fill="var(--accent-dark)">{{ efficiencyMultiplier }}</text>
+        </svg>
+        <div class="gl-leverage__values">
+          <span class="gl-leverage__human">{{ project.totalDurationMinutes | formatDuration }} <small>you</small></span>
+          <span class="gl-leverage__agent">{{ project.totalAgentDurationMinutes | formatDuration }} <small>agents</small></span>
+        </div>
+      </div>
+      {% endif %}
+      {% endif %}
+    </section>
 
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
+    {%- comment -%} Work timeline chart {%- endcomment -%}
+    {% if sessionsJson %}
+    <section class="chart-section fade-up" aria-label="Work timeline">
+      <h2 class="section-heading">Work Timeline</h2>
+      <div class="chart-container frost">
+        <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+      </div>
+    </section>
+    {% endif %}
 
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+    {%- comment -%} Growth chart {%- endcomment -%}
+    {% if growthJson %}
+    <section class="chart-section fade-up" aria-label="Growth over time">
+      <h2 class="section-heading">Growth</h2>
+      <div class="chart-container frost">
+        <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Phases {%- endcomment -%}
+    {% if arc.size > 0 %}
+    <section class="phases fade-up" aria-label="Project phases">
+      <h2 class="section-heading">Phases</h2>
+      <div class="phase-list">
+        {% for item in arc %}
+        <div class="phase-item frost">
+          <span class="phase-number">{{ item.phase }}</span>
+          <div class="phase-content">
+            <div class="phase-name">{{ item.title }}</div>
+            {% if item.description %}
+            <div class="phase-desc">{{ item.description }}</div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Skills {%- endcomment -%}
+    {% if project.skills.size > 0 %}
+    <section class="skills-section fade-up" aria-label="Technologies used">
+      <h2 class="section-heading">Skills</h2>
+      <div class="skills-grid">
+        {% for skill in project.skills %}
+        <span class="skill-chip">{{ skill }}</span>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Key decisions {%- endcomment -%}
+    {% if arc.size > 0 %}
+    <section class="decisions fade-up" aria-label="Key decisions">
+      <h2 class="section-heading">Key Decisions</h2>
+      <div class="decision-list">
+        {% for item in arc %}
+        <div class="decision-item frost">
+          <span class="decision-number">{{ item.phase }}</span>
+          <p class="decision-text">{{ item.description }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Source breakdown {%- endcomment -%}
+    {% if sourceCounts.size > 0 %}
+    <section class="source-section fade-up" aria-label="Source breakdown">
+      <h2 class="section-heading">Source Breakdown</h2>
+      <div class="source-card frost">
+        {% assign totalSourceSessions = 0 %}
+        {% for src in sourceCounts %}
+          {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
+        {% endfor %}
+        {% if totalSourceSessions > 0 %}
+        {% assign firstPct = sourceCounts[0].count | times: 100 | divided_by: totalSourceSessions %}
+        <div class="source-bar" role="img" aria-label="Source mix">
+          <div class="source-bar-fill" style="width: {{ firstPct }}%"></div>
+        </div>
+        <div class="source-legend">
+          {% for src in sourceCounts %}
+          {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+          <span><span class="source-legend-dot" style="background: {% if forloop.first %}var(--accent){% else %}#e2e8f0{% endif %}"></span>{{ src.tool }} {{ srcPct }}% ({{ src.count }} session{% if src.count != 1 %}s{% endif %})</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Featured sessions {%- endcomment -%}
+    {% if featuredSessions.size > 0 %}
+    <section class="featured-section fade-up" aria-label="Featured sessions">
+      <h2 class="section-heading">Featured Sessions</h2>
+      <div class="featured-grid">
+        {% for s in featuredSessions %}
+        <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="featured-card frost">
+          {% if s.skills.size > 0 %}
+          <span class="featured-tag">{{ s.skills | first }}</span>
+          {% endif %}
+          <span class="featured-name">{{ s.title }}</span>
+          <div class="featured-stats">
+            <span>{{ s.durationMinutes | formatDuration }}</span>
+            <span>{{ s.locChanged | localeNumber }} LOC</span>
+            {% if s.agentSummary %}
+            <span>{{ s.agentSummary.agents.size }} agents</span>
+            {% endif %}
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
   </div>
 
-  {% render 'partials/_phases', arc: arc %}
-
-  {% render 'partials/_skills', skills: project.skills %}
-
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
-
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  {%- comment -%} Fade-up animation {%- endcomment -%}
+  <script>
+    (function() {
+      var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var els = document.querySelectorAll('.fade-up');
+      if (prefersReduced) {
+        els.forEach(function(el) { el.classList.add('visible'); });
+        return;
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      els.forEach(function(el) { observer.observe(el); });
+    })();
+  </script>
 
 </div>

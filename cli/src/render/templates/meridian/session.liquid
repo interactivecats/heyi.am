@@ -1,47 +1,288 @@
 <div class="heyiam-session meridian" data-render-version="2" data-template="meridian">
 
-  <div class="session-layout">
-
-    {% render 'partials/_session-sidebar', session: session %}
-
-    <main class="session-main">
-
-      {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
-
-      {% render 'partials/_session-header', session: session %}
-
-      {% if session.skills.size > 0 %}
-      <section class="content-section">
-        <div class="chip-list">
-          {% for skill in session.skills %}
-          <span class="chip chip--violet">{{ skill }}</span>
-          {% endfor %}
-        </div>
-      </section>
-      {% endif %}
-
-      {% if session.narrative != blank %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Narrative</h2>
-        <p>{{ session.narrative }}</p>
-      </section>
-      {% endif %}
-
-      {% if session.highlights.size > 0 %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Highlights</h2>
-        <ul class="highlights-list">
-          {% for h in session.highlights %}
-          <li>{{ h }}</li>
-          {% endfor %}
-        </ul>
-      </section>
-      {% endif %}
-
-      {% render 'partials/_beats', session: session %}
-
-      {% render 'partials/_qa', session: session %}
-
-    </main>
+  {%- comment -%} Topographic contour background {%- endcomment -%}
+  <div class="topo-bg" aria-hidden="true">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid slice">
+      <g class="topo-contours" fill="none" stroke-width="0.75">
+        <ellipse cx="350" cy="300" rx="280" ry="180" stroke="var(--mer-contour)" />
+        <ellipse cx="355" cy="305" rx="240" ry="150" stroke="var(--mer-contour)" />
+        <ellipse cx="360" cy="310" rx="200" ry="120" stroke="var(--mer-contour-strong)" />
+        <ellipse cx="365" cy="315" rx="160" ry="90" stroke="var(--mer-contour)" />
+        <ellipse cx="370" cy="320" rx="120" ry="65" stroke="var(--mer-contour-strong)" />
+        <ellipse cx="850" cy="550" rx="300" ry="200" stroke="var(--mer-contour)" />
+        <ellipse cx="845" cy="545" rx="250" ry="165" stroke="var(--mer-contour)" />
+        <ellipse cx="840" cy="540" rx="200" ry="130" stroke="var(--mer-contour-strong)" />
+        <ellipse cx="835" cy="535" rx="150" ry="95" stroke="var(--mer-contour)" />
+        <ellipse cx="950" cy="150" rx="220" ry="140" stroke="var(--mer-contour)" />
+        <ellipse cx="955" cy="155" rx="170" ry="105" stroke="var(--mer-contour-strong)" />
+        <ellipse cx="960" cy="160" rx="120" ry="70" stroke="var(--mer-contour)" />
+        <ellipse cx="150" cy="700" rx="250" ry="160" stroke="var(--mer-contour)" />
+        <ellipse cx="155" cy="695" rx="200" ry="125" stroke="var(--mer-contour-strong)" />
+        <ellipse cx="160" cy="690" rx="150" ry="90" stroke="var(--mer-contour)" />
+      </g>
+    </svg>
   </div>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="mer-page">
+    <main id="main-content">
+
+      {%- comment -%} Breadcrumb {%- endcomment -%}
+      <div class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/{{ user.username }}">{{ user.username }}</a>
+        <span class="breadcrumb__sep">/</span>
+        <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
+        <span class="breadcrumb__sep">/</span>
+        <span aria-current="page">{{ session.title }}</span>
+      </div>
+
+      {%- comment -%} Session Header {%- endcomment -%}
+      <header class="session-header section-reveal">
+        <div class="section-label">
+          <span>&#167;01 &mdash; waypoint detail</span>
+        </div>
+        <h1 class="session-header__title">{{ session.title }}</h1>
+        <div class="session-header__meta">
+          {% if session.recordedAt %}
+          <span class="session-header__meta-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span class="session-header__meta-value">{{ session.recordedAt | formatDate }}</span>
+          </span>
+          {% endif %}
+          {% if session.sourceTool %}
+          <span class="session-header__meta-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            <span class="session-header__meta-value">{{ session.sourceTool }}</span>
+          </span>
+          {% endif %}
+          {% if session.durationMinutes %}
+          <span class="session-header__meta-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span class="session-header__meta-value">{{ session.durationMinutes | formatDuration }}</span>
+          </span>
+          {% endif %}
+          {% if session.locChanged %}
+          <span class="session-header__meta-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            <span class="session-header__meta-value">{{ session.locChanged | localeNumber }} LOC</span>
+          </span>
+          {% endif %}
+        </div>
+      </header>
+
+      {%- comment -%} Session Stats {%- endcomment -%}
+      <section class="session-stats section-reveal" aria-label="Session statistics">
+        {% if session.durationMinutes %}
+        <div class="stat-cell" role="group" aria-label="Duration">
+          <div class="stat-cell__coord">elapsed</div>
+          <div class="stat-cell__value">{{ session.durationMinutes | formatDuration }}</div>
+          <div class="stat-cell__label">active</div>
+        </div>
+        {% endif %}
+        {% if session.turns %}
+        <div class="stat-cell" role="group" aria-label="Conversation turns">
+          <div class="stat-cell__coord">turns</div>
+          <div class="stat-cell__value">{{ session.turns }}</div>
+          <div class="stat-cell__label">exchanges</div>
+        </div>
+        {% endif %}
+        {% if session.locChanged %}
+        <div class="stat-cell" role="group" aria-label="Lines of code">
+          <div class="stat-cell__coord">datum</div>
+          <div class="stat-cell__value">{{ session.locChanged | localeNumber }}</div>
+          <div class="stat-cell__label">LOC</div>
+        </div>
+        {% endif %}
+        {% if session.filesChanged %}
+        <div class="stat-cell" role="group" aria-label="Files changed">
+          <div class="stat-cell__coord">feat</div>
+          <div class="stat-cell__value">{{ session.filesChanged }}</div>
+          <div class="stat-cell__label">files</div>
+        </div>
+        {% endif %}
+      </section>
+
+      {%- comment -%} Dev Take {%- endcomment -%}
+      {% if session.devTake != blank %}
+      <div class="dev-take section-reveal">
+        <div class="dev-take__label">Dev Take</div>
+        <p class="dev-take__text">"{{ session.devTake }}"</p>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Main + Sidebar Layout {%- endcomment -%}
+      <div class="session-layout">
+        <div class="session-main">
+
+          {%- comment -%} Execution Path (Beats) {%- endcomment -%}
+          {% if session.beats.size > 0 %}
+          <section class="beats-section section-reveal" aria-label="Execution path">
+            <div class="section-label">
+              <span>&#167;02 &mdash; traverse log</span>
+            </div>
+            <h2 class="section-heading">Execution Path</h2>
+            <div class="beats-path" role="list">
+              {% for beat in session.beats %}
+              <div class="beat" role="listitem">
+                <div class="beat__marker"><div class="beat__marker-num">{{ beat.stepNumber }}</div></div>
+                <h3 class="beat__title">{{ beat.title }}</h3>
+                {% if beat.body != blank %}
+                <p class="beat__desc">{{ beat.body }}</p>
+                {% endif %}
+              </div>
+              {% endfor %}
+            </div>
+          </section>
+          {% endif %}
+
+          {%- comment -%} Context / Narrative {%- endcomment -%}
+          {% if session.narrative != blank %}
+          <section class="narrative section-reveal" aria-label="Session narrative">
+            <div class="section-label">
+              <span>&#167;03 &mdash; field notes</span>
+            </div>
+            <h2 class="section-heading">Narrative</h2>
+            <p>{{ session.narrative }}</p>
+          </section>
+          {% endif %}
+
+          {%- comment -%} Q&A {%- endcomment -%}
+          {% if session.qaPairs.size > 0 %}
+          <section class="qa-section section-reveal" aria-label="Questions and answers">
+            <div class="section-label">
+              <span>&#167;04 &mdash; triangulation</span>
+            </div>
+            <h2 class="section-heading">Q&amp;A</h2>
+            {% for qa in session.qaPairs %}
+            <div class="qa-item">
+              <div class="qa-item__q">
+                <span class="qa-item__q-mark">Q:</span>
+                <span>{{ qa.question }}</span>
+              </div>
+              <p class="qa-item__a">{{ qa.answer }}</p>
+            </div>
+            {% endfor %}
+          </section>
+          {% endif %}
+
+          {%- comment -%} Highlights {%- endcomment -%}
+          {% if session.highlights.size > 0 %}
+          <section class="narrative section-reveal" aria-label="Highlights">
+            <div class="section-label">
+              <span>&#167;05 &mdash; landmarks</span>
+            </div>
+            <h2 class="section-heading">Highlights</h2>
+            <ul style="list-style: none; padding: 0;">
+              {% for h in session.highlights %}
+              <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--mer-border-subtle); font-size: 0.9375rem; color: var(--mer-text-secondary);">{{ h }}</li>
+              {% endfor %}
+            </ul>
+          </section>
+          {% endif %}
+
+          {%- comment -%} Agent Summary {%- endcomment -%}
+          {% if session.agentSummary %}
+          <section class="agents-section section-reveal" aria-label="Agent breakdown">
+            <div class="section-label">
+              <span>&#167;06 &mdash; crew manifest</span>
+            </div>
+            <h2 class="section-heading">Agent Summary</h2>
+            {% if session.agentSummary.agents.size > 0 %}
+            <table class="agent-table">
+              <thead>
+                <tr>
+                  <th scope="col">Role</th>
+                  <th scope="col">Duration</th>
+                  <th scope="col">LOC</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for agent in session.agentSummary.agents %}
+                <tr>
+                  <td>
+                    <div class="agent-table__role">
+                      <span class="agent-table__dot" style="background: var(--mer-accent)"></span>
+                      {{ agent.role }}
+                    </div>
+                  </td>
+                  <td class="mono-val">{% if agent.durationMinutes %}{{ agent.durationMinutes | formatDuration }}{% else %}&mdash;{% endif %}</td>
+                  <td class="mono-val">{% if agent.linesOfCode %}{{ agent.linesOfCode | localeNumber }}{% else %}&mdash;{% endif %}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% endif %}
+          </section>
+          {% endif %}
+        </div>
+
+        {%- comment -%} Sidebar {%- endcomment -%}
+        <aside class="sidebar" aria-label="Session details">
+          {% if session.toolBreakdown.size > 0 %}
+          <div class="sidebar-block">
+            <h2 class="sidebar-block__title">Tools Used</h2>
+            <table class="tools-table">
+              <tbody>
+                {% for tool in session.toolBreakdown %}
+                <tr><td>{{ tool.tool }}</td><td>{{ tool.count }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+
+          {% if session.topFiles.size > 0 %}
+          <div class="sidebar-block">
+            <h2 class="sidebar-block__title">Files Changed</h2>
+            <ul class="files-list">
+              {% for file in session.topFiles %}
+              <li class="files-list__item">
+                <span class="files-list__path">{{ file.path }}</span>
+                <span class="files-list__diff">+{{ file.additions }}{% if file.deletions > 0 %} -{{ file.deletions }}{% endif %}</span>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          {% if session.skills.size > 0 %}
+          <div class="sidebar-block">
+            <h2 class="sidebar-block__title">Skills</h2>
+            <div class="sidebar-skills">
+              {% for skill in session.skills %}
+              <span class="skill-chip">{{ skill }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </aside>
+      </div>
+    </main>
+
+    <footer class="mer-footer">
+      <p class="mer-footer__text">surveyed with heyi.am &middot; meridian template</p>
+    </footer>
+  </div>
+
+  <script>
+  (function() {
+    var sections = document.querySelectorAll('.section-reveal');
+    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      sections.forEach(function(s) { s.classList.add('visible'); });
+      return;
+    }
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    sections.forEach(function(s) { observer.observe(s); });
+  })();
+  </script>
+
 </div>

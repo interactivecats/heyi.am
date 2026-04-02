@@ -1,47 +1,228 @@
-<div class="heyiam-session noir" data-render-version="2" data-template="noir">
+<div class="noir-page" data-render-version="2" data-template="noir">
 
-  <div class="session-layout">
+  <!-- Breadcrumb -->
+  <div class="noir-breadcrumb" aria-label="Breadcrumb">
+    {% if user.username != blank %}
+    <a href="/{{ user.username }}">{{ user.username }}</a>
+    <span class="noir-breadcrumb__sep">/</span>
+    {% endif %}
+    {% if projectSlug != blank %}
+    <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
+    <span class="noir-breadcrumb__sep">/</span>
+    {% endif %}
+    <span>{{ session.title }}</span>
+  </div>
 
-    {% render 'partials/_session-sidebar', session: session %}
+  <!-- Session Header -->
+  <section class="noir-section noir-session-header" aria-label="Session header">
+    <h1 class="noir-session-header__title">{{ session.title }}</h1>
+    <div class="noir-session-header__meta">
+      {% if session.recordedAt != blank %}
+      <span class="noir-session-header__meta-item">
+        <span class="noir-session-header__meta-value">{{ session.recordedAt | formatDate }}</span>
+      </span>
+      {% endif %}
+      {% if session.sourceTool != blank %}
+      <span class="noir-session-header__meta-item">
+        Source: <span class="noir-session-header__meta-value">{{ session.sourceTool }}</span>
+      </span>
+      {% endif %}
+    </div>
+  </section>
 
-    <main class="session-main">
+  <!-- Dev Take -->
+  {% if session.devTake != blank %}
+  <section class="noir-section" aria-label="Developer take">
+    <div class="noir-dev-take">
+      <p class="noir-dev-take__label">Dev Take</p>
+      <p class="noir-dev-take__text">"{{ session.devTake }}"</p>
+    </div>
+  </section>
+  {% endif %}
 
-      {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
+  <hr class="noir-rule">
 
-      {% render 'partials/_session-header', session: session %}
+  <!-- Stats -->
+  <section class="noir-section" aria-label="Session statistics">
+    <div class="noir-stats-row-session" role="list">
+      <div class="noir-stat-cell" role="listitem">
+        <span class="noir-stat-cell__value">{{ session.durationMinutes | formatDuration }}</span>
+        <span class="noir-stat-cell__label">Duration</span>
+      </div>
+      <div class="noir-stat-cell" role="listitem">
+        <span class="noir-stat-cell__value">{{ session.turns | localeNumber }}</span>
+        <span class="noir-stat-cell__label">Turns</span>
+      </div>
+      <div class="noir-stat-cell" role="listitem">
+        <span class="noir-stat-cell__value">{{ session.locChanged | formatLoc }}</span>
+        <span class="noir-stat-cell__label">LOC</span>
+      </div>
+      <div class="noir-stat-cell" role="listitem">
+        <span class="noir-stat-cell__value">{{ session.filesChanged }}</span>
+        <span class="noir-stat-cell__label">Files Changed</span>
+      </div>
+    </div>
+  </section>
 
-      {% if session.skills.size > 0 %}
-      <section class="content-section">
-        <div class="chip-list">
-          {% for skill in session.skills %}
-          <span class="chip chip--violet">{{ skill }}</span>
-          {% endfor %}
+  <hr class="noir-rule">
+
+  <!-- Main Content + Sidebar -->
+  <div class="noir-layout">
+
+    <!-- Main Column -->
+    <div>
+
+      <!-- Narrative -->
+      {% if session.narrative != blank %}
+      <section class="noir-section" aria-label="Narrative">
+        <h2 class="noir-heading">Narrative</h2>
+        <div class="noir-narrative">
+          <p>{{ session.narrative }}</p>
         </div>
       </section>
+
+      <hr class="noir-rule">
       {% endif %}
 
-      {% if session.narrative != blank %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Narrative</h2>
-        <p>{{ session.narrative }}</p>
+      <!-- Context -->
+      {% if session.context != blank %}
+      <section class="noir-section" aria-label="Context">
+        <h2 class="noir-heading">Context</h2>
+        <div class="noir-narrative">
+          <p>{{ session.context }}</p>
+        </div>
       </section>
+
+      <hr class="noir-rule">
       {% endif %}
 
+      <!-- Highlights -->
       {% if session.highlights.size > 0 %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Highlights</h2>
-        <ul class="highlights-list">
+      <section class="noir-section" aria-label="Highlights">
+        <h2 class="noir-heading">Highlights</h2>
+        <ul class="noir-highlights">
           {% for h in session.highlights %}
           <li>{{ h }}</li>
           {% endfor %}
         </ul>
       </section>
+
+      <hr class="noir-rule">
       {% endif %}
 
-      {% render 'partials/_beats', session: session %}
+      <!-- Execution Path -->
+      {% if session.beats.size > 0 %}
+      <section class="noir-section" aria-label="Execution path">
+        <h2 class="noir-heading">Execution Path</h2>
+        <ol class="noir-beats">
+          {% for beat in session.beats %}
+          <li class="noir-beat">
+            <span class="noir-beat__number">{{ beat.stepNumber | prepend: '00' | slice: -2, 2 }}</span>
+            <div>
+              <h3 class="noir-beat__title">{{ beat.title }}</h3>
+              {% if beat.body != blank %}
+              <p class="noir-beat__desc">{{ beat.body }}</p>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
+      </section>
 
-      {% render 'partials/_qa', session: session %}
+      <hr class="noir-rule">
+      {% endif %}
 
-    </main>
+      <!-- Q&A -->
+      {% if session.qaPairs.size > 0 %}
+      <section class="noir-section" aria-label="Questions and answers">
+        <h2 class="noir-heading">Q&amp;A</h2>
+        <div class="noir-qa-list">
+          {% for qa in session.qaPairs %}
+          <article class="noir-qa">
+            <h3 class="noir-qa__question">{{ qa.question }}</h3>
+            <p class="noir-qa__answer">{{ qa.answer }}</p>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+
+      <hr class="noir-rule">
+      {% endif %}
+
+      <!-- Agent Summary -->
+      {% if session.agentSummary.subSessions.size > 0 %}
+      <section class="noir-section" aria-label="Agent summary">
+        <h2 class="noir-heading">Agent Summary</h2>
+        <p class="noir-agent-count">{{ session.agentSummary.subSessions.size }} sub-sessions</p>
+
+        <div class="noir-agents" role="table" aria-label="Agent breakdown">
+          {% for sub in session.agentSummary.subSessions %}
+          <div class="noir-agent-row" role="row">
+            <span class="noir-agent-row__role" role="cell">{{ sub.role }}</span>
+            <span class="noir-agent-row__duration" role="cell">{{ sub.durationMinutes | formatDuration }}</span>
+            <span class="noir-agent-row__loc" role="cell">{{ sub.linesOfCode }} LOC</span>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="noir-sidebar" aria-label="Session details">
+
+      <!-- Tools Used -->
+      {% if session.toolBreakdown.size > 0 %}
+      <div class="noir-sidebar-section">
+        <h2 class="noir-sidebar-section__title">Tools Used</h2>
+        <table class="noir-tool-table" aria-label="Tool usage counts">
+          <tbody>
+            {% for tool in session.toolBreakdown %}
+            <tr>
+              <td>{{ tool.tool }}</td>
+              <td>{{ tool.count }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      <!-- Files Changed -->
+      {% if session.topFiles.size > 0 %}
+      <div class="noir-sidebar-section">
+        <h2 class="noir-sidebar-section__title">Files Changed</h2>
+        <ul class="noir-file-list" aria-label="Changed files">
+          {% for f in session.topFiles %}
+          <li class="noir-file-item">
+            <span class="noir-file-item__name" title="{{ f.path }}">{{ f.path }}</span>
+            <span class="noir-file-item__diff">+{{ f.additions }}{% if f.deletions > 0 %} -{{ f.deletions }}{% endif %}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <!-- Skills -->
+      {% if session.skills.size > 0 %}
+      <div class="noir-sidebar-section">
+        <h2 class="noir-sidebar-section__title">Skills</h2>
+        <div class="noir-chips">
+          {% for skill in session.skills %}
+          <span class="noir-chip">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </aside>
+
   </div>
+
+  <!-- Footer -->
+  <footer class="noir-footer">
+    <p class="noir-footer__text">Built with heyi.am</p>
+  </footer>
+
 </div>

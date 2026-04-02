@@ -1,11 +1,350 @@
 <div class="heyiam-portfolio parallax" data-render-version="2" data-template="parallax" data-username="{{ user.username }}">
 
-  {% render 'partials/_portfolio-header', user: user %}
+  <a href="#main-content" class="skip-link">Skip to content</a>
 
-  {% render 'partials/_portfolio-stats', projects: projects, totalSessions: totalSessions, totalDurationMinutes: totalDurationMinutes, totalAgentDurationMinutes: totalAgentDurationMinutes, totalLoc: totalLoc, efficiencyMultiplier: efficiencyMultiplier %}
+  <!-- Background Shapes -->
+  <div class="bg-shapes" aria-hidden="true">
+    <div class="bg-shape bg-shape--1" data-bg-drift="0.15"></div>
+    <div class="bg-shape bg-shape--2" data-bg-drift="0.25"></div>
+    <div class="bg-shape bg-shape--3" data-bg-drift="0.1"></div>
+    <div class="bg-shape bg-shape--4" data-bg-drift="0.2"></div>
+    <div class="bg-shape bg-shape--5" data-bg-drift="0.35"></div>
+    <div class="bg-shape bg-shape--6" data-bg-drift="0.12"></div>
+    <div class="bg-shape bg-shape--7" data-bg-drift="0.3"></div>
+    <div class="bg-shape bg-shape--8" data-bg-drift="0.18"></div>
+  </div>
 
-  {% render 'partials/_portfolio-projects', projects: projects %}
+  {% if user.photoUrl %}
+  <!-- Fixed Photo Layer -->
+  <div class="photo-layer" aria-hidden="true">
+    <img
+      class="photo-fixed"
+      src="{{ user.photoUrl }}"
+      alt=""
+      width="420"
+      height="420"
+    >
+  </div>
+  {% endif %}
 
-  {% render 'partials/_footer' %}
+  <!-- Scrollable Content Layer -->
+  <div class="content-layer">
+    <main id="main-content">
+
+      <!-- Hero -->
+      <section class="hero" aria-label="Introduction">
+        {% if user.photoUrl %}
+        <span class="sr-only">{{ user.displayName }}, profile photo</span>
+        {% endif %}
+
+        <h1 class="hero__name">{{ user.displayName }}</h1>
+
+        {% if user.location != blank %}
+        <p class="hero__location">{{ user.location }}</p>
+        {% endif %}
+
+        {% if user.bio != blank %}
+        <p class="hero__bio">{{ user.bio }}</p>
+        {% endif %}
+
+        {% if user.email != blank or user.linkedinUrl != blank or user.githubUrl != blank or user.websiteUrl != blank or user.twitterHandle != blank %}
+        <div class="hero__contact">
+          {% if user.email != blank %}
+          <a href="mailto:{{ user.email }}" class="hero__contact-link">{{ user.email }}</a>
+          {% endif %}
+          {% if user.linkedinUrl != blank %}
+          {% if user.email != blank %}<span class="hero__contact-sep" aria-hidden="true">&middot;</span>{% endif %}
+          <a href="{{ user.linkedinUrl }}" class="hero__contact-link" rel="noopener noreferrer" target="_blank">LinkedIn</a>
+          {% endif %}
+          {% if user.githubUrl != blank %}
+          <span class="hero__contact-sep" aria-hidden="true">&middot;</span>
+          <a href="{{ user.githubUrl }}" class="hero__contact-link" rel="noopener noreferrer" target="_blank">GitHub</a>
+          {% endif %}
+          {% if user.websiteUrl != blank %}
+          <span class="hero__contact-sep" aria-hidden="true">&middot;</span>
+          <a href="{{ user.websiteUrl }}" class="hero__contact-link" rel="noopener noreferrer" target="_blank">{{ user.websiteUrl | stripProtocol }}</a>
+          {% endif %}
+          {% if user.twitterHandle != blank %}
+          <span class="hero__contact-sep" aria-hidden="true">&middot;</span>
+          <a href="https://x.com/{{ user.twitterHandle }}" class="hero__contact-link" rel="noopener noreferrer" target="_blank">@{{ user.twitterHandle }}</a>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="stats-row" aria-label="Aggregate statistics">
+          <div class="stat-card">
+            <div class="stat-card__value">{{ projects.size }}</div>
+            <div class="stat-card__label">Projects</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__value">{{ totalSessions | localeNumber }}</div>
+            <div class="stat-card__label">Sessions</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__value">{{ totalLoc | formatLoc }}</div>
+            <div class="stat-card__label">Lines Changed</div>
+          </div>
+        </div>
+
+        {% if efficiencyMultiplier %}
+        <div class="px-leverage" role="figure" aria-label="{{ totalDurationMinutes | formatDuration }} you, {{ totalAgentDurationMinutes | formatDuration }} agents, {{ efficiencyMultiplier }} leverage">
+          <span class="px-leverage__multi">{{ efficiencyMultiplier }}&times;</span>
+          <div class="px-leverage__line" aria-hidden="true"></div>
+          <div class="px-leverage__values">
+            <span>{{ totalDurationMinutes | formatDuration }} <small>you</small></span>
+            <span style="color:var(--px-accent-blue)">{{ totalAgentDurationMinutes | formatDuration }} <small>agents</small></span>
+          </div>
+        </div>
+        {% endif %}
+      </section>
+
+      {% if user.photoUrl %}
+      <!-- Transition spacer — photo shows through this gap -->
+      <div class="transition-spacer" aria-hidden="true"></div>
+      {% endif %}
+
+      <!-- Skills Overview -->
+      {% assign all_skills = "" %}
+      {% for p in projects %}
+        {% for s in p.skills %}
+          {% unless all_skills contains s %}
+            {% if all_skills != "" %}{% assign all_skills = all_skills | append: "|||" %}{% endif %}
+            {% assign all_skills = all_skills | append: s %}
+          {% endunless %}
+        {% endfor %}
+      {% endfor %}
+      {% assign skills_arr = all_skills | split: "|||" %}
+      {% if skills_arr.size > 0 %}
+      <div class="skills-overview section--opaque">
+        <h2 class="skills-overview__title reveal">Technology Expertise</h2>
+        <div class="skills-cloud reveal-stagger">
+          {% for skill in skills_arr %}
+          <span class="skills-cloud__chip reveal">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Projects -->
+      {% if projects.size > 0 %}
+      <section class="section section--opaque" aria-label="Projects">
+        <h2 class="section__title reveal">Projects</h2>
+        <div class="project-grid reveal-stagger">
+          {% for p in projects %}
+          <a href="/{{ user.username }}/{{ p.slug }}" class="project-card reveal" data-float="0.08">
+            <h3 class="project-card__name">{{ p.title }}</h3>
+            {% if p.narrative != blank %}
+            <p class="project-card__narrative">{{ p.narrative }}</p>
+            {% endif %}
+            {% if p.skills.size > 0 %}
+            <div class="project-card__skills">
+              {% for skill in p.skills %}
+              <span class="skill-chip">{{ skill }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+            <div class="project-card__stats">
+              <span>{{ p.totalSessions }} sessions</span>
+              <span>{{ p.totalDurationMinutes | formatDuration }}</span>
+              <span>{{ p.totalLoc | formatLoc }} LOC</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- About / Connect -->
+      {% if user.email != blank or user.linkedinUrl != blank or user.githubUrl != blank or user.websiteUrl != blank or user.twitterHandle != blank or user.resumeUrl != blank %}
+      <section class="about-section about-section--opaque" aria-label="About and links">
+        <div class="about-grid">
+          <div class="about-card reveal" data-float="0.06">
+            <h2 class="about-card__title">Connect</h2>
+            {% if user.email != blank %}
+            <a href="mailto:{{ user.email }}" class="about-card__link">{{ user.email }}</a>
+            {% endif %}
+            {% if user.linkedinUrl != blank %}
+            <a href="{{ user.linkedinUrl }}" class="about-card__link" rel="noopener noreferrer" target="_blank">{{ user.linkedinUrl | stripProtocol }}</a>
+            {% endif %}
+            {% if user.githubUrl != blank %}
+            <a href="{{ user.githubUrl }}" class="about-card__link" rel="noopener noreferrer" target="_blank">{{ user.githubUrl | stripProtocol }}</a>
+            {% endif %}
+            {% if user.websiteUrl != blank %}
+            <a href="{{ user.websiteUrl }}" class="about-card__link" rel="noopener noreferrer" target="_blank">{{ user.websiteUrl | stripProtocol }}</a>
+            {% endif %}
+            {% if user.twitterHandle != blank %}
+            <a href="https://x.com/{{ user.twitterHandle }}" class="about-card__link" rel="noopener noreferrer" target="_blank">@{{ user.twitterHandle }}</a>
+            {% endif %}
+          </div>
+          {% if user.resumeUrl != blank %}
+          <div class="about-card reveal" data-float="0.09">
+            <h2 class="about-card__title">Resume</h2>
+            <p style="font-size: 0.875rem; color: var(--px-text-secondary); margin-block-end: 1rem;">
+              Download my full resume for a deeper look at experience and education.
+            </p>
+            <a href="{{ user.resumeUrl }}" class="resume-btn" download>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M8 1v10m0 0L4.5 7.5M8 11l3.5-3.5M2 14h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Download Resume
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer footer--opaque">
+      <p>Built with <a href="https://heyi.am">heyi.am</a> &mdash; signal over noise.</p>
+    </footer>
+  </div>
+
+  <!-- JavaScript: Parallax, Reveals, Counters -->
+  <script>
+  (function() {
+    'use strict';
+
+    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var isMobile = window.innerWidth < 769;
+    var ticking = false;
+
+    var photo = document.querySelector('.photo-fixed');
+    var photoLayer = document.querySelector('.photo-layer');
+    var floatElements = [];
+    var bgDriftElements = [];
+
+    function cacheElements() {
+      floatElements = [];
+      var floats = document.querySelectorAll('[data-float]');
+      for (var i = 0; i < floats.length; i++) {
+        floatElements.push({
+          el: floats[i],
+          speed: parseFloat(floats[i].dataset.float)
+        });
+      }
+      bgDriftElements = [];
+      var drifts = document.querySelectorAll('[data-bg-drift]');
+      for (var j = 0; j < drifts.length; j++) {
+        bgDriftElements.push({
+          el: drifts[j],
+          speed: parseFloat(drifts[j].dataset.bgDrift)
+        });
+      }
+    }
+
+    function updateParallax() {
+      if (prefersReducedMotion.matches || isMobile) {
+        ticking = false;
+        return;
+      }
+      var scrollY = window.scrollY;
+      var vh = window.innerHeight;
+
+      if (photo && photoLayer) {
+        var fadeProgress = Math.min(scrollY / vh, 1);
+        var opacity = 1 - fadeProgress * 0.85;
+        if (opacity < 0) opacity = 0;
+        var scale = 1 - fadeProgress * 0.35;
+        var drift = -fadeProgress * 40;
+        photo.style.opacity = opacity;
+        photo.style.transform = 'translate(-50%, calc(-50% + ' + drift + 'px)) scale(' + scale + ')';
+        photoLayer.style.visibility = opacity <= 0 ? 'hidden' : 'visible';
+      }
+
+      for (var i = 0; i < floatElements.length; i++) {
+        var item = floatElements[i];
+        var rect = item.el.getBoundingClientRect();
+        var elementCenter = rect.top + rect.height * 0.5;
+        var viewportCenter = vh * 0.5;
+        var centerOffset = (elementCenter - viewportCenter) / vh;
+        var offset = centerOffset * item.speed * 50;
+        if (offset > 30) offset = 30;
+        if (offset < -30) offset = -30;
+        item.el.style.transform = 'translateY(' + offset + 'px)';
+      }
+
+      for (var k = 0; k < bgDriftElements.length; k++) {
+        var bg = bgDriftElements[k];
+        var bgOffset = scrollY * bg.speed * 0.15;
+        bg.el.style.transform = 'translateY(' + (-bgOffset) + 'px)';
+      }
+
+      ticking = false;
+    }
+
+    function onScroll() {
+      if (!ticking) {
+        requestAnimationFrame(updateParallax);
+        ticking = true;
+      }
+    }
+
+    function initReveal() {
+      var reveals = document.querySelectorAll('.reveal');
+      if (!reveals.length) return;
+      if (prefersReducedMotion.matches) {
+        for (var i = 0; i < reveals.length; i++) {
+          reveals[i].classList.add('reveal--visible');
+        }
+        return;
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('reveal--visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+      for (var j = 0; j < reveals.length; j++) {
+        observer.observe(reveals[j]);
+      }
+    }
+
+    function onResize() {
+      var wasMobile = isMobile;
+      isMobile = window.innerWidth < 769;
+      if (isMobile && !wasMobile) {
+        for (var i = 0; i < floatElements.length; i++) {
+          floatElements[i].el.style.transform = '';
+        }
+        for (var j = 0; j < bgDriftElements.length; j++) {
+          bgDriftElements[j].el.style.transform = '';
+        }
+        if (photo) { photo.style.transform = ''; photo.style.opacity = ''; }
+        if (photoLayer) { photoLayer.style.visibility = ''; }
+      }
+    }
+
+    function init() {
+      cacheElements();
+      initReveal();
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onResize, { passive: true });
+      prefersReducedMotion.addEventListener('change', function() {
+        if (prefersReducedMotion.matches) {
+          for (var i = 0; i < floatElements.length; i++) {
+            floatElements[i].el.style.transform = '';
+          }
+          for (var j = 0; j < bgDriftElements.length; j++) {
+            bgDriftElements[j].el.style.transform = '';
+          }
+          if (photo) { photo.style.transform = ''; photo.style.opacity = ''; }
+          if (photoLayer) { photoLayer.style.visibility = ''; }
+        }
+      });
+      updateParallax();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+  </script>
 
 </div>

@@ -1,47 +1,291 @@
-<div class="heyiam-session strata" data-render-version="2" data-template="strata">
+<div class="strata-session" data-render-version="2" data-template="strata">
 
-  <div class="session-layout">
+  {%- comment -%} Breadcrumb {%- endcomment -%}
+  <nav class="strata-breadcrumb" aria-label="Breadcrumb">
+    <a href="/{{ user.username }}">{{ user.username }}</a>
+    <span class="strata-breadcrumb__sep">/</span>
+    <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
+    <span class="strata-breadcrumb__sep">/</span>
+    <span aria-current="page">{{ session.title }}</span>
+  </nav>
 
-    {% render 'partials/_session-sidebar', session: session %}
+  {%- comment -%} Title {%- endcomment -%}
+  <h1 class="strata-title">{{ session.title }}</h1>
 
-    <main class="session-main">
-
-      {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
-
-      {% render 'partials/_session-header', session: session %}
-
-      {% if session.skills.size > 0 %}
-      <section class="content-section">
-        <div class="chip-list">
-          {% for skill in session.skills %}
-          <span class="chip chip--violet">{{ skill }}</span>
-          {% endfor %}
-        </div>
-      </section>
-      {% endif %}
-
-      {% if session.narrative != blank %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Narrative</h2>
-        <p>{{ session.narrative }}</p>
-      </section>
-      {% endif %}
-
-      {% if session.highlights.size > 0 %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Highlights</h2>
-        <ul class="highlights-list">
-          {% for h in session.highlights %}
-          <li>{{ h }}</li>
-          {% endfor %}
-        </ul>
-      </section>
-      {% endif %}
-
-      {% render 'partials/_beats', session: session %}
-
-      {% render 'partials/_qa', session: session %}
-
-    </main>
+  {%- comment -%} Session Meta {%- endcomment -%}
+  <div class="strata-session-meta">
+    {% if session.recordedAt %}
+    <span class="strata-session-meta__item">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 1v2M11 1v2M2 6h12"/></svg>
+      {{ session.recordedAt | formatDate }}
+    </span>
+    {% endif %}
+    {% if session.sourceTool %}
+    <span class="strata-session-meta__badge">{{ session.sourceTool }}</span>
+    {% endif %}
+    <span class="strata-session-meta__item">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.5 1.5"/></svg>
+      {{ session.durationMinutes | formatDuration }}
+    </span>
+    <span class="strata-session-meta__item">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 13V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v8"/><path d="M3 13h10"/><path d="M7 8h2"/></svg>
+      {{ session.turns }} turns
+    </span>
   </div>
+
+  {%- comment -%} Dev Take {%- endcomment -%}
+  {% if session.devTake %}
+  <div class="strata-layer" style="z-index: 1; padding: 2.5rem 3rem;">
+    <div class="strata-dev-take">
+      <p class="strata-dev-take__text">"{{ session.devTake }}"</p>
+    </div>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Stats {%- endcomment -%}
+  <div class="strata-layer" style="z-index: 2;" id="stats-section">
+    <div class="strata-stats-grid">
+      <div class="strata-stat">
+        <span class="strata-stat__label">Duration</span>
+        <span class="strata-stat__value">{{ session.durationMinutes | formatDuration }}</span>
+      </div>
+      <div class="strata-stat">
+        <span class="strata-stat__label">Turns</span>
+        <span class="strata-stat__value">{{ session.turns }}</span>
+      </div>
+      <div class="strata-stat">
+        <span class="strata-stat__label">Lines Changed</span>
+        <span class="strata-stat__value">{{ session.locChanged | localeNumber }}</span>
+      </div>
+      <div class="strata-stat">
+        <span class="strata-stat__label">Files Changed</span>
+        <span class="strata-stat__value">{{ session.filesChanged }}</span>
+      </div>
+      {% if session.sourceTool %}
+      <div class="strata-stat">
+        <span class="strata-stat__label">Source</span>
+        <span class="strata-stat__value" style="font-size: 1.25rem;">{{ session.sourceTool }}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {%- comment -%} Two-Column: Tools Used + Files Changed {%- endcomment -%}
+  {% if session.toolBreakdown.size > 0 or session.topFiles.size > 0 %}
+  <div class="strata-layer" style="z-index: 3;">
+    <div class="strata-two-col">
+      {% if session.toolBreakdown.size > 0 %}
+      <div>
+        <h2 class="strata-col-heading">Tools Used</h2>
+        {% assign maxToolCount = 0 %}
+        {% for t in session.toolBreakdown %}
+          {% if t.count > maxToolCount %}{% assign maxToolCount = t.count %}{% endif %}
+        {% endfor %}
+        <table class="strata-tools-table">
+          <thead>
+            <tr>
+              <th>Tool</th>
+              <th>Count</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in session.toolBreakdown %}
+            <tr>
+              <td>
+                {{ t.tool }}
+                {% if maxToolCount > 0 %}
+                {% assign barPct = t.count | times: 100 | divided_by: maxToolCount %}
+                <span class="strata-tool-bar" style="width: {{ barPct }}%;"></span>
+                {% endif %}
+              </td>
+              <td>{{ t.count }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+      {% if session.toolBreakdown.size > 0 and session.topFiles.size > 0 %}
+      <div class="strata-col-divider"></div>
+      {% endif %}
+      {% if session.topFiles.size > 0 %}
+      <div>
+        <h2 class="strata-col-heading">Files Changed</h2>
+        <table class="strata-files-table">
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>+/-</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in session.topFiles %}
+            <tr>
+              <td>{{ f.path }}</td>
+              <td>+{{ f.additions }}{% if f.deletions > 0 %} / -{{ f.deletions }}{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Execution Path (Beats) {%- endcomment -%}
+  {% if session.beats.size > 0 %}
+  <div class="strata-layer" style="z-index: 4;">
+    <div class="strata-section-header">
+      <h2 class="strata-section-header__title">Execution Path</h2>
+      <span class="strata-section-header__meta">{{ session.beats.size }} beats</span>
+    </div>
+    <div class="strata-beats">
+      <div class="strata-beats__line"></div>
+      {% for beat in session.beats %}
+      <div class="strata-beat">
+        <div class="strata-beat__dot"></div>
+        <div class="strata-beat__number">Beat {{ beat.stepNumber }}</div>
+        <div class="strata-beat__title">{{ beat.title }}</div>
+        {% if beat.body %}
+        <div class="strata-beat__desc">{{ beat.body }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Q&A {%- endcomment -%}
+  {% if session.qaPairs.size > 0 %}
+  <div class="strata-layer" style="z-index: 5;">
+    <div class="strata-section-header">
+      <h2 class="strata-section-header__title">Q&amp;A</h2>
+      <span class="strata-section-header__meta">{{ session.qaPairs.size }} questions</span>
+    </div>
+    <div class="strata-qa-list">
+      {% for qa in session.qaPairs %}
+      <article class="strata-qa">
+        <div class="strata-qa__question">{{ qa.question }}</div>
+        <div class="strata-qa__answer">{{ qa.answer }}</div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Agent Summary {%- endcomment -%}
+  {% if session.agentSummary %}
+  <div class="strata-layer" style="z-index: 6;" id="agent-section">
+    <div class="strata-section-header">
+      <h2 class="strata-section-header__title">Agent Summary</h2>
+      {% if session.agentSummary.agents %}
+      <span class="strata-section-header__meta">{{ session.agentSummary.agents.size }} sub-sessions</span>
+      {% endif %}
+    </div>
+    {% if session.agentSummary.agents.size > 0 %}
+    <table class="strata-agent-table">
+      <thead>
+        <tr>
+          <th>Role</th>
+          <th>Duration</th>
+          <th>LOC</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for agent in session.agentSummary.agents %}
+        <tr>
+          <td><span class="strata-agent-dot" style="background: var(--strata-accent);"></span> {{ agent.role }}</td>
+          <td>{{ agent.durationMinutes | formatDuration }}</td>
+          <td>{{ agent.linesOfCode | localeNumber }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {%- comment -%} Skills {%- endcomment -%}
+  {% if session.skills.size > 0 %}
+  <div class="strata-layer" style="z-index: 7;">
+    <div class="strata-section-header">
+      <h2 class="strata-section-header__title">Technologies</h2>
+    </div>
+    <div class="strata-chips">
+      {% for skill in session.skills %}
+      <span class="strata-chip">{{ skill }}</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Footer {%- endcomment -%}
+  <footer class="strata-footer">
+    <div class="strata-footer__text">
+      Built with <a href="https://heyi.am">heyi.am</a> &middot; <a href="/{{ user.username }}/{{ projectSlug }}">Back to project</a>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      'use strict';
+
+      var layers = document.querySelectorAll('.strata-layer');
+
+      var entranceObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('strata-visible');
+            entranceObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+
+      layers.forEach(function(layer, i) {
+        layer.style.transitionDelay = (i * 80) + 'ms';
+        entranceObserver.observe(layer);
+      });
+
+      var activeObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('strata-active');
+          } else {
+            entry.target.classList.remove('strata-active');
+          }
+        });
+      }, { threshold: 0.4 });
+
+      layers.forEach(function(layer) {
+        activeObserver.observe(layer);
+      });
+
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      if (!prefersReducedMotion.matches) {
+        var ticking = false;
+        window.addEventListener('scroll', function() {
+          if (!ticking) {
+            requestAnimationFrame(function() {
+              var vh = window.innerHeight;
+              layers.forEach(function(layer, i) {
+                var rect = layer.getBoundingClientRect();
+                var offset = (rect.top + rect.height / 2 - vh / 2);
+                var parallax = Math.max(-20, Math.min(20, offset * 0.03 * (i + 1) * 0.5));
+                if (layer.classList.contains('strata-visible')) {
+                  var lift = layer.classList.contains('strata-active') ? -4 : 0;
+                  layer.style.transform = 'translateY(' + (parallax + lift) + 'px)';
+                }
+              });
+              ticking = false;
+            });
+            ticking = true;
+          }
+        });
+      }
+
+      window.dispatchEvent(new Event('scroll'));
+    })();
+  </script>
+
 </div>

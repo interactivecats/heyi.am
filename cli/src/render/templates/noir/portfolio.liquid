@@ -1,11 +1,125 @@
-<div class="heyiam-portfolio noir" data-render-version="2" data-template="noir" data-username="{{ user.username }}">
+<div class="noir-page" data-render-version="2" data-template="noir" data-username="{{ user.username }}">
 
-  {% render 'partials/_portfolio-header', user: user %}
+  <!-- Hero Profile -->
+  <section class="noir-section noir-hero" aria-label="Profile">
+    {% if user.photoUrl %}
+    <img
+      src="{{ user.photoUrl }}"
+      alt="{{ user.displayName }}"
+      class="noir-hero__photo"
+      width="400"
+      height="500"
+    >
+    {% endif %}
+    <div class="noir-hero__content">
+      <h1 class="noir-hero__name">{{ user.displayName }}</h1>
+      {% if user.bio != blank %}
+      <p class="noir-hero__bio">{{ user.bio }}</p>
+      {% endif %}
+      {% if user.location != blank %}
+      <p class="noir-hero__location">{{ user.location }}</p>
+      {% endif %}
+      <p class="noir-hero__contact">
+        {% if user.email != blank %}<a href="mailto:{{ user.email }}">{{ user.email }}</a>{% endif %}{% if user.linkedinUrl != blank %}{% if user.email != blank %}<span class="noir-middot">&middot;</span>{% endif %}<a href="{{ user.linkedinUrl }}">LinkedIn</a>{% endif %}{% if user.githubUrl != blank %}{% if user.email != blank or user.linkedinUrl != blank %}<span class="noir-middot">&middot;</span>{% endif %}<a href="{{ user.githubUrl }}">GitHub</a>{% endif %}{% if user.twitterHandle != blank %}{% if user.email != blank or user.linkedinUrl != blank or user.githubUrl != blank %}<span class="noir-middot">&middot;</span>{% endif %}<a href="https://twitter.com/{{ user.twitterHandle }}">@{{ user.twitterHandle }}</a>{% endif %}{% if user.websiteUrl != blank %}{% if user.email != blank or user.linkedinUrl != blank or user.githubUrl != blank or user.twitterHandle != blank %}<span class="noir-middot">&middot;</span>{% endif %}<a href="{{ user.websiteUrl }}">{{ user.websiteUrl | stripProtocol }}</a>{% endif %}
+      </p>
+      {% if user.resumeUrl != blank %}
+      <a href="{{ user.resumeUrl }}" class="noir-hero__resume">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+        Resume (PDF)
+      </a>
+      {% endif %}
+    </div>
+  </section>
 
-  {% render 'partials/_portfolio-stats', projects: projects, totalSessions: totalSessions, totalDurationMinutes: totalDurationMinutes, totalAgentDurationMinutes: totalAgentDurationMinutes, totalLoc: totalLoc, efficiencyMultiplier: efficiencyMultiplier %}
+  <hr class="noir-rule">
 
-  {% render 'partials/_portfolio-projects', projects: projects %}
+  <!-- Aggregate Stats -->
+  <section class="noir-section" aria-label="Portfolio statistics">
+    <div class="noir-stats-row" role="list">
+      <div class="noir-stats-row__item" role="listitem">
+        <span class="noir-stats-row__value">{{ projects.size }}</span>
+        <span class="noir-stats-row__label">Projects</span>
+      </div>
+      <div class="noir-stats-row__item" role="listitem">
+        <span class="noir-stats-row__value">{{ totalSessions | localeNumber }}</span>
+        <span class="noir-stats-row__label">Sessions</span>
+      </div>
+      <div class="noir-stats-row__item" role="listitem">
+        <span class="noir-stats-row__value">{{ totalLoc | formatLoc }}</span>
+        <span class="noir-stats-row__label">Lines Changed</span>
+      </div>
+    </div>
+  </section>
 
-  {% render 'partials/_footer' %}
+  {% if efficiencyMultiplier %}
+  <!-- Leverage -->
+  <section aria-label="AI leverage" role="figure">
+    <hr class="noir-rule">
+    <div class="noir-leverage">
+      <span class="noir-leverage__multi">{{ efficiencyMultiplier }}</span>
+      <span class="noir-leverage__sep" aria-hidden="true">&mdash;</span>
+      <span class="noir-leverage__detail">{{ totalDurationMinutes | formatDuration }} you{% if totalAgentDurationMinutes %}, {{ totalAgentDurationMinutes | formatDuration }} agents{% endif %}</span>
+    </div>
+    <hr class="noir-rule">
+  </section>
+  {% endif %}
+
+  <!-- Work Timeline -->
+  {% if projects.size > 0 %}
+  <section class="noir-section" aria-label="Work timeline">
+    <h2 class="noir-heading">Work Timeline</h2>
+    <div class="noir-timeline" role="list">
+      {% for p in projects %}
+      <div class="noir-timeline__row" role="listitem">
+        <span class="noir-timeline__label">{{ p.title }}</span>
+        <div class="noir-timeline__bar-track">
+          <div class="noir-timeline__bar" style="width: {% if projects[0].totalDurationMinutes > 0 %}{{ p.totalDurationMinutes | times: 100 | divided_by: projects[0].totalDurationMinutes }}%{% else %}0%{% endif %};"></div>
+        </div>
+        <span class="noir-timeline__value">{{ p.totalDurationMinutes | formatDuration }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <hr class="noir-rule">
+  {% endif %}
+
+  <!-- Projects -->
+  {% if projects.size > 0 %}
+  <section class="noir-section" aria-label="Projects">
+    <h2 class="noir-heading">Projects</h2>
+    <div class="noir-projects">
+      {% for p in projects %}
+      <a href="/{{ user.username }}/{{ p.slug }}" class="noir-project" aria-label="{{ p.title }} project">
+        <div>
+          <h3 class="noir-project__title">{{ p.title }}</h3>
+          {% if p.narrative != blank %}
+          <p class="noir-project__narrative">{{ p.narrative }}</p>
+          {% endif %}
+          {% if p.skills.size > 0 %}
+          <div class="noir-project__skills" aria-label="Skills">
+            {% for skill in p.skills %}
+            <span class="noir-chip">{{ skill }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <p class="noir-project__meta">{{ p.totalSessions }} sessions &middot; {{ p.totalDurationMinutes | formatDuration }} &middot; {{ p.totalLoc | formatLoc }} LOC</p>
+        </div>
+        <div class="noir-project__sidebar">
+          <div>
+            <span class="noir-project__stat-num">{{ p.totalLoc | formatLoc }}</span>
+            <span class="noir-project__stat-label">LOC</span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Footer -->
+  <footer class="noir-footer">
+    <p class="noir-footer__text">Built with heyi.am</p>
+  </footer>
 
 </div>

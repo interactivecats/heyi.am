@@ -1,45 +1,177 @@
 <div class="heyiam-portfolio mono" data-render-version="2" data-template="mono" data-username="{{ user.username }}">
 
-  <div class="term-prompt">
-    <span class="term-prompt__char">&#10095;</span> <span class="term-prompt__path">@{{ user.username }}</span>
+  <div class="mono-page">
+
+    {%- comment -%} Hero {%- endcomment -%}
+    <section class="mono-section" aria-label="Profile">
+      <div class="terminal-block">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="dot-red" aria-hidden="true"></span>
+            <span class="dot-yellow" aria-hidden="true"></span>
+            <span class="dot-green" aria-hidden="true"></span>
+          </div>
+          <span>{{ user.username }}@heyi.am ~ portfolio</span>
+        </div>
+        <div class="terminal-body">
+          <div class="hero-profile">
+            {% if user.photoUrl %}
+            <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="hero-photo" width="120" height="150">
+            {% endif %}
+            <div class="hero-info">
+              <h1 class="hero-title" aria-label="{{ user.displayName }}">{{ user.displayName }}</h1>
+              <p class="hero-handle">
+                <span style="color: var(--mono-accent, #4ade80);">@</span>{{ user.username }}
+              </p>
+              {% if user.bio %}
+              <p class="hero-bio">
+                <span class="comment">// </span>{{ user.bio }}
+              </p>
+              {% endif %}
+              {% if user.location %}
+              <p class="hero-location">
+                <span class="comment">location: </span>{{ user.location }}
+              </p>
+              {% endif %}
+              {% if user.email or user.linkedinUrl or user.githubUrl or user.twitterHandle or user.websiteUrl %}
+              <ul class="hero-contact" aria-label="Contact and social links">
+                {% if user.email %}
+                <li><a href="mailto:{{ user.email }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg>{{ user.email }}</a></li>
+                {% endif %}
+                {% if user.linkedinUrl %}
+                <li><a href="{{ user.linkedinUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>LinkedIn</a></li>
+                {% endif %}
+                {% if user.githubUrl %}
+                <li><a href="{{ user.githubUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>GitHub</a></li>
+                {% endif %}
+                {% if user.twitterHandle %}
+                <li><a href="https://x.com/{{ user.twitterHandle }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>@{{ user.twitterHandle }}</a></li>
+                {% endif %}
+                {% if user.websiteUrl %}
+                <li><a href="{{ user.websiteUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>{{ user.websiteUrl | stripProtocol }}</a></li>
+                {% endif %}
+              </ul>
+              {% endif %}
+              {% if user.resumeUrl %}
+              <a href="{{ user.resumeUrl }}" class="hero-resume-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>Download Resume</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {%- comment -%} Stats {%- endcomment -%}
+    <section class="mono-section" aria-label="Aggregate statistics">
+      <h2 class="mono-heading"># stats</h2>
+      <div class="stats-grid" role="list">
+        <div class="stat-cell" role="listitem">
+          <div class="stat-key">projects:</div>
+          <div class="stat-value">{{ projects.size }}</div>
+        </div>
+        <div class="stat-cell" role="listitem">
+          <div class="stat-key">sessions:</div>
+          <div class="stat-value">{{ totalSessions }}</div>
+        </div>
+        {% if efficiencyMultiplier %}
+        <div class="stat-cell stat-cell--leverage" role="listitem">
+          <div class="leverage-terminal">
+            <div class="lev-line"><span class="lev-key">human:</span> <span class="lev-val">{{ totalDurationMinutes | formatDuration }}</span></div>
+            <div class="lev-line"><span class="lev-key">agents:</span> <span class="lev-val lev-val--agent">{{ totalAgentDurationMinutes | formatDuration }}</span></div>
+            <div class="lev-line"><span class="lev-key">multi:</span> <span class="lev-val lev-val--multi">{{ efficiencyMultiplier }}</span></div>
+          </div>
+        </div>
+        {% else %}
+        <div class="stat-cell" role="listitem">
+          <div class="stat-key">time:</div>
+          <div class="stat-value">{{ durationLabel }}</div>
+        </div>
+        {% endif %}
+        <div class="stat-cell" role="listitem">
+          <div class="stat-key">lines_changed:</div>
+          <div class="stat-value">{{ totalLoc | localeNumber }}</div>
+        </div>
+      </div>
+    </section>
+
+    {%- comment -%} Work Timeline chart mount {%- endcomment -%}
+    {% if sessionsJson %}
+    <section class="mono-section" aria-label="Work timeline">
+      <h2 class="mono-heading"># work_timeline</h2>
+      <div class="terminal-block">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="dot-red" aria-hidden="true"></span>
+            <span class="dot-yellow" aria-hidden="true"></span>
+            <span class="dot-green" aria-hidden="true"></span>
+          </div>
+          <span>hours per project</span>
+        </div>
+        <div class="terminal-body">
+          <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Projects {%- endcomment -%}
+    {% if projects.size > 0 %}
+    <section class="mono-section" aria-label="Projects">
+      <h2 class="mono-heading"># projects</h2>
+      <div class="project-list">
+        {% for p in projects %}
+        <a href="/{{ user.username }}/{{ p.slug }}" class="project-card">
+          <div class="project-card-header">
+            <h3 class="project-name">{{ p.title }}</h3>
+          </div>
+          <div class="project-card-body">
+            {% if p.narrative != blank %}
+            <p class="project-narrative">{{ p.narrative }}</p>
+            {% endif %}
+            <div class="project-stats-row">
+              <span class="project-stat"><strong>{{ p.totalSessions }}</strong> sessions</span>
+              <span class="project-stat"><strong>{{ p.totalDurationMinutes | formatDuration }}</strong></span>
+              <span class="project-stat"><strong>{{ p.totalLoc | localeNumber }}</strong> LOC</span>
+            </div>
+            {% if p.skills.size > 0 %}
+            <div class="project-tags">
+              {% for skill in p.skills %}
+              <span class="tag">[{{ skill }}]</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
   </div>
 
-  <h1 class="term-heading"># {{ user.displayName }}</h1>
-  {% if user.bio != blank %}
-  <blockquote class="term-blockquote">{{ user.bio }}</blockquote>
-  {% endif %}
+  <footer class="mono-footer">
+    <p>// generated by heyi.am &middot; mono template</p>
+  </footer>
 
-  {%- comment -%} Stats with compact leverage {%- endcomment -%}
-  <div class="term-section">
-    <div class="term-comment"># stats</div>
-    <table class="term-table">
-      {% if efficiencyMultiplier %}
-      <tr>
-        <td class="term-table__key">Leverage</td>
-        <td class="term-table__val"><span style="color: var(--accent, #4ade80); font-weight: 700;">{{ efficiencyMultiplier }}</span> <span style="opacity: 0.5;">{{ totalDurationMinutes | formatDuration }} you</span> <span style="color: var(--accent, #4ade80);">{{ totalAgentDurationMinutes | formatDuration }} agents</span></td>
-      </tr>
-      {% else %}
-      <tr><td class="term-table__key">Time</td><td class="term-table__val">{{ totalDurationMinutes | formatDuration }}</td></tr>
-      {% endif %}
-      <tr><td class="term-table__key">Sessions</td><td class="term-table__val">{{ totalSessions }}</td></tr>
-      <tr><td class="term-table__key">Lines</td><td class="term-table__val">{{ totalLoc | formatLoc }}</td></tr>
-    </table>
-  </div>
-
-  {%- comment -%} Projects {%- endcomment -%}
-  {% if projects.size > 0 %}
-  <div class="term-section">
-    <div class="term-comment"># projects ({{ projects.size }})</div>
-    {% for project in projects %}
-    <div class="term-session-entry">
-      <span class="term-session-entry__idx">[{{ forloop.index }}]</span>
-      <span class="term-session-entry__title">{{ project.title }}</span>
-      <span class="term-session-entry__meta">{{ project.totalSessions }} sessions &middot; {{ project.totalLoc | formatLoc }} loc</span>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  <script>
+  (function() {
+    'use strict';
+    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var sections = document.querySelectorAll('.mono-section');
+    if (prefersReducedMotion) {
+      sections.forEach(function(s) { s.classList.add('visible'); });
+    } else {
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+      sections.forEach(function(s) { observer.observe(s); });
+    }
+  })();
+  </script>
 
 </div>

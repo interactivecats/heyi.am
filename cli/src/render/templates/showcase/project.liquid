@@ -1,51 +1,332 @@
 <div class="heyiam-project showcase" data-render-version="2" data-template="showcase"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+  <div class="sc-page">
+    <main id="main-content">
 
-  {% render 'partials/_links', project: project %}
+      <!-- Title -->
+      <section class="sc-title-section sc-section section-gap" style="transition-delay: 100ms;" aria-label="Project title">
+        <h1 data-editable="title">{{ project.title }}</h1>
+        {% if project.narrative != blank %}
+        <p class="sc-subtitle">{{ project.narrative | truncate: 80 }}</p>
+        {% endif %}
+      </section>
 
-  {% render 'partials/_screenshot', project: project %}
+      <!-- Links -->
+      {% if project.repoUrl != blank or project.projectUrl != blank %}
+      <section class="sc-section section-gap-sm" aria-label="Project links">
+        <div class="sc-links">
+          {% if project.repoUrl != blank %}
+          <a href="{{ project.repoUrl }}" class="sc-stagger" target="_blank" rel="noopener">
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            {{ project.repoUrl | stripProtocol }}
+          </a>
+          {% endif %}
+          {% if project.projectUrl != blank %}
+          <a href="{{ project.projectUrl }}" class="sc-stagger" target="_blank" rel="noopener">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3.5h-4a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1v-4"/><path d="M9.5 1.5h5v5"/><path d="M14.5 1.5L7 9"/></svg>
+            {{ project.projectUrl | stripProtocol }}
+          </a>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
 
-  {% render 'partials/_narrative', narrative: project.narrative %}
+      <!-- Screenshot -->
+      {% if project.screenshotUrl != blank %}
+      <section class="sc-section sc-section--screenshot section-gap-lg" aria-label="Screenshot">
+        <div class="sc-screenshot-frame">
+          <div class="sc-screenshot-chrome" aria-hidden="true">
+            <span class="sc-screenshot-dot"></span>
+            <span class="sc-screenshot-dot"></span>
+            <span class="sc-screenshot-dot"></span>
+            {% if project.projectUrl != blank %}
+            <span class="sc-screenshot-url">{{ project.projectUrl | stripProtocol }}</span>
+            {% endif %}
+          </div>
+          <div class="sc-screenshot-body">
+            <img src="{{ project.screenshotUrl }}" alt="Screenshot of {{ project.title }}" style="width:100%;height:100%;object-fit:cover;">
+          </div>
+        </div>
+      </section>
+      {% endif %}
 
-  {% render 'partials/_stats', project: project, durationLabel: durationLabel, efficiencyMultiplier: efficiencyMultiplier %}
+      <!-- Narrative -->
+      {% if project.narrative != blank %}
+      <section class="sc-section section-gap-lg" aria-label="Project narrative">
+        <div class="sc-narrative">
+          <p>{{ project.narrative }}</p>
+        </div>
+      </section>
+      {% endif %}
 
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
+      <!-- Stats Grid (animated counters) -->
+      <section class="sc-section section-gap-lg" id="stats-section" aria-label="Project statistics">
+        <div class="sc-stats-grid">
+          <div class="sc-stat-card sc-stagger">
+            <div class="sc-stat-card__label">Sessions</div>
+            <div class="sc-stat-card__value" data-count-to="{{ project.totalSessions }}" data-format="int">0</div>
+          </div>
+          <div class="sc-stat-card sc-stagger">
+            <div class="sc-stat-card__label">Lines Changed</div>
+            <div class="sc-stat-card__value" data-count-to="{{ project.totalLoc }}" data-format="comma">0</div>
+          </div>
+          <div class="sc-stat-card sc-stagger">
+            <div class="sc-stat-card__label">Files Changed</div>
+            <div class="sc-stat-card__value" data-count-to="{{ project.totalFilesChanged }}" data-format="int">0</div>
+          </div>
+          {% if project.totalTokens %}
+          <div class="sc-stat-card sc-stagger">
+            <div class="sc-stat-card__label">Tokens</div>
+            <div class="sc-stat-card__value" data-count-to="{{ project.totalTokens }}" data-format="token">0</div>
+          </div>
+          {% endif %}
+        </div>
+      </section>
 
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
+      <!-- Work Timeline -->
+      <section class="sc-section section-gap-lg" id="timeline-section" aria-label="Work timeline">
+        <div class="sc-chart-container">
+          <div class="sc-section-header">
+            <h3>Work Timeline</h3>
+            <span class="sc-section-label">sessions over time</span>
+          </div>
+          <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+        </div>
+      </section>
 
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+      <!-- Leverage -->
+      {% if efficiencyMultiplier %}
+      <section class="sc-leverage sc-section section-gap" aria-label="AI leverage" role="figure">
+        <div class="sc-leverage__multi">{{ efficiencyMultiplier }}&times;</div>
+        <div class="sc-leverage__context"><span>{{ durationLabel }}</span></div>
+        {% if project.totalDurationMinutes > 0 and project.totalAgentDurationMinutes %}
+        {% assign total_combined = project.totalDurationMinutes | plus: project.totalAgentDurationMinutes %}
+        {% assign human_pct = project.totalDurationMinutes | times: 100 | divided_by: total_combined %}
+        {% assign agent_pct = 100 | minus: human_pct %}
+        <div class="sc-leverage__bar"><div class="sc-leverage__human" style="width:{{ human_pct }}%"></div><div class="sc-leverage__agent" style="width:{{ agent_pct }}%"></div></div>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      <!-- Growth Chart -->
+      <section class="sc-section section-gap-lg" id="growth-section" aria-label="Code growth chart">
+        <div class="sc-chart-container">
+          <div class="sc-section-header">
+            <h3>Code Growth</h3>
+            <span class="sc-section-label">cumulative lines of code</span>
+          </div>
+          <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+        </div>
+      </section>
+
+      <!-- Two-Column: Key Decisions + Source Breakdown -->
+      <section class="sc-section section-gap-lg" aria-label="Decisions and source breakdown">
+        <div class="sc-two-col">
+          {% if arc.size > 0 %}
+          <div class="sc-two-col-card sc-stagger">
+            <h4>Key Decisions</h4>
+            {% for item in arc %}
+            <div class="sc-decision-item">
+              <div class="sc-phase-label">{{ item.title }}</div>
+              <p>{{ item.description }}</p>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% if sourceCounts.size > 0 %}
+          <div class="sc-two-col-card sc-stagger">
+            <h4>Source Breakdown</h4>
+            <div style="margin-top: 0.5rem;">
+              {% assign total_sessions = 0 %}
+              {% for sc in sourceCounts %}
+                {% assign total_sessions = total_sessions | plus: sc.count %}
+              {% endfor %}
+              {% for sc in sourceCounts %}
+              {% if total_sessions > 0 %}
+              {% assign pct = sc.count | times: 100 | divided_by: total_sessions %}
+              {% endif %}
+              <div class="sc-source-row">
+                <span class="sc-source-name">{{ sc.tool }}</span>
+                <div class="sc-source-bar-track">
+                  <div class="sc-source-bar-fill" style="width: {{ pct }}%;"></div>
+                </div>
+                <span class="sc-source-pct">{{ pct }}%</span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- Phase Timeline -->
+      {% if arc.size > 0 %}
+      <section class="sc-section section-gap-lg" aria-label="Project phases">
+        <div class="sc-section-header">
+          <h3>Project Arc</h3>
+          <span class="sc-section-label">{{ arc.size }} phases</span>
+        </div>
+        <div class="sc-phase-timeline">
+          <div class="sc-phase-line" aria-hidden="true"></div>
+          {% for item in arc %}
+          <div class="sc-phase-item">
+            <div class="sc-phase-dot" aria-hidden="true"></div>
+            <div class="sc-phase-number">Phase {{ item.phase }}</div>
+            <div class="sc-phase-title">{{ item.title }}</div>
+            <div class="sc-phase-desc">{{ item.description }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- Skills -->
+      {% if project.skills.size > 0 %}
+      <section class="sc-section sc-section--skills section-gap-lg" aria-label="Skills">
+        <div class="sc-section-header">
+          <h3>Skills</h3>
+          <span class="sc-section-label">{{ project.skills.size }} technologies</span>
+        </div>
+        <div class="sc-skills-grid">
+          {% for skill in project.skills %}
+          <span class="sc-skill-chip sc-stagger">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- Featured Sessions -->
+      {% if featuredSessions.size > 0 %}
+      <section class="sc-section sc-section--cards section-gap-lg" aria-label="Featured sessions">
+        <div class="sc-section-header">
+          <h3>Sessions</h3>
+          <span class="sc-section-label">{{ featuredSessions.size }} of {{ project.totalSessions }}</span>
+        </div>
+        <div class="sc-session-grid">
+          {% for s in featuredSessions %}
+          <a href="{{ sessionBaseUrl }}/{{ s.slug | default: s.token }}.html" class="sc-session-card sc-stagger">
+            <div class="sc-session-card__accent-bar" style="background: var(--accent);"></div>
+            <div class="sc-session-card__title">{{ s.title }}</div>
+            <div class="sc-session-card__meta">
+              <span>{{ s.durationMinutes | formatDuration }}</span>
+              <span>{{ s.locChanged | localeNumber }} LOC</span>
+            </div>
+            <div class="sc-session-card__bottom">
+              {% if s.skills.size > 0 %}
+              <span class="sc-session-card__skill">{{ s.skills[0] }}</span>
+              {% endif %}
+              {% if s.sourceTool != blank %}
+              <span class="sc-session-card__source">{{ s.sourceTool }}</span>
+              {% endif %}
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+    </main>
+
+    <footer class="sc-footer">
+      <span>built with <a href="https://heyi.am">heyi.am</a></span>
+    </footer>
   </div>
-
-  {% render 'partials/_phases', arc: arc %}
-
-  {% render 'partials/_skills', skills: project.skills %}
-
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
-
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
 
   <script>
   (function() {
     'use strict';
+
+    // IntersectionObserver for scroll animations
     var sections = document.querySelectorAll('.sc-section');
-    if (!sections.length) return;
-    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) {
-      sections.forEach(function(s) { s.classList.add('visible'); });
-      return;
+    if (sections.length) {
+      var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReduced) {
+        sections.forEach(function(s) { s.classList.add('visible'); });
+      } else {
+        var observer = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+        sections.forEach(function(s) { observer.observe(s); });
+      }
     }
-    var observer = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
+
+    // Animated Counters
+    var COUNTER_DURATION = 1200;
+    var statsSection = document.getElementById('stats-section');
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    function formatCounter(value, format) {
+      switch (format) {
+        case 'int':
+          return String(Math.round(value));
+        case 'comma':
+          return Math.round(value).toLocaleString('en-US');
+        case 'duration': {
+          var totalMin = Math.round(value);
+          var h = Math.floor(totalMin / 60);
+          var m = totalMin % 60;
+          if (h === 0) return m + 'm';
+          if (m === 0) return h + 'h';
+          return h + 'h ' + m + 'm';
         }
+        case 'hours-short':
+          return value.toFixed(1) + 'h';
+        case 'token':
+          if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+          if (value >= 1000) return Math.round(value / 1000) + 'k';
+          return String(Math.round(value));
+        case 'multiplier':
+          return value.toFixed(1) + 'x';
+        default:
+          return String(Math.round(value));
+      }
+    }
+
+    function animateCounters() {
+      var values = statsSection.querySelectorAll('[data-count-to]');
+      values.forEach(function(el, index) {
+        var target = parseFloat(el.getAttribute('data-count-to'));
+        var format = el.getAttribute('data-format');
+        var delay = index * 100;
+
+        setTimeout(function() {
+          var startTime = null;
+          function tick(timestamp) {
+            if (!startTime) startTime = timestamp;
+            var elapsed = timestamp - startTime;
+            var progress = Math.min(elapsed / COUNTER_DURATION, 1);
+            var easedProgress = easeOutCubic(progress);
+            var currentValue = target * easedProgress;
+            el.textContent = formatCounter(currentValue, format);
+            if (progress < 1) {
+              requestAnimationFrame(tick);
+            }
+          }
+          requestAnimationFrame(tick);
+        }, delay);
       });
-    }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
-    sections.forEach(function(s) { observer.observe(s); });
+    }
+
+    if (statsSection) {
+      var counterObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            animateCounters();
+            counterObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+      counterObserver.observe(statsSection);
+    }
   })();
   </script>
 

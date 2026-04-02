@@ -1,36 +1,68 @@
 <div class="heyiam-session aurora" data-render-version="2" data-template="aurora">
 
-  <div class="session-layout">
+  {%- comment -%} Aurora Header {%- endcomment -%}
+  <header class="aurora-header" role="banner">
+    <div class="aurora-breadcrumb fade-up" aria-label="Breadcrumb">
+      <a href="/{{ user.username }}">{{ user.username }}</a>
+      {% if projectSlug %}
+      <span class="aurora-breadcrumb-sep">/</span>
+      <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
+      {% endif %}
+      <span class="aurora-breadcrumb-sep">/</span>
+      <span aria-current="page">{{ session.title }}</span>
+    </div>
 
-    {% render 'partials/_session-sidebar', session: session %}
+    <div class="aurora-session-hero fade-up">
+      <h1>{{ session.title }}</h1>
+      <div class="aurora-session-meta-row">
+        {% if session.recordedAt %}
+        <span class="aurora-session-meta-item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          {{ session.recordedAt | formatDate }}
+        </span>
+        {% endif %}
+        {% if session.sourceTool %}
+        <span class="aurora-source-badge">{{ session.sourceTool }}</span>
+        {% endif %}
+        <span class="aurora-session-meta-item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          {{ session.durationMinutes | formatDuration }}
+        </span>
+        <span class="aurora-session-meta-item">{{ session.turns }} turns</span>
+        <span class="aurora-session-meta-item">{{ session.locChanged | localeNumber }} LOC</span>
+        <span class="aurora-session-meta-item">{{ session.filesChanged }} files</span>
+      </div>
+    </div>
+  </header>
 
-    <main class="session-main">
+  {%- comment -%} Dev Take {%- endcomment -%}
+  {% if session.devTake %}
+  <div class="aurora-dev-take fade-up">
+    <blockquote class="aurora-dev-take-box">
+      {{ session.devTake }}
+    </blockquote>
+  </div>
+  {% endif %}
 
-      {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
+  {%- comment -%} Two-column layout {%- endcomment -%}
+  <div class="aurora-layout">
+    <div class="aurora-main-content">
 
-      {% render 'partials/_session-header', session: session %}
-
-      {% if session.skills.size > 0 %}
-      <section class="content-section">
-        <div class="chip-list">
-          {% for skill in session.skills %}
-          <span class="chip chip--violet">{{ skill }}</span>
-          {% endfor %}
+      {%- comment -%} Narrative {%- endcomment -%}
+      {% if session.narrative %}
+      <section class="aurora-section--content fade-up" aria-label="Session narrative">
+        <h2 class="aurora-section-title aurora-section-title--sm">Narrative</h2>
+        <div class="aurora-narrative-section">
+          <p>{{ session.narrative }}</p>
         </div>
       </section>
       {% endif %}
 
-      {% if session.narrative != blank %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Narrative</h2>
-        <p>{{ session.narrative }}</p>
-      </section>
-      {% endif %}
-
+      {%- comment -%} Highlights {%- endcomment -%}
       {% if session.highlights.size > 0 %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Highlights</h2>
-        <ul class="highlights-list">
+      <section class="aurora-section--content fade-up" aria-label="Session highlights">
+        <h2 class="aurora-section-title aurora-section-title--sm">Highlights</h2>
+        <ul class="aurora-highlights highlights-list">
           {% for h in session.highlights %}
           <li>{{ h }}</li>
           {% endfor %}
@@ -38,10 +70,175 @@
       </section>
       {% endif %}
 
-      {% render 'partials/_beats', session: session %}
+      {%- comment -%} Execution Path (Beats) {%- endcomment -%}
+      {% if session.beats.size > 0 %}
+      <section class="aurora-section--content fade-up" aria-label="Execution path">
+        <h2 class="aurora-section-title aurora-section-title--sm">Execution Path</h2>
+        <div class="aurora-beats beats-list" role="list">
+          {% for beat in session.beats %}
+          <div class="aurora-beat" role="listitem">
+            <div class="aurora-beat-dot" aria-hidden="true"></div>
+            <div class="aurora-beat-title">{{ beat.title }}</div>
+            <div class="aurora-beat-desc">{{ beat.body }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
 
-      {% render 'partials/_qa', session: session %}
+      {%- comment -%} Q&A {%- endcomment -%}
+      {% if session.qaPairs.size > 0 %}
+      <section class="aurora-section--content fade-up" aria-label="Questions and answers">
+        <h2 class="aurora-section-title aurora-section-title--sm">Q&amp;A</h2>
+        <div class="aurora-qa-list qa-pair">
+          {% for qa in session.qaPairs %}
+          <article class="aurora-qa-item">
+            <div class="aurora-qa-question">
+              <span class="aurora-qa-q-mark" aria-hidden="true">Q</span>
+              <span>{{ qa.question }}</span>
+            </div>
+            <div class="aurora-qa-answer">
+              {{ qa.answer }}
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
 
-    </main>
+      {%- comment -%} Agent Summary {%- endcomment -%}
+      {% if session.agentSummary %}
+      <section class="aurora-section--content fade-up" aria-label="Agent summary">
+        <h2 class="aurora-section-title aurora-section-title--sm">Agent Summary</h2>
+        {% assign maxAgentLoc = 0 %}
+        {% for agent in session.agentSummary.agents %}
+          {% if agent.loc_changed > maxAgentLoc %}
+            {% assign maxAgentLoc = agent.loc_changed %}
+          {% endif %}
+        {% endfor %}
+        {% assign agent_colors = '#0891b2,#059669,#7c3aed,#475569,#e11d48,#d97706' | split: ',' %}
+        <div class="aurora-agents" role="list">
+          {% for agent in session.agentSummary.agents %}
+          <div class="aurora-agent-row" role="listitem">
+            <div class="aurora-agent-name">
+              {% assign colorIdx = forloop.index0 | modulo: 6 %}
+              <span class="aurora-agent-dot" style="background: {{ agent_colors[colorIdx] }}"></span>
+              {{ agent.role }}
+            </div>
+            <div class="aurora-agent-bar-track">
+              {% if maxAgentLoc > 0 %}
+              {% assign barPct = agent.loc_changed | times: 100 | divided_by: maxAgentLoc %}
+              {% else %}
+              {% assign barPct = 0 %}
+              {% endif %}
+              <div class="aurora-agent-bar-fill" style="width: {{ barPct }}%; background: {{ agent_colors[colorIdx] }}"></div>
+            </div>
+            <div class="aurora-agent-value">{{ agent.duration_minutes }}m</div>
+            <div class="aurora-agent-value">{{ agent.loc_changed }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+    </div>
+
+    {%- comment -%} Sidebar {%- endcomment -%}
+    <aside class="aurora-sidebar" aria-label="Session details">
+      {%- comment -%} Tools Used {%- endcomment -%}
+      {% if session.toolBreakdown.size > 0 %}
+      <div class="aurora-sidebar-card fade-up">
+        <h2 class="aurora-sidebar-title">Tools Used</h2>
+        <div class="aurora-tools-list tool-list" role="list">
+          {% for t in session.toolBreakdown %}
+          <div class="aurora-tool-row" role="listitem">
+            <span class="aurora-tool-name">{{ t.tool }}</span>
+            <span class="aurora-tool-count">{{ t.count }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Files Changed {%- endcomment -%}
+      {% if session.topFiles.size > 0 %}
+      <div class="aurora-sidebar-card fade-up">
+        <h2 class="aurora-sidebar-title">Files Changed</h2>
+        <div class="aurora-files-list file-list" role="list">
+          {% for f in session.topFiles %}
+          <div class="aurora-file-row" role="listitem">
+            <span class="aurora-file-name" title="{{ f.path }}">{{ f.path }}</span>
+            <span class="aurora-file-diff"><span class="aurora-file-adds">+{{ f.additions }}</span>{% if f.deletions > 0 %} <span class="aurora-file-dels">-{{ f.deletions }}</span>{% endif %}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Skills {%- endcomment -%}
+      {% if session.skills.size > 0 %}
+      <div class="aurora-sidebar-card fade-up">
+        <h2 class="aurora-sidebar-title">Skills</h2>
+        <div class="aurora-sidebar-tags">
+          {% for skill in session.skills %}
+          <span class="aurora-tag">{{ skill }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Session Stats {%- endcomment -%}
+      <div class="aurora-sidebar-card fade-up">
+        <h2 class="aurora-sidebar-title">Stats</h2>
+        <div class="aurora-tools-list">
+          <div class="aurora-tool-row">
+            <span class="aurora-tool-name">Duration</span>
+            <span class="aurora-tool-count" style="color: var(--aurora-text);">{{ session.durationMinutes | formatDuration }}</span>
+          </div>
+          <div class="aurora-tool-row">
+            <span class="aurora-tool-name">Turns</span>
+            <span class="aurora-tool-count" style="color: var(--aurora-text);">{{ session.turns }}</span>
+          </div>
+          <div class="aurora-tool-row">
+            <span class="aurora-tool-name">LOC</span>
+            <span class="aurora-tool-count" style="color: var(--aurora-text);">{{ session.locChanged | localeNumber }}</span>
+          </div>
+          <div class="aurora-tool-row">
+            <span class="aurora-tool-name">Files</span>
+            <span class="aurora-tool-count" style="color: var(--aurora-text);">{{ session.filesChanged }}</span>
+          </div>
+          {% if session.sourceTool %}
+          <div class="aurora-tool-row">
+            <span class="aurora-tool-name">Source</span>
+            <span class="aurora-tool-count">{{ session.sourceTool }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </aside>
   </div>
+
+  {%- comment -%} Fade-up animation {%- endcomment -%}
+  <script>
+    (function() {
+      var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (prefersReduced) {
+        document.querySelectorAll('.fade-up').forEach(function(el) { el.classList.add('visible'); });
+        return;
+      }
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+      document.querySelectorAll('.fade-up').forEach(function(el) { observer.observe(el); });
+    })();
+  </script>
+
 </div>

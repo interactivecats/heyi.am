@@ -1,46 +1,67 @@
 <div class="heyiam-portfolio minimal" data-render-version="2" data-template="minimal" data-username="{{ user.username }}">
 
-  {%- comment -%} Big serif title {%- endcomment -%}
-  <h1 class="minimal-title">{{ user.displayName }}</h1>
+  <div class="mn-portfolio">
 
-  {% if user.bio != blank %}
-  <div class="minimal-narrative">
-    <p>{{ user.bio }}</p>
+    {%- comment -%} Optional photo {%- endcomment -%}
+    {% if user.photoUrl %}
+    <div class="mn-photo-wrap">
+      <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="mn-photo portfolio-photo" width="96" height="96">
+    </div>
+    {% endif %}
+
+    {%- comment -%} Big serif heading {%- endcomment -%}
+    <h1 class="mn-heading">{{ user.displayName }}</h1>
+
+    {% if user.bio != blank %}
+    <p class="mn-bio">{{ user.bio }}</p>
+    {% endif %}
+
+    {%- comment -%} Contact / links as middot-separated inline text {%- endcomment -%}
+    {% if user.location != blank or user.email != blank or user.phone != blank or user.githubUrl != blank or user.linkedinUrl != blank or user.twitterHandle != blank or user.websiteUrl != blank or user.resumeUrl != blank %}
+    <div class="mn-contact">
+      {% if user.location != blank %}<span>{{ user.location }}</span>{% endif %}
+      {% if user.email != blank %}<span><a href="mailto:{{ user.email }}">{{ user.email }}</a></span>{% endif %}
+      {% if user.phone != blank %}<span><a href="tel:{{ user.phone }}">{{ user.phone }}</a></span>{% endif %}
+      {% if user.githubUrl != blank %}<span><a href="{{ user.githubUrl }}" target="_blank" rel="noopener">GitHub</a></span>{% endif %}
+      {% if user.linkedinUrl != blank %}<span><a href="{{ user.linkedinUrl }}" target="_blank" rel="noopener">LinkedIn</a></span>{% endif %}
+      {% if user.twitterHandle != blank %}<span><a href="https://twitter.com/{{ user.twitterHandle }}" target="_blank" rel="noopener">@{{ user.twitterHandle }}</a></span>{% endif %}
+      {% if user.websiteUrl != blank %}<span><a href="{{ user.websiteUrl }}" target="_blank" rel="noopener">{{ user.websiteUrl | stripProtocol }}</a></span>{% endif %}
+      {% if user.resumeUrl != blank %}<span><a href="{{ user.resumeUrl }}" download>Resume (PDF)</a></span>{% endif %}
+    </div>
+    {% endif %}
+
+    {%- comment -%} Aggregate stats as quiet inline text {%- endcomment -%}
+    <div class="mn-stats">
+      <span>{{ totalDurationMinutes | formatDuration }}{% if efficiencyMultiplier %} ({{ efficiencyMultiplier }}){% endif %}</span>
+      <span>{{ totalSessions }} sessions</span>
+      <span>{{ totalLoc | formatLoc }} lines</span>
+    </div>
+
+    <hr class="mn-rule" />
+
+    {%- comment -%} Projects as clean list {%- endcomment -%}
+    {% if projects.size > 0 %}
+    <div class="mn-section">
+      <h2 class="mn-section-heading">Projects</h2>
+      <ul class="mn-project-list">
+        {% for p in projects %}
+        <li class="mn-project-item">
+          <a href="/{{ user.username }}/{{ p.slug }}" class="mn-project-link">{{ p.title }}</a>
+          <span class="mn-meta">{{ p.totalSessions }} sessions &middot; {{ p.totalDurationMinutes | formatDuration }} &middot; {{ p.totalLoc | formatLoc }} lines</span>
+          {% if p.narrative != blank %}<span class="mn-meta">{{ p.narrative | truncate: 120 }}</span>{% endif %}
+          {% if p.skills.size > 0 %}
+          <span class="mn-meta mn-skill-line">{% for skill in p.skills %}{{ skill }}{% unless forloop.last %}, {% endunless %}{% endfor %}</span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <div class="mn-footer">
+      <span>built with <a href="https://heyiam.com" target="_blank" rel="noopener noreferrer">heyiam.com</a></span>
+    </div>
+
   </div>
-  {% endif %}
-
-  {%- comment -%} Contact and location as understated inline text {%- endcomment -%}
-  <div class="minimal-stats-inline">
-    {% if user.location != blank %}<span>{{ user.location }}</span><span class="minimal-stats-sep">&middot;</span>{% endif %}
-    {% if user.email != blank %}<span><a href="mailto:{{ user.email }}">{{ user.email }}</a></span><span class="minimal-stats-sep">&middot;</span>{% endif %}
-    {% if user.githubUrl != blank %}<span><a href="{{ user.githubUrl }}" target="_blank" rel="noopener">GitHub</a></span><span class="minimal-stats-sep">&middot;</span>{% endif %}
-    {% if user.linkedinUrl != blank %}<span><a href="{{ user.linkedinUrl }}" target="_blank" rel="noopener">LinkedIn</a></span><span class="minimal-stats-sep">&middot;</span>{% endif %}
-    {% if user.websiteUrl != blank %}<span><a href="{{ user.websiteUrl }}" target="_blank" rel="noopener">{{ user.websiteUrl | stripProtocol }}</a></span><span class="minimal-stats-sep">&middot;</span>{% endif %}
-    <span>{{ totalDurationMinutes | formatDuration }}{% if efficiencyMultiplier %} ({{ efficiencyMultiplier }}){% endif %}</span>
-    <span class="minimal-stats-sep">&middot;</span>
-    <span>{{ totalSessions }} sessions</span>
-    <span class="minimal-stats-sep">&middot;</span>
-    <span>{{ totalLoc | formatLoc }} lines</span>
-  </div>
-
-  <hr class="minimal-rule" />
-
-  {%- comment -%} Projects as simple list {%- endcomment -%}
-  {% if projects.size > 0 %}
-  <div class="minimal-section">
-    <h2 class="minimal-section-heading">Projects <span class="minimal-meta">{{ projects.size }}</span></h2>
-    <ul class="minimal-session-list">
-      {% for project in projects %}
-      <li class="minimal-session-item">
-        <span class="minimal-session-title">{{ project.title }}</span>
-        <span class="minimal-session-meta">{{ project.totalSessions }} sessions &middot; {{ project.totalDurationMinutes | formatDuration }} &middot; {{ project.totalLoc | formatLoc }} lines</span>
-        {% if project.narrative != blank %}<span class="minimal-session-meta">{{ project.narrative | truncate: 120 }}</span>{% endif %}
-      </li>
-      {% endfor %}
-    </ul>
-  </div>
-  {% endif %}
-
-  {% render 'partials/_footer' %}
 
 </div>

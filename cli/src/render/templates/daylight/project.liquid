@@ -1,30 +1,240 @@
 <div class="heyiam-project daylight" data-render-version="2" data-template="daylight"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+  <div class="dl-container">
 
-  {% render 'partials/_links', project: project %}
+    {%- comment -%} Project Header {%- endcomment -%}
+    <header class="dl-project-header dl-bounce">
+      <h1 data-editable="title">{{ project.title }}</h1>
+      {% if project.repoUrl or project.projectUrl %}
+      <div class="dl-project-links">
+        {% if project.repoUrl %}
+        <a href="{{ project.repoUrl }}" target="_blank" rel="noopener">{{ project.repoUrl | stripProtocol }}</a>
+        {% endif %}
+        {% if project.projectUrl %}
+        <a href="{{ project.projectUrl }}" target="_blank" rel="noopener">{{ project.projectUrl | stripProtocol }}</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </header>
 
-  {% render 'partials/_screenshot', project: project %}
+    {%- comment -%} Screenshot {%- endcomment -%}
+    {% if project.screenshotUrl %}
+    <div class="dl-screenshot dl-bounce dl-delay-1">
+      <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot">
+    </div>
+    {% endif %}
 
-  {% render 'partials/_narrative', narrative: project.narrative %}
+    {%- comment -%} Narrative {%- endcomment -%}
+    {% if project.narrative %}
+    <section class="dl-narrative dl-bounce dl-delay-2" aria-label="Project narrative">
+      <h2 class="dl-section-heading">The Story</h2>
+      <p>{{ project.narrative }}</p>
+    </section>
+    {% endif %}
 
-  {% render 'partials/_stats', project: project, durationLabel: durationLabel, efficiencyMultiplier: efficiencyMultiplier %}
+    {%- comment -%} Stats {%- endcomment -%}
+    <section class="dl-stats-row dl-bounce dl-delay-1" aria-label="Project statistics">
+      <div class="dl-stat-card">
+        <span class="dl-stat-number" data-target="{{ project.totalSessions }}">0</span>
+        <span class="dl-stat-label">Sessions</span>
+      </div>
+      <div class="dl-stat-card">
+        <span class="dl-stat-number" data-target="{{ project.totalLoc }}" data-format="comma">0</span>
+        <span class="dl-stat-label">Lines Changed</span>
+      </div>
+      <div class="dl-stat-card">
+        <span class="dl-stat-number" data-target="{{ project.totalFilesChanged }}">0</span>
+        <span class="dl-stat-label">Files</span>
+      </div>
+      {% if project.totalTokens %}
+      <div class="dl-stat-card">
+        <span class="dl-stat-number">{{ project.totalTokens | formatTokens }}</span>
+        <span class="dl-stat-label">Tokens</span>
+      </div>
+      {% endif %}
+      {% if efficiencyMultiplier %}
+      <div class="dl-stat-card">
+        <span class="dl-stat-number">{{ efficiencyMultiplier }}</span>
+        <span class="dl-stat-label">Leverage</span>
+      </div>
+      {% endif %}
+    </section>
 
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
+    {%- comment -%} Leverage Card {%- endcomment -%}
+    {% if efficiencyMultiplier %}
+    <div class="dl-leverage-card dl-bounce dl-delay-1" role="figure" aria-label="Time breakdown">
+      <div class="dl-leverage-card__title">Time Breakdown</div>
+      <svg width="96" height="96" viewBox="0 0 96 96">
+        <circle cx="48" cy="48" r="40" fill="none" stroke="rgba(14,165,233,0.12)" stroke-width="7"/>
+        {% assign totalCombined = project.totalDurationMinutes | plus: project.totalAgentDurationMinutes %}
+        {% if totalCombined > 0 %}
+        {% assign humanPct = project.totalDurationMinutes | times: 251 | divided_by: totalCombined %}
+        {% else %}
+        {% assign humanPct = 125 %}
+        {% endif %}
+        <circle cx="48" cy="48" r="40" fill="none" stroke="var(--dl-accent)" stroke-width="7" stroke-dasharray="{{ humanPct }} 251" stroke-dashoffset="-50" stroke-linecap="round"/>
+        <text x="48" y="44" text-anchor="middle" font-family="var(--dl-font-display)" font-size="18" font-weight="700" fill="var(--dl-accent)">{{ efficiencyMultiplier }}</text>
+        <text x="48" y="58" text-anchor="middle" font-family="var(--dl-font-mono)" font-size="8" fill="var(--dl-text-tertiary)">LEVERAGE</text>
+      </svg>
+      <div class="dl-leverage-card__values">
+        <div><span class="dl-leverage-card__num">{{ project.totalDurationMinutes | formatDuration }}</span><span class="dl-leverage-card__lbl">you</span></div>
+        <div><span class="dl-leverage-card__num" style="color:var(--dl-accent)">{{ project.totalAgentDurationMinutes | formatDuration }}</span><span class="dl-leverage-card__lbl">agents</span></div>
+      </div>
+    </div>
+    {% endif %}
 
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
+    {%- comment -%} Work Timeline Chart {%- endcomment -%}
+    {% if sessionsJson %}
+    <section class="dl-chart-container dl-bounce dl-delay-2" aria-label="Work timeline">
+      <h2 class="dl-chart-title">Work Timeline</h2>
+      <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+    </section>
+    {% endif %}
 
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+    {%- comment -%} Growth Chart {%- endcomment -%}
+    {% if growthJson %}
+    <section class="dl-chart-container dl-bounce dl-delay-2" aria-label="Growth over time">
+      <h2 class="dl-chart-title">Lines of Code Over Time</h2>
+      <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Phases {%- endcomment -%}
+    {% if arc.size > 0 %}
+    <section class="dl-phases dl-bounce dl-delay-2" aria-label="Project phases">
+      <h2 class="dl-section-heading">Phases</h2>
+      <ol class="dl-phase-list" role="list">
+        {% for item in arc %}
+        <li class="dl-phase-item">
+          <span class="dl-phase-name">{{ item.title }}</span>
+          <p class="dl-phase-desc">{{ item.description }}</p>
+        </li>
+        {% endfor %}
+      </ol>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Skills {%- endcomment -%}
+    {% if project.skills.size > 0 %}
+    <section class="dl-skills-section dl-bounce dl-delay-3" aria-label="Skills used">
+      <h2 class="dl-section-heading">Skills</h2>
+      <div class="dl-skill-chips">
+        {% for skill in project.skills %}
+        <span class="dl-skill-chip">{{ skill }}</span>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Key Decisions {%- endcomment -%}
+    {% if arc.size > 0 %}
+    <section class="dl-decisions dl-bounce dl-delay-3" aria-label="Key decisions">
+      <h2 class="dl-section-heading">Key Decisions</h2>
+      <ol class="dl-decision-list">
+        {% for item in arc %}
+        <li class="dl-decision-item">{{ item.description }}</li>
+        {% endfor %}
+      </ol>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Source Breakdown {%- endcomment -%}
+    {% if sourceCounts.size > 0 %}
+    <section class="dl-source-section dl-bounce dl-delay-3" aria-label="Source breakdown">
+      <h2 class="dl-section-heading">Source Breakdown</h2>
+      {% assign totalSourceSessions = 0 %}
+      {% for src in sourceCounts %}
+        {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
+      {% endfor %}
+      <div class="dl-source-breakdown">
+        {% if totalSourceSessions > 0 %}
+        {% assign firstPct = sourceCounts[0].count | times: 1000 | divided_by: totalSourceSessions | divided_by: 10 %}
+        <div class="dl-source-bar-large" role="img" aria-label="Source tool distribution">
+          <div class="dl-source-fill-large" style="width: {{ firstPct }}%"></div>
+        </div>
+        {% endif %}
+        <div class="dl-source-labels">
+          {% for src in sourceCounts %}
+          {% if totalSourceSessions > 0 %}
+          {% assign srcPct = src.count | times: 1000 | divided_by: totalSourceSessions | divided_by: 10 %}
+          <span>{{ src.tool }} {{ srcPct }}% ({{ src.count }} session{% if src.count != 1 %}s{% endif %})</span>
+          {% else %}
+          <span>{{ src.tool }} ({{ src.count }} session{% if src.count != 1 %}s{% endif %})</span>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Featured Sessions {%- endcomment -%}
+    {% if featuredSessions.size > 0 %}
+    <section class="dl-sessions-section dl-bounce dl-delay-4" aria-label="Featured sessions">
+      <h2 class="dl-section-heading">Sessions</h2>
+      <div class="dl-session-grid">
+        {% for s in featuredSessions %}
+        <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="dl-session-card">
+          {% if s.skills.size > 0 %}
+          <span class="dl-session-card-tag">{{ s.skills | first }}</span>
+          {% endif %}
+          <h3 class="dl-session-card-title">{{ s.title }}</h3>
+          <p class="dl-session-card-meta">{{ s.durationMinutes | formatDuration }} &middot; {{ s.locChanged | localeNumber }} LOC{% if s.agentSummary %} &middot; {{ s.agentSummary.agents.size }} agents{% endif %}</p>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <footer class="dl-footer" role="contentinfo">
+      <p>Built with <a href="https://heyi.am">heyi.am</a> &middot; Daylight theme</p>
+    </footer>
+
   </div>
 
-  {% render 'partials/_phases', arc: arc %}
-
-  {% render 'partials/_skills', skills: project.skills %}
-
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
-
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  {%- comment -%} Animations {%- endcomment -%}
+  <script>
+    (function () {
+      'use strict';
+      var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var bounceEls = document.querySelectorAll('.dl-bounce');
+      if (prefersReduced) {
+        for (var i = 0; i < bounceEls.length; i++) { bounceEls[i].classList.add('dl-visible'); }
+      } else {
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) { entry.target.classList.add('dl-visible'); observer.unobserve(entry.target); }
+          });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+        for (var j = 0; j < bounceEls.length; j++) { observer.observe(bounceEls[j]); }
+      }
+      var counters = document.querySelectorAll('.dl-stat-number[data-target]');
+      var counterObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          var el = entry.target;
+          var targetVal = parseFloat(el.getAttribute('data-target'));
+          var format = el.getAttribute('data-format');
+          var suffix = el.getAttribute('data-suffix') || '';
+          var isDecimal = el.getAttribute('data-decimal') === 'true';
+          var duration = prefersReduced ? 0 : 1200;
+          var start = performance.now();
+          function step(now) {
+            var elapsed = now - start;
+            var progress = Math.min(elapsed / duration, 1);
+            var eased = 1 - (1 - progress) * (1 - progress);
+            var current = isDecimal ? (eased * targetVal).toFixed(1) : Math.round(eased * targetVal);
+            el.textContent = format === 'comma' ? Number(current).toLocaleString() : current + suffix;
+            if (progress < 1) requestAnimationFrame(step);
+          }
+          if (duration === 0) {
+            var final = isDecimal ? targetVal.toFixed(1) : targetVal;
+            el.textContent = format === 'comma' ? Number(final).toLocaleString() : final + suffix;
+          } else { requestAnimationFrame(step); }
+          counterObserver.unobserve(el);
+        });
+      }, { threshold: 0.5 });
+      for (var k = 0; k < counters.length; k++) { counterObserver.observe(counters[k]); }
+    })();
+  </script>
 
 </div>

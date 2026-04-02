@@ -1,54 +1,161 @@
 <div class="heyiam-portfolio radar" data-render-version="2" data-template="radar" data-username="{{ user.username }}">
 
-  <h1 class="project-title">{{ user.displayName }}</h1>
-  {% if user.bio != blank %}
-  <p class="narrative-text">{{ user.bio }}</p>
-  {% endif %}
-
-  {%- comment -%} Stats with SVG arc leverage {%- endcomment -%}
-  <div class="stat-grid" role="list" aria-label="Portfolio statistics">
-    {% if efficiencyMultiplier %}
-    <div class="radar-leverage-arc" role="listitem" aria-label="Leverage multiplier: {{ efficiencyMultiplier }}">
-      <svg class="radar-leverage-arc__svg" viewBox="0 0 48 48" width="48" height="48" aria-hidden="true">
-        <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" stroke-width="2" opacity="0.15"/>
-        <path d="M 24 4 A 20 20 0 1 1 4 24" fill="none" stroke="var(--accent, #22d3ee)" stroke-width="3" stroke-linecap="round"/>
-      </svg>
-      <div class="radar-leverage-arc__text">
-        <span class="radar-leverage-arc__multiplier" style="color: var(--accent, #22d3ee);">{{ efficiencyMultiplier }}</span>
-        <span class="radar-leverage-arc__detail"><span style="opacity: 0.5;">{{ totalDurationMinutes | formatDuration }} you</span> / <span style="color: var(--accent, #22d3ee);">{{ totalAgentDurationMinutes | formatDuration }} agents</span></span>
+  {%- comment -%} Header {%- endcomment -%}
+  <section class="radar-section" aria-label="Profile">
+    <div class="portfolio-header">
+      {% if user.photoUrl %}
+      <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="portfolio-photo">
+      {% endif %}
+      <div class="portfolio-info">
+        <h1 class="portfolio-name">{{ user.displayName }}</h1>
+        <div class="portfolio-handle">@{{ user.username }}</div>
+        {% if user.bio != blank %}
+        <div class="portfolio-bio">{{ user.bio }}</div>
+        {% endif %}
+        {% if user.location != blank %}
+        <div class="portfolio-location">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          {{ user.location }}
+        </div>
+        {% endif %}
+        {% if user.email != blank or user.linkedinUrl != blank or user.githubUrl != blank or user.twitterHandle != blank or user.websiteUrl != blank or user.resumeUrl != blank %}
+        <div class="contact-row">
+          {% if user.email != blank %}
+          <a href="mailto:{{ user.email }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg> {{ user.email }}</a>
+          {% endif %}
+          {% if user.linkedinUrl != blank %}
+          <a href="{{ user.linkedinUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg> LinkedIn</a>
+          {% endif %}
+          {% if user.githubUrl != blank %}
+          <a href="{{ user.githubUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg> GitHub</a>
+          {% endif %}
+          {% if user.twitterHandle != blank %}
+          <a href="https://x.com/{{ user.twitterHandle }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> @{{ user.twitterHandle }}</a>
+          {% endif %}
+          {% if user.websiteUrl != blank %}
+          <a href="{{ user.websiteUrl }}" target="_blank" rel="noopener">{{ user.websiteUrl | stripProtocol }}</a>
+          {% endif %}
+          {% if user.resumeUrl != blank %}
+          <a href="{{ user.resumeUrl }}" class="resume-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg> Resume (PDF)</a>
+          {% endif %}
+        </div>
+        {% endif %}
       </div>
     </div>
-    {% endif %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Projects</div>
-      <div class="stat-card__value">{{ projects.size }}</div>
-    </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Sessions</div>
-      <div class="stat-card__value">{{ totalSessions }}</div>
-    </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Lines</div>
-      <div class="stat-card__value">{{ totalLoc | formatLoc }}</div>
-    </div>
-  </div>
+  </section>
 
+  {%- comment -%} Aggregate Stats {%- endcomment -%}
+  <section class="radar-section" aria-label="Aggregate statistics" id="stats-section">
+    <div class="radar-label">Metrics</div>
+    <div class="portfolio-stats">
+      <div class="portfolio-stat">
+        <div class="portfolio-stat__value">{{ projects.size }}</div>
+        <div class="portfolio-stat__label">Projects</div>
+      </div>
+      <div class="portfolio-stat">
+        <div class="portfolio-stat__value">{{ totalSessions }}</div>
+        <div class="portfolio-stat__label">Sessions</div>
+      </div>
+      <div class="portfolio-stat">
+        <div class="portfolio-stat__value">{{ totalDurationMinutes | formatDuration }}</div>
+        <div class="portfolio-stat__label">You</div>
+      </div>
+      {% if totalAgentDurationMinutes %}
+      <div class="portfolio-stat portfolio-stat--cyan">
+        <div class="portfolio-stat__value">{{ totalAgentDurationMinutes | formatDuration }}</div>
+        <div class="portfolio-stat__label">Agents</div>
+      </div>
+      {% endif %}
+      {% if efficiencyMultiplier %}
+      <div class="portfolio-stat portfolio-stat--cyan">
+        <div class="portfolio-stat__value">{{ efficiencyMultiplier }}</div>
+        <div class="portfolio-stat__label">Multiplier</div>
+      </div>
+      {% endif %}
+      <div class="portfolio-stat">
+        <div class="portfolio-stat__value">{{ totalLoc | formatLoc }}</div>
+        <div class="portfolio-stat__label">LOC</div>
+      </div>
+    </div>
+  </section>
+
+  {%- comment -%} Projects {%- endcomment -%}
   {% if projects.size > 0 %}
-  <div class="card">
-    <div class="section-header">
-      <h3 class="section-header__title">Projects</h3>
-    </div>
-    <div class="session-grid">
-      {% for project in projects %}
-      <div class="session-card">
-        <h4 class="session-card__title">{{ project.title }}</h4>
-        <span class="session-card__meta">{{ project.totalSessions }} sessions &middot; {{ project.totalLoc | formatLoc }} lines</span>
-      </div>
+  <section class="radar-section" aria-label="Projects">
+    <div class="radar-label">Projects</div>
+    <div class="portfolio-projects">
+      {% for p in projects %}
+      <a class="portfolio-card" href="/{{ user.username }}/{{ p.slug }}">
+        <div class="portfolio-card__bar portfolio-card__bar--cyan"></div>
+        <div class="portfolio-card__title">{{ p.title }}</div>
+        {% if p.narrative != blank %}
+        <div class="portfolio-card__desc">{{ p.narrative }}</div>
+        {% endif %}
+        <div class="portfolio-card__meta">{{ p.totalSessions }} sessions &middot; {{ p.totalDurationMinutes | formatDuration }} &middot; {{ p.totalLoc | formatLoc }} LOC</div>
+        {% if p.skills.size > 0 %}
+        <div class="portfolio-card__skills">
+          {% for skill in p.skills %}
+          <span class="chip">{{ skill }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </a>
       {% endfor %}
     </div>
-  </div>
+  </section>
   {% endif %}
 
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  {%- comment -%} All Skills {%- endcomment -%}
+  {% assign allSkills = "" %}
+  {% for p in projects %}
+    {% for skill in p.skills %}
+      {% unless allSkills contains skill %}
+        {% if allSkills != "" %}{% assign allSkills = allSkills | append: "|||" %}{% endif %}
+        {% assign allSkills = allSkills | append: skill %}
+      {% endunless %}
+    {% endfor %}
+  {% endfor %}
+  {% if allSkills != "" %}
+  <section class="radar-section" aria-label="Technologies">
+    <div class="radar-label">Technologies</div>
+    <div class="chip-list">
+      {% assign skillArray = allSkills | split: "|||" %}
+      {% for skill in skillArray %}
+      <span class="chip">{{ skill }}</span>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Footer {%- endcomment -%}
+  <section class="radar-section" aria-label="Footer">
+    <footer class="radar-footer">
+      <div class="radar-footer__text">Built with heyi.am</div>
+    </footer>
+  </section>
 
 </div>
+
+<script>
+(function() {
+  'use strict';
+
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Section Fade-In
+  var allSections = document.querySelectorAll('.radar-section');
+  if (!prefersReducedMotion) {
+    var fadeObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          fadeObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    allSections.forEach(function(s) { fadeObserver.observe(s); });
+  } else {
+    allSections.forEach(function(s) { s.classList.add('is-visible'); });
+  }
+})();
+</script>

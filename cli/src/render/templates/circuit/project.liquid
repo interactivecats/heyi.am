@@ -1,65 +1,240 @@
 <div class="heyiam-project circuit" data-render-version="2" data-template="circuit"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
-
-  {% render 'partials/_links', project: project %}
-
-  {% render 'partials/_screenshot', project: project %}
-
-  {% render 'partials/_narrative', narrative: project.narrative %}
-
-  {%- comment -%} Stats grid (without leverage) {%- endcomment -%}
-  <div class="stat-grid" role="list" aria-label="Project statistics">
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Sessions</div>
-      <div class="stat-card__value">{{ project.totalSessions }}</div>
-    </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Lines changed</div>
-      <div class="stat-card__value">{{ project.totalLoc | formatLoc }}</div>
-    </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Files</div>
-      <div class="stat-card__value">{{ project.totalFilesChanged }}</div>
-    </div>
-    {% if project.totalTokens %}
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Tokens</div>
-      <div class="stat-card__value">{{ project.totalTokens | formatTokens }}</div>
-    </div>
-    {% endif %}
+  {%- comment -%} Breadcrumb {%- endcomment -%}
+  <div class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/{{ user.username }}">{{ user.username }}</a>
+    <span class="sep">/</span>
+    <span aria-current="page">{{ project.slug }}</span>
   </div>
 
-  {%- comment -%} Leverage: PCB trace layout {%- endcomment -%}
-  {% if efficiencyMultiplier %}
-  <div class="circuit-leverage-trace" role="status" aria-label="Leverage: {{ efficiencyMultiplier }}, you {{ project.totalDurationMinutes | formatDuration }}, agents {{ project.totalAgentDurationMinutes | formatDuration }}">
-    <div class="circuit-leverage-trace__pad circuit-leverage-trace__pad--left">
-      <span style="opacity: 0.5;">{{ project.totalDurationMinutes | formatDuration }}</span>
+  {%- comment -%} Hero {%- endcomment -%}
+  <section class="hero fade-in" aria-label="Project header">
+    <h1 data-editable="title">{{ project.title }}</h1>
+    {% if project.repoUrl or project.projectUrl %}
+    <div class="hero-links">
+      {% if project.repoUrl %}
+      <a href="{{ project.repoUrl }}" target="_blank" rel="noopener">{{ project.repoUrl | stripProtocol }}</a>
+      {% endif %}
+      {% if project.projectUrl %}
+      <a href="{{ project.projectUrl }}" target="_blank" rel="noopener">{{ project.projectUrl | stripProtocol }}</a>
+      {% endif %}
     </div>
-    <div class="circuit-leverage-trace__line" aria-hidden="true">
-      <span class="circuit-leverage-trace__multiplier" style="color: var(--accent, #a3e635);">{{ efficiencyMultiplier }}</span>
+    {% endif %}
+  </section>
+
+  {%- comment -%} Screenshot {%- endcomment -%}
+  {% if project.screenshotUrl %}
+  <div class="screenshot fade-in" role="img" aria-label="{{ project.title }} screenshot">
+    <div class="screenshot-chrome" aria-hidden="true">
+      <span class="screenshot-dot"></span>
+      <span class="screenshot-dot"></span>
+      <span class="screenshot-dot"></span>
     </div>
-    <div class="circuit-leverage-trace__pad circuit-leverage-trace__pad--right">
-      <span style="color: var(--accent, #a3e635);">{{ project.totalAgentDurationMinutes | formatDuration }}</span>
-    </div>
+    <img src="{{ project.screenshotUrl }}" alt="{{ project.title }}" style="width: 100%; height: 100%; object-fit: cover;">
   </div>
   {% endif %}
 
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
+  {%- comment -%} Stats {%- endcomment -%}
+  <section class="stat-chips fade-in" aria-label="Project statistics">
+    <div class="stat-chip" role="group" aria-label="Sessions">
+      <span class="stat-chip-value">{{ project.totalSessions }}</span>
+      <span class="stat-chip-label">Sessions</span>
+    </div>
+    {% if efficiencyMultiplier %}
+    <div class="stat-chip stat-chip--leverage" role="group" aria-label="{{ project.totalDurationMinutes | formatDuration }} you, {{ project.totalAgentDurationMinutes | formatDuration }} agents, {{ efficiencyMultiplier }} leverage">
+      <div class="leverage-row">
+        <span><span class="lev-val">{{ project.totalDurationMinutes | formatDuration }}</span> <span class="lev-lbl">you</span></span>
+        <span><span class="lev-val lev-val--agent">{{ project.totalAgentDurationMinutes | formatDuration }}</span> <span class="lev-lbl">agents</span></span>
+        <span><span class="lev-val lev-val--multi">{{ efficiencyMultiplier }}</span></span>
+      </div>
+      {% assign totalCombined = project.totalDurationMinutes | plus: project.totalAgentDurationMinutes %}
+      {% if totalCombined > 0 %}
+      {% assign humanPct = project.totalDurationMinutes | times: 100 | divided_by: totalCombined %}
+      {% assign agentPct = 100 | minus: humanPct %}
+      <div class="circuit-leverage-bar">
+        <div class="circuit-leverage-bar__human" style="width: {{ humanPct }}%"></div>
+        <div class="circuit-leverage-bar__agent" style="width: {{ agentPct }}%"></div>
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="stat-chip" role="group" aria-label="Time">
+      <span class="stat-chip-value">{{ project.totalDurationMinutes | formatDuration }}</span>
+      <span class="stat-chip-label">Time</span>
+    </div>
+    {% endif %}
+    <div class="stat-chip" role="group" aria-label="Lines of code">
+      <span class="stat-chip-value">{{ project.totalLoc | formatLoc }}</span>
+      <span class="stat-chip-label">LOC</span>
+    </div>
+    <div class="stat-chip" role="group" aria-label="Files">
+      <span class="stat-chip-value">{{ project.totalFilesChanged }}</span>
+      <span class="stat-chip-label">Files</span>
+    </div>
+    {% if project.totalTokens %}
+    <div class="stat-chip" role="group" aria-label="Tokens">
+      <span class="stat-chip-value">{{ project.totalTokens | formatTokens }}</span>
+      <span class="stat-chip-label">Tokens</span>
+    </div>
+    {% endif %}
+  </section>
 
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
+  <div class="trace-connector" aria-hidden="true"></div>
 
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
-  </div>
+  {%- comment -%} Narrative {%- endcomment -%}
+  {% if project.narrative %}
+  <section class="narrative fade-in" aria-label="Project narrative">
+    <h2 class="section-header">Narrative</h2>
+    <p>{{ project.narrative }}</p>
+  </section>
 
-  {% render 'partials/_phases', arc: arc %}
+  <div class="trace-connector" aria-hidden="true"></div>
+  {% endif %}
 
-  {% render 'partials/_skills', skills: project.skills %}
+  {%- comment -%} Skills {%- endcomment -%}
+  {% if project.skills.size > 0 %}
+  <section class="fade-in" aria-label="Technologies used">
+    <h2 class="section-header">Skills</h2>
+    <div class="skill-pins">
+      {% for skill in project.skills %}
+      <span class="skill-pin">{{ skill }}</span>
+      {% endfor %}
+    </div>
+  </section>
 
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
+  <div class="trace-connector" aria-hidden="true"></div>
+  {% endif %}
 
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  {%- comment -%} Key Decisions {%- endcomment -%}
+  {% if arc.size > 0 %}
+  <section class="decisions fade-in" aria-label="Key decisions">
+    <h2 class="section-header">Key Decisions</h2>
+    {% for item in arc %}
+    <div class="decision-item">
+      <span class="decision-number">{{ item.phase | prepend: '0' | slice: -2, 2 }}</span>
+      {{ item.description }}
+    </div>
+    {% endfor %}
+  </section>
+
+  <div class="trace-connector" aria-hidden="true"></div>
+  {% endif %}
+
+  {%- comment -%} Phases {%- endcomment -%}
+  {% if arc.size > 0 %}
+  <section class="fade-in" aria-label="Project phases">
+    <h2 class="section-header">Phases</h2>
+    <div class="phase-bus" role="list">
+      {% for item in arc %}
+      <div class="phase-item" role="listitem">
+        <div class="phase-label"><span class="phase-num">{{ item.phase | prepend: '0' | slice: -2, 2 }}</span> {{ item.title }}</div>
+        <div class="phase-desc">{{ item.description }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="trace-connector" aria-hidden="true"></div>
+  {% endif %}
+
+  {%- comment -%} Source Breakdown {%- endcomment -%}
+  {% if sourceCounts.size > 0 %}
+  <section class="source-section fade-in" aria-label="Source breakdown">
+    <h2 class="section-header">Source Breakdown</h2>
+    <div class="source-bar-container">
+      {% assign totalSourceSessions = 0 %}
+      {% for src in sourceCounts %}
+        {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
+      {% endfor %}
+      {% if totalSourceSessions > 0 %}
+      <div class="source-bar-label">
+        {% for src in sourceCounts %}
+        {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+        <span>{{ src.tool }} {{ srcPct }}%</span>
+        {% endfor %}
+      </div>
+      <div class="source-bar" role="img" aria-label="Source breakdown">
+        {% for src in sourceCounts %}
+        {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+        <div class="source-bar-fill{% unless forloop.first %} cursor{% endunless %}" style="width: {{ srcPct }}%"></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <div class="trace-connector" aria-hidden="true"></div>
+  {% endif %}
+
+  {%- comment -%} Work Timeline chart {%- endcomment -%}
+  {% if sessionsJson %}
+  <section class="fade-in" aria-label="Work timeline">
+    <h2 class="section-header">Work Timeline</h2>
+    <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+  </section>
+
+  <div class="trace-connector" aria-hidden="true"></div>
+  {% endif %}
+
+  {%- comment -%} Growth chart {%- endcomment -%}
+  {% if growthJson %}
+  <section class="fade-in" aria-label="Growth over time">
+    <h2 class="section-header">Growth</h2>
+    <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+  </section>
+
+  <div class="trace-connector" aria-hidden="true"></div>
+  {% endif %}
+
+  {%- comment -%} Featured Sessions {%- endcomment -%}
+  {% if featuredSessions.size > 0 %}
+  <section class="fade-in" aria-label="Featured sessions" style="padding-bottom: 64px;">
+    <h2 class="section-header">Featured Sessions</h2>
+    <div class="featured-grid">
+      {% for s in featuredSessions %}
+      <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="featured-card">
+        {% if s.skills.size > 0 %}
+        <span class="featured-card-tag">{{ s.skills | first }}</span>
+        {% endif %}
+        <h4>{{ s.title }}</h4>
+        <div class="featured-card-stats">
+          <span><span class="val">{{ s.durationMinutes | formatDuration }}</span></span>
+          <span><span class="val">{{ s.locChanged | localeNumber }}</span> LOC</span>
+          {% if s.agentSummary %}
+          <span><span class="val">{{ s.agentSummary.agents.size }}</span> agents</span>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Fade-in animation script {%- endcomment -%}
+  <script>
+    (function() {
+      var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (prefersReduced) {
+        document.querySelectorAll('.fade-in').forEach(function(el) {
+          el.classList.add('visible');
+        });
+        return;
+      }
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.fade-in').forEach(function(el) {
+        observer.observe(el);
+      });
+    })();
+  </script>
 
 </div>

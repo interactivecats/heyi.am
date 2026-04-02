@@ -1,30 +1,261 @@
 <div class="heyiam-project aurora" data-render-version="2" data-template="aurora"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
+  {%- comment -%} Aurora Header {%- endcomment -%}
+  <header class="aurora-header" role="banner">
+    <div class="aurora-breadcrumb fade-up" aria-label="Breadcrumb">
+      <a href="/{{ user.username }}">{{ user.username }}</a>
+      <span class="aurora-breadcrumb-sep">/</span>
+      <span aria-current="page">{{ project.slug }}</span>
+    </div>
 
-  {% render 'partials/_links', project: project %}
+    <div class="aurora-project-hero fade-up">
+      <h1 data-editable="title">{{ project.title }}</h1>
+      {% if project.repoUrl or project.projectUrl %}
+      <div class="aurora-project-links">
+        {% if project.repoUrl %}
+        <a href="{{ project.repoUrl }}" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          {{ project.repoUrl | stripProtocol }}
+        </a>
+        {% endif %}
+        {% if project.projectUrl %}
+        <a href="{{ project.projectUrl }}" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          {{ project.projectUrl | stripProtocol }}
+        </a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </header>
 
-  {% render 'partials/_screenshot', project: project %}
+  {%- comment -%} Screenshot {%- endcomment -%}
+  {% if project.screenshotUrl %}
+  <div class="aurora-screenshot fade-up">
+    <div class="aurora-screenshot-frame browser-chrome">
+      <div class="aurora-screenshot-chrome">
+        <div class="aurora-screenshot-dot"></div>
+        <div class="aurora-screenshot-dot"></div>
+        <div class="aurora-screenshot-dot"></div>
+      </div>
+      <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot">
+    </div>
+  </div>
+  {% endif %}
 
-  {% render 'partials/_narrative', narrative: project.narrative %}
+  {%- comment -%} Stats {%- endcomment -%}
+  <section class="aurora-stats aurora-stats--project fade-up" aria-label="Project statistics">
+    <div class="aurora-stat">
+      <div class="aurora-stat-number">{{ project.totalSessions }}</div>
+      <div class="aurora-stat-label">Sessions</div>
+    </div>
+    <div class="aurora-stat">
+      <div class="aurora-stat-number">{{ project.totalLoc | localeNumber }}</div>
+      <div class="aurora-stat-label">LOC</div>
+    </div>
+    <div class="aurora-stat">
+      <div class="aurora-stat-number">{{ project.totalFilesChanged }}</div>
+      <div class="aurora-stat-label">Files</div>
+    </div>
+    {% if project.totalTokens %}
+    <div class="aurora-stat">
+      <div class="aurora-stat-number">{{ project.totalTokens | formatTokens }}</div>
+      <div class="aurora-stat-label">Tokens</div>
+    </div>
+    {% endif %}
+    {% if efficiencyMultiplier %}
+    <div class="aurora-stat">
+      <div class="aurora-stat-number">{{ project.totalDurationMinutes | formatDuration }}</div>
+      <div class="aurora-stat-label">You</div>
+    </div>
+    <div class="aurora-stat">
+      <div class="aurora-stat-number">{{ project.totalAgentDurationMinutes | formatDuration }}</div>
+      <div class="aurora-stat-label">Agents</div>
+    </div>
+    {% else %}
+    <div class="aurora-stat">
+      <div class="aurora-stat-number">{{ project.totalDurationMinutes | formatDuration }}</div>
+      <div class="aurora-stat-label">Time</div>
+    </div>
+    {% endif %}
+  </section>
 
-  {% render 'partials/_stats', project: project, durationLabel: durationLabel, efficiencyMultiplier: efficiencyMultiplier %}
+  {%- comment -%} Leverage {%- endcomment -%}
+  {% if efficiencyMultiplier %}
+  <section class="aurora-leverage-section fade-up" aria-label="AI leverage" role="figure">
+    <div class="aurora-leverage-section__multi">{{ efficiencyMultiplier }}</div>
+    <div class="aurora-leverage-section__context">{{ project.totalDurationMinutes | formatDuration }} you &middot; <strong>{{ project.totalAgentDurationMinutes | formatDuration }}</strong> agents</div>
+    {% assign totalCombined = project.totalDurationMinutes | plus: project.totalAgentDurationMinutes %}
+    {% if totalCombined > 0 %}
+    {% assign humanPct = project.totalDurationMinutes | times: 100 | divided_by: totalCombined %}
+    {% assign agentPct = 100 | minus: humanPct %}
+    <div class="aurora-leverage-section__bar"><div class="aurora-leverage-section__bar-human" style="width:{{ humanPct }}%"></div><div class="aurora-leverage-section__bar-agent" style="width:{{ agentPct }}%"></div></div>
+    {% endif %}
+  </section>
+  {% endif %}
 
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
+  <div class="aurora-content">
+    {%- comment -%} Narrative {%- endcomment -%}
+    {% if project.narrative %}
+    <section class="aurora-section--content fade-up" aria-label="Project narrative">
+      <h2 class="aurora-section-title">The Story</h2>
+      <div class="aurora-narrative">
+        <p>{{ project.narrative }}</p>
+      </div>
+    </section>
+    {% endif %}
 
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
+    {%- comment -%} Work Timeline Chart {%- endcomment -%}
+    {% if sessionsJson %}
+    <section class="aurora-section--content fade-up" aria-label="Work timeline">
+      <h2 class="aurora-section-title">Work Timeline</h2>
+      <div class="aurora-chart">
+        <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+      </div>
+    </section>
+    {% endif %}
 
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+    {%- comment -%} Growth Chart {%- endcomment -%}
+    {% if growthJson %}
+    <section class="aurora-section--content fade-up" aria-label="Growth over time">
+      <h2 class="aurora-section-title">Growth</h2>
+      <div class="aurora-chart">
+        <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Phases {%- endcomment -%}
+    {% if arc.size > 0 %}
+    <section class="aurora-section--content fade-up" aria-label="Project phases">
+      <h2 class="aurora-section-title">Phases</h2>
+      <div class="aurora-phases" role="list">
+        {% for item in arc %}
+        <div class="aurora-phase" role="listitem">
+          <div class="aurora-phase-dot" aria-hidden="true"></div>
+          <div class="aurora-phase-title">{{ item.title }}</div>
+          <div class="aurora-phase-desc">{{ item.description }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Skills {%- endcomment -%}
+    {% if project.skills.size > 0 %}
+    <section class="aurora-section--content fade-up" aria-label="Skills used">
+      <h2 class="aurora-section-title">Skills</h2>
+      <div class="aurora-tags">
+        {% for skill in project.skills %}
+        <span class="aurora-tag chip">{{ skill }}</span>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Key Decisions {%- endcomment -%}
+    {% if arc.size > 0 %}
+    <section class="aurora-section--content fade-up" aria-label="Key decisions">
+      <h2 class="aurora-section-title">Key Decisions</h2>
+      <ol class="aurora-decisions">
+        {% for item in arc %}
+        <li class="aurora-decision">
+          <span class="aurora-decision-num">{{ forloop.index }}</span>
+          <span class="aurora-decision-text">{{ item.description }}</span>
+        </li>
+        {% endfor %}
+      </ol>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Source Breakdown {%- endcomment -%}
+    {% if sourceCounts.size > 0 %}
+    <section class="aurora-section--content fade-up" aria-label="Source breakdown">
+      <h2 class="aurora-section-title">Source Breakdown</h2>
+      {% assign totalSourceSessions = 0 %}
+      {% for src in sourceCounts %}
+        {% assign totalSourceSessions = totalSourceSessions | plus: src.count %}
+      {% endfor %}
+      <div class="aurora-source-bar">
+        <div class="aurora-source-track" role="img">
+          {% for src in sourceCounts %}
+          {% if totalSourceSessions > 0 %}
+          {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+          {% endif %}
+          {% if forloop.first %}
+          <div class="aurora-source-fill-claude" style="width: {{ srcPct }}%"></div>
+          {% else %}
+          <div class="aurora-source-fill-cursor" style="width: {{ srcPct }}%"></div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        <div class="aurora-source-labels">
+          {% for src in sourceCounts %}
+          {% if totalSourceSessions > 0 %}
+          {% assign srcPctDisplay = src.count | times: 100 | divided_by: totalSourceSessions %}
+          {% endif %}
+          {% if forloop.first %}
+          <span><span class="aurora-source-dot aurora-source-dot--claude"></span>{{ src.tool }} {{ srcPctDisplay }}%</span>
+          {% else %}
+          <span><span class="aurora-source-dot aurora-source-dot--cursor"></span>{{ src.tool }} {{ srcPctDisplay }}%</span>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Featured Sessions {%- endcomment -%}
+    {% if featuredSessions.size > 0 %}
+    <section class="aurora-section--content fade-up" aria-label="Featured sessions">
+      <h2 class="aurora-section-title">Featured Sessions</h2>
+      <div class="aurora-sessions">
+        {% for s in featuredSessions %}
+        <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="aurora-session-card session-card">
+          <h3>{{ s.title }}</h3>
+          <div class="aurora-session-meta">
+            <span>{{ s.durationMinutes | formatDuration }}</span>
+            <span>{{ s.locChanged | localeNumber }} LOC</span>
+            {% if s.agentSummary %}
+            <span>{{ s.agentSummary.agents.size }} agents</span>
+            {% endif %}
+          </div>
+          {% if s.skills.size > 0 %}
+          <span class="aurora-session-tag">{{ s.skills | first }}</span>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
   </div>
 
-  {% render 'partials/_phases', arc: arc %}
+  {%- comment -%} Footer {%- endcomment -%}
+  <footer class="aurora-footer">
+    <p>Built with <a href="https://heyi.am">heyi.am</a></p>
+  </footer>
 
-  {% render 'partials/_skills', skills: project.skills %}
+  {%- comment -%} Fade-up + stat counter animation {%- endcomment -%}
+  <script>
+    (function() {
+      var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
+      if (prefersReduced) {
+        document.querySelectorAll('.fade-up').forEach(function(el) { el.classList.add('visible'); });
+        return;
+      }
 
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+      document.querySelectorAll('.fade-up').forEach(function(el) { observer.observe(el); });
+    })();
+  </script>
 
 </div>

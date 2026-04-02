@@ -1,0 +1,1272 @@
+/* ── Strata Template Styles ── */
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Strata Design Tokens ── */
+:root {
+  --strata-bg:             #fafaf9;
+  --strata-plane-0:        #f5f5f4;
+  --strata-plane-1:        #ffffff;
+  --strata-plane-2:        #ffffff;
+
+  --strata-shadow-rest:    0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+  --strata-shadow-hover:   0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
+  --strata-shadow-active:  0 12px 40px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+
+  --strata-accent:         #d97706;
+  --strata-accent-hover:   #b45309;
+  --strata-accent-light:   #fef3c7;
+  --strata-accent-faint:   #fffbeb;
+
+  --strata-text:           #1c1917;
+  --strata-text-secondary: #78716c;
+  --strata-text-tertiary:  #a8a29e;
+
+  --strata-border:         #e7e5e4;
+  --strata-border-faint:   #f5f5f4;
+
+  --strata-font-display:   'Space Grotesk', system-ui, sans-serif;
+  --strata-font-body:      'Inter', system-ui, sans-serif;
+  --strata-font-mono:      'IBM Plex Mono', monospace;
+
+  --strata-radius:         0.5rem;
+  --strata-radius-lg:      0.75rem;
+  --strata-radius-sm:      0.25rem;
+
+  --strata-duration-micro: 150ms;
+  --strata-duration-section: 350ms;
+  --strata-duration-parallax: 600ms;
+  --strata-ease:           cubic-bezier(0.16, 1, 0.3, 1);
+  --strata-ease-spring:    cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Skip Link ── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--strata-accent);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: var(--strata-radius);
+  font-family: var(--strata-font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  z-index: 100;
+  text-decoration: none;
+}
+.skip-link:focus { top: 1rem; }
+
+/* ── Base ── */
+body {
+  font-family: var(--strata-font-body);
+  color: var(--strata-text);
+  background: var(--strata-bg);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: var(--strata-accent);
+  text-decoration: none;
+  transition: color var(--strata-duration-micro) ease-out;
+}
+a:hover {
+  color: var(--strata-accent-hover);
+  text-decoration: underline;
+}
+a:focus-visible {
+  outline: 2px solid var(--strata-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ── Page Containers ── */
+.strata-portfolio {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+.strata-project {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+.strata-session {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+/* ── Title (shared) ── */
+.strata-title {
+  font-family: var(--strata-font-display);
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--strata-text);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: strata-title-in 450ms var(--strata-ease) forwards;
+}
+@keyframes strata-title-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes strata-fade-in {
+  to { opacity: 1; }
+}
+
+/* ── Hero: Overlapping Card Portrait (portfolio) ── */
+.strata-hero {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  margin-bottom: 0.5rem;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: strata-title-in 450ms var(--strata-ease) forwards;
+}
+.strata-hero__photo-card {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  width: 300px;
+  border-radius: var(--strata-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--strata-shadow-active);
+  background: var(--strata-plane-1);
+}
+.strata-hero__photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  object-position: 55% 5%;
+  border-radius: var(--strata-radius-lg);
+}
+.strata-hero__bio-card {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+  background: var(--strata-plane-1);
+  border-radius: var(--strata-radius-lg);
+  box-shadow: var(--strata-shadow-rest);
+  padding: 2.5rem 2.5rem 2.5rem 3.5rem;
+  margin-inline-start: -40px;
+  margin-top: 2rem;
+}
+.strata-hero__name {
+  font-family: var(--strata-font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--strata-text);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.strata-hero__location {
+  font-family: var(--strata-font-mono);
+  font-size: 0.75rem;
+  color: var(--strata-text-tertiary);
+  margin-top: 0.375rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.strata-hero__location svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+.strata-hero__bio {
+  font-size: 0.9375rem;
+  color: var(--strata-text-secondary);
+  line-height: 1.65;
+  margin-top: 0.875rem;
+  max-width: 50ch;
+}
+
+/* ── Contact links (portfolio) ── */
+.strata-contact-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 1rem;
+  font-family: var(--strata-font-mono);
+  font-size: 0.75rem;
+}
+.strata-contact-row a,
+.strata-contact-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--strata-text-tertiary);
+  text-decoration: none;
+  transition: color var(--strata-duration-micro) ease-out;
+}
+.strata-contact-row a:hover {
+  color: var(--strata-accent);
+  text-decoration: none;
+}
+.strata-contact-row a:focus-visible {
+  outline: 2px solid var(--strata-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.strata-contact-row svg {
+  flex-shrink: 0;
+}
+.strata-resume-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border: 1px solid var(--strata-border);
+  border-radius: var(--strata-radius-sm);
+  font-family: var(--strata-font-mono);
+  font-size: 0.75rem;
+  color: var(--strata-accent);
+  text-decoration: none;
+  transition: border-color var(--strata-duration-micro) ease-out, color var(--strata-duration-micro) ease-out, background var(--strata-duration-micro) ease-out;
+  background: transparent;
+}
+.strata-resume-btn:hover {
+  border-color: var(--strata-accent);
+  color: var(--strata-accent-hover);
+  background: var(--strata-accent-faint);
+  text-decoration: none;
+}
+
+/* ── Aggregate Stats (portfolio) ── */
+.strata-agg-stats {
+  display: flex;
+  gap: 0;
+  margin-top: 1.5rem;
+  margin-bottom: 2.5rem;
+  padding-top: 0.5rem;
+  opacity: 0;
+  animation: strata-fade-in 300ms ease-out 200ms forwards;
+}
+.strata-agg-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  background: var(--strata-plane-1);
+  border-radius: var(--strata-radius-lg);
+  box-shadow: var(--strata-shadow-rest);
+  padding: 1rem 1.5rem;
+  position: relative;
+  transition: box-shadow var(--strata-duration-micro) ease-out, transform var(--strata-duration-micro) ease-out;
+}
+.strata-agg-stat:nth-child(1) { z-index: 6; }
+.strata-agg-stat:nth-child(2) { z-index: 5; margin-inline-start: -0.5rem; }
+.strata-agg-stat:nth-child(3) { z-index: 4; margin-inline-start: -0.5rem; }
+.strata-agg-stat:nth-child(4) { z-index: 3; margin-inline-start: -0.5rem; }
+.strata-agg-stat:nth-child(5) { z-index: 2; margin-inline-start: -0.5rem; }
+.strata-agg-stat:nth-child(6) { z-index: 1; margin-inline-start: -0.5rem; }
+.strata-agg-stat:hover {
+  box-shadow: var(--strata-shadow-hover);
+  z-index: 10;
+  transform: translateY(-2px);
+}
+.strata-agg-stat__value {
+  font-family: var(--strata-font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--strata-text);
+}
+.strata-agg-stat__label {
+  font-family: var(--strata-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--strata-text-tertiary);
+}
+
+/* ── Section Header (shared) ── */
+.strata-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.strata-section-header__title {
+  font-family: var(--strata-font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--strata-text);
+}
+.strata-section-header__meta {
+  font-family: var(--strata-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--strata-text-tertiary);
+}
+
+/* ── Layer System (shared) ── */
+.strata-layer {
+  position: relative;
+  background: var(--strata-plane-1);
+  border-radius: var(--strata-radius-lg);
+  padding: 2rem 2.5rem;
+  margin-top: -1rem;
+  box-shadow: var(--strata-shadow-rest);
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    box-shadow var(--strata-duration-section) var(--strata-ease);
+  will-change: transform, box-shadow, opacity;
+}
+.strata-layer:first-of-type {
+  margin-top: 0;
+}
+.strata-layer.strata-visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity var(--strata-duration-parallax) var(--strata-ease),
+    transform var(--strata-duration-parallax) var(--strata-ease),
+    box-shadow var(--strata-duration-section) var(--strata-ease);
+}
+.strata-layer.strata-active {
+  box-shadow: var(--strata-shadow-active);
+}
+.strata-layer:hover {
+  box-shadow: var(--strata-shadow-hover);
+}
+.strata-layer.strata-active:hover {
+  box-shadow: var(--strata-shadow-active);
+}
+
+/* ── Links (project) ── */
+.strata-links {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+  opacity: 0;
+  animation: strata-fade-in 300ms ease-out 200ms forwards;
+}
+.strata-link {
+  font-family: var(--strata-font-mono);
+  font-size: 0.8125rem;
+  color: var(--strata-accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+.strata-link:hover { color: var(--strata-accent-hover); }
+.strata-link svg {
+  width: 14px;
+  height: 14px;
+  color: var(--strata-text-tertiary);
+  flex-shrink: 0;
+}
+
+/* ── Screenshot (project) ── */
+.strata-layer--screenshot {
+  padding: 0;
+  overflow: hidden;
+  box-shadow: var(--strata-shadow-hover);
+}
+.strata-layer--screenshot.strata-active {
+  box-shadow: var(--strata-shadow-active);
+}
+.browser-chrome__bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.625rem 0.875rem;
+  background: var(--strata-plane-0);
+  border-bottom: 1px solid var(--strata-border);
+}
+.browser-chrome__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.browser-chrome__dot--red { background: #ff5f57; }
+.browser-chrome__dot--yellow { background: #febc2e; }
+.browser-chrome__dot--green { background: #28c840; }
+.browser-chrome__url {
+  font-family: var(--strata-font-mono);
+  font-size: 11px;
+  color: var(--strata-text-tertiary);
+  margin-left: 0.5rem;
+}
+.browser-chrome__viewport {
+  max-height: 28rem;
+  overflow: hidden;
+  background: linear-gradient(180deg, #e8e4df 0%, #d6d0c8 40%, #c8c1b7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 16rem;
+}
+
+/* ── Narrative (project) ── */
+.strata-narrative {
+  border-left: 4px solid var(--strata-accent);
+  padding-left: 1rem;
+}
+.strata-narrative p {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--strata-text);
+  margin-bottom: 1rem;
+}
+.strata-narrative p:last-child { margin-bottom: 0; }
+
+/* ── Stats Grid (shared) ── */
+.strata-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem 1.5rem;
+}
+.strata-stat {
+  display: flex;
+  flex-direction: column;
+}
+.strata-stat__label {
+  font-family: var(--strata-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--strata-text-tertiary);
+  margin-bottom: 0.25rem;
+}
+.strata-stat__value {
+  font-family: var(--strata-font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--strata-text);
+  white-space: nowrap;
+}
+.strata-stat__value--accent {
+  color: var(--strata-accent);
+}
+
+/* ── Two Column Layout (shared) ── */
+.strata-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  gap: 0 2.5rem;
+}
+.strata-col-divider {
+  background: var(--strata-border);
+  width: 1px;
+}
+.strata-col-heading {
+  font-family: var(--strata-font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--strata-text);
+  margin-bottom: 1rem;
+}
+
+/* ── Chart containers (shared) ── */
+.strata-chart {
+  position: relative;
+  height: 200px;
+}
+.strata-chart svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.strata-growth-chart {
+  position: relative;
+  height: 220px;
+}
+.strata-growth-chart svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ── Chart Animation Classes ── */
+.strata-chart-bar {
+  transform: scaleY(0);
+  transform-origin: center bottom;
+  transition: transform 600ms var(--strata-ease);
+}
+.strata-layer.strata-visible .strata-chart-bar {
+  transform: scaleY(1);
+}
+.strata-agent-line {
+  opacity: 0;
+  transition: opacity 400ms ease-out;
+}
+.strata-layer.strata-visible .strata-agent-line {
+  opacity: 1;
+}
+.strata-growth-line {
+  transition: stroke-dashoffset 1200ms var(--strata-ease);
+}
+.strata-growth-area {
+  opacity: 0;
+  transition: opacity 800ms ease-out 400ms;
+}
+.strata-layer.strata-visible .strata-growth-area {
+  opacity: 1;
+}
+
+/* ── Key Decisions (project) ── */
+.strata-decisions { display: flex; flex-direction: column; gap: 0.75rem; }
+.strata-decision {
+  background: var(--strata-accent-faint);
+  border: 1px solid var(--strata-accent-light);
+  border-radius: var(--strata-radius);
+  padding: 0.875rem 1rem;
+}
+.strata-decision__title {
+  font-family: var(--strata-font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--strata-text);
+  margin-bottom: 0.25rem;
+}
+.strata-decision__desc {
+  font-family: var(--strata-font-body);
+  font-size: 0.8125rem;
+  color: var(--strata-text-secondary);
+  line-height: 1.5;
+}
+
+/* ── Source Breakdown Table (project) ── */
+.strata-source-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.strata-source-table th {
+  text-align: left;
+  padding: 0 0 0.5rem;
+  font-family: var(--strata-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--strata-text-tertiary);
+  font-weight: 400;
+}
+.strata-source-table th:last-child { text-align: right; }
+.strata-source-table td {
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--strata-border-faint);
+  font-family: var(--strata-font-mono);
+  font-size: 0.8125rem;
+  position: relative;
+}
+.strata-source-table td:first-child { color: var(--strata-text); }
+.strata-source-table td:nth-child(2) {
+  color: var(--strata-text-secondary);
+  text-align: right;
+  padding-right: 1rem;
+}
+.strata-source-table td:last-child {
+  color: var(--strata-text-secondary);
+  text-align: right;
+}
+.strata-source-bar {
+  display: block;
+  height: 3px;
+  background: rgba(217, 119, 6, 0.2);
+  border-radius: 1.5px;
+  margin-top: 0.25rem;
+}
+
+/* ── Phase Timeline (project) ── */
+.strata-phases {
+  position: relative;
+  padding-left: 1.5rem;
+}
+.strata-phases__line {
+  position: absolute;
+  left: 0.3rem;
+  top: 0.5rem;
+  bottom: 1rem;
+  width: 2px;
+  background: var(--strata-border);
+  border-radius: 1px;
+}
+.strata-phase {
+  position: relative;
+  padding-bottom: 1.25rem;
+}
+.strata-phase:last-child { padding-bottom: 0; }
+.strata-phase__dot {
+  position: absolute;
+  left: -1.5rem;
+  top: 0.25rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--strata-accent);
+  box-shadow: 0 0 0 4px var(--strata-accent-light);
+  transform: scale(0);
+  transition: transform 300ms var(--strata-ease-spring);
+}
+.strata-layer.strata-visible .strata-phase__dot {
+  transform: scale(1);
+}
+.strata-phase:nth-child(2) .strata-phase__dot { transition-delay: 100ms; }
+.strata-phase:nth-child(3) .strata-phase__dot { transition-delay: 200ms; }
+.strata-phase:nth-child(4) .strata-phase__dot { transition-delay: 300ms; }
+.strata-phase__dates {
+  font-family: var(--strata-font-mono);
+  font-size: 0.6875rem;
+  color: var(--strata-text-tertiary);
+  margin-bottom: 0.125rem;
+}
+.strata-phase__title {
+  font-family: var(--strata-font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--strata-text);
+  margin-bottom: 0.25rem;
+}
+.strata-phase__desc {
+  font-family: var(--strata-font-body);
+  font-size: 0.8125rem;
+  color: var(--strata-text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Skills Chips (shared) ── */
+.strata-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.strata-chip {
+  font-family: var(--strata-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--strata-radius);
+  background: var(--strata-accent-faint);
+  border: 1px solid var(--strata-accent-light);
+  color: var(--strata-accent);
+  transition: background var(--strata-duration-micro) ease-out,
+              border-color var(--strata-duration-micro) ease-out;
+  cursor: default;
+}
+.strata-chip:hover {
+  background: var(--strata-accent-light);
+  border-color: var(--strata-accent);
+}
+
+/* ── Project Cards Grid (portfolio) ── */
+.strata-project-cards {
+  display: flex;
+  gap: 0;
+  position: relative;
+}
+.strata-project-card {
+  background: var(--strata-plane-1);
+  border-radius: var(--strata-radius-lg);
+  padding: 1.5rem 1.75rem;
+  box-shadow: var(--strata-shadow-rest);
+  flex: 1;
+  position: relative;
+  transition:
+    transform var(--strata-duration-section) var(--strata-ease),
+    box-shadow var(--strata-duration-section) var(--strata-ease);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.strata-project-card:nth-child(1) { z-index: 3; }
+.strata-project-card:nth-child(2) { z-index: 2; margin-left: -0.75rem; }
+.strata-project-card:nth-child(3) { z-index: 1; margin-left: -0.75rem; }
+.strata-project-card:nth-child(n+4) { margin-left: -0.75rem; }
+.strata-project-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--strata-shadow-active);
+  z-index: 10;
+  text-decoration: none;
+}
+.strata-project-card:hover .strata-project-card__title {
+  color: var(--strata-accent);
+}
+.strata-project-card:focus-visible {
+  outline: 2px solid var(--strata-accent);
+  outline-offset: 2px;
+}
+.strata-project-card__accent {
+  height: 3px;
+  border-radius: 2px;
+  margin-bottom: 1rem;
+}
+.strata-project-card__title {
+  font-family: var(--strata-font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--strata-text);
+  margin-bottom: 0.375rem;
+  transition: color var(--strata-duration-micro) ease-out;
+}
+.strata-project-card__desc {
+  font-size: 0.8125rem;
+  color: var(--strata-text-secondary);
+  line-height: 1.55;
+  margin-bottom: 0.75rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.strata-project-card__meta {
+  font-family: var(--strata-font-mono);
+  font-size: 0.6875rem;
+  color: var(--strata-text-tertiary);
+  margin-bottom: 0.125rem;
+}
+.strata-project-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.625rem;
+}
+.strata-project-card__chip {
+  font-family: var(--strata-font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--strata-radius);
+  background: var(--strata-accent-faint);
+  border: 1px solid var(--strata-accent-light);
+  color: var(--strata-accent);
+}
+
+/* ── Session Cards (project) ── */
+.strata-session-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+.strata-session-card {
+  background: var(--strata-bg);
+  border: 1px solid var(--strata-border);
+  border-radius: var(--strata-radius);
+  padding: 0;
+  overflow: hidden;
+  transition:
+    transform var(--strata-duration-micro) var(--strata-ease),
+    box-shadow var(--strata-duration-micro) var(--strata-ease),
+    border-color var(--strata-duration-micro) var(--strata-ease);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.strata-session-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--strata-shadow-hover);
+  border-color: var(--strata-accent-light);
+  text-decoration: none;
+}
+.strata-session-card:focus-visible {
+  outline: 2px solid var(--strata-accent);
+  outline-offset: 2px;
+}
+.strata-session-card__bar {
+  height: 3px;
+  width: 100%;
+}
+.strata-session-card__body {
+  padding: 1rem 1.25rem;
+}
+.strata-session-card__title {
+  font-family: var(--strata-font-display);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--strata-text);
+  margin-bottom: 0.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.strata-session-card__meta {
+  font-family: var(--strata-font-mono);
+  font-size: 0.75rem;
+  color: var(--strata-text-secondary);
+}
+.strata-session-card__lines {
+  font-family: var(--strata-font-mono);
+  font-size: 0.75rem;
+  color: var(--strata-accent);
+  margin-top: 0.25rem;
+}
+.strata-session-card__source {
+  font-family: var(--strata-font-mono);
+  font-size: 0.6875rem;
+  color: var(--strata-text-tertiary);
+  margin-top: 0.125rem;
+}
+.strata-session-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+.strata-session-card__chip {
+  font-family: var(--strata-font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--strata-radius);
+  background: var(--strata-accent-faint);
+  border: 1px solid var(--strata-accent-light);
+  color: var(--strata-accent);
+}
+.strata-session-grid--stacked .strata-session-card:nth-child(n+3) {
+  margin-top: -0.375rem;
+}
+
+/* ── Breadcrumb (session) ── */
+.strata-breadcrumb {
+  font-family: var(--strata-font-mono);
+  font-size: 0.75rem;
+  color: var(--strata-text-tertiary);
+  margin-bottom: 1rem;
+  opacity: 0;
+  animation: strata-fade-in 300ms ease-out forwards;
+}
+.strata-breadcrumb a {
+  color: var(--strata-text-tertiary);
+}
+.strata-breadcrumb a:hover {
+  color: var(--strata-accent);
+}
+.strata-breadcrumb__sep {
+  margin: 0 0.375rem;
+  color: var(--strata-border);
+}
+
+/* ── Session Meta (session) ── */
+.strata-session-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 2rem;
+  opacity: 0;
+  animation: strata-fade-in 300ms ease-out 250ms forwards;
+}
+.strata-session-meta__item {
+  font-family: var(--strata-font-mono);
+  font-size: 0.8125rem;
+  color: var(--strata-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+.strata-session-meta__item svg {
+  width: 14px;
+  height: 14px;
+  color: var(--strata-text-tertiary);
+  flex-shrink: 0;
+}
+.strata-session-meta__badge {
+  font-family: var(--strata-font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--strata-radius);
+  background: var(--strata-accent-faint);
+  border: 1px solid var(--strata-accent-light);
+  color: var(--strata-accent);
+}
+
+/* ── Dev Take (session) ── */
+.strata-dev-take {
+  border-left: 4px solid var(--strata-accent);
+  padding-left: 1rem;
+  max-width: 65ch;
+}
+.strata-dev-take__text {
+  font-size: 1rem;
+  font-style: italic;
+  line-height: 1.75;
+  color: var(--strata-text);
+}
+
+/* ── Tools Used Table (session) ── */
+.strata-tools-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.strata-tools-table th {
+  text-align: left;
+  padding: 0 0 0.5rem;
+  font-family: var(--strata-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--strata-text-tertiary);
+  font-weight: 400;
+}
+.strata-tools-table th:last-child { text-align: right; }
+.strata-tools-table td {
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--strata-border-faint);
+  font-family: var(--strata-font-mono);
+  font-size: 0.8125rem;
+}
+.strata-tools-table td:first-child { color: var(--strata-text); }
+.strata-tools-table td:last-child {
+  color: var(--strata-text-secondary);
+  text-align: right;
+}
+.strata-tool-bar {
+  display: block;
+  height: 3px;
+  background: rgba(217, 119, 6, 0.2);
+  border-radius: 1.5px;
+  margin-top: 0.25rem;
+}
+
+/* ── Files Changed Table (session) ── */
+.strata-files-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.strata-files-table th {
+  text-align: left;
+  padding: 0 0 0.5rem;
+  font-family: var(--strata-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--strata-text-tertiary);
+  font-weight: 400;
+}
+.strata-files-table th:last-child { text-align: right; }
+.strata-files-table td {
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--strata-border-faint);
+  font-family: var(--strata-font-mono);
+  font-size: 0.75rem;
+}
+.strata-files-table td:first-child {
+  color: var(--strata-text);
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.strata-files-table td:last-child {
+  color: var(--strata-accent);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ── Execution Path / Beats (session) ── */
+.strata-beats {
+  position: relative;
+  padding-left: 1.5rem;
+}
+.strata-beats__line {
+  position: absolute;
+  left: 0.3rem;
+  top: 0.5rem;
+  bottom: 1rem;
+  width: 2px;
+  background: var(--strata-border);
+  border-radius: 1px;
+}
+.strata-beat {
+  position: relative;
+  padding-bottom: 1.5rem;
+}
+.strata-beat:last-child { padding-bottom: 0; }
+.strata-beat__dot {
+  position: absolute;
+  left: -1.5rem;
+  top: 0.25rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--strata-accent);
+  box-shadow: 0 0 0 4px var(--strata-accent-light);
+  transform: scale(0);
+  transition: transform 300ms var(--strata-ease-spring);
+}
+.strata-layer.strata-visible .strata-beat__dot {
+  transform: scale(1);
+}
+.strata-beat:nth-child(2) .strata-beat__dot { transition-delay: 100ms; }
+.strata-beat:nth-child(3) .strata-beat__dot { transition-delay: 200ms; }
+.strata-beat:nth-child(4) .strata-beat__dot { transition-delay: 300ms; }
+.strata-beat__number {
+  font-family: var(--strata-font-mono);
+  font-size: 0.6875rem;
+  color: var(--strata-text-tertiary);
+  margin-bottom: 0.125rem;
+}
+.strata-beat__title {
+  font-family: var(--strata-font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--strata-text);
+  margin-bottom: 0.25rem;
+}
+.strata-beat__desc {
+  font-family: var(--strata-font-body);
+  font-size: 0.8125rem;
+  color: var(--strata-text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Q&A (session) ── */
+.strata-qa-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.strata-qa {
+  background: var(--strata-accent-faint);
+  border: 1px solid var(--strata-accent-light);
+  border-radius: var(--strata-radius);
+  padding: 1rem 1.25rem;
+}
+.strata-qa__question {
+  font-family: var(--strata-font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--strata-text);
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+.strata-qa__answer {
+  font-family: var(--strata-font-body);
+  font-size: 0.8125rem;
+  color: var(--strata-text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Agent Summary (session) ── */
+.strata-agent-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.strata-agent-table th {
+  text-align: left;
+  padding: 0 0 0.5rem;
+  font-family: var(--strata-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--strata-text-tertiary);
+  font-weight: 400;
+}
+.strata-agent-table th:nth-child(2),
+.strata-agent-table th:last-child { text-align: right; }
+.strata-agent-table td {
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--strata-border-faint);
+  font-family: var(--strata-font-mono);
+  font-size: 0.8125rem;
+}
+.strata-agent-table td:first-child {
+  color: var(--strata-text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.strata-agent-table td:nth-child(2),
+.strata-agent-table td:last-child {
+  color: var(--strata-text-secondary);
+  text-align: right;
+}
+.strata-agent-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Footer (shared) ── */
+.strata-footer {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--strata-border);
+  text-align: center;
+}
+.strata-footer__text {
+  font-family: var(--strata-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--strata-text-tertiary);
+}
+.strata-footer__text a {
+  color: var(--strata-accent);
+}
+
+/* ── Responsive ── */
+@media (max-width: 959px) {
+  .strata-portfolio { padding: 2rem 1.5rem; }
+  .strata-project { padding: 2rem 1.5rem; }
+  .strata-session { padding: 2rem 1.5rem; }
+  .strata-hero__photo-card { width: 240px; }
+  .strata-hero__bio-card { padding: 2rem 2rem 2rem 3rem; }
+  .strata-two-col { gap: 0 1.5rem; }
+}
+
+@media (max-width: 767px) {
+  .strata-portfolio { padding: 1.5rem 1rem; }
+  .strata-project { padding: 1.5rem 1rem; }
+  .strata-session { padding: 1.5rem 1rem; }
+  .strata-title { font-size: 1.5rem; }
+
+  .strata-hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .strata-hero__photo-card {
+    width: 100%;
+    max-height: 360px;
+  }
+  .strata-hero__photo {
+    max-height: 360px;
+  }
+  .strata-hero__bio-card {
+    margin-inline-start: 0;
+    margin-top: -1.5rem;
+    padding: 2rem 1.5rem 1.5rem;
+    z-index: 2;
+  }
+  .strata-hero__photo-card {
+    z-index: 1;
+  }
+  .strata-hero__name { font-size: 1.75rem; }
+
+  .strata-agg-stats {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .strata-agg-stat:nth-child(2),
+  .strata-agg-stat:nth-child(3),
+  .strata-agg-stat:nth-child(4),
+  .strata-agg-stat:nth-child(5),
+  .strata-agg-stat:nth-child(6) {
+    margin-inline-start: 0;
+  }
+  .strata-agg-stat {
+    flex: 1;
+    min-width: 0;
+    padding: 0.75rem 1rem;
+  }
+
+  .strata-layer {
+    margin-top: -0.5rem;
+    padding: 1.5rem;
+    border-radius: var(--strata-radius);
+  }
+
+  .strata-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .strata-two-col {
+    grid-template-columns: 1fr;
+    gap: 1.5rem 0;
+  }
+  .strata-col-divider { display: none; }
+
+  .strata-project-cards {
+    flex-direction: column;
+  }
+  .strata-project-card:nth-child(2),
+  .strata-project-card:nth-child(3),
+  .strata-project-card:nth-child(n+4) {
+    margin-left: 0;
+    margin-top: -0.5rem;
+  }
+
+  .strata-session-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .strata-session-meta {
+    gap: 0.625rem;
+  }
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .strata-layer {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: box-shadow var(--strata-duration-micro) ease-out !important;
+  }
+  .strata-layer.strata-active {
+    transform: none !important;
+  }
+  .strata-hero {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+  .strata-title {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+  .strata-links {
+    opacity: 1;
+    animation: none;
+  }
+  .strata-agg-stats {
+    opacity: 1;
+    animation: none;
+  }
+  .strata-breadcrumb,
+  .strata-session-meta {
+    opacity: 1;
+    animation: none;
+  }
+  .strata-agg-stat:hover {
+    transform: none;
+  }
+  .strata-project-card:hover {
+    transform: none;
+  }
+  .strata-session-card:hover {
+    transform: none;
+  }
+  .strata-chart-bar {
+    transform: scaleY(1) !important;
+    transition: none !important;
+  }
+  .strata-phase__dot {
+    transform: scale(1) !important;
+    transition: none !important;
+  }
+  .strata-beat__dot {
+    transform: scale(1) !important;
+    transition: none !important;
+  }
+  .strata-growth-line {
+    stroke-dashoffset: 0 !important;
+    transition: none !important;
+  }
+  .strata-growth-area {
+    opacity: 1 !important;
+    transition: none !important;
+  }
+  .strata-agent-line {
+    opacity: 1 !important;
+    transition: none !important;
+  }
+}

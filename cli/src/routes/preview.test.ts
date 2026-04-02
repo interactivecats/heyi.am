@@ -14,6 +14,7 @@ vi.mock('../settings.js', async (importOriginal) => {
     loadEnhancedData: () => null,
     loadProjectEnhanceResult: vi.fn().mockReturnValue(null),
     getDefaultTemplate: vi.fn().mockReturnValue(undefined),
+    getPortfolioProfile: vi.fn().mockReturnValue({}),
   };
 });
 
@@ -24,6 +25,7 @@ vi.mock('../screenshot.js', () => ({
 vi.mock('../render/index.js', () => ({
   renderProjectHtml: vi.fn().mockReturnValue('<div>rendered project</div>'),
   renderSessionHtml: vi.fn().mockReturnValue('<div>rendered session</div>'),
+  renderPortfolioHtml: vi.fn().mockReturnValue('<div>rendered portfolio</div>'),
 }));
 
 vi.mock('../render/templates.js', () => ({
@@ -41,10 +43,10 @@ vi.mock('../sync.js', () => ({
   displayNameFromDir: (dir: string) => dir,
 }));
 
-import { createPreviewRouter } from './preview.js';
+import { createPreviewRouter, clearPreviewCache } from './preview.js';
 import type { RouteContext } from './context.js';
-import { getDefaultTemplate, loadProjectEnhanceResult } from '../settings.js';
-import { renderProjectHtml } from '../render/index.js';
+import { getDefaultTemplate, loadProjectEnhanceResult, getPortfolioProfile } from '../settings.js';
+import { renderProjectHtml, renderPortfolioHtml } from '../render/index.js';
 import { getTemplateCss } from '../render/templates.js';
 
 function makeCtx(overrides: Partial<RouteContext> = {}): RouteContext {
@@ -93,6 +95,7 @@ function makeApp(ctx?: RouteContext): express.Express {
 describe('GET /api/projects/:project/render', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearPreviewCache();
   });
 
   it('returns 404 JSON when project is not found', async () => {
@@ -180,6 +183,7 @@ describe('GET /api/projects/:project/render', () => {
 describe('GET /preview/project/:project', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearPreviewCache();
   });
 
   it('returns 404 when project is not found', async () => {
@@ -230,6 +234,7 @@ describe('GET /preview/project/:project', () => {
 describe('GET /api/projects/:project/render with ?template=', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearPreviewCache();
   });
 
   it('uses ?template= override when valid', async () => {
@@ -262,5 +267,71 @@ describe('GET /api/projects/:project/render with ?template=', () => {
     const res = await request(app).get('/api/projects/my-project/render?template=showcase');
     expect(res.status).toBe(200);
     expect(res.body.template).toBe('showcase');
+  });
+});
+
+describe('GET /api/projects/:project/render — session links use SPA routes', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    clearPreviewCache();
+  });
+
+  it('overrides sessionBaseUrl to /session for SPA routing', async () => {
+    const app = makeApp();
+
+    await request(app).get('/api/projects/my-project/render');
+    // renderProjectHtml should be called with renderData that has sessionBaseUrl = '/session'
+    expect(renderProjectHtml).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionBaseUrl: '/session' }),
+      expect.anything(),
+      expect.any(String),
+    );
+  });
+});
+
+describe('GET /preview/portfolio', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    clearPreviewCache();
+  });
+
+  it('renders portfolio with mock data when no profile exists', async () => {
+    vi.mocked(getPortfolioProfile).mockReturnValue({});
+    const app = makeApp();
+
+    const res = await request(app).get('/preview/portfolio');
+    expect(res.status).toBe(200);
+    // Falls back to mock data, rendered via buildPreviewPage
+    expect(res.text).toBe('<html>preview</html>');
+    expect(renderPortfolioHtml).toHaveBeenCalled();
+  });
+
+  it('renders portfolio with real profile when displayName is set', async () => {
+    vi.mocked(getPortfolioProfile).mockReturnValue({
+      displayName: 'Test User',
+      bio: 'A developer',
+      location: 'NYC',
+    });
+    const app = makeApp();
+
+    const res = await request(app).get('/preview/portfolio');
+    expect(res.status).toBe(200);
+    expect(renderPortfolioHtml).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user: expect.objectContaining({ displayName: 'Test User' }),
+      }),
+      expect.any(String),
+    );
+  });
+
+  it('returns 500 on unexpected errors', async () => {
+    const ctx = makeCtx({
+      getProjects: vi.fn().mockRejectedValue(new Error('DB error')),
+    });
+    const app = makeApp(ctx);
+
+    const res = await request(app).get('/preview/portfolio');
+    expect(res.status).toBe(500);
+    expect(res.text).toBe('Portfolio preview failed');
   });
 });

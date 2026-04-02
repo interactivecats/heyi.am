@@ -1,47 +1,200 @@
-<div class="heyiam-session zen" data-render-version="2" data-template="zen">
+<div class="zen-session-page" data-render-version="2" data-template="zen">
 
-  <div class="session-layout">
+  <main class="zen-container">
 
-    {% render 'partials/_session-sidebar', session: session %}
+    <!-- Breadcrumb -->
+    {% if user.username != blank %}
+    <div class="zen-breadcrumb zen-fade">
+      <a href="/{{ user.username }}">{{ user.username }}</a>
+      {% if projectSlug != blank %}
+      <span class="zen-breadcrumb-sep" aria-hidden="true">/</span>
+      <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
+      {% endif %}
+      <span class="zen-breadcrumb-sep" aria-hidden="true">/</span>
+      <span aria-current="page">{{ session.title }}</span>
+    </div>
+    {% endif %}
 
-    <main class="session-main">
+    <!-- Section 1: Session Header -->
+    <section class="zen-section zen-fade" aria-label="Session header">
+      <h1 class="zen-display">{{ session.title }}</h1>
+      <div class="zen-session-header-meta">
+        <span class="zen-session-meta-row">{{ session.recordedAt | formatDate }}</span>
+        {% if session.sourceTool != blank %}
+        <span class="zen-session-meta-row"> &middot; {{ session.sourceTool }}</span>
+        {% endif %}
+        <span class="zen-session-meta-row"> &middot; {{ session.durationMinutes | formatDuration }}</span>
+        <br>
+        <span class="zen-session-meta-row">{{ session.turns }} turns</span>
+        <span class="zen-session-meta-row"> &middot; {{ session.locChanged | localeNumber }} LOC</span>
+        <span class="zen-session-meta-row"> &middot; {{ session.filesChanged }} files changed</span>
+      </div>
+    </section>
 
-      {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
+    <hr class="zen-rule zen-fade" aria-hidden="true">
 
-      {% render 'partials/_session-header', session: session %}
+    <!-- Section 2: Dev Take -->
+    {% if session.devTake != blank %}
+    <section class="zen-section zen-fade" aria-label="Developer commentary">
+      <h2 class="zen-heading">Dev Take</h2>
+      <p class="zen-dev-take">
+        &ldquo;{{ session.devTake }}&rdquo;
+      </p>
+    </section>
 
-      {% if session.skills.size > 0 %}
-      <section class="content-section">
-        <div class="chip-list">
-          {% for skill in session.skills %}
-          <span class="chip chip--violet">{{ skill }}</span>
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+    {% endif %}
+
+    <!-- Context -->
+    {% if session.context != blank %}
+    <section class="zen-section zen-fade" aria-label="Session context">
+      <h2 class="zen-heading">Context</h2>
+      <p class="zen-body">{{ session.context }}</p>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+    {% endif %}
+
+    <!-- Narrative -->
+    {% if session.narrative != blank %}
+    <section class="zen-section zen-fade" aria-label="Session narrative">
+      <h2 class="zen-heading">Narrative</h2>
+      <p class="zen-body">{{ session.narrative }}</p>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+    {% endif %}
+
+    <!-- Highlights -->
+    {% if session.highlights.size > 0 %}
+    <section class="zen-section zen-fade" aria-label="Highlights">
+      <h2 class="zen-heading">Highlights</h2>
+      <ul class="zen-decisions" role="list">
+        {% for h in session.highlights %}
+        <li class="zen-decision-item">
+          <p class="zen-decision-text">{{ h }}</p>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+    {% endif %}
+
+    <!-- Section 3: Execution Path / Beats -->
+    {% if session.beats.size > 0 %}
+    <section class="zen-section zen-fade" aria-label="Execution path">
+      <h2 class="zen-heading">Execution Path</h2>
+
+      {% for beat in session.beats %}
+      {% if forloop.index > 1 %}
+      <hr class="zen-beat-divider" aria-hidden="true">
+      {% endif %}
+      <div class="zen-beat zen-fade">
+        <p class="zen-beat-number">{{ beat.stepNumber | at_least: 1 | prepend: "" }}</p>
+        <p class="zen-beat-title">{{ beat.title }}</p>
+        {% if beat.body != blank %}
+        <p class="zen-beat-desc">{{ beat.body }}</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+    {% endif %}
+
+    <!-- Section 4: Q&A -->
+    {% if session.qaPairs.size > 0 %}
+    <section class="zen-section zen-fade" aria-label="Questions and answers">
+      <h2 class="zen-heading">Questions</h2>
+
+      {% for qa in session.qaPairs %}
+      {% if forloop.index > 1 %}
+      <hr class="zen-qa-divider" aria-hidden="true">
+      {% endif %}
+      <div class="zen-qa-item zen-fade">
+        <p class="zen-question">{{ qa.question }}</p>
+        <p class="zen-answer">{{ qa.answer }}</p>
+      </div>
+      {% endfor %}
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+    {% endif %}
+
+    <!-- Section 5: Details -->
+    <section class="zen-section zen-fade" aria-label="Session details">
+      <h2 class="zen-heading">Details</h2>
+
+      <!-- Tools Used -->
+      {% if session.toolBreakdown.size > 0 %}
+      <div class="zen-details-group">
+        <p class="zen-details-label" id="tools-heading">Tools Used</p>
+        <div class="zen-tools" role="list" aria-labelledby="tools-heading">
+          {% for tool in session.toolBreakdown %}
+          <div class="zen-tool-row" role="listitem">
+            <span class="zen-tool-name">{{ tool.tool }}</span>
+            <span class="zen-tool-count">{{ tool.count }}</span>
+          </div>
           {% endfor %}
         </div>
-      </section>
+      </div>
       {% endif %}
 
-      {% if session.narrative != blank %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Narrative</h2>
-        <p>{{ session.narrative }}</p>
-      </section>
-      {% endif %}
-
-      {% if session.highlights.size > 0 %}
-      <section class="content-section">
-        <h2 class="content-section__heading">Highlights</h2>
-        <ul class="highlights-list">
-          {% for h in session.highlights %}
-          <li>{{ h }}</li>
+      <!-- Files Changed -->
+      {% if session.topFiles.size > 0 %}
+      <div class="zen-details-group">
+        <p class="zen-details-label" id="files-heading">Files Changed</p>
+        <ul class="zen-files" role="list" aria-labelledby="files-heading">
+          {% for f in session.topFiles %}
+          <li class="zen-file-item">
+            <span class="zen-file-path">{{ f.path }}</span>
+            <span class="zen-file-diff">+{{ f.additions }}</span>
+          </li>
           {% endfor %}
         </ul>
-      </section>
+      </div>
       {% endif %}
 
-      {% render 'partials/_beats', session: session %}
+      <!-- Skills -->
+      {% if session.skills.size > 0 %}
+      <div class="zen-details-group">
+        <p class="zen-details-label">Skills</p>
+        <p class="zen-skills-text">{{ session.skills | join: ", " }}</p>
+      </div>
+      {% endif %}
+    </section>
 
-      {% render 'partials/_qa', session: session %}
+    {% if session.agentSummary %}
+    <hr class="zen-rule zen-fade" aria-hidden="true">
 
-    </main>
-  </div>
+    <!-- Section 6: Agent Summary -->
+    <section class="zen-section zen-fade" aria-label="Agent summary">
+      <h2 class="zen-heading">Agents</h2>
+      {% if session.agentSummary.totalSubSessions %}
+      <p class="zen-agents-count">{{ session.agentSummary.totalSubSessions }} sub-sessions</p>
+      {% endif %}
+
+      {% if session.agentSummary.agents.size > 0 %}
+      <div role="list" aria-label="Agent roles and contributions">
+        {% for agent in session.agentSummary.agents %}
+        <div class="zen-agent-row" role="listitem">
+          <span class="zen-agent-role">{{ agent.role }}</span>
+          <span class="zen-agent-meta">{{ agent.durationMinutes | formatDuration }} &middot; {{ agent.locChanged | localeNumber }} LOC</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    <!-- Footer -->
+    <footer class="zen-footer zen-fade" role="contentinfo">
+      <div class="zen-footer-inner">
+        <p class="zen-footer-text">heyi.am</p>
+      </div>
+    </footer>
+
+  </main>
+
 </div>

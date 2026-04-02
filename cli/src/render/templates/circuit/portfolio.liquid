@@ -1,57 +1,152 @@
 <div class="heyiam-portfolio circuit" data-render-version="2" data-template="circuit" data-username="{{ user.username }}">
 
-  <h1 class="project-title">{{ user.displayName }}</h1>
-  {% if user.bio != blank %}
-  <p class="narrative-text">{{ user.bio }}</p>
-  {% endif %}
+  {%- comment -%} Hero {%- endcomment -%}
+  <section class="hero fade-in" aria-label="Profile">
+    <svg class="hero-trace" viewBox="0 0 200 200" aria-hidden="true">
+      <path d="M200 20 H160 V60 H120 V100 H80 V140 H40 V180"/>
+      <path d="M180 0 V40 H140 V80 H100"/>
+      <circle cx="200" cy="20" r="3"/>
+      <circle cx="120" cy="100" r="3"/>
+      <circle cx="40" cy="180" r="3"/>
+      <circle cx="100" cy="80" r="3"/>
+    </svg>
+    <div class="hero-profile">
+      {% if user.photoUrl %}
+      <div class="hero-photo-wrap">
+        <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="hero-photo" width="120" height="150">
+        <span class="pad-bl" aria-hidden="true"></span>
+        <span class="pad-br" aria-hidden="true"></span>
+      </div>
+      {% endif %}
+      <div class="hero-info">
+        <h1>{{ user.displayName }}</h1>
+        {% if user.bio %}
+        <p class="hero-bio">{{ user.bio }}</p>
+        {% endif %}
+        {% if user.location %}
+        <p class="hero-location">{{ user.location }}</p>
+        {% endif %}
+        <ul class="hero-contact" aria-label="Contact and social links">
+          {% if user.email %}
+          <li><a href="mailto:{{ user.email }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 4 10 8 10-8"/></svg>{{ user.email }}</a></li>
+          {% endif %}
+          {% if user.linkedinUrl %}
+          <li><a href="{{ user.linkedinUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>LinkedIn</a></li>
+          {% endif %}
+          {% if user.githubUrl %}
+          <li><a href="{{ user.githubUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>GitHub</a></li>
+          {% endif %}
+          {% if user.twitterHandle %}
+          <li><a href="https://x.com/{{ user.twitterHandle }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>@{{ user.twitterHandle }}</a></li>
+          {% endif %}
+          {% if user.websiteUrl %}
+          <li><a href="{{ user.websiteUrl }}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>{{ user.websiteUrl | stripProtocol }}</a></li>
+          {% endif %}
+        </ul>
+        {% if user.resumeUrl %}
+        <a href="{{ user.resumeUrl }}" class="hero-resume"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>Download Resume</a>
+        {% endif %}
+      </div>
+    </div>
+  </section>
 
   {%- comment -%} Stats {%- endcomment -%}
-  <div class="stat-grid" role="list" aria-label="Portfolio statistics">
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Projects</div>
-      <div class="stat-card__value">{{ projects.size }}</div>
+  <section class="stat-chips fade-in" aria-label="Aggregate statistics">
+    <div class="stat-chip" role="group" aria-label="Projects">
+      <span class="stat-chip-value">{{ projects.size }}</span>
+      <span class="stat-chip-label">Projects</span>
     </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Sessions</div>
-      <div class="stat-card__value">{{ totalSessions }}</div>
+    <div class="stat-chip" role="group" aria-label="Sessions">
+      <span class="stat-chip-value">{{ totalSessions }}</span>
+      <span class="stat-chip-label">Sessions</span>
     </div>
-    <div class="stat-card" role="listitem">
-      <div class="stat-card__label">Lines</div>
-      <div class="stat-card__value">{{ totalLoc | formatLoc }}</div>
-    </div>
-  </div>
-
-  {%- comment -%} Leverage: PCB trace {%- endcomment -%}
-  {% if efficiencyMultiplier %}
-  <div class="circuit-leverage-trace" role="status" aria-label="Leverage: {{ efficiencyMultiplier }}">
-    <div class="circuit-leverage-trace__pad circuit-leverage-trace__pad--left">
-      <span style="opacity: 0.5;">{{ totalDurationMinutes | formatDuration }}</span>
-    </div>
-    <div class="circuit-leverage-trace__line" aria-hidden="true">
-      <span class="circuit-leverage-trace__multiplier" style="color: var(--accent, #a3e635);">{{ efficiencyMultiplier }}</span>
-    </div>
-    <div class="circuit-leverage-trace__pad circuit-leverage-trace__pad--right">
-      <span style="color: var(--accent, #a3e635);">{{ totalAgentDurationMinutes | formatDuration }}</span>
-    </div>
-  </div>
-  {% endif %}
-
-  {% if projects.size > 0 %}
-  <div class="card">
-    <div class="section-header">
-      <h3 class="section-header__title">Projects</h3>
-    </div>
-    <div class="session-grid">
-      {% for project in projects %}
-      <div class="session-card">
-        <h4 class="session-card__title">{{ project.title }}</h4>
-        <span class="session-card__meta">{{ project.totalSessions }} sessions &middot; {{ project.totalLoc | formatLoc }} lines</span>
+    {% if efficiencyMultiplier %}
+    <div class="stat-chip stat-chip--leverage" role="group" aria-label="{{ totalDurationMinutes | formatDuration }} you, {{ totalAgentDurationMinutes | formatDuration }} agents, {{ efficiencyMultiplier }} leverage">
+      <div class="leverage-row">
+        <span><span class="lev-val">{{ totalDurationMinutes | formatDuration }}</span> <span class="lev-lbl">you</span></span>
+        <span><span class="lev-val lev-val--agent">{{ totalAgentDurationMinutes | formatDuration }}</span> <span class="lev-lbl">agents</span></span>
+        <span><span class="lev-val lev-val--multi">{{ efficiencyMultiplier }}</span></span>
       </div>
+      {% assign totalCombined = totalDurationMinutes | plus: totalAgentDurationMinutes %}
+      {% if totalCombined > 0 %}
+      {% assign humanPct = totalDurationMinutes | times: 100 | divided_by: totalCombined %}
+      {% assign agentPct = 100 | minus: humanPct %}
+      <div class="circuit-leverage-bar">
+        <div class="circuit-leverage-bar__human" style="width: {{ humanPct }}%"></div>
+        <div class="circuit-leverage-bar__agent" style="width: {{ agentPct }}%"></div>
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="stat-chip" role="group" aria-label="Time">
+      <span class="stat-chip-value">{{ totalDurationMinutes | formatDuration }}</span>
+      <span class="stat-chip-label">Time</span>
+    </div>
+    {% endif %}
+    <div class="stat-chip" role="group" aria-label="Lines changed">
+      <span class="stat-chip-value">{{ totalLoc | formatLoc }}</span>
+      <span class="stat-chip-label">Lines Changed</span>
+    </div>
+  </section>
+
+  <div class="trace-connector" aria-hidden="true"></div>
+
+  {%- comment -%} Projects {%- endcomment -%}
+  {% if projects.size > 0 %}
+  <section class="fade-in" aria-label="Projects" style="padding-bottom: 64px;">
+    <h2 class="section-header">Projects</h2>
+    <div class="projects-grid">
+      {% for p in projects %}
+      <article class="project-card pad-corner">
+        <div class="project-card-header">
+          <h3><a href="/{{ user.username }}/{{ p.slug }}">{{ p.title }}</a></h3>
+        </div>
+        {% if p.narrative %}
+        <p class="project-card-narrative">{{ p.narrative }}</p>
+        {% endif %}
+        <div class="project-card-stats">
+          <span><span class="val">{{ p.totalSessions }}</span> sessions</span>
+          <span><span class="val">{{ p.totalDurationMinutes | formatDuration }}</span></span>
+          <span><span class="val">{{ p.totalLoc | formatLoc }}</span> LOC</span>
+        </div>
+        {% if p.skills.size > 0 %}
+        <div class="skill-pins">
+          {% for skill in p.skills %}
+          <span class="skill-pin">{{ skill }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </article>
       {% endfor %}
     </div>
-  </div>
+  </section>
   {% endif %}
 
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  {%- comment -%} Fade-in animation script {%- endcomment -%}
+  <script>
+    (function() {
+      var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (prefersReduced) {
+        document.querySelectorAll('.fade-in').forEach(function(el) {
+          el.classList.add('visible');
+        });
+        return;
+      }
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+
+      document.querySelectorAll('.fade-in').forEach(function(el) {
+        observer.observe(el);
+      });
+    })();
+  </script>
 
 </div>

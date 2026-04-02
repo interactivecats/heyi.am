@@ -1,30 +1,213 @@
-<div class="heyiam-project noir" data-render-version="2" data-template="noir"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
+<div class="noir-page" data-render-version="2" data-template="noir"{% if sessionBaseUrl %} data-session-base-url="{{ sessionBaseUrl }}"{% endif %} data-username="{{ user.username }}" data-project-slug="{{ project.slug }}">
 
-  <h1 class="project-title" data-editable="title">{{ project.title }}</h1>
-
-  {% render 'partials/_links', project: project %}
-
-  {% render 'partials/_screenshot', project: project %}
-
-  {% render 'partials/_narrative', narrative: project.narrative %}
-
-  {% render 'partials/_stats', project: project, durationLabel: durationLabel, efficiencyMultiplier: efficiencyMultiplier %}
-
-  {% render 'partials/_work-timeline', sessionsJson: sessionsJson %}
-
-  {% render 'partials/_growth-chart', project: project, growthJson: growthJson %}
-
-  <div class="two-col">
-    {% render 'partials/_key-decisions', arc: arc %}
-    {% render 'partials/_source-breakdown', sourceCounts: sourceCounts %}
+  <!-- Breadcrumb -->
+  <div class="noir-breadcrumb" aria-label="Breadcrumb">
+    <a href="/{{ user.username }}">{{ user.username }}</a>
+    <span class="noir-breadcrumb__sep">/</span>
+    <span>{{ project.slug }}</span>
   </div>
 
-  {% render 'partials/_phases', arc: arc %}
+  <!-- Project Header -->
+  <section class="noir-section noir-project-header" aria-label="Project header">
+    <h1 class="noir-project-header__title" data-editable="title">{{ project.title }}</h1>
+    {% if project.repoUrl != blank or project.projectUrl != blank %}
+    <div class="noir-project-header__links">
+      {% if project.repoUrl != blank %}
+      <a href="{{ project.repoUrl }}" aria-label="GitHub repository">{{ project.repoUrl | stripProtocol }}</a>
+      {% endif %}
+      {% if project.projectUrl != blank %}
+      <a href="{{ project.projectUrl }}" aria-label="Live site">{{ project.projectUrl | stripProtocol }}</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
 
-  {% render 'partials/_skills', skills: project.skills %}
+  <!-- Screenshot -->
+  {% if project.screenshotUrl != blank %}
+  <section class="noir-section" aria-label="Project screenshot">
+    <div class="noir-screenshot" role="img" aria-label="{{ project.title }} screenshot">
+      <div class="noir-screenshot__chrome">
+        <span class="noir-screenshot__dot"></span>
+        <span class="noir-screenshot__dot"></span>
+        <span class="noir-screenshot__dot"></span>
+      </div>
+      <img src="{{ project.screenshotUrl }}" alt="{{ project.title }}" style="width: 100%; height: 100%; object-fit: cover;">
+    </div>
+  </section>
+  {% endif %}
 
-  {% render 'partials/_session-cards', featuredSessions: featuredSessions, sessionBaseUrl: sessionBaseUrl, totalSessionCount: sessions.size %}
+  <hr class="noir-rule">
 
-  {% render 'partials/_footer', sessionBaseUrl: sessionBaseUrl %}
+  <!-- Stats -->
+  <section class="noir-section" aria-label="Project statistics">
+    <div class="noir-stats-grid" role="list">
+      <div class="noir-stat-cell" role="listitem">
+        <span class="noir-stat-cell__value">{{ project.totalSessions }}</span>
+        <span class="noir-stat-cell__label">Sessions</span>
+      </div>
+      <div class="noir-stat-cell" role="listitem">
+        <span class="noir-stat-cell__value">{{ project.totalLoc | formatLoc }}</span>
+        <span class="noir-stat-cell__label">LOC</span>
+      </div>
+      <div class="noir-stat-cell" role="listitem">
+        <span class="noir-stat-cell__value">{{ project.totalFilesChanged | localeNumber }}</span>
+        <span class="noir-stat-cell__label">Files</span>
+      </div>
+      {% if project.totalTokens %}
+      <div class="noir-stat-cell" role="listitem">
+        <span class="noir-stat-cell__value">{{ project.totalTokens | formatTokens }}</span>
+        <span class="noir-stat-cell__label">Tokens</span>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  {% if efficiencyMultiplier %}
+  <!-- Leverage -->
+  <section aria-label="AI leverage" role="figure">
+    <hr class="noir-rule">
+    <div class="noir-leverage">
+      <span class="noir-leverage__multi">{{ efficiencyMultiplier }}</span>
+      <span class="noir-leverage__sep" aria-hidden="true">&mdash;</span>
+      <span class="noir-leverage__detail">{{ project.totalDurationMinutes | formatDuration }} you{% if project.totalAgentDurationMinutes %}, {{ project.totalAgentDurationMinutes | formatDuration }} agents{% endif %}</span>
+    </div>
+    <hr class="noir-rule">
+  </section>
+  {% endif %}
+
+  <!-- Narrative -->
+  {% if project.narrative != blank %}
+  <section class="noir-section" aria-label="Project narrative">
+    <h2 class="noir-heading">Narrative</h2>
+    <div class="noir-narrative">
+      <p>{{ project.narrative }}</p>
+    </div>
+  </section>
+
+  <hr class="noir-rule">
+  {% endif %}
+
+  <!-- Work Timeline Chart -->
+  {% if sessionsJson != blank %}
+  <section class="noir-section" aria-label="Work timeline">
+    <h2 class="noir-heading">Work Timeline</h2>
+    <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+  </section>
+
+  <hr class="noir-rule">
+  {% endif %}
+
+  <!-- Growth Chart -->
+  {% if growthJson != blank %}
+  <section class="noir-section" aria-label="Growth chart">
+    <h2 class="noir-heading">Growth</h2>
+    <div data-growth-chart data-project-slug="{{ project.slug }}" data-total-loc="{{ project.totalLoc }}" data-total-files="{{ project.totalFilesChanged }}" data-sessions='{{ growthJson | raw }}'></div>
+  </section>
+
+  <hr class="noir-rule">
+  {% endif %}
+
+  <!-- Sessions -->
+  {% if featuredSessions.size > 0 %}
+  <section class="noir-section" aria-label="Sessions timeline">
+    <h2 class="noir-heading">Sessions</h2>
+    <div class="noir-session-timeline" role="list">
+      {% for s in featuredSessions %}
+      <div class="noir-session-row" role="listitem">
+        <span class="noir-session-row__num">{{ forloop.index | prepend: '00' | slice: -2, 2 }}</span>
+        <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="noir-session-row__title">{{ s.title }}</a>
+        <div class="noir-session-row__bar-wrap">
+          <div class="noir-session-row__bar-track">
+            <div class="noir-session-row__bar" style="width: {% if featuredSessions[0].locChanged > 0 %}{{ s.locChanged | times: 100 | divided_by: featuredSessions[0].locChanged }}%{% else %}0%{% endif %};"></div>
+          </div>
+          <span class="noir-session-row__loc">{{ s.locChanged | formatLoc }} LOC</span>
+        </div>
+        <span class="noir-session-row__date">{{ s.recordedAt | formatDateShort }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <hr class="noir-rule">
+  {% endif %}
+
+  <!-- Phases -->
+  {% if arc.size > 0 %}
+  <section class="noir-section" aria-label="Project phases">
+    <h2 class="noir-heading">Phases</h2>
+    <div class="noir-phases">
+      {% for phase in arc %}
+      <article class="noir-phase">
+        <span class="noir-phase__number">{{ phase.phase | prepend: '00' | slice: -2, 2 }}</span>
+        <div>
+          <h3 class="noir-phase__name">{{ phase.title }}</h3>
+          {% if phase.description != blank %}
+          <p class="noir-phase__desc">{{ phase.description }}</p>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <hr class="noir-rule">
+  {% endif %}
+
+  <!-- Skills -->
+  {% if project.skills.size > 0 %}
+  <section class="noir-section" aria-label="Technologies used">
+    <h2 class="noir-heading">Skills</h2>
+    <div class="noir-chips">
+      {% for skill in project.skills %}
+      <span class="noir-chip">{{ skill }}</span>
+      {% endfor %}
+    </div>
+  </section>
+
+  <hr class="noir-rule">
+  {% endif %}
+
+  <!-- Source Breakdown -->
+  {% if sourceCounts.size > 0 %}
+  <section class="noir-section" aria-label="Source breakdown">
+    <h2 class="noir-heading">Source Breakdown</h2>
+    <div class="noir-source-breakdown">
+      <div class="noir-source-legend">
+        {% for sc in sourceCounts %}
+        <span class="noir-source-legend__item">
+          <span class="noir-source-legend__swatch {% if forloop.first %}noir-source-legend__swatch--primary{% else %}noir-source-legend__swatch--secondary{% endif %}"></span>
+          {{ sc.tool }} &mdash; {{ sc.count }} sessions
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <hr class="noir-rule">
+  {% endif %}
+
+  <!-- Featured Session Cards -->
+  {% if featuredSessions.size > 0 %}
+  <section class="noir-section" aria-label="Featured sessions">
+    <h2 class="noir-heading">Featured Sessions</h2>
+    <div class="noir-featured-sessions">
+      {% for s in featuredSessions %}
+      <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="noir-featured-card">
+        <span class="noir-featured-card__tag">{{ s.sourceTool }}</span>
+        <h3 class="noir-featured-card__title">{{ s.title }}</h3>
+        <span class="noir-featured-card__meta">{{ s.durationMinutes | formatDuration }} &middot; {{ s.locChanged | formatLoc }} LOC</span>
+        {% if s.agentSummary.subSessions.size > 0 %}
+        <span class="noir-featured-card__agents">{{ s.agentSummary.subSessions.size }} agents</span>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Footer -->
+  <footer class="noir-footer">
+    <p class="noir-footer__text">Built with heyi.am</p>
+  </footer>
 
 </div>

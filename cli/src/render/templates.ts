@@ -82,14 +82,18 @@ export function resolveTemplate(projectTemplate?: string, userDefault?: string):
 export function getTemplateCss(templateName: string): string {
   const name = isValidTemplate(templateName) ? templateName : DEFAULT_TEMPLATE;
 
-  // For now, use the single styles.css until CSS is split (Step 3).
-  // This function is the single point to update when CSS is split.
+  let css = '';
   try {
-    const baseCss = readFileSync(resolve(TEMPLATES_DIR, 'styles.css'), 'utf-8');
-    return baseCss;
-  } catch {
-    return '';
-  }
+    css = readFileSync(resolve(TEMPLATES_DIR, 'styles.css'), 'utf-8');
+  } catch { /* empty */ }
+
+  // Load template-specific CSS if it exists (e.g. kinetic/styles.css)
+  try {
+    const templateCss = readFileSync(resolve(TEMPLATES_DIR, name, 'styles.css'), 'utf-8');
+    css += '\n\n/* === ' + name + ' template styles === */\n' + templateCss;
+  } catch { /* no template-specific CSS — fine */ }
+
+  return css;
 }
 
 export function getTemplateNames(): string[] {

@@ -1,0 +1,233 @@
+<div class="heyiam-session blueprint" data-render-version="2" data-template="blueprint">
+
+  {%- comment -%} Breadcrumb {%- endcomment -%}
+  {% render 'partials/_breadcrumb', user: user, projectSlug: projectSlug, session: session %}
+
+  <div class="bp-page-layout">
+
+    {%- comment -%} Main content column {%- endcomment -%}
+    <div class="bp-main-col">
+
+      {%- comment -%} Hero {%- endcomment -%}
+      <section class="bp-hero bp-hero--session" aria-label="Session overview">
+        <div class="bp-section-ref">
+          <span class="bp-ref-badge" aria-hidden="true">01</span>
+          <span class="bp-section-label">Session Record</span>
+        </div>
+        <h1>{{ session.title }}</h1>
+        <div class="bp-session-meta-row">
+          <span class="bp-meta-item">{{ session.recordedAt | formatDate }}</span>
+          {% if session.sourceTool != blank %}
+            <span class="bp-meta-item">{{ session.sourceTool }}</span>
+          {% endif %}
+          <span class="bp-meta-item">{{ session.durationMinutes | formatDuration }}</span>
+          <span class="bp-meta-item">{{ session.turns }} turns</span>
+        </div>
+
+        {%- comment -%} Stats bar {%- endcomment -%}
+        <div class="bp-stats-bar bp-stats-bar--session" role="list" aria-label="Session statistics">
+          <div class="bp-stat-cell" role="listitem">
+            <div class="bp-stat-value">{{ session.durationMinutes | formatDuration }}</div>
+            <div class="bp-stat-label">Duration</div>
+          </div>
+          <div class="bp-stat-cell" role="listitem">
+            <div class="bp-stat-value">{{ session.locChanged | localeNumber }}</div>
+            <div class="bp-stat-label">LOC</div>
+          </div>
+          <div class="bp-stat-cell" role="listitem">
+            <div class="bp-stat-value">{{ session.filesChanged }}</div>
+            <div class="bp-stat-label">Files</div>
+          </div>
+          <div class="bp-stat-cell" role="listitem">
+            <div class="bp-stat-value">{{ session.turns }}</div>
+            <div class="bp-stat-label">Turns</div>
+          </div>
+        </div>
+      </section>
+
+      {%- comment -%} Dev Take {%- endcomment -%}
+      {% if session.devTake != blank %}
+      <div class="bp-dev-take">
+        <div class="bp-dev-take-label">Dev Take</div>
+        <blockquote>{{ session.devTake }}</blockquote>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Context {%- endcomment -%}
+      {% if session.context != blank %}
+      <div class="bp-context">
+        <p>{{ session.context }}</p>
+      </div>
+      {% endif %}
+
+      {%- comment -%} Execution Path (Beats) {%- endcomment -%}
+      {% if session.beats.size > 0 %}
+      <section class="bp-beats-section" aria-label="Execution path">
+        <div class="bp-section-ref">
+          <span class="bp-ref-badge" aria-hidden="true">02</span>
+          <span class="bp-section-label">Execution Path</span>
+        </div>
+        <ol class="bp-beats-list">
+          {% for beat in session.beats %}
+          <li class="bp-beat-item">
+            <div class="bp-beat-title">{{ beat.title }}</div>
+            {% if beat.body != blank %}
+              <div class="bp-beat-desc">{{ beat.body }}</div>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ol>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Q&A {%- endcomment -%}
+      {% if session.qaPairs.size > 0 %}
+      <section class="bp-qa-section" aria-label="Questions and answers">
+        <div class="bp-section-ref">
+          <span class="bp-ref-badge" aria-hidden="true">03</span>
+          <span class="bp-section-label">Q&amp;A</span>
+        </div>
+        {% for qa in session.qaPairs %}
+        <div class="bp-qa-item">
+          <div class="bp-qa-question">
+            <span class="bp-qa-prefix">Q:</span>
+            <span>{{ qa.question }}</span>
+          </div>
+          <p class="bp-qa-answer">{{ qa.answer }}</p>
+        </div>
+        {% endfor %}
+      </section>
+      {% endif %}
+
+      {%- comment -%} Narrative {%- endcomment -%}
+      {% if session.narrative != blank %}
+      <section class="bp-narrative-section" aria-label="Session narrative">
+        <div class="bp-section-ref">
+          <span class="bp-ref-badge" aria-hidden="true">04</span>
+          <span class="bp-section-label">Narrative</span>
+        </div>
+        <div class="bp-narrative">
+          <p>{{ session.narrative }}</p>
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Highlights {%- endcomment -%}
+      {% if session.highlights.size > 0 %}
+      <section class="bp-highlights-section" aria-label="Key highlights">
+        <div class="bp-section-ref">
+          <span class="bp-ref-badge" aria-hidden="true">05</span>
+          <span class="bp-section-label">Highlights</span>
+        </div>
+        <ul class="bp-highlights-list">
+          {% for h in session.highlights %}
+            <li>{{ h }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Agent Summary {%- endcomment -%}
+      {% if session.agentSummary %}
+      <section class="bp-agents-section" aria-label="Agent summary">
+        <div class="bp-section-ref">
+          <span class="bp-ref-badge" aria-hidden="true">06</span>
+          <span class="bp-section-label">Agent Breakdown</span>
+        </div>
+        <table class="bp-agent-table">
+          <thead>
+            <tr>
+              <th scope="col">Role</th>
+              <th scope="col">Duration</th>
+              <th scope="col">LOC</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for agent in session.agentSummary.agents %}
+            <tr>
+              <td>
+                <span class="bp-agent-role">
+                  <span class="bp-agent-dot" aria-hidden="true"></span>
+                  {{ agent.role }}
+                </span>
+              </td>
+              <td class="bp-mono-val">{{ agent.durationMinutes | formatDuration }}</td>
+              <td class="bp-mono-val">{{ agent.linesChanged | localeNumber }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+      {% endif %}
+
+    </div>
+
+    {%- comment -%} Sidebar {%- endcomment -%}
+    <aside class="bp-sidebar" aria-label="Session details">
+
+      {% if session.toolBreakdown.size > 0 %}
+      <div class="bp-sidebar-section">
+        <h2 class="bp-sidebar-title">Tools Used</h2>
+        <table class="bp-tools-table" aria-label="Tool usage counts">
+          <tbody>
+            {% for t in session.toolBreakdown %}
+            <tr><td>{{ t.tool }}</td><td>{{ t.count }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      {% if session.topFiles.size > 0 %}
+      <div class="bp-sidebar-section">
+        <h2 class="bp-sidebar-title">Files Changed</h2>
+        <table class="bp-files-table" aria-label="Files modified in this session">
+          <tbody>
+            {% for f in session.topFiles %}
+            <tr>
+              <td class="bp-file-path">{{ f.path }}</td>
+              <td class="bp-file-diff">+{{ f.additions }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      {% if session.skills.size > 0 %}
+      <div class="bp-sidebar-section">
+        <h2 class="bp-sidebar-title">Skills</h2>
+        <ul class="bp-sidebar-skills">
+          {% for skill in session.skills %}
+            <li class="bp-sidebar-skill-chip">{{ skill }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+    </aside>
+  </div>
+
+  {%- comment -%} Footer title block {%- endcomment -%}
+  <footer class="bp-footer" role="contentinfo">
+    <div class="bp-title-block">
+      <div class="bp-title-block-cell">
+        <div class="bp-title-block-label">DWG NO.</div>
+        <div class="bp-title-block-value">SESSION-{{ session.token | upcase | truncate: 8, "" }}</div>
+      </div>
+      <div class="bp-title-block-cell">
+        <div class="bp-title-block-label">REV</div>
+        <div class="bp-title-block-value">A</div>
+      </div>
+      <div class="bp-title-block-cell">
+        <div class="bp-title-block-label">Date</div>
+        <div class="bp-title-block-value">{{ session.recordedAt | formatDateShort }}</div>
+      </div>
+    </div>
+    <div class="bp-footer-bottom">
+      <span>Blueprint Template</span>
+      <span>heyi.am</span>
+    </div>
+  </footer>
+
+</div>
