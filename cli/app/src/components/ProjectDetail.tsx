@@ -52,6 +52,7 @@ export function ProjectDetail() {
   // Liquid-rendered HTML + CSS from server
   const [renderHtml, setRenderHtml] = useState<string | null>(null)
   const [renderCss, setRenderCss] = useState<string | null>(null)
+  const [renderError, setRenderError] = useState<string | null>(null)
 
   // Chart React roots for cleanup
   const chartRootsRef = useRef<Root[]>([])
@@ -68,9 +69,13 @@ export function ProjectDetail() {
   const screenshotInputRef = useRef<HTMLInputElement>(null)
 
   // Fetch rendered Liquid HTML (called on mount and after metadata saves)
-  const loadRender = useCallback(() => {
+  const loadRender = useCallback((templateOverride?: string) => {
     if (!dirName) return
-    fetchProjectRender(dirName)
+    setRenderError(null)
+    const url = templateOverride
+      ? `${dirName}?template=${encodeURIComponent(templateOverride)}`
+      : dirName
+    fetchProjectRender(url)
       .then((r) => {
         if (r) {
           setRenderHtml(r.html)
@@ -78,9 +83,13 @@ export function ProjectDetail() {
           if (r.screenshotUrl) {
             setScreenshotPreview((prev) => prev || r.screenshotUrl!)
           }
+        } else {
+          setRenderError('Failed to render template')
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        setRenderError('Failed to render template')
+      })
   }, [dirName])
 
   useEffect(() => {
@@ -109,6 +118,13 @@ export function ProjectDetail() {
     const container = liquidRef.current
     if (!renderHtml || !container) return
     container.innerHTML = renderHtml
+
+    // Animated templates use opacity:0 + IntersectionObserver (.visible class).
+    // That JS doesn't run inside the React shell, so force visibility with stagger.
+    const sections = container.querySelectorAll('[class*="-section"], [class*="sc-"], [class*="-hero"]')
+    sections.forEach((el, i) => {
+      setTimeout(() => el.classList.add('visible'), i * 50)
+    })
   }, [renderHtml])
 
   // Hydrate charts after HTML injection AND detail data is available
@@ -359,6 +375,16 @@ export function ProjectDetail() {
             {renderCss && <style>{scopeTemplateCss(renderCss)}</style>}
             <div id="liquid-render" ref={liquidRef} />
           </>
+        ) : renderError ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <span className="text-sm text-on-surface-variant">{renderError}</span>
+            <button
+              onClick={() => loadRender('editorial')}
+              className="text-xs text-primary hover:underline"
+            >
+              Retry with editorial template
+            </button>
+          </div>
         ) : (
           <div className="flex items-center justify-center py-16">
             <span className="text-sm text-on-surface-variant">Rendering template...</span>

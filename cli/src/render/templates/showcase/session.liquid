@@ -178,7 +178,7 @@
                 {% for f in session.topFiles %}
                 <tr>
                   <td>{{ f.path }}</td>
-                  <td>+{{ f.additions }}</td>
+                  <td>+{{ f.additions }}{% if f.deletions > 0 %} -{{ f.deletions }}{% endif %}</td>
                 </tr>
                 {% endfor %}
               </tbody>
