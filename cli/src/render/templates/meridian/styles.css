@@ -27,8 +27,17 @@
   --radius-sm: 4px;
   --radius:    8px;
 
-  font-family: var(--font-body);
+  /* Agent colors */
+  --agent-frontend:  #7c3aed;
+  --agent-backend:   #0891b2;
+  --agent-qa:        #059669;
+  --agent-security:  #475569;
+  --agent-reviewer:  #e11d48;
+  --agent-ux:        #d97706;
+
+  background: var(--mer-bg);
   color: var(--mer-text);
+  font-family: var(--font-body);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -37,6 +46,7 @@
 }
 
 .meridian a { color: var(--mer-accent); text-decoration: none; }
+.meridian a:visited { color: var(--mer-accent); }
 .meridian a:hover { text-decoration: underline; }
 
 /* ── Topographic Contour Background ── */
@@ -70,6 +80,8 @@
   .meridian .stat-counter { animation: none !important; }
   .meridian .route-waypoint { animation: none !important; }
   .meridian .beat-marker { animation: none !important; }
+  .meridian .elevation-path { animation: none !important; }
+  .meridian .agent-bar-row__fill { transition: none; }
 }
 
 /* ── Skip Link ── */
@@ -123,9 +135,9 @@
 .meridian .section-heading {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   color: var(--mer-white);
-  margin-block-end: 1.5rem;
+  margin-block-end: 1.25rem;
   line-height: 1.2;
 }
 
@@ -297,6 +309,18 @@
   border-radius: var(--radius);
 }
 
+.meridian .session-stats .stat-cell__coord {
+  margin-block-end: 0.125rem;
+}
+
+.meridian .session-stats .stat-cell__value {
+  font-size: 1.25rem;
+}
+
+.meridian .session-stats .stat-cell__label {
+  font-size: 0.6875rem;
+}
+
 /* ── Stat Cell (shared) ── */
 .meridian .stat-cell {
   text-align: center;
@@ -308,21 +332,20 @@
   color: var(--mer-text-muted);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  margin-block-end: 0.375rem;
+  margin-block-end: 0.25rem;
 }
 
 .meridian .stat-cell__value {
   font-family: var(--font-mono);
   font-weight: 600;
-  font-size: 1.625rem;
+  font-size: 1.375rem;
   color: var(--mer-accent);
 }
 
 .meridian .stat-cell__label {
   font-family: var(--font-body);
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: var(--mer-text-secondary);
-  margin-block-start: 0.125rem;
 }
 
 /* Counter animation */
@@ -397,6 +420,7 @@
 }
 
 .meridian .breadcrumb a { color: var(--mer-text-muted); }
+.meridian .breadcrumb a:visited { color: var(--mer-text-muted); }
 .meridian .breadcrumb a:hover { color: var(--mer-accent); }
 .meridian .breadcrumb__sep { margin-inline: 0.375rem; opacity: 0.4; }
 
@@ -469,11 +493,18 @@
 }
 
 .meridian .screenshot__body {
-  min-height: 240px;
+  height: 240px;
   background: linear-gradient(135deg, var(--mer-surface), var(--mer-card));
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.meridian .screenshot__placeholder {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--mer-text-muted);
+  opacity: 0.5;
 }
 
 /* ── Project Cards (portfolio) ── */
@@ -523,6 +554,7 @@
 }
 
 .meridian .project-card__title a { color: var(--mer-white); }
+.meridian .project-card__title a:visited { color: var(--mer-white); }
 .meridian .project-card__title a:hover { color: var(--mer-accent); }
 
 .meridian .project-card__source {
@@ -568,8 +600,8 @@
 /* ── Skill Chips ── */
 .meridian .skill-chip {
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  padding: 0.3125rem 0.75rem;
   background: var(--mer-accent-dim);
   color: var(--mer-accent);
   border-radius: var(--radius-sm);
@@ -682,6 +714,21 @@
   overflow: hidden;
 }
 
+.meridian .elevation-chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.meridian .elevation-chart__x-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-block-start: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--mer-text-muted);
+}
+
 /* ── Session Table ── */
 .meridian .sessions-section {
   margin-block-end: 3rem;
@@ -737,6 +784,7 @@
   font-weight: 500;
 }
 
+.meridian .session-table__title-cell a:visited { color: var(--mer-white); }
 .meridian .session-table__title-cell a:hover { color: var(--mer-accent); }
 
 .meridian .session-table .mono-val {
@@ -833,6 +881,10 @@
   color: var(--mer-white);
   margin-block-end: 0.5rem;
 }
+
+.meridian .featured-card__title a { color: var(--mer-white); }
+.meridian .featured-card__title a:visited { color: var(--mer-white); }
+.meridian .featured-card__title a:hover { color: var(--mer-accent); text-decoration: none; }
 
 .meridian .featured-card__meta {
   font-family: var(--font-mono);
@@ -1162,6 +1214,91 @@
   font-size: 0.8125rem;
 }
 
+/* ── Agent Bar Chart ── */
+.meridian .agent-bars {
+  margin-block-start: 1.25rem;
+}
+
+.meridian .agent-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-block-end: 0.625rem;
+}
+
+.meridian .agent-bar-row__label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--mer-text-secondary);
+  width: 120px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.meridian .agent-bar-row__track {
+  flex: 1;
+  height: 8px;
+  background: rgba(6, 95, 70, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.meridian .agent-bar-row__fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.8s ease;
+}
+
+.meridian .agent-bar-row__value {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--mer-text-muted);
+  width: 40px;
+  flex-shrink: 0;
+}
+
+/* ── Agent Dots (session table) ── */
+.meridian .agent-dots {
+  display: flex;
+  gap: 3px;
+}
+
+.meridian .agent-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* ── Key Decisions ── */
+.meridian .decisions-section {
+  margin-block-end: 3rem;
+}
+
+.meridian .decision-list {
+  list-style: none;
+  counter-reset: decision-counter;
+}
+
+.meridian .decision-item {
+  counter-increment: decision-counter;
+  position: relative;
+  padding-inline-start: 2.5rem;
+  margin-block-end: 1rem;
+  font-size: 0.9375rem;
+  color: var(--mer-text-secondary);
+  line-height: 1.55;
+}
+
+.meridian .decision-item::before {
+  content: counter(decision-counter, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--mer-accent);
+  font-weight: 600;
+}
+
 /* ── Footer ── */
 .meridian .mer-footer {
   margin-block-start: 4rem;
@@ -1216,6 +1353,7 @@
   .meridian .sidebar-block { margin-block-end: 0; }
   .meridian .session-header__title { font-size: 1.5rem; }
   .meridian .session-stats { grid-template-columns: repeat(2, 1fr); }
+  .meridian .agent-bar-row__label { width: 80px; font-size: 0.6875rem; }
 }
 
 @media (max-width: 480px) {

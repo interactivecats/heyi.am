@@ -88,21 +88,71 @@
     </section>
 
     <!-- Work Timeline -->
-    {% if sessionsJson %}
+    {% if featuredSessions.size > 0 %}
+    {% assign maxLoc = 1 %}
+    {% for s in featuredSessions %}
+      {% if s.locChanged > maxLoc %}{% assign maxLoc = s.locChanged %}{% endif %}
+    {% endfor %}
     <section class="section" aria-label="Work timeline">
       <h2 class="section__label reveal">Work Timeline</h2>
-      <div class="reveal">
-        <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+      <div class="timeline-chart reveal" role="table" aria-label="Session work timeline">
+        {% for s in featuredSessions %}
+        <div class="timeline-chart__row" role="row">
+          <span class="timeline-chart__num" role="cell">{{ forloop.index }}</span>
+          <div class="timeline-chart__bar-wrap" role="cell">
+            {% assign barPct = s.locChanged | times: 100 | divided_by: maxLoc | round %}
+            <div class="timeline-chart__bar bar--claude" data-bar-width="{{ barPct }}" style="width: 0%;">
+              <span class="timeline-chart__bar-label">{{ s.title }}</span>
+            </div>
+          </div>
+          <span class="timeline-chart__loc" role="cell">{{ s.locChanged | formatLoc }} LOC</span>
+        </div>
+        {% endfor %}
       </div>
     </section>
     {% endif %}
 
     <!-- Growth Chart -->
-    {% if growthJson %}
+    {% if featuredSessions.size > 1 %}
+    {% assign cumulativeLoc = 0 %}
+    {% assign maxCumLoc = 0 %}
+    {% for s in featuredSessions %}
+      {% assign cumulativeLoc = cumulativeLoc | plus: s.locChanged %}
+      {% if cumulativeLoc > maxCumLoc %}{% assign maxCumLoc = cumulativeLoc %}{% endif %}
+    {% endfor %}
     <section class="section" aria-label="Cumulative LOC growth">
       <h2 class="section__label reveal">Growth</h2>
-      <div class="reveal">
-        <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+      <div class="growth-chart reveal" aria-label="Line chart showing cumulative lines of code over {{ featuredSessions.size }} sessions">
+        <svg viewBox="0 0 600 200" preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true">
+          <defs>
+            <linearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="rgba(96, 165, 250, 0.2)" />
+              <stop offset="100%" stop-color="rgba(96, 165, 250, 0)" />
+            </linearGradient>
+          </defs>
+          <!-- Grid lines -->
+          <line x1="60" y1="170" x2="570" y2="170" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+          <line x1="60" y1="127" x2="570" y2="127" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+          <line x1="60" y1="85" x2="570" y2="85" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+          <line x1="60" y1="42" x2="570" y2="42" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+          <!-- Area + Line rendered by script from data points -->
+          <polygon class="growth-area" points="" />
+          <polyline class="growth-line" points="" />
+          {% assign runningLoc = 0 %}
+          {% assign stepX = 510 | divided_by: featuredSessions.size %}
+          {% for s in featuredSessions %}
+            {% assign runningLoc = runningLoc | plus: s.locChanged %}
+            {% assign cx = forloop.index0 | times: stepX | plus: 60 %}
+            {% assign yRatio = runningLoc | times: 128 | divided_by: maxCumLoc %}
+            {% assign cy = 170 | minus: yRatio %}
+            <circle class="growth-dot" cx="{{ cx }}" cy="{{ cy }}" data-loc="{{ runningLoc }}" />
+          {% endfor %}
+        </svg>
+        <div class="growth-chart__labels">
+          {% for s in featuredSessions %}
+          <span>S{{ forloop.index }}</span>
+          {% endfor %}
+        </div>
       </div>
     </section>
     {% endif %}
@@ -117,6 +167,9 @@
           <div class="phase-item__dot" aria-hidden="true"></div>
           <div class="phase-item__num">Phase {{ phase.phase }}</div>
           <h3 class="phase-item__title">{{ phase.title }}</h3>
+          {% if phase.dates != blank %}
+          <div class="phase-item__dates">{{ phase.dates }}</div>
+          {% endif %}
           {% if phase.description != blank %}
           <p class="phase-item__desc">{{ phase.description }}</p>
           {% endif %}
@@ -138,16 +191,35 @@
     </section>
     {% endif %}
 
+    <!-- Key Decisions -->
+    {% if project.decisions.size > 0 %}
+    <section class="section" aria-label="Key decisions">
+      <h2 class="section__label reveal">Key Decisions</h2>
+      <ol class="decisions-list reveal">
+        {% for d in project.decisions %}
+        <li>{{ d }}</li>
+        {% endfor %}
+      </ol>
+    </section>
+    {% endif %}
+
     <!-- Source Breakdown -->
     {% if sourceCounts.size > 0 %}
     <section class="section" aria-label="Source breakdown">
       <h2 class="section__label reveal">Source Breakdown</h2>
       <div class="source-breakdown reveal">
+        <svg class="source-ring" viewBox="0 0 80 80" aria-hidden="true">
+          <circle class="source-ring__bg" cx="40" cy="40" r="31.4" />
+          {% for src in sourceCounts %}
+          <circle class="source-ring__segment" cx="40" cy="40" r="31.4"
+            style="stroke: var(--px-accent-blue); stroke-dasharray: 197; stroke-dashoffset: {{ 197 | times: src.count | divided_by: project.totalSessions | times: -1 | plus: 197 }}; transform: rotate(-90deg); transform-origin: center;" />
+          {% endfor %}
+        </svg>
         <div class="source-legend">
           {% for src in sourceCounts %}
           <div class="source-legend__item">
             <div class="source-legend__dot" style="background: var(--px-accent-blue);"></div>
-            <span>{{ src.tool }} &mdash; {{ src.count }} sessions</span>
+            <span>{{ src.tool }} &mdash; {{ src.count | times: 100.0 | divided_by: project.totalSessions | round }}% ({{ src.count }} sessions)</span>
           </div>
           {% endfor %}
         </div>
@@ -173,7 +245,7 @@
             <span>{{ s.filesChanged }} files</span>
           </div>
           {% if s.skills.size > 0 %}
-          <span class="session-card__tag">{{ s.skills.first }}</span>
+          <span class="session-card__tag">{{ s.skills | first }}</span>
           {% endif %}
         </a>
         {% endfor %}
@@ -348,12 +420,99 @@
       }
     }
 
+    function initBars() {
+      var bars = document.querySelectorAll('[data-bar-width]');
+      if (!bars.length) return;
+      if (prefersReducedMotion.matches) {
+        for (var i = 0; i < bars.length; i++) {
+          bars[i].style.width = bars[i].dataset.barWidth + '%';
+        }
+        return;
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            var bar = entry.target;
+            bar.style.width = bar.dataset.barWidth + '%';
+            observer.unobserve(bar);
+          }
+        });
+      }, { threshold: 0.1 });
+      for (var i = 0; i < bars.length; i++) {
+        observer.observe(bars[i]);
+      }
+    }
+
+    function initGrowthChart() {
+      var dots = document.querySelectorAll('.growth-dot');
+      var line = document.querySelector('.growth-line');
+      var area = document.querySelector('.growth-area');
+      if (!dots.length || !line) return;
+      var points = [];
+      for (var i = 0; i < dots.length; i++) {
+        points.push(dots[i].getAttribute('cx') + ',' + dots[i].getAttribute('cy'));
+      }
+      line.setAttribute('points', points.join(' '));
+      if (area) {
+        var lastDot = dots[dots.length - 1];
+        var firstDot = dots[0];
+        area.setAttribute('points', firstDot.getAttribute('cx') + ',170 ' + points.join(' ') + ' ' + lastDot.getAttribute('cx') + ',170');
+      }
+      if (prefersReducedMotion.matches) {
+        line.classList.add('growth-line--visible');
+        if (area) area.classList.add('growth-area--visible');
+        for (var j = 0; j < dots.length; j++) {
+          dots[j].classList.add('growth-dot--visible');
+        }
+        return;
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            line.classList.add('growth-line--visible');
+            if (area) area.classList.add('growth-area--visible');
+            for (var k = 0; k < dots.length; k++) {
+              dots[k].classList.add('growth-dot--visible');
+            }
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.2 });
+      observer.observe(line.closest('.growth-chart'));
+    }
+
+    function initSourceRing() {
+      var segments = document.querySelectorAll('.source-ring__segment, .source-ring__claude');
+      if (!segments.length) return;
+      if (prefersReducedMotion.matches) {
+        for (var i = 0; i < segments.length; i++) {
+          segments[i].classList.add('source-ring__claude--visible');
+        }
+        return;
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            for (var i = 0; i < segments.length; i++) {
+              segments[i].classList.add('source-ring__claude--visible');
+            }
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.3 });
+      var ring = document.querySelector('.source-breakdown');
+      if (ring) observer.observe(ring);
+    }
+
     function init() {
       cacheParallaxElements();
       initReveal();
       initStatsFly();
       initPhaseTimeline();
       initSessionCards();
+      initBars();
+      initGrowthChart();
+      initSourceRing();
       window.addEventListener('scroll', onScroll, { passive: true });
       window.addEventListener('resize', onResize, { passive: true });
       prefersReducedMotion.addEventListener('change', function() {

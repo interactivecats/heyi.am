@@ -29,11 +29,11 @@
     <main id="main-content">
 
       {%- comment -%} Breadcrumb {%- endcomment -%}
-      <div class="breadcrumb" aria-label="Breadcrumb">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="/{{ user.username }}">{{ user.username }}</a>
         <span class="breadcrumb__sep">/</span>
         <span aria-current="page">{{ project.slug }}</span>
-      </div>
+      </nav>
 
       {%- comment -%} Hero {%- endcomment -%}
       <section class="project-hero section-reveal" aria-label="Project overview">
@@ -97,7 +97,7 @@
             </div>
             {% assign totalCombined = project.totalDurationMinutes | plus: project.totalAgentDurationMinutes %}
             {% if totalCombined > 0 %}
-            {% assign humanPct = project.totalDurationMinutes | times: 100 | divided_by: totalCombined %}
+            {% assign humanPct = project.totalDurationMinutes | times: 100.0 | divided_by: totalCombined | round %}
             {% assign agentPct = 100 | minus: humanPct %}
             <div class="mer-leverage-bar">
               <div class="mer-leverage-bar__human" style="width: {{ humanPct }}%"></div>
@@ -162,28 +162,87 @@
       </section>
       {% endif %}
 
-      {%- comment -%} Work Timeline Chart {%- endcomment -%}
-      {% if sessionsJson %}
+      {%- comment -%} Elevation Profile (Work Timeline as CSS-only SVG) {%- endcomment -%}
+      {% if featuredSessions.size > 0 %}
       <section class="elevation-section section-reveal" aria-label="Work timeline chart">
         <div class="section-label">
           <span>&#167;05 &mdash; elevation profile</span>
         </div>
         <h2 class="section-heading">Work Timeline</h2>
         <div class="elevation-chart">
-          <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
-        </div>
-      </section>
-      {% endif %}
+          {% assign maxLoc = 0 %}
+          {% for s in featuredSessions %}
+            {% if s.locChanged > maxLoc %}{% assign maxLoc = s.locChanged %}{% endif %}
+          {% endfor %}
+          {% if maxLoc == 0 %}{% assign maxLoc = 1 %}{% endif %}
+          <svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Elevation-style chart showing lines of code per session">
+            <!-- Grid lines -->
+            <line x1="60" y1="20" x2="60" y2="170" stroke="var(--mer-border-subtle)" stroke-width="0.5"/>
+            <line x1="60" y1="170" x2="760" y2="170" stroke="var(--mer-border-subtle)" stroke-width="0.5"/>
+            <line x1="60" y1="120" x2="760" y2="120" stroke="var(--mer-border-subtle)" stroke-width="0.5" stroke-dasharray="4,4"/>
+            <line x1="60" y1="70" x2="760" y2="70" stroke="var(--mer-border-subtle)" stroke-width="0.5" stroke-dasharray="4,4"/>
+            <line x1="60" y1="20" x2="760" y2="20" stroke="var(--mer-border-subtle)" stroke-width="0.5" stroke-dasharray="4,4"/>
 
-      {%- comment -%} Growth Chart {%- endcomment -%}
-      {% if growthJson %}
-      <section class="elevation-section section-reveal" aria-label="Growth over time">
-        <div class="section-label">
-          <span>&#167;06 &mdash; accumulation</span>
-        </div>
-        <h2 class="section-heading">Growth</h2>
-        <div class="elevation-chart">
-          <div data-growth-chart data-project-slug="{{ project.slug }}" data-sessions='{{ growthJson | raw }}'></div>
+            <!-- Y-axis labels -->
+            <text x="50" y="174" text-anchor="end" fill="var(--mer-text-muted)" font-family="IBM Plex Mono" font-size="9">0</text>
+            {% assign yMid = maxLoc | divided_by: 2 | round %}
+            <text x="50" y="124" text-anchor="end" fill="var(--mer-text-muted)" font-family="IBM Plex Mono" font-size="9">{{ yMid }}</text>
+            <text x="50" y="74" text-anchor="end" fill="var(--mer-text-muted)" font-family="IBM Plex Mono" font-size="9">{{ maxLoc }}</text>
+
+            <!-- Data points + line -->
+            {% assign chartW = 700 %}
+            {% assign chartH = 150 %}
+            {% assign sessCount = featuredSessions.size %}
+            {% assign points = "" %}
+            {% assign areaPath = "" %}
+            {% for s in featuredSessions %}
+              {% assign idx = forloop.index0 %}
+              {% if sessCount > 1 %}
+                {% assign xPos = idx | times: chartW | divided_by: sessCount | minus: 1 | plus: 87 %}
+              {% else %}
+                {% assign xPos = 410 %}
+              {% endif %}
+              {% assign locPct = s.locChanged | times: chartH | divided_by: maxLoc %}
+              {% assign yPos = 170 | minus: locPct %}
+              {% if forloop.first %}
+                {% assign points = points | append: xPos | append: "," | append: yPos %}
+                {% assign areaPath = "M " | append: xPos | append: " " | append: yPos %}
+              {% else %}
+                {% assign points = points | append: " " | append: xPos | append: "," | append: yPos %}
+                {% assign areaPath = areaPath | append: " L " | append: xPos | append: " " | append: yPos %}
+              {% endif %}
+              {% if forloop.last %}
+                {% assign areaPath = areaPath | append: " L " | append: xPos | append: " 170 L 87 170 Z" %}
+              {% endif %}
+            {% endfor %}
+
+            <path d="{{ areaPath }}" fill="url(#elevGradient)" opacity="0.3"/>
+            <polyline points="{{ points }}" fill="none" stroke="var(--mer-accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+
+            {% for s in featuredSessions %}
+              {% assign idx = forloop.index0 %}
+              {% if sessCount > 1 %}
+                {% assign xPos = idx | times: chartW | divided_by: sessCount | minus: 1 | plus: 87 %}
+              {% else %}
+                {% assign xPos = 410 %}
+              {% endif %}
+              {% assign locPct = s.locChanged | times: chartH | divided_by: maxLoc %}
+              {% assign yPos = 170 | minus: locPct %}
+              <circle cx="{{ xPos }}" cy="{{ yPos }}" r="4" fill="var(--mer-accent)"/>
+            {% endfor %}
+
+            <defs>
+              <linearGradient id="elevGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--mer-accent)" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="var(--mer-accent)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="elevation-chart__x-labels">
+            {% for s in featuredSessions %}
+            <span>S{{ forloop.index }} {{ s.recordedAt | formatDateShort }}</span>
+            {% endfor %}
+          </div>
         </div>
       </section>
       {% endif %}
@@ -192,7 +251,7 @@
       {% if featuredSessions.size > 0 %}
       <section class="sessions-section section-reveal" aria-label="All sessions">
         <div class="section-label">
-          <span>&#167;07 &mdash; waypoint log</span>
+          <span>&#167;06 &mdash; waypoint log</span>
         </div>
         <h2 class="section-heading">Sessions</h2>
         <div class="session-table-wrap">
@@ -221,6 +280,21 @@
             </tbody>
           </table>
         </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Key Decisions {%- endcomment -%}
+      {% if project.decisions.size > 0 %}
+      <section class="decisions-section section-reveal" aria-label="Key decisions">
+        <div class="section-label">
+          <span>&#167;07 &mdash; bearing marks</span>
+        </div>
+        <h2 class="section-heading">Key Decisions</h2>
+        <ol class="decision-list">
+          {% for decision in project.decisions %}
+          <li class="decision-item">{{ decision }}</li>
+          {% endfor %}
+        </ol>
       </section>
       {% endif %}
 
@@ -253,13 +327,14 @@
         {% if totalSourceSessions > 0 %}
         <div class="source-bar-large" role="img" aria-label="Source breakdown">
           {% for src in sourceCounts %}
-          {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+          {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
           <div class="source-bar-large__segment{% if forloop.first %} source-bar-large__segment--claude{% else %} source-bar-large__segment--cursor{% endif %}" style="width: {{ srcPct }}%"></div>
           {% endfor %}
         </div>
         <div class="source-legend">
           {% for src in sourceCounts %}
-          <span><span class="source-legend__dot" style="background: {% if forloop.first %}var(--mer-accent){% else %}var(--mer-text-muted){% endif %}"></span>{{ src.tool }} &mdash; {{ src.count }} session{% if src.count != 1 %}s{% endif %}</span>
+          {% assign legendPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
+          <span><span class="source-legend__dot" style="background: {% if forloop.first %}var(--mer-accent){% else %}var(--mer-text-muted){% endif %}"></span>{{ src.tool }} &mdash; {{ legendPct }}% ({{ src.count }} session{% if src.count != 1 %}s{% endif %})</span>
           {% endfor %}
         </div>
         {% endif %}
@@ -275,17 +350,17 @@
         <h2 class="section-heading">Featured Sessions</h2>
         <div class="featured-grid">
           {% for s in featuredSessions %}
-          <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="featured-card">
+          <article class="featured-card">
             {% if s.skills.size > 0 %}
             <div class="featured-card__tag">{{ s.skills | first }}</div>
             {% endif %}
-            <h3 class="featured-card__title">{{ s.title }}</h3>
+            <h3 class="featured-card__title"><a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a></h3>
             <div class="featured-card__meta">
               <span><strong>{{ s.durationMinutes | formatDuration }}</strong></span>
               <span><strong>{{ s.locChanged | localeNumber }}</strong> LOC</span>
               <span><strong>{{ s.filesChanged }}</strong> files</span>
             </div>
-          </a>
+          </article>
           {% endfor %}
         </div>
       </section>

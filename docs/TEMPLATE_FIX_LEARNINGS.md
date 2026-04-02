@@ -19,13 +19,13 @@ Accumulated knowledge from fixing project/session liquid templates to match thei
 | glacier    | TODO   | |
 | grid       | TODO   | |
 | kinetic    | DONE   | Dark template. Title alignment, session card bg, visited links, percentage rounding, chart accent |
-| meridian   | TODO   | |
+| meridian   | DONE   | Dark template. Breadcrumb nav fix, JS charts replaced with CSS-only SVG elevation chart, growth chart removed, missing Key Decisions section + agent bar chart + agent-dots, source percentages with rounding, visited links, wrapper bg/color + agent color tokens, stat-cell font-size drift, section-heading size drift, skill-chip size drift, featured cards article structure, responsive agent-bar-row, reduced-motion for agent bars |
 | mono       | TODO   | |
 | neon       | TODO   | |
 | noir       | DONE   | Dark template. Breadcrumb element, missing sections, CSS gaps, responsive gaps, removed JS charts (mockup uses CSS-only bars), visited links |
 | obsidian   | TODO   | Has float division bug in source breakdown |
 | paper      | TODO   | |
-| parallax   | TODO   | |
+| parallax   | DONE   | Dark template. JS charts replaced with CSS-only timeline bars + SVG growth chart, missing Key Decisions section, source ring SVG + percentages, phase dates, tool usage chart sidebar card, wrapper bg/color, visited links, section padding/margin drift, reveal animation values |
 | parchment  | TODO   | |
 | radar      | DONE   | Dark template. Breadcrumb nav fix, agent table+bar chart added, source percentages, visited links, wrapper bg/color |
 | showcase   | DONE   | Dark template. Visited links, percentage rounding, SVG width override removed, leverage bar color drift, screenshot ::before pseudo, phase-dates CSS |
@@ -129,3 +129,18 @@ Accumulated knowledge from fixing project/session liquid templates to match thei
 - **Missing CSS class families from mockup**: Orbital timeline (`cos-orbit-*` -- 7 classes), chart SVG (`cos-chart-*` -- 5 classes), screenshot body/placeholder, phase-dates, and sidebar skill chip size override were all missing from styles.css. The orbital timeline is decorative and only appears in the mockup with hardcoded data, but the CSS must exist for when it's used.
 - **Agent role color tokens missing**: The mockup `:root` had `--color-frontend`, `--color-backend`, etc. but they were dropped during extraction to styles.css. Agent dots use these via `style="background: var(--color-backend)"` in session template.
 - **Dark wrapper pattern confirmed again**: Like kinetic, noir, and radar -- the `.cosmos` wrapper needs explicit `background`, `color`, `font-family`, and `a:visited` rules since `body` styles are scoped to `#liquid-render` via `@scope` and don't inherit into the template wrapper.
+
+### Parallax
+- **JS charts replaced with CSS-only equivalents**: Both `data-work-timeline` (JS mount) and `data-growth-chart` (JS mount) replaced. Work Timeline uses CSS-only horizontal bars with `timeline-chart__row` grid layout, bar widths computed from `maxLoc` in Liquid. Growth Chart uses an inline SVG with `growth-line`/`growth-area`/`growth-dot` classes and a small script to build polyline points from Liquid-rendered `<circle>` data attributes.
+- **Missing entire sections**: Key Decisions section (`decisions-list`) was absent from project.liquid. Source ring SVG (`source-ring`) was missing -- just had a flat legend. Tool Usage Chart sidebar card (`tool-chart`) was missing from session.liquid. Phase dates (`phase-item__dates`) were missing from the phase loop.
+- **Source legend percentages**: Mockup shows "62.5% (5 sessions)" format but liquid had just count. Added `| times: 100.0 | divided_by: project.totalSessions | round` for percentage display.
+- **CSS value drift pattern continues**: `.section` padding was `5rem 2rem` vs mockup's `4rem 2rem`, `.section__label` margin-bottom was `2.5rem` vs `1.5rem`, `.reveal` translateY was `24px` vs `30px` with `0.7s` vs `0.8s` duration. Every value must be compared.
+- **Dark wrapper confirmed again**: `.parallax` wrapper needed explicit `background: var(--px-bg)`, `color: var(--px-text)`, `a:visited { color: inherit }`, and `-webkit-font-smoothing: antialiased`. Same pattern as kinetic, noir, radar, cosmos.
+
+### Meridian
+- **JS charts replaced with CSS-only SVG elevation chart**: The project mockup has a static SVG elevation profile (polyline + area fill + waypoint dots) for Work Timeline, not `data-work-timeline` JS mount. Built with Liquid loops computing `maxLoc` for Y-axis scaling and spacing points across the X-axis. Growth chart (`data-growth-chart`) removed entirely -- mockup has no growth section.
+- **Missing sections from mockup**: Key Decisions section (`decisions-section` with counter-styled `decision-item` list) was missing from project.liquid. Agent bar chart (`agent-bars`/`agent-bar-row`) was missing from session.liquid below the agent table. Agent dots column in session table was not present in the liquid template (mockup had `agent-dots` column).
+- **Featured card structure mismatch**: Template used `<a class="featured-card">` wrapper, but mockup uses `<article class="featured-card">` with inner `<a>` only on the `h3`. The `<a>` wrapper approach changes hover/focus semantics.
+- **CSS property value drift across multiple rules**: `section-heading` font-size was `1.75rem` vs mockup's `1.5rem`, `stat-cell__value` was `1.625rem` vs `1.375rem`, `stat-cell__coord` margin was `0.375rem` vs `0.25rem`, `stat-cell__label` was `0.8125rem` vs `0.75rem`, `skill-chip` was `0.6875rem` vs `0.75rem` with different padding. Session-scoped overrides needed for `stat-cell__value` (`1.25rem`) and `stat-cell__label` (`0.6875rem`).
+- **Agent color tokens missing**: Mockup `:root` had `--agent-frontend`, `--agent-backend`, etc. but they were dropped from `.meridian` token block. Agent dots and bar fills use these.
+- **Dark wrapper pattern confirmed again**: `.meridian` needed explicit `background: var(--mer-bg)` and `a:visited { color: var(--mer-accent) }` plus breadcrumb/card-specific visited rules.

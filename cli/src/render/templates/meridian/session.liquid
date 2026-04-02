@@ -29,13 +29,13 @@
     <main id="main-content">
 
       {%- comment -%} Breadcrumb {%- endcomment -%}
-      <div class="breadcrumb" aria-label="Breadcrumb">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="/{{ user.username }}">{{ user.username }}</a>
         <span class="breadcrumb__sep">/</span>
         <a href="/{{ user.username }}/{{ projectSlug }}">{{ projectSlug }}</a>
         <span class="breadcrumb__sep">/</span>
         <span aria-current="page">{{ session.title }}</span>
-      </div>
+      </nav>
 
       {%- comment -%} Session Header {%- endcomment -%}
       <header class="session-header section-reveal">
@@ -206,12 +206,31 @@
                       {{ agent.role }}
                     </div>
                   </td>
-                  <td class="mono-val">{% if agent.durationMinutes %}{{ agent.durationMinutes | formatDuration }}{% else %}&mdash;{% endif %}</td>
-                  <td class="mono-val">{% if agent.linesOfCode %}{{ agent.linesOfCode | localeNumber }}{% else %}&mdash;{% endif %}</td>
+                  <td class="mono-val">{% if agent.duration_minutes %}{{ agent.duration_minutes | formatDuration }}{% else %}&mdash;{% endif %}</td>
+                  <td class="mono-val">{% if agent.loc_changed %}{{ agent.loc_changed | localeNumber }}{% else %}&mdash;{% endif %}</td>
                 </tr>
                 {% endfor %}
               </tbody>
             </table>
+            {% if session.agentSummary.agents.size > 0 %}
+            {% assign maxAgentDuration = 0 %}
+            {% for agent in session.agentSummary.agents %}
+              {% if agent.duration_minutes > maxAgentDuration %}{% assign maxAgentDuration = agent.duration_minutes %}{% endif %}
+            {% endfor %}
+            {% if maxAgentDuration == 0 %}{% assign maxAgentDuration = 1 %}{% endif %}
+            <div class="agent-bars" role="img" aria-label="Agent duration breakdown as horizontal bars">
+              {% for agent in session.agentSummary.agents %}
+              {% assign barPct = agent.duration_minutes | times: 100.0 | divided_by: maxAgentDuration | round %}
+              <div class="agent-bar-row">
+                <span class="agent-bar-row__label">{{ agent.role }}</span>
+                <div class="agent-bar-row__track">
+                  <div class="agent-bar-row__fill" style="width: {{ barPct }}%; background: var(--mer-accent)"></div>
+                </div>
+                <span class="agent-bar-row__value">{% if agent.duration_minutes %}{{ agent.duration_minutes | formatDuration }}{% else %}&mdash;{% endif %}</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
             {% endif %}
           </section>
           {% endif %}

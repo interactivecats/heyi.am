@@ -154,11 +154,11 @@
               <div class="agent-bar__track">
                 <div class="agent-bar__fill" data-bar-width="{{ agent.percentage | default: 50 }}" style="width: 0%; background: var(--px-accent-blue);"></div>
               </div>
-              {% if agent.durationMinutes %}
-              <span class="agent-bar__duration">{{ agent.durationMinutes | formatDuration }}</span>
+              {% if agent.duration_minutes %}
+              <span class="agent-bar__duration">{{ agent.duration_minutes | formatDuration }}</span>
               {% endif %}
-              {% if agent.locChanged %}
-              <span class="agent-bar__loc">{{ agent.locChanged }}</span>
+              {% if agent.loc_changed %}
+              <span class="agent-bar__loc">{{ agent.loc_changed }}</span>
               {% endif %}
             </div>
             {% endfor %}
@@ -207,6 +207,28 @@
             {% for skill in session.skills %}
             <span class="sidebar-skill">{{ skill }}</span>
             {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if session.toolBreakdown.size > 0 %}
+        <div class="sidebar-card">
+          <h2 class="sidebar-card__title">Tool Usage Chart</h2>
+          {% assign maxToolCount = 1 %}
+          {% for tool in session.toolBreakdown %}
+            {% if tool.count > maxToolCount %}{% assign maxToolCount = tool.count %}{% endif %}
+          {% endfor %}
+          <div class="tool-chart" aria-label="Tool usage distribution">
+            <svg viewBox="0 0 200 {{ session.toolBreakdown.size | times: 20 }}" preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true">
+              {% for tool in session.toolBreakdown %}
+              {% assign yPos = forloop.index0 | times: 20 | plus: 6 %}
+              {% assign barWidth = tool.count | times: 140 | divided_by: maxToolCount %}
+              <text x="0" y="{{ yPos | plus: 9 }}" fill="rgba(255,255,255,0.5)" font-size="9" font-family="JetBrains Mono, monospace">{{ tool.tool }}</text>
+              <rect x="40" y="{{ yPos }}" width="140" height="12" rx="3" fill="rgba(255,255,255,0.03)" />
+              <rect x="40" y="{{ yPos }}" width="{{ barWidth }}" height="12" rx="3" fill="rgba(96, 165, 250, 0.35)" />
+              <text x="{{ 40 | plus: barWidth | plus: 4 }}" y="{{ yPos | plus: 9 }}" fill="rgba(255,255,255,0.3)" font-size="8" font-family="JetBrains Mono, monospace">{{ tool.count }}</text>
+              {% endfor %}
+            </svg>
           </div>
         </div>
         {% endif %}
