@@ -19,6 +19,7 @@ defmodule HeyiAmPublicWeb.ShareController do
 
       render(conn, :rendered,
         rendered_html: html,
+        template_name: share.template || "editorial",
         page_title: share.title,
         og_title: "#{share.title} — #{display_name}",
         og_description: og_description(share),
@@ -57,6 +58,7 @@ defmodule HeyiAmPublicWeb.ShareController do
 
           render(conn, :rendered,
             rendered_html: html,
+            template_name: share.template || "editorial",
             page_title: share.title,
             og_title: "#{share.title} — #{display_name}",
             og_description: og_description(share),

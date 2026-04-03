@@ -51,7 +51,11 @@ defmodule HeyiAm.HtmlSanitizer.Scrubber do
   # all others to prevent DOM clobbering and JS hijacking via attacker-controlled values.
   @allowed_data_attrs ~w(data-work-timeline data-growth-chart data-sessions
                           data-total-loc data-total-files data-session-id
-                          data-session-base-url data-message-index data-testid)
+                          data-session-base-url data-message-index data-testid
+                          data-accent data-mode data-template data-render-version
+                          data-username data-project-slug data-editable
+                          data-target data-count-to data-format data-suffix
+                          data-width data-bar-width data-target-width)
 
   # Tag rules: allow listed tags, strip everything else
   for tag <- @allowed_tags do

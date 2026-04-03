@@ -37,8 +37,13 @@
     <meta name="twitter:image" content={assigns[:og_image] || HeyiAmPublicWeb.Endpoint.url() <> "/images/og-default.png"} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Newsreader:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
+    <%!-- Template CSS: base styles + per-template overrides --%>
+    <link rel="stylesheet" href={~p"/css/templates/base.css"} />
+    <%= if assigns[:template_name] do %>
+      <link rel="stylesheet" href={"/css/templates/#{assigns[:template_name]}.css"} />
+    <% end %>
     <%!-- NO LiveView JS — this endpoint has no LiveView --%>
     <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
     </script>

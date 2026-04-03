@@ -1,0 +1,1283 @@
+/* ── Ember Design Tokens ── */
+:root {
+  --bg: #1c1210;
+  --surface: #231916;
+  --surface-raised: #2a1f1b;
+  --surface-high: #332620;
+
+  --accent: #f97316;
+  --accent-secondary: #ef4444;
+  --accent-dim: rgba(249, 115, 22, 0.1);
+  --accent-mid: rgba(249, 115, 22, 0.15);
+  --accent-glow: rgba(249, 115, 22, 0.06);
+  --accent-border: rgba(249, 115, 22, 0.1);
+
+  --text: #faf5f0;
+  --text-secondary: rgba(250, 245, 240, 0.65);
+  --text-muted: rgba(250, 245, 240, 0.4);
+  --text-faint: rgba(250, 245, 240, 0.25);
+
+  --border: rgba(249, 115, 22, 0.1);
+  --border-subtle: rgba(250, 245, 240, 0.06);
+
+  --green: #4ade80;
+  --green-dim: rgba(74, 222, 128, 0.1);
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-section: 600ms;
+
+  /* Agent role colors */
+  --color-frontend: #7c3aed;
+  --color-backend: #0891b2;
+  --color-qa: #059669;
+  --color-security: #475569;
+  --color-reviewer: #e11d48;
+  --color-ux: #d97706;
+}
+
+.ember {
+  font-family: var(--font-body);
+  color: var(--text);
+  background-color: var(--bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.ember a { color: var(--accent); text-decoration: none; }
+.ember a:visited { color: var(--accent); }
+.ember a:hover { text-decoration: underline; }
+
+/* ── Layout ── */
+.ember .container {
+  max-width: 960px;
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
+/* ── Section Entrance Animation ── */
+.ember .ember-section {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity var(--dur-section) var(--ease-out),
+              transform var(--dur-section) var(--ease-out);
+  margin-bottom: 2rem;
+}
+.ember.heyiam-project .ember-section {
+  margin-bottom: 2.5rem;
+}
+.ember .ember-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Breadcrumb ── */
+.ember .breadcrumb {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 1.5rem 0 0;
+}
+.ember .breadcrumb a {
+  color: var(--text-muted);
+  transition: color 0.15s;
+}
+.ember .breadcrumb a:hover {
+  color: var(--accent);
+}
+.ember .breadcrumb a:visited {
+  color: var(--text-muted);
+}
+.ember .breadcrumb .sep {
+  margin: 0 6px;
+  color: var(--text-faint);
+}
+
+/* ── Section Headers ── */
+.ember .section-header {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ember.heyiam-project .section-header {
+  font-size: 1.125rem;
+  margin-bottom: 1.25rem;
+}
+.ember.heyiam-session .section-header {
+  font-size: 1.0625rem;
+  margin-bottom: 1rem;
+}
+.ember .section-header .ember-icon {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  box-shadow: 0 0 6px rgba(249, 115, 22, 0.4);
+  flex-shrink: 0;
+}
+
+/* ── Hero: Asymmetric Split (Portfolio) ── */
+.ember .hero {
+  padding: 3.5rem 0 2.5rem;
+}
+.ember .hero-split {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 3rem;
+  align-items: center;
+}
+.ember .hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.ember .hero-name {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.25rem;
+  position: relative;
+  display: inline-block;
+}
+.ember .hero-name::after {
+  content: '';
+  display: block;
+  height: 3px;
+  margin-top: 8px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.3);
+}
+.ember .hero-location {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 0.75rem;
+}
+.ember .hero-bio {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  max-width: 480px;
+  margin-top: 1rem;
+  line-height: 1.7;
+}
+.ember .hero-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  list-style: none;
+}
+.ember .hero-contact a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+  transition: color 0.15s;
+}
+.ember .hero-contact a:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+.ember .hero-contact a:visited {
+  color: var(--text-muted);
+}
+.ember .hero-contact svg {
+  flex-shrink: 0;
+}
+.ember .hero-resume-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 1.25rem;
+  padding: 0.5rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--bg);
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.ember .hero-resume-btn:hover {
+  opacity: 0.85;
+  text-decoration: none;
+  color: var(--bg);
+}
+
+/* ── Hero Photo ── */
+.ember .hero-photo-wrapper {
+  position: relative;
+}
+.ember .hero-photo-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-secondary));
+  border-radius: 2px 0 0 2px;
+  z-index: 1;
+}
+.ember .hero-photo {
+  width: 100%;
+  display: block;
+  border-radius: var(--radius);
+  object-fit: cover;
+  object-position: center 15%;
+  box-shadow: -20px 0 60px rgba(249, 115, 22, 0.1);
+}
+
+/* ── Stats Bar (Portfolio) ── */
+.ember .stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 2.5rem 0 3rem;
+}
+
+/* ── Stats Grid (Project) ── */
+.ember .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.ember .stat-cell {
+  background: var(--surface);
+  padding: 1.25rem 1rem;
+  text-align: center;
+  position: relative;
+}
+.ember .stat-cell::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.ember .stat-cell:hover::before {
+  opacity: 1;
+}
+.ember .stat-value {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  font-weight: 700;
+  color: var(--text);
+  display: block;
+  white-space: nowrap;
+}
+.ember .stat-value.ember-glow {
+  text-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+}
+.ember .stat-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+  display: block;
+}
+/* Project page uses smaller stat cells */
+.ember.heyiam-project .stat-cell {
+  padding: 1rem 0.75rem;
+}
+.ember.heyiam-project .stat-value {
+  font-size: clamp(1rem, 2.5vw, 1.35rem);
+  text-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+  white-space: nowrap;
+}
+.ember.heyiam-project .stat-label {
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+/* ── Leverage ── */
+.ember .ember-leverage {
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-block: 1.5rem;
+}
+.ember .ember-leverage__main {
+  display: flex;
+  align-items: baseline;
+  gap: 1.5rem;
+}
+.ember .ember-leverage__multi {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-shadow: 0 0 24px rgba(249, 115, 22, 0.35);
+  line-height: 1;
+}
+.ember .ember-leverage__detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+.ember .ember-leverage__bar {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+  margin-block-start: 0.75rem;
+}
+.ember .ember-leverage__fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+}
+
+/* ── Project Cards ── */
+.ember .projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+  gap: 1.25rem;
+}
+.ember .project-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.ember .project-card:hover {
+  border-color: rgba(249, 115, 22, 0.25);
+  box-shadow: 0 4px 24px rgba(249, 115, 22, 0.08);
+  text-decoration: none;
+}
+.ember .project-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.ember .project-card:visited {
+  color: inherit;
+}
+.ember .project-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.ember .project-card-title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.ember .project-card-arrow {
+  color: var(--text-muted);
+  font-size: 18px;
+  transition: color 0.2s, transform 0.2s;
+}
+.ember .project-card:hover .project-card-arrow {
+  color: var(--accent);
+  transform: translateX(2px);
+}
+.ember .project-card-narrative {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+.ember .project-card-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 1rem;
+}
+.ember .project-card-stats {
+  display: flex;
+  gap: 1rem;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.ember .project-card-stats span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+/* Portfolio card-level source bar */
+.ember .project-card .source-bar {
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  display: flex;
+  margin-top: 1rem;
+  background: var(--surface-high);
+}
+.ember .project-card .source-bar-segment {
+  height: 100%;
+  transition: width 0.6s var(--ease-out);
+}
+.ember .project-card .source-bar-segment.claude {
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+}
+.ember .project-card .source-bar-segment.cursor {
+  background: var(--text-muted);
+}
+.ember .project-card .source-legend {
+  display: flex;
+  gap: 1rem;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ── Skill Chips ── */
+.ember .skill-chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+}
+.ember.heyiam-project .skills-list .skill-chip {
+  font-size: 12px;
+  padding: 4px 10px;
+}
+
+/* ── Project Header ── */
+.ember .project-header {
+  padding: 2.5rem 0 2rem;
+}
+.ember .project-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  position: relative;
+  display: inline-block;
+}
+.ember .project-title::after {
+  content: '';
+  display: block;
+  height: 3px;
+  margin-top: 8px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.3);
+}
+.ember .project-links {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.ember .project-links a {
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s;
+}
+.ember .project-links a:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+.ember .project-links a:visited {
+  color: var(--text-secondary);
+}
+
+/* ── Screenshot ── */
+.ember .screenshot-frame {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+.ember .screenshot-chrome {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
+}
+.ember .screenshot-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+.ember .screenshot-dot:first-child { background: #ef4444; }
+.ember .screenshot-dot:nth-child(2) { background: #f59e0b; }
+.ember .screenshot-dot:nth-child(3) { background: #22c55e; }
+.ember .screenshot-url {
+  margin-inline-start: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--surface);
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  flex: 1;
+  max-width: 300px;
+}
+
+.ember .screenshot-body {
+  height: 200px;
+  background: linear-gradient(135deg, rgba(249,115,22,0.08) 0%, rgba(239,68,68,0.05) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+/* ── Narrative ── */
+.ember .narrative {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+.ember .narrative p {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+.ember .narrative p:last-child { margin-bottom: 0; }
+
+/* ── Work Timeline Chart ── */
+.ember .timeline-chart {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+.ember .chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 140px;
+  padding-bottom: 1rem;
+}
+.ember .chart-bar-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+}
+.ember .chart-bar {
+  width: 100%;
+  max-width: 48px;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, var(--accent), var(--accent-secondary));
+  transition: opacity 0.2s;
+  position: relative;
+}
+.ember .chart-bar:hover {
+  opacity: 0.85;
+}
+.ember .chart-bar-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  text-align: center;
+}
+.ember .chart-bar-value {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.ember .chart-bar:hover .chart-bar-value {
+  opacity: 1;
+}
+
+/* ── Phase Timeline ── */
+.ember .phases {
+  position: relative;
+  padding-inline-start: 24px;
+}
+.ember .phases::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 7px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-secondary));
+  opacity: 0.3;
+  border-radius: 1px;
+}
+.ember .phase-item {
+  position: relative;
+  margin-bottom: 1.25rem;
+}
+.ember .phase-item:last-child { margin-bottom: 0; }
+.ember .phase-dot {
+  position: absolute;
+  inset-inline-start: -24px;
+  top: 6px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.4);
+  border: 2px solid var(--bg);
+}
+.ember .phase-title {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.ember .phase-dates {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.ember .phase-desc {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* ── Skills List ── */
+.ember .skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── Key Decisions ── */
+.ember .decisions-list {
+  list-style: none;
+  counter-reset: decisions;
+}
+.ember .decisions-list li {
+  counter-increment: decisions;
+  position: relative;
+  padding-inline-start: 2rem;
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+.ember .decisions-list li::before {
+  content: counter(decisions);
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--accent-border);
+}
+
+/* ── Source Breakdown ── */
+.ember .source-breakdown {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+.ember .source-bar-container {
+  flex: 1;
+}
+.ember .source-bar {
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  background: var(--surface-high);
+}
+.ember .source-bar-segment {
+  height: 100%;
+}
+.ember .source-bar-segment.claude {
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+}
+.ember .source-bar-segment.cursor {
+  background: var(--text-muted);
+}
+.ember .source-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.ember .source-legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-inline-end: 4px;
+  vertical-align: middle;
+}
+.ember .source-legend-dot.claude {
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+}
+.ember .source-legend-dot.cursor {
+  background: var(--text-muted);
+}
+
+/* ── Session Cards ── */
+.ember .sessions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.ember .session-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s ease;
+}
+.ember .session-card:hover {
+  border-color: rgba(249, 115, 22, 0.25);
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.08);
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+.ember .session-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.ember .session-card:visited {
+  color: inherit;
+}
+.ember .session-card-number {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.ember .session-card-title {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.ember .session-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.ember .session-card-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  margin-top: 8px;
+  display: inline-block;
+}
+
+/* ── Session Header ── */
+.ember .session-header {
+  padding: 2rem 0 1.5rem;
+}
+.ember .session-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3.5vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.3;
+  position: relative;
+  display: inline-block;
+}
+.ember .session-title::after {
+  content: '';
+  display: block;
+  height: 3px;
+  margin-top: 8px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.3);
+}
+.ember .session-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.ember .session-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ember .session-meta-item .ember-pip {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.ember .session-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  border: 1px solid var(--accent-border);
+  margin-top: 0.75rem;
+}
+
+/* ── Content Layout (Session) ── */
+.ember .content-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* ── Dev Take ── */
+.ember .dev-take {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  border-inline-start: 3px solid;
+  border-image: linear-gradient(180deg, var(--accent), var(--accent-secondary)) 1;
+}
+.ember .dev-take-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.ember .dev-take p {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  font-style: italic;
+}
+
+/* ── Highlights ── */
+.ember .highlights-list {
+  list-style: none;
+  padding: 0;
+}
+.ember .highlights-list li {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  padding: 0.375rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.ember .highlights-list li:last-child {
+  border-bottom: none;
+}
+
+/* ── Execution Path (Beats) ── */
+.ember .beats {
+  position: relative;
+  padding-inline-start: 28px;
+}
+.ember .beats::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 9px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-secondary));
+  opacity: 0.25;
+  border-radius: 1px;
+}
+.ember .beat-item {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+.ember .beat-item:last-child { margin-bottom: 0; }
+.ember .beat-dot {
+  position: absolute;
+  inset-inline-start: -28px;
+  top: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.35);
+  border: 2px solid var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ember .beat-dot::after {
+  content: attr(data-num);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--bg);
+}
+.ember .beat-title {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.ember .beat-desc {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Q&A ── */
+.ember .qa-list {
+  list-style: none;
+  padding: 0;
+}
+.ember .qa-item {
+  margin-bottom: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.ember .qa-item:last-child { margin-bottom: 0; }
+.ember .qa-question {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  gap: 8px;
+}
+.ember .qa-question::before {
+  content: 'Q';
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-border);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.ember .qa-answer {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.7;
+  padding-inline-start: 30px;
+}
+
+/* ── Sidebar ── */
+.ember .sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.ember .sidebar-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.ember .sidebar-card-title {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Tools Used Table ── */
+.ember .tools-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.ember .tools-table tr {
+  border-bottom: 1px solid var(--border-subtle);
+}
+.ember .tools-table tr:last-child {
+  border-bottom: none;
+}
+.ember .tools-table td {
+  padding: 6px 0;
+  font-size: 13px;
+}
+.ember .tools-table td:first-child {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.ember .tools-table td:last-child {
+  text-align: end;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.ember .tool-bar {
+  display: inline-block;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+  vertical-align: middle;
+  margin-inline-start: 8px;
+}
+
+/* ── Files Changed ── */
+.ember .files-list {
+  list-style: none;
+  padding: 0;
+}
+.ember .files-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 12px;
+}
+.ember .files-list li:last-child { border-bottom: none; }
+.ember .file-path {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+.ember .file-diff {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+/* ── Skills (Sidebar) ── */
+.ember .sidebar-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ── Agent Summary ── */
+.ember .agent-summary-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.ember .agent-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.ember .agent-table tr {
+  border-bottom: 1px solid var(--border-subtle);
+}
+.ember .agent-table tr:last-child { border-bottom: none; }
+.ember .agent-table td {
+  padding: 6px 0;
+  font-size: 12px;
+}
+.ember .agent-role {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.ember .agent-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ember .agent-table td:nth-child(2),
+.ember .agent-table td:nth-child(3) {
+  text-align: end;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.ember .agent-bar-cell {
+  width: 100%;
+  padding-inline-start: 8px;
+}
+.ember .agent-bar {
+  height: 4px;
+  border-radius: 2px;
+}
+.ember .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Footer ── */
+.ember .footer {
+  margin-top: 3rem;
+  padding: 2rem 0;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.ember .footer a { color: var(--accent); }
+.ember .footer a:visited { color: var(--accent); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .ember .hero-split {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .ember .hero-photo-order {
+    order: -1;
+  }
+  .ember .hero-photo {
+    width: 100%;
+    max-height: 280px;
+  }
+  .ember .stats-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ember .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .ember .content-layout {
+    grid-template-columns: 1fr;
+  }
+  .ember .sidebar {
+    order: -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  .ember .sessions-grid {
+    grid-template-columns: 1fr;
+  }
+  .ember .source-breakdown {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .ember .session-meta {
+    gap: 0.75rem;
+  }
+  .ember .nav-links { gap: 16px; }
+  .ember .chart-bars { gap: 4px; }
+}
+
+@media (max-width: 480px) {
+  .ember .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .ember .project-header h1 { font-size: 1.5rem; }
+  .ember .ember-leverage__main {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+  .ember .hero {
+    padding: 2rem 0 1.5rem;
+  }
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .ember .ember-section {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .ember .tool-bar,
+  .ember .agent-bar,
+  .ember .chart-bar,
+  .ember .source-bar-segment {
+    transition: none;
+  }
+}

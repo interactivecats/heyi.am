@@ -4,6 +4,15 @@ defmodule HeyiAmPublicWeb.PortfolioController do
   alias HeyiAm.Accounts
   alias HeyiAm.Projects
 
+  # Extract template name from data-template="..." in rendered HTML
+  defp extract_template(html) when is_binary(html) do
+    case Regex.run(~r/data-template="([^"]+)"/, html) do
+      [_, name] -> name
+      _ -> "editorial"
+    end
+  end
+  defp extract_template(_), do: "editorial"
+
   def show(conn, %{"username" => username}) do
     case Accounts.get_user_by_username(username) do
       nil ->
@@ -24,6 +33,7 @@ defmodule HeyiAmPublicWeb.PortfolioController do
           html when is_binary(html) and html != "" ->
             render(conn, :rendered,
               rendered_html: html,
+              template_name: extract_template(html),
               page_title: display_name,
               og_title: "#{display_name} — heyi.am",
               og_description: og_description,
@@ -89,6 +99,7 @@ defmodule HeyiAmPublicWeb.PortfolioController do
               html when is_binary(html) and html != "" ->
                 render(conn, :rendered,
                   rendered_html: html,
+                  template_name: extract_template(html),
                   page_title: "#{project.title} — #{display_name}",
                   og_title: og_title,
                   og_description: og_description,
@@ -135,6 +146,7 @@ defmodule HeyiAmPublicWeb.PortfolioController do
           html when is_binary(html) and html != "" ->
             render(conn, :rendered,
               rendered_html: html,
+              template_name: extract_template(html),
               page_title: "#{project.title} — #{display_name}",
               og_title: og_title,
               og_description: og_description,

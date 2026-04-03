@@ -2,7 +2,11 @@ defmodule HeyiAm.Shares.Share do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @valid_templates ~w(editorial kinetic terminal minimal showcase brutalist campfire neon-night)
+  @valid_templates ~w(editorial kinetic terminal minimal showcase
+                       parallax blueprint radar strata noir verdant neon paper
+                       cosmos bauhaus mono glacier ember zen circuit parchment
+                       aurora grid obsidian chalk signal canvas meridian carbon
+                       daylight)
   @valid_statuses ~w(draft listed unlisted archived)
 
   schema "shares" do
