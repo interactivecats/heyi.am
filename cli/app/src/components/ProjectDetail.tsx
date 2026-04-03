@@ -142,7 +142,12 @@ export function ProjectDetail() {
         '[class*="-section"], [class*="sc-"], [class*="-hero"], .fade-up, .fade-in, .reveal, [class*="anim-"], .strata-layer, [class*="cos-"]',
       )
       animated.forEach((el, i) => {
-        setTimeout(() => el.classList.add('visible'), i * 50)
+        setTimeout(() => {
+          el.classList.add('visible')
+          // Force-run CSS animations that templates pause for scroll-triggered reveal
+          ;(el as HTMLElement).style.animationPlayState = 'running'
+          ;(el as HTMLElement).style.opacity = '1'
+        }, i * 50)
       })
     })
   }, [renderHtml])
