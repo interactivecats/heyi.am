@@ -100,20 +100,22 @@ function injectTemplateAttrs(html: string, templateName: string): string {
   );
 }
 
-/** Wrap screenshot <img> tags in a browser-frame component with scrollable viewport. */
+/** Wrap screenshot <img> tags in a browser-frame component with scrollable viewport.
+ *  Skips templates that already include their own browser chrome. */
 function wrapScreenshotInBrowserFrame(html: string): string {
+  // Templates with their own browser chrome (grid, showcase, meridian, parchment, obsidian, etc.)
+  if (/browser-chrome|screenshot-chrome|screenshot__chrome|sc-screenshot-frame/.test(html)) {
+    return html;
+  }
   return html.replace(
     /<img\s([^>]*alt="[^"]*screenshot[^"]*"[^>]*)>/i,
     (_, attrs) => {
-      // Extract src for the URL bar display
-      const srcMatch = attrs.match(/src="([^"]*)"/);
-      const urlDisplay = srcMatch ? 'Preview' : '';
       return `<div class="browser-frame" data-editable="screenshot">`
         + `<div class="browser-frame__bar">`
         + `<div class="browser-frame__dot"></div>`
         + `<div class="browser-frame__dot"></div>`
         + `<div class="browser-frame__dot"></div>`
-        + `<div class="browser-frame__url">${escapeHtml(urlDisplay)}</div>`
+        + `<div class="browser-frame__url">Preview</div>`
         + `</div>`
         + `<div class="browser-frame__viewport">`
         + `<img ${attrs.replace(/style="[^"]*"/g, '').trim()}>`
