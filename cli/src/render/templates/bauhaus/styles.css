@@ -4,6 +4,21 @@
  * Space Grotesk display font, heavy black borders.
  */
 
+:root {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --text: #1a1a1a;
+  --text-secondary: #6b6b6b;
+  --red: #dc2626;
+  --blue: #2563eb;
+  --yellow: #eab308;
+  --black: #1a1a1a;
+  --border: 3px solid var(--black);
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
 /* ── Visited links ── */
 .bauhaus a:visited { color: inherit; }
 .bauhaus .breadcrumb a:visited { color: var(--blue); }
