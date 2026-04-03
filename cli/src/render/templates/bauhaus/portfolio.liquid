@@ -171,29 +171,5 @@
     </div>
   </footer>
 
-  <script>
-    (function () {
-      var targets = document.querySelectorAll(
-        '.anim-slide-left, .anim-slide-right, .anim-scale-in, .anim-fade-up'
-      );
-      if (!('IntersectionObserver' in window)) {
-        targets.forEach(function (el) { el.style.opacity = '1'; });
-        return;
-      }
-      targets.forEach(function (el) { el.style.animationPlayState = 'paused'; });
-      var observer = new IntersectionObserver(
-        function (entries) {
-          entries.forEach(function (entry) {
-            if (entry.isIntersecting) {
-              entry.target.style.animationPlayState = 'running';
-              observer.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0.15 }
-      );
-      targets.forEach(function (el) { observer.observe(el); });
-    })();
-  </script>
 
 </div>

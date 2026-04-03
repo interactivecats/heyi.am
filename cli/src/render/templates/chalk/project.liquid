@@ -241,33 +241,5 @@
   {% endif %}
 
   {%- comment -%} Fade-in animation script {%- endcomment -%}
-  <script>
-  (function() {
-    'use strict';
-    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    function setupFadeIn() {
-      var sections = document.querySelectorAll('.chalk-card, .decision-item');
-      if (prefersReducedMotion || !sections.length) return;
-      var observer = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-          if (entry.isIntersecting) {
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0) rotate(0deg)';
-            observer.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.1 });
-      sections.forEach(function(el) {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(12px) rotate(-1deg)';
-        el.style.transition = 'opacity 0.4s ease-out, transform 0.4s ease-out';
-        observer.observe(el);
-      });
-    }
-
-    setupFadeIn();
-  })();
-  </script>
 
 </div>

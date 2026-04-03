@@ -194,49 +194,5 @@
 
   </div>
 
-  <script>
-  (function() {
-    'use strict';
-    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) {
-      var allSections = document.querySelectorAll('.vd-section');
-      for (var i = 0; i < allSections.length; i++) {
-        allSections[i].classList.add('visible');
-      }
-    }
-    var sectionObserver = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          sectionObserver.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.15 });
-    var sections = document.querySelectorAll('.vd-section');
-    sections.forEach(function(s) {
-      if (!prefersReduced) sectionObserver.observe(s);
-    });
-
-    // Source bar animation for project cards
-    var barObserver = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          var fill = entry.target.querySelector('.vd-source-bar-fill');
-          if (fill) fill.style.width = fill.getAttribute('data-width') + '%';
-          barObserver.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.3 });
-    var bars = document.querySelectorAll('.vd-source-bar');
-    bars.forEach(function(b) {
-      if (prefersReduced) {
-        var fill = b.querySelector('.vd-source-bar-fill');
-        if (fill) fill.style.width = fill.getAttribute('data-width') + '%';
-      } else {
-        barObserver.observe(b);
-      }
-    });
-  })();
-  </script>
 
 </div>

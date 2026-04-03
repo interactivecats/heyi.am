@@ -233,49 +233,5 @@
 
   </div>
 
-  <script>
-  (function() {
-    'use strict';
-    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) {
-      var allSections = document.querySelectorAll('.vd-section');
-      for (var i = 0; i < allSections.length; i++) {
-        allSections[i].classList.add('visible');
-      }
-    }
-    var sectionObserver = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          sectionObserver.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.1 });
-    var sections = document.querySelectorAll('.vd-section');
-    sections.forEach(function(s) {
-      if (!prefersReduced) sectionObserver.observe(s);
-    });
-
-    // Agent bar animation
-    var agentObserver = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          var fills = entry.target.querySelectorAll('.vd-agent-bar-fill');
-          fills.forEach(function(fill, index) {
-            var w = fill.getAttribute('data-width');
-            if (prefersReduced) {
-              fill.style.width = w + '%';
-            } else {
-              setTimeout(function() { fill.style.width = w + '%'; }, index * 100);
-            }
-          });
-          agentObserver.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.2 });
-    var agentSection = document.querySelector('.vd-agents');
-    if (agentSection) agentObserver.observe(agentSection);
-  })();
-  </script>
 
 </div>

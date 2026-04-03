@@ -133,50 +133,5 @@
   {% endif %}
 
   {%- comment -%} Counter animation script {%- endcomment -%}
-  <script>
-    (function() {
-      var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var counters = document.querySelectorAll('.counter');
-
-      function formatNumber(n, fmt) {
-        if (fmt === 'comma') return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        return n.toString();
-      }
-
-      function animateCounter(el) {
-        var target = parseInt(el.getAttribute('data-target'), 10);
-        var fmt = el.getAttribute('data-format') || '';
-
-        if (reducedMotion) {
-          el.textContent = formatNumber(target, fmt);
-          return;
-        }
-
-        var duration = 1200;
-        var startTime = null;
-
-        function step(timestamp) {
-          if (!startTime) startTime = timestamp;
-          var progress = Math.min((timestamp - startTime) / duration, 1);
-          var eased = 1 - Math.pow(1 - progress, 3);
-          var current = Math.round(eased * target);
-          el.textContent = formatNumber(current, fmt);
-          if (progress < 1) requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
-      }
-
-      var observer = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-          if (entry.isIntersecting) {
-            animateCounter(entry.target);
-            observer.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.5 });
-
-      counters.forEach(function(c) { observer.observe(c); });
-    })();
-  </script>
 
 </div>

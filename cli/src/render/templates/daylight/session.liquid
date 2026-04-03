@@ -215,22 +215,5 @@
   </div>
 
   {%- comment -%} Animations {%- endcomment -%}
-  <script>
-    (function () {
-      'use strict';
-      var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var bounceEls = document.querySelectorAll('.dl-bounce');
-      if (prefersReduced) {
-        for (var i = 0; i < bounceEls.length; i++) { bounceEls[i].classList.add('dl-visible'); }
-      } else {
-        var observer = new IntersectionObserver(function (entries) {
-          entries.forEach(function (entry) {
-            if (entry.isIntersecting) { entry.target.classList.add('dl-visible'); observer.unobserve(entry.target); }
-          });
-        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-        for (var j = 0; j < bounceEls.length; j++) { observer.observe(bounceEls[j]); }
-      }
-    })();
-  </script>
 
 </div>

@@ -245,27 +245,5 @@
   </footer>
 
   {%- comment -%} Fade-in animation {%- endcomment -%}
-  <script>
-  (function() {
-    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var els = document.querySelectorAll('.fade-in');
-    if (prefersReduced) {
-      els.forEach(function(el) { el.classList.add('visible'); });
-      return;
-    }
-    var observer = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.1 });
-    els.forEach(function(el, i) {
-      el.style.transitionDelay = (i * 0.08) + 's';
-      observer.observe(el);
-    });
-  })();
-  </script>
 
 </div>

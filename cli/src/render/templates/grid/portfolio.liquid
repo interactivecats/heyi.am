@@ -228,46 +228,5 @@
   </div>
 
   {%- comment -%} Stat counter animation {%- endcomment -%}
-  <script>
-    (function() {
-      var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var stats = document.querySelectorAll('.stat-number[data-target]');
-
-      stats.forEach(function(el) {
-        var target = parseInt(el.getAttribute('data-target'), 10);
-        var format = el.getAttribute('data-format');
-        var unit = el.querySelector('.stat-unit');
-
-        if (reducedMotion) {
-          el.textContent = format === 'comma' ? target.toLocaleString() : String(target);
-          if (unit) el.appendChild(unit);
-          return;
-        }
-
-        var duration = 1200;
-        var start = null;
-
-        function step(timestamp) {
-          if (!start) start = timestamp;
-          var progress = Math.min((timestamp - start) / duration, 1);
-          var eased = 1 - Math.pow(1 - progress, 3);
-          var current = Math.round(eased * target);
-          el.textContent = format === 'comma' ? current.toLocaleString() : String(current);
-          if (unit) el.appendChild(unit);
-          if (progress < 1) requestAnimationFrame(step);
-        }
-
-        var observer = new IntersectionObserver(function(entries) {
-          entries.forEach(function(entry) {
-            if (entry.isIntersecting) {
-              requestAnimationFrame(step);
-              observer.unobserve(el);
-            }
-          });
-        }, { threshold: 0.5 });
-        observer.observe(el);
-      });
-    })();
-  </script>
 
 </div>

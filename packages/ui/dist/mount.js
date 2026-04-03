@@ -23211,6 +23211,9 @@
         }
       });
     });
+    mountCounterAnimations();
+    mountScrollReveals();
+    mountBarAnimations();
     if (allSessions.size > 0) {
       const overlayEl = document.createElement("div");
       overlayEl.id = "heyiam-overlay-root";
@@ -23219,6 +23222,114 @@
         import_react3.default.createElement(OverlayRoot, { sessions: allSessions })
       );
     }
+  }
+  var REDUCED_MOTION = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function mountCounterAnimations() {
+    const selectors = [
+      ".counter[data-target]",
+      ".stat-value[data-target]",
+      ".stat-number[data-target]",
+      ".value[data-target]",
+      "[data-count-to]",
+      ".dl-stat-number[data-target]",
+      "[data-animate][data-target]"
+    ];
+    const els = document.querySelectorAll(selectors.join(","));
+    if (els.length === 0) return;
+    function formatNumber(n, fmt) {
+      if (fmt === "comma") return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      if (fmt === "decimal" || fmt === "1") return n.toFixed(1);
+      return Math.round(n).toString();
+    }
+    function animateCounter(el) {
+      const target = parseFloat(el.getAttribute("data-target") ?? el.getAttribute("data-count-to") ?? "0");
+      const fmt = el.getAttribute("data-format") ?? "";
+      const suffix = el.getAttribute("data-suffix") ?? "";
+      const isDecimal = fmt === "decimal" || fmt === "1";
+      if (REDUCED_MOTION) {
+        el.textContent = formatNumber(target, fmt) + suffix;
+        return;
+      }
+      const duration = 1200;
+      let startTime = null;
+      function step(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const progress = Math.min((timestamp - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = isDecimal ? eased * target : Math.round(eased * target);
+        el.textContent = formatNumber(current, fmt) + suffix;
+        if (progress < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          animateCounter(entry.target);
+          observer.unobserve(entry.target);
+        }
+      }
+    }, { threshold: 0.3 });
+    els.forEach((el) => observer.observe(el));
+  }
+  function mountScrollReveals() {
+    const selectors = [
+      ".fade-in",
+      ".fade-up",
+      ".reveal",
+      ".section-reveal",
+      ".sc-section",
+      ".sc-stagger",
+      ".mono-section",
+      ".ember-section",
+      ".radar-section",
+      ".cos-section",
+      ".strata-layer",
+      ".dl-bounce",
+      ".vd-section"
+    ];
+    const els = document.querySelectorAll(selectors.join(","));
+    if (els.length === 0) return;
+    if (REDUCED_MOTION) {
+      els.forEach((el) => el.classList.add("visible"));
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+          observer.unobserve(entry.target);
+        }
+      }
+    }, { threshold: 0.15 });
+    els.forEach((el) => observer.observe(el));
+  }
+  function mountBarAnimations() {
+    const els = document.querySelectorAll(
+      "[data-width], [data-bar-width], [data-target-width]"
+    );
+    if (els.length === 0) return;
+    if (REDUCED_MOTION) {
+      els.forEach((el) => {
+        const w = el.getAttribute("data-width") ?? el.getAttribute("data-bar-width") ?? el.getAttribute("data-target-width") ?? "";
+        if (w) el.style.width = w.includes("%") ? w : `${w}%`;
+      });
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          const el = entry.target;
+          const w = el.getAttribute("data-width") ?? el.getAttribute("data-bar-width") ?? el.getAttribute("data-target-width") ?? "";
+          if (w) {
+            el.style.transition = "width 0.6s ease-out";
+            el.style.width = w.includes("%") ? w : `${w}%`;
+          }
+          observer.unobserve(el);
+        }
+      }
+    }, { threshold: 0.2 });
+    els.forEach((el) => observer.observe(el));
   }
   if (typeof document !== "undefined") {
     if (document.readyState === "loading") {

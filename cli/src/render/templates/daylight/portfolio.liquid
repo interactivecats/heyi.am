@@ -180,45 +180,5 @@
   </div>
 
   {%- comment -%} Animations {%- endcomment -%}
-  <script>
-    (function () {
-      'use strict';
-      var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var bounceEls = document.querySelectorAll('.dl-bounce');
-      if (prefersReduced) {
-        for (var i = 0; i < bounceEls.length; i++) { bounceEls[i].classList.add('dl-visible'); }
-      } else {
-        var observer = new IntersectionObserver(function (entries) {
-          entries.forEach(function (entry) {
-            if (entry.isIntersecting) { entry.target.classList.add('dl-visible'); observer.unobserve(entry.target); }
-          });
-        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-        for (var j = 0; j < bounceEls.length; j++) { observer.observe(bounceEls[j]); }
-      }
-      var counters = document.querySelectorAll('.dl-stat-number[data-target]');
-      var counterObserver = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (!entry.isIntersecting) return;
-          var el = entry.target;
-          var target = parseInt(el.getAttribute('data-target'), 10);
-          var format = el.getAttribute('data-format');
-          var duration = prefersReduced ? 0 : 1200;
-          var start = performance.now();
-          function step(now) {
-            var elapsed = now - start;
-            var progress = Math.min(elapsed / duration, 1);
-            var eased = 1 - (1 - progress) * (1 - progress);
-            var current = Math.round(eased * target);
-            el.textContent = format === 'comma' ? current.toLocaleString() : current;
-            if (progress < 1) requestAnimationFrame(step);
-          }
-          if (duration === 0) { el.textContent = format === 'comma' ? target.toLocaleString() : target; }
-          else { requestAnimationFrame(step); }
-          counterObserver.unobserve(el);
-        });
-      }, { threshold: 0.5 });
-      for (var k = 0; k < counters.length; k++) { counterObserver.observe(counters[k]); }
-    })();
-  </script>
 
 </div>
