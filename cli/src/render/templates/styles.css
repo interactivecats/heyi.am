@@ -46,12 +46,47 @@ a { color: var(--primary); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
 /* ── Screenshot browser frame ── */
-img[alt*="screenshot" i] {
+.browser-frame {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border, var(--outline, rgba(128,128,128,0.2)));
+}
+.browser-frame__bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(128,128,128,0.08);
+  border-bottom: 1px solid var(--border, var(--outline, rgba(128,128,128,0.2)));
+}
+.browser-frame__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(128,128,128,0.3);
+}
+.browser-frame__url {
+  flex: 1;
+  margin-left: 8px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: rgba(128,128,128,0.1);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  color: var(--text-2, var(--on-surface-variant, #6b7280));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.browser-frame__viewport {
   max-height: 24rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.browser-frame__viewport img {
+  display: block;
   width: 100%;
-  object-fit: cover;
-  object-position: top;
-  border-radius: 6px;
+  height: auto;
 }
 
 /* ── Shared Components ── */

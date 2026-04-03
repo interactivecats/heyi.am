@@ -96,7 +96,29 @@ function injectTemplateAttrs(html: string, templateName: string): string {
   if (!info) return html;
   return html.replace(
     /data-template="[^"]*"/,
-    (match) => `${match} data-accent="${info.accent}" data-mode="${info.mode}"`,
+    (match) => `${match} data-accent="${escapeHtml(info.accent)}" data-mode="${info.mode}"`,
+  );
+}
+
+/** Wrap screenshot <img> tags in a browser-frame component with scrollable viewport. */
+function wrapScreenshotInBrowserFrame(html: string): string {
+  return html.replace(
+    /<img\s([^>]*alt="[^"]*screenshot[^"]*"[^>]*)>/i,
+    (_, attrs) => {
+      // Extract src for the URL bar display
+      const srcMatch = attrs.match(/src="([^"]*)"/);
+      const urlDisplay = srcMatch ? 'Preview' : '';
+      return `<div class="browser-frame" data-editable="screenshot">`
+        + `<div class="browser-frame__bar">`
+        + `<div class="browser-frame__dot"></div>`
+        + `<div class="browser-frame__dot"></div>`
+        + `<div class="browser-frame__dot"></div>`
+        + `<div class="browser-frame__url">${escapeHtml(urlDisplay)}</div>`
+        + `</div>`
+        + `<div class="browser-frame__viewport">`
+        + `<img ${attrs.replace(/style="[^"]*"/g, '').trim()}>`
+        + `</div></div>`;
+    },
   );
 }
 
@@ -237,7 +259,7 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
     efficiencyMultiplier: efficiencyStr,
     sessionSuffix,
   });
-  return injectTemplateAttrs(html, template);
+  return wrapScreenshotInBrowserFrame(injectTemplateAttrs(html, template));
 }
 
 export function renderSession(data: SessionRenderData, templateName?: string): string {
