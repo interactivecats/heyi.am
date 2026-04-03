@@ -346,12 +346,28 @@ export async function deleteProjectScreenshot(dirName: string): Promise<void> {
   await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/screenshot`, { method: 'DELETE' })
 }
 
-export async function fetchProjectRender(dirName: string): Promise<{ html: string; css: string; template: string; screenshotUrl?: string } | null> {
+export interface RenderResult {
+  html: string
+  css: string
+  template: string
+  accent?: string
+  mode?: 'light' | 'dark'
+}
+
+async function fetchRender<T extends RenderResult>(path: string): Promise<T | null> {
   try {
-    return await get<{ html: string; css: string; template: string; screenshotUrl?: string }>(`/projects/${encodeURIComponent(dirName)}/render`)
+    return await get<T>(path)
   } catch {
     return null
   }
+}
+
+export function fetchProjectRender(dirName: string) {
+  return fetchRender<RenderResult & { screenshotUrl?: string }>(`/projects/${encodeURIComponent(dirName)}/render`)
+}
+
+export function fetchSessionRender(sessionId: string) {
+  return fetchRender<RenderResult>(`/sessions/${encodeURIComponent(sessionId)}/render`)
 }
 
 export async function fetchAuthStatus(): Promise<AuthStatus> {

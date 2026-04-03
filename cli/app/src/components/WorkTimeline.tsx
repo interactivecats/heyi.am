@@ -403,16 +403,16 @@ function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CON
         const waves = groupIntoWaves(visible, parentStartMs)
         const maxConcurrentInWave = Math.max(...waves.map(w => w.children.length), 1)
         const gap = laneGap(maxConcurrentInWave)
-        const maxSpread = Math.min((maxConcurrentInWave - 1) * gap, 300)
+        const maxSpread = Math.min((maxConcurrentInWave - 1) * gap, 120)
 
         const forkX = cx
         const joinX = cx + w
         const topLaneY = cY - maxSpread / 2
 
-        const titleY = topLaneY - 32
+        const titleY = topLaneY - 16
         const flatStartX = forkX + CURVE_CP * 2
         nodes.push({ kind: 'label', pos: { x: flatStartX + 8, y: titleY }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: mc, above: true, session: s, tooltip })
-        bound(titleY - 4, 28)
+        bound(titleY - 4, 16)
 
         nodes.push({ kind: 'dot', pos: { x: forkX, y: cY }, color: mc, size: 'lg', tooltip })
         tracks.push({ path: `M ${forkX} ${cY} L ${joinX} ${cY}`, color: mc, width: 1.5 })
@@ -440,8 +440,8 @@ function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CON
         sessionRanges.push({ session: s, xStart: forkX, xEnd: joinX })
         cx = joinX + SEG_GAP
       } else {
-        nodes.push({ kind: 'label', pos: { x: cx + 14, y: cY - 28 }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: mc, above: true, session: s, tooltip })
-        bound(cY - 32, 28)
+        nodes.push({ kind: 'label', pos: { x: cx + 14, y: cY - 16 }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: mc, above: true, session: s, tooltip })
+        bound(cY - 20, 16)
         nodes.push({ kind: 'dot', pos: { x: cx, y: cY }, color: mc, size: 'sm', tooltip })
         nodes.push({ kind: 'dot', pos: { x: cx + w, y: cY }, color: mc, size: 'sm', tooltip })
         tracks.push({ path: `M ${cx} ${cY} L ${cx + w} ${cY}`, color: mc, width: 3 })
@@ -531,7 +531,7 @@ function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CON
         } else {
           const hasRoom = laneLabelRight[lane] === 0 || sXStart >= laneLabelRight[lane]
           if (hasRoom) {
-            nodes.push({ kind: 'label', pos: { x: sXStart + 8, y: trackY - 28 }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: mc, above: true, session: s, tooltip })
+            nodes.push({ kind: 'label', pos: { x: sXStart + 8, y: trackY - 16 }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: mc, above: true, session: s, tooltip })
             laneLabelRight[lane] = sXStart + MIN_LABEL_GAP
           }
           bound(trackY - 32, 28)
@@ -556,7 +556,7 @@ function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CON
   }
 
   const threadEnd = cx - SEG_GAP
-  const pad = 36
+  const pad = 4
   const yShift = -minY + pad
   const totalH = maxY - minY + pad * 2
 
@@ -601,7 +601,7 @@ function Legend({ entry, textSecondaryColor, textMutedColor }: { entry: LegendEn
     <div style={{
       fontFamily: FONT, fontSize: 10,
       display: 'flex', alignItems: 'baseline', gap: 14,
-      padding: '6px 0', minHeight: 28,
+      padding: '2px 0', minHeight: 20,
     }}>
       {isLegendary ? (
         <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: '#d97706', flexShrink: 0 }}>
@@ -764,7 +764,7 @@ export function WorkTimeline({ sessions, onSessionClick, maxHeight, accentColor,
       </div>
 
       <div ref={scrollRef} onScroll={handleScroll}
-        style={{ overflowX: 'auto', overflowY: fullscreen ? 'auto' : 'hidden', WebkitOverflowScrolling: 'touch', paddingBottom: 12, maxHeight: fullscreen ? 'calc(100vh - 80px)' : undefined }}>
+        style={{ overflowX: 'auto', overflowY: fullscreen ? 'auto' : 'hidden', WebkitOverflowScrolling: 'touch', maxHeight: fullscreen ? 'calc(100vh - 80px)' : undefined }}>
         <div style={{ position: 'relative', width: L.totalW, height: L.totalH, fontFamily: FONT }}>
           <svg style={{ position: 'absolute', inset: 0, width: L.totalW, height: L.totalH, pointerEvents: 'none' }}>
             <line x1={L.threadStart} y1={L.centerY} x2={L.threadEnd} y2={L.centerY}

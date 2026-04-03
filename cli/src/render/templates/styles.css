@@ -45,6 +45,15 @@ body {
 a { color: var(--primary); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
+/* ── Screenshot browser frame ── */
+img[alt*="screenshot" i] {
+  max-height: 24rem;
+  width: 100%;
+  object-fit: cover;
+  object-position: top;
+  border-radius: 6px;
+}
+
 /* ── Shared Components ── */
 
 .card {

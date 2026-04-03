@@ -9,6 +9,7 @@ import { Liquid } from 'liquidjs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { PortfolioRenderData, ProjectRenderData, SessionRenderData } from './types.js';
+import { getTemplateInfo } from './templates.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -87,6 +88,16 @@ interface RenderProjectExtras {
 }
 
 const DEFAULT_TEMPLATE = 'editorial';
+
+/** Inject data-accent and data-mode into the first data-template wrapper element. */
+function injectTemplateAttrs(html: string, templateName: string): string {
+  const info = getTemplateInfo(templateName);
+  if (!info) return html;
+  return html.replace(
+    /data-template="[^"]*"/,
+    (match) => `${match} data-accent="${info.accent}" data-mode="${info.mode}"`,
+  );
+}
 
 export function renderProject(data: ProjectRenderData, extras?: RenderProjectExtras, templateName?: string): string {
   const template = templateName || DEFAULT_TEMPLATE;
@@ -210,7 +221,7 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
     return true;
   }).slice(0, 6);
 
-  return engine.renderFileSync(`${template}/project`, {
+  const html = engine.renderFileSync(`${template}/project`, {
     ...data,
     arc: extras?.arc ?? [],
     featuredSessions,
@@ -222,11 +233,12 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
     durationLabel,
     efficiencyMultiplier: efficiencyStr,
   });
+  return injectTemplateAttrs(html, template);
 }
 
 export function renderSession(data: SessionRenderData, templateName?: string): string {
   const template = templateName || DEFAULT_TEMPLATE;
-  return engine.renderFileSync(`${template}/session`, data);
+  return injectTemplateAttrs(engine.renderFileSync(`${template}/session`, data), template);
 }
 
 export function renderPortfolio(data: PortfolioRenderData, templateName?: string): string {
@@ -238,9 +250,9 @@ export function renderPortfolio(data: PortfolioRenderData, templateName?: string
     : undefined;
   const efficiencyStr = efficiencyMultiplier && efficiencyMultiplier > 1 ? `${efficiencyMultiplier.toFixed(1)}x` : undefined;
 
-  return engine.renderFileSync(`${template}/portfolio`, {
+  return injectTemplateAttrs(engine.renderFileSync(`${template}/portfolio`, {
     ...data,
     durationLabel,
     efficiencyMultiplier: efficiencyStr,
-  });
+  }), template);
 }

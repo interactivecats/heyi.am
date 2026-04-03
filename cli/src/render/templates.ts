@@ -79,20 +79,24 @@ export function resolveTemplate(projectTemplate?: string, userDefault?: string):
  * Load concatenated CSS for a template (base + template-specific).
  * Used by export.ts for standalone HTML and by preview.
  */
+const cssCache = new Map<string, string>();
+
 export function getTemplateCss(templateName: string): string {
   const name = isValidTemplate(templateName) ? templateName : DEFAULT_TEMPLATE;
+  const cached = cssCache.get(name);
+  if (cached !== undefined) return cached;
 
   let css = '';
   try {
     css = readFileSync(resolve(TEMPLATES_DIR, 'styles.css'), 'utf-8');
   } catch { /* empty */ }
 
-  // Load template-specific CSS if it exists (e.g. kinetic/styles.css)
   try {
     const templateCss = readFileSync(resolve(TEMPLATES_DIR, name, 'styles.css'), 'utf-8');
     css += '\n\n/* === ' + name + ' template styles === */\n' + templateCss;
   } catch { /* no template-specific CSS — fine */ }
 
+  cssCache.set(name, css);
   return css;
 }
 

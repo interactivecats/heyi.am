@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { getAuthToken } from '../auth.js';
 import { API_URL, PUBLIC_URL } from '../config.js';
-import { loadEnhancedData, saveEnhancedData, saveUploadedState } from '../settings.js';
+import { loadEnhancedData, saveEnhancedData, saveUploadedState, getDefaultTemplate } from '../settings.js';
 import { captureScreenshot } from '../screenshot.js';
 import { redactSession, redactText, scanTextSync, formatFindings, stripHomePathsInText } from '../redact.js';
 import { renderProjectHtml, renderSessionHtml } from '../render/index.js';
@@ -62,7 +62,8 @@ export function createPublishRouter(ctx: RouteContext): Router {
         sessionCards: sessionCards || [],
       });
 
-      const html = renderProjectHtml(renderData);
+      const templateName = getDefaultTemplate() || 'editorial';
+      const html = renderProjectHtml(renderData, undefined, templateName);
       res.json({ html });
     } catch (err) {
       res.status(500).json({ error: { code: 'RENDER_FAILED', message: (err as Error).message } });
@@ -271,6 +272,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
       const uploadedSessionCards: SessionCard[] = [];
 
       if (proj) {
+        const selectedTemplate = getDefaultTemplate() || 'editorial';
         for (const sessionId of selectedSessionIds) {
           const meta = proj.sessions.find((s) => s.sessionId === sessionId);
           if (!meta) continue;
@@ -295,7 +297,6 @@ export function createPublishRouter(ctx: RouteContext): Router {
             const sessionSkills = enhanced?.skills ?? session.skills ?? [];
             const sessionSourceTool = session.source ?? meta.source ?? 'claude';
             const sessionRecordedAt = session.date ? new Date(session.date).toISOString() : new Date().toISOString();
-
             const renderOpts = {
               sessionId,
               session,
@@ -305,12 +306,13 @@ export function createPublishRouter(ctx: RouteContext): Router {
               sessionSlug,
               sourceTool: sessionSourceTool,
               agentSummary,
+              template: selectedTemplate,
             };
 
             let sessionRenderedHtml: string | null = null;
             try {
               const sessionRenderData = buildSessionRenderData(renderOpts);
-              sessionRenderedHtml = renderSessionHtml(sessionRenderData);
+              sessionRenderedHtml = renderSessionHtml(sessionRenderData, selectedTemplate);
             } catch (renderErr) {
               console.error(`[upload] Session render failed for ${sessionId}:`, (renderErr as Error).message);
             }
@@ -336,7 +338,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
                 end_time: session.endTime ? new Date(session.endTime).toISOString() : null,
                 cwd: session.cwd ?? null,
                 wall_clock_minutes: session.wallClockMinutes ?? null,
-                template: 'editorial',
+                template: selectedTemplate,
                 language: null,
                 tools: session.toolBreakdown?.map((t) => t.tool) ?? [],
                 skills: sessionSkills,
@@ -370,7 +372,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
               })(),
               cwd: session.cwd ?? null,
               wall_clock_minutes: session.wallClockMinutes ?? null,
-              template: 'editorial',
+              template: selectedTemplate,
               skills: sessionSkills,
               tools: session.toolBreakdown?.map((t) => t.tool) ?? [],
               source: sessionSourceTool,

@@ -22003,7 +22003,9 @@
     ].join(" ");
   }
   var DEFAULT_MAX_CONCURRENT = 8;
-  function layoutSegments(segments, maxConcurrent = DEFAULT_MAX_CONCURRENT) {
+  function layoutSegments(segments, maxConcurrent = DEFAULT_MAX_CONCURRENT, themeColors) {
+    const _mainColor = themeColors?.main ?? MAIN_COLOR;
+    const _textMuted = themeColors?.muted ?? TEXT_MUTED;
     const nodes = [];
     const tracks = [];
     const sessionRanges = [];
@@ -22019,7 +22021,7 @@
     for (const seg of segments) {
       if (seg.type === "gap") {
         const gapW = 72;
-        tracks.push({ path: `M ${cx} ${cY} L ${cx + gapW} ${cY}`, color: TEXT_MUTED, width: 1.5, dashed: true });
+        tracks.push({ path: `M ${cx} ${cY} L ${cx + gapW} ${cY}`, color: _textMuted, width: 1.5, dashed: true });
         nodes.push({ kind: "gap", pos: { x: cx, y: cY + 16 }, label: formatGap(seg.durationMs), durationMs: seg.durationMs });
         bound(cY - 8, 40);
         cx += gapW + SEG_GAP;
@@ -22046,16 +22048,16 @@
           const waves = groupIntoWaves(visible, parentStartMs);
           const maxConcurrentInWave = Math.max(...waves.map((w2) => w2.children.length), 1);
           const gap = laneGap(maxConcurrentInWave);
-          const maxSpread = Math.min((maxConcurrentInWave - 1) * gap, 300);
+          const maxSpread = Math.min((maxConcurrentInWave - 1) * gap, 120);
           const forkX = cx;
           const joinX = cx + w;
           const topLaneY = cY - maxSpread / 2;
-          const titleY = topLaneY - 32;
+          const titleY = topLaneY - 16;
           const flatStartX = forkX + CURVE_CP * 2;
-          nodes.push({ kind: "label", pos: { x: flatStartX + 8, y: titleY }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
-          bound(titleY - 4, 28);
-          nodes.push({ kind: "dot", pos: { x: forkX, y: cY }, color: MAIN_COLOR, size: "lg", tooltip });
-          tracks.push({ path: `M ${forkX} ${cY} L ${joinX} ${cY}`, color: MAIN_COLOR, width: 1.5 });
+          nodes.push({ kind: "label", pos: { x: flatStartX + 8, y: titleY }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: _mainColor, above: true, session: s, tooltip });
+          bound(titleY - 4, 16);
+          nodes.push({ kind: "dot", pos: { x: forkX, y: cY }, color: _mainColor, size: "lg", tooltip });
+          tracks.push({ path: `M ${forkX} ${cY} L ${joinX} ${cY}`, color: _mainColor, width: 1.5 });
           for (const wave of waves) {
             const n = wave.children.length;
             const waveSpread = Math.min((n - 1) * gap, maxSpread);
@@ -22072,15 +22074,15 @@
               bound(laneY - 2, 4);
             });
           }
-          nodes.push({ kind: "dot", pos: { x: joinX, y: cY }, color: MAIN_COLOR, size: "lg", tooltip });
+          nodes.push({ kind: "dot", pos: { x: joinX, y: cY }, color: _mainColor, size: "lg", tooltip });
           sessionRanges.push({ session: s, xStart: forkX, xEnd: joinX });
           cx = joinX + SEG_GAP;
         } else {
-          nodes.push({ kind: "label", pos: { x: cx + 14, y: cY - 28 }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
-          bound(cY - 32, 28);
-          nodes.push({ kind: "dot", pos: { x: cx, y: cY }, color: MAIN_COLOR, size: "sm", tooltip });
-          nodes.push({ kind: "dot", pos: { x: cx + w, y: cY }, color: MAIN_COLOR, size: "sm", tooltip });
-          tracks.push({ path: `M ${cx} ${cY} L ${cx + w} ${cY}`, color: MAIN_COLOR, width: 3 });
+          nodes.push({ kind: "label", pos: { x: cx + 14, y: cY - 16 }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: _mainColor, above: true, session: s, tooltip });
+          bound(cY - 20, 16);
+          nodes.push({ kind: "dot", pos: { x: cx, y: cY }, color: _mainColor, size: "sm", tooltip });
+          nodes.push({ kind: "dot", pos: { x: cx + w, y: cY }, color: _mainColor, size: "sm", tooltip });
+          tracks.push({ path: `M ${cx} ${cY} L ${cx + w} ${cY}`, color: _mainColor, width: 3 });
           sessionRanges.push({ session: s, xStart: cx, xEnd: cx + w });
           cx += w + SEG_GAP;
         }
@@ -22124,12 +22126,12 @@
             const titleY = topAgentY - 32;
             const hasRoom = laneLabelRight[lane] === 0 || sXStart >= laneLabelRight[lane];
             if (hasRoom) {
-              nodes.push({ kind: "label", pos: { x: sXStart + 8, y: titleY }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
+              nodes.push({ kind: "label", pos: { x: sXStart + 8, y: titleY }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: _mainColor, above: true, session: s, tooltip });
               laneLabelRight[lane] = sXStart + MIN_LABEL_GAP;
             }
             bound(titleY - 4, 28);
-            nodes.push({ kind: "dot", pos: { x: sXStart, y: trackY }, color: MAIN_COLOR, size: "lg", tooltip });
-            tracks.push({ path: `M ${sXStart} ${trackY} L ${sXEnd} ${trackY}`, color: MAIN_COLOR, width: 1.5 });
+            nodes.push({ kind: "dot", pos: { x: sXStart, y: trackY }, color: _mainColor, size: "lg", tooltip });
+            tracks.push({ path: `M ${sXStart} ${trackY} L ${sXEnd} ${trackY}`, color: _mainColor, width: 1.5 });
             const agentOpacity = agentLaneCount > 15 ? 0.4 : agentLaneCount > 8 ? 0.6 : 0.8;
             const agentWidth = agentLaneCount > 15 ? 1 : 1.5;
             agentVisible.forEach((kid) => {
@@ -22144,32 +22146,32 @@
               tracks.push({ path: bezierForkJoin(kidForkX, Math.min(adjustedJoinX, sXEnd), trackY, agentY), color, width: agentWidth, opacity: agentOpacity });
               bound(agentY - 2, 4);
             });
-            nodes.push({ kind: "dot", pos: { x: sXEnd, y: trackY }, color: MAIN_COLOR, size: "lg", tooltip });
+            nodes.push({ kind: "dot", pos: { x: sXEnd, y: trackY }, color: _mainColor, size: "lg", tooltip });
             sessionRanges.push({ session: s, xStart: sXStart, xEnd: sXEnd });
           } else {
             const hasRoom = laneLabelRight[lane] === 0 || sXStart >= laneLabelRight[lane];
             if (hasRoom) {
-              nodes.push({ kind: "label", pos: { x: sXStart + 8, y: trackY - 28 }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: MAIN_COLOR, above: true, session: s, tooltip });
+              nodes.push({ kind: "label", pos: { x: sXStart + 8, y: trackY - 28 }, title: truncate(s.title, MAX_TITLE), sub, timestamp: ts, color: _mainColor, above: true, session: s, tooltip });
               laneLabelRight[lane] = sXStart + MIN_LABEL_GAP;
             }
             bound(trackY - 32, 28);
-            nodes.push({ kind: "dot", pos: { x: sXStart, y: trackY }, color: MAIN_COLOR, size: "sm", tooltip });
-            nodes.push({ kind: "dot", pos: { x: sXEnd, y: trackY }, color: MAIN_COLOR, size: "sm", tooltip });
-            tracks.push({ path: `M ${sXStart} ${trackY} L ${sXEnd} ${trackY}`, color: MAIN_COLOR, width: 3 });
+            nodes.push({ kind: "dot", pos: { x: sXStart, y: trackY }, color: _mainColor, size: "sm", tooltip });
+            nodes.push({ kind: "dot", pos: { x: sXEnd, y: trackY }, color: _mainColor, size: "sm", tooltip });
+            tracks.push({ path: `M ${sXStart} ${trackY} L ${sXEnd} ${trackY}`, color: _mainColor, width: 3 });
             sessionRanges.push({ session: s, xStart: sXStart, xEnd: sXEnd });
           }
           bound(trackY - 4, 8);
         }
         if (hidden > 0) {
           const overflowY = cY + laneCount * dynamicTrackGap;
-          nodes.push({ kind: "label", pos: { x: segXStart + 8, y: overflowY }, title: `+${hidden} more sessions`, color: TEXT_MUTED, above: false });
+          nodes.push({ kind: "label", pos: { x: segXStart + 8, y: overflowY }, title: `+${hidden} more sessions`, color: _textMuted, above: false });
           bound(overflowY, 16);
         }
         cx = segXEnd + SEG_GAP;
       }
     }
     const threadEnd = cx - SEG_GAP;
-    const pad = 36;
+    const pad = 4;
     const yShift = -minY + pad;
     const totalH = maxY - minY + pad * 2;
     return {
@@ -22199,8 +22201,10 @@
     }
     return best;
   }
-  function Legend({ entry }) {
+  function Legend({ entry, textSecondaryColor, textMutedColor }) {
     if (!entry || entry.agents.length === 0) return null;
+    const _textSecondary = textSecondaryColor ?? TEXT_SECONDARY;
+    const _textMuted = textMutedColor ?? TEXT_MUTED;
     const visible = entry.agents.slice(0, MAX_LEGEND_ROLES);
     const hiddenRoles = entry.agents.length - visible.length;
     const isLegendary = entry.totalAgents >= LEGENDARY_THRESHOLD;
@@ -22217,7 +22221,7 @@
         "LEGENDARY AGENTIC USE \u2014 ",
         entry.totalAgents,
         " agents:"
-      ] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 10, color: TEXT_SECONDARY, fontWeight: 600, flexShrink: 0 }, children: [
+      ] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 10, color: _textSecondary, fontWeight: 600, flexShrink: 0 }, children: [
         entry.totalAgents,
         " agents:"
       ] }),
@@ -22232,13 +22236,13 @@
             flexShrink: 0
           } }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontWeight: 600, color: a.color, letterSpacing: "0.03em" }, children: a.role.toUpperCase() }),
-          a.count > 1 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { color: TEXT_MUTED }, children: [
+          a.count > 1 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { color: _textMuted }, children: [
             "\xD7",
             a.count
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: TEXT_MUTED }, children: a.duration })
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: _textMuted }, children: a.duration })
         ] }, a.role)),
-        hiddenRoles > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { color: TEXT_MUTED, fontStyle: "italic" }, children: [
+        hiddenRoles > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { color: _textMuted, fontStyle: "italic" }, children: [
           "+",
           hiddenRoles,
           " more"
@@ -22279,14 +22283,20 @@
       ] })
     ] });
   }
-  function WorkTimeline({ sessions, onSessionClick, maxHeight }) {
+  function WorkTimeline({ sessions, onSessionClick, maxHeight, accentColor, isDark }) {
+    const mainColor = accentColor ?? (isDark ? "#f97316" : MAIN_COLOR);
+    const threadColor = isDark ? "rgba(255,255,255,0.15)" : THREAD_COLOR;
+    const textSecondary = isDark ? "rgba(255,255,255,0.65)" : TEXT_SECONDARY;
+    const textMuted = isDark ? "rgba(255,255,255,0.4)" : TEXT_MUTED;
+    const bgSurface = isDark ? "#111" : "#f8f9fb";
     const segments = (0, import_react.useMemo)(() => computeSegments(sessions), [sessions]);
     const [expanded, setExpanded] = (0, import_react.useState)(false);
     const [fullscreen, setFullscreen] = (0, import_react.useState)(false);
     const [playing, setPlaying] = (0, import_react.useState)(false);
     const playRef = (0, import_react.useRef)(null);
     const concurrentLimit = expanded ? 999 : DEFAULT_MAX_CONCURRENT;
-    const L = (0, import_react.useMemo)(() => layoutSegments(segments, concurrentLimit), [segments, concurrentLimit]);
+    const themeColors = (0, import_react.useMemo)(() => ({ main: mainColor, muted: textMuted }), [mainColor, textMuted]);
+    const L = (0, import_react.useMemo)(() => layoutSegments(segments, concurrentLimit, themeColors), [segments, concurrentLimit, themeColors]);
     const legendEntries = (0, import_react.useMemo)(() => buildLegendEntries(segments, L.sessionRanges), [segments, L.sessionRanges]);
     const scrollRef = (0, import_react.useRef)(null);
     const [hovered, setHovered] = (0, import_react.useState)(null);
@@ -22342,17 +22352,17 @@
     }, []);
     const clearHover = (0, import_react.useCallback)(() => setHovered(null), []);
     if (!sessions.length) {
-      return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { "data-testid": "work-timeline-empty", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { fontFamily: FONT, fontSize: "0.8125rem", color: TEXT_SECONDARY }, children: "No sessions to display." }) });
+      return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { "data-testid": "work-timeline-empty", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { fontFamily: FONT, fontSize: "0.8125rem", color: textSecondary }, children: "No sessions to display." }) });
     }
     const hasAgents = legendEntries.some((e) => e.agents.length > 0);
     const btnStyle = (active) => ({
       padding: "3px 10px",
       fontSize: 10,
       fontWeight: 600,
-      border: `1px solid ${THREAD_COLOR}`,
+      border: `1px solid ${threadColor}`,
       borderRadius: 4,
-      background: active ? MAIN_COLOR : "#fff",
-      color: active ? "#fff" : MAIN_COLOR,
+      background: active ? mainColor : isDark ? "rgba(255,255,255,0.08)" : "#fff",
+      color: active ? "#fff" : mainColor,
       cursor: "pointer",
       fontFamily: FONT,
       letterSpacing: "0.03em",
@@ -22360,7 +22370,7 @@
     });
     const timelineContent = /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { flex: 1, minWidth: 0 }, children: hasAgents && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Legend, { entry: focusedEntry }) }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { flex: 1, minWidth: 0 }, children: hasAgents && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Legend, { entry: focusedEntry, textSecondaryColor: textSecondary, textMutedColor: textMuted }) }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", gap: 6, flexShrink: 0 }, children: L.totalW > 600 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: togglePlay, style: btnStyle(playing), children: playing ? "PAUSE" : "PLAY" }) })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
@@ -22378,7 +22388,7 @@
                   y1: L.centerY,
                   x2: L.threadEnd,
                   y2: L.centerY,
-                  stroke: THREAD_COLOR,
+                  stroke: threadColor,
                   strokeWidth: 1.5
                 }
               ),
@@ -22413,9 +22423,9 @@
                     onMouseLeave: node.tooltip ? clearHover : void 0,
                     children: [
                       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 12, fontWeight: 700, color: node.color, letterSpacing: "0.01em", display: "block" }, children: node.title }),
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 10, color: TEXT_MUTED, display: "flex", gap: 8, marginTop: 1 }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 10, color: textMuted, display: "flex", gap: 8, marginTop: 1 }, children: [
                         node.sub && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: node.sub }),
-                        node.timestamp && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: TEXT_SECONDARY }, children: node.timestamp })
+                        node.timestamp && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: textSecondary }, children: node.timestamp })
                       ] })
                     ]
                   },
@@ -22456,7 +22466,7 @@
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: 10,
-                  color: TEXT_MUTED,
+                  color: textMuted,
                   letterSpacing: "0.04em"
                 }, children: node.label }, `g-${i}`);
               }
@@ -22472,7 +22482,7 @@
         position: "fixed",
         inset: 0,
         zIndex: 9998,
-        background: "#f8f9fb",
+        background: bgSurface,
         display: "flex",
         flexDirection: "column",
         padding: "16px 24px"
@@ -22485,10 +22495,10 @@
           padding: "6px 14px",
           fontSize: 12,
           fontWeight: 700,
-          border: `1px solid ${THREAD_COLOR}`,
+          border: `1px solid ${threadColor}`,
           borderRadius: 4,
-          background: "#fff",
-          color: MAIN_COLOR,
+          background: isDark ? "rgba(255,255,255,0.08)" : "#fff",
+          color: mainColor,
           cursor: "pointer",
           fontFamily: FONT
         }, children: "Close" }),
@@ -22504,7 +22514,7 @@
         left: 0,
         right: 0,
         height: 64,
-        background: "linear-gradient(transparent, #f8f9fb)",
+        background: `linear-gradient(transparent, ${bgSurface})`,
         display: "flex",
         alignItems: "flex-end",
         justifyContent: "center",
@@ -22516,14 +22526,14 @@
         padding: "5px 16px",
         fontSize: 11,
         fontWeight: 700,
-        border: `1px solid ${THREAD_COLOR}`,
+        border: `1px solid ${threadColor}`,
         borderRadius: 4,
-        background: "#fff",
-        color: MAIN_COLOR,
+        background: isDark ? "rgba(255,255,255,0.08)" : "#fff",
+        color: mainColor,
         cursor: "pointer",
         fontFamily: FONT,
         letterSpacing: "0.03em",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.08)"
+        boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.3)" : "0 2px 8px rgba(0,0,0,0.08)"
       }, children: "EXPAND TIMELINE" }) })
     ] });
   }
@@ -22531,6 +22541,7 @@
   // src/GrowthChart.tsx
   var import_jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
   var FONT2 = "'IBM Plex Mono', monospace";
+  var PRIMARY = "#084471";
   var GREEN = "#16a34a";
   var RED = "#dc2626";
   var TEXT_MUTED2 = "#9ca3af";
@@ -22633,10 +22644,31 @@
     }
     return dividers;
   }
-  function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSessionClick }) {
+  function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSessionClick, accentColor, isDark, dualPositive = true }) {
+    const colors = isDark ? {
+      textMuted: "rgba(255,255,255,0.4)",
+      textSecondary: "rgba(255,255,255,0.65)",
+      grid: "rgba(255,255,255,0.06)",
+      text: "#fafafa",
+      green: GREEN,
+      red: RED,
+      accent: accentColor || "#f97316",
+      dotStroke: "rgba(0,0,0,0.3)",
+      border: "rgba(255,255,255,0.06)"
+    } : {
+      textMuted: TEXT_MUTED2,
+      textSecondary: TEXT_SECONDARY2,
+      grid: GRID_COLOR,
+      text: "#191c1e",
+      green: GREEN,
+      red: RED,
+      accent: accentColor || PRIMARY,
+      dotStroke: "#fff",
+      border: GRID_COLOR
+    };
     const points = buildTimeSeries(sessions);
     if (points.length === 0) {
-      return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontFamily: FONT2, fontSize: "0.75rem", color: TEXT_SECONDARY2, padding: 16 }, children: "No session data available for growth chart." });
+      return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontFamily: FONT2, fontSize: "0.75rem", color: colors.textSecondary, padding: 16 }, children: "No session data available for growth chart." });
     }
     const { visualTimes, totalVisualTime } = compressTime(points);
     const momentMap = /* @__PURE__ */ new Map();
@@ -22646,26 +22678,49 @@
     const totalAdded = points[points.length - 1].cumulativeAdded;
     const totalDeleted = points[points.length - 1].cumulativeDeleted;
     const hasDeleteData = totalDeleted > 0;
-    const maxVal = Math.max(totalAdded, 1);
-    const ticks = computeAxisTicks(maxVal);
-    const axisMax = ticks[ticks.length - 1] || 1;
-    const deleteTicks = hasDeleteData ? computeAxisTicks(totalDeleted) : [];
-    const deleteAxisMax = hasDeleteData ? deleteTicks[deleteTicks.length - 1] || 1 : 0;
     const baseWidth = 700;
-    const svgWidth = Math.max(baseWidth, Math.round(totalVisualTime / 6e4 * 0.8) + 120);
+    const timeBasedWidth = Math.round(totalVisualTime / 6e4 * 0.8) + 120;
+    const pointBasedWidth = points.length * 12 + 120;
+    const svgWidth = Math.max(baseWidth, timeBasedWidth, pointBasedWidth);
     const padLeft = 48;
     const padRight = 16;
     const padTop = 24;
-    const addChartH = 140;
-    const delChartH = hasDeleteData ? 50 : 0;
-    const gapH = hasDeleteData ? 2 : 0;
     const padBottom = 36;
-    const svgHeight = padTop + addChartH + gapH + delChartH + padBottom;
-    const baseline = padTop + addChartH;
     const maxVT = totalVisualTime || 1;
     const toX = (vt) => padLeft + vt / maxVT * (svgWidth - padLeft - padRight);
-    const toYAdd = (val) => baseline - val / axisMax * addChartH;
-    const toYDel = (val) => baseline + gapH + val / deleteAxisMax * delChartH;
+    let addChartH, delChartH, gapH, svgHeight;
+    let baseline;
+    let axisMax, deleteAxisMax;
+    let ticks, deleteTicks;
+    let toYAdd;
+    let toYDel;
+    if (dualPositive) {
+      const maxVal = Math.max(totalAdded, totalDeleted, 1);
+      ticks = computeAxisTicks(maxVal);
+      axisMax = ticks[ticks.length - 1] || 1;
+      deleteTicks = [];
+      deleteAxisMax = 0;
+      addChartH = 160;
+      delChartH = 0;
+      gapH = 0;
+      svgHeight = padTop + addChartH + padBottom;
+      baseline = padTop + addChartH;
+      toYAdd = (val) => baseline - val / axisMax * addChartH;
+      toYDel = toYAdd;
+    } else {
+      const maxVal = Math.max(totalAdded, 1);
+      ticks = computeAxisTicks(maxVal);
+      axisMax = ticks[ticks.length - 1] || 1;
+      deleteTicks = hasDeleteData ? computeAxisTicks(totalDeleted) : [];
+      deleteAxisMax = hasDeleteData ? deleteTicks[deleteTicks.length - 1] || 1 : 0;
+      addChartH = 140;
+      delChartH = hasDeleteData ? 50 : 0;
+      gapH = hasDeleteData ? 2 : 0;
+      svgHeight = padTop + addChartH + gapH + delChartH + padBottom;
+      baseline = padTop + addChartH;
+      toYAdd = (val) => baseline - val / axisMax * addChartH;
+      toYDel = (val) => baseline + gapH + val / deleteAxisMax * delChartH;
+    }
     const addCoords = points.map((p, i) => ({ x: toX(visualTimes[i]), y: toYAdd(p.cumulativeAdded) }));
     const delCoords = hasDeleteData ? points.map((p, i) => ({ x: toX(visualTimes[i]), y: toYDel(p.cumulativeDeleted) })) : [];
     function stepPath(coords) {
@@ -22680,7 +22735,7 @@
     const addPath = stepPath(addCoords);
     const addAreaPath = addPath + ` L${addCoords[addCoords.length - 1].x.toFixed(1)},${baseline} L${addCoords[0].x.toFixed(1)},${baseline} Z`;
     const delPath = hasDeleteData ? stepPath(delCoords) : "";
-    const delAreaPath = hasDeleteData ? delPath + ` L${delCoords[delCoords.length - 1].x.toFixed(1)},${baseline + gapH} L${delCoords[0].x.toFixed(1)},${baseline + gapH} Z` : "";
+    const delAreaPath = hasDeleteData ? delPath + ` L${delCoords[delCoords.length - 1].x.toFixed(1)},${baseline + (dualPositive ? 0 : gapH)} L${delCoords[0].x.toFixed(1)},${baseline + (dualPositive ? 0 : gapH)} Z` : "";
     const MIN_LABEL_GAP2 = 90;
     const labelledIndices = /* @__PURE__ */ new Set();
     let lastLabelX = -Infinity;
@@ -22701,20 +22756,20 @@
         justifyContent: "space-between",
         alignItems: "baseline",
         padding: "8px 12px",
-        borderBottom: `1px solid ${GRID_COLOR}`,
+        borderBottom: `1px solid ${colors.border}`,
         fontFamily: FONT2
       }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { fontSize: 10, fontWeight: 700, color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em" }, children: "Code Changes Over Time" }),
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { fontSize: 10, fontWeight: 700, color: colors.textMuted, textTransform: "uppercase", letterSpacing: "0.06em" }, children: dualPositive ? "Lines Changed" : "Code Changes Over Time" }),
         /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", gap: 16, fontSize: 11, fontWeight: 600 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { color: GREEN }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { color: dualPositive ? colors.accent : colors.green }, children: [
             "+",
             formatLoc(totalAdded)
           ] }),
-          hasDeleteData && /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { color: RED }, children: [
+          hasDeleteData && /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { color: dualPositive ? colors.textSecondary : colors.red }, children: [
             "-",
             formatLoc(totalDeleted)
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { color: "#191c1e" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("span", { style: { color: colors.text }, children: [
             formatLoc(totalLoc),
             " total"
           ] })
@@ -22731,12 +22786,12 @@
           children: [
             /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("defs", { children: [
               /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("linearGradient", { id: "addGrad", x1: "0", y1: "0", x2: "0", y2: "1", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("stop", { offset: "0%", stopColor: GREEN, stopOpacity: 0.12 }),
-                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("stop", { offset: "100%", stopColor: GREEN, stopOpacity: 0.02 })
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("stop", { offset: "0%", stopColor: dualPositive ? colors.accent : colors.green, stopOpacity: 0.12 }),
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("stop", { offset: "100%", stopColor: dualPositive ? colors.accent : colors.green, stopOpacity: 0.02 })
               ] }),
               /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("linearGradient", { id: "delGrad", x1: "0", y1: "0", x2: "0", y2: "1", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("stop", { offset: "0%", stopColor: RED, stopOpacity: 0.02 }),
-                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("stop", { offset: "100%", stopColor: RED, stopOpacity: 0.1 })
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("stop", { offset: "0%", stopColor: dualPositive ? colors.accent : colors.red, stopOpacity: dualPositive ? 0.12 : 0.02 }),
+                /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("stop", { offset: "100%", stopColor: dualPositive ? colors.accent : colors.red, stopOpacity: dualPositive ? 0.02 : 0.1 })
               ] })
             ] }),
             ticks.map((tick) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("g", { children: [
@@ -22747,7 +22802,7 @@
                   y1: toYAdd(tick),
                   x2: svgWidth - padRight,
                   y2: toYAdd(tick),
-                  stroke: GRID_COLOR,
+                  stroke: colors.grid,
                   strokeWidth: "0.5",
                   strokeDasharray: "4,4"
                 }
@@ -22760,8 +22815,8 @@
                   textAnchor: "end",
                   fontFamily: FONT2,
                   fontSize: "8",
-                  fill: TEXT_MUTED2,
-                  children: tick === 0 ? "" : `+${formatLocAxis(tick)}`
+                  fill: colors.textMuted,
+                  children: tick === 0 ? "" : dualPositive ? formatLocAxis(tick) : `+${formatLocAxis(tick)}`
                 }
               )
             ] }, `ya-${tick}`)),
@@ -22772,7 +22827,7 @@
                 y1: baseline,
                 x2: svgWidth - padRight,
                 y2: baseline,
-                stroke: GRID_COLOR,
+                stroke: colors.grid,
                 strokeWidth: "1"
               }
             ),
@@ -22784,12 +22839,12 @@
                 textAnchor: "end",
                 fontFamily: FONT2,
                 fontSize: "8",
-                fill: TEXT_SECONDARY2,
+                fill: colors.textSecondary,
                 fontWeight: "600",
                 children: "0"
               }
             ),
-            hasDeleteData && deleteTicks.filter((t) => t > 0).map((tick) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("g", { children: [
+            !dualPositive && hasDeleteData && deleteTicks.filter((t) => t > 0).map((tick) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("g", { children: [
               /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
                 "line",
                 {
@@ -22797,7 +22852,7 @@
                   y1: toYDel(tick),
                   x2: svgWidth - padRight,
                   y2: toYDel(tick),
-                  stroke: GRID_COLOR,
+                  stroke: colors.grid,
                   strokeWidth: "0.5",
                   strokeDasharray: "4,4"
                 }
@@ -22810,7 +22865,7 @@
                   textAnchor: "end",
                   fontFamily: FONT2,
                   fontSize: "8",
-                  fill: TEXT_MUTED2,
+                  fill: colors.textMuted,
                   children: `-${formatLocAxis(tick)}`
                 }
               )
@@ -22822,17 +22877,17 @@
                 y1: padTop,
                 x2: div.x,
                 y2: baseline + gapH + delChartH,
-                stroke: GRID_COLOR,
+                stroke: colors.grid,
                 strokeWidth: "0.5",
                 strokeDasharray: "2,4"
               },
               `m-${i}`
             )),
             /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: addAreaPath, fill: "url(#addGrad)" }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: addPath, fill: "none", stroke: GREEN, strokeWidth: "1.5" }),
+            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: addPath, fill: "none", stroke: dualPositive ? colors.accent : colors.green, strokeWidth: "1.5" }),
             hasDeleteData && /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_jsx_runtime2.Fragment, { children: [
               /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: delAreaPath, fill: "url(#delGrad)" }),
-              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: delPath, fill: "none", stroke: RED, strokeWidth: "1.5" })
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("path", { d: delPath, fill: "none", stroke: dualPositive ? `${colors.accent}66` : colors.red, strokeWidth: "1.5" })
             ] }),
             points.map((p, i) => {
               const x = toX(visualTimes[i]);
@@ -22850,12 +22905,12 @@
                         cx: x,
                         cy: toYAdd(p.cumulativeAdded),
                         r: "5",
-                        fill: GREEN,
-                        stroke: "#fff",
+                        fill: dualPositive ? colors.accent : colors.green,
+                        stroke: colors.dotStroke,
                         strokeWidth: "2"
                       }
-                    ) : showLabel ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("circle", { cx: x, cy: toYAdd(p.cumulativeAdded), r: "3", fill: GREEN }) : null,
-                    hasDeleteData && p.cumulativeDeleted > 0 && showLabel && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("circle", { cx: x, cy: toYDel(p.cumulativeDeleted), r: "2.5", fill: RED }),
+                    ) : showLabel ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("circle", { cx: x, cy: toYAdd(p.cumulativeAdded), r: "3", fill: dualPositive ? colors.accent : colors.green }) : null,
+                    hasDeleteData && p.cumulativeDeleted > 0 && showLabel && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("circle", { cx: x, cy: toYDel(p.cumulativeDeleted), r: "2.5", fill: dualPositive ? `${colors.accent}66` : colors.red }),
                     isKey && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
                       "text",
                       {
@@ -22864,7 +22919,7 @@
                         textAnchor: "middle",
                         fontFamily: FONT2,
                         fontSize: "8",
-                        fill: TEXT_SECONDARY2,
+                        fill: colors.textSecondary,
                         children: momentMap.get(p.sessionId)
                       }
                     ),
@@ -22876,7 +22931,7 @@
                         textAnchor: "middle",
                         fontFamily: FONT2,
                         fontSize: "8",
-                        fill: TEXT_MUTED2,
+                        fill: colors.textMuted,
                         children: new Date(p.dateMs).toLocaleDateString("en-US", { month: "short", day: "numeric" })
                       }
                     )
@@ -22892,35 +22947,35 @@
         display: "flex",
         gap: 24,
         padding: "8px 12px",
-        borderTop: `1px solid ${GRID_COLOR}`,
+        borderTop: `1px solid ${colors.border}`,
         fontFamily: FONT2,
         fontSize: 10
       }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { fontSize: 14, fontWeight: 700, color: GREEN }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { fontSize: 14, fontWeight: 700, color: dualPositive ? colors.accent : colors.green }, children: [
             "+",
             formatLoc(totalAdded)
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }, children: "Added" })
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: colors.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }, children: "Added" })
         ] }),
         hasDeleteData && /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { fontSize: 14, fontWeight: 700, color: RED }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { fontSize: 14, fontWeight: 700, color: dualPositive ? colors.textSecondary : colors.red }, children: [
             "-",
             formatLoc(totalDeleted)
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }, children: "Deleted" })
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: colors.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }, children: "Deleted" })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontSize: 14, fontWeight: 700, color: "#191c1e" }, children: formatLoc(totalLoc) }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }, children: "Total LOC" })
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontSize: 14, fontWeight: 700, color: colors.text }, children: formatLoc(totalLoc) }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: colors.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }, children: "Total LOC" })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontSize: 14, fontWeight: 700, color: "#191c1e" }, children: totalFiles }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }, children: "Files" })
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontSize: 14, fontWeight: 700, color: colors.text }, children: totalFiles }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: colors.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }, children: "Files" })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontSize: 14, fontWeight: 700, color: "#191c1e" }, children: points.length }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: TEXT_MUTED2, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }, children: "Sessions" })
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { fontSize: 14, fontWeight: 700, color: colors.text }, children: points.length }),
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: colors.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }, children: "Sessions" })
         ] })
       ] })
     ] });
@@ -23063,6 +23118,21 @@
       return [];
     }
   }
+  function detectTheme() {
+    const wrapper = document.querySelector("[data-accent]");
+    if (wrapper) {
+      return {
+        isDark: wrapper.getAttribute("data-mode") === "dark",
+        accentColor: wrapper.getAttribute("data-accent") || void 0
+      };
+    }
+    const bg = window.getComputedStyle(document.body).backgroundColor;
+    const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (!match) return { isDark: false };
+    const [, r, g, b] = match.map(Number);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return { isDark: luminance < 0.5 };
+  }
   var allSessions = /* @__PURE__ */ new Map();
   var showOverlay = null;
   function OverlayRoot({ sessions }) {
@@ -23093,6 +23163,7 @@
     );
   }
   function mountVisualizations() {
+    const { isDark, accentColor } = detectTheme();
     document.querySelectorAll("[data-work-timeline]").forEach((el) => {
       const sessions = parseSessions(el);
       if (sessions.length === 0) return;
@@ -23101,6 +23172,8 @@
         import_react3.default.createElement(WorkTimeline, {
           sessions,
           maxHeight: 300,
+          isDark,
+          accentColor,
           onSessionClick: (session) => {
             if (showOverlay) showOverlay(session);
           }
@@ -23118,6 +23191,8 @@
           sessions,
           totalLoc,
           totalFiles,
+          isDark,
+          accentColor,
           onSessionClick: (session) => {
             if (showOverlay) showOverlay(session);
           }

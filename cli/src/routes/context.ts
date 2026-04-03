@@ -13,6 +13,7 @@ import {
   loadEnhancedData, loadProjectEnhanceResult,
   getUploadedState,
 } from '../settings.js';
+import { getTemplateCss } from '../render/templates.js';
 import { archiveSessionFiles } from '../archive.js';
 import {
   getDatabase, openDatabase,
@@ -141,7 +142,7 @@ export interface RouteContext {
   getSessionStats: (meta: SessionMeta, projectName: string) => Promise<SessionStats>;
   mergeSessionIntervals: (stats: SessionStats[]) => number;
   getProjectWithStats: (proj: ProjectInfo) => Promise<Record<string, unknown>>;
-  buildPreviewPage: (title: string, bodyHtml: string, banner?: string) => string;
+  buildPreviewPage: (title: string, bodyHtml: string, banner?: string, templateName?: string) => string;
 }
 
 // ── Shared session builder ──────────────────────────────────
@@ -607,10 +608,9 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
   }
 
   // ── buildPreviewPage ─────────────────────────────────────
-  function buildPreviewPage(title: string, bodyHtml: string, banner?: string): string {
-    const renderCssPath = path.resolve(__dirname, '..', 'render', 'templates', 'styles.css');
-    let inlineCss = '';
-    try { inlineCss = readFileSync(renderCssPath, 'utf-8'); } catch { /* */ }
+  function buildPreviewPage(title: string, bodyHtml: string, banner?: string, templateName?: string): string {
+    // Load full template CSS (base + template-specific) via the same path as the React embed
+    const inlineCss = getTemplateCss(templateName || 'editorial');
     const cssTag = `<style>${inlineCss}\n/* Preview override */\nbody { overflow: auto !important; min-height: auto !important; }\n#root { min-height: auto !important; }</style>`;
     const bannerHtml = banner
       ? `<div style="background: var(--primary, #084471); color: white; text-align: center; padding: 0.5rem; font-family: 'Inter', sans-serif; font-size: 0.75rem; letter-spacing: 0.05em;">${escapeHtml(banner)}</div>`
@@ -624,7 +624,7 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
   <title>${escapeHtml(title)} — Preview</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Newsreader:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
   ${cssTag}
 </head>
 <body>

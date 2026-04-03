@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import type { ProjectEnhanceCache, EnhancedData } from './settings.js';
 import { loadEnhancedData, getDefaultTemplate } from './settings.js';
 import { renderProjectHtml, renderSessionHtml } from './render/index.js';
-import { resolveTemplate } from './render/templates.js';
+import { resolveTemplate, getTemplateCss } from './render/templates.js';
 import { escapeHtml, displayNameFromDir } from './format-utils.js';
 import {
   buildProjectRenderData,
@@ -340,6 +340,7 @@ export async function exportHtml(
   }, templateName);
   const projectHtml = buildStandalonePage(title, projectBody, {
     description: result.narrative?.slice(0, 200) || undefined,
+    templateName,
   });
   totalBytes += writeAndTrack(join(outputPath, 'index.html'), projectHtml, files);
 
@@ -367,7 +368,7 @@ export async function exportHtml(
     const sessionHtml = buildStandalonePage(
       session.title,
       sessionBody,
-      { description: sessionDesc },
+      { description: sessionDesc, templateName },
     );
     totalBytes += writeAndTrack(join(sessionsDir, `${sessionSlug}.html`), sessionHtml, files);
   }
@@ -504,6 +505,7 @@ export function generateHtmlFiles(
   }, templateName);
   files.push({ path: 'index.html', content: buildStandalonePage(title, projectBody, {
     description: result.narrative?.slice(0, 200) || undefined,
+    templateName,
   }) });
 
   const featuredSessions = pickFeaturedSessions(sessions, cache);
@@ -521,7 +523,7 @@ export function generateHtmlFiles(
     const sessionDesc = (enhanced?.developerTake ?? session.developerTake ?? '').slice(0, 200) || undefined;
     files.push({
       path: `sessions/${sessionSlug}.html`,
-      content: buildStandalonePage(session.title, sessionBody, { description: sessionDesc }),
+      content: buildStandalonePage(session.title, sessionBody, { description: sessionDesc, templateName }),
     });
   }
 
@@ -637,12 +639,13 @@ function getInlineMountJs(): string {
 
 interface StandalonePageOpts {
   description?: string;
+  templateName?: string;
 }
 
 function buildStandalonePage(title: string, bodyHtml: string, opts?: StandalonePageOpts): string {
-  const css = getInlineCss();
+  const css = opts?.templateName ? getTemplateCss(opts.templateName) : getInlineCss();
   const cssTag = css
-    ? `<style>${css}\nbody { overflow: auto !important; min-height: auto !important; background: var(--color-surface, #f8f9fb); }</style>`
+    ? `<style>${css}\nbody { overflow: auto !important; min-height: auto !important; }\n#root { min-height: auto !important; }</style>`
     : '';
 
   const mountJs = getInlineMountJs();
@@ -670,7 +673,7 @@ function buildStandalonePage(title: string, bodyHtml: string, opts?: StandaloneP
   ${ogTags}
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Newsreader:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
   ${cssTag}
 </head>
 <body>

@@ -28,10 +28,13 @@ vi.mock('../render/index.js', () => ({
   renderPortfolioHtml: vi.fn().mockReturnValue('<div>rendered portfolio</div>'),
 }));
 
-vi.mock('../render/templates.js', () => ({
-  getTemplateCss: vi.fn().mockReturnValue('body { color: red; }'),
-  isValidTemplate: (name: string) => ['editorial', 'kinetic', 'terminal', 'minimal', 'showcase'].includes(name),
-}));
+vi.mock('../render/templates.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../render/templates.js')>();
+  return {
+    ...actual,
+    getTemplateCss: vi.fn().mockReturnValue('body { color: red; }'),
+  };
+});
 
 vi.mock('../render/build-render-data.js', () => ({
   buildProjectRenderData: vi.fn().mockReturnValue({ project: { slug: 'test' } }),
@@ -41,6 +44,12 @@ vi.mock('../render/build-render-data.js', () => ({
 
 vi.mock('../sync.js', () => ({
   displayNameFromDir: (dir: string) => dir,
+}));
+
+vi.mock('../db.js', () => ({
+  getSessionsByProject: vi.fn().mockReturnValue([]),
+  getProjectUuid: vi.fn().mockReturnValue('test-uuid'),
+  getFileCountWithChildren: vi.fn().mockReturnValue(0),
 }));
 
 import { createPreviewRouter, clearPreviewCache } from './preview.js';
@@ -114,10 +123,12 @@ describe('GET /api/projects/:project/render', () => {
 
     const res = await request(app).get('/api/projects/my-project/render');
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({
+    expect(res.body).toMatchObject({
       html: '<div>rendered project</div>',
       css: 'body { color: red; }',
       template: 'editorial',
+      accent: '#084471',
+      mode: 'light',
     });
   });
 

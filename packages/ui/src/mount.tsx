@@ -31,6 +31,24 @@ function parseSessions(el: HTMLElement): Session[] {
   }
 }
 
+/** Read theme from data attributes injected by the Liquid render engine. */
+function detectTheme(): { isDark: boolean; accentColor?: string } {
+  const wrapper = document.querySelector('[data-accent]');
+  if (wrapper) {
+    return {
+      isDark: wrapper.getAttribute('data-mode') === 'dark',
+      accentColor: wrapper.getAttribute('data-accent') || undefined,
+    };
+  }
+  // Fallback: detect from body background luminance
+  const bg = window.getComputedStyle(document.body).backgroundColor;
+  const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (!match) return { isDark: false };
+  const [, r, g, b] = match.map(Number);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return { isDark: luminance < 0.5 };
+}
+
 // Global session map + overlay state
 let allSessions: Map<string, Session> = new Map();
 let showOverlay: ((session: Session) => void) | null = null;
@@ -81,6 +99,8 @@ function OverlayRoot({ sessions }: { sessions: Map<string, Session> }) {
  * Mount all visualization components found in the current document.
  */
 export function mountVisualizations(): void {
+  const { isDark, accentColor } = detectTheme();
+
   // Work Timeline
   document.querySelectorAll<HTMLElement>('[data-work-timeline]').forEach((el) => {
     const sessions = parseSessions(el);
@@ -91,6 +111,8 @@ export function mountVisualizations(): void {
       React.createElement(WorkTimeline, {
         sessions,
         maxHeight: 300,
+        isDark,
+        accentColor,
         onSessionClick: (session: Session) => {
           if (showOverlay) showOverlay(session);
         },
@@ -110,6 +132,8 @@ export function mountVisualizations(): void {
         sessions,
         totalLoc,
         totalFiles,
+        isDark,
+        accentColor,
         onSessionClick: (session: Session) => {
           if (showOverlay) showOverlay(session);
         },
