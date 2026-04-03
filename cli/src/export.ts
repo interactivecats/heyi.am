@@ -14,7 +14,7 @@ import type { ProjectEnhanceCache, EnhancedData } from './settings.js';
 import { loadEnhancedData, getDefaultTemplate } from './settings.js';
 import { renderProjectHtml, renderSessionHtml } from './render/index.js';
 import { resolveTemplate, getTemplateCss } from './render/templates.js';
-import { escapeHtml, displayNameFromDir } from './format-utils.js';
+import { escapeHtml, displayNameFromDir, toSlug } from './format-utils.js';
 import {
   buildProjectRenderData,
   buildSessionRenderData,
@@ -61,7 +61,7 @@ function resolveScreenshotDataUri(dirName: string, cache: ProjectEnhanceCache): 
   }
 
   // Try local screenshot file
-  const slug = dirName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const slug = toSlug(dirName);
   const screenshotPath = join(SCREENSHOTS_DIR, `${slug}.png`);
   if (existsSync(screenshotPath)) {
     const buf = readFileSync(screenshotPath);
@@ -260,6 +260,9 @@ function buildSessionMarkdown(session: Session, enhanced: EnhancedData | null): 
 
 export interface ExportOpts {
   totalFilesChanged?: number;
+  totalAgentDurationMinutes?: number;
+  totalInputTokens?: number;
+  totalOutputTokens?: number;
   title?: string;
   screenshotUrl?: string;
 }
@@ -294,16 +297,19 @@ export async function exportHtml(
     });
   });
 
-  // Compute stats the same way the dashboard does
+  // Prefer DB-computed stats from opts (includes subagent data); fall back to session-based computation
   const totalLoc = sessions.reduce((sum, s) => sum + s.linesOfCode, 0);
   const totalDurationMinutes = computeMergedSessionDuration(sessions);
   const totalFilesChanged = opts?.totalFilesChanged ?? new Set(sessions.flatMap(s => s.filesChanged.map(f => f.path))).size;
-  // Agent duration: sum child durations across all orchestrated sessions
-  const totalAgentMinutes = sessions
-    .filter((s) => s.isOrchestrated && s.children)
-    .reduce((sum, s) => sum + s.children!.reduce((cs, c) => cs + c.durationMinutes, 0), 0);
-  const totalAgentDurationMinutes = totalAgentMinutes > 0 ? totalDurationMinutes + totalAgentMinutes : undefined;
-  const totalTokens = sessions.reduce((sum, s) => sum + (s.tokenUsage?.input ?? 0) + (s.tokenUsage?.output ?? 0), 0) || undefined;
+  const totalAgentDurationMinutes = opts?.totalAgentDurationMinutes ?? (() => {
+    const agentMin = sessions
+      .filter((s) => s.isOrchestrated && s.children)
+      .reduce((sum, s) => sum + s.children!.reduce((cs, c) => cs + c.durationMinutes, 0), 0);
+    return agentMin > 0 ? totalDurationMinutes + agentMin : undefined;
+  })();
+  const totalTokens = (opts?.totalInputTokens || opts?.totalOutputTokens)
+    ? (opts.totalInputTokens ?? 0) + (opts.totalOutputTokens ?? 0) || undefined
+    : sessions.reduce((sum, s) => sum + (s.tokenUsage?.input ?? 0) + (s.tokenUsage?.output ?? 0), 0) || undefined;
 
   // Resolve screenshot for embedding
   const screenshotUrl = resolveScreenshotDataUri(dirName, cache);
@@ -424,11 +430,15 @@ function buildProjectRenderInputs(
   const totalLoc = sessions.reduce((sum, s) => sum + s.linesOfCode, 0);
   const totalDurationMinutes = computeMergedSessionDuration(sessions);
   const totalFilesChanged = opts?.totalFilesChanged ?? new Set(sessions.flatMap(s => s.filesChanged.map(f => f.path))).size;
-  const totalAgentMinutes = sessions
-    .filter((s) => s.isOrchestrated && s.children)
-    .reduce((sum, s) => sum + s.children!.reduce((cs, c) => cs + c.durationMinutes, 0), 0);
-  const totalAgentDurationMinutes = totalAgentMinutes > 0 ? totalDurationMinutes + totalAgentMinutes : undefined;
-  const totalTokens = sessions.reduce((sum, s) => sum + (s.tokenUsage?.input ?? 0) + (s.tokenUsage?.output ?? 0), 0) || undefined;
+  const totalAgentDurationMinutes = opts?.totalAgentDurationMinutes ?? (() => {
+    const agentMin = sessions
+      .filter((s) => s.isOrchestrated && s.children)
+      .reduce((sum, s) => sum + s.children!.reduce((cs, c) => cs + c.durationMinutes, 0), 0);
+    return agentMin > 0 ? totalDurationMinutes + agentMin : undefined;
+  })();
+  const totalTokens = (opts?.totalInputTokens || opts?.totalOutputTokens)
+    ? (opts.totalInputTokens ?? 0) + (opts.totalOutputTokens ?? 0) || undefined
+    : sessions.reduce((sum, s) => sum + (s.tokenUsage?.input ?? 0) + (s.tokenUsage?.output ?? 0), 0) || undefined;
 
   return { result, slug, title, sessionCards, totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged, totalTokens };
 }

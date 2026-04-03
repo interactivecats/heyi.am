@@ -109,9 +109,14 @@ export function createExportRouter(ctx: RouteContext): Router {
       const data = await loadProjectData(ctx, dirName);
       if (!data) { res.status(404).json({ error: 'Project not found' }); return; }
       const cache = (data.enhanceCache as ProjectEnhanceCache) ?? buildFallbackCache(data.sessions);
-      const totalFilesChanged = (data.project as Record<string, unknown>).totalFiles as number;
+      const proj = data.project as Record<string, unknown>;
       const outDir = safeExportPath(outputPath, dirName, 'html');
-      const result = await exportHtml(dirName, cache, data.sessions, outDir, 'local', { totalFilesChanged });
+      const result = await exportHtml(dirName, cache, data.sessions, outDir, 'local', {
+        totalFilesChanged: proj.totalFiles as number,
+        totalAgentDurationMinutes: proj.totalAgentDuration as number | undefined,
+        totalInputTokens: proj.totalInputTokens as number | undefined,
+        totalOutputTokens: proj.totalOutputTokens as number | undefined,
+      });
       res.json(result);
     } catch (err) {
       console.error('[export-html]', (err as Error).message);
@@ -126,8 +131,13 @@ export function createExportRouter(ctx: RouteContext): Router {
       const data = await loadProjectData(ctx, dirName);
       if (!data) { res.status(404).json({ error: 'Project not found' }); return; }
       const cache = (data.enhanceCache as ProjectEnhanceCache) ?? buildFallbackCache(data.sessions);
-      const totalFilesChanged = (data.project as Record<string, unknown>).totalFiles as number;
-      const htmlFiles = generateHtmlFiles(dirName, cache, data.sessions, 'local', { totalFilesChanged });
+      const proj = data.project as Record<string, unknown>;
+      const htmlFiles = generateHtmlFiles(dirName, cache, data.sessions, 'local', {
+        totalFilesChanged: proj.totalFiles as number,
+        totalAgentDurationMinutes: proj.totalAgentDuration as number | undefined,
+        totalInputTokens: proj.totalInputTokens as number | undefined,
+        totalOutputTokens: proj.totalOutputTokens as number | undefined,
+      });
       const zipBuffer = createZipBuffer(htmlFiles);
       const filename = `${dirName.replace(/[^a-zA-Z0-9_-]/g, '_')}.zip`;
       res.setHeader('Content-Type', 'application/zip');
