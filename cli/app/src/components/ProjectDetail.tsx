@@ -200,7 +200,6 @@ export function ProjectDetail() {
       root.render(
         <WorkTimeline
           sessions={sessions}
-          maxHeight={300}
           onSessionClick={(s) => setSelectedSession(s)}
           accentColor={templateAccent}
           isDark={isDark}
