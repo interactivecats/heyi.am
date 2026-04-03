@@ -33,15 +33,22 @@ function buildLinkEl(url: string, type: 'repo' | 'project'): HTMLAnchorElement {
  * Remaps :root/body selectors and wraps in @layer for lower specificity than Tailwind.
  */
 function scopeTemplateCss(css: string): string {
-  let scoped = css
+  // Extract @keyframes before scoping — they break inside @scope
+  const keyframes: string[] = []
+  let scoped = css.replace(/@keyframes\s+[\w-]+\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\}/g, (match) => {
+    keyframes.push(match)
+    return ''
+  })
+  scoped = scoped
     // Remap :root and body to :scope (which resolves to #liquid-render inside @scope)
     .replace(/(?:^|\n)\s*:root\s*\{/g, '\n:scope {')
     .replace(/(?:^|\n)\s*body\s*\{/g, '\n:scope {')
     // Strip universal reset (Tailwind preflight handles this)
     .replace(/\*\s*,\s*\*::before\s*,\s*\*::after\s*\{[^}]*\}/g, '')
   // @scope confines ALL selectors to #liquid-render — nothing leaks out
+  // @keyframes placed outside @scope so animations work
   // Add screenshot constraint so images don't dominate the page
-  return `@scope (#liquid-render) {\n${scoped}\n}\n#liquid-render img[alt*="screenshot" i], #liquid-render img[alt*="Screenshot" i], #liquid-render [class*="screenshot"] img { max-height: 24rem; width: 100%; object-fit: cover; object-position: top; border-radius: 6px; }`
+  return `@scope (#liquid-render) {\n${scoped}\n}\n${keyframes.join('\n')}\n#liquid-render img[alt*="screenshot" i], #liquid-render img[alt*="Screenshot" i], #liquid-render [class*="screenshot"] img { max-height: 24rem; width: 100%; object-fit: cover; object-position: top; border-radius: 6px; }`
 }
 
 export function ProjectDetail() {

@@ -32,11 +32,17 @@ function formatDate(iso: string): string {
  * Same approach as ProjectDetail's scopeTemplateCss.
  */
 function scopeSessionCss(css: string): string {
-  let scoped = css
+  // Extract @keyframes before scoping — they break inside @scope
+  const keyframes: string[] = []
+  let scoped = css.replace(/@keyframes\s+[\w-]+\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\}/g, (match) => {
+    keyframes.push(match)
+    return ''
+  })
+  scoped = scoped
     .replace(/(?:^|\n)\s*:root\s*\{/g, '\n:scope {')
     .replace(/(?:^|\n)\s*body\s*\{/g, '\n:scope {')
     .replace(/\*\s*,\s*\*::before\s*,\s*\*::after\s*\{[^}]*\}/g, '')
-  return `@scope (#session-liquid-render) {\n${scoped}\n}`
+  return `@scope (#session-liquid-render) {\n${scoped}\n}\n${keyframes.join('\n')}`
 }
 
 export function SessionDetailOverlay({ session: initialSession, projectDirName, onClose, isDark }: SessionDetailOverlayProps) {
