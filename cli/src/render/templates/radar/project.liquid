@@ -113,7 +113,7 @@
   <section class="radar-section" aria-label="Lines changed">
     <div class="radar-label">Lines Changed</div>
     <div class="chart-card">
-      <div data-growth-chart data-dual-positive data-variant="radar" data-project-slug="{{ project.slug }}" data-total-loc="{{ project.totalLoc }}" data-total-files="{{ project.totalFilesChanged }}" data-sessions='{{ growthJson | raw }}'></div>
+      <div data-growth-chart data-variant="radar" data-project-slug="{{ project.slug }}" data-total-loc="{{ project.totalLoc }}" data-total-files="{{ project.totalFilesChanged }}" data-sessions='{{ growthJson | raw }}'></div>
     </div>
   </section>
   {% endif %}

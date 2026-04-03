@@ -219,7 +219,7 @@ export function ProjectDetail() {
           onSessionClick={(s) => setSelectedSession(s)}
           accentColor={templateAccent}
           isDark={isDark}
-          dualPositive={el.hasAttribute('data-dual-positive')}
+          dualPositive
           variant={(el.getAttribute('data-variant') as 'default' | 'radar') || 'default'}
         />,
       )
@@ -430,7 +430,7 @@ export function ProjectDetail() {
       </aside>
 
       {/* Main content — Liquid-rendered template preview */}
-      <div className="p-6 max-w-[1200px] mx-auto min-h-0" style={templateMode === 'dark' ? { background: '#000' } : undefined}>
+      <div className="p-6 min-h-0" style={templateMode === 'dark' ? { background: '#000' } : undefined}>
         {renderHtml ? (
           <>
             {renderCss && <style>{scopeProjectCss(renderCss)}</style>}
