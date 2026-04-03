@@ -182,7 +182,7 @@ const REDUCED_MOTION = typeof window !== 'undefined'
  * Counter animation — animate numeric elements from 0 to their target value.
  * Selects: [data-target], [data-count-to] on .counter, .stat-value, .stat-number, etc.
  */
-function mountCounterAnimations(): void {
+export function mountCounterAnimations(): void {
   const selectors = [
     '.counter[data-target]',
     '.stat-value[data-target]',
@@ -242,7 +242,7 @@ function mountCounterAnimations(): void {
  * Scroll reveal — add .visible class when elements scroll into view.
  * Covers all template-specific reveal classes.
  */
-function mountScrollReveals(): void {
+export function mountScrollReveals(): void {
   const selectors = [
     '.fade-in', '.fade-up', '.reveal',
     '.section-reveal',
@@ -279,7 +279,7 @@ function mountScrollReveals(): void {
  * Bar width animation — animate bar fills to their data-specified width.
  * Selects: [data-width], [data-bar-width], [data-target-width]
  */
-function mountBarAnimations(): void {
+export function mountBarAnimations(): void {
   const els = document.querySelectorAll<HTMLElement>(
     '[data-width], [data-bar-width], [data-target-width]',
   );

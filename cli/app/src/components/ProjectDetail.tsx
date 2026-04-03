@@ -16,6 +16,7 @@ import { Chip } from './shared/Chip'
 import { WorkTimeline } from './WorkTimeline'
 import { GrowthChart } from './GrowthChart'
 import { SessionDetailOverlay } from './SessionDetailOverlay'
+import { mountCounterAnimations, mountScrollReveals, mountBarAnimations } from '@heyiam/ui'
 import { scopeTemplateCss, REVEAL_SELECTOR } from '../scopeCss'
 
 /** Build a link element for DOM patching (safe — no innerHTML). */
@@ -123,32 +124,11 @@ export function ProjectDetail() {
     if (!renderHtml || !container) return
     container.innerHTML = renderHtml
 
-    // Re-execute inline scripts (setting content via ref doesn't run <script> tags).
-    // This activates template-specific animations (counters, scroll reveals).
-    container.querySelectorAll('script').forEach((oldScript) => {
-      const newScript = document.createElement('script')
-      if (oldScript.src) {
-        newScript.src = oldScript.src
-      } else {
-        newScript.textContent = oldScript.textContent ?? ''
-      }
-      oldScript.parentNode?.replaceChild(newScript, oldScript)
-    })
-
-    // Force-reveal animated elements that use IntersectionObserver + .visible class.
-    // In the embedded React shell, viewport-based observers may not fire reliably.
-    const timers: ReturnType<typeof setTimeout>[] = []
-    const raf = requestAnimationFrame(() => {
-      const animated = container.querySelectorAll(REVEAL_SELECTOR)
-      animated.forEach((el, i) => {
-        timers.push(setTimeout(() => {
-          el.classList.add('visible')
-          ;(el as HTMLElement).style.animationPlayState = 'running'
-          ;(el as HTMLElement).style.opacity = '1'
-        }, i * 50))
-      })
-    })
-    return () => { cancelAnimationFrame(raf); timers.forEach(clearTimeout) }
+    // Activate template animations (counters, scroll reveals, bar fills).
+    // These were previously inline <script> tags; now handled by @heyiam/ui mount functions.
+    mountCounterAnimations()
+    mountScrollReveals()
+    mountBarAnimations()
   }, [renderHtml])
 
   // Intercept session card link clicks → open drawer instead of navigating away.

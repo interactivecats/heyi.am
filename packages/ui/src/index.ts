@@ -6,7 +6,7 @@ export type { GrowthPoint, SessionBoundary } from './GrowthChart';
 
 export { DirectoryHeatmap } from './DirectoryHeatmap';
 
-export { mountVisualizations } from './mount';
+export { mountVisualizations, mountCounterAnimations, mountScrollReveals, mountBarAnimations } from './mount';
 
 export type {
   Session,
