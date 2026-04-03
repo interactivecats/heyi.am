@@ -12,6 +12,7 @@ import { buildSessionRenderData, buildSessionCard, buildProjectRenderData } from
 import type { SessionCard, ProjectRenderData, PortfolioRenderData, PortfolioProject } from '../render/types.js';
 import { buildAgentSummary, type RouteContext } from './context.js';
 import { displayNameFromDir } from '../sync.js';
+import { toSlug } from '../format-utils.js';
 import { getSessionsByProject, type SessionRow } from '../db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -71,7 +72,7 @@ async function buildProjectPreviewData(
     const skills: string[] = enhanced?.skills ?? (row.skills ? JSON.parse(row.skills) : []);
     const title = enhanced?.title ?? row.title ?? sid;
     const devTake = (enhanced?.developerTake ?? '').slice(0, 2000);
-    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+    const slug = toSlug(title, 80);
 
     // Check for child sessions (subagents) in DB
     const children = dbSessions.filter((r) => r.parent_session_id === sid);
@@ -151,7 +152,7 @@ async function buildProjectPreviewData(
   const projAny = proj as Record<string, unknown>;
   const rawName = (projAny.name as string) || displayNameFromDir(projAny.dirName as string);
   const title = (cached as Record<string, unknown> | null)?.title as string | undefined || rawName;
-  const slug = rawName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const slug = toSlug(rawName);
 
   // Metadata from enhance cache (set in sidebar), with query overrides taking priority
   const cachedAny = cached as Record<string, unknown> | null;
@@ -303,7 +304,7 @@ body { overflow: auto !important; min-height: auto !important; }
   // Delete a screenshot file
   router.delete('/api/projects/:project/screenshot', (req: Request, res: Response) => {
     const projectParam = String(req.params.project);
-    const slug = projectParam.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const slug = toSlug(projectParam);
     const filePath = path.join(SCREENSHOTS_DIR, `${slug}.png`);
     try {
       if (existsSync(filePath)) {
@@ -551,7 +552,7 @@ body { overflow: auto !important; min-height: auto !important; }
             || (proj.name as string) || displayNameFromDir(rawProj.dirName);
 
           portfolioProjects.push({
-            slug: rawProj.dirName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+            slug: toSlug(rawProj.dirName),
             title,
             narrative: cached?.result?.narrative || (proj.description as string) || '',
             totalSessions: projSessions,

@@ -4,16 +4,9 @@ import { searchSessions, type SearchResult } from '../api'
 import { AppShell, Card, Chip } from './shared'
 import { SearchInput } from './shared/SearchInput'
 
+import { formatDuration, formatLoc } from '../format'
+
 const SOURCE_FILTERS = ['Claude', 'Cursor', 'Codex', 'Gemini'] as const
-
-function formatDuration(minutes: number): string {
-  const hours = minutes / 60
-  return hours >= 1 ? `${hours.toFixed(1)}h` : `${Math.round(minutes)}m`
-}
-
-function formatLoc(loc: number): string {
-  return loc >= 1000 ? `${(loc / 1000).toFixed(1)}k` : String(loc)
-}
 
 function formatDate(iso: string): string {
   try {

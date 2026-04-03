@@ -5,21 +5,13 @@ import type { Session } from '../types'
 import { Chip } from './shared/Chip'
 import { WorkTimeline } from './WorkTimeline'
 import { scopeTemplateCss, REVEAL_SELECTOR } from '../scopeCss'
+import { formatDuration, formatLoc } from '../format'
 
 interface SessionDetailOverlayProps {
   session: Session
   projectDirName: string
   onClose: () => void
   isDark?: boolean
-}
-
-function formatDuration(minutes: number): string {
-  const hours = minutes / 60
-  return hours >= 1 ? `${hours.toFixed(1)}h` : `${Math.round(minutes)}m`
-}
-
-function formatLoc(loc: number): string {
-  return loc >= 1000 ? `${(loc / 1000).toFixed(1)}k` : String(loc)
 }
 
 function formatDate(iso: string): string {

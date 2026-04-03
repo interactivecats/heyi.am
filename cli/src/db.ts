@@ -18,7 +18,6 @@ function getDataDir(): string {
 export function getDbPath(): string {
   return join(getDataDir(), 'sessions.db');
 }
-export const DB_PATH = join(homedir(), '.local', 'share', 'heyiam', 'sessions.db');
 
 const CURRENT_SCHEMA_VERSION = 5;
 

@@ -102,16 +102,9 @@ function countTurns(entries: RawEntry[]): number {
   return turns;
 }
 
-/** Max gap between consecutive entries before it's considered a break (5 min). */
-const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
+import { computeActiveDuration } from './duration.js';
 
-function computeDuration(entries: RawEntry[]): {
-  duration_ms: number;
-  wall_clock_ms: number;
-  start_time: string | null;
-  end_time: string | null;
-  active_intervals: [number, number][];
-} {
+function computeDuration(entries: RawEntry[]) {
   const timestamps: number[] = [];
   let startStr: string | null = null;
   let endStr: string | null = null;
@@ -123,35 +116,7 @@ function computeDuration(entries: RawEntry[]): {
     timestamps.push(new Date(entry.timestamp).getTime());
   }
 
-  if (timestamps.length < 2 || !startStr || !endStr) {
-    return { duration_ms: 0, wall_clock_ms: 0, start_time: startStr, end_time: endStr, active_intervals: [] };
-  }
-
-  const wallClock = timestamps[timestamps.length - 1] - timestamps[0];
-
-  // Sum only active segments (gaps under threshold) and track intervals
-  let activeMs = 0;
-  const active_intervals: [number, number][] = [];
-  let intervalStart = timestamps[0];
-
-  for (let i = 1; i < timestamps.length; i++) {
-    const gap = timestamps[i] - timestamps[i - 1];
-    if (gap < IDLE_THRESHOLD_MS) {
-      activeMs += gap;
-    } else {
-      active_intervals.push([intervalStart, timestamps[i - 1]]);
-      intervalStart = timestamps[i];
-    }
-  }
-  active_intervals.push([intervalStart, timestamps[timestamps.length - 1]]);
-
-  return {
-    duration_ms: Math.max(activeMs, 0),
-    wall_clock_ms: Math.max(wallClock, 0),
-    start_time: startStr,
-    end_time: endStr,
-    active_intervals,
-  };
+  return computeActiveDuration(timestamps, startStr, endStr);
 }
 
 export function computeLocStats(entries: RawEntry[]): LocStats {

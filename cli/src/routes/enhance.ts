@@ -9,7 +9,8 @@ import {
   loadProjectEnhanceResult, buildProjectFingerprint,
   getUploadedState,
 } from '../settings.js';
-import type { RouteContext } from './context.js';
+import { requireProject, type RouteContext } from './context.js';
+import { startSSE } from './sse.js';
 
 export function createEnhanceRouter(ctx: RouteContext): Router {
   const router = Router();
@@ -22,22 +23,10 @@ export function createEnhanceRouter(ctx: RouteContext): Router {
     }
 
     const { project } = req.params;
-    const projects = await ctx.getProjects();
-    const proj = projects.find((p) => p.name === project || p.dirName === project);
-    if (!proj) {
-      res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });
-      return;
-    }
+    const proj = await requireProject(ctx, project, res);
+    if (!proj) return;
 
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-    });
-
-    const send = (event: Record<string, unknown>) => {
-      res.write(`data: ${JSON.stringify(event)}\n\n`);
-    };
+    const send = startSSE(res);
 
     try {
       const total = proj.sessions.length;
@@ -79,12 +68,8 @@ export function createEnhanceRouter(ctx: RouteContext): Router {
   router.post('/api/projects/:project/sessions/:id/enhance', async (req: Request, res: Response) => {
     try {
       const { project, id } = req.params;
-      const projects = await ctx.getProjects();
-      const proj = projects.find((p) => p.name === project || p.dirName === project);
-      if (!proj) {
-        res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });
-        return;
-      }
+      const proj = await requireProject(ctx, project, res);
+      if (!proj) return;
 
       const meta = proj.sessions.find((s) => s.sessionId === id);
       if (!meta) {
@@ -151,15 +136,7 @@ export function createEnhanceRouter(ctx: RouteContext): Router {
       return;
     }
 
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-    });
-
-    const send = (data: Record<string, unknown>) => {
-      res.write(`data: ${JSON.stringify(data)}\n\n`);
-    };
+    const send = startSSE(res);
 
     try {
       const projects = await ctx.getProjects();
@@ -300,12 +277,8 @@ export function createEnhanceRouter(ctx: RouteContext): Router {
     }
 
     try {
-      const projects = await ctx.getProjects();
-      const proj = projects.find((p) => p.name === project || p.dirName === project);
-      if (!proj) {
-        res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });
-        return;
-      }
+      const proj = await requireProject(ctx, project, res);
+      if (!proj) return;
 
       saveProjectEnhanceResult(proj.dirName, selectedSessionIds, result, undefined, { title, repoUrl, projectUrl, screenshotBase64 });
       res.json({ saved: true, enhancedAt: new Date().toISOString() });
@@ -318,12 +291,8 @@ export function createEnhanceRouter(ctx: RouteContext): Router {
   router.get('/api/projects/:project/enhance-cache', async (req: Request, res: Response) => {
     const { project } = req.params;
     try {
-      const projects = await ctx.getProjects();
-      const proj = projects.find((p) => p.name === project || p.dirName === project);
-      if (!proj) {
-        res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });
-        return;
-      }
+      const proj = await requireProject(ctx, project, res);
+      if (!proj) return;
 
       const cached = loadProjectEnhanceResult(proj.dirName);
       if (!cached) {

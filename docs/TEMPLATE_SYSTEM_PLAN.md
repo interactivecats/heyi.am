@@ -87,30 +87,25 @@ Branch: `feature/template-system`
 
 ---
 
-## Phase 6: Wire through publish/export flow
+## Phase 6: Wire through publish/export flow ✅
 
-**Status: NOT STARTED**
+**Status: COMPLETE**
 
-**Goal:** Publishing and exporting use the selected template. What you see in the CLI is what gets published.
+**What was fixed:**
 
-**What needs to happen:**
-
-1. **`export.ts`** — Pass `getDefaultTemplate()` to `renderProjectHtml()` and `renderSessionHtml()`
-   - Currently renders with DEFAULT_TEMPLATE ('editorial') regardless of user selection
-   - Need to import and call `getDefaultTemplate()`
-
-2. **`routes/publish.ts`** — Pass template to render-preview endpoint
-   - `/api/projects/:project/render-preview` currently calls `renderProjectHtml(renderData)` without template
-   - Should read template from settings or query param
-
-3. **Verify upload flow** — Ensure the published HTML on heyi.am uses the selected template
-   - Server-side `share.ex` already validates template names
-   - Need to confirm template name is included in upload payload
-
-**Verification:**
-- Export HTML files use selected template (not always editorial)
-- Publish preview matches what's shown in project detail
-- Published pages on heyi.am render with chosen template
+1. **`publish.ts`** — Session payloads and session data no longer hardcode `template: 'editorial'`. Both now use `getDefaultTemplate()`. Session rendered HTML also uses the selected template.
+2. **`export.ts`** — All `renderProjectHtml()` and `renderSessionHtml()` calls now pass `getDefaultTemplate()`. Both `exportHtml()`, `generateProjectHtmlFragment()`, and `generateHtmlFiles()` fixed.
+3. **`preview.ts`** — Session preview route now reads template from query param or `getDefaultTemplate()`. All `buildPreviewPage()` calls pass template name.
+4. **`context.ts`** — `buildPreviewPage()` now uses `getTemplateCss(templateName)` for full template-specific CSS (was only loading base styles.css). Also added Cormorant Garamond and Newsreader fonts.
+5. **Template bugs fixed:**
+   - 11 session.liquid templates had wrong AgentSummary field names (camelCase → snake_case)
+   - `noir` used `agentSummary.subSessions` instead of `agentSummary.agents`
+   - `radar/project.liquid` used `project.timeline` instead of `arc` for phases
+   - `showcase/project.liquid` appended `.html` to session URLs
+   - `parallax/project.liquid` used `.first` instead of `| first` filter
+   - `blueprint/project.liquid` rendered shared breadcrumb partial that assumed session context
+   - `parchment/styles.css` had 14 undefined CSS custom properties
+6. **React embed** — `ProjectDetail.tsx` now re-executes inline scripts with IntersectionObserver root patched to `main` container, and broader selector for force-revealing animated elements
 
 ---
 

@@ -9,17 +9,9 @@ import {
 } from '../api'
 import { Chip } from './shared/Chip'
 import { SessionTranscript } from './SessionTranscript'
+import { formatDuration, formatLoc } from '../format'
 
 type ContextFormat = 'compact' | 'summary' | 'full'
-
-function formatDuration(minutes: number): string {
-  const hours = minutes / 60
-  return hours >= 1 ? `${hours.toFixed(1)}h` : `${Math.round(minutes)}m`
-}
-
-function formatLoc(loc: number): string {
-  return loc >= 1000 ? `${(loc / 1000).toFixed(1)}k` : String(loc)
-}
 
 function formatDate(iso: string): string {
   try {

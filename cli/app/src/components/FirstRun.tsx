@@ -5,6 +5,7 @@ import { WorkTimeline } from './WorkTimeline'
 import { GrowthChart } from './GrowthChart'
 import { fetchDashboard, subscribeSyncProgress, completeOnboarding as apiCompleteOnboarding, saveApiKey, checkUsername, startSignup, startLogin, pollDeviceAuth } from '../api'
 import type { DashboardResponse, DashboardProject, SyncProgressEvent, Session } from '../types'
+import { formatDuration, formatLoc } from '../format'
 
 // ── State machine ───────────────────────────────────────────
 type OnboardingStep =
@@ -20,15 +21,6 @@ type OnboardingStep =
 
 // Steps that show the right-side preview panel
 const PREVIEW_STEPS: OnboardingStep[] = ['preview_project', 'preview_enhanced', 'prompt_enhance']
-
-function formatDuration(minutes: number): string {
-  const hours = minutes / 60
-  return hours >= 1 ? `${hours.toFixed(1)}h` : `${Math.round(minutes)}m`
-}
-
-function formatLoc(loc: number): string {
-  return loc >= 1000 ? `${(loc / 1000).toFixed(1)}k` : String(loc)
-}
 
 export function FirstRun() {
   const [step, setStep] = useState<OnboardingStep>('loading')

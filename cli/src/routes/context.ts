@@ -86,6 +86,21 @@ function computeMergedDurationFromDb(
 import { escapeHtml } from '../format-utils.js';
 export { escapeHtml };
 
+/** Look up a project by name or dirName, sending 404 if not found. Returns null on miss. */
+export async function requireProject(
+  ctx: RouteContext,
+  projectParam: string,
+  res: import('express').Response,
+): Promise<ProjectInfo | null> {
+  const projects = await ctx.getProjects();
+  const proj = projects.find((p) => p.name === projectParam || p.dirName === projectParam);
+  if (!proj) {
+    res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });
+    return null;
+  }
+  return proj;
+}
+
 export interface AgentSummary {
   is_orchestrated: true;
   agents: Array<{ role: string; duration_minutes: number; loc_changed: number }>;

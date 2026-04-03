@@ -141,15 +141,9 @@ function countTurns(lines: CodexLine[]): number {
   return turns;
 }
 
-const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
+import { computeActiveDuration } from './duration.js';
 
-function computeDuration(lines: CodexLine[]): {
-  duration_ms: number;
-  wall_clock_ms: number;
-  start_time: string | null;
-  end_time: string | null;
-  active_intervals: [number, number][];
-} {
+function computeDuration(lines: CodexLine[]) {
   const timestamps: number[] = [];
   let startStr: string | null = null;
   let endStr: string | null = null;
@@ -161,33 +155,7 @@ function computeDuration(lines: CodexLine[]): {
     timestamps.push(new Date(line.timestamp).getTime());
   }
 
-  if (timestamps.length < 2 || !startStr || !endStr) {
-    return { duration_ms: 0, wall_clock_ms: 0, start_time: startStr, end_time: endStr, active_intervals: [] };
-  }
-
-  const wallClock = timestamps[timestamps.length - 1] - timestamps[0];
-  let activeMs = 0;
-  const active_intervals: [number, number][] = [];
-  let intervalStart = timestamps[0];
-
-  for (let i = 1; i < timestamps.length; i++) {
-    const gap = timestamps[i] - timestamps[i - 1];
-    if (gap < IDLE_THRESHOLD_MS) {
-      activeMs += gap;
-    } else {
-      active_intervals.push([intervalStart, timestamps[i - 1]]);
-      intervalStart = timestamps[i];
-    }
-  }
-  active_intervals.push([intervalStart, timestamps[timestamps.length - 1]]);
-
-  return {
-    duration_ms: Math.max(activeMs, 0),
-    wall_clock_ms: Math.max(wallClock, 0),
-    start_time: startStr,
-    end_time: endStr,
-    active_intervals,
-  };
+  return computeActiveDuration(timestamps, startStr, endStr);
 }
 
 function computeLocStats(toolCalls: ToolCall[]): LocStats {

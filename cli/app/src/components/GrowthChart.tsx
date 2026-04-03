@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { Session } from '../types'
+import { formatLoc } from '../format'
 
 // ── Growth Chart ─────────────────────────────────────────────────
 // Time-sorted cumulative additions + deletions.
@@ -27,11 +28,6 @@ const RED = '#dc2626'
 const TEXT_MUTED = '#9ca3af'
 const TEXT_SECONDARY = '#6b7280'
 const GRID_COLOR = '#e4e4e7'
-
-function formatLoc(loc: number): string {
-  if (loc < 1000) return String(loc)
-  return `${(loc / 1000).toFixed(1)}k`
-}
 
 function formatLocAxis(n: number): string {
   if (n === 0) return '0'

@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from 'express';
 import { statSync } from 'node:fs';
 import { type AgentChild } from '../bridge.js';
 import { loadProjectEnhanceResult, getUploadedState } from '../settings.js';
-import { RouteContext, buildSessionList, buildProjectDetail } from './context.js';
+import { RouteContext, requireProject, buildSessionList, buildProjectDetail } from './context.js';
 
 export function createProjectsRouter(ctx: RouteContext): Router {
   const router = Router();
@@ -27,12 +27,8 @@ export function createProjectsRouter(ctx: RouteContext): Router {
   router.get('/api/projects/:project/detail', async (req: Request, res: Response) => {
     try {
       const { project } = req.params;
-      const projects = await ctx.getProjects();
-      const proj = projects.find((p) => p.name === project || p.dirName === project);
-      if (!proj) {
-        res.status(404).json({ error: 'Project not found' });
-        return;
-      }
+      const proj = await requireProject(ctx, project, res);
+      if (!proj) return;
 
       res.json(buildProjectDetail(ctx.db, proj));
     } catch (err) {
@@ -107,12 +103,8 @@ export function createProjectsRouter(ctx: RouteContext): Router {
   router.get('/api/projects/:project/sessions/:id', async (req: Request, res: Response) => {
     try {
       const { project, id } = req.params;
-      const projects = await ctx.getProjects();
-      const proj = projects.find((p) => p.name === project || p.dirName === project);
-      if (!proj) {
-        res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });
-        return;
-      }
+      const proj = await requireProject(ctx, project, res);
+      if (!proj) return;
 
       const meta = proj.sessions.find((s) => s.sessionId === id);
       if (!meta) {
@@ -157,12 +149,8 @@ export function createProjectsRouter(ctx: RouteContext): Router {
     const { execFileSync } = await import('node:child_process');
     try {
       const { project } = req.params;
-      const projects = await ctx.getProjects();
-      const proj = projects.find((p) => p.name === project || p.dirName === project);
-      if (!proj) {
-        res.status(404).json({ error: { code: 'PROJECT_NOT_FOUND', message: 'Project not found' } });
-        return;
-      }
+      const proj = await requireProject(ctx, project, res);
+      if (!proj) return;
 
       let projectPath: string | null = null;
       for (const meta of proj.sessions) {

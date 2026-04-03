@@ -47,7 +47,7 @@ export interface GeminiSessionFile {
   format?: 'legacy' | 'new';
 }
 
-const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
+import { computeActiveDuration } from './duration.js';
 
 const GEMINI_BASE = () => join(homedir(), ".gemini", "tmp");
 
@@ -168,43 +168,16 @@ function toRawEntries(entries: GeminiLogEntry[]): RawEntry[] {
 
 // --- Duration ---
 
-function computeDuration(entries: GeminiLogEntry[]): {
-  duration_ms: number;
-  wall_clock_ms: number;
-  start_time: string | null;
-  end_time: string | null;
-  active_intervals: [number, number][];
-} {
+function computeDuration(entries: GeminiLogEntry[]) {
   if (entries.length === 0) {
-    return { duration_ms: 0, wall_clock_ms: 0, start_time: null, end_time: null, active_intervals: [] };
+    return { duration_ms: 0, wall_clock_ms: 0, start_time: null, end_time: null, active_intervals: [] as [number, number][] };
   }
 
   const timestamps = entries.map((e) => new Date(e.timestamp).getTime());
   const start_time = entries[0].timestamp;
   const end_time = entries[entries.length - 1].timestamp;
 
-  if (timestamps.length < 2) {
-    return { duration_ms: 0, wall_clock_ms: 0, start_time, end_time, active_intervals: [] };
-  }
-
-  const wall_clock_ms = timestamps[timestamps.length - 1] - timestamps[0];
-
-  let activeMs = 0;
-  const active_intervals: [number, number][] = [];
-  let intervalStart = timestamps[0];
-
-  for (let i = 1; i < timestamps.length; i++) {
-    const gap = timestamps[i] - timestamps[i - 1];
-    if (gap < IDLE_THRESHOLD_MS) {
-      activeMs += gap;
-    } else {
-      active_intervals.push([intervalStart, timestamps[i - 1]]);
-      intervalStart = timestamps[i];
-    }
-  }
-  active_intervals.push([intervalStart, timestamps[timestamps.length - 1]]);
-
-  return { duration_ms: Math.max(activeMs, 0), wall_clock_ms: Math.max(wall_clock_ms, 0), start_time, end_time, active_intervals };
+  return computeActiveDuration(timestamps, start_time, end_time);
 }
 
 // --- Turns ---

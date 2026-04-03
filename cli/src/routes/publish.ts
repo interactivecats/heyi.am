@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from 'express';
 import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { getAuthToken } from '../auth.js';
-import { API_URL, PUBLIC_URL } from '../config.js';
+import { API_URL, PUBLIC_URL, warnIfNonDefaultApiUrl } from '../config.js';
 import { loadEnhancedData, saveEnhancedData, saveUploadedState, getDefaultTemplate } from '../settings.js';
 import { captureScreenshot } from '../screenshot.js';
 import { redactSession, redactText, scanTextSync, formatFindings, stripHomePathsInText } from '../redact.js';
@@ -11,7 +11,9 @@ import { buildSessionRenderData, buildSessionCard, buildProjectRenderData } from
 import type { SessionCard } from '../render/types.js';
 import type { ProjectEnhanceResult } from '../llm/project-enhance.js';
 import { buildAgentSummary, type RouteContext } from './context.js';
+import { startSSE } from './sse.js';
 import { displayNameFromDir } from '../sync.js';
+import { toSlug } from '../format-utils.js';
 import { getProjectUuid, getFileCountWithChildren } from '../db.js';
 
 const IMAGE_KEY_PREFIX = 'images/';
@@ -95,6 +97,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
   router.post('/api/projects/:project/upload', async (req: Request, res: Response) => {
     const { project } = req.params;
     const auth = getAuthToken();
+    warnIfNonDefaultApiUrl();
 
     if (!auth) {
       res.status(401).json({ error: { message: 'Authentication required' } });
@@ -128,21 +131,13 @@ export function createPublishRouter(ctx: RouteContext): Router {
 
     // Ensure slug is the short project name, not the full encoded directory path
     const shortName = displayNameFromDir(String(project));
-    const baseSlug = shortName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const baseSlug = toSlug(shortName);
     const title = rawTitle === rawSlug ? shortName : rawTitle;
 
     // Get stable project UUID from CLI database
     const clientProjectId = getProjectUuid(ctx.db, String(project));
 
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-    });
-
-    const send = (data: Record<string, unknown>) => {
-      res.write(`data: ${JSON.stringify(data)}\n\n`);
-    };
+    const send = startSSE(res);
 
     try {
       // Step 1: Upsert project on Phoenix (with slug conflict retry)
@@ -282,8 +277,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
           try {
             const session = await ctx.loadSession(meta.path, proj.name, sessionId);
             const enhanced = loadEnhancedData(sessionId);
-            const sessionSlug = (enhanced?.title ?? session.title ?? sessionId)
-              .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+            const sessionSlug = toSlug(enhanced?.title ?? session.title ?? sessionId, 80);
 
             const agentSummary = await buildAgentSummary(
               meta.children ?? [],

@@ -3,15 +3,7 @@ import { Link } from 'react-router-dom'
 import { fetchProjects, type Project } from '../api'
 import { AppShell, Card, Badge, SectionHeader, StatCard } from './shared'
 import { Chip } from './shared/Chip'
-
-function formatDuration(minutes: number): string {
-  const hours = minutes / 60
-  return hours >= 1 ? `${hours.toFixed(1)}h` : `${Math.round(minutes)}m`
-}
-
-function formatLoc(loc: number): string {
-  return loc >= 1000 ? `${(loc / 1000).toFixed(1)}k` : String(loc)
-}
+import { formatDuration, formatLoc } from '../format'
 
 function formatDateRange(raw: string): string {
   if (!raw) return ''
