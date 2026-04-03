@@ -16,6 +16,7 @@ import { Chip } from './shared/Chip'
 import { WorkTimeline } from './WorkTimeline'
 import { GrowthChart } from './GrowthChart'
 import { SessionDetailOverlay } from './SessionDetailOverlay'
+import { scopeTemplateCss } from '../scopeCss'
 
 /** Build a link element for DOM patching (safe — no innerHTML). */
 function buildLinkEl(url: string, type: 'repo' | 'project'): HTMLAnchorElement {
@@ -32,23 +33,9 @@ function buildLinkEl(url: string, type: 'repo' | 'project'): HTMLAnchorElement {
  * Scope template CSS to the #liquid-render container.
  * Remaps :root/body selectors and wraps in @layer for lower specificity than Tailwind.
  */
-function scopeTemplateCss(css: string): string {
-  // Extract @keyframes before scoping — they break inside @scope
-  const keyframes: string[] = []
-  let scoped = css.replace(/@keyframes\s+[\w-]+\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\}/g, (match) => {
-    keyframes.push(match)
-    return ''
-  })
-  scoped = scoped
-    // Remap :root and body to :scope (which resolves to #liquid-render inside @scope)
-    .replace(/(?:^|\n)\s*:root\s*\{/g, '\n:scope {')
-    .replace(/(?:^|\n)\s*body\s*\{/g, '\n:scope {')
-    // Strip universal reset (Tailwind preflight handles this)
-    .replace(/\*\s*,\s*\*::before\s*,\s*\*::after\s*\{[^}]*\}/g, '')
-  // @scope confines ALL selectors to #liquid-render — nothing leaks out
-  // @keyframes placed outside @scope so animations work
-  // Add screenshot constraint so images don't dominate the page
-  return `@scope (#liquid-render) {\n${scoped}\n}\n${keyframes.join('\n')}\n#liquid-render img[alt*="screenshot" i], #liquid-render img[alt*="Screenshot" i], #liquid-render [class*="screenshot"] img { max-height: 24rem; width: 100%; object-fit: cover; object-position: top; border-radius: 6px; }`
+function scopeProjectCss(css: string): string {
+  return scopeTemplateCss(css, 'liquid-render') +
+    '\n#liquid-render img[alt*="screenshot" i], #liquid-render img[alt*="Screenshot" i], #liquid-render [class*="screenshot"] img { max-height: 24rem; width: 100%; object-fit: cover; object-position: top; border-radius: 6px; }'
 }
 
 export function ProjectDetail() {
@@ -442,7 +429,7 @@ export function ProjectDetail() {
       <div className="p-6 max-w-[1200px] mx-auto min-h-0" style={templateMode === 'dark' ? { background: '#000' } : undefined}>
         {renderHtml ? (
           <>
-            {renderCss && <style>{scopeTemplateCss(renderCss)}</style>}
+            {renderCss && <style>{scopeProjectCss(renderCss)}</style>}
             <div id="liquid-render" ref={liquidRef} />
           </>
         ) : renderError ? (
