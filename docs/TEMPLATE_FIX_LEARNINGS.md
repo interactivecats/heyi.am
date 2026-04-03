@@ -52,6 +52,25 @@ Accumulated knowledge from fixing project/session liquid templates to match thei
 - **Visited links**: Add `a:visited { color: inherit }` or explicit visited color to prevent browser-default blue
 - Check Liquid `divided_by` produces floats — add `| round` on displayed percentages
 
+## Critical: @keyframes and @scope
+- `@keyframes` inside `@scope` blocks don't work in browsers — animations never run
+- The preview app's `scopeTemplateCss()` wraps ALL template CSS in `@scope (#liquid-render) { ... }`
+- Fix: extract `@keyframes` blocks before wrapping, append them outside `@scope`
+- This affects bauhaus, parallax, radar, cosmos, and any template with CSS animations
+- **Fixed in ProjectDetail.tsx and SessionDetailOverlay.tsx**
+
+## Visual QA Needed — Work Timeline Mismatches
+These templates may have work timeline visualization type mismatches (detected by automated comparison, needs visual review):
+- **signal**: mockup has CSS_BARS, liquid has TABLE+CSS_BARS (extra table)
+- **verdant**: mockup has CSS_BARS, liquid has CSS_BARS+SVG (extra SVG)
+- **bauhaus**: mockup has TABLE, liquid has TABLE+SVG (extra SVG)
+- **canvas**: mockup has no timeline section, liquid has SVG
+- **daylight**: mockup has CSS_BARS, liquid has CSS_BARS+SVG (extra SVG)
+- **aurora**: mockup has CSS_BARS, liquid has CSS_BARS+SVG (extra SVG)
+- **carbon**: mockup has TABLE+SVG, liquid has just SVG (missing table)
+- **grid**: mockup has no timeline section, liquid has SVG
+- **meridian**: mockup has SVG, liquid has TABLE+SVG (extra table)
+
 ## Critical Checks for Dark Templates
 - Outer wrapper class (`.kinetic`, `.noir`, etc.) MUST have explicit `background: var(--bg); color: var(--text);` — background doesn't inherit
 - Add `a { color: inherit; text-decoration: none; } a:visited { color: inherit; }` on the wrapper
