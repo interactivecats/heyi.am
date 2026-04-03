@@ -180,15 +180,15 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
   const delAreaRef = useRef<SVGPathElement>(null)
   const chartRef = useRef<HTMLDivElement>(null)
 
-  // Theme-aware colors
+  // Theme-aware colors — deletion uses accent at reduced opacity for monochromatic look
+  const accentVal = isRadar ? (isDark ? '#22d3ee' : '#0891b2') : (accentColor || (isDark ? '#f97316' : PRIMARY))
   const colors = isDark ? {
     textMuted: isRadar ? '#94a3b8' : 'rgba(255,255,255,0.4)',
     textSecondary: isRadar ? '#cbd5e1' : 'rgba(255,255,255,0.65)',
     grid: isRadar ? 'rgba(34,211,238,0.04)' : 'rgba(255,255,255,0.06)',
     gridAxis: isRadar ? 'rgba(34,211,238,0.08)' : 'rgba(255,255,255,0.06)',
     text: '#fafafa',
-    accent: isRadar ? '#22d3ee' : (accentColor || '#f97316'),
-    deletion: isRadar ? '#f87171' : RED,
+    accent: accentVal,
     dotStroke: 'rgba(0,0,0,0.3)',
   } : {
     textMuted: isRadar ? '#64748b' : TEXT_MUTED,
@@ -196,8 +196,7 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
     grid: isRadar ? 'rgba(100,116,139,0.08)' : GRID_COLOR,
     gridAxis: isRadar ? 'rgba(100,116,139,0.15)' : GRID_COLOR,
     text: '#191c1e',
-    accent: isRadar ? '#0891b2' : (accentColor || PRIMARY),
-    deletion: isRadar ? '#ef4444' : RED,
+    accent: accentVal,
     dotStroke: '#fff',
   }
 
@@ -402,7 +401,7 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
         </span>
         <div style={{ display: 'flex', gap: 16, fontSize: 11, fontWeight: 600 }}>
           <span style={{ color: colors.accent }}>+{formatLoc(totalAdded)}</span>
-          {hasDeleteData && <span style={{ color: colors.deletion }}>-{formatLoc(totalDeleted)}</span>}
+          {hasDeleteData && <span style={{ color: colors.textSecondary }}>-{formatLoc(totalDeleted)}</span>}
           <span style={{ color: colors.text }}>{formatLoc(totalLoc)} total</span>
         </div>
       </div>
@@ -422,8 +421,8 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
               <stop offset="100%" stopColor={colors.accent} stopOpacity={isRadar ? 0.05 : 0.02} />
             </linearGradient>
             <linearGradient id="delGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={colors.deletion} stopOpacity={isRadar ? 0.05 : (dualPositive ? 0.12 : 0.02)} />
-              <stop offset="100%" stopColor={colors.deletion} stopOpacity={isRadar ? 0.05 : (dualPositive ? 0.02 : 0.1)} />
+              <stop offset="0%" stopColor={colors.accent} stopOpacity={isRadar ? 0.05 : (dualPositive ? 0.12 : 0.02)} />
+              <stop offset="100%" stopColor={colors.accent} stopOpacity={isRadar ? 0.05 : (dualPositive ? 0.02 : 0.1)} />
             </linearGradient>
             {isRadar && (
               <filter id="dotGlow" x="-50%" y="-50%" width="200%" height="200%">
@@ -495,23 +494,27 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
             </>
           )}
 
-          {/* Deletions area + line */}
-          {hasDeleteData && (isRadar ? (
-            <>
-              <path ref={delAreaRef} d={delAreaPath} fill={`${colors.deletion}0D`} />
-              <polyline
-                ref={delLineRef}
-                points={delCoords.map(c => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ')}
-                fill="none" stroke={colors.deletion} strokeWidth="1.5"
-                strokeLinecap="round" strokeLinejoin="round"
-              />
-            </>
-          ) : (
-            <>
-              <path d={delAreaPath} fill="url(#delGrad)" />
-              <path d={delPath} fill="none" stroke={colors.deletion} strokeWidth="1.5" />
-            </>
-          ))}
+          {/* Deletions area + line — same accent color at 40% opacity */}
+          {hasDeleteData && (
+            <g opacity="0.4">
+              {isRadar ? (
+                <>
+                  <path ref={delAreaRef} d={delAreaPath} fill={`${colors.accent}0D`} />
+                  <polyline
+                    ref={delLineRef}
+                    points={delCoords.map(c => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ')}
+                    fill="none" stroke={colors.accent} strokeWidth="1.5"
+                    strokeLinecap="round" strokeLinejoin="round"
+                  />
+                </>
+              ) : (
+                <>
+                  <path d={delAreaPath} fill="url(#delGrad)" />
+                  <path d={delPath} fill="none" stroke={colors.accent} strokeWidth="1.5" />
+                </>
+              )}
+            </g>
+          )}
 
           {/* Session dots + labels */}
           {points.map((p, i) => {
@@ -534,10 +537,10 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
                     fill={colors.accent} filter={isRadar ? 'url(#dotGlow)' : undefined} />
                 ) : null}
 
-                {/* Deletion dot */}
+                {/* Deletion dot — 40% opacity to match deletion line */}
                 {hasDeleteData && p.cumulativeDeleted > 0 && showLabel && (
-                  <circle cx={x} cy={toYDel(p.cumulativeDeleted)} r="2.5"
-                    fill={colors.deletion} filter={isRadar ? 'url(#dotGlow)' : undefined} />
+                  <circle cx={x} cy={toYDel(p.cumulativeDeleted)} r="2.5" opacity="0.4"
+                    fill={colors.accent} filter={isRadar ? 'url(#dotGlow)' : undefined} />
                 )}
 
                 {/* Key moment annotation */}
@@ -561,20 +564,26 @@ export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSess
         </svg>
       </div>
 
-      {/* Summary bar */}
+      {/* Summary bar with legend swatches */}
       <div style={{
         display: 'flex', gap: 24, padding: '8px 12px',
         borderTop: `1px solid ${colors.grid}`,
         fontFamily: FONT, fontSize: 10,
       }}>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: colors.accent }}>+{formatLoc(totalAdded)}</div>
-          <div style={{ color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Added</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 16, height: 3, background: colors.accent, borderRadius: 1, flexShrink: 0 }} />
+            <span style={{ fontSize: 14, fontWeight: 700, color: colors.accent }}>+{formatLoc(totalAdded)}</span>
+          </div>
+          <div style={{ color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginTop: 2 }}>Added</div>
         </div>
         {hasDeleteData && (
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: colors.deletion }}>-{formatLoc(totalDeleted)}</div>
-            <div style={{ color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Deleted</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 16, height: 3, background: colors.accent, opacity: 0.4, borderRadius: 1, flexShrink: 0 }} />
+              <span style={{ fontSize: 14, fontWeight: 700, color: colors.textSecondary }}>-{formatLoc(totalDeleted)}</span>
+            </div>
+            <div style={{ color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginTop: 2 }}>Removed</div>
           </div>
         )}
         <div>
