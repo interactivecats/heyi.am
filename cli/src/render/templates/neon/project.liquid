@@ -201,7 +201,7 @@
       <div class="session-grid">
         {% for s in featuredSessions %}
         <article class="session-card">
-          <a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a>
+          <a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}">{{ s.title }}</a>
           <div class="session-card-meta">
             <span>{{ s.durationMinutes | formatDuration }}</span>
             <span>{{ s.locChanged | localeNumber }} LOC</span>

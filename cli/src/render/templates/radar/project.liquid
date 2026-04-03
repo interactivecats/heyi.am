@@ -206,7 +206,7 @@
     </div>
     <div class="session-grid">
       {% for s in featuredSessions %}
-      <a class="session-card" href="{{ sessionBaseUrl }}/{{ s.slug }}">
+      <a class="session-card" href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}">
         <div class="session-card__bar session-card__bar--cyan"></div>
         <div class="session-card__title">{{ s.title }}</div>
         <div class="session-card__meta">{{ s.durationMinutes | formatDuration }} &middot; {{ s.locChanged | formatLoc }} LOC &middot; {{ s.filesChanged }} files</div>

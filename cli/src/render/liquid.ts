@@ -10,6 +10,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { PortfolioRenderData, ProjectRenderData, SessionRenderData } from './types.js';
 import { getTemplateInfo } from './templates.js';
+import { escapeHtml } from '../format-utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -62,7 +63,7 @@ engine.registerFilter('formatDateShort', (iso: string) => {
 });
 
 engine.registerFilter('jsonAttr', (value: unknown) => {
-  return JSON.stringify(value);
+  return escapeHtml(JSON.stringify(value));
 });
 
 engine.registerFilter('localeNumber', (value: number) => {
@@ -221,6 +222,8 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
     return true;
   }).slice(0, 6);
 
+  const sessionSuffix = data.sessionBaseUrl ? '.html' : '';
+
   const html = engine.renderFileSync(`${template}/project`, {
     ...data,
     arc: extras?.arc ?? [],
@@ -232,6 +235,7 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
     growthJson,
     durationLabel,
     efficiencyMultiplier: efficiencyStr,
+    sessionSuffix,
   });
   return injectTemplateAttrs(html, template);
 }

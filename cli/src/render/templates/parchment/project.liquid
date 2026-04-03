@@ -255,7 +255,7 @@
           <span class="session-card__page">p. {{ forloop.index }}</span>
           <div class="session-card__number">Session {{ forloop.index }}</div>
           <h3 class="session-card__title">
-            <a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a>
+            <a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}">{{ s.title }}</a>
             {% if s.skills.size > 0 %}
             <span class="session-card__tag">{{ s.skills | first }}</span>
             {% endif %}

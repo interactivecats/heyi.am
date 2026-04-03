@@ -189,7 +189,7 @@
           {% if s.skills.size > 0 %}
           <span class="dl-session-card-tag">{{ s.skills | first }}</span>
           {% endif %}
-          <h3 class="dl-session-card-title"><a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a></h3>
+          <h3 class="dl-session-card-title"><a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}">{{ s.title }}</a></h3>
           <p class="dl-session-card-meta">{{ s.durationMinutes | formatDuration }} &middot; {{ s.locChanged | localeNumber }} LOC{% if s.agentSummary %} &middot; {{ s.agentSummary.agents.size }} agents{% endif %}</p>
           {% if s.agentSummary %}
           <div class="dl-session-card-agents" aria-label="{{ s.agentSummary.agents.size }} agents used">

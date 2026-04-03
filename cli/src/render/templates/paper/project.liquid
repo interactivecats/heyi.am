@@ -208,7 +208,7 @@
         <article class="session-card">
           <p class="session-card__number">Session {{ forloop.index }}</p>
           <h3 class="session-card__headline">
-            <a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a>
+            <a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}">{{ s.title }}</a>
             {% if s.skills.size > 0 %}
             <span class="session-card__tag">{{ s.skills | first }}</span>
             {% endif %}

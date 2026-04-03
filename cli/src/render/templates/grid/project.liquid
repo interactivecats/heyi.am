@@ -269,7 +269,7 @@
       {%- comment -%} Featured Session Cards (2-wide each) {%- endcomment -%}
       {% if featuredSessions.size > 0 %}
       {% for s in featuredSessions %}
-      <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="bento-cell cell-session session-card" aria-label="View session: {{ s.title }}">
+      <a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}" class="bento-cell cell-session session-card" aria-label="View session: {{ s.title }}">
         <div class="session-header">
           <span class="session-title">{{ s.title }}</span>
           {% if s.skills.size > 0 %}

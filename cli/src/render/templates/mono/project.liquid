@@ -247,7 +247,7 @@
             <span aria-hidden="true">$</span> session #{{ forloop.index }}
           </div>
           <div class="session-card-body">
-            <h3 class="session-card-title"><a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a></h3>
+            <h3 class="session-card-title"><a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}">{{ s.title }}</a></h3>
             <div class="session-kv"><span class="session-kv-key">duration:</span><span class="session-kv-value">{{ s.durationMinutes | formatDuration }}</span></div>
             <div class="session-kv"><span class="session-kv-key">loc:</span><span class="session-kv-value">{{ s.locChanged | localeNumber }}</span></div>
             <div class="session-kv"><span class="session-kv-key">turns:</span><span class="session-kv-value">{{ s.turns }}</span></div>

@@ -270,7 +270,7 @@
               {% for s in featuredSessions %}
               <tr>
                 <td>{{ forloop.index | prepend: '0' | slice: -2, 2 }}</td>
-                <td class="session-table__title-cell"><a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a></td>
+                <td class="session-table__title-cell"><a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}">{{ s.title }}</a></td>
                 <td>{{ s.recordedAt | formatDateShort }}</td>
                 <td class="mono-val">{{ s.durationMinutes | formatDuration }}</td>
                 <td class="mono-val">{{ s.locChanged | localeNumber }}</td>
@@ -354,7 +354,7 @@
             {% if s.skills.size > 0 %}
             <div class="featured-card__tag">{{ s.skills | first }}</div>
             {% endif %}
-            <h3 class="featured-card__title"><a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a></h3>
+            <h3 class="featured-card__title"><a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}">{{ s.title }}</a></h3>
             <div class="featured-card__meta">
               <span><strong>{{ s.durationMinutes | formatDuration }}</strong></span>
               <span><strong>{{ s.locChanged | localeNumber }}</strong> LOC</span>

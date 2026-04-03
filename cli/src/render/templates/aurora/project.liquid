@@ -120,7 +120,7 @@
           {% for s in featuredSessions %}
           {% assign barPct = s.durationMinutes | times: 100 | divided_by: maxDuration %}
           <div class="aurora-chart-row" role="listitem">
-            <div class="aurora-chart-label"><a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a></div>
+            <div class="aurora-chart-label"><a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}">{{ s.title }}</a></div>
             <div class="aurora-chart-bar-track">
               <div class="aurora-chart-bar-fill{% if s.sourceTool == 'Cursor' %} aurora-chart-bar-fill--cursor{% endif %}" style="width: {{ barPct }}%" aria-label="{{ s.durationMinutes }} minutes">
                 {% if s.agentSummary and s.agentSummary.agents.size > 0 %}
@@ -232,7 +232,7 @@
       <div class="aurora-sessions">
         {% for s in featuredSessions %}
         <article class="aurora-session-card">
-          <h3><a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a></h3>
+          <h3><a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}">{{ s.title }}</a></h3>
           <div class="aurora-session-meta">
             <span>{{ s.durationMinutes | formatDuration }}</span>
             <span>{{ s.locChanged | localeNumber }} LOC</span>

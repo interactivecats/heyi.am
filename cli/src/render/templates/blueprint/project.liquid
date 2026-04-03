@@ -132,7 +132,7 @@
           {% for s in featuredSessions %}
           <tr>
             <td class="bp-session-num">{{ forloop.index | prepend: '00' | slice: -2, 2 }}</td>
-            <td>{% if sessionBaseUrl %}<a class="bp-session-title-link" href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a>{% else %}<span class="bp-session-title-link">{{ s.title }}</span>{% endif %}</td>
+            <td>{% if sessionBaseUrl %}<a class="bp-session-title-link" href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}">{{ s.title }}</a>{% else %}<span class="bp-session-title-link">{{ s.title }}</span>{% endif %}</td>
             <td class="bp-session-date">{{ s.recordedAt | formatDateShort }}</td>
             <td class="bp-session-date">{{ s.durationMinutes | formatDuration }}</td>
             <td class="bp-session-date">{{ s.locChanged | localeNumber }}</td>
@@ -243,7 +243,7 @@
     </div>
     <div class="bp-featured-grid">
       {% for s in featuredSessions %}
-      <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="bp-featured-card">
+      <a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}" class="bp-featured-card">
         <div class="bp-featured-card-header">
           <h3>{{ s.title }}</h3>
           {% if s.sourceTool != blank %}

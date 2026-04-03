@@ -226,7 +226,7 @@
           {% for s in featuredSessions %}
           <tr>
             <td>{{ forloop.index }}</td>
-            <td><a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="session-title-link session-card">{{ s.title }}</a></td>
+            <td><a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}" class="session-title-link session-card">{{ s.title }}</a></td>
             <td>{{ s.recordedAt | formatDateShort }}</td>
             <td>{{ s.durationMinutes | formatDuration }}</td>
             <td>{{ s.locChanged | localeNumber }}</td>

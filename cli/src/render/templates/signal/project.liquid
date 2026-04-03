@@ -209,7 +209,7 @@
             {% for s in featuredSessions %}
             <tr>
               <td class="stat-mono">{{ forloop.index }}</td>
-              <td><a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="session-title-link">{{ s.title }}</a></td>
+              <td><a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}" class="session-title-link">{{ s.title }}</a></td>
               <td class="stat-mono">{{ s.recordedAt | formatDateShort }}</td>
               <td class="stat-mono">{{ s.durationMinutes | formatDuration }}</td>
               <td class="stat-mono stat-green">{{ s.locChanged | localeNumber }}</td>

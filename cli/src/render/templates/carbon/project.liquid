@@ -227,7 +227,7 @@
   <section class="sessions-table fade-in" aria-label="Sessions">
     <h2 class="section-heading">Sessions</h2>
     {% for s in featuredSessions %}
-    <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="session-row">
+    <a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}" class="session-row">
       <span class="session-row__num">{{ forloop.index }}</span>
       <span class="session-row__title">{{ s.title }}</span>
       <span class="session-row__date">{{ s.recordedAt | formatDateShort }}</span>

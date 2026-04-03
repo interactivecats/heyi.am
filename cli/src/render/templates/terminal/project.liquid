@@ -129,7 +129,7 @@
     <div class="term-comment"># sessions ({{ project.totalSessions }} total)</div>
     {% for s in featuredSessions %}
     <div class="term-session-entry">
-      {% if sessionBaseUrl %}<a href="{{ sessionBaseUrl }}/{{ s.slug | default: s.token }}" class="term-session-link">{% endif %}
+      {% if sessionBaseUrl %}<a href="{{ sessionBaseUrl }}/{{ s.slug | default: s.token }}{{ sessionSuffix }}" class="term-session-link">{% endif %}
       <div class="term-session-entry__row">
         <span class="term-session-entry__idx">[{{ forloop.index }}]</span>
         <span class="term-session-entry__title">{{ s.title }}</span>

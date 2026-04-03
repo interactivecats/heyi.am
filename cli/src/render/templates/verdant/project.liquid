@@ -281,7 +281,7 @@
         </div>
         <div class="vd-sessions-grid">
           {% for s in featuredSessions %}
-          <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="vd-session-card">
+          <a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}" class="vd-session-card">
             {% if s.sourceTool %}
             <span class="vd-session-card__tag">{{ s.sourceTool }}</span>
             {% endif %}

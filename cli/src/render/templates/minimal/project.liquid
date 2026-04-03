@@ -121,7 +121,7 @@
       <ul class="mn-session-list">
         {% for s in featuredSessions %}
         <li class="mn-session-item">
-          {% if sessionBaseUrl %}<a href="{{ sessionBaseUrl }}/{{ s.slug | default: s.token }}" class="mn-session-link">{% endif %}
+          {% if sessionBaseUrl %}<a href="{{ sessionBaseUrl }}/{{ s.slug | default: s.token }}{{ sessionSuffix }}" class="mn-session-link">{% endif %}
           <span class="mn-session-title">{{ s.title }}</span>
           <span class="mn-meta">{{ s.durationMinutes | formatDuration }} &middot; {{ s.turns }} turns &middot; {{ s.locChanged | formatLoc }} lines</span>
           {% if sessionBaseUrl %}</a>{% endif %}

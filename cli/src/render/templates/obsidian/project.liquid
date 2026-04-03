@@ -248,7 +248,7 @@
         <h2 class="section-heading">Sessions</h2>
         <div class="session-list">
           {% for s in featuredSessions %}
-          <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="session-card shimmer-transition">
+          <a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}" class="session-card shimmer-transition">
             <span class="session-num">{{ forloop.index }}</span>
             <div class="session-info">
               <div class="session-title">{{ s.title }}</div>

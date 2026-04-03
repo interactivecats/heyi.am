@@ -203,7 +203,7 @@
 
     <div class="sessions-grid">
       {% for s in featuredSessions %}
-      <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="session-card">
+      <a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}" class="session-card">
         <div class="session-chrome">
           <div class="session-chrome-dots" aria-hidden="true"><span></span><span></span><span></span></div>
           <div class="session-chrome-url">session {{ forloop.index }}</div>

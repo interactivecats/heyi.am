@@ -191,7 +191,7 @@
     </div>
     <div class="strata-session-grid strata-session-grid--stacked">
       {% for s in featuredSessions %}
-      <a class="strata-session-card" href="{{ sessionBaseUrl }}/{{ s.slug }}">
+      <a class="strata-session-card" href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}">
         <div class="strata-session-card__bar" style="background: var(--strata-accent);"></div>
         <div class="strata-session-card__body">
           <div class="strata-session-card__title">{{ s.title }}</div>

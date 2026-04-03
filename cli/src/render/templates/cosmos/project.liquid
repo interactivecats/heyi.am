@@ -260,7 +260,7 @@
         <div class="cos-sessions">
           {% for s in featuredSessions %}
           <article class="cos-session-card">
-            <h3><a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a></h3>
+            <h3><a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}">{{ s.title }}</a></h3>
             <div class="cos-session-meta">
               <span><strong>{{ s.durationMinutes | formatDuration }}</strong></span>
               <span><strong>{{ s.locChanged | localeNumber }}</strong> LOC</span>

@@ -165,7 +165,7 @@
       {% endif %}
       <div class="zen-session-item zen-fade">
         <p class="zen-session-title">
-          <a href="{{ sessionBaseUrl }}/{{ s.slug }}">{{ s.title }}</a>
+          <a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}">{{ s.title }}</a>
         </p>
         <p class="zen-session-meta">
           {{ s.recordedAt | formatDateShort }} &middot; {{ s.durationMinutes | formatDuration }} &middot; {{ s.locChanged | localeNumber }} LOC{% if s.skills.size > 0 %} &middot; {{ s.skills | join: ", " }}{% endif %}

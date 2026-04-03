@@ -95,7 +95,7 @@
       {% for s in featuredSessions %}
       <div class="noir-session-row" role="listitem" style="--bar-width: {% if featuredSessions[0].locChanged > 0 %}{{ s.locChanged | times: 100 | divided_by: featuredSessions[0].locChanged }}%{% else %}0%{% endif %};">
         <span class="noir-session-row__num">{{ forloop.index | prepend: '00' | slice: -2, 2 }}</span>
-        <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="noir-session-row__title">{{ s.title }}</a>
+        <a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}" class="noir-session-row__title">{{ s.title }}</a>
         <div class="noir-session-row__bar-wrap">
           <div class="noir-session-row__bar-track">
             <div class="noir-session-row__bar"></div>
@@ -199,7 +199,7 @@
     <h2 class="noir-heading">Featured Sessions</h2>
     <div class="noir-featured-sessions">
       {% for s in featuredSessions %}
-      <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="noir-featured-card">
+      <a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}" class="noir-featured-card">
         <span class="noir-featured-card__tag">{{ s.sourceTool }}</span>
         <h3 class="noir-featured-card__title">{{ s.title }}</h3>
         <span class="noir-featured-card__meta">{{ s.durationMinutes | formatDuration }} &middot; {{ s.locChanged | formatLoc }} LOC</span>

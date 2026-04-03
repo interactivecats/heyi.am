@@ -226,7 +226,7 @@
             {% for s in featuredSessions %}
             <tr>
               <td>{{ forloop.index }}</td>
-              <td><a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="session-title-link">{{ s.title }}</a></td>
+              <td><a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}" class="session-title-link">{{ s.title }}</a></td>
               <td>{{ s.recordedAt | formatDateShort }}</td>
               <td>{{ s.durationMinutes | formatDuration }}</td>
               <td>{{ s.locChanged | localeNumber }}</td>
@@ -256,7 +256,7 @@
       <h2 class="section-heading">Featured Sessions</h2>
       <div class="featured-grid">
         {% for s in featuredSessions %}
-        <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="featured-card frost">
+        <a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}" class="featured-card frost">
           {% if s.skills.size > 0 %}
           <span class="featured-tag">{{ s.skills | first }}</span>
           {% endif %}

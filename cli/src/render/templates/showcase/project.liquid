@@ -205,7 +205,7 @@
         </div>
         <div class="sc-session-grid">
           {% for s in featuredSessions %}
-          <a href="{{ sessionBaseUrl }}/{{ s.slug | default: s.token }}" class="sc-session-card sc-stagger">
+          <a href="{{ sessionBaseUrl }}/{{ s.slug | default: s.token }}{{ sessionSuffix }}" class="sc-session-card sc-stagger">
             <div class="sc-session-card__accent-bar" style="background: var(--accent);"></div>
             <div class="sc-session-card__title">{{ s.title }}</div>
             <div class="sc-session-card__meta">

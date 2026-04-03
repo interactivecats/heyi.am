@@ -166,7 +166,7 @@
     <h2 class="ed-section-title">{{ featuredSessions.size }} Featured Session{% if featuredSessions.size != 1 %}s{% endif %}</h2>
     <div class="ed-sessions-grid">
       {% for s in featuredSessions %}
-      <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="ed-session-card">
+      <a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}" class="ed-session-card">
         <h3 class="ed-session-card-title">{{ s.title }}</h3>
         <div class="ed-session-card-meta">
           <span>{{ s.durationMinutes | formatDuration }}</span>

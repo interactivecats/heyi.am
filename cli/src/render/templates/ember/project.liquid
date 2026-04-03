@@ -203,7 +203,7 @@
     <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Featured Sessions</h2>
     <div class="sessions-grid">
       {% for s in featuredSessions %}
-      <a href="{{ sessionBaseUrl }}/{{ s.slug }}" class="session-card">
+      <a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}" class="session-card">
         <div class="session-card-number">#{{ forloop.index }}</div>
         <h3 class="session-card-title">{{ s.title }}</h3>
         <div class="session-card-meta">
