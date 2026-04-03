@@ -4,7 +4,7 @@ import { fetchSession, fetchSessionRender } from '../api'
 import type { Session } from '../types'
 import { Chip } from './shared/Chip'
 import { WorkTimeline } from './WorkTimeline'
-import { scopeTemplateCss } from '../scopeCss'
+import { scopeTemplateCss, REVEAL_SELECTOR } from '../scopeCss'
 
 interface SessionDetailOverlayProps {
   session: Session
@@ -78,11 +78,13 @@ export function SessionDetailOverlay({ session: initialSession, projectDirName, 
 
     // Force-reveal animated elements
     requestAnimationFrame(() => {
-      const animated = container.querySelectorAll(
-        '[class*="-section"], [class*="sc-"], [class*="-hero"], .fade-up, .fade-in, .reveal, [class*="anim-"]',
-      )
+      const animated = container.querySelectorAll(REVEAL_SELECTOR)
       animated.forEach((el, i) => {
-        setTimeout(() => el.classList.add('visible'), i * 50)
+        setTimeout(() => {
+          el.classList.add('visible')
+          ;(el as HTMLElement).style.animationPlayState = 'running'
+          ;(el as HTMLElement).style.opacity = '1'
+        }, i * 50)
       })
     })
   }, [renderHtml])

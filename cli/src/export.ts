@@ -11,8 +11,9 @@ import { deflateRawSync } from 'node:zlib';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ProjectEnhanceCache, EnhancedData } from './settings.js';
-import { loadEnhancedData } from './settings.js';
+import { loadEnhancedData, getDefaultTemplate } from './settings.js';
 import { renderProjectHtml, renderSessionHtml } from './render/index.js';
+import { resolveTemplate } from './render/templates.js';
 import { escapeHtml, displayNameFromDir } from './format-utils.js';
 import {
   buildProjectRenderData,
@@ -332,10 +333,11 @@ export async function exportHtml(
     sessionBaseUrl: './sessions',
   });
 
+  const templateName = resolveTemplate(undefined, getDefaultTemplate());
   const projectBody = renderProjectHtml(projectRenderData, {
     arc: result.arc,
     fullSessions: sessions as unknown as Array<Record<string, unknown>>,
-  });
+  }, templateName);
   const projectHtml = buildStandalonePage(title, projectBody, {
     description: result.narrative?.slice(0, 200) || undefined,
   });
@@ -357,9 +359,10 @@ export async function exportHtml(
       projectSlug: slug,
       sessionSlug,
       sourceTool: session.source ?? 'unknown',
+      template: templateName,
     });
 
-    const sessionBody = renderSessionHtml(renderData);
+    const sessionBody = renderSessionHtml(renderData, templateName);
     const sessionDesc = (enhanced?.developerTake ?? session.developerTake ?? '').slice(0, 200) || undefined;
     const sessionHtml = buildStandalonePage(
       session.title,
@@ -460,10 +463,11 @@ export function generateProjectHtmlFragment(
     sessionCards,
   });
 
+  const templateName = resolveTemplate(undefined, getDefaultTemplate());
   return renderProjectHtml(renderData, {
     arc: result.arc,
     fullSessions: sessions as unknown as Array<Record<string, unknown>>,
-  });
+  }, templateName);
 }
 
 export function generateHtmlFiles(
@@ -478,6 +482,7 @@ export function generateHtmlFiles(
     buildProjectRenderInputs(dirName, cache, sessions, username, opts);
 
   const screenshotUrl = resolveScreenshotDataUri(dirName, cache);
+  const templateName = resolveTemplate(undefined, getDefaultTemplate());
 
   const projectRenderData = buildProjectRenderData({
     username, slug, title,
@@ -496,7 +501,7 @@ export function generateHtmlFiles(
   const projectBody = renderProjectHtml(projectRenderData, {
     arc: result.arc,
     fullSessions: sessions as unknown as Array<Record<string, unknown>>,
-  });
+  }, templateName);
   files.push({ path: 'index.html', content: buildStandalonePage(title, projectBody, {
     description: result.narrative?.slice(0, 200) || undefined,
   }) });
@@ -510,8 +515,9 @@ export function generateHtmlFiles(
       session, enhanced, username,
       projectSlug: slug, sessionSlug,
       sourceTool: session.source ?? 'unknown',
+      template: templateName,
     });
-    const sessionBody = renderSessionHtml(renderData);
+    const sessionBody = renderSessionHtml(renderData, templateName);
     const sessionDesc = (enhanced?.developerTake ?? session.developerTake ?? '').slice(0, 200) || undefined;
     files.push({
       path: `sessions/${sessionSlug}.html`,

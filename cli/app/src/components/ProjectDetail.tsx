@@ -16,7 +16,7 @@ import { Chip } from './shared/Chip'
 import { WorkTimeline } from './WorkTimeline'
 import { GrowthChart } from './GrowthChart'
 import { SessionDetailOverlay } from './SessionDetailOverlay'
-import { scopeTemplateCss } from '../scopeCss'
+import { scopeTemplateCss, REVEAL_SELECTOR } from '../scopeCss'
 
 /** Build a link element for DOM patching (safe — no innerHTML). */
 function buildLinkEl(url: string, type: 'repo' | 'project'): HTMLAnchorElement {
@@ -137,19 +137,18 @@ export function ProjectDetail() {
 
     // Force-reveal animated elements that use IntersectionObserver + .visible class.
     // In the embedded React shell, viewport-based observers may not fire reliably.
-    requestAnimationFrame(() => {
-      const animated = container.querySelectorAll(
-        '[class*="-section"], [class*="sc-"], [class*="-hero"], .fade-up, .fade-in, .reveal, [class*="anim-"], .strata-layer, [class*="cos-"]',
-      )
+    const timers: ReturnType<typeof setTimeout>[] = []
+    const raf = requestAnimationFrame(() => {
+      const animated = container.querySelectorAll(REVEAL_SELECTOR)
       animated.forEach((el, i) => {
-        setTimeout(() => {
+        timers.push(setTimeout(() => {
           el.classList.add('visible')
-          // Force-run CSS animations that templates pause for scroll-triggered reveal
           ;(el as HTMLElement).style.animationPlayState = 'running'
           ;(el as HTMLElement).style.opacity = '1'
-        }, i * 50)
+        }, i * 50))
       })
     })
+    return () => { cancelAnimationFrame(raf); timers.forEach(clearTimeout) }
   }, [renderHtml])
 
   // Intercept session card link clicks → open drawer instead of navigating away.

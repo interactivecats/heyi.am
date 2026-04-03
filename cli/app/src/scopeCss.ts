@@ -34,3 +34,7 @@ export function scopeTemplateCss(css: string, containerId: string): string {
 
   return `@scope (#${containerId}) {\n${scoped}\n}\n${keyframes.join('\n')}`
 }
+
+/** Selector for template elements that use scroll-triggered animation reveals. */
+export const REVEAL_SELECTOR =
+  '[class*="-section"], [class*="sc-"], [class*="-hero"], .fade-up, .fade-in, .reveal, [class*="anim-"], .strata-layer, [class*="cos-"]'

@@ -124,9 +124,9 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
     .filter(s => s.recordedAt)
     .sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime());
 
-  // Gap compression: gaps > 1 day compressed to fixed visual width
-  const GAP_THRESHOLD = 24 * 60 * 60 * 1000; // 1 day
-  const COMPRESSED_GAP = 2 * 60 * 60 * 1000;  // 2 hours visual
+  // Gap compression — must match GrowthChart.tsx constants
+  const GAP_THRESHOLD = 60 * 60 * 1000;       // 1 hour
+  const COMPRESSED_GAP = 10 * 60 * 1000;      // 10 minutes visual
   const visualTimes: number[] = [0];
   for (let i = 1; i < sortedAll.length; i++) {
     const gap = new Date(sortedAll[i].recordedAt).getTime() - new Date(sortedAll[i - 1].recordedAt).getTime();
