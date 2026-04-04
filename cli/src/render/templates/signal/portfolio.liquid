@@ -46,6 +46,7 @@
   {%- comment -%} Main Content {%- endcomment -%}
   <main id="main" class="container">
 
+    {% if hasProfile %}
     {%- comment -%} Identity {%- endcomment -%}
     <section class="identity fade-in" aria-label="Developer identity">
       <div class="identity-profile">
@@ -55,7 +56,9 @@
         <div class="identity-details">
           <div class="identity-top">
             <div>
+              {% if user.displayName != blank %}
               <h1>{{ user.displayName }}</h1>
+              {% endif %}
               {% if user.bio != blank %}
               <p class="identity-bio">{{ user.bio }}</p>
               {% endif %}
@@ -95,6 +98,7 @@
         </div>
       </div>
     </section>
+    {% endif %}
 
     {%- comment -%} Projects Table {%- endcomment -%}
     {% if projects.size > 0 %}

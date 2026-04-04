@@ -306,18 +306,22 @@ describe('GET /preview/portfolio', () => {
     clearPreviewCache();
   });
 
-  it('renders portfolio with mock data when no profile exists', async () => {
+  it('uses real project data with empty profile fields when nothing is filled out', async () => {
     vi.mocked(getPortfolioProfile).mockReturnValue({});
     const app = makeApp();
 
     const res = await request(app).get('/preview/portfolio');
     expect(res.status).toBe(200);
-    // Falls back to mock data, rendered via buildPreviewPage
-    expect(res.text).toBe('<html>preview</html>');
-    expect(renderPortfolioHtml).toHaveBeenCalled();
+    expect(renderPortfolioHtml).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user: expect.objectContaining({ displayName: '', bio: '', location: '', photoUrl: undefined }),
+        projects: expect.any(Array),
+      }),
+      expect.any(String),
+    );
   });
 
-  it('renders portfolio with real profile when displayName is set', async () => {
+  it('uses profile fields when provided', async () => {
     vi.mocked(getPortfolioProfile).mockReturnValue({
       displayName: 'Test User',
       bio: 'A developer',
@@ -329,7 +333,28 @@ describe('GET /preview/portfolio', () => {
     expect(res.status).toBe(200);
     expect(renderPortfolioHtml).toHaveBeenCalledWith(
       expect.objectContaining({
-        user: expect.objectContaining({ displayName: 'Test User' }),
+        user: expect.objectContaining({ displayName: 'Test User', bio: 'A developer', location: 'NYC' }),
+      }),
+      expect.any(String),
+    );
+  });
+
+  it('handles partial profile (name but no photo/bio)', async () => {
+    vi.mocked(getPortfolioProfile).mockReturnValue({
+      displayName: 'Jane',
+    });
+    const app = makeApp();
+
+    const res = await request(app).get('/preview/portfolio');
+    expect(res.status).toBe(200);
+    expect(renderPortfolioHtml).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user: expect.objectContaining({
+          displayName: 'Jane',
+          bio: '',
+          location: '',
+          photoUrl: undefined,
+        }),
       }),
       expect.any(String),
     );

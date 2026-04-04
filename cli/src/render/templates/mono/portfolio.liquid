@@ -3,6 +3,7 @@
   <div class="mono-page">
 
     {%- comment -%} Hero {%- endcomment -%}
+    {% if hasProfile %}
     <section class="mono-section" aria-label="Profile">
       <div class="terminal-block">
         <div class="terminal-header">
@@ -19,7 +20,9 @@
             <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="hero-photo" width="120" height="150">
             {% endif %}
             <div class="hero-info">
+              {% if user.displayName != blank %}
               <h1 class="hero-title" aria-label="{{ user.displayName }}">{{ user.displayName }}</h1>
+              {% endif %}
               <p class="hero-handle">
                 <span style="color: var(--mono-accent, #4ade80);">@</span>{{ user.username }}
               </p>
@@ -60,6 +63,7 @@
         </div>
       </div>
     </section>
+    {% endif %}
 
     {%- comment -%} Stats {%- endcomment -%}
     <section class="mono-section" aria-label="Aggregate statistics">

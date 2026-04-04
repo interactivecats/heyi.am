@@ -1,5 +1,6 @@
 <div class="heyiam-portfolio radar" data-render-version="2" data-template="radar" data-username="{{ user.username }}">
 
+  {% if hasProfile %}
   {%- comment -%} Header {%- endcomment -%}
   <section class="radar-section" aria-label="Profile">
     <div class="portfolio-header">
@@ -7,7 +8,9 @@
       <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="portfolio-photo">
       {% endif %}
       <div class="portfolio-info">
+        {% if user.displayName != blank %}
         <h1 class="portfolio-name">{{ user.displayName }}</h1>
+        {% endif %}
         <div class="portfolio-handle">@{{ user.username }}</div>
         {% if user.bio != blank %}
         <div class="portfolio-bio">{{ user.bio }}</div>
@@ -43,6 +46,7 @@
       </div>
     </div>
   </section>
+  {% endif %}
 
   {%- comment -%} Aggregate Stats {%- endcomment -%}
   <section class="radar-section" aria-label="Aggregate statistics" id="stats-section">

@@ -3,11 +3,14 @@
   <div class="grid-bg" aria-hidden="true"></div>
 
   {%- comment -%} Hero {%- endcomment -%}
+  {% if hasProfile %}
   <section class="hero fade-in" aria-label="Profile">
     {% if user.photoUrl %}
     <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="hero-photo portfolio-photo">
     {% endif %}
+    {% if user.displayName != blank %}
     <h1>{{ user.displayName }}</h1>
+    {% endif %}
     {% if user.bio != blank %}
     <p class="hero-bio portfolio-bio">{{ user.bio }}</p>
     {% endif %}
@@ -37,6 +40,7 @@
     </ul>
     {% endif %}
   </section>
+  {% endif %}
 
   {%- comment -%} Aggregate Stats {%- endcomment -%}
   <section class="stats-section fade-in" aria-label="Aggregate statistics">

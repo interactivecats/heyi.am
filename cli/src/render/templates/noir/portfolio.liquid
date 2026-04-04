@@ -1,6 +1,7 @@
 <div class="noir-page" data-render-version="2" data-template="noir" data-username="{{ user.username }}">
 
   <!-- Hero Profile -->
+  {% if hasProfile %}
   <section class="noir-section noir-hero" aria-label="Profile">
     {% if user.photoUrl %}
     <img
@@ -12,7 +13,9 @@
     >
     {% endif %}
     <div class="noir-hero__content">
+      {% if user.displayName != blank %}
       <h1 class="noir-hero__name">{{ user.displayName }}</h1>
+      {% endif %}
       {% if user.bio != blank %}
       <p class="noir-hero__bio">{{ user.bio }}</p>
       {% endif %}
@@ -30,6 +33,7 @@
       {% endif %}
     </div>
   </section>
+  {% endif %}
 
   <hr class="noir-rule">
 

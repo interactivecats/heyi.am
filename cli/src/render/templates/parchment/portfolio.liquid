@@ -3,12 +3,15 @@
 
   <div class="page-wrapper">
 
+    {% if hasProfile %}
     {%- comment -%} Masthead / Title Page {%- endcomment -%}
     <header class="masthead fade-in" role="banner">
       {% if user.photoUrl %}
       <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="masthead__photo" width="120" height="120">
       {% endif %}
+      {% if user.displayName != blank %}
       <h1 class="masthead__title">{{ user.displayName }}</h1>
+      {% endif %}
       {% if user.bio %}
       <p class="masthead__subtitle">{{ user.bio }}</p>
       {% endif %}
@@ -53,6 +56,7 @@
       </div>
       {% endif %}
     </header>
+    {% endif %}
 
     <div class="hr-triple" role="separator">
       <span class="hr-triple-inner"></span>

@@ -1,13 +1,16 @@
 <div class="heyiam-portfolio bauhaus" data-render-version="2" data-template="bauhaus" data-username="{{ user.username }}">
 
   {%- comment -%} Hero {%- endcomment -%}
+  {% if hasProfile %}
   <section class="hero" aria-label="Introduction">
     <div class="hero-grid">
       <div class="hero-content anim-slide-left">
         {% if user.photoUrl %}
         <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="hero-photo" width="120" height="120">
         {% endif %}
+        {% if user.displayName != blank %}
         <h1>{{ user.displayName }}<span class="accent-dot">.</span></h1>
+        {% endif %}
         {% if user.bio %}
         <p class="hero-bio">{{ user.bio }}</p>
         {% endif %}
@@ -60,6 +63,7 @@
       </div>
     </div>
   </section>
+  {% endif %}
 
   {%- comment -%} Stats bar {%- endcomment -%}
   <section class="stats-bar anim-fade-up anim-delay-2" aria-label="Aggregate statistics">

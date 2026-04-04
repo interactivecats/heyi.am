@@ -566,40 +566,35 @@ body { overflow: auto !important; min-height: auto !important; }
         } catch { /* skip projects that fail */ }
       }
 
-      // Build PortfolioRenderData from real profile or fall back to mock
-      let renderData: PortfolioRenderData;
-      if (profile.displayName) {
-        renderData = {
-          user: {
-            username: auth?.username || 'preview',
-            accent: '#084471',
-            displayName: profile.displayName,
-            bio: profile.bio || '',
-            location: profile.location || '',
-            status: 'active',
-            email: profile.email,
-            phone: profile.phone,
-            photoUrl: profile.photoBase64 || undefined,
-            linkedinUrl: profile.linkedinUrl,
-            githubUrl: profile.githubUrl,
-            twitterHandle: profile.twitterHandle,
-            websiteUrl: profile.websiteUrl,
-            resumeUrl: profile.resumeBase64 ? '#' : undefined,
-          },
-          projects: portfolioProjects,
-          totalDurationMinutes: totalDuration,
-          totalAgentDurationMinutes: totalAgentDuration || undefined,
-          totalLoc,
-          totalSessions,
-        };
-      } else {
-        // No profile yet — use mock data so the preview still renders
-        renderData = getMockPortfolioData();
-      }
+      // Always use real project data; fall back gracefully for missing profile fields
+      const username = auth?.username || 'preview';
+      const renderData: PortfolioRenderData = {
+        user: {
+          username,
+          accent: '#084471',
+          displayName: profile.displayName || '',
+          bio: profile.bio || '',
+          location: profile.location || '',
+          status: 'active',
+          email: profile.email,
+          phone: profile.phone,
+          photoUrl: profile.photoBase64 || undefined,
+          linkedinUrl: profile.linkedinUrl,
+          githubUrl: profile.githubUrl,
+          twitterHandle: profile.twitterHandle,
+          websiteUrl: profile.websiteUrl,
+          resumeUrl: profile.resumeBase64 ? '#' : undefined,
+        },
+        projects: portfolioProjects,
+        totalDurationMinutes: totalDuration,
+        totalAgentDurationMinutes: totalAgentDuration || undefined,
+        totalLoc,
+        totalSessions,
+      };
 
       const bodyHtml = renderPortfolioHtml(renderData, templateName);
       res.type('html').send(ctx.buildPreviewPage(
-        `${renderData.user.displayName}'s Portfolio`,
+        renderData.user.displayName ? `${renderData.user.displayName}'s Portfolio` : 'Portfolio Preview',
         bodyHtml,
         'PREVIEW — this is how your portfolio will appear on heyi.am',
         templateName,

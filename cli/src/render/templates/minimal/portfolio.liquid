@@ -2,6 +2,7 @@
 
   <div class="mn-portfolio">
 
+    {% if hasProfile %}
     {%- comment -%} Optional photo {%- endcomment -%}
     {% if user.photoUrl %}
     <div class="mn-photo-wrap">
@@ -10,7 +11,9 @@
     {% endif %}
 
     {%- comment -%} Big serif heading {%- endcomment -%}
+    {% if user.displayName != blank %}
     <h1 class="mn-heading">{{ user.displayName }}</h1>
+    {% endif %}
 
     {% if user.bio != blank %}
     <p class="mn-bio">{{ user.bio }}</p>
@@ -28,6 +31,7 @@
       {% if user.websiteUrl != blank %}<span><a href="{{ user.websiteUrl }}" target="_blank" rel="noopener">{{ user.websiteUrl | stripProtocol }}</a></span>{% endif %}
       {% if user.resumeUrl != blank %}<span><a href="{{ user.resumeUrl }}" download>Resume (PDF)</a></span>{% endif %}
     </div>
+    {% endif %}
     {% endif %}
 
     {%- comment -%} Aggregate stats as quiet inline text {%- endcomment -%}

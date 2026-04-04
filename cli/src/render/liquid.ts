@@ -255,9 +255,13 @@ export function renderPortfolio(data: PortfolioRenderData, templateName?: string
     : undefined;
   const efficiencyStr = efficiencyMultiplier && efficiencyMultiplier > 1 ? `${efficiencyMultiplier.toFixed(1)}x` : undefined;
 
+  const u = data.user;
+  const hasProfile = !!(u.displayName || u.bio || u.photoUrl || u.location || u.email || u.phone || u.linkedinUrl || u.githubUrl || u.twitterHandle || u.websiteUrl || u.resumeUrl);
+
   return injectTemplateAttrs(engine.renderFileSync(`${template}/portfolio`, {
     ...data,
     durationLabel,
     efficiencyMultiplier: efficiencyStr,
+    hasProfile,
   }), template);
 }

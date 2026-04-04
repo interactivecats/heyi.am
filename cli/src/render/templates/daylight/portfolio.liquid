@@ -1,11 +1,14 @@
 <div class="heyiam-portfolio daylight" data-render-version="2" data-template="daylight" data-username="{{ user.username }}">
 
   {%- comment -%} Hero {%- endcomment -%}
+  {% if hasProfile %}
   <section class="dl-hero dl-container dl-bounce" aria-label="Profile">
     {% if user.photoUrl %}
     <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="dl-hero-photo">
     {% endif %}
+    {% if user.displayName != blank %}
     <h1 class="dl-hero-name">{{ user.displayName }}</h1>
+    {% endif %}
     {% if user.bio %}
     <p class="dl-hero-bio">{{ user.bio }}</p>
     {% endif %}
@@ -35,6 +38,7 @@
     </ul>
     {% endif %}
   </section>
+  {% endif %}
 
   <div class="dl-container">
 

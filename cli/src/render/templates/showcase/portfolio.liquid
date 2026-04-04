@@ -1,5 +1,6 @@
 <div class="heyiam-portfolio showcase" data-render-version="2" data-template="showcase" data-username="{{ user.username }}">
 
+  {% if hasProfile %}
   <!-- Cinematic Hero -->
   <section class="sc-hero" id="hero-section" aria-label="Portfolio header">
     {% if user.photoUrl %}
@@ -18,7 +19,9 @@
       >
       {% endif %}
       <div class="sc-hero__info">
+        {% if user.displayName != blank %}
         <h1 class="sc-hero__name">{{ user.displayName }}</h1>
+        {% endif %}
         {% if user.location != blank %}
         <div class="sc-hero__location">{{ user.location }}</div>
         {% endif %}
@@ -72,6 +75,7 @@
       {% endif %}
     </div>
   </section>
+  {% endif %}
 
   <div class="sc-page">
     <main id="main-content">

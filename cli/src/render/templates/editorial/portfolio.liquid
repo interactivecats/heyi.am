@@ -1,6 +1,7 @@
 <div class="heyiam-portfolio editorial" data-render-version="2" data-template="editorial" data-username="{{ user.username }}">
 
   {%- comment -%} Hero {%- endcomment -%}
+  {% if hasProfile %}
   <section class="ed-hero" aria-label="Developer profile">
     <div class="ed-hero-content">
       <div class="ed-hero-profile">
@@ -8,7 +9,9 @@
         <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="ed-profile-photo">
         {% endif %}
         <div class="ed-hero-info">
+          {% if user.displayName != blank %}
           <h1 class="ed-hero-name">{{ user.displayName }}</h1>
+          {% endif %}
           {% if user.bio %}
           <p class="ed-hero-bio">{{ user.bio }}</p>
           {% endif %}
@@ -48,6 +51,7 @@
       {% endif %}
     </div>
   </section>
+  {% endif %}
 
   {%- comment -%} Stats grid {%- endcomment -%}
   <section class="ed-stats-section" aria-label="Portfolio statistics">

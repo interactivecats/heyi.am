@@ -4,14 +4,17 @@
 
     <main id="main-content">
 
+      {% if hasProfile %}
       {%- comment -%} Hero / Profile {%- endcomment -%}
       <section class="vd-section vd-hero" aria-label="Profile">
         {% if user.photoUrl %}
         <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="vd-hero__photo" width="120" height="120">
-        {% else %}
+        {% elsif user.displayName != blank %}
         <div class="vd-hero__avatar" aria-hidden="true">{{ user.displayName | slice: 0 }}</div>
         {% endif %}
+        {% if user.displayName != blank %}
         <h1>{{ user.displayName }}</h1>
+        {% endif %}
         {% if user.bio != blank %}
         <p class="vd-hero__bio">{{ user.bio }}</p>
         {% endif %}
@@ -65,6 +68,7 @@
         </div>
         {% endif %}
       </section>
+      {% endif %}
 
       {%- comment -%} Leaf Divider {%- endcomment -%}
       <div class="vd-leaf-divider" role="separator">

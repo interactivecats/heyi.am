@@ -1,5 +1,6 @@
 <div class="heyiam-portfolio aurora" data-render-version="2" data-template="aurora" data-username="{{ user.username }}">
 
+  {% if hasProfile %}
   {%- comment -%} Aurora Header {%- endcomment -%}
   <header class="aurora-header" role="banner">
     <div class="aurora-hero fade-up">
@@ -9,7 +10,9 @@
       </div>
       {% endif %}
       <div class="aurora-hero-content">
+        {% if user.displayName != blank %}
         <h1>{{ user.displayName }}</h1>
+        {% endif %}
         {% if user.location %}
         <div class="aurora-hero-location portfolio-location">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="9" r="2.5"/></svg>
@@ -50,6 +53,7 @@
       </div>
     </div>
   </header>
+  {% endif %}
 
   {%- comment -%} Stats Grid {%- endcomment -%}
   <section class="aurora-stats" aria-label="Portfolio statistics">

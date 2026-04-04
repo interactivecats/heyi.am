@@ -4,13 +4,16 @@
     <div class="bento" aria-label="Portfolio dashboard">
 
       {%- comment -%} Cell 1: Identity (2-wide) {%- endcomment -%}
+      {% if hasProfile %}
       <div class="bento-cell cell-identity">
         <div class="identity-top">
           {% if user.photoUrl %}
           <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="profile-photo portfolio-photo">
           {% endif %}
           <div class="identity-text">
+            {% if user.displayName != blank %}
             <h1>{{ user.displayName }}</h1>
+            {% endif %}
             {% if user.location != blank %}
             <p class="location portfolio-location">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -43,6 +46,7 @@
           {% endif %}
         </div>
       </div>
+      {% endif %}
 
       {%- comment -%} Cell 2: Stat -- Projects {%- endcomment -%}
       <section class="bento-cell cell-stat" aria-label="Projects count">

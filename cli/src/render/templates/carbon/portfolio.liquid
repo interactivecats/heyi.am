@@ -1,11 +1,14 @@
 <div class="heyiam-portfolio carbon" data-render-version="2" data-template="carbon" data-username="{{ user.username }}">
 
   {%- comment -%} Profile Header {%- endcomment -%}
+  {% if hasProfile %}
   <header class="profile fade-in" aria-label="Profile">
     {% if user.photoUrl %}
     <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="profile__photo" width="120" height="120">
     {% endif %}
+    {% if user.displayName != blank %}
     <h1 class="profile__name">{{ user.displayName }}</h1>
+    {% endif %}
     {% if user.bio != blank %}
     <p class="profile__bio">{{ user.bio }}</p>
     {% endif %}
@@ -33,6 +36,7 @@
       {% endif %}
     </div>
   </header>
+  {% endif %}
 
   {%- comment -%} Aggregate Stats Bar {%- endcomment -%}
   <section class="stats-bar fade-in" aria-label="Portfolio statistics">

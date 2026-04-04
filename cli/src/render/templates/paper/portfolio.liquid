@@ -1,8 +1,11 @@
 <div class="heyiam-portfolio paper" data-render-version="2" data-template="paper" data-username="{{ user.username }}">
 
+  {% if hasProfile %}
   {%- comment -%} Masthead {%- endcomment -%}
   <header class="masthead fade-in fade-in-d1" role="banner">
+    {% if user.displayName != blank %}
     <h1 class="masthead__title">{{ user.displayName }}</h1>
+    {% endif %}
     {% if user.bio %}
     <p class="masthead__edition">A Developer Portfolio</p>
     {% endif %}
@@ -11,14 +14,16 @@
     <p class="masthead__dateline">{{ user.location }}</p>
     {% endif %}
   </header>
+  {% endif %}
 
   <main id="main-content">
+    {% if hasProfile %}
     {%- comment -%} Byline / Bio {%- endcomment -%}
     <section class="byline fade-in fade-in-d2" aria-label="About">
       {% if user.photoUrl %}
       <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="byline__photo portfolio-photo" width="100" height="130">
       {% endif %}
-      <p class="byline__name">By {{ user.displayName }}</p>
+      {% if user.displayName != blank %}<p class="byline__name">By {{ user.displayName }}</p>{% endif %}
       {% if user.location %}
       <p class="byline__location portfolio-location">{{ user.location }}</p>
       {% endif %}
@@ -61,6 +66,7 @@
         {% endif %}
       </div>
     </section>
+    {% endif %}
 
     {%- comment -%} Aggregate Stats {%- endcomment -%}
     <section class="stats-section fade-in fade-in-d3" aria-label="Portfolio statistics">

@@ -5,6 +5,7 @@
     <span class="term-prompt__char">&#10095;</span> <span class="term-prompt__path">~/@{{ user.username }}</span>
   </div>
 
+  {% if hasProfile %}
   {%- comment -%} Header: photo + identity {%- endcomment -%}
   <div class="term-header">
     {% if user.photoUrl != blank %}
@@ -15,7 +16,9 @@
     </div>
     {% endif %}
     <div class="term-identity">
+      {% if user.displayName != blank %}
       <h1 class="term-heading"># {{ user.displayName }}</h1>
+      {% endif %}
       {% if user.status != blank %}
       <div class="term-status">[ {{ user.status }} ]</div>
       {% endif %}
@@ -56,6 +59,7 @@
       {% endif %}
     </table>
   </div>
+  {% endif %}
   {% endif %}
 
   {%- comment -%} Stats as tabular output {%- endcomment -%}

@@ -2,6 +2,7 @@
 
   <main class="zen-container">
 
+    {% if hasProfile %}
     <!-- Section 1: Profile Header -->
     <section class="zen-section zen-fade" aria-label="Profile">
       <div class="zen-header-profile">
@@ -9,7 +10,9 @@
         <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="zen-header-photo">
         {% endif %}
         <div class="zen-header-info">
+          {% if user.displayName != blank %}
           <h1 class="zen-display zen-header-name">{{ user.displayName }}</h1>
+          {% endif %}
           {% if user.bio != blank %}
           <p class="zen-header-bio">{{ user.bio }}</p>
           {% endif %}
@@ -44,6 +47,7 @@
         </div>
       </div>
     </section>
+    {% endif %}
 
     <hr class="zen-rule zen-fade" aria-hidden="true">
 

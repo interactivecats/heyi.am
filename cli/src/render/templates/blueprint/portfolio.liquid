@@ -10,6 +10,7 @@
   </svg>
 
   {%- comment -%} Hero {%- endcomment -%}
+  {% if hasProfile %}
   <section class="bp-hero" aria-label="Profile">
     <div class="bp-section-ref">
       <span class="bp-ref-badge" aria-hidden="true">01</span>
@@ -20,7 +21,9 @@
         <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="bp-profile-photo">
       {% endif %}
       <div>
+        {% if user.displayName != blank %}
         <h1>{{ user.displayName }}</h1>
+        {% endif %}
         {% if user.bio != blank %}
           <p class="bp-hero-bio">{{ user.bio }}</p>
         {% endif %}
@@ -56,6 +59,7 @@
       {% endif %}
     </div>
   </section>
+  {% endif %}
 
   {%- comment -%} Stats {%- endcomment -%}
   <section aria-label="Aggregate statistics">

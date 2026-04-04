@@ -34,6 +34,7 @@
     <main id="main-content">
 
       {%- comment -%} Hero {%- endcomment -%}
+      {% if hasProfile %}
       <section class="hero section-reveal" aria-label="Profile">
         <div class="section-label">
           <span>&#167;01 &mdash; survey point</span>
@@ -43,7 +44,9 @@
           <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="hero__photo" width="120" height="150">
           {% endif %}
           <div class="hero__info">
+            {% if user.displayName != blank %}
             <h1 class="hero__name">{{ user.displayName }}</h1>
+            {% endif %}
             <p class="hero__handle">@{{ user.username }}</p>
             {% if user.bio != blank %}
             <p class="hero__bio">{{ user.bio }}</p>
@@ -82,6 +85,7 @@
           </div>
         </div>
       </section>
+      {% endif %}
 
       {%- comment -%} Stats {%- endcomment -%}
       <section class="section-reveal" aria-label="Aggregate statistics">

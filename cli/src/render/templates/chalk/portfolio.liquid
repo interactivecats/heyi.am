@@ -11,11 +11,14 @@
   </svg>
 
   {%- comment -%} Hero {%- endcomment -%}
+  {% if hasProfile %}
   <section class="hero" aria-label="Profile">
     {% if user.photoUrl %}
     <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="hero-photo portfolio-photo" width="120" height="120">
     {% endif %}
+    {% if user.displayName != blank %}
     <h1>{{ user.displayName }}</h1>
+    {% endif %}
     {% if user.bio != blank %}
     <p class="hero-bio portfolio-bio">{{ user.bio }}</p>
     {% endif %}
@@ -58,6 +61,7 @@
       {% endif %}
     </div>
   </section>
+  {% endif %}
 
   {%- comment -%} Stats {%- endcomment -%}
   <section class="stats-section" aria-label="Aggregate statistics">

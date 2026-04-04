@@ -1,6 +1,7 @@
 <div class="heyiam-portfolio canvas" data-render-version="2" data-template="canvas" data-username="{{ user.username }}">
 
   {%- comment -%} Hero Split: Magazine Spread {%- endcomment -%}
+  {% if hasProfile %}
   <section class="hero-split fade-in" aria-label="Introduction">
     {% if user.photoUrl %}
     <div class="hero-photo-container">
@@ -14,7 +15,9 @@
     {% endif %}
 
     <div class="hero-content">
+      {% if user.displayName != blank %}
       <h1 class="hero__name">{{ user.displayName }}</h1>
+      {% endif %}
       {% if user.location %}
       <p class="hero__location">{{ user.location }}</p>
       {% endif %}
@@ -107,6 +110,7 @@
       </div>
     </div>
   </section>
+  {% endif %}
 
   {%- comment -%} Below the fold: gallery content {%- endcomment -%}
   <div class="page-content">

@@ -1,5 +1,6 @@
 <div class="strata-portfolio" data-render-version="2" data-template="strata" data-username="{{ user.username }}">
 
+  {% if hasProfile %}
   {%- comment -%} Hero: Overlapping Card Portrait {%- endcomment -%}
   <header class="strata-hero">
     {% if user.photoUrl %}
@@ -8,7 +9,9 @@
     </div>
     {% endif %}
     <div class="strata-hero__bio-card">
+      {% if user.displayName != blank %}
       <h1 class="strata-hero__name">{{ user.displayName }}</h1>
+      {% endif %}
       {% if user.location %}
       <div class="strata-hero__location">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 14s-5-4.5-5-8a5 5 0 1 1 10 0c0 3.5-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>
@@ -43,6 +46,7 @@
       </div>
     </div>
   </header>
+  {% endif %}
 
   {%- comment -%} Aggregate Stats (overlapping stat cards) {%- endcomment -%}
   <div class="strata-agg-stats" aria-label="Portfolio statistics" id="agg-stats">

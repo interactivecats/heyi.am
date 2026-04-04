@@ -3,13 +3,16 @@
   <a href="#main" class="skip-link">Skip to content</a>
 
   <main id="main">
+    {% if hasProfile %}
     <section class="hero hero--portfolio container fade-up" aria-label="Profile">
       <div class="hero-row">
         {% if user.photoUrl %}
         <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="hero-photo portfolio-photo">
         {% endif %}
         <div class="hero-row-text">
+          {% if user.displayName != blank %}
           <h1>{{ user.displayName }}</h1>
+          {% endif %}
           {% if user.bio != blank %}
           <p class="hero-bio portfolio-bio">{{ user.bio }}</p>
           {% endif %}
@@ -44,6 +47,7 @@
         </div>
       </div>
     </section>
+    {% endif %}
 
     {%- comment -%} Stats {%- endcomment -%}
     <section class="container fade-up" aria-label="Statistics">

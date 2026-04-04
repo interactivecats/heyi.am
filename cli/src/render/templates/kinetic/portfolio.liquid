@@ -1,6 +1,7 @@
 <div class="heyiam-portfolio kinetic" data-render-version="2" data-template="kinetic" data-username="{{ user.username }}">
 
   {%- comment -%} Hero {%- endcomment -%}
+  {% if hasProfile %}
   <section class="hero" aria-label="Developer profile">
     <div class="hero-bg-text" aria-hidden="true">{{ user.username }}</div>
     <div class="hero-content">
@@ -10,7 +11,9 @@
         <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="profile-photo">
         {% endif %}
         <div>
+          {% if user.displayName != blank %}
           <h1>{{ user.displayName }}</h1>
+          {% endif %}
           {% if user.bio %}
           <p class="hero-bio">{{ user.bio }}</p>
           {% endif %}
@@ -41,6 +44,7 @@
       </div>
     </div>
   </section>
+  {% endif %}
 
   {%- comment -%} Stats row {%- endcomment -%}
   <div class="stats-row" aria-label="Portfolio statistics">

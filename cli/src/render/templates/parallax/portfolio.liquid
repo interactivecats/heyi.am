@@ -14,6 +14,7 @@
     <div class="bg-shape bg-shape--8" data-bg-drift="0.18"></div>
   </div>
 
+  {% if hasProfile %}
   {% if user.photoUrl %}
   <!-- Fixed Photo Layer -->
   <div class="photo-layer" aria-hidden="true">
@@ -26,18 +27,22 @@
     >
   </div>
   {% endif %}
+  {% endif %}
 
   <!-- Scrollable Content Layer -->
   <div class="content-layer">
     <main id="main-content">
 
+      {% if hasProfile %}
       <!-- Hero -->
       <section class="hero" aria-label="Introduction">
         {% if user.photoUrl %}
         <span class="sr-only">{{ user.displayName }}, profile photo</span>
         {% endif %}
 
+        {% if user.displayName != blank %}
         <h1 class="hero__name">{{ user.displayName }}</h1>
+        {% endif %}
 
         {% if user.location != blank %}
         <p class="hero__location">{{ user.location }}</p>
@@ -101,6 +106,7 @@
       {% if user.photoUrl %}
       <!-- Transition spacer — photo shows through this gap -->
       <div class="transition-spacer" aria-hidden="true"></div>
+      {% endif %}
       {% endif %}
 
       <!-- Skills Overview -->
