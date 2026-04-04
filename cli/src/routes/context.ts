@@ -84,7 +84,6 @@ function computeMergedDurationFromDb(
 }
 
 import { escapeHtml } from '../format-utils.js';
-export { escapeHtml };
 
 /** Look up a project by name or dirName, sending 404 if not found. Returns null on miss. */
 export async function requireProject(
