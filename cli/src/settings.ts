@@ -169,14 +169,6 @@ export function loadEnhancedData(sessionId: string, configDir?: string): Enhance
   }
 }
 
-export function markAsUploaded(sessionId: string, configDir?: string): void {
-  const data = loadEnhancedData(sessionId, configDir);
-  if (!data) return;
-  data.uploaded = true;
-  const dir = enhancedDir(configDir);
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(enhancedPath(sessionId, configDir), JSON.stringify(data, null, 2), { mode: 0o600 });
-}
 
 export function deleteEnhancedData(sessionId: string, configDir?: string): void {
   const path = enhancedPath(sessionId, configDir);
