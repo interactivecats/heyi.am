@@ -19,8 +19,15 @@
 
     {%- comment -%} Screenshot {%- endcomment -%}
     {% if project.screenshotUrl %}
-    <div class="dl-screenshot dl-bounce dl-delay-1">
-      <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot">
+    <div class="dl-screenshot dl-bounce dl-delay-1" data-editable="screenshot">
+      <div class="dl-screenshot-bar">
+        <span class="dl-screenshot-dot"></span>
+        <span class="dl-screenshot-dot"></span>
+        <span class="dl-screenshot-dot"></span>
+      </div>
+      <div class="dl-screenshot-body">
+        <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot">
+      </div>
     </div>
     {% endif %}
 

@@ -59,13 +59,16 @@
 
       {%- comment -%} Screenshot {%- endcomment -%}
       {% if project.screenshotUrl %}
-      <div class="cos-section cos-screenshot">
+      <div class="cos-section cos-screenshot" data-editable="screenshot">
         <div class="cos-screenshot-bar" aria-hidden="true">
           <span class="cos-screenshot-dot"></span>
           <span class="cos-screenshot-dot"></span>
           <span class="cos-screenshot-dot"></span>
+          <span class="cos-screenshot-url">Preview</span>
         </div>
-        <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" style="width: 100%; display: block;">
+        <div class="cos-screenshot-viewport">
+          <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" style="width: 100%; display: block;">
+        </div>
       </div>
       {% endif %}
 

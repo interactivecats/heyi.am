@@ -478,16 +478,12 @@
 .dl-screenshot-dot:nth-child(2) { background: #fcd34d; }
 .dl-screenshot-dot:nth-child(3) { background: #86efac; }
 .dl-screenshot-body {
-  height: 240px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--dl-font-mono);
-  font-size: 0.875rem;
-  color: var(--dl-text-tertiary);
+  max-height: 320px;
+  overflow-y: auto;
 }
-@media (min-width: 768px) {
-  .dl-screenshot-body { height: 320px; }
+.dl-screenshot-body img {
+  width: 100%;
+  display: block;
 }
 
 /* ── Narrative ── */

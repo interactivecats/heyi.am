@@ -25,8 +25,18 @@
 
     {%- comment -%} Screenshot {%- endcomment -%}
     {% if project.screenshotUrl %}
-    <div class="mn-screenshot" data-editable="screenshot">
-      <img src="{{ project.screenshotUrl }}" alt="Screenshot of {{ project.title }}" loading="lazy" />
+    <div class="mn-screenshot">
+      <div class="browser-frame" data-editable="screenshot">
+        <div class="browser-frame__bar">
+          <div class="browser-frame__dot"></div>
+          <div class="browser-frame__dot"></div>
+          <div class="browser-frame__dot"></div>
+          <div class="browser-frame__url">Preview</div>
+        </div>
+        <div class="browser-frame__viewport">
+          <img src="{{ project.screenshotUrl }}" alt="Screenshot of {{ project.title }}" loading="lazy">
+        </div>
+      </div>
     </div>
     {% endif %}
     {% unless project.screenshotUrl %}

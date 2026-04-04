@@ -25,8 +25,16 @@
 
     {%- comment -%} Screenshot {%- endcomment -%}
     {% if project.screenshotUrl %}
-    <div class="screenshot fade-up" role="img" aria-label="{{ project.title }} screenshot">
-      <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" style="width: 100%; display: block;">
+    <div class="screenshot fade-up" role="img" aria-label="{{ project.title }} screenshot" data-editable="screenshot">
+      <div class="screenshot-chrome">
+        <span class="screenshot-dot"></span>
+        <span class="screenshot-dot"></span>
+        <span class="screenshot-dot"></span>
+        <span class="screenshot-url">Preview</span>
+      </div>
+      <div class="screenshot-body">
+        <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" style="width: 100%; display: block;">
+      </div>
     </div>
     {% endif %}
 

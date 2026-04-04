@@ -25,7 +25,17 @@
   {%- comment -%} Screenshot {%- endcomment -%}
   {% if project.screenshotUrl %}
   <div class="ed-screenshot-card">
-    <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" class="ed-screenshot-img">
+    <div class="browser-frame" data-editable="screenshot">
+      <div class="browser-frame__bar">
+        <div class="browser-frame__dot"></div>
+        <div class="browser-frame__dot"></div>
+        <div class="browser-frame__dot"></div>
+        <div class="browser-frame__url">Preview</div>
+      </div>
+      <div class="browser-frame__viewport">
+        <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot">
+      </div>
+    </div>
   </div>
   {% endif %}
 

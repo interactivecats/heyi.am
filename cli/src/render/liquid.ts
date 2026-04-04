@@ -100,29 +100,6 @@ function injectTemplateAttrs(html: string, templateName: string): string {
   );
 }
 
-/** Wrap screenshot <img> tags in a browser-frame component with scrollable viewport.
- *  Skips templates that already include their own browser chrome. */
-function wrapScreenshotInBrowserFrame(html: string): string {
-  // Templates with their own browser chrome (grid, showcase, meridian, parchment, obsidian, etc.)
-  if (/browser-chrome|screenshot-chrome|screenshot__chrome|sc-screenshot-frame/.test(html)) {
-    return html;
-  }
-  return html.replace(
-    /<img\s([^>]*alt="[^"]*screenshot[^"]*"[^>]*)>/i,
-    (_, attrs) => {
-      return `<div class="browser-frame" data-editable="screenshot">`
-        + `<div class="browser-frame__bar">`
-        + `<div class="browser-frame__dot"></div>`
-        + `<div class="browser-frame__dot"></div>`
-        + `<div class="browser-frame__dot"></div>`
-        + `<div class="browser-frame__url">Preview</div>`
-        + `</div>`
-        + `<div class="browser-frame__viewport">`
-        + `<img ${attrs.replace(/style="[^"]*"/g, '').trim()}>`
-        + `</div></div>`;
-    },
-  );
-}
 
 export function renderProject(data: ProjectRenderData, extras?: RenderProjectExtras, templateName?: string): string {
   const template = templateName || DEFAULT_TEMPLATE;
@@ -261,7 +238,7 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
     efficiencyMultiplier: efficiencyStr,
     sessionSuffix,
   });
-  return wrapScreenshotInBrowserFrame(injectTemplateAttrs(html, template));
+  return injectTemplateAttrs(html, template);
 }
 
 export function renderSession(data: SessionRenderData, templateName?: string): string {

@@ -499,6 +499,15 @@
 .cosmos .cos-screenshot-dot:first-child { background: #ef4444; opacity: 0.6; }
 .cosmos .cos-screenshot-dot:nth-child(2) { background: #fbbf24; opacity: 0.6; }
 .cosmos .cos-screenshot-dot:nth-child(3) { background: #22c55e; opacity: 0.6; }
+.cosmos .cos-screenshot-url {
+  margin-inline-start: auto;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--cos-text-tertiary);
+}
+.cosmos .cos-screenshot-viewport {
+  overflow-y: auto;
+}
 .cosmos .cos-screenshot-body {
   height: 240px;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);

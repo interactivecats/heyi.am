@@ -26,8 +26,16 @@
 
     {%- comment -%} Screenshot {%- endcomment -%}
     {% if project.screenshotUrl %}
-    <div class="screenshot fade-in fade-in-d2">
-      <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" class="screenshot__image">
+    <div class="screenshot fade-in fade-in-d2" data-editable="screenshot">
+      <div class="screenshot__bar" aria-hidden="true">
+        <div class="screenshot__dot"></div>
+        <div class="screenshot__dot"></div>
+        <div class="screenshot__dot"></div>
+        <div class="screenshot__url">Preview</div>
+      </div>
+      <div class="screenshot__viewport">
+        <img src="{{ project.screenshotUrl }}" alt="{{ project.title }} screenshot" class="screenshot__image">
+      </div>
     </div>
     {% endif %}
 
