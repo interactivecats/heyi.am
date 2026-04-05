@@ -56,6 +56,20 @@ describe('CLI commands', () => {
     expect(cmd!.description()).toBe('Show archive health, session counts, and daemon status');
   });
 
+  it('registers the embed command with options', () => {
+    const cmd = program.commands.find((c) => c.name() === 'embed');
+    expect(cmd).toBeDefined();
+    expect(cmd!.description()).toBe('Generate embeddable widget snippets for your portfolio and projects');
+    const projectOpt = cmd!.options.find((o) => o.long === '--project');
+    expect(projectOpt).toBeDefined();
+    const sectionsOpt = cmd!.options.find((o) => o.long === '--sections');
+    expect(sectionsOpt).toBeDefined();
+    expect(sectionsOpt!.defaultValue).toBe('stats');
+    const themeOpt = cmd!.options.find((o) => o.long === '--theme');
+    expect(themeOpt).toBeDefined();
+    expect(themeOpt!.defaultValue).toBe('dark');
+  });
+
   it('registers the daemon command with subcommands', () => {
     const cmd = program.commands.find((c) => c.name() === 'daemon');
     expect(cmd).toBeDefined();

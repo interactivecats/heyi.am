@@ -705,6 +705,111 @@ daemon
     console.log('\n  Daemon uninstalled.\n');
   });
 
+// ── Embed command ──────────────────────────────────────────
+
+program
+  .command('embed')
+  .description('Generate embeddable widget snippets for your portfolio and projects')
+  .option('--project <name>', 'Generate embed for a specific project')
+  .option('--sections <list>', 'Sections to include (comma-separated: stats,tools,skills,heatmap,recent)', 'stats')
+  .option('--theme <theme>', 'Color theme (dark or light)', 'dark')
+  .action(async (opts) => {
+    const { getAuthToken } = await import('./auth.js');
+    const { PUBLIC_URL } = await import('./config.js');
+    const { getUploadedState } = await import('./settings.js');
+    const { displayNameFromDir } = await import('./sync.js');
+    const { readdirSync, existsSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const { getDataDir } = await import('./settings.js');
+
+    const auth = getAuthToken();
+    if (!auth) {
+      console.log('\n  Not logged in. Run `npx heyiam` and log in first.\n');
+      return;
+    }
+
+    const username = auth.username;
+    const sections = opts.sections || 'stats';
+    const theme = opts.theme || 'dark';
+    const queryParts: string[] = [];
+    if (sections !== 'stats') queryParts.push(`sections=${sections}`);
+    if (theme !== 'dark') queryParts.push(`theme=${theme}`);
+    const query = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+
+    // Find published projects
+    const publishedDir = join(getDataDir(), 'published');
+    const publishedProjects: Array<{ dirName: string; slug: string }> = [];
+
+    if (existsSync(publishedDir)) {
+      for (const file of readdirSync(publishedDir)) {
+        if (!file.endsWith('.json')) continue;
+        const dirName = file.replace(/\.json$/, '');
+        const state = getUploadedState(dirName);
+        if (state?.slug) {
+          publishedProjects.push({ dirName, slug: state.slug });
+        }
+      }
+    }
+
+    if (opts.project) {
+      // Single project embed
+      const match = publishedProjects.find(
+        (p) => p.slug === opts.project || p.dirName === opts.project || displayNameFromDir(p.dirName) === opts.project,
+      );
+
+      if (!match) {
+        console.log(`\n  Project "${opts.project}" not found or not published.`);
+        if (publishedProjects.length > 0) {
+          console.log('  Published projects:');
+          for (const p of publishedProjects) console.log(`    ${p.slug}`);
+        }
+        console.log('');
+        return;
+      }
+
+      const base = `${PUBLIC_URL}/${username}/${match.slug}`;
+      printProjectSnippets(match.slug, base, query);
+    } else {
+      // Portfolio embed + list all projects
+      const base = `${PUBLIC_URL}/${username}`;
+      console.log('');
+      console.log('  ── Portfolio embed ──────────────────────────────');
+      console.log('');
+      printSnippets(base, query);
+
+      if (publishedProjects.length > 0) {
+        for (const p of publishedProjects) {
+          const projBase = `${PUBLIC_URL}/${username}/${p.slug}`;
+          console.log(`  ── ${p.slug} ──────────────────────────────`);
+          console.log('');
+          printSnippets(projBase, query);
+        }
+      } else {
+        console.log('  No published projects yet. Publish from the dashboard first.');
+        console.log('');
+      }
+    }
+  });
+
+function printSnippets(base: string, query: string): void {
+  console.log('  GitHub README (markdown):');
+  console.log(`    [![heyi.am](${base}/embed.svg)](${base})`);
+  console.log('');
+  console.log('  HTML iframe:');
+  console.log(`    <iframe src="${base}/embed${query}" width="480" height="200" frameborder="0"></iframe>`);
+  console.log('');
+  console.log('  SVG image:');
+  console.log(`    <img src="${base}/embed.svg" alt="heyi.am stats" />`);
+  console.log('');
+}
+
+function printProjectSnippets(slug: string, base: string, query: string): void {
+  console.log('');
+  console.log(`  ── ${slug} embed snippets ──────────────────────`);
+  console.log('');
+  printSnippets(base, query);
+}
+
 // ── Logout command ──────────────────────────────────────────
 
 program

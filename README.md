@@ -45,6 +45,7 @@ From there you can browse projects, search sessions, and publish portfolio case 
 | `heyiam sync` | Index sessions into SQLite search database |
 | `heyiam reindex` | Rebuild the search index from scratch |
 | `heyiam status` | Archive health, session counts, daemon status |
+| `heyiam embed` | Generate embeddable widget snippets (`--project <name>`, `--sections`, `--theme`) |
 | `heyiam logout` | Remove stored auth token |
 | `heyiam daemon start\|stop\|install\|uninstall\|status` | Background tray daemon management |
 
