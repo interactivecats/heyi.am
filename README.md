@@ -67,6 +67,67 @@ From there you can browse projects, search sessions, and publish portfolio case 
 
 AI enhancement (triage, narrative generation) runs locally using your own `ANTHROPIC_API_KEY`.
 
+## Embeddable Widgets
+
+Embed live stats from your portfolio on any website or GitHub README. Widgets are served from `heyi.am` and update automatically on each publish.
+
+### Quick Start
+
+```html
+<!-- Portfolio stats (iframe) -->
+<iframe src="https://heyi.am/:username/embed" width="480" height="160" frameborder="0"></iframe>
+
+<!-- Portfolio badge (SVG — works in GitHub READMEs) -->
+[![heyi.am stats](https://heyi.am/:username/embed.svg)](https://heyi.am/:username)
+
+<!-- Project stats -->
+<iframe src="https://heyi.am/:username/:project/embed" width="480" height="180" frameborder="0"></iframe>
+
+<!-- Project badge -->
+[![project stats](https://heyi.am/:username/:project/embed.svg)](https://heyi.am/:username/:project)
+```
+
+### Composable Sections
+
+Combine multiple sections in a single embed with `?sections=`:
+
+```
+https://heyi.am/:username/embed?sections=stats,skills,heatmap
+```
+
+| Section | What it shows |
+|---------|--------------|
+| `stats` | Sessions, lines changed, active time, agent leverage (default) |
+| `tools` | Breakdown by source tool (Claude Code, Cursor, Gemini, Codex) |
+| `skills` | Top skills with frequency counts |
+| `heatmap` | GitHub-style 52-week activity grid with month labels |
+| `recent` | Session count, lines, and hours in the last 30 days |
+
+### Options
+
+| Param | Values | Default | Description |
+|-------|--------|---------|-------------|
+| `sections` | Comma-separated list | `stats` | Which sections to show |
+| `theme` | `dark`, `light` | `dark` | Color theme |
+
+### Examples
+
+```html
+<!-- Full card: stats + tools + heatmap, light theme -->
+<iframe src="https://heyi.am/ben/embed?sections=stats,tools,heatmap&theme=light"
+        width="520" height="300" frameborder="0"></iframe>
+
+<!-- Compact recent activity badge -->
+<iframe src="https://heyi.am/ben/embed?sections=recent" width="400" height="60" frameborder="0"></iframe>
+
+<!-- Project with skills -->
+<iframe src="https://heyi.am/ben/heyi-am/embed?sections=stats,skills&theme=light"
+        width="480" height="200" frameborder="0"></iframe>
+
+<!-- SVG badge for GitHub README -->
+[![stats](https://heyi.am/ben/embed.svg)](https://heyi.am/ben)
+```
+
 ## Also
 
 ```bash

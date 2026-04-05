@@ -1,6 +1,15 @@
 defmodule HeyiAmPublicWeb.Router do
   use HeyiAmPublicWeb, :router
 
+  # Relaxed CSP for embeddable widgets — allows framing from any origin
+  @embed_csp %{
+    "content-security-policy" =>
+      "default-src 'none'; " <>
+        "style-src 'unsafe-inline'; " <>
+        "img-src 'self' data:; " <>
+        "font-src https://fonts.gstatic.com"
+  }
+
   @strict_csp %{
     "content-security-policy" =>
       "default-src 'self'; " <>
@@ -22,6 +31,12 @@ defmodule HeyiAmPublicWeb.Router do
     # NO :fetch_session
     # NO :protect_from_forgery
     # NO :fetch_current_scope_for_user
+  end
+
+  pipeline :embed do
+    plug :accepts, ["html"]
+    plug :put_secure_browser_headers, @embed_csp
+    # No root layout — embeds render standalone HTML
   end
 
   # Landing + legal pages
@@ -59,6 +74,16 @@ defmodule HeyiAmPublicWeb.Router do
     pipe_through :browser
 
     get "/:token", ShareController, :show
+  end
+
+  # Embeddable stats widgets — relaxed CSP, no layout wrapping
+  scope "/", HeyiAmPublicWeb do
+    pipe_through :embed
+
+    get "/:username/embed", EmbedController, :portfolio_html
+    get "/:username/embed.svg", EmbedController, :portfolio_svg
+    get "/:username/:project/embed", EmbedController, :project_html
+    get "/:username/:project/embed.svg", EmbedController, :project_svg
   end
 
   # Public portfolio pages — MUST be last (/:username is a catch-all)

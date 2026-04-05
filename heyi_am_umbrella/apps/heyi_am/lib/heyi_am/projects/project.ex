@@ -41,6 +41,7 @@ defmodule HeyiAm.Projects.Project do
     |> validate_length(:title, max: 200)
     |> validate_length(:rendered_html, max: 5_000_000, message: "rendered HTML is too large (max 5MB)")
     |> validate_format(:slug, ~r/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, message: "must be lowercase alphanumeric with hyphens, cannot start or end with hyphen")
+    |> validate_exclusion(:slug, ~w[embed time], message: "is reserved")
     |> maybe_generate_unlisted_token()
     |> unique_constraint([:user_id, :slug])
     |> unique_constraint([:user_id, :client_project_id], name: :projects_user_id_client_project_id_index)

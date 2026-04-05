@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="120" viewBox="0 0 480 120">
+  <%!-- Background --%>
+  <rect width="480" height="120" rx="6" fill="#0a0a0f"/>
+  <rect x="0" y="0" width="480" height="3" rx="6" fill="#22c55e"/>
+
+  <%!-- Display name --%>
+  <text x="20" y="32" fill="#f9fafb" font-family="monospace" font-size="14" font-weight="700">
+    <%= @user.display_name || @user.username %>
+  </text>
+
+  <%!-- Stats row --%>
+  <text x="20" y="58" fill="#9ca3af" font-family="monospace" font-size="11">
+    <%= HeyiAmPublicWeb.EmbedHTML.format_number(@total_sessions) %> sessions
+  </text>
+  <text x="160" y="58" fill="#9ca3af" font-family="monospace" font-size="11">
+    <%= HeyiAmPublicWeb.EmbedHTML.format_number(@total_loc) %> lines changed
+  </text>
+  <text x="330" y="58" fill="#9ca3af" font-family="monospace" font-size="11">
+    <%= HeyiAmPublicWeb.EmbedHTML.format_duration(@total_duration) %> active
+  </text>
+
+  <%!-- Leverage (if applicable) --%>
+  <%= if @multiplier do %>
+  <text x="20" y="80" fill="#22c55e" font-family="monospace" font-size="12" font-weight="600">
+    <%= @multiplier %>x leverage
+  </text>
+  <text x="140" y="80" fill="#6b7280" font-family="monospace" font-size="11">
+    human + agents
+  </text>
+  <% end %>
+
+  <%!-- Skills --%>
+  <%= for {skill, idx} <- Enum.with_index(Enum.take(@skills, 6)) do %>
+  <rect x={20 + idx * 72} y="90" width="66" height="18" rx="3" fill="#1f2937"/>
+  <text x={20 + idx * 72 + 33} y="103" fill="#9ca3af" font-family="monospace" font-size="9" text-anchor="middle">
+    <%= String.slice(skill, 0, 10) %>
+  </text>
+  <% end %>
+
+  <%!-- Watermark --%>
+  <text x="460" y="115" fill="#374151" font-family="monospace" font-size="9" text-anchor="end">heyi.am</text>
+</svg>

@@ -101,6 +101,24 @@ defmodule HeyiAm.Shares do
     |> Repo.update_all(set: [status: "archived"])
   end
 
+  @doc """
+  List published shares for a user with only the fields needed for embed widgets.
+  Returns lightweight maps to avoid loading rendered_html (which can be 5MB each).
+  """
+  def list_published_shares_slim(user_id) do
+    Share
+    |> where([s], s.user_id == ^user_id and s.status in ["listed", "unlisted"])
+    |> select([s], %{
+      source_tool: s.source_tool,
+      recorded_at: s.recorded_at,
+      duration_minutes: s.duration_minutes,
+      loc_changed: s.loc_changed,
+      skills: s.skills
+    })
+    |> order_by([s], asc: s.recorded_at)
+    |> Repo.all()
+  end
+
   def generate_token do
     :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
   end
