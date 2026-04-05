@@ -34,6 +34,7 @@ defmodule HeyiAmPublicWeb.PortfolioController do
             render(conn, :rendered,
               rendered_html: html,
               template_name: extract_template(html),
+              load_app_css: true,
               page_title: display_name,
               og_title: "#{display_name} — heyi.am",
               og_description: og_description,
