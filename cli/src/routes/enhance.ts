@@ -22,7 +22,7 @@ export function createEnhanceRouter(ctx: RouteContext): Router {
       return;
     }
 
-    const { project } = req.params;
+    const project = String(req.params.project);
     const proj = await requireProject(ctx, project, res);
     if (!proj) return;
 
@@ -67,7 +67,8 @@ export function createEnhanceRouter(ctx: RouteContext): Router {
   // Enhance a single session
   router.post('/api/projects/:project/sessions/:id/enhance', async (req: Request, res: Response) => {
     try {
-      const { project, id } = req.params;
+      const project = String(req.params.project);
+      const id = String(req.params.id);
       const proj = await requireProject(ctx, project, res);
       if (!proj) return;
 
@@ -256,7 +257,7 @@ export function createEnhanceRouter(ctx: RouteContext): Router {
 
   // Save project enhance result explicitly
   router.post('/api/projects/:project/enhance-save', async (req: Request, res: Response) => {
-    const { project } = req.params;
+    const project = String(req.params.project);
     const { selectedSessionIds, result, title, repoUrl, projectUrl, screenshotBase64 } = req.body as {
       selectedSessionIds: string[];
       result: ProjectEnhanceResult;
@@ -289,7 +290,7 @@ export function createEnhanceRouter(ctx: RouteContext): Router {
 
   // Get cached project enhance result
   router.get('/api/projects/:project/enhance-cache', async (req: Request, res: Response) => {
-    const { project } = req.params;
+    const project = String(req.params.project);
     try {
       const proj = await requireProject(ctx, project, res);
       if (!proj) return;

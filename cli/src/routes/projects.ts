@@ -26,7 +26,7 @@ export function createProjectsRouter(ctx: RouteContext): Router {
   // Aggregated project detail for the hub screen
   router.get('/api/projects/:project/detail', async (req: Request, res: Response) => {
     try {
-      const { project } = req.params;
+      const project = String(req.params.project);
       const proj = await requireProject(ctx, project, res);
       if (!proj) return;
 
@@ -102,7 +102,8 @@ export function createProjectsRouter(ctx: RouteContext): Router {
 
   router.get('/api/projects/:project/sessions/:id', async (req: Request, res: Response) => {
     try {
-      const { project, id } = req.params;
+      const project = String(req.params.project);
+      const id = String(req.params.id);
       const proj = await requireProject(ctx, project, res);
       if (!proj) return;
 
@@ -148,7 +149,7 @@ export function createProjectsRouter(ctx: RouteContext): Router {
   router.get('/api/projects/:project/git-remote', async (req: Request, res: Response) => {
     const { execFileSync } = await import('node:child_process');
     try {
-      const { project } = req.params;
+      const project = String(req.params.project);
       const proj = await requireProject(ctx, project, res);
       if (!proj) return;
 

@@ -37,6 +37,12 @@ export function SessionDetailOverlay({ session: initialSession, projectDirName, 
   const [renderHtml, setRenderHtml] = useState<string | null>(null)
   const [renderCss, setRenderCss] = useState<string | null>(null)
   const liquidRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Scroll to top when session changes
+  useEffect(() => {
+    scrollRef.current?.scrollTo(0, 0)
+  }, [initialSession.id])
 
   useEffect(() => {
     fetchSession(projectDirName, initialSession.id)
@@ -116,7 +122,7 @@ export function SessionDetailOverlay({ session: initialSession, projectDirName, 
           View full session →
         </button>
       </div>
-      <div className={`flex-1 overflow-y-auto ${isDark ? '' : 'bg-surface'}`} style={isDark ? { background: '#000' } : undefined}>
+      <div ref={scrollRef} className={`flex-1 overflow-y-auto ${isDark ? '' : 'bg-surface'}`} style={isDark ? { background: '#000' } : undefined}>
         <div className="max-w-4xl mx-auto p-8">
 
           {/* Liquid-rendered template content */}
