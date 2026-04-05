@@ -133,7 +133,11 @@ export function ProjectDetail() {
       mountScrollReveals()
       mountBarAnimations()
     })
-  }, [renderHtml])
+    // loading is in deps because the <div ref={liquidRef}> is behind a loading
+    // guard — if renderHtml arrives before detail, the ref is null and injection
+    // silently skips. Re-firing when loading clears ensures the HTML gets injected
+    // once the container div exists.
+  }, [renderHtml, loading])
 
   // Intercept session card link clicks → open drawer instead of navigating away.
   // Session cards in Liquid templates are raw <a> tags that React Router doesn't manage.
