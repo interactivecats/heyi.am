@@ -31,7 +31,7 @@
     "dev:api": "tsx watch src/index.ts open --no-open",
     "dev:app": "cd app && npm run dev",
     "test": "vitest run && cd app && npx vitest run",
-    "test:backend": "vitest run",
+    "test:backend": "vitest run --exclude src/build-integrity.test.ts",
     "test:frontend": "cd app && npx vitest run"
   },
   "dependencies": {
