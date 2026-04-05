@@ -23,6 +23,8 @@
   --radius-sm: 2px;
   --radius-md: 4px;
 }
+body { background: var(--surface); color: var(--on-surface); }
+
 
 /* ── Dark Template Wrapper ── */
 .radar {

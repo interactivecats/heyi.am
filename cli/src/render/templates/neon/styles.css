@@ -3,6 +3,8 @@
  * Dark theme with pink/cyan neon accents, Space Grotesk display font.
  */
 
+body { background: var(--neon-bg); color: var(--neon-text); }
+
 /* ── Design Tokens ── */
 .neon {
   --neon-bg: #0c0014;

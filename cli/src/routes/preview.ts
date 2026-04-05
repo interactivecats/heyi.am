@@ -152,7 +152,7 @@ async function buildProjectPreviewData(
   const projAny = proj as Record<string, unknown>;
   const rawName = (projAny.name as string) || displayNameFromDir(projAny.dirName as string);
   const title = (cached as Record<string, unknown> | null)?.title as string | undefined || rawName;
-  const slug = toSlug(rawName);
+  const slug = toSlug(title);
 
   // Metadata from enhance cache (set in sidebar), with query overrides taking priority
   const cachedAny = cached as Record<string, unknown> | null;
@@ -562,7 +562,7 @@ body { overflow: auto !important; min-height: auto !important; }
             }));
 
           portfolioProjects.push({
-            slug: toSlug(rawProj.dirName),
+            slug: toSlug(title),
             title,
             narrative: cached?.result?.narrative || (proj.description as string) || '',
             totalSessions: projSessions,

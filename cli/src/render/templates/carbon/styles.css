@@ -1,4 +1,6 @@
 /* ── Carbon Design Tokens ── */
+
+body { background: var(--carbon-bg); color: var(--carbon-text); }
 .carbon {
   --carbon-bg:             #171717;
   --carbon-surface:        #1f1f1f;

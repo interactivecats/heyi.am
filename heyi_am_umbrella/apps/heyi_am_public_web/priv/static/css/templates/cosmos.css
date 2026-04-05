@@ -33,6 +33,8 @@
   --color-reviewer:  #e11d48;
   --color-ux:        #d97706;
 }
+body { background: var(--cos-bg); color: var(--cos-text); }
+
 
 /* ── Dark Template Wrapper ── */
 .cosmos {

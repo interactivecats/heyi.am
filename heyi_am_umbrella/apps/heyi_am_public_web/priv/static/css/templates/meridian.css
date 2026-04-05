@@ -4,6 +4,8 @@
  * Fonts: Space Grotesk (display), Inter (body), IBM Plex Mono (mono).
  */
 
+body { background: var(--mer-bg); color: var(--mer-text); }
+
 /* ── Meridian Design Tokens ── */
 .meridian {
   --mer-bg:             #022c22;

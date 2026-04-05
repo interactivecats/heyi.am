@@ -27,6 +27,8 @@
   --font-body: 'Inter', sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
 }
+body { background: var(--bg); color: var(--fg); }
+
 
 /* ── Base ── */
 .signal {

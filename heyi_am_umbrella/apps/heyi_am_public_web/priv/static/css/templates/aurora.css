@@ -33,6 +33,8 @@
   --agent-reviewer: #e11d48;
   --agent-ux: #d97706;
 }
+body { background: var(--aurora-bg); color: var(--aurora-text); }
+
 
 /* ── Dark wrapper ── */
 .aurora {

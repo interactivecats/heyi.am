@@ -41,6 +41,8 @@
   --color-reviewer: #e11d48;
   --color-ux: #d97706;
 }
+body { background: var(--bg); color: var(--text); }
+
 
 .ember {
   font-family: var(--font-body);

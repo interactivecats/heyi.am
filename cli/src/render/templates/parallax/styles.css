@@ -31,6 +31,8 @@
   --clr-reviewer:  #e11d48;
   --clr-ux:        #d97706;
 }
+body { background: var(--px-bg); color: var(--px-text); }
+
 
 /* ── Skip Link ── */
 .skip-link {

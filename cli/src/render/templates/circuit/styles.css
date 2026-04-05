@@ -1,5 +1,7 @@
 /* ── Circuit Template ── */
 
+body { background: var(--bg); color: var(--fg); }
+
 /* ── Tokens ── */
 .circuit {
   --bg: #0a0f0a;

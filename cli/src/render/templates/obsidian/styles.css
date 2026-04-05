@@ -3,6 +3,8 @@
  * Dark theme with purple accent, Space Grotesk display font.
  */
 
+body { background: var(--obs-bg); color: var(--obs-text); }
+
 /* ── Tokens ── */
 .obsidian {
   --bg: #09090b;

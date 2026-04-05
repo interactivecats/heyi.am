@@ -22,6 +22,8 @@
 
   --radius: 0px;
 }
+body { background: var(--noir-bg); color: var(--noir-text); }
+
 
 /* ── Page Shell ── */
 .noir-page {

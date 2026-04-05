@@ -1,3 +1,4 @@
+body { background: var(--term-bg); color: var(--term-text); }
 /* ── Terminal template styles ──
  * Green-on-black terminal aesthetic.
  * Monospace font, ASCII elements, command-line feel.
