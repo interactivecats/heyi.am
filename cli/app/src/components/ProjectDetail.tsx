@@ -163,7 +163,7 @@ export function ProjectDetail() {
       if (!match) return
 
       e.preventDefault()
-      const sessionSlug = decodeURIComponent(match[1])
+      const sessionSlug = decodeURIComponent(match[1]).replace(/\.html$/, '')
       const session = detail.sessions.find(
         (s) => s.id === sessionSlug || s.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') === sessionSlug,
       )
@@ -181,10 +181,9 @@ export function ProjectDetail() {
     const container = liquidRef.current
     if (!renderHtml || !container || !detail) return
 
-    for (const root of chartRootsRef.current) {
-      root.unmount()
-    }
-    chartRootsRef.current = []
+    // Previous roots are cleaned up by the effect's return function below.
+    // Do NOT unmount here — doing so during render causes React race conditions.
+    const newRoots: Root[] = []
 
     const { sessions, project } = detail
 
@@ -192,7 +191,7 @@ export function ProjectDetail() {
 
     container.querySelectorAll<HTMLElement>('[data-work-timeline]').forEach((el) => {
       const root = createRoot(el)
-      chartRootsRef.current.push(root)
+      newRoots.push(root)
       root.render(
         <WorkTimeline
           sessions={sessions}
@@ -206,7 +205,7 @@ export function ProjectDetail() {
 
     container.querySelectorAll<HTMLElement>('[data-growth-chart]').forEach((el) => {
       const root = createRoot(el)
-      chartRootsRef.current.push(root)
+      newRoots.push(root)
       root.render(
         <GrowthChart
           sessions={sessions}
@@ -221,11 +220,12 @@ export function ProjectDetail() {
       )
     })
 
+    chartRootsRef.current = newRoots
+
     return () => {
-      for (const root of chartRootsRef.current) {
+      for (const root of newRoots) {
         root.unmount()
       }
-      chartRootsRef.current = []
     }
   }, [renderHtml, detail])
 
@@ -295,7 +295,7 @@ export function ProjectDetail() {
   const tools = [...new Set(sessions.map((s) => s.source ?? 'unknown'))]
 
   return (
-    <div className="grid grid-cols-[240px_1fr] min-h-[calc(100vh-48px)]">
+    <div className={`grid grid-cols-[240px_1fr] min-h-[calc(100vh-48px)]${templateMode === 'dark' ? ' bg-black' : ''}`}>
       {/* Sidebar — editing controls */}
       <aside className="border-r border-ghost bg-surface-low p-4">
         <div className="mb-4">
@@ -488,7 +488,7 @@ export function ProjectDetail() {
       </aside>
 
       {/* Main content — Liquid-rendered template preview */}
-      <div className="p-6 min-h-0" style={templateMode === 'dark' ? { background: '#000' } : undefined}>
+      <div className={`relative min-h-0 overflow-y-auto ${templateMode === 'dark' ? 'p-0' : 'p-6'}`} style={templateMode === 'dark' ? { background: '#000' } : undefined}>
         {renderHtml ? (
           <>
             {renderCss && <style>{scopeProjectCss(renderCss)}</style>}
@@ -509,17 +509,17 @@ export function ProjectDetail() {
             <span className="text-sm text-on-surface-variant">Rendering template...</span>
           </div>
         )}
-      </div>
 
-      {/* Session overlay */}
-      {selectedSession && dirName && (
-        <SessionDetailOverlay
-          session={selectedSession}
-          projectDirName={dirName}
-          onClose={() => setSelectedSession(null)}
-          isDark={templateMode === 'dark'}
-        />
-      )}
+        {/* Session overlay — fills the main content area, not the whole viewport */}
+        {selectedSession && dirName && (
+          <SessionDetailOverlay
+            session={selectedSession}
+            projectDirName={dirName}
+            onClose={() => setSelectedSession(null)}
+            isDark={templateMode === 'dark'}
+          />
+        )}
+      </div>
     </div>
   )
 }

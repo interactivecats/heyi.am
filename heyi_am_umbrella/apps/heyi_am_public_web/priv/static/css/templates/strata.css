@@ -334,7 +334,7 @@ a:focus-visible {
 .strata-layer:first-of-type {
   margin-top: 0;
 }
-.strata-layer.strata-visible {
+.strata-layer.visible, .strata-layer.strata-visible {
   opacity: 1;
   transform: translateY(0);
   transition:
@@ -506,14 +506,14 @@ a:focus-visible {
   transform-origin: center bottom;
   transition: transform 600ms var(--strata-ease);
 }
-.strata-layer.strata-visible .strata-chart-bar {
+.strata-layer.visible .strata-chart-bar, .strata-layer.strata-visible .strata-chart-bar {
   transform: scaleY(1);
 }
 .strata-agent-line {
   opacity: 0;
   transition: opacity 400ms ease-out;
 }
-.strata-layer.strata-visible .strata-agent-line {
+.strata-layer.visible .strata-agent-line, .strata-layer.strata-visible .strata-agent-line {
   opacity: 1;
 }
 .strata-growth-line {
@@ -523,7 +523,7 @@ a:focus-visible {
   opacity: 0;
   transition: opacity 800ms ease-out 400ms;
 }
-.strata-layer.strata-visible .strata-growth-area {
+.strata-layer.visible .strata-growth-area, .strata-layer.strata-visible .strata-growth-area {
   opacity: 1;
 }
 
@@ -621,7 +621,7 @@ a:focus-visible {
   transform: scale(0);
   transition: transform 300ms var(--strata-ease-spring);
 }
-.strata-layer.strata-visible .strata-phase__dot {
+.strata-layer.visible .strata-phase__dot, .strata-layer.strata-visible .strata-phase__dot {
   transform: scale(1);
 }
 .strata-phase:nth-child(2) .strata-phase__dot { transition-delay: 100ms; }
@@ -1019,7 +1019,7 @@ a:focus-visible {
   transform: scale(0);
   transition: transform 300ms var(--strata-ease-spring);
 }
-.strata-layer.strata-visible .strata-beat__dot {
+.strata-layer.visible .strata-beat__dot, .strata-layer.strata-visible .strata-beat__dot {
   transform: scale(1);
 }
 .strata-beat:nth-child(2) .strata-beat__dot { transition-delay: 100ms; }
@@ -1130,7 +1130,7 @@ a:focus-visible {
   transform-origin: left center;
   transition: transform 600ms var(--strata-ease);
 }
-.strata-layer.strata-visible .strata-agent-chart__bar {
+.strata-layer.visible .strata-agent-chart__bar, .strata-layer.strata-visible .strata-agent-chart__bar {
   transform: scaleX(1);
 }
 .strata-agent-chart__labels {
@@ -1159,7 +1159,7 @@ a:focus-visible {
   transform-origin: left center;
   transition: transform 600ms var(--strata-ease);
 }
-.strata-layer.strata-visible .strata-agent-bar {
+.strata-layer.visible .strata-agent-bar, .strata-layer.strata-visible .strata-agent-bar {
   transform: scaleX(1);
 }
 

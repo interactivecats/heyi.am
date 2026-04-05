@@ -94,31 +94,30 @@ export function SessionDetailOverlay({ session: initialSession, projectDirName, 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-black/40"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      className="absolute inset-0 z-50 flex flex-col"
     >
-      <div className={`w-[600px] max-w-full h-full overflow-y-auto shadow-[-8px_0_32px_rgba(25,28,30,0.1)] ${isDark ? '' : 'bg-surface'}`} style={isDark ? { background: '#000' } : undefined}>
-        <div className="p-8">
-          {/* Close + View full session */}
-          <div className="flex items-center gap-3 mb-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="font-mono text-[0.8125rem] text-on-surface-variant bg-surface-low border border-surface-high rounded-md px-3 py-1 cursor-pointer hover:text-on-surface"
-            >
-              ESC · Close
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onClose()
-                navigate(`/session/${encodeURIComponent(session.id)}`)
-              }}
-              className="font-mono text-[0.8125rem] text-primary bg-primary/5 border border-primary/20 rounded-md px-3 py-1 cursor-pointer hover:bg-primary/10 transition-colors"
-            >
-              View full session →
-            </button>
-          </div>
+      {/* Sticky header */}
+      <div className={`sticky top-0 z-10 border-b px-6 py-3 flex items-center gap-3 ${isDark ? 'bg-black border-white/10' : 'bg-surface-lowest border-ghost'}`}>
+        <button
+          type="button"
+          onClick={onClose}
+          className={`font-mono text-[0.8125rem] rounded-md px-3 py-1 cursor-pointer transition-colors ${isDark ? 'text-white/60 hover:text-white/90 bg-white/5 border border-white/10' : 'text-on-surface-variant hover:text-on-surface bg-surface-low border border-surface-high'}`}
+        >
+          ← Back to project
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            onClose()
+            navigate(`/session/${encodeURIComponent(session.id)}`)
+          }}
+          className="font-mono text-[0.8125rem] text-primary bg-primary/5 border border-primary/20 rounded-md px-3 py-1 cursor-pointer hover:bg-primary/10 transition-colors"
+        >
+          View full session →
+        </button>
+      </div>
+      <div className={`flex-1 overflow-y-auto ${isDark ? '' : 'bg-surface'}`} style={isDark ? { background: '#000' } : undefined}>
+        <div className="max-w-4xl mx-auto p-8">
 
           {/* Liquid-rendered template content */}
           {renderHtml ? (

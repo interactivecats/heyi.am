@@ -1287,7 +1287,7 @@
   opacity: 0;
   transform: translateY(24px);
 }
-.dl-bounce.dl-visible {
+.dl-bounce.visible, .dl-bounce.dl-visible {
   opacity: 1;
   transform: translateY(0);
   transition:
