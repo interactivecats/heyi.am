@@ -434,7 +434,7 @@ export function ProjectDetail() {
             <span className="text-[10px] text-outline">{embedOpen ? '−' : '+'}</span>
           </button>
           {embedOpen && (() => {
-            const slug = project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+            const slug = (projectTitle || project.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || dirName
             const base = authUsername ? `https://heyi.am/${authUsername}/${slug}` : null
             const isPublished = project.isUploaded && base
 
@@ -442,7 +442,7 @@ export function ProjectDetail() {
             const durationStr = project.totalDuration >= 60 ? `${Math.round(project.totalDuration / 60)}h` : `${project.totalDuration}m`
             const locStr = project.totalLoc >= 1000 ? `${(project.totalLoc / 1000).toFixed(1)}k` : String(project.totalLoc)
             const staticHtml = `<div style="font-family:ui-monospace,monospace;background:#0a0a0f;color:#e5e7eb;padding:16px 20px;border-radius:6px">
-  <div style="font-size:15px;font-weight:600;color:#f9fafb;margin-bottom:12px">${project.name}</div>
+  <div style="font-size:15px;font-weight:600;color:#f9fafb;margin-bottom:12px">${projectTitle || project.name}</div>
   <div style="display:flex;gap:20px;flex-wrap:wrap">
     <div><div style="font-size:18px;font-weight:700;color:#f9fafb">${project.sessionCount}</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">Sessions</div></div>
     <div><div style="font-size:18px;font-weight:700;color:#f9fafb">${locStr}</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">Lines Changed</div></div>
@@ -451,12 +451,10 @@ export function ProjectDetail() {
 </div>`
 
             const snippets = [
-              ...(isPublished ? [
-                { label: 'Badge', desc: 'GitHub, markdown', code: `[![heyi.am](${base}/embed.svg)](${base})` },
-                { label: 'Widget', desc: 'Personal site', code: `<div class="heyiam-embed" data-username="${authUsername}" data-project="${slug}"></div>\n<script src="https://heyi.am/embed.js"></script>` },
-                { label: 'iframe', desc: 'Any site', code: `<iframe src="${base}/embed?sections=stats,skills" width="480" height="200" frameborder="0"></iframe>` },
-              ] : []),
-              { label: 'HTML', desc: isPublished ? 'No JS needed' : 'Works before publishing', code: staticHtml },
+              { label: 'Badge', desc: 'GitHub, markdown', code: base ? `[![heyi.am](${base}/embed.svg)](${base})` : `[![heyi.am](https://heyi.am/${slug}/embed.svg)](https://heyi.am/${slug})` },
+              { label: 'Widget', desc: 'Personal site', code: `<div class="heyiam-embed" data-username="${authUsername || 'your-username'}" data-project="${slug}"></div>\n<script src="https://heyi.am/embed.js"></script>` },
+              { label: 'iframe', desc: 'Any site', code: `<iframe src="${base || `https://heyi.am/${slug}`}/embed?sections=stats,skills" width="480" height="200" frameborder="0"></iframe>` },
+              { label: 'HTML', desc: 'No JS needed', code: staticHtml },
             ]
 
             const copy = (code: string, label: string) => {
@@ -468,7 +466,7 @@ export function ProjectDetail() {
             return (
               <div className="mt-2 space-y-2">
                 {!isPublished && (
-                  <div className="text-[10px] text-on-surface-variant mb-1">Publish to unlock badge, widget, and iframe.</div>
+                  <div className="text-[10px] text-on-surface-variant mb-1">Badge, widget, and iframe will work after publishing.</div>
                 )}
                 {snippets.map((s) => (
                   <div key={s.label}>
