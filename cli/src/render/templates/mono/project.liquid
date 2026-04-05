@@ -250,7 +250,11 @@
             <h3 class="session-card-title"><a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}">{{ s.title }}</a></h3>
             <div class="session-kv"><span class="session-kv-key">duration:</span><span class="session-kv-value">{{ s.durationMinutes | formatDuration }}</span></div>
             <div class="session-kv"><span class="session-kv-key">loc:</span><span class="session-kv-value">{{ s.locChanged | localeNumber }}</span></div>
+            {% if s.agentSummary %}
+            <div class="session-kv"><span class="session-kv-key">agents:</span><span class="session-kv-value">{{ s.agentSummary.agents.size }}</span></div>
+            {% else %}
             <div class="session-kv"><span class="session-kv-key">turns:</span><span class="session-kv-value">{{ s.turns }}</span></div>
+            {% endif %}
             {% if s.skills.size > 0 %}
             <span class="session-card-tag">[{{ s.skills | first }}]</span>
             {% endif %}

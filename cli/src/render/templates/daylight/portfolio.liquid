@@ -138,6 +138,35 @@
     </section>
     {% endif %}
 
+    {%- comment -%} Activity Heatmap {%- endcomment -%}
+    {% if activityByDay.size > 0 %}
+    <section class="dl-activity-section dl-bounce dl-delay-3" aria-label="Activity overview">
+      <h2 class="dl-section-heading">Activity</h2>
+      <div class="dl-activity-chart">
+        <div class="dl-activity-title">Coding sessions over time</div>
+        <div class="dl-activity-grid" role="img" aria-label="Activity heatmap showing coding sessions over time">
+          {% for day in activityByDay %}
+          {% if day.count >= 4 %}{% assign level = 4 %}
+          {% elsif day.count >= 3 %}{% assign level = 3 %}
+          {% elsif day.count >= 2 %}{% assign level = 2 %}
+          {% elsif day.count >= 1 %}{% assign level = 1 %}
+          {% else %}{% assign level = 0 %}{% endif %}
+          <div class="dl-activity-cell" data-level="{{ level }}" title="{{ day.date }}: {{ day.count }} sessions"></div>
+          {% endfor %}
+        </div>
+        <div class="dl-activity-legend">
+          <span>Less</span>
+          <div class="dl-activity-legend-cell" data-level="0"></div>
+          <div class="dl-activity-legend-cell" data-level="1"></div>
+          <div class="dl-activity-legend-cell" data-level="2"></div>
+          <div class="dl-activity-legend-cell" data-level="3"></div>
+          <div class="dl-activity-legend-cell" data-level="4"></div>
+          <span>More</span>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
     {%- comment -%} All Skills {%- endcomment -%}
     {% if allSkills.size > 0 %}
     <section class="dl-all-skills-section dl-bounce dl-delay-3" aria-label="All skills across projects">

@@ -551,6 +551,16 @@ body { overflow: auto !important; min-height: auto !important; }
           const title = (cached as Record<string, unknown> | null)?.title as string | undefined
             || (proj.name as string) || displayNameFromDir(rawProj.dirName);
 
+          // Session activity for charts
+          const dbSessions = getSessionsByProject(ctx.db, rawProj.dirName);
+          const sessionActivity = dbSessions
+            .filter(s => !s.is_subagent)
+            .map(s => ({
+              date: s.start_time || '',
+              loc: (s.loc_added || 0) + (s.loc_removed || 0),
+              durationMinutes: s.duration_minutes || 0,
+            }));
+
           portfolioProjects.push({
             slug: toSlug(rawProj.dirName),
             title,
@@ -562,6 +572,7 @@ body { overflow: auto !important; min-height: auto !important; }
             totalFilesChanged: (proj.totalFiles as number) || 0,
             skills: cached?.result?.skills || (proj.skills as string[]) || [],
             publishedCount: 0,
+            sessions: sessionActivity,
           });
         } catch { /* skip projects that fail */ }
       }

@@ -87,9 +87,66 @@
     </div>
   </div>
 
+  {%- comment -%} Work Timeline (CSS-only SVG bars) {%- endcomment -%}
+  {% if featuredSessions.size > 0 %}
+  <div class="strata-layer" style="z-index: 4;">
+    <div class="strata-section-header">
+      <h2 class="strata-section-header__title">Work Timeline</h2>
+    </div>
+    {% assign maxLoc = 1 %}
+    {% for s in featuredSessions %}
+      {% if s.locChanged > maxLoc %}{% assign maxLoc = s.locChanged %}{% endif %}
+    {% endfor %}
+    {% assign barCount = featuredSessions.size %}
+    {% assign barWidth = 50 %}
+    {% assign barGap = 90 %}
+    {% assign chartLeft = 60 %}
+    {% assign chartHeight = 180 %}
+    {% assign chartBottom = 210 %}
+    {% assign svgWidth = barCount | times: barGap | plus: chartLeft | plus: 40 %}
+    <div class="strata-chart">
+      <svg viewBox="0 0 {{ svgWidth }} 240" role="img" aria-label="Bar chart showing lines of code written per session">
+        <line x1="{{ chartLeft }}" y1="30" x2="{{ svgWidth | minus: 20 }}" y2="30" stroke="var(--strata-border, #e7e5e4)" stroke-width="1" />
+        <line x1="{{ chartLeft }}" y1="75" x2="{{ svgWidth | minus: 20 }}" y2="75" stroke="var(--strata-border, #e7e5e4)" stroke-width="1" />
+        <line x1="{{ chartLeft }}" y1="120" x2="{{ svgWidth | minus: 20 }}" y2="120" stroke="var(--strata-border, #e7e5e4)" stroke-width="1" />
+        <line x1="{{ chartLeft }}" y1="165" x2="{{ svgWidth | minus: 20 }}" y2="165" stroke="var(--strata-border, #e7e5e4)" stroke-width="1" />
+        <line x1="{{ chartLeft }}" y1="210" x2="{{ svgWidth | minus: 20 }}" y2="210" stroke="var(--strata-border, #e7e5e4)" stroke-width="1" />
+        <text x="55" y="34" text-anchor="end" fill="var(--strata-text-tertiary, #a8a29e)" font-family="var(--strata-font-mono)" font-size="10">{{ maxLoc }}</text>
+        <text x="55" y="124" text-anchor="end" fill="var(--strata-text-tertiary, #a8a29e)" font-family="var(--strata-font-mono)" font-size="10">{{ maxLoc | divided_by: 2 }}</text>
+        <text x="55" y="214" text-anchor="end" fill="var(--strata-text-tertiary, #a8a29e)" font-family="var(--strata-font-mono)" font-size="10">0</text>
+        {% for s in featuredSessions %}
+        {% assign barX = forloop.index0 | times: barGap | plus: chartLeft %}
+        {% assign barCenterX = barX | plus: 25 %}
+        {% if maxLoc > 0 %}
+          {% assign barH = s.locChanged | times: chartHeight | divided_by: maxLoc %}
+        {% else %}
+          {% assign barH = 0 %}
+        {% endif %}
+        {% assign barY = chartBottom | minus: barH %}
+        <rect class="strata-chart-bar" x="{{ barX }}" y="{{ barY }}" width="{{ barWidth }}" height="{{ barH }}" rx="4" ry="4" fill="var(--strata-accent, #d97706)" opacity="0.85" style="transition-delay: {{ forloop.index0 | times: 60 }}ms" />
+        <text x="{{ barCenterX }}" y="{{ barY | minus: 6 }}" text-anchor="middle" fill="var(--strata-text-secondary, #78716c)" font-family="var(--strata-font-mono)" font-size="10">{{ s.locChanged | localeNumber }}</text>
+        <text x="{{ barCenterX }}" y="228" text-anchor="middle" fill="var(--strata-text-tertiary, #a8a29e)" font-family="var(--strata-font-mono)" font-size="10">S{{ forloop.index }}</text>
+        {% endfor %}
+      </svg>
+    </div>
+  </div>
+  {% endif %}
+
+  {%- comment -%} Growth Chart (JS-driven mount) {%- endcomment -%}
+  {% if growthJson != blank %}
+  <div class="strata-layer" style="z-index: 4;">
+    <div class="strata-section-header">
+      <h2 class="strata-section-header__title">Lines Changed</h2>
+    </div>
+    <div class="strata-growth-chart">
+      <div data-growth-chart data-variant="strata" data-project-slug="{{ project.slug }}" data-total-loc="{{ project.totalLoc }}" data-total-files="{{ project.totalFilesChanged }}" data-sessions='{{ growthJson | raw }}'></div>
+    </div>
+  </div>
+  {% endif %}
+
   {%- comment -%} Two-Column: Key Decisions + Source Breakdown {%- endcomment -%}
   {% if arc.size > 0 or sourceCounts.size > 0 %}
-  <div class="strata-layer" style="z-index: 4;">
+  <div class="strata-layer" style="z-index: 6;">
     <div class="strata-two-col">
       {% if arc.size > 0 %}
       <div>
@@ -151,7 +208,7 @@
 
   {%- comment -%} Phase Timeline {%- endcomment -%}
   {% if arc.size > 0 %}
-  <div class="strata-layer" style="z-index: 5;">
+  <div class="strata-layer" style="z-index: 7;">
     <div class="strata-section-header">
       <h2 class="strata-section-header__title">Project Phases</h2>
     </div>
@@ -170,7 +227,7 @@
 
   {%- comment -%} Skills {%- endcomment -%}
   {% if project.skills.size > 0 %}
-  <div class="strata-layer" style="z-index: 6;">
+  <div class="strata-layer" style="z-index: 8;">
     <div class="strata-section-header">
       <h2 class="strata-section-header__title">Technologies</h2>
     </div>
@@ -184,7 +241,7 @@
 
   {%- comment -%} Session Cards {%- endcomment -%}
   {% if featuredSessions.size > 0 %}
-  <div class="strata-layer" style="z-index: 7;">
+  <div class="strata-layer" style="z-index: 9;">
     <div class="strata-section-header">
       <h2 class="strata-section-header__title">Sessions</h2>
       <span class="strata-section-header__meta">{{ project.totalSessions }} total</span>

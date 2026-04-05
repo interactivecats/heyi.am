@@ -190,6 +190,137 @@
       </section>
       {% endif %}
 
+      {%- comment -%} Leaf Divider {%- endcomment -%}
+      {% if allSkills.size > 0 %}
+      <div class="vd-leaf-divider" role="separator">
+        <div class="vd-leaf-divider__line"></div>
+        <svg class="vd-leaf-divider__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6.5 21.5s2-3 2-6c0-4-3-6-3-6s3 1 6 1 7-2 7-2-1 4-1 7-1.5 6-1.5 6"/>
+          <path d="M8 14s-1.5-2-1.5-4 2-4.5 2-4.5"/>
+        </svg>
+        <div class="vd-leaf-divider__line"></div>
+      </div>
+
+      {%- comment -%} Skills Garden {%- endcomment -%}
+      <section class="vd-section" aria-label="Skills overview">
+        <div class="vd-section-header">
+          <div class="vd-section-header__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <h2>Skills Garden</h2>
+        </div>
+        <div class="vd-skills-garden">
+          {% for skill in allSkills %}
+          <span class="vd-skill-garden-chip{% if skill.projectCount >= 4 %} vd-skill-garden-chip--primary{% elsif skill.projectCount >= 2 %} vd-skill-garden-chip--secondary{% endif %}">{{ skill.name }}</span>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Leaf Divider {%- endcomment -%}
+      {% if sourceCounts.size > 0 %}
+      <div class="vd-leaf-divider" role="separator">
+        <div class="vd-leaf-divider__line"></div>
+        <svg class="vd-leaf-divider__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75"/>
+        </svg>
+        <div class="vd-leaf-divider__line"></div>
+      </div>
+
+      {%- comment -%} Source Overview {%- endcomment -%}
+      <section class="vd-section" aria-label="Source breakdown">
+        <div class="vd-section-header">
+          <div class="vd-section-header__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>
+          </div>
+          <h2>Source Breakdown</h2>
+        </div>
+        <div class="vd-source-overview">
+          {% for sc in sourceCounts %}
+          {% assign pct = sc.count | times: 100 | divided_by: totalSourceSessions %}
+          <div class="vd-source-card">
+            <div class="vd-source-card__pct">{{ pct }}%</div>
+            <div class="vd-source-card__label">{{ sc.tool }}</div>
+            <div class="vd-source-card__sessions">{{ sc.count }} sessions</div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Leaf Divider {%- endcomment -%}
+      <div class="vd-leaf-divider" role="separator">
+        <div class="vd-leaf-divider__line"></div>
+        <svg class="vd-leaf-divider__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6.5 21.5s2-3 2-6c0-4-3-6-3-6s3 1 6 1 7-2 7-2-1 4-1 7-1.5 6-1.5 6"/>
+          <path d="M8 14s-1.5-2-1.5-4 2-4.5 2-4.5"/>
+        </svg>
+        <div class="vd-leaf-divider__line"></div>
+      </div>
+
+      {%- comment -%} Monthly Activity Timeline {%- endcomment -%}
+      {% if activityByMonth.size > 0 %}
+      <section class="vd-section" aria-label="Monthly activity">
+        <div class="vd-section-header">
+          <div class="vd-section-header__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h2>Monthly Activity</h2>
+        </div>
+        {% assign maxMonthlySessions = 0 %}
+        {% for m in activityByMonth %}
+          {% if m.sessions > maxMonthlySessions %}{% assign maxMonthlySessions = m.sessions %}{% endif %}
+        {% endfor %}
+        <div class="vd-timeline-compact" id="monthly-bars">
+          {% for m in activityByMonth %}
+          <div class="vd-timeline-month">
+            <span class="vd-timeline-month__label">{{ m.month }}</span>
+            <div class="vd-timeline-month__bar">
+              {% if maxMonthlySessions > 0 %}
+              {% assign fillWidth = m.sessions | times: 100 | divided_by: maxMonthlySessions %}
+              {% else %}
+              {% assign fillWidth = 0 %}
+              {% endif %}
+              <div class="vd-timeline-month__fill" data-width="{{ fillWidth }}"></div>
+            </div>
+            <span class="vd-timeline-month__count">{{ m.sessions }} session{% if m.sessions != 1 %}s{% endif %}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Activity Heatmap Grid {%- endcomment -%}
+      {% if activityByDay.size > 0 %}
+      <section class="vd-section" aria-label="Activity heatmap" style="margin-top: 2rem;">
+        <div class="vd-section-header">
+          <div class="vd-section-header__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </div>
+          <h2>Activity Heatmap</h2>
+        </div>
+        <div class="vd-activity-grid" aria-label="Weekly activity heatmap, darker means more activity">
+          {% for day in activityByDay %}
+          {% if day.count >= 4 %}{% assign level = 4 %}
+          {% elsif day.count >= 3 %}{% assign level = 3 %}
+          {% elsif day.count >= 2 %}{% assign level = 2 %}
+          {% elsif day.count >= 1 %}{% assign level = 1 %}
+          {% else %}{% assign level = 0 %}{% endif %}
+          <div class="vd-activity-cell{% if level > 0 %} vd-activity-cell--l{{ level }}{% endif %}" title="{{ day.date }}: {{ day.count }} sessions"></div>
+          {% endfor %}
+        </div>
+        <div class="vd-activity-legend">
+          <span>Less</span>
+          <div class="vd-activity-legend__cell" data-level="0"></div>
+          <div class="vd-activity-legend__cell" data-level="1"></div>
+          <div class="vd-activity-legend__cell" data-level="2"></div>
+          <div class="vd-activity-legend__cell" data-level="3"></div>
+          <div class="vd-activity-legend__cell" data-level="4"></div>
+          <span>More</span>
+        </div>
+      </section>
+      {% endif %}
+
     </main>
 
     <footer class="vd-footer">

@@ -36,7 +36,18 @@ export function getMockPortfolioData(): PortfolioRenderData {
         totalAgentDurationMinutes: 2064,
         totalFilesChanged: 45,
         skills: ['TypeScript', 'React', 'Prisma', 'Node.js'],
+        sourceCounts: [{ tool: 'claude', count: 5 }, { tool: 'cursor', count: 3 }],
         publishedCount: 6,
+        sessions: [
+          { date: '2026-02-10T10:00:00Z', loc: 420, durationMinutes: 65 },
+          { date: '2026-02-15T14:00:00Z', loc: 680, durationMinutes: 90 },
+          { date: '2026-02-22T09:00:00Z', loc: 350, durationMinutes: 55 },
+          { date: '2026-03-01T11:00:00Z', loc: 550, durationMinutes: 75 },
+          { date: '2026-03-08T16:00:00Z', loc: 280, durationMinutes: 40 },
+          { date: '2026-03-15T10:00:00Z', loc: 400, durationMinutes: 60 },
+          { date: '2026-03-22T13:00:00Z', loc: 320, durationMinutes: 50 },
+          { date: '2026-04-02T09:00:00Z', loc: 200, durationMinutes: 45 },
+        ],
       },
       {
         slug: 'shellhook',
@@ -48,7 +59,15 @@ export function getMockPortfolioData(): PortfolioRenderData {
         totalAgentDurationMinutes: 900,
         totalFilesChanged: 22,
         skills: ['Rust', 'Shell', 'Git'],
+        sourceCounts: [{ tool: 'claude', count: 3 }, { tool: 'cursor', count: 2 }],
         publishedCount: 4,
+        sessions: [
+          { date: '2026-02-18T11:00:00Z', loc: 380, durationMinutes: 70 },
+          { date: '2026-03-03T15:00:00Z', loc: 450, durationMinutes: 65 },
+          { date: '2026-03-12T10:00:00Z', loc: 320, durationMinutes: 55 },
+          { date: '2026-03-28T14:00:00Z', loc: 400, durationMinutes: 60 },
+          { date: '2026-04-05T09:00:00Z', loc: 250, durationMinutes: 50 },
+        ],
       },
       {
         slug: 'pixelboard',
@@ -60,7 +79,22 @@ export function getMockPortfolioData(): PortfolioRenderData {
         totalAgentDurationMinutes: 2160,
         totalFilesChanged: 60,
         skills: ['TypeScript', 'WebSocket', 'Canvas API', 'Redis'],
+        sourceCounts: [{ tool: 'claude', count: 8 }, { tool: 'cursor', count: 4 }],
         publishedCount: 8,
+        sessions: [
+          { date: '2026-02-08T09:00:00Z', loc: 300, durationMinutes: 50 },
+          { date: '2026-02-12T14:00:00Z', loc: 420, durationMinutes: 65 },
+          { date: '2026-02-19T11:00:00Z', loc: 380, durationMinutes: 55 },
+          { date: '2026-02-26T16:00:00Z', loc: 500, durationMinutes: 80 },
+          { date: '2026-03-05T10:00:00Z', loc: 350, durationMinutes: 60 },
+          { date: '2026-03-10T13:00:00Z', loc: 280, durationMinutes: 45 },
+          { date: '2026-03-17T09:00:00Z', loc: 450, durationMinutes: 70 },
+          { date: '2026-03-22T15:00:00Z', loc: 520, durationMinutes: 75 },
+          { date: '2026-03-29T11:00:00Z', loc: 400, durationMinutes: 60 },
+          { date: '2026-04-01T14:00:00Z', loc: 350, durationMinutes: 55 },
+          { date: '2026-04-03T10:00:00Z', loc: 300, durationMinutes: 50 },
+          { date: '2026-04-05T16:00:00Z', loc: 250, durationMinutes: 55 },
+        ],
       },
     ],
     totalDurationMinutes: 1500,
@@ -95,6 +129,7 @@ export function getMockProjectData(): ProjectRenderData {
         title: 'Set up Prisma schema and migrations',
         devTake: 'Got the data model right on the first try — accounts, transactions, categories, and budget rules.',
         durationMinutes: 65,
+        wallClockMinutes: 87,
         turns: 18,
         locChanged: 420,
         linesAdded: 350,
@@ -110,6 +145,7 @@ export function getMockProjectData(): ProjectRenderData {
         title: 'Build REST API with Express',
         devTake: 'CRUD endpoints for transactions and categories. Added pagination and filtering.',
         durationMinutes: 90,
+        wallClockMinutes: 115,
         turns: 24,
         locChanged: 680,
         linesAdded: 520,
@@ -125,6 +161,7 @@ export function getMockProjectData(): ProjectRenderData {
         title: 'React dashboard with charts',
         devTake: 'Built the spending breakdown and monthly trend charts. Used Recharts for visualization.',
         durationMinutes: 75,
+        wallClockMinutes: 92,
         turns: 20,
         locChanged: 550,
         linesAdded: 480,
@@ -140,6 +177,7 @@ export function getMockProjectData(): ProjectRenderData {
         title: 'AI-powered transaction categorization',
         devTake: 'The classifier learns from user corrections. Accuracy jumped from 60% to 92% after 50 labeled transactions.',
         durationMinutes: 120,
+        wallClockMinutes: 155,
         turns: 35,
         locChanged: 800,
         linesAdded: 600,
@@ -159,7 +197,7 @@ export function getMockFullSessions(): Array<Record<string, unknown>> {
   return [
     {
       id: 'session-1', slug: 'prisma-schema-setup', title: 'Set up Prisma schema and migrations',
-      date: '2026-03-15T10:00:00Z', durationMinutes: 65, turns: 18,
+      date: '2026-03-15T10:00:00Z', durationMinutes: 65, wallClockMinutes: 87, turns: 18,
       linesOfCode: 420, filesChanged: 8, status: 'enhanced', source: 'claude',
       projectName: 'BudgetWise', skills: ['Prisma', 'PostgreSQL'], rawLog: [],
       children: [
@@ -169,7 +207,7 @@ export function getMockFullSessions(): Array<Record<string, unknown>> {
     },
     {
       id: 'session-2', slug: 'rest-api-endpoints', title: 'Build REST API with Express',
-      date: '2026-03-16T14:00:00Z', durationMinutes: 90, turns: 24,
+      date: '2026-03-16T14:00:00Z', durationMinutes: 90, wallClockMinutes: 115, turns: 24,
       linesOfCode: 680, filesChanged: 12, status: 'enhanced', source: 'claude',
       projectName: 'BudgetWise', skills: ['TypeScript', 'Node.js'], rawLog: [],
       children: [
@@ -180,7 +218,7 @@ export function getMockFullSessions(): Array<Record<string, unknown>> {
     },
     {
       id: 'session-3', slug: 'react-dashboard', title: 'React dashboard with charts',
-      date: '2026-03-17T09:00:00Z', durationMinutes: 75, turns: 20,
+      date: '2026-03-17T09:00:00Z', durationMinutes: 75, wallClockMinutes: 92, turns: 20,
       linesOfCode: 550, filesChanged: 10, status: 'enhanced', source: 'claude',
       projectName: 'BudgetWise', skills: ['React', 'TailwindCSS'], rawLog: [],
       children: [
@@ -190,7 +228,7 @@ export function getMockFullSessions(): Array<Record<string, unknown>> {
     },
     {
       id: 'session-4', slug: 'ai-categorization', title: 'AI-powered transaction categorization',
-      date: '2026-03-18T11:00:00Z', durationMinutes: 120, turns: 35,
+      date: '2026-03-18T11:00:00Z', durationMinutes: 120, wallClockMinutes: 155, turns: 35,
       linesOfCode: 800, filesChanged: 15, status: 'enhanced', source: 'claude',
       projectName: 'BudgetWise', skills: ['TypeScript', 'ML'], rawLog: [],
       children: [
@@ -222,6 +260,7 @@ export function getMockSessionData(): SessionRenderData {
       context: 'Starting the BudgetWise project from scratch. Need a solid data foundation before building the API.',
       narrative: 'Started by mapping out the core entities: Users own Accounts, Accounts have Transactions, Transactions belong to Categories, and Categories can be nested. Added a BudgetRule model to track monthly spending limits per category. The Prisma schema came together cleanly — the main design decision was whether to use a single Transaction table with a type enum or separate Income/Expense tables. Went with the enum approach for query simplicity.',
       durationMinutes: 65,
+      wallClockMinutes: 87,
       turns: 18,
       filesChanged: 8,
       locChanged: 420,

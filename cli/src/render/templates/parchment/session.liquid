@@ -24,7 +24,7 @@
         {% if session.sourceTool %}
         <span class="session-header__meta-item">{{ session.sourceTool }}</span>
         {% endif %}
-        <span class="session-header__meta-item">{{ session.durationMinutes | formatDuration }}</span>
+        <span class="session-header__meta-item">{{ session.durationMinutes | formatDuration }}{% if session.wallClockMinutes %} ({{ session.wallClockMinutes | formatDuration }} wall){% endif %}</span>
         <span class="session-header__meta-item">{{ session.turns }} turns</span>
         <span class="session-header__meta-item">{{ session.locChanged | localeNumber }} LOC</span>
         <span class="session-header__meta-item">{{ session.filesChanged }} file{% if session.filesChanged != 1 %}s{% endif %}</span>
@@ -48,6 +48,12 @@
         <div class="session-stats-row__value">{{ session.durationMinutes | formatDuration }}</div>
         <div class="session-stats-row__label">Duration</div>
       </div>
+        {% if session.wallClockMinutes %}
+        <div class="session-stats-row__item">
+          <div class="session-stats-row__value">{{ session.wallClockMinutes | formatDuration }}</div>
+          <div class="session-stats-row__label">Wall Clock</div>
+        </div>
+        {% endif %}
       <div class="session-stats-row__item">
         <div class="session-stats-row__value">{{ session.turns }}</div>
         <div class="session-stats-row__label">Turns</div>
@@ -198,32 +204,46 @@
         </div>
         {% endif %}
 
-        {%- comment -%} Tool Breakdown {%- endcomment -%}
+        {%- comment -%} Turn Distribution (tool usage as proportional segmented bar) {%- endcomment -%}
         {% if session.toolBreakdown.size > 0 %}
-        <section class="turn-distribution" aria-label="Tool usage">
+        <section class="turn-distribution" aria-label="Turn distribution">
           <h2 class="chapter-heading fade-in fade-in-d4">
-            <span class="chapter-heading__number">Chapter V</span>
-            Tool Usage
+            <span class="chapter-heading__number">Chapter {% if session.agentSummary %}IV{% elsif session.highlights.size > 0 %}V{% else %}IV{% endif %}</span>
+            Turn Distribution
           </h2>
           {% assign totalToolUses = 0 %}
           {% for tb in session.toolBreakdown %}
             {% assign totalToolUses = totalToolUses | plus: tb.count %}
           {% endfor %}
           {% if totalToolUses > 0 %}
-          <div class="turn-bar" role="img" aria-label="Tool usage distribution">
+          <div class="turn-bar" role="img" aria-label="Tool usage distribution: {% for tb in session.toolBreakdown %}{{ tb.tool }} {{ tb.count | times: 100.0 | divided_by: totalToolUses | round }}%{% unless forloop.last %}, {% endunless %}{% endfor %}">
             {% for tb in session.toolBreakdown %}
             {% assign tbPct = tb.count | times: 100.0 | divided_by: totalToolUses | round %}
             {% if tbPct > 3 %}
-            <div class="turn-bar__seg" style="width: {{ tbPct }}%; background: var(--parch-accent); opacity: {{ forloop.index0 | times: 15 | minus: 100 | abs | divided_by: 100.0 | plus: 0.4 }};">{{ tb.tool }}</div>
+            {% case forloop.index0 %}
+              {% when 0 %}{% assign segBg = "var(--parch-accent)" %}
+              {% when 1 %}{% assign segBg = "var(--parch-text-secondary)" %}
+              {% when 2 %}{% assign segBg = "var(--parch-text-tertiary)" %}
+              {% when 3 %}{% assign segBg = "var(--parch-border-light)" %}
+              {% else %}{% assign segBg = "var(--parch-border-faint)" %}
+            {% endcase %}
+            <div class="turn-bar__seg" style="width: {{ tbPct }}%; background: {{ segBg }};">{{ tb.tool }}</div>
             {% else %}
-            <div class="turn-bar__seg" style="width: {{ tbPct }}%; background: var(--parch-accent); opacity: 0.3;"></div>
+            <div class="turn-bar__seg" style="width: {{ tbPct }}%; background: var(--parch-border-faint);"></div>
             {% endif %}
             {% endfor %}
           </div>
           <div class="turn-legend">
             {% for tb in session.toolBreakdown %}
+            {% case forloop.index0 %}
+              {% when 0 %}{% assign legendBg = "var(--parch-accent)" %}
+              {% when 1 %}{% assign legendBg = "var(--parch-text-secondary)" %}
+              {% when 2 %}{% assign legendBg = "var(--parch-text-tertiary)" %}
+              {% when 3 %}{% assign legendBg = "var(--parch-border-light)" %}
+              {% else %}{% assign legendBg = "var(--parch-border-faint)" %}
+            {% endcase %}
             <span class="turn-legend__item">
-              <span class="turn-legend__dot" style="background: var(--parch-accent);" aria-hidden="true"></span>
+              <span class="turn-legend__dot" style="background: {{ legendBg }};" aria-hidden="true"></span>
               {{ tb.tool }} ({{ tb.count }})
             </span>
             {% endfor %}

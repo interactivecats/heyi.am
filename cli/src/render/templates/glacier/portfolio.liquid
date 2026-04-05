@@ -138,6 +138,134 @@
   </section>
   {% endif %}
 
+  {%- comment -%} Activity Chart {%- endcomment -%}
+  {% if activityByMonth.size > 0 %}
+  {% assign maxLoc = 0 %}
+  {% for m in activityByMonth %}
+    {% for proj in m.projects %}
+      {% if proj.loc > maxLoc %}{% assign maxLoc = proj.loc %}{% endif %}
+    {% endfor %}
+  {% endfor %}
+  <section class="container fade-up" aria-label="Activity overview" style="margin-bottom: 48px;">
+    <h2 class="section-heading">Activity</h2>
+    <div class="frost" style="padding: 24px;">
+      <svg viewBox="0 0 900 220" role="img" aria-label="Monthly activity chart showing lines of code per project" style="width: 100%; height: auto;">
+        <line x1="60" y1="20" x2="60" y2="170" stroke="rgba(56,189,248,0.1)" stroke-width="1"/>
+        <line x1="60" y1="170" x2="880" y2="170" stroke="rgba(56,189,248,0.1)" stroke-width="1"/>
+        <line x1="60" y1="110" x2="880" y2="110" stroke="rgba(56,189,248,0.06)" stroke-width="1"/>
+        <line x1="60" y1="50" x2="880" y2="50" stroke="rgba(56,189,248,0.06)" stroke-width="1"/>
+        <text x="50" y="174" fill="#64748b" font-family="IBM Plex Mono, monospace" font-size="11" text-anchor="end">0</text>
+        {% if maxLoc > 0 %}
+        {% assign halfMax = maxLoc | divided_by: 2 %}
+        <text x="50" y="114" fill="#64748b" font-family="IBM Plex Mono, monospace" font-size="11" text-anchor="end">{{ halfMax | formatLoc }}</text>
+        <text x="50" y="54" fill="#64748b" font-family="IBM Plex Mono, monospace" font-size="11" text-anchor="end">{{ maxLoc | formatLoc }}</text>
+        {% endif %}
+        {% assign monthSpacing = 820 | divided_by: activityByMonth.size %}
+        {% for m in activityByMonth %}
+          {% assign outerIdx = forloop.index0 %}
+          {% assign groupX = outerIdx | times: monthSpacing | plus: 80 %}
+          {% for proj in m.projects %}
+            {% if maxLoc > 0 %}
+              {% assign barH = proj.loc | times: 150 | divided_by: maxLoc %}
+            {% else %}
+              {% assign barH = 0 %}
+            {% endif %}
+            {% assign barY = 170 | minus: barH %}
+            {% assign barX = forloop.index0 | times: 70 | plus: groupX %}
+            {% if forloop.index0 == 0 %}{% assign barFill = "#38bdf8" %}{% assign barOp = "0.8" %}
+            {% elsif forloop.index0 == 1 %}{% assign barFill = "#7dd3fc" %}{% assign barOp = "0.7" %}
+            {% else %}{% assign barFill = "#bae6fd" %}{% assign barOp = "0.8" %}
+            {% endif %}
+            <rect x="{{ barX }}" y="{{ barY }}" width="60" height="{{ barH }}" rx="6" fill="{{ barFill }}" opacity="{{ barOp }}" aria-label="{{ proj.name }} {{ m.month }}: {{ proj.loc }} LOC"/>
+          {% endfor %}
+          {% assign labelX = groupX | plus: 35 %}
+          <text x="{{ labelX }}" y="192" fill="#64748b" font-family="IBM Plex Mono, monospace" font-size="11" text-anchor="middle">{{ m.month }}</text>
+        {% endfor %}
+        {% assign legendX = 560 %}
+        {% assign legendY = 20 %}
+        {% for p in projects %}
+          {% if forloop.index0 == 0 %}{% assign dotFill = "#38bdf8" %}{% assign dotOp = "0.8" %}
+          {% elsif forloop.index0 == 1 %}{% assign dotFill = "#7dd3fc" %}{% assign dotOp = "0.7" %}
+          {% else %}{% assign dotFill = "#bae6fd" %}{% assign dotOp = "0.8" %}
+          {% endif %}
+          {% assign dotY = forloop.index0 | times: 20 | plus: legendY %}
+          <rect x="{{ legendX }}" y="{{ dotY }}" width="12" height="12" rx="3" fill="{{ dotFill }}" opacity="{{ dotOp }}"/>
+          {% assign textX = legendX | plus: 20 %}
+          {% assign textY = dotY | plus: 11 %}
+          <text x="{{ textX }}" y="{{ textY }}" fill="#64748b" font-family="IBM Plex Mono, monospace" font-size="11">{{ p.title }}</text>
+          {% if forloop.index0 >= 2 %}{% break %}{% endif %}
+        {% endfor %}
+      </svg>
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Skills Overview {%- endcomment -%}
+  {% if allSkills.size > 0 %}
+  <section class="container fade-up" aria-label="All skills">
+    <h2 class="section-heading">Skills</h2>
+    <div class="frost" style="padding: 28px;">
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px;">
+        {% for skill in allSkills %}
+        <span class="skill-chip">{{ skill.name }}</span>
+        {% endfor %}
+      </div>
+      {% if topSkills.size > 0 %}
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% assign maxSkillCount = topSkills[0].projectCount %}
+        {% for skill in topSkills %}
+        <div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span style="font-family: var(--font-mono); font-size: 13px; color: var(--fg);">{{ skill.name }}</span>
+            <span style="font-family: var(--font-mono); font-size: 12px; color: var(--fg-muted);">{{ skill.projectCount }} project{% if skill.projectCount != 1 %}s{% endif %}</span>
+          </div>
+          <div style="height: 6px; border-radius: 3px; background: rgba(56,189,248,0.1); overflow: hidden;">
+            {% if maxSkillCount > 0 %}
+            {% assign skillPct = skill.projectCount | times: 100 | divided_by: maxSkillCount %}
+            {% else %}
+            {% assign skillPct = 0 %}
+            {% endif %}
+            <div style="height: 100%; width: {{ skillPct }}%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), #7dd3fc);"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Source Overview {%- endcomment -%}
+  {% if sourceCounts.size > 0 %}
+  <section class="container fade-up" aria-label="Overall source breakdown">
+    <h2 class="section-heading">Source Breakdown</h2>
+    <div class="frost" style="padding: 28px;">
+      <div style="display: grid; grid-template-columns: repeat({{ sourceCounts.size }}, 1fr); gap: 24px; margin-bottom: 20px;">
+        {% for src in sourceCounts %}
+        {% if totalSourceSessions > 0 %}
+        {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+        {% else %}
+        {% assign srcPct = 0 %}
+        {% endif %}
+        <div style="text-align: center;">
+          <div style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: {% if forloop.first %}var(--accent){% else %}var(--fg-muted){% endif %};">{{ srcPct }}%</div>
+          <div style="font-family: var(--font-mono); font-size: 12px; color: var(--fg-muted); margin-top: 4px;">{{ src.tool }}</div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted); margin-top: 2px;">{{ src.count }} sessions</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% if totalSourceSessions > 0 %}
+      <div style="height: 8px; border-radius: 4px; overflow: hidden; display: flex; background: rgba(56,189,248,0.1);">
+        {% for src in sourceCounts %}
+        {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+        <div style="width: {{ srcPct }}%; height: 100%; background: {% if forloop.first %}var(--accent){% else %}#e2e8f0{% endif %};"></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
   {%- comment -%} Fade-up animation {%- endcomment -%}
 
 </div>

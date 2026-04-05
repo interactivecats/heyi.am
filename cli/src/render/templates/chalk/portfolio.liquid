@@ -128,6 +128,72 @@
   </section>
   {% endif %}
 
+  {%- comment -%} Activity Chart {%- endcomment -%}
+  {% if activityByMonth.size > 0 %}
+  {% assign maxSessions = 0 %}
+  {% for m in activityByMonth %}
+    {% if m.sessions > maxSessions %}{% assign maxSessions = m.sessions %}{% endif %}
+  {% endfor %}
+  <section class="activity-section" aria-label="Activity overview">
+    <h2 class="section-heading"><span class="sketch-underline">Activity</span></h2>
+    <div class="activity-chart" role="img" aria-label="Monthly session activity">
+      <svg viewBox="0 0 800 200" preserveAspectRatio="xMidYMid meet">
+        <line x1="60" y1="30" x2="60" y2="150" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="6 4" />
+        <line x1="60" y1="150" x2="780" y2="150" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="6 4" />
+        {% assign spacing = 720 | divided_by: activityByMonth.size %}
+        {% for m in activityByMonth %}
+          {% if maxSessions > 0 %}
+            {% assign barH = m.sessions | times: 120 | divided_by: maxSessions %}
+          {% else %}
+            {% assign barH = 0 %}
+          {% endif %}
+          {% assign halfSpace = spacing | divided_by: 2 %}
+          {% assign centerX = forloop.index0 | times: spacing | plus: 60 | plus: halfSpace %}
+          {% assign barX = centerX | minus: 20 %}
+          {% assign barY = 150 | minus: barH %}
+          <rect x="{{ barX }}" y="{{ barY }}" width="40" height="{{ barH }}" rx="3" fill="#334155" opacity="0.7" filter="url(#chalk-rough)"/>
+          <text x="{{ centerX }}" y="170" text-anchor="middle" font-family="'Caveat', cursive" font-size="14" fill="#334155">{{ m.month }}</text>
+          {% assign labelY = barY | minus: 8 %}
+          <text x="{{ centerX }}" y="{{ labelY }}" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#64748b">{{ m.sessions }}</text>
+        {% endfor %}
+      </svg>
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Source Overview {%- endcomment -%}
+  {% if sourceCounts.size > 0 %}
+  <section class="source-overview" aria-label="Overall source breakdown">
+    <h2 class="section-heading"><span class="sketch-underline">Source Mix</span></h2>
+    <div class="source-bar-lg" role="img" aria-label="Overall source breakdown">
+      {% assign firstSrcPct = sourceCounts[0].count | times: 100.0 | divided_by: totalSourceSessions | round %}
+      <div class="source-fill-lg" style="width: {{ firstSrcPct }}%"></div>
+    </div>
+    <div class="source-legend-lg">
+      {% for src in sourceCounts %}
+      {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
+      <span><span class="dot-{{ src.tool | downcase | replace: ' ', '-' }}-lg"></span> {{ src.tool }} {{ srcPct }}%</span>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Skills Overview {%- endcomment -%}
+  {% if allSkills.size > 0 %}
+  <section class="skills-overview" aria-label="All skills">
+    <h2 class="section-heading"><span class="sketch-underline">Skills</span></h2>
+    <div class="skills-grid" role="list">
+      {% for skill in topSkills %}
+      <div class="skill-card" role="listitem">
+        <div class="skill-card-name">{{ skill.name }}</div>
+        <div class="skill-card-count">{{ skill.projectCount }}</div>
+        <div class="skill-card-label">project{% if skill.projectCount != 1 %}s{% endif %}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
   {%- comment -%} Counter animation script {%- endcomment -%}
 
 </div>

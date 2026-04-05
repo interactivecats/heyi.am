@@ -193,6 +193,35 @@
       </a>
       {% endfor %}
 
+      {%- comment -%} Cell: Activity Heatmap (2-wide) {%- endcomment -%}
+      {% if activityByDay.size > 0 %}
+      <section class="bento-cell cell-activity" aria-label="Activity over time">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Activity
+        </h2>
+        <div class="heatmap" role="img" aria-label="Activity heatmap showing session density over time">
+          {% for day in activityByDay %}
+          {% if day.count >= 4 %}{% assign level = 4 %}
+          {% elsif day.count >= 3 %}{% assign level = 3 %}
+          {% elsif day.count >= 2 %}{% assign level = 2 %}
+          {% elsif day.count >= 1 %}{% assign level = 1 %}
+          {% else %}{% assign level = 0 %}{% endif %}
+          <div class="heatmap-cell{% if level > 0 %} heatmap-cell--l{{ level }}{% endif %}" title="{{ day.date }}: {{ day.count }} sessions" aria-hidden="true"></div>
+          {% endfor %}
+        </div>
+        <div class="heatmap-legend">
+          <span class="heatmap-legend-label">Less</span>
+          <span class="heatmap-legend-cell" aria-hidden="true"></span>
+          <span class="heatmap-legend-cell heatmap-cell--l1" aria-hidden="true"></span>
+          <span class="heatmap-legend-cell heatmap-cell--l2" aria-hidden="true"></span>
+          <span class="heatmap-legend-cell heatmap-cell--l3" aria-hidden="true"></span>
+          <span class="heatmap-legend-cell heatmap-cell--l4" aria-hidden="true"></span>
+          <span class="heatmap-legend-label">More</span>
+        </div>
+      </section>
+      {% endif %}
+
       {%- comment -%} Cell: All Skills (2-wide) {%- endcomment -%}
       {% if allSkills.size > 0 %}
       <section class="bento-cell cell-all-skills" aria-label="All skills across projects">

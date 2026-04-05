@@ -23,7 +23,7 @@
         {% if session.sourceTool %}
         <span class="source-badge">{{ session.sourceTool }}</span>
         {% endif %}
-        <span>{{ session.durationMinutes | formatDuration }}</span>
+        <span>{{ session.durationMinutes | formatDuration }}{% if session.wallClockMinutes %} ({{ session.wallClockMinutes | formatDuration }} wall){% endif %}</span>
         <span>{{ session.turns }} turns</span>
       </div>
       <div class="session-stats-grid">

@@ -38,7 +38,10 @@ export interface PortfolioProject {
   totalAgentDurationMinutes?: number;
   totalFilesChanged: number;
   skills: string[];
+  sourceCounts?: Array<{ tool: string; count: number }>;
   publishedCount: number;
+  /** Lightweight session records for activity charts */
+  sessions?: Array<{ date: string; loc: number; durationMinutes: number }>;
 }
 
 export interface PortfolioRenderData {
@@ -83,6 +86,7 @@ export interface SessionCard {
   title: string;
   devTake: string;
   durationMinutes: number;
+  wallClockMinutes?: number;
   turns: number;
   locChanged: number;
   linesAdded: number;
@@ -133,6 +137,7 @@ export interface SessionDetail {
   devTake: string;
   context?: string;
   durationMinutes: number;
+  wallClockMinutes?: number;
   turns: number;
   filesChanged: number;
   locChanged: number;

@@ -128,6 +128,37 @@
   </section>
   {% endif %}
 
+  {%- comment -%} Aggregate Source Chart {%- endcomment -%}
+  {% if sourceCounts.size > 0 %}
+  <section class="source-overview fade-in" aria-label="Source breakdown across all projects">
+    <h2 class="section-heading">Source Overview</h2>
+    <div class="source-bar" role="img" aria-label="Aggregate source breakdown">
+      {% for src in sourceCounts %}
+      {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
+      <div class="source-bar__segment source-bar__segment--{{ src.tool | downcase | replace: ' ', '-' }}" style="width: {{ srcPct }}%"></div>
+      {% endfor %}
+    </div>
+    <div class="source-overview__legend">
+      {% for src in sourceCounts %}
+      {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
+      <span><span class="source-overview__dot source-overview__dot--{{ src.tool | downcase | replace: ' ', '-' }}"></span>{{ src.tool }} {{ srcPct }}%</span>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Aggregate Skills {%- endcomment -%}
+  {% if allSkills.size > 0 %}
+  <section class="all-skills fade-in" aria-label="All skills across projects">
+    <h2 class="section-heading">Skills</h2>
+    <ul class="all-skills__list">
+      {% for skill in allSkills %}
+      <li class="all-skills__chip">{{ skill.name }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
   {%- comment -%} Footer {%- endcomment -%}
   <footer class="carbon-footer">
     <span>Built with <a href="https://heyiam.com" target="_blank" rel="noopener noreferrer">heyi.am</a></span>

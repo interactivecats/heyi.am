@@ -20,7 +20,7 @@
           {% if session.sourceTool != blank %}
             <span class="bp-meta-item">{{ session.sourceTool }}</span>
           {% endif %}
-          <span class="bp-meta-item">{{ session.durationMinutes | formatDuration }}</span>
+          <span class="bp-meta-item">{{ session.durationMinutes | formatDuration }}{% if session.wallClockMinutes %} ({{ session.wallClockMinutes | formatDuration }} wall){% endif %}</span>
           <span class="bp-meta-item">{{ session.turns }} turns</span>
         </div>
 

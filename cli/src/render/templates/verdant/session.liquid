@@ -35,7 +35,7 @@
           {% endif %}
           <div class="vd-meta-item">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <span>{{ session.durationMinutes | formatDuration }}</span>
+            <span>{{ session.durationMinutes | formatDuration }}{% if session.wallClockMinutes %} ({{ session.wallClockMinutes | formatDuration }} wall){% endif %}</span>
           </div>
           <div class="vd-meta-item">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>

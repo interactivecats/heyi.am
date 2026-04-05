@@ -144,9 +144,139 @@
               {% endfor %}
             </div>
             {% endif %}
+            {% if p.sourceCounts.size > 0 %}
+            {% assign pTotalSrc = 0 %}
+            {% for src in p.sourceCounts %}{% assign pTotalSrc = pTotalSrc | plus: src.count %}{% endfor %}
+            {% if pTotalSrc > 0 %}
+            <div class="source-bar" role="img" aria-label="Source mix">
+              {% for src in p.sourceCounts %}
+              {% assign pSrcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+              <div class="source-bar-segment {% if forloop.first %}claude{% else %}cursor{% endif %}" style="width: {{ pSrcPct }}%;"></div>
+              {% endfor %}
+            </div>
+            <div class="source-legend" aria-hidden="true">
+              {% for src in p.sourceCounts %}
+              {% assign pSrcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+              <span><span class="source-legend-dot {% if forloop.first %}claude{% else %}cursor{% endif %}"></span>{{ src.tool }} {{ pSrcPct }}%</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% endif %}
           </div>
         </a>
         {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} LOC Breakdown (ASCII) {%- endcomment -%}
+    {% if projects.size > 0 %}
+    <section class="mono-section" aria-label="Lines of code per project">
+      <h2 class="mono-heading"># loc_breakdown</h2>
+      <div class="terminal-block">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="dot-red" aria-hidden="true"></span>
+            <span class="dot-yellow" aria-hidden="true"></span>
+            <span class="dot-green" aria-hidden="true"></span>
+          </div>
+          <span>lines of code per project</span>
+        </div>
+        <div class="terminal-body">
+          <div class="ascii-chart" role="img" aria-label="Lines of code per project">
+            {% assign maxLoc = 0 %}
+            {% for p in projects %}
+            {% if p.totalLoc > maxLoc %}{% assign maxLoc = p.totalLoc %}{% endif %}
+            {% endfor %}
+            {% for p in projects %}
+            <div class="ascii-row">
+              <span class="ascii-label">{{ p.title }}</span>
+              <div class="ascii-bar">
+                {% if maxLoc > 0 %}
+                {% assign locPct = p.totalLoc | times: 45 | divided_by: maxLoc %}
+                {% else %}
+                {% assign locPct = 0 %}
+                {% endif %}
+                {% assign filledBlocks = '' %}
+                {% assign emptyBlocks = '' %}
+                {% for i in (1..45) %}
+                {% if i <= locPct %}{% assign filledBlocks = filledBlocks | append: '▓' %}{% else %}{% assign emptyBlocks = emptyBlocks | append: '░' %}{% endif %}
+                {% endfor %}
+                <span class="ascii-bar-fill" aria-hidden="true">{{ filledBlocks }}{{ emptyBlocks }}</span>
+                <span class="ascii-bar-value">{{ p.totalLoc | localeNumber }}</span>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Sessions per Project (ASCII) {%- endcomment -%}
+    {% if projects.size > 0 %}
+    <section class="mono-section" aria-label="Sessions per project">
+      <h2 class="mono-heading"># sessions_per_project</h2>
+      <div class="terminal-block">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="dot-red" aria-hidden="true"></span>
+            <span class="dot-yellow" aria-hidden="true"></span>
+            <span class="dot-green" aria-hidden="true"></span>
+          </div>
+          <span>session count per project</span>
+        </div>
+        <div class="terminal-body">
+          <div class="ascii-chart" role="img" aria-label="Sessions per project">
+            {% assign maxSessions = 0 %}
+            {% for p in projects %}
+            {% if p.totalSessions > maxSessions %}{% assign maxSessions = p.totalSessions %}{% endif %}
+            {% endfor %}
+            {% for p in projects %}
+            <div class="ascii-row">
+              <span class="ascii-label">{{ p.title }}</span>
+              <div class="ascii-bar">
+                {% if maxSessions > 0 %}
+                {% assign sesPct = p.totalSessions | times: 45 | divided_by: maxSessions %}
+                {% else %}
+                {% assign sesPct = 0 %}
+                {% endif %}
+                {% assign filledBlocks = '' %}
+                {% assign emptyBlocks = '' %}
+                {% for i in (1..45) %}
+                {% if i <= sesPct %}{% assign filledBlocks = filledBlocks | append: '▓' %}{% else %}{% assign emptyBlocks = emptyBlocks | append: '░' %}{% endif %}
+                {% endfor %}
+                <span class="ascii-bar-fill" aria-hidden="true">{{ filledBlocks }}{{ emptyBlocks }}</span>
+                <span class="ascii-bar-value">{{ p.totalSessions }}</span>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Skills Aggregate {%- endcomment -%}
+    {% if allSkills.size > 0 %}
+    <section class="mono-section" aria-label="All skills">
+      <h2 class="mono-heading"># skills --all</h2>
+      <div class="terminal-block">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="dot-red" aria-hidden="true"></span>
+            <span class="dot-yellow" aria-hidden="true"></span>
+            <span class="dot-green" aria-hidden="true"></span>
+          </div>
+          <span>cat skills.json | sort</span>
+        </div>
+        <div class="terminal-body">
+          <div class="project-tags">
+            {% for skill in allSkills %}
+            <span class="tag">[{{ skill.name }}]</span>
+            {% endfor %}
+          </div>
+        </div>
       </div>
     </section>
     {% endif %}

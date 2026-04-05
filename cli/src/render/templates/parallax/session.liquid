@@ -42,7 +42,7 @@
       {% endif %}
       <div class="session-header__meta-item">
         <span class="session-header__meta-label">Duration</span>
-        <span class="session-header__meta-value">{{ session.durationMinutes | formatDuration }}</span>
+        <span class="session-header__meta-value">{{ session.durationMinutes | formatDuration }}{% if session.wallClockMinutes %} ({{ session.wallClockMinutes | formatDuration }} wall){% endif %}</span>
       </div>
       {% if session.turns > 0 %}
       <div class="session-header__meta-item">
@@ -236,30 +236,36 @@
         <div class="sidebar-card">
           <h2 class="sidebar-card__title">Session Info</h2>
           <dl class="session-info-list">
+            {% if session.wallClockMinutes %}
             <div class="session-info-row">
-              <dt class="session-info-label">Duration</dt>
+              <dt class="session-info-label">Wall clock</dt>
+              <dd class="session-info-value">{{ session.wallClockMinutes | formatDuration }}</dd>
+            </div>
+            {% endif %}
+            <div class="session-info-row">
+              <dt class="session-info-label">Active time</dt>
               <dd class="session-info-value">{{ session.durationMinutes | formatDuration }}</dd>
             </div>
-            {% if session.turns > 0 %}
+            {% if session.wallClockMinutes and session.wallClockMinutes > 0 %}
             <div class="session-info-row">
-              <dt class="session-info-label">Turns</dt>
-              <dd class="session-info-value">{{ session.turns }}</dd>
+              <dt class="session-info-label">Efficiency</dt>
+              {% assign effPctWhole = session.durationMinutes | times: 1000 | divided_by: session.wallClockMinutes %}
+              {% assign effInt = effPctWhole | divided_by: 10 %}
+              {% assign effDec = effPctWhole | modulo: 10 %}
+              <dd class="session-info-value">{{ effInt }}.{{ effDec }}%</dd>
             </div>
             {% endif %}
+            {% if session.durationMinutes > 0 %}
             <div class="session-info-row">
-              <dt class="session-info-label">LOC Changed</dt>
-              <dd class="session-info-value">{{ session.locChanged | formatLoc }}</dd>
-            </div>
-            {% if session.filesChanged > 0 %}
-            <div class="session-info-row">
-              <dt class="session-info-label">Files Changed</dt>
-              <dd class="session-info-value">{{ session.filesChanged }}</dd>
+              <dt class="session-info-label">LOC / hour</dt>
+              {% assign locPerHour = session.locChanged | times: 60 | divided_by: session.durationMinutes %}
+              <dd class="session-info-value">{{ locPerHour | localeNumber }}</dd>
             </div>
             {% endif %}
-            {% if session.sourceTool != blank %}
+            {% if session.agentSummary %}
             <div class="session-info-row">
-              <dt class="session-info-label">Source</dt>
-              <dd class="session-info-value">{{ session.sourceTool }}</dd>
+              <dt class="session-info-label">Sub-sessions</dt>
+              <dd class="session-info-value">{{ session.agentSummary.agents.size }}</dd>
             </div>
             {% endif %}
           </dl>

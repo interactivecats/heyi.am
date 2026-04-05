@@ -219,7 +219,7 @@
       {% endif %}
 
       {%- comment -%} Key Decisions {%- endcomment -%}
-      {% if project.keyDecisions.size > 0 %}
+      {% if arc.size > 0 %}
       <section class="vd-section" aria-label="Key decisions">
         <div class="vd-section-header">
           <div class="vd-section-header__icon" aria-hidden="true">
@@ -228,8 +228,8 @@
           <h2>Key Decisions</h2>
         </div>
         <div class="vd-decisions">
-          {% for decision in project.keyDecisions %}
-          <div class="vd-decision"><strong>{{ forloop.index }}.</strong> {{ decision }}</div>
+          {% for item in arc %}
+          <div class="vd-decision"><strong>{{ forloop.index }}.</strong> {{ item.description }}</div>
           {% endfor %}
         </div>
       </section>

@@ -104,7 +104,7 @@
   {% endif %}
 
   {%- comment -%} Key decisions {%- endcomment -%}
-  {% if keyDecisions.size > 0 %}
+  {% if arc.size > 0 %}
   <section class="decisions-section anim-slide-left anim-delay-3" aria-label="Key decisions">
     <div class="section-heading">
       <svg width="20" height="20" aria-hidden="true">
@@ -114,10 +114,10 @@
       <div class="heading-line" aria-hidden="true"></div>
     </div>
     <ol class="decisions-list">
-      {% for d in keyDecisions %}
+      {% for item in arc %}
       <li class="decision-item">
         <div class="decision-number" aria-hidden="true">{{ forloop.index }}</div>
-        <div class="decision-text">{{ d }}</div>
+        <div class="decision-text">{{ item.description }}</div>
       </li>
       {% endfor %}
     </ol>

@@ -28,7 +28,7 @@
         {% endif %}
         <span class="dl-session-meta-item">
           <svg class="dl-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          {{ session.durationMinutes | formatDuration }}
+          {{ session.durationMinutes | formatDuration }}{% if session.wallClockMinutes %} ({{ session.wallClockMinutes | formatDuration }} wall){% endif %}
         </span>
         <span class="dl-session-meta-item">
           <svg class="dl-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>

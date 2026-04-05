@@ -136,6 +136,35 @@
   </section>
   {% endif %}
 
+  {%- comment -%} Source Mix {%- endcomment -%}
+  {% if sourceCounts.size > 0 %}
+  <section class="section" aria-label="Source breakdown">
+    <div class="section-tag">Source mix</div>
+    <h2 class="section-title">Tools of the trade</h2>
+    <p class="section-desc">How work is distributed across AI coding tools.</p>
+
+    <div class="split">
+      {% for src in sourceCounts %}
+      <div class="split-panel">
+        <h3>{{ src.tool }}</h3>
+        {% if totalSourceSessions > 0 %}
+        {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+        {% else %}
+        {% assign srcPct = 0 %}
+        {% endif %}
+        <div class="split-stat">
+          <span class="split-stat-value{% if forloop.first %} hl-orange{% endif %}">{{ srcPct }}%</span>
+          <span class="split-stat-label">of sessions</span>
+        </div>
+        <div class="split-detail">
+          <span class="hl-orange">&#8594;</span> {{ src.count }} sessions total
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
   {%- comment -%} Counter animation script {%- endcomment -%}
 
 </div>

@@ -284,15 +284,15 @@
       {% endif %}
 
       {%- comment -%} Key Decisions {%- endcomment -%}
-      {% if project.decisions.size > 0 %}
+      {% if arc.size > 0 %}
       <section class="decisions-section section-reveal" aria-label="Key decisions">
         <div class="section-label">
           <span>&#167;07 &mdash; bearing marks</span>
         </div>
         <h2 class="section-heading">Key Decisions</h2>
         <ol class="decision-list">
-          {% for decision in project.decisions %}
-          <li class="decision-item">{{ decision }}</li>
+          {% for item in arc %}
+          <li class="decision-item">{{ item.description }}</li>
           {% endfor %}
         </ol>
       </section>

@@ -103,6 +103,14 @@
           {% endfor %}
         </div>
         {% endif %}
+        {% if p.sourceCounts.size > 0 %}
+        <div class="source-mix" aria-label="Source mix: {% for sc in p.sourceCounts %}{{ sc.tool }} {% assign pct = sc.count | times: 100 | divided_by: p.totalSessions %}{{ pct }}%{% unless forloop.last %}, {% endunless %}{% endfor %}">
+          {% for sc in p.sourceCounts %}
+          {% assign pct = sc.count | times: 100 | divided_by: p.totalSessions %}
+          <div class="source-mix__segment--{{ sc.tool | downcase | replace: ' ', '-' }}" style="width: {{ pct }}%"></div>
+          {% endfor %}
+        </div>
+        {% endif %}
       </a>
       {% endfor %}
     </div>
@@ -131,12 +139,95 @@
   </section>
   {% endif %}
 
+  {%- comment -%} Activity Chart {%- endcomment -%}
+  {% if activityByMonth.size > 0 %}
+  <section class="radar-section" aria-label="Activity overview" id="activity-chart-section">
+    <div class="radar-label">Activity</div>
+    <div style="background: var(--surface-lowest); border: 1px solid var(--ghost); border-radius: var(--radius-sm); padding: 1rem; overflow: hidden;">
+      {% assign maxSessions = 0 %}
+      {% for m in activityByMonth %}
+        {% if m.sessions > maxSessions %}{% assign maxSessions = m.sessions %}{% endif %}
+      {% endfor %}
+      <svg viewBox="0 0 820 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Activity chart showing sessions per month">
+        <line x1="48" y1="10" x2="48" y2="130" stroke="rgba(34,211,238,0.08)" stroke-width="1"/>
+        <line x1="48" y1="130" x2="800" y2="130" stroke="rgba(34,211,238,0.08)" stroke-width="1"/>
+        <line x1="48" y1="90" x2="800" y2="90" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="48" y1="50" x2="800" y2="50" stroke="rgba(34,211,238,0.04)" stroke-width="1" stroke-dasharray="4 4"/>
+        {% assign barWidth = 750 | divided_by: activityByMonth.size %}
+        {% for m in activityByMonth %}
+          {% if maxSessions > 0 %}
+            {% assign barHeight = m.sessions | times: 100 | divided_by: maxSessions %}
+          {% else %}
+            {% assign barHeight = 0 %}
+          {% endif %}
+          {% assign barY = 130 | minus: barHeight %}
+          {% assign barX = forloop.index0 | times: barWidth | plus: 60 %}
+          {% assign barW = barWidth | minus: 20 %}
+          <rect class="wt-bar" x="{{ barX }}" y="{{ barY }}" width="{{ barW }}" height="{{ barHeight }}" rx="2" fill="#22d3ee" opacity="0.7"/>
+          {% assign labelX = barX | plus: barW | divided_by: 2 | plus: barX | divided_by: 2 %}
+          <text x="{{ barX }}" y="146" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="8" dx="{{ barW | divided_by: 2 }}">{{ m.month }}</text>
+          {% assign valueY = barY | minus: 4 %}
+          <text x="{{ barX }}" y="{{ valueY }}" fill="#64748b" font-family="'IBM Plex Mono', monospace" font-size="7" dx="{{ barW | divided_by: 2 }}">{{ m.sessions }}</text>
+        {% endfor %}
+      </svg>
+    </div>
+  </section>
+  {% endif %}
+
   {%- comment -%} Footer {%- endcomment -%}
-  <section class="radar-section" aria-label="Footer">
+  <section class="radar-section" aria-label="Footer" data-radar-section="footer">
     <footer class="radar-footer">
       <div class="radar-footer__text">Built with heyi.am</div>
     </footer>
   </section>
+
+{%- comment -%} Radar Floating Nav {%- endcomment -%}
+<nav class="radar-nav" aria-label="Section navigation">
+  <div class="radar-nav__ring"></div>
+  <div class="radar-nav__sweep"></div>
+  <div class="radar-nav__center"></div>
+</nav>
+<script>
+(function() {
+  'use strict';
+  var nav = document.querySelector('.radar-nav');
+  if (!nav) return;
+  var sections = document.querySelectorAll('.radar-section');
+  var dots = [];
+  sections.forEach(function(sec, i) {
+    sec.setAttribute('data-radar-section', i);
+    var label = sec.getAttribute('aria-label') || 'Section ' + (i + 1);
+    var btn = document.createElement('button');
+    btn.className = 'radar-nav__dot';
+    btn.setAttribute('data-radar-dot', i);
+    btn.setAttribute('aria-label', 'Navigate to ' + label);
+    nav.appendChild(btn);
+    dots.push(btn);
+  });
+  var total = dots.length;
+  dots.forEach(function(dot, i) {
+    var angle = (i / total) * 2 * Math.PI - Math.PI / 2;
+    var r = 54;
+    dot.style.left = (60 + r * Math.cos(angle) - 3) + 'px';
+    dot.style.top  = (60 + r * Math.sin(angle) - 3) + 'px';
+  });
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      var idx = entry.target.getAttribute('data-radar-section');
+      var dot = nav.querySelector('[data-radar-dot="' + idx + '"]');
+      if (dot) dot.classList.toggle('radar-nav__dot--active', entry.isIntersecting);
+    });
+  }, { threshold: 0.3 });
+  sections.forEach(function(s) { observer.observe(s); });
+  dots.forEach(function(dot) {
+    dot.addEventListener('click', function() {
+      var idx = this.getAttribute('data-radar-dot');
+      var target = document.querySelector('[data-radar-section="' + idx + '"]');
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+})();
+</script>
 
 </div>
 

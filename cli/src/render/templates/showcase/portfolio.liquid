@@ -121,6 +121,22 @@
             {% endfor %}
           </div>
           {% endif %}
+          {% if p.sourceCounts.size > 0 %}
+          <div class="project-card__source">
+            <div class="source-bar-track">
+              {% for sc in p.sourceCounts %}
+              {% assign pct = sc.count | times: 100 | divided_by: p.totalSessions %}
+              <div class="source-bar-segment" style="width: {{ pct }}%; background: var({% if forloop.first %}--accent{% else %}--green{% endif %});"></div>
+              {% endfor %}
+            </div>
+            <div class="source-labels">
+              {% for sc in p.sourceCounts %}
+              {% assign pct = sc.count | times: 100 | divided_by: p.totalSessions %}
+              <span>{{ sc.tool }} {{ pct }}%</span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
         </a>
         {% endfor %}
       </section>
@@ -149,6 +165,57 @@
             <span class="sc-skill-chip--lg sc-stagger">{{ skill }}</span>
             {% endfor %}
           </div>
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- Source Summary -->
+      {% if sourceCounts.size > 0 %}
+      <section class="sc-section section-gap-lg" aria-label="Source breakdown and activity">
+        <div class="source-summary">
+          <div class="source-summary-card sc-stagger">
+            <h3>Source Breakdown</h3>
+            {% for sc in sourceCounts %}
+            {% assign pct = sc.count | times: 100 | divided_by: totalSourceSessions %}
+            <div class="source-summary-row">
+              <span class="source-summary-row__name">{{ sc.tool }}</span>
+              <div class="source-bar-track--summary">
+                <div class="source-bar-fill--summary" style="width: {{ pct }}%;"></div>
+              </div>
+              <span class="source-summary-row__value">{{ pct }}%</span>
+            </div>
+            {% endfor %}
+            <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
+              <div class="source-summary-row">
+                <span class="source-summary-row__name">Total sessions</span>
+                <span class="source-summary-row__value">{{ totalSessions }}</span>
+              </div>
+            </div>
+          </div>
+          {% if activityByDay.size > 0 %}
+          <div class="activity-card sc-stagger">
+            <h3 style="font-family: var(--font-display); font-size: 0.875rem; font-weight: 600; color: var(--text); margin-bottom: 0.75rem;">Activity</h3>
+            <div class="activity-grid" aria-label="Activity heatmap showing session frequency over time">
+              {% for day in activityByDay %}
+              {% if day.count >= 4 %}{% assign level = 4 %}
+              {% elsif day.count >= 3 %}{% assign level = 3 %}
+              {% elsif day.count >= 2 %}{% assign level = 2 %}
+              {% elsif day.count >= 1 %}{% assign level = 1 %}
+              {% else %}{% assign level = 0 %}{% endif %}
+              <div class="activity-cell{% if level > 0 %} activity-cell--{{ level }}{% endif %}" title="{{ day.date }}: {{ day.count }} sessions"></div>
+              {% endfor %}
+            </div>
+            <div class="activity-legend">
+              <span>Less</span>
+              <div class="activity-legend__cell" data-level="0"></div>
+              <div class="activity-legend__cell" data-level="1"></div>
+              <div class="activity-legend__cell" data-level="2"></div>
+              <div class="activity-legend__cell" data-level="3"></div>
+              <div class="activity-legend__cell" data-level="4"></div>
+              <span>More</span>
+            </div>
+          </div>
+          {% endif %}
         </div>
       </section>
       {% endif %}

@@ -52,6 +52,12 @@
             <div class="stat__number">{{ session.durationMinutes }}</div>
             <div class="stat__label">Minutes</div>
           </div>
+            {% if session.wallClockMinutes %}
+            <div class="stat">
+              <div class="stat__number">{{ session.wallClockMinutes }}</div>
+              <div class="stat__label">Wall clock</div>
+            </div>
+            {% endif %}
           <div class="stat">
             <div class="stat__number">{{ session.locChanged | localeNumber }}</div>
             <div class="stat__label">Lines of code</div>

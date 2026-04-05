@@ -25,7 +25,7 @@
     {% endif %}
     <span class="strata-session-meta__item">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.5 1.5"/></svg>
-      {{ session.durationMinutes | formatDuration }}
+      {{ session.durationMinutes | formatDuration }}{% if session.wallClockMinutes %} ({{ session.wallClockMinutes | formatDuration }} wall){% endif %}
     </span>
     <span class="strata-session-meta__item">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 13V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v8"/><path d="M3 13h10"/><path d="M7 8h2"/></svg>

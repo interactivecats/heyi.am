@@ -114,6 +114,14 @@
             <span class="noir-project__stat-num">{{ p.totalLoc | formatLoc }}</span>
             <span class="noir-project__stat-label">LOC</span>
           </div>
+          {% if p.sourceCounts.size > 0 %}
+          <div class="noir-source-bar" aria-label="Source mix: {% for sc in p.sourceCounts %}{{ sc.tool }} {% assign pct = sc.count | times: 100 | divided_by: p.totalSessions %}{{ pct }}%{% unless forloop.last %}, {% endunless %}{% endfor %}">
+            {% for sc in p.sourceCounts %}
+            {% assign pct = sc.count | times: 100 | divided_by: p.totalSessions %}
+            <div class="noir-source-bar__fill{% if forloop.index > 1 %}--secondary{% endif %}" style="width: {{ pct }}%;"></div>
+            {% endfor %}
+          </div>
+          {% endif %}
         </div>
       </a>
       {% endfor %}

@@ -95,6 +95,37 @@
 
   <div class="trace-connector" aria-hidden="true"></div>
 
+  {%- comment -%} Source Overview {%- endcomment -%}
+  {% if sourceCounts.size > 0 %}
+  <section class="fade-in" aria-label="Source overview" style="margin-bottom: 24px;">
+    <div class="source-overview">
+      <h3>Source Overview</h3>
+      {% for src in sourceCounts %}
+      {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
+      <div class="source-overview-row">
+        <span class="source-overview-name">{{ src.tool }}</span>
+        <div class="source-overview-bar">
+          <div class="source-overview-fill {% if forloop.first %}claude{% else %}cursor-fill{% endif %}" style="width: {{ srcPct }}%"></div>
+        </div>
+        <span class="source-overview-pct">{{ srcPct }}%</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Aggregate Skills {%- endcomment -%}
+  {% if allSkills.size > 0 %}
+  <section class="all-skills-section fade-in" aria-label="All skills">
+    <h2 class="section-header">Skills</h2>
+    <div class="all-skills-grid">
+      {% for skill in allSkills %}
+      <div class="skill-ic"><span class="skill-ic-dot"></span> {{ skill.name }} <span class="skill-ic-count">{{ skill.projectCount }}</span></div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
   {%- comment -%} Projects {%- endcomment -%}
   {% if projects.size > 0 %}
   <section class="fade-in" aria-label="Projects" style="padding-bottom: 64px;">

@@ -8,7 +8,7 @@
 import { Liquid } from 'liquidjs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { PortfolioRenderData, ProjectRenderData, SessionRenderData } from './types.js';
+import type { PortfolioProject, PortfolioRenderData, ProjectRenderData, SessionRenderData } from './types.js';
 import { getTemplateInfo } from './templates.js';
 import { escapeHtml } from '../format-utils.js';
 
@@ -258,10 +258,86 @@ export function renderPortfolio(data: PortfolioRenderData, templateName?: string
   const u = data.user;
   const hasProfile = !!(u.displayName || u.bio || u.photoUrl || u.location || u.email || u.phone || u.linkedinUrl || u.githubUrl || u.twitterHandle || u.websiteUrl || u.resumeUrl);
 
+  // Aggregate skills across all projects with counts
+  const skillMap = new Map<string, number>();
+  for (const p of data.projects) {
+    for (const s of p.skills) {
+      skillMap.set(s, (skillMap.get(s) || 0) + 1);
+    }
+  }
+  const allSkills = [...skillMap.entries()]
+    .map(([name, projectCount]) => ({ name, projectCount }))
+    .sort((a, b) => b.projectCount - a.projectCount);
+  const topSkills = allSkills.slice(0, 8);
+
+  // Aggregate source counts across all projects
+  const sourceMap = new Map<string, number>();
+  for (const p of data.projects) {
+    for (const sc of p.sourceCounts || []) {
+      sourceMap.set(sc.tool, (sourceMap.get(sc.tool) || 0) + sc.count);
+    }
+  }
+  const sourceCounts = [...sourceMap.entries()]
+    .map(([tool, count]) => ({ tool, count }))
+    .sort((a, b) => b.count - a.count);
+  const totalSourceSessions = sourceCounts.reduce((sum, s) => sum + s.count, 0);
+
+  const activityByDay = computeActivityByDay(data.projects);
+  const activityByMonth = computeActivityByMonth(data.projects);
+
   return injectTemplateAttrs(engine.renderFileSync(`${template}/portfolio`, {
     ...data,
     durationLabel,
     efficiencyMultiplier: efficiencyStr,
     hasProfile,
+    allSkills,
+    topSkills,
+    sourceCounts,
+    totalSourceSessions,
+    activityByDay,
+    activityByMonth,
   }), template);
+}
+
+// ── Activity aggregation helpers (exported for testing) ─────────────────
+
+type ProjectWithSessions = Pick<PortfolioProject, 'title' | 'sessions'>;
+
+export function computeActivityByDay(projects: ProjectWithSessions[]): Array<{ date: string; count: number; loc: number }> {
+  const dayMap = new Map<string, { count: number; loc: number }>();
+  for (const p of projects) {
+    for (const s of p.sessions || []) {
+      const day = s.date.slice(0, 10);
+      const existing = dayMap.get(day) || { count: 0, loc: 0 };
+      dayMap.set(day, { count: existing.count + 1, loc: existing.loc + s.loc });
+    }
+  }
+  return [...dayMap.entries()]
+    .map(([date, d]) => ({ date, ...d }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export function computeActivityByMonth(projects: ProjectWithSessions[]): Array<{ month: string; sessions: number; loc: number; projects: Array<{ name: string; sessions: number; loc: number }> }> {
+  const monthMap = new Map<string, { sessions: number; loc: number; projects: Map<string, { sessions: number; loc: number }> }>();
+  for (const p of projects) {
+    for (const s of p.sessions || []) {
+      const monthKey = s.date.slice(0, 7);
+      const existing = monthMap.get(monthKey) || { sessions: 0, loc: 0, projects: new Map() };
+      existing.sessions++;
+      existing.loc += s.loc;
+      const projData = existing.projects.get(p.title) || { sessions: 0, loc: 0 };
+      projData.sessions++;
+      projData.loc += s.loc;
+      existing.projects.set(p.title, projData);
+      monthMap.set(monthKey, existing);
+    }
+  }
+  return [...monthMap.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, d]) => ({
+      month: new Date(key + '-01').toLocaleDateString('en-US', { month: 'short' }),
+      sessions: d.sessions,
+      loc: d.loc,
+      projects: [...d.projects.entries()].map(([name, pd]) => ({ name, ...pd })),
+    }));
 }

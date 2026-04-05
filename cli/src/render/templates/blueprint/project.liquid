@@ -194,17 +194,17 @@
   {% endif %}
 
   {%- comment -%} Key Decisions {%- endcomment -%}
-  {% if project.keyDecisions.size > 0 %}
+  {% if arc.size > 0 %}
   <section class="bp-decisions-section" aria-label="Key decisions">
     <div class="bp-section-ref">
       <span class="bp-ref-badge" aria-hidden="true">06</span>
       <span class="bp-section-label">Decision Log</span>
     </div>
     <ol class="bp-decision-list">
-      {% for decision in project.keyDecisions %}
+      {% for item in arc %}
       <li class="bp-decision-item">
         <span class="bp-decision-num">{{ forloop.index | prepend: '00' | slice: -2, 2 }}</span>
-        <span>{{ decision }}</span>
+        <span>{{ item.description }}</span>
       </li>
       {% endfor %}
     </ol>

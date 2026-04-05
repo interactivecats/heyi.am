@@ -209,7 +209,7 @@
       <a class="session-card" href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}">
         <div class="session-card__bar session-card__bar--cyan"></div>
         <div class="session-card__title">{{ s.title }}</div>
-        <div class="session-card__meta">{{ s.durationMinutes | formatDuration }} &middot; {{ s.locChanged | formatLoc }} LOC &middot; {{ s.filesChanged }} files</div>
+        <div class="session-card__meta">{{ s.durationMinutes | formatDuration }} &middot; {{ s.locChanged | formatLoc }} LOC{% if s.agentSummary %} &middot; {{ s.agentSummary.agents.size }} agent{% if s.agentSummary.agents.size != 1 %}s{% endif %}{% else %} &middot; {{ s.turns }} turns{% endif %}</div>
         {% if s.skills.size > 0 %}
         <span class="session-card__tag">{{ s.skills[0] }}</span>
         {% endif %}
@@ -220,11 +220,59 @@
   {% endif %}
 
   {%- comment -%} Footer {%- endcomment -%}
-  <section class="radar-section" aria-label="Footer">
+  <section class="radar-section" aria-label="Footer" data-radar-section="footer">
     <footer class="radar-footer">
       <div class="radar-footer__text">Built with heyi.am</div>
     </footer>
   </section>
+
+{%- comment -%} Radar Floating Nav {%- endcomment -%}
+<nav class="radar-nav" aria-label="Section navigation">
+  <div class="radar-nav__ring"></div>
+  <div class="radar-nav__sweep"></div>
+  <div class="radar-nav__center"></div>
+</nav>
+<script>
+(function() {
+  'use strict';
+  var nav = document.querySelector('.radar-nav');
+  if (!nav) return;
+  var sections = document.querySelectorAll('.radar-section');
+  var dots = [];
+  sections.forEach(function(sec, i) {
+    sec.setAttribute('data-radar-section', i);
+    var label = sec.getAttribute('aria-label') || 'Section ' + (i + 1);
+    var btn = document.createElement('button');
+    btn.className = 'radar-nav__dot';
+    btn.setAttribute('data-radar-dot', i);
+    btn.setAttribute('aria-label', 'Navigate to ' + label);
+    nav.appendChild(btn);
+    dots.push(btn);
+  });
+  var total = dots.length;
+  dots.forEach(function(dot, i) {
+    var angle = (i / total) * 2 * Math.PI - Math.PI / 2;
+    var r = 54;
+    dot.style.left = (60 + r * Math.cos(angle) - 3) + 'px';
+    dot.style.top  = (60 + r * Math.sin(angle) - 3) + 'px';
+  });
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      var idx = entry.target.getAttribute('data-radar-section');
+      var dot = nav.querySelector('[data-radar-dot="' + idx + '"]');
+      if (dot) dot.classList.toggle('radar-nav__dot--active', entry.isIntersecting);
+    });
+  }, { threshold: 0.3 });
+  sections.forEach(function(s) { observer.observe(s); });
+  dots.forEach(function(dot) {
+    dot.addEventListener('click', function() {
+      var idx = this.getAttribute('data-radar-dot');
+      var target = document.querySelector('[data-radar-section="' + idx + '"]');
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+})();
+</script>
 
 </div>
 

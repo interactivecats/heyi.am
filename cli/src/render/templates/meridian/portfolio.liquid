@@ -169,8 +169,79 @@
             {% endfor %}
           </div>
           {% endif %}
+          {% if p.sourceCounts.size > 0 %}
+          {% assign pTotalSrc = 0 %}
+          {% for src in p.sourceCounts %}{% assign pTotalSrc = pTotalSrc | plus: src.count %}{% endfor %}
+          {% if pTotalSrc > 0 %}
+          <div class="source-bar" role="img" aria-label="Source breakdown">
+            {% for src in p.sourceCounts %}
+            {% assign pSrcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+            <div class="source-bar__segment source-bar__segment--{% if forloop.first %}claude{% else %}cursor{% endif %}" style="width: {{ pSrcPct }}%"></div>
+            {% endfor %}
+          </div>
+          <div class="source-bar__legend">
+            {% for src in p.sourceCounts %}
+            <span><span class="source-bar__legend-dot" style="background: {% if forloop.first %}var(--mer-accent){% else %}var(--mer-text-muted){% endif %}"></span>{{ src.tool }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% endif %}
         </article>
         {% endfor %}
+      </section>
+      {% endif %}
+
+      {%- comment -%} Skills Overview {%- endcomment -%}
+      {% if allSkills.size > 0 %}
+      <section class="section-reveal" aria-label="Skills overview">
+        <div class="section-label">
+          <span>&#167;04 &mdash; instrument readings</span>
+        </div>
+        <h2 class="section-heading">Skills Across Projects</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+          {% for skill in allSkills %}
+          <span class="skill-chip">{{ skill.name }}</span>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Source Overview {%- endcomment -%}
+      {% if sourceCounts.size > 0 %}
+      <section class="section-reveal" aria-label="Source overview">
+        <div class="section-label">
+          <span>&#167;05 &mdash; map legend</span>
+        </div>
+        <h2 class="section-heading">Source Overview</h2>
+        <div style="background: var(--mer-surface); border: 1px solid var(--mer-border-subtle); border-radius: var(--radius); padding: 1.5rem;">
+          <div style="display: grid; grid-template-columns: repeat({{ sourceCounts.size }}, 1fr); gap: 1.5rem;">
+            {% for src in sourceCounts %}
+            {% if totalSourceSessions > 0 %}
+            {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+            {% else %}
+            {% assign srcPct = 0 %}
+            {% endif %}
+            <div>
+              <div style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--mer-text-muted); letter-spacing: 0.06em; text-transform: uppercase; margin-block-end: 0.375rem;">{% if forloop.first %}Primary{% else %}Secondary{% endif %} Source</div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: {% if forloop.first %}var(--mer-accent){% else %}var(--mer-text-muted){% endif %};"></span>
+                <span style="font-family: var(--font-mono); font-size: 0.875rem; color: var(--mer-white);">{{ src.tool }}</span>
+              </div>
+              <div style="font-family: var(--font-mono); font-size: 0.8125rem; color: var(--mer-text-muted); margin-block-start: 0.25rem;">{{ src.count }} sessions &middot; {{ srcPct }}%</div>
+            </div>
+            {% endfor %}
+          </div>
+          {% if totalSourceSessions > 0 %}
+          <div style="margin-block-start: 1.25rem;">
+            <div style="display: flex; height: 8px; border-radius: 4px; overflow: hidden;">
+              {% for src in sourceCounts %}
+              {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+              <div style="width: {{ srcPct }}%; height: 100%; background: {% if forloop.first %}var(--mer-accent){% else %}var(--mer-text-muted){% endif %};"></div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
       </section>
       {% endif %}
     </main>

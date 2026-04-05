@@ -31,7 +31,7 @@
       {% if session.sourceTool %}
       <span class="hero-meta-item">{{ session.sourceTool }}</span>
       {% endif %}
-      <span class="hero-meta-item">{{ session.durationMinutes | formatDuration }}</span>
+      <span class="hero-meta-item">{{ session.durationMinutes | formatDuration }}{% if session.wallClockMinutes %} ({{ session.wallClockMinutes | formatDuration }} wall){% endif %}</span>
       <span class="hero-meta-item">{{ session.turns }} turns</span>
       <span class="hero-meta-item">{{ session.locChanged | localeNumber }} LOC</span>
       <span class="hero-meta-item">{{ session.filesChanged }} files</span>

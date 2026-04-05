@@ -139,6 +139,175 @@
   </section>
   {% endif %}
 
+  {%- comment -%} Activity {%- endcomment -%}
+  {% if activityByMonth.size > 0 %}
+  {% assign maxSessions = 0 %}
+  {% for m in activityByMonth %}
+    {% if m.sessions > maxSessions %}{% assign maxSessions = m.sessions %}{% endif %}
+  {% endfor %}
+  <section class="activity-section ember-section" aria-label="Session activity">
+    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Session Activity</h2>
+    <div class="activity-chart" role="img" aria-label="Monthly session activity bar chart">
+      {% for m in activityByMonth %}
+        {% if maxSessions > 0 %}
+          {% assign barPct = m.sessions | times: 100 | divided_by: maxSessions %}
+        {% else %}
+          {% assign barPct = 0 %}
+        {% endif %}
+        <div class="activity-bar" style="height: {{ barPct }}%" data-label="{{ m.month }}"></div>
+      {% endfor %}
+    </div>
+    <div class="activity-labels">
+      {% for m in activityByMonth %}
+      <span>{{ m.month }}</span>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Growth Line Chart {%- endcomment -%}
+  {% if activityByDay.size > 0 %}
+  {% assign cumLoc = 0 %}
+  {% assign maxCumLoc = 0 %}
+  {% for d in activityByDay %}
+    {% assign cumLoc = cumLoc | plus: d.loc %}
+    {% if cumLoc > maxCumLoc %}{% assign maxCumLoc = cumLoc %}{% endif %}
+  {% endfor %}
+  <section class="ember-section" aria-label="Cumulative lines of code" style="margin-top: 2.5rem;">
+    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Growth</h2>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
+      <svg viewBox="0 0 500 180" width="100%" height="180" role="img" aria-label="Cumulative LOC growth line chart">
+        <line x1="40" y1="20" x2="40" y2="150" stroke="rgba(250,245,240,0.06)" stroke-width="1"/>
+        <line x1="40" y1="150" x2="480" y2="150" stroke="rgba(250,245,240,0.06)" stroke-width="1"/>
+        <line x1="40" y1="117.5" x2="480" y2="117.5" stroke="rgba(250,245,240,0.04)" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="40" y1="85" x2="480" y2="85" stroke="rgba(250,245,240,0.04)" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="40" y1="52.5" x2="480" y2="52.5" stroke="rgba(250,245,240,0.04)" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="40" y1="20" x2="480" y2="20" stroke="rgba(250,245,240,0.04)" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="35" y="154" fill="rgba(250,245,240,0.4)" font-family="JetBrains Mono, monospace" font-size="10" text-anchor="end">0</text>
+        {% if maxCumLoc > 0 %}
+        {% assign yLabel2 = maxCumLoc | divided_by: 2 %}
+        <text x="35" y="88" fill="rgba(250,245,240,0.4)" font-family="JetBrains Mono, monospace" font-size="10" text-anchor="end">{{ yLabel2 | formatLoc }}</text>
+        <text x="35" y="24" fill="rgba(250,245,240,0.4)" font-family="JetBrains Mono, monospace" font-size="10" text-anchor="end">{{ maxCumLoc | formatLoc }}</text>
+        {% endif %}
+        <defs>
+          <linearGradient id="emberGradFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f97316" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#f97316" stop-opacity="0.01"/>
+          </linearGradient>
+          <linearGradient id="emberGradLine" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#f97316"/>
+            <stop offset="100%" stop-color="#ef4444"/>
+          </linearGradient>
+        </defs>
+        {% assign fillPath = "M 40 150" %}
+        {% assign polyPoints = "" %}
+        {% assign cumLoc = 0 %}
+        {% assign dayCount = activityByDay.size | minus: 1 %}
+        {% assign lastPx = 40 %}
+        {% for d in activityByDay %}
+          {% assign cumLoc = cumLoc | plus: d.loc %}
+          {% if dayCount > 0 %}
+            {% assign px = forloop.index0 | times: 440 | divided_by: dayCount | plus: 40 %}
+          {% else %}
+            {% assign px = 260 %}
+          {% endif %}
+          {% if maxCumLoc > 0 %}
+            {% assign pyOff = cumLoc | times: 130 | divided_by: maxCumLoc %}
+            {% assign py = 150 | minus: pyOff %}
+          {% else %}
+            {% assign py = 150 %}
+          {% endif %}
+          {% assign fillPath = fillPath | append: " L " | append: px | append: " " | append: py %}
+          {% assign polyPoints = polyPoints | append: px | append: "," | append: py | append: " " %}
+          {% assign lastPx = px %}
+        {% endfor %}
+        {% assign fillPath = fillPath | append: " L " | append: lastPx | append: " 150 Z" %}
+        <path d="{{ fillPath }}" fill="url(#emberGradFill)"/>
+        <polyline points="{{ polyPoints }}" fill="none" stroke="url(#emberGradLine)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        {% assign cumLoc = 0 %}
+        {% for d in activityByDay %}
+          {% assign cumLoc = cumLoc | plus: d.loc %}
+          {% if dayCount > 0 %}
+            {% assign px = forloop.index0 | times: 440 | divided_by: dayCount | plus: 40 %}
+          {% else %}
+            {% assign px = 260 %}
+          {% endif %}
+          {% if maxCumLoc > 0 %}
+            {% assign pyOff = cumLoc | times: 130 | divided_by: maxCumLoc %}
+            {% assign py = 150 | minus: pyOff %}
+          {% else %}
+            {% assign py = 150 %}
+          {% endif %}
+          <circle cx="{{ px }}" cy="{{ py }}" r="4" fill="var(--bg)" stroke="#f97316" stroke-width="2"/>
+        {% endfor %}
+      </svg>
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Skills Overview {%- endcomment -%}
+  {% if allSkills.size > 0 %}
+  <section class="ember-section" aria-label="Skills overview">
+    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Skills</h2>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        {% for skill in allSkills %}
+        <span class="skill-chip">{{ skill.name }}</span>
+        {% endfor %}
+      </div>
+      {% if topSkills.size > 0 %}
+      <div style="margin-top: 1.25rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+        {% assign maxSkillCount = topSkills[0].projectCount %}
+        {% for skill in topSkills %}
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">{{ skill.name }}</div>
+          <div style="height: 6px; background: var(--surface-high); border-radius: 3px; overflow: hidden;">
+            {% if maxSkillCount > 0 %}
+            {% assign skillPct = skill.projectCount | times: 100 | divided_by: maxSkillCount %}
+            {% else %}
+            {% assign skillPct = 0 %}
+            {% endif %}
+            <div style="width: {{ skillPct }}%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-secondary)); border-radius: 3px;"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Source Overview {%- endcomment -%}
+  {% if sourceCounts.size > 0 %}
+  <section class="ember-section" aria-label="Overall source breakdown">
+    <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Source Breakdown</h2>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem;">
+      <div style="display: grid; grid-template-columns: repeat({{ sourceCounts.size }}, 1fr); gap: 1.5rem;">
+        {% for src in sourceCounts %}
+        {% if totalSourceSessions > 0 %}
+        {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+        {% else %}
+        {% assign srcPct = 0 %}
+        {% endif %}
+        <div style="text-align: center; padding: 1rem; background: {% if forloop.first %}var(--accent-glow){% else %}var(--border-subtle){% endif %}; border-radius: var(--radius-sm); border: 1px solid {% if forloop.first %}var(--accent-border){% else %}var(--border-subtle){% endif %};">
+          <div style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: {% if forloop.first %}var(--accent){% else %}var(--text-secondary){% endif %};">{{ srcPct }}%</div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-top: 4px;">{{ src.tool }}</div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); margin-top: 2px;">{{ src.count }} sessions</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% if totalSourceSessions > 0 %}
+      <div style="margin-top: 1rem; height: 8px; background: var(--surface-high); border-radius: 4px; overflow: hidden; display: flex;">
+        {% for src in sourceCounts %}
+        {% assign srcPct = src.count | times: 100 | divided_by: totalSourceSessions %}
+        <div style="width: {{ srcPct }}%; height: 100%; background: {% if forloop.first %}linear-gradient(90deg, var(--accent), var(--accent-secondary)){% else %}var(--text-muted){% endif %};"></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
   {%- comment -%} Footer {%- endcomment -%}
   <footer class="footer">
     <p>Built with <a href="https://heyi.am">heyi.am</a></p>

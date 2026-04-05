@@ -179,6 +179,40 @@
       </section>
       {% endif %}
 
+      {%- comment -%} Orbital Timeline {%- endcomment -%}
+      {% if arc.size > 0 %}
+      <section class="cos-section cos-orbit-timeline" aria-label="Project phases orbital timeline">
+        <h2 class="cos-section-title">Orbital Timeline</h2>
+        {% assign nodeCount = arc.size %}
+        {% assign svgWidth = 800 %}
+        <svg class="cos-orbit-svg" viewBox="0 0 {{ svgWidth }} 200" role="img" aria-label="Phase timeline showing {{ nodeCount }} project phases as points along an orbital path">
+          <path class="cos-orbit-path" d="M50,100 C150,30 250,170 400,100 C550,30 650,170 750,100" />
+          <path class="cos-orbit-path-active" d="M50,100 C150,30 250,170 400,100 C550,30 650,170 750,100" />
+          {% for item in arc %}
+          {% assign segWidth = 700 | divided_by: nodeCount %}
+          {% assign nodeX = forloop.index0 | times: segWidth | plus: 50 | plus: segWidth | divided_by: 2 %}
+          {% assign oddPhase = forloop.index0 | modulo: 2 %}
+          {% if oddPhase == 0 %}
+            {% assign nodeY = 65 %}
+            {% assign labelY = 50 %}
+            {% assign textY = 40 %}
+          {% else %}
+            {% assign nodeY = 145 %}
+            {% assign labelY = 170 %}
+            {% assign textY = 190 %}
+          {% endif %}
+          <text class="cos-orbit-phase-label" x="{{ nodeX }}" y="{{ labelY }}">{{ item.title }}</text>
+          <g class="cos-orbit-node">
+            <circle cx="{{ nodeX }}" cy="{{ nodeY }}" r="6" fill="var(--cos-bg, #030712)" stroke="var(--cos-accent)" stroke-width="2" />
+            {% if item.dates != blank %}
+            <text x="{{ nodeX }}" y="{{ textY }}" text-anchor="middle">{{ item.dates }}</text>
+            {% endif %}
+          </g>
+          {% endfor %}
+        </svg>
+      </section>
+      {% endif %}
+
       {%- comment -%} Phase Cards {%- endcomment -%}
       {% if arc.size > 0 %}
       <section class="cos-section" aria-label="Phase details">

@@ -148,12 +148,12 @@
     {% endif %}
 
     {%- comment -%} Key Decisions {%- endcomment -%}
-    {% if keyDecisions.size > 0 %}
+    {% if arc.size > 0 %}
     <section class="decisions-section fade-in fade-in-d5" aria-label="Key decisions">
       <h2 class="section-label">Key Decisions</h2>
       <ol class="decisions-list" role="list">
-        {% for decision in keyDecisions %}
-        <li class="decision-item">{{ decision }}</li>
+        {% for item in arc %}
+        <li class="decision-item">{{ item.description }}</li>
         {% endfor %}
       </ol>
     </section>

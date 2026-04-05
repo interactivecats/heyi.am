@@ -26,7 +26,7 @@
         {% endif %}
         <span class="aurora-session-meta-item">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          {{ session.durationMinutes | formatDuration }}
+          {{ session.durationMinutes | formatDuration }}{% if session.wallClockMinutes %} ({{ session.wallClockMinutes | formatDuration }} wall){% endif %}
         </span>
         <span class="aurora-session-meta-item">{{ session.turns }} turns</span>
         <span class="aurora-session-meta-item">{{ session.locChanged | localeNumber }} LOC</span>

@@ -21,7 +21,7 @@
       {% if session.sourceTool %}
       <span>Source: <span class="val">{{ session.sourceTool }}</span></span>
       {% endif %}
-      <span>Duration: <span class="val">{{ session.durationMinutes | formatDuration }}</span></span>
+      <span>Duration: <span class="val">{{ session.durationMinutes | formatDuration }}</span>{% if session.wallClockMinutes %} ({{ session.wallClockMinutes | formatDuration }} wall){% endif %}</span>
       <span>Turns: <span class="val">{{ session.turns }}</span></span>
       <span>LOC: <span class="val">{{ session.locChanged | localeNumber }}</span></span>
       <span>Files: <span class="val">{{ session.filesChanged }}</span></span>
@@ -42,6 +42,12 @@
       <span class="stat-chip-value">{{ session.durationMinutes | formatDuration }}</span>
       <span class="stat-chip-label">Duration</span>
     </div>
+    {% if session.wallClockMinutes %}
+    <div class="stat-chip" role="group" aria-label="Wall clock">
+      <span class="stat-chip-value">{{ session.wallClockMinutes | formatDuration }}</span>
+      <span class="stat-chip-label">Wall Clock</span>
+    </div>
+    {% endif %}
     <div class="stat-chip" role="group" aria-label="Turns">
       <span class="stat-chip-value">{{ session.turns }}</span>
       <span class="stat-chip-label">Turns</span>

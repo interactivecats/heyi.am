@@ -42,6 +42,12 @@
           <div class="stat-key">duration:</div>
           <div class="stat-value">{{ session.durationMinutes | formatDuration }}</div>
         </div>
+          {% if session.wallClockMinutes %}
+          <div class="stat-cell" role="listitem">
+            <div class="stat-key">wall_clock:</div>
+            <div class="stat-value">{{ session.wallClockMinutes | formatDuration }}</div>
+          </div>
+          {% endif %}
         <div class="stat-cell" role="listitem">
           <div class="stat-key">turns:</div>
           <div class="stat-value">{{ session.turns }}</div>

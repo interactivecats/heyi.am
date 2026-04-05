@@ -95,6 +95,15 @@
           <div class="strata-project-card__desc">{{ p.narrative }}</div>
           {% endif %}
           <div class="strata-project-card__meta">{{ p.totalSessions }} sessions &middot; {{ p.totalDurationMinutes | formatDuration }} &middot; {{ p.totalLoc | formatLoc }} LOC</div>
+          {% if p.sourceCounts.size > 0 %}
+          <div class="strata-source-mix" aria-label="Source mix: {% for sc in p.sourceCounts %}{{ sc.tool }} {% assign pct = sc.count | times: 100 | divided_by: p.totalSessions %}{{ pct }}%{% unless forloop.last %}, {% endunless %}{% endfor %}">
+            {% for sc in p.sourceCounts %}
+            {% assign pct = sc.count | times: 100 | divided_by: p.totalSessions %}
+            <div class="strata-source-mix__segment" style="width: {{ pct }}%; background: var({% if forloop.first %}--strata-accent{% else %}--strata-text-tertiary{% endif %});" aria-hidden="true"></div>
+            {% endfor %}
+          </div>
+          <div class="strata-project-card__source">{% for sc in p.sourceCounts %}{% assign pct = sc.count | times: 100 | divided_by: p.totalSessions %}{{ sc.tool }} {{ pct }}%{% unless forloop.last %} &middot; {% endunless %}{% endfor %}</div>
+          {% endif %}
           {% if p.skills.size > 0 %}
           <div class="strata-project-card__chips">
             {% for skill in p.skills %}
@@ -131,6 +140,45 @@
     </div>
     {% endif %}
   </section>
+  {% endif %}
+
+  {%- comment -%} Activity Chart {%- endcomment -%}
+  {% if activityByMonth.size > 0 %}
+  <div class="strata-layer" style="z-index: 2;" id="activity-section">
+    <div class="strata-section-header">
+      <h2 class="strata-section-header__title">Activity Overview</h2>
+      <span class="strata-section-header__meta">{{ totalSessions }} sessions across {{ projects.size }} projects</span>
+    </div>
+    <div class="strata-chart">
+      {% assign maxSessions = 0 %}
+      {% for m in activityByMonth %}
+        {% if m.sessions > maxSessions %}{% assign maxSessions = m.sessions %}{% endif %}
+      {% endfor %}
+      <svg viewBox="0 0 800 200" preserveAspectRatio="xMidYMid meet" aria-label="Monthly activity overview showing session count">
+        <line x1="60" y1="30" x2="760" y2="30" stroke="#f5f5f4" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="60" y1="70" x2="760" y2="70" stroke="#f5f5f4" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="60" y1="110" x2="760" y2="110" stroke="#f5f5f4" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="60" y1="150" x2="760" y2="150" stroke="#f5f5f4" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="60" y1="180" x2="760" y2="180" stroke="#e7e5e4" stroke-width="1"/>
+        {% assign barAreaWidth = 700 | divided_by: activityByMonth.size %}
+        {% for m in activityByMonth %}
+          {% if maxSessions > 0 %}
+            {% assign barHeight = m.sessions | times: 140 | divided_by: maxSessions %}
+          {% else %}
+            {% assign barHeight = 0 %}
+          {% endif %}
+          {% assign barY = 180 | minus: barHeight %}
+          {% assign barX = forloop.index0 | times: barAreaWidth | plus: 80 %}
+          {% assign delay = forloop.index0 | times: 80 %}
+          <rect class="strata-chart-bar" x="{{ barX }}" y="{{ barY }}" width="30" height="{{ barHeight }}" rx="4" ry="4" fill="#d97706" opacity="0.85" style="transition-delay: {{ delay }}ms"/>
+          {% assign labelX = barX | plus: 15 %}
+          <text x="{{ labelX }}" y="196" text-anchor="middle" fill="#a8a29e" font-family="IBM Plex Mono, monospace" font-size="9">{{ m.month }}</text>
+          {% assign valueY = barY | minus: 6 %}
+          <text x="{{ labelX }}" y="{{ valueY }}" text-anchor="middle" fill="#78716c" font-family="IBM Plex Mono, monospace" font-size="8">{{ m.sessions }}</text>
+        {% endfor %}
+      </svg>
+    </div>
+  </div>
   {% endif %}
 
   {%- comment -%} Footer {%- endcomment -%}

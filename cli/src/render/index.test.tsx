@@ -491,6 +491,43 @@ describe('renderPortfolioHtml', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Portfolio — aggregated skills and source counts
+// ---------------------------------------------------------------------------
+
+describe('renderPortfolioHtml — aggregated variables', () => {
+  it('computes allSkills and topSkills from project skills', () => {
+    const data = makePortfolioData();
+    // my-project has ['TypeScript', 'React'], second-project has ['Elixir']
+    // TypeScript appears in 1 project, React in 1, Elixir in 1
+    const html = renderPortfolioHtml(data, 'bauhaus');
+    // All three skills should appear in the rendered output
+    expect(html).toContain('TypeScript');
+    expect(html).toContain('React');
+    expect(html).toContain('Elixir');
+  });
+
+  it('computes sourceCounts from per-project sourceCounts', () => {
+    const data = makePortfolioData();
+    data.projects[0].sourceCounts = [{ tool: 'claude', count: 5 }, { tool: 'cursor', count: 3 }];
+    data.projects[1].sourceCounts = [{ tool: 'claude', count: 2 }];
+    const html = renderPortfolioHtml(data, 'bauhaus');
+    // claude total = 7, cursor total = 3
+    expect(html).toContain('claude');
+    expect(html).toContain('cursor');
+  });
+
+  it('handles projects without sourceCounts gracefully', () => {
+    const data = makePortfolioData();
+    // no sourceCounts set on any project
+    delete data.projects[0].sourceCounts;
+    delete data.projects[1].sourceCounts;
+    const html = renderPortfolioHtml(data, 'bauhaus');
+    // Should render without error
+    expect(html).toContain('Test User');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Portfolio — template-specific rendering
 // ---------------------------------------------------------------------------
 
@@ -536,6 +573,93 @@ describe.each(PORTFOLIO_TEMPLATES)('%s template — portfolio', (templateName) =
     const data = makePortfolioData({ totalAgentDurationMinutes: 360 });
     const html = renderPortfolioHtml(data, templateName);
     expect(html).toContain(`data-template="${templateName}"`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Portfolio — activity aggregation (activityByDay / activityByMonth)
+// ---------------------------------------------------------------------------
+
+import { computeActivityByDay, computeActivityByMonth } from './liquid.js';
+
+describe('computeActivityByDay', () => {
+  it('aggregates sessions from multiple projects by date', () => {
+    const projects = [
+      { title: 'A', sessions: [
+        { date: '2026-03-10T10:00:00Z', loc: 100, durationMinutes: 30 },
+        { date: '2026-03-10T14:00:00Z', loc: 200, durationMinutes: 45 },
+      ]},
+      { title: 'B', sessions: [
+        { date: '2026-03-10T09:00:00Z', loc: 50, durationMinutes: 20 },
+        { date: '2026-03-11T11:00:00Z', loc: 150, durationMinutes: 60 },
+      ]},
+    ];
+    const result = computeActivityByDay(projects);
+    expect(result).toEqual([
+      { date: '2026-03-10', count: 3, loc: 350 },
+      { date: '2026-03-11', count: 1, loc: 150 },
+    ]);
+  });
+
+  it('returns sorted by date ascending', () => {
+    const projects = [
+      { title: 'A', sessions: [
+        { date: '2026-04-01T10:00:00Z', loc: 50, durationMinutes: 20 },
+        { date: '2026-02-15T10:00:00Z', loc: 100, durationMinutes: 30 },
+      ]},
+    ];
+    const result = computeActivityByDay(projects);
+    expect(result[0].date).toBe('2026-02-15');
+    expect(result[1].date).toBe('2026-04-01');
+  });
+
+  it('returns empty array when no sessions', () => {
+    expect(computeActivityByDay([{ title: 'A' }])).toEqual([]);
+    expect(computeActivityByDay([])).toEqual([]);
+  });
+});
+
+describe('computeActivityByMonth', () => {
+  it('aggregates sessions by month with per-project breakdown', () => {
+    const projects = [
+      { title: 'Alpha', sessions: [
+        { date: '2026-03-10T10:00:00Z', loc: 100, durationMinutes: 30 },
+        { date: '2026-03-20T14:00:00Z', loc: 200, durationMinutes: 45 },
+      ]},
+      { title: 'Beta', sessions: [
+        { date: '2026-03-15T09:00:00Z', loc: 50, durationMinutes: 20 },
+        { date: '2026-04-01T11:00:00Z', loc: 150, durationMinutes: 60 },
+      ]},
+    ];
+    const result = computeActivityByMonth(projects);
+    expect(result).toHaveLength(2);
+    expect(result[0].month).toBe('Mar');
+    expect(result[0].sessions).toBe(3);
+    expect(result[0].loc).toBe(350);
+    expect(result[0].projects).toEqual([
+      { name: 'Alpha', sessions: 2, loc: 300 },
+      { name: 'Beta', sessions: 1, loc: 50 },
+    ]);
+    expect(result[1].month).toBe('Apr');
+    expect(result[1].sessions).toBe(1);
+    expect(result[1].loc).toBe(150);
+  });
+
+  it('returns sorted by month ascending', () => {
+    const projects = [
+      { title: 'A', sessions: [
+        { date: '2026-04-01T10:00:00Z', loc: 50, durationMinutes: 20 },
+        { date: '2026-02-15T10:00:00Z', loc: 100, durationMinutes: 30 },
+      ]},
+    ];
+    const result = computeActivityByMonth(projects);
+    expect(result[0].month).toBe('Feb');
+    expect(result[1].month).toBe('Apr');
+  });
+
+  it('returns empty array when no sessions', () => {
+    expect(computeActivityByMonth([{ title: 'A' }])).toEqual([]);
+    expect(computeActivityByMonth([])).toEqual([]);
   });
 });
 

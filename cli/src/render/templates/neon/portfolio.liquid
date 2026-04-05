@@ -140,6 +140,38 @@
   </section>
   {% endif %}
 
+  {%- comment -%} Contribution Overview {%- endcomment -%}
+  {% if sourceCounts.size > 0 %}
+  <section class="chart-section fade-in" aria-label="Contribution overview">
+    <h2 class="section-heading">Contribution Overview</h2>
+    <div class="contrib-chart">
+      <div style="display: flex; align-items: flex-end; gap: 2rem; justify-content: center; padding: 1.5rem 1rem;">
+        {% assign maxSourceCount = 0 %}
+        {% for src in sourceCounts %}
+        {% if src.count > maxSourceCount %}{% assign maxSourceCount = src.count %}{% endif %}
+        {% endfor %}
+        {% for src in sourceCounts %}
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+          {% if maxSourceCount > 0 %}
+          {% assign barHeight = src.count | times: 120 | divided_by: maxSourceCount %}
+          {% else %}
+          {% assign barHeight = 0 %}
+          {% endif %}
+          <div style="font-family: var(--font-mono); font-size: 0.75rem; color: {% if forloop.first %}var(--neon-pink){% else %}var(--neon-cyan){% endif %};">{{ src.count }}</div>
+          <div style="width: 80px; height: {{ barHeight }}px; background: {% if forloop.first %}var(--neon-pink){% else %}var(--neon-cyan){% endif %}; border-radius: 4px 4px 0 0; min-height: 8px;"></div>
+          <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--neon-muted);">{{ src.tool }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="chart-legend">
+        {% for src in sourceCounts %}
+        <span class="{% if forloop.first %}pink-label{% else %}cyan-label{% endif %}">{{ src.tool }} sessions</span>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
   {%- comment -%} All Skills {%- endcomment -%}
   {% assign allSkills = '' %}
   {% for p in projects %}

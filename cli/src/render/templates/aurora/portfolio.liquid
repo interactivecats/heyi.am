@@ -121,7 +121,74 @@
           {% endfor %}
         </div>
         {% endif %}
+        {% if p.sourceCounts.size > 0 %}
+        {% assign pTotalSrc = 0 %}
+        {% for src in p.sourceCounts %}{% assign pTotalSrc = pTotalSrc | plus: src.count %}{% endfor %}
+        {% if pTotalSrc > 0 %}
+        <div class="aurora-source-bar">
+          <div class="aurora-source-track" role="img" aria-label="Source breakdown for {{ p.title }}">
+            {% for src in p.sourceCounts %}
+            {% assign srcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+            <div class="aurora-source-fill-{{ src.tool | downcase | replace: ' ', '-' }}" style="width: {{ srcPct }}%"></div>
+            {% endfor %}
+          </div>
+          <div class="aurora-source-labels">
+            {% for src in p.sourceCounts %}
+            {% assign srcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+            <span><span class="aurora-source-dot aurora-source-dot--{{ src.tool | downcase | replace: ' ', '-' }}"></span>{{ src.tool }} {{ srcPct }}%</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% endif %}
       </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Activity Heatmap {%- endcomment -%}
+  {% if activityByDay.size > 0 %}
+  <section class="aurora-activity fade-up" aria-label="Activity overview">
+    <h2 class="aurora-section-title">Activity</h2>
+    <div class="aurora-activity-grid">
+      <div class="aurora-activity-rows" role="img" aria-label="Activity heatmap showing coding sessions over time">
+        {% for day in activityByDay %}
+          {% assign mod = forloop.index0 | modulo: 5 %}
+          {% if mod == 0 %}<div class="aurora-activity-week">{% endif %}
+          {% if day.count >= 4 %}{% assign level = 4 %}
+          {% elsif day.count >= 3 %}{% assign level = 3 %}
+          {% elsif day.count >= 2 %}{% assign level = 2 %}
+          {% elsif day.count >= 1 %}{% assign level = 1 %}
+          {% else %}{% assign level = 0 %}{% endif %}
+          <div class="aurora-activity-cell" data-level="{{ level }}" title="{{ day.date }}: {{ day.count }} sessions"></div>
+          {% assign mod1 = forloop.index | modulo: 5 %}
+          {% if mod1 == 0 or forloop.last %}</div>{% endif %}
+        {% endfor %}
+      </div>
+      <div class="aurora-activity-legend">
+        <span>Less</span>
+        <div class="aurora-activity-legend-cell" data-level="0"></div>
+        <div class="aurora-activity-legend-cell" data-level="1"></div>
+        <div class="aurora-activity-legend-cell" data-level="2"></div>
+        <div class="aurora-activity-legend-cell" data-level="3"></div>
+        <div class="aurora-activity-legend-cell" data-level="4"></div>
+        <span>More</span>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {%- comment -%} Skills Summary {%- endcomment -%}
+  {% if allSkills.size > 0 %}
+  <section class="aurora-skills-summary fade-up" aria-label="Top skills">
+    <h2 class="aurora-section-title">Top Skills</h2>
+    <div class="aurora-skills-grid">
+      {% for skill in topSkills %}
+      <div class="aurora-skill-card">
+        <span class="aurora-skill-name">{{ skill.name }}</span>
+        <span class="aurora-skill-count">{{ skill.projectCount }} project{% if skill.projectCount != 1 %}s{% endif %}</span>
+      </div>
       {% endfor %}
     </div>
   </section>

@@ -144,8 +144,77 @@
               {% endfor %}
             </div>
             {% endif %}
+            {% if p.sourceCounts.size > 0 %}
+            {% assign pTotalSrc = 0 %}
+            {% for src in p.sourceCounts %}{% assign pTotalSrc = pTotalSrc | plus: src.count %}{% endfor %}
+            {% if pTotalSrc > 0 %}
+            <div class="cos-source-bar">
+              <div class="cos-source-track">
+                {% for src in p.sourceCounts %}
+                {% assign srcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+                <div class="cos-source-fill-{{ src.tool | downcase | replace: ' ', '-' }}" style="width: {{ srcPct }}%"></div>
+                {% endfor %}
+              </div>
+              <div class="cos-source-labels">
+                {% for src in p.sourceCounts %}
+                {% assign srcPct = src.count | times: 100.0 | divided_by: pTotalSrc | round %}
+                <span><span class="cos-source-dot {{ src.tool | downcase | replace: ' ', '-' }}" aria-hidden="true"></span>{{ src.tool }} {{ srcPct }}%</span>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+            {% endif %}
           </article>
           {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Skills Overview {%- endcomment -%}
+      {% if allSkills.size > 0 %}
+      <section class="cos-section cos-skills-overview" aria-label="Skills overview">
+        <h2 class="cos-section-title">Skills</h2>
+        <div class="cos-skill-overview-grid">
+          {% for skill in allSkills %}
+          <span class="cos-skill-overview-chip">{{ skill.name }}</span>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {%- comment -%} Activity Chart {%- endcomment -%}
+      {% if activityByMonth.size > 0 %}
+      {% assign maxSessions = 0 %}
+      {% for m in activityByMonth %}
+        {% if m.sessions > maxSessions %}{% assign maxSessions = m.sessions %}{% endif %}
+      {% endfor %}
+      <section class="cos-section cos-activity" aria-label="Monthly activity">
+        <h2 class="cos-section-title">Activity</h2>
+        <div class="cos-activity-chart">
+          <svg class="cos-activity-svg" viewBox="0 0 600 180" role="img" aria-label="Monthly session activity bar chart">
+            <line class="cos-activity-grid" x1="60" y1="20" x2="560" y2="20" />
+            <line class="cos-activity-grid" x1="60" y1="55" x2="560" y2="55" />
+            <line class="cos-activity-grid" x1="60" y1="90" x2="560" y2="90" />
+            <line class="cos-activity-grid" x1="60" y1="125" x2="560" y2="125" />
+            {% assign spacing = 500 | divided_by: activityByMonth.size %}
+            {% for m in activityByMonth %}
+              {% if maxSessions > 0 %}
+                {% assign barH = m.sessions | times: 105 | divided_by: maxSessions %}
+              {% else %}
+                {% assign barH = 0 %}
+              {% endif %}
+              {% assign barY = 125 | minus: barH %}
+              {% assign halfSpace = spacing | divided_by: 2 %}
+              {% assign centerX = forloop.index0 | times: spacing | plus: 60 | plus: halfSpace %}
+              {% assign barX = centerX | minus: 40 %}
+              <g class="cos-activity-bar">
+                <rect x="{{ barX }}" y="{{ barY }}" width="80" height="{{ barH }}" rx="4" fill="#fbbf24" opacity="0.7" />
+                {% assign valY = barY | minus: 6 %}
+                <text class="cos-activity-value" x="{{ centerX }}" y="{{ valY }}" text-anchor="middle">{{ m.sessions }}</text>
+                <text class="cos-activity-label" x="{{ centerX }}" y="148" text-anchor="middle">{{ m.month }}</text>
+              </g>
+            {% endfor %}
+          </svg>
         </div>
       </section>
       {% endif %}

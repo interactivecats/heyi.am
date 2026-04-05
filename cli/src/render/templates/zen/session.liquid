@@ -24,6 +24,9 @@
         <span class="zen-session-meta-row"> &middot; {{ session.sourceTool }}</span>
         {% endif %}
         <span class="zen-session-meta-row"> &middot; {{ session.durationMinutes | formatDuration }}</span>
+        {% if session.wallClockMinutes %}
+        <span class="zen-session-meta-row"> ({{ session.wallClockMinutes | formatDuration }} wall clock)</span>
+        {% endif %}
         <br>
         <span class="zen-session-meta-row">{{ session.turns }} turns</span>
         <span class="zen-session-meta-row"> &middot; {{ session.locChanged | localeNumber }} LOC</span>

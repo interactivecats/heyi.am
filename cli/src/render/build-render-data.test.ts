@@ -176,6 +176,17 @@ describe('buildSessionRenderData', () => {
     expect(data.session.agentSummary).toBeUndefined();
   });
 
+  it('passes wallClockMinutes from session', () => {
+    const session = makeSession({ wallClockMinutes: 90 });
+    const data = buildSessionRenderData({ ...baseOpts, session });
+    expect(data.session.wallClockMinutes).toBe(90);
+  });
+
+  it('leaves wallClockMinutes undefined when not in session', () => {
+    const data = buildSessionRenderData(baseOpts);
+    expect(data.session.wallClockMinutes).toBeUndefined();
+  });
+
   it('uses current time for recordedAt when session has no date', () => {
     const session = makeSession({ date: '' });
     const before = new Date().toISOString();
@@ -210,6 +221,12 @@ describe('buildSessionCard', () => {
     const card = buildSessionCard({ ...baseOpts, enhanced: null });
     expect(card.title).toBe('Raw title from analyzer');
     expect(card.skills).toEqual(['TypeScript']);
+  });
+
+  it('passes wallClockMinutes from session', () => {
+    const session = makeSession({ wallClockMinutes: 72 });
+    const card = buildSessionCard({ ...baseOpts, session });
+    expect(card.wallClockMinutes).toBe(72);
   });
 
   it('truncates devTake to 2000 characters', () => {

@@ -31,6 +31,9 @@
         <span class="session-meta-item">
           <span class="session-meta-label">Duration:</span>
           <span class="session-meta-value">{{ session.durationMinutes | formatDuration }}</span>
+            {% if session.wallClockMinutes %}
+            <span class="session-meta-label">({{ session.wallClockMinutes | formatDuration }} wall)</span>
+            {% endif %}
         </span>
         <span class="session-meta-item">
           <span class="session-meta-label">Turns:</span>

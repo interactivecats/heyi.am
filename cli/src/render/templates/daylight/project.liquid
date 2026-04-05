@@ -98,11 +98,17 @@
       {% for s in featuredSessions %}
         {% if s.locChanged > maxLoc %}{% assign maxLoc = s.locChanged %}{% endif %}
       {% endfor %}
-      <div class="dl-chart" role="img" aria-label="Bar chart showing lines of code across {{ featuredSessions.size }} sessions">
+      {% assign maxDur = 1 %}
+      {% for s in featuredSessions %}
+        {% if s.durationMinutes > maxDur %}{% assign maxDur = s.durationMinutes %}{% endif %}
+      {% endfor %}
+      <div class="dl-chart" role="img" aria-label="Bar chart showing lines of code and duration across {{ featuredSessions.size }} sessions">
         {% for s in featuredSessions %}
         <div class="dl-chart-bar-group">
-          {% assign barHeight = s.locChanged | times: 100 | divided_by: maxLoc %}
-          <div class="dl-chart-bar dl-chart-bar-loc" style="height: {{ barHeight }}%" title="{{ s.locChanged }} LOC"></div>
+          {% assign locHeight = s.locChanged | times: 100 | divided_by: maxLoc %}
+          {% assign durHeight = s.durationMinutes | times: 100 | divided_by: maxDur %}
+          <div class="dl-chart-bar dl-chart-bar-loc" style="height: {{ locHeight }}%" title="{{ s.locChanged }} LOC"></div>
+          <div class="dl-chart-bar dl-chart-bar-duration" style="height: {{ durHeight }}%" title="{{ s.durationMinutes }}m"></div>
           <span class="dl-chart-label">S{{ forloop.index }}</span>
         </div>
         {% endfor %}

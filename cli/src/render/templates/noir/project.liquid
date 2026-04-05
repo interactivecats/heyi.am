@@ -151,14 +151,14 @@
   {% endif %}
 
   <!-- Key Decisions -->
-  {% if project.keyDecisions.size > 0 %}
+  {% if arc.size > 0 %}
   <section class="noir-section" aria-label="Key decisions">
     <h2 class="noir-heading">Key Decisions</h2>
     <ol class="noir-decisions">
-      {% for decision in project.keyDecisions %}
+      {% for item in arc %}
       <li class="noir-decision">
         <span class="noir-decision__num">{{ forloop.index }}</span>
-        <p class="noir-decision__text">{{ decision }}</p>
+        <p class="noir-decision__text">{{ item.description }}</p>
       </li>
       {% endfor %}
     </ol>

@@ -60,6 +60,9 @@
           <span class="session-header__meta-item">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <span class="session-header__meta-value">{{ session.durationMinutes | formatDuration }}</span>
+            {% if session.wallClockMinutes %}
+            <span>({{ session.wallClockMinutes | formatDuration }} wall)</span>
+            {% endif %}
           </span>
           {% endif %}
           {% if session.locChanged %}
@@ -78,6 +81,13 @@
           <div class="stat-cell__coord">elapsed</div>
           <div class="stat-cell__value">{{ session.durationMinutes | formatDuration }}</div>
           <div class="stat-cell__label">active</div>
+        </div>
+        {% endif %}
+        {% if session.wallClockMinutes %}
+        <div class="stat-cell" role="group" aria-label="Wall clock time">
+          <div class="stat-cell__coord">wall</div>
+          <div class="stat-cell__value">{{ session.wallClockMinutes | formatDuration }}</div>
+          <div class="stat-cell__label">total</div>
         </div>
         {% endif %}
         {% if session.turns %}

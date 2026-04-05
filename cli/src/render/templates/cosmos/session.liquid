@@ -66,6 +66,12 @@
             <span class="cos-meta-label">Duration</span>
             <span class="cos-meta-value">{{ session.durationMinutes | formatDuration }}</span>
           </div>
+          {% if session.wallClockMinutes %}
+          <div class="cos-meta-item">
+            <span class="cos-meta-label">Wall Clock</span>
+            <span class="cos-meta-value">{{ session.wallClockMinutes | formatDuration }}</span>
+          </div>
+          {% endif %}
           <div class="cos-meta-item">
             <span class="cos-meta-label">Turns</span>
             <span class="cos-meta-value">{{ session.turns }}</span>

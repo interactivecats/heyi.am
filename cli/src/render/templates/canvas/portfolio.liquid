@@ -147,9 +147,65 @@
               {% endfor %}
             </div>
             {% endif %}
+            {% if p.sourceCounts.size > 0 %}
+            {% assign pTotalSrc = 0 %}
+            {% for src in p.sourceCounts %}{% assign pTotalSrc = pTotalSrc | plus: src.count %}{% endfor %}
+            {% if pTotalSrc > 0 %}
+            <div class="source-bar">
+              <div class="source-bar__track">
+                {% assign pFirstPct = p.sourceCounts[0].count | times: 100.0 | divided_by: pTotalSrc | round %}
+                <div class="source-bar__fill" style="width: {{ pFirstPct }}%"></div>
+              </div>
+              <span>{{ p.sourceCounts[0].tool }} {{ pFirstPct }}%</span>
+            </div>
+            {% endif %}
+            {% endif %}
           </div>
         </a>
         {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Skills Overview {%- endcomment -%}
+    {% if allSkills.size > 0 %}
+    <section class="skills-overview fade-in fade-in-d3" aria-label="All skills">
+      <h2 class="section-title" style="text-align: center;">Skills</h2>
+      <div class="skills-cloud">
+        {% for skill in allSkills %}
+        {% if skill.projectCount > 1 %}
+        <span class="skill-pill skill-pill--lg">{{ skill.name }}</span>
+        {% else %}
+        <span class="skill-pill skill-pill--lg skill-pill--secondary">{{ skill.name }}</span>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {%- comment -%} Source Breakdown {%- endcomment -%}
+    {% if sourceCounts.size > 0 %}
+    <section class="source-overview fade-in fade-in-d4" aria-label="Source tool breakdown">
+      <h2 class="section-title" style="text-align: center;">Source Breakdown</h2>
+      <div class="source-overview__visual">
+        <div class="source-bar" style="height: 20px; border-radius: 10px; overflow: hidden; display: flex;">
+          {% for src in sourceCounts %}
+          {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
+          <div class="source-bar__fill" style="width: {{ srcPct }}%; {% if forloop.index > 1 %}background: var(--canvas-gray, #d4d4d8);{% endif %}"></div>
+          {% endfor %}
+        </div>
+        <div class="source-legend">
+          {% for src in sourceCounts %}
+          {% assign srcPct = src.count | times: 100.0 | divided_by: totalSourceSessions | round %}
+          <div class="source-legend__item">
+            <span class="source-legend__dot" style="background: {% if forloop.first %}var(--canvas-accent){% else %}var(--canvas-gray, #d4d4d8){% endif %}"></span>
+            <div>
+              <div class="source-legend__value">{{ srcPct }}%</div>
+              <div class="source-legend__label">{{ src.tool }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
       </div>
     </section>
     {% endif %}

@@ -12,7 +12,7 @@
       {% if session.recordedAt %}
       <span class="session-meta-item"><span class="ember-pip" aria-hidden="true"></span>{{ session.recordedAt | formatDate }}</span>
       {% endif %}
-      <span class="session-meta-item"><span class="ember-pip" aria-hidden="true"></span>{{ session.durationMinutes | formatDuration }}</span>
+      <span class="session-meta-item"><span class="ember-pip" aria-hidden="true"></span>{{ session.durationMinutes | formatDuration }}{% if session.wallClockMinutes %} ({{ session.wallClockMinutes | formatDuration }} wall){% endif %}</span>
       <span class="session-meta-item"><span class="ember-pip" aria-hidden="true"></span>{{ session.turns }} turns</span>
       <span class="session-meta-item"><span class="ember-pip" aria-hidden="true"></span>{{ session.locChanged | localeNumber }} LOC</span>
       <span class="session-meta-item"><span class="ember-pip" aria-hidden="true"></span>{{ session.filesChanged }} file{% if session.filesChanged != 1 %}s{% endif %}</span>

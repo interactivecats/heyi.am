@@ -202,12 +202,12 @@
     {% endif %}
 
     <!-- Key Decisions -->
-    {% if project.decisions.size > 0 %}
+    {% if arc.size > 0 %}
     <section class="section" aria-label="Key decisions">
       <h2 class="section__label reveal">Key Decisions</h2>
       <ol class="decisions-list reveal">
-        {% for d in project.decisions %}
-        <li>{{ d }}</li>
+        {% for item in arc %}
+        <li>{{ item.description }}</li>
         {% endfor %}
       </ol>
     </section>

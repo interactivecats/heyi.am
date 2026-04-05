@@ -106,16 +106,16 @@
   <section class="ember-section" aria-label="Session timeline">
     <h2 class="section-header"><span class="ember-icon" aria-hidden="true"></span>Work Timeline</h2>
     <div class="timeline-chart">
-      {% assign maxDur = 0 %}
+      {% assign maxLoc = 1 %}
       {% for s in featuredSessions %}
-        {% if s.durationMinutes > maxDur %}{% assign maxDur = s.durationMinutes %}{% endif %}
+        {% if s.locChanged > maxLoc %}{% assign maxLoc = s.locChanged %}{% endif %}
       {% endfor %}
-      <div class="chart-bars" role="img" aria-label="Bar chart of session durations for {{ project.title }}">
+      <div class="chart-bars" role="img" aria-label="Bar chart of lines changed per session for {{ project.title }}">
         {% for s in featuredSessions %}
-        {% if maxDur > 0 %}{% assign barPct = s.durationMinutes | times: 100 | divided_by: maxDur %}{% else %}{% assign barPct = 0 %}{% endif %}
+        {% if maxLoc > 0 %}{% assign barPct = s.locChanged | times: 100 | divided_by: maxLoc %}{% else %}{% assign barPct = 0 %}{% endif %}
         <div class="chart-bar-group">
           <div class="chart-bar" style="height: {{ barPct }}%">
-            <span class="chart-bar-value">{{ s.durationMinutes }}m</span>
+            <span class="chart-bar-value">{{ s.locChanged }} LOC</span>
           </div>
           <span class="chart-bar-label">S{{ forloop.index }}</span>
         </div>

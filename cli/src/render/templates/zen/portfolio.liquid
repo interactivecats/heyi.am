@@ -94,8 +94,31 @@
           {{ p.skills | join: ", " }}
         </p>
         {% endif %}
+        {% if p.sourceCounts.size > 0 %}
+        <p class="zen-project-source">
+          {% for sc in p.sourceCounts %}{% assign pct = sc.count | times: 100 | divided_by: p.totalSessions %}{{ sc.tool }} {{ pct }}%{% unless forloop.last %}, {% endunless %}{% endfor %}
+        </p>
+        {% endif %}
       </article>
       {% endfor %}
+    </section>
+
+    <hr class="zen-rule zen-fade" aria-hidden="true">
+    {% endif %}
+
+    <!-- Source Summary -->
+    {% if sourceCounts.size > 0 %}
+    <section class="zen-section zen-fade" aria-label="Source breakdown">
+      <h2 class="zen-heading">Source Tools</h2>
+      <div class="zen-source-summary">
+        {% for sc in sourceCounts %}
+        {% assign pct = sc.count | times: 100 | divided_by: totalSourceSessions %}
+        <div class="zen-source-row">
+          <span class="zen-source-label">{{ sc.tool }}</span>
+          <span class="zen-source-value">{{ pct }}% ({{ sc.count }} sessions)</span>
+        </div>
+        {% endfor %}
+      </div>
     </section>
 
     <hr class="zen-rule zen-fade" aria-hidden="true">
