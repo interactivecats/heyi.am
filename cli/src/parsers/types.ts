@@ -1,6 +1,6 @@
 import { open } from "node:fs/promises";
 
-export type SessionSource = "claude" | "cursor" | "codex" | "gemini" | "antigravity";
+export type SessionSource = "claude" | "cursor" | "codex" | "gemini";
 
 /** Display names for source tools */
 export const SOURCE_DISPLAY_NAMES: Record<SessionSource, string> = {
@@ -8,7 +8,6 @@ export const SOURCE_DISPLAY_NAMES: Record<SessionSource, string> = {
   cursor: "Cursor",
   codex: "Codex",
   gemini: "Gemini CLI",
-  antigravity: "Antigravity",
 };
 
 export interface ToolCall {

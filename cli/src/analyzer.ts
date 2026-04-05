@@ -28,7 +28,7 @@ export interface SessionAnalysis {
   /** Wall-clock minutes (first to last timestamp, includes idle) */
   wallClockMinutes?: number;
   projectName: string;
-  /** Source tool: "claude", "cursor", "codex", "gemini", "antigravity" */
+  /** Source tool: "claude", "cursor", "codex", "gemini" */
   source?: string;
   turns: ParsedTurn[];
   filesChanged: ParsedFileChange[];
@@ -113,7 +113,7 @@ export interface Session {
   cwd?: string;
   /** True when enhanced via bulk mode with auto-accepted AI suggestions */
   quickEnhanced?: boolean;
-  /** Source tool: "claude", "cursor", "codex", "gemini", "antigravity" */
+  /** Source tool: "claude", "cursor", "codex", "gemini" */
   source?: string;
   /** Active time intervals as [startMs, endMs] pairs for overlap-aware project aggregation */
   activeIntervals?: [number, number][];
