@@ -23286,8 +23286,20 @@
       ".cos-section",
       ".strata-layer",
       ".dl-bounce",
-      ".vd-section"
+      ".vd-section",
+      ".fly-left",
+      ".fly-right",
+      ".phase-item",
+      ".growth-line",
+      ".growth-area",
+      ".growth-dot",
+      ".session-card",
+      ".beat-item",
+      ".qa-card"
     ];
+    document.querySelectorAll(".parallax").forEach((el) => {
+      el.classList.add("parallax--mounted");
+    });
     const els = document.querySelectorAll(selectors.join(","));
     if (els.length === 0) return;
     if (REDUCED_MOTION) {

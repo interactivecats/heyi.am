@@ -254,7 +254,17 @@ export function mountScrollReveals(): void {
     '.strata-layer',
     '.dl-bounce',
     '.vd-section',
+    '.fly-left', '.fly-right',
+    '.phase-item', '.growth-line', '.growth-area', '.growth-dot',
+    '.session-card', '.beat-item', '.qa-card',
   ];
+
+  // Force CSS-animated elements visible when mounted via innerHTML.
+  // CSS animations with opacity:0 don't replay on dynamically injected HTML.
+  // Add a class to the parallax container so CSS can handle visibility.
+  document.querySelectorAll<HTMLElement>('.parallax').forEach((el) => {
+    el.classList.add('parallax--mounted');
+  });
   const els = document.querySelectorAll<HTMLElement>(selectors.join(','));
   if (els.length === 0) return;
 
