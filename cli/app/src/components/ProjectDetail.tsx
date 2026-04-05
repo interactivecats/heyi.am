@@ -424,48 +424,67 @@ export function ProjectDetail() {
           )}
         </div>
 
-        {/* Embed snippets — shown when project is published and user is logged in */}
-        {project.isUploaded && authUsername && (
-          <div className="mt-6 pt-4 border-t border-ghost">
-            <button
-              onClick={() => setEmbedOpen(!embedOpen)}
-              className="flex items-center justify-between w-full text-left"
-            >
-              <span className="font-mono text-[9px] uppercase tracking-wider text-outline">Embed</span>
-              <span className="text-[10px] text-outline">{embedOpen ? '−' : '+'}</span>
-            </button>
-            {embedOpen && (() => {
-              const slug = project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-              const base = `https://heyi.am/${authUsername}/${slug}`
-              const snippets = [
-                { label: 'GitHub README', code: `[![heyi.am](${base}/embed.svg)](${base})` },
-                { label: 'iframe', code: `<iframe src="${base}/embed?sections=stats,skills" width="480" height="200" frameborder="0"></iframe>` },
-                { label: 'SVG', code: `<img src="${base}/embed.svg" alt="heyi.am stats" />` },
-              ]
-              const copy = (code: string, label: string) => {
-                navigator.clipboard.writeText(code).then(() => {
-                  setEmbedCopied(label)
-                  setTimeout(() => setEmbedCopied(null), 2000)
-                })
-              }
-              return (
-                <div className="mt-2 space-y-2">
-                  {snippets.map((s) => (
-                    <div key={s.label}>
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-[10px] text-on-surface-variant">{s.label}</span>
-                        <button onClick={() => copy(s.code, s.label)} className="text-[10px] text-primary hover:underline">
-                          {embedCopied === s.label ? 'Copied' : 'Copy'}
-                        </button>
-                      </div>
-                      <pre className="text-[10px] font-mono bg-surface-lowest border border-ghost rounded-sm px-2 py-1.5 overflow-x-auto text-on-surface-variant whitespace-pre-wrap break-all">{s.code}</pre>
+        {/* Embed snippets — always available, published formats shown when uploaded */}
+        <div className="mt-6 pt-4 border-t border-ghost">
+          <button
+            onClick={() => setEmbedOpen(!embedOpen)}
+            className="flex items-center justify-between w-full text-left"
+          >
+            <span className="font-mono text-[9px] uppercase tracking-wider text-outline">Embed</span>
+            <span className="text-[10px] text-outline">{embedOpen ? '−' : '+'}</span>
+          </button>
+          {embedOpen && (() => {
+            const slug = project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+            const base = authUsername ? `https://heyi.am/${authUsername}/${slug}` : null
+            const isPublished = project.isUploaded && base
+
+            // Static HTML (always available)
+            const durationStr = project.totalDuration >= 60 ? `${Math.round(project.totalDuration / 60)}h` : `${project.totalDuration}m`
+            const locStr = project.totalLoc >= 1000 ? `${(project.totalLoc / 1000).toFixed(1)}k` : String(project.totalLoc)
+            const staticHtml = `<div style="font-family:ui-monospace,monospace;background:#0a0a0f;color:#e5e7eb;padding:16px 20px;border-radius:6px">
+  <div style="font-size:15px;font-weight:600;color:#f9fafb;margin-bottom:12px">${project.name}</div>
+  <div style="display:flex;gap:20px;flex-wrap:wrap">
+    <div><div style="font-size:18px;font-weight:700;color:#f9fafb">${project.sessionCount}</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">Sessions</div></div>
+    <div><div style="font-size:18px;font-weight:700;color:#f9fafb">${locStr}</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">Lines Changed</div></div>
+    <div><div style="font-size:18px;font-weight:700;color:#f9fafb">${durationStr}</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase">Active Time</div></div>
+  </div>
+</div>`
+
+            const snippets = [
+              ...(isPublished ? [
+                { label: 'Badge', desc: 'GitHub, markdown', code: `[![heyi.am](${base}/embed.svg)](${base})` },
+                { label: 'Widget', desc: 'Personal site', code: `<div class="heyiam-embed" data-username="${authUsername}" data-project="${slug}"></div>\n<script src="https://heyi.am/embed.js"></script>` },
+                { label: 'iframe', desc: 'Any site', code: `<iframe src="${base}/embed?sections=stats,skills" width="480" height="200" frameborder="0"></iframe>` },
+              ] : []),
+              { label: 'HTML', desc: isPublished ? 'No JS needed' : 'Works before publishing', code: staticHtml },
+            ]
+
+            const copy = (code: string, label: string) => {
+              navigator.clipboard.writeText(code).then(() => {
+                setEmbedCopied(label)
+                setTimeout(() => setEmbedCopied(null), 2000)
+              })
+            }
+            return (
+              <div className="mt-2 space-y-2">
+                {!isPublished && (
+                  <div className="text-[10px] text-on-surface-variant mb-1">Publish to unlock badge, widget, and iframe.</div>
+                )}
+                {snippets.map((s) => (
+                  <div key={s.label}>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[10px] text-on-surface-variant"><strong>{s.label}</strong> <span className="text-outline">{s.desc}</span></span>
+                      <button onClick={() => copy(s.code, s.label)} className="text-[10px] text-primary hover:underline">
+                        {embedCopied === s.label ? 'Copied' : 'Copy'}
+                      </button>
                     </div>
-                  ))}
-                </div>
-              )
-            })()}
-          </div>
-        )}
+                    <pre className="text-[10px] font-mono bg-surface-lowest border border-ghost rounded-sm px-2 py-1.5 overflow-x-auto text-on-surface-variant whitespace-pre-wrap break-all">{s.code}</pre>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
+        </div>
       </aside>
 
       {/* Main content — Liquid-rendered template preview */}

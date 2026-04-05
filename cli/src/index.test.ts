@@ -60,13 +60,14 @@ describe('CLI commands', () => {
     const cmd = program.commands.find((c) => c.name() === 'embed');
     expect(cmd).toBeDefined();
     expect(cmd!.description()).toBe('Generate embeddable widget snippets for your portfolio and projects');
-    const projectOpt = cmd!.options.find((o) => o.long === '--project');
-    expect(projectOpt).toBeDefined();
+    const opts = cmd!.options.map((o) => o.long);
+    expect(opts).toContain('--project');
+    expect(opts).toContain('--format');
+    expect(opts).toContain('--sections');
+    expect(opts).toContain('--theme');
     const sectionsOpt = cmd!.options.find((o) => o.long === '--sections');
-    expect(sectionsOpt).toBeDefined();
     expect(sectionsOpt!.defaultValue).toBe('stats');
     const themeOpt = cmd!.options.find((o) => o.long === '--theme');
-    expect(themeOpt).toBeDefined();
     expect(themeOpt!.defaultValue).toBe('dark');
   });
 

@@ -283,29 +283,23 @@ export function PublishReview() {
 
 function EmbedSnippets({ projectUrl }: { projectUrl: string }) {
   const [copied, setCopied] = useState<string | null>(null)
+  const embedBase = projectUrl.endsWith('/') ? projectUrl.slice(0, -1) : projectUrl
 
-  // Parse URL to build embed URLs
-  // projectUrl is like https://heyiam.com/dashboard/projects/... or https://heyi.am/ben/heyi-am
-  // We need the public URL path: /:username/:project
-  const publicUrl = projectUrl.replace(/\/dashboard\/projects\/.*$/, '')
-  const embedBase = publicUrl.endsWith('/') ? publicUrl.slice(0, -1) : publicUrl
+  // Extract username and slug from URL for widget snippet
+  const pathParts = (() => {
+    try { return new URL(embedBase).pathname.split('/').filter(Boolean) }
+    catch { return [] }
+  })()
+  const username = pathParts[0] || ''
+  const projectSlug = pathParts[1] || ''
 
   const snippets = [
-    {
-      label: 'GitHub README',
-      code: `[![heyi.am](${embedBase}/embed.svg)](${embedBase})`,
-    },
-    {
-      label: 'HTML iframe',
-      code: `<iframe src="${embedBase}/embed?sections=stats,skills" width="480" height="200" frameborder="0"></iframe>`,
-    },
-    {
-      label: 'SVG image',
-      code: `<img src="${embedBase}/embed.svg" alt="heyi.am stats" />`,
-    },
+    { label: 'Badge', desc: 'GitHub, markdown', code: `[![heyi.am](${embedBase}/embed.svg)](${embedBase})` },
+    { label: 'Widget', desc: 'Personal site', code: `<div class="heyiam-embed" data-username="${username}" data-project="${projectSlug}"></div>\n<script src="${new URL(embedBase).origin}/embed.js"></script>` },
+    { label: 'iframe', desc: 'Any site', code: `<iframe src="${embedBase}/embed?sections=stats,skills" width="480" height="200" frameborder="0"></iframe>` },
   ]
 
-  const copyToClipboard = (code: string, label: string) => {
+  const copy = (code: string, label: string) => {
     navigator.clipboard.writeText(code).then(() => {
       setCopied(label)
       setTimeout(() => setCopied(null), 2000)
@@ -314,22 +308,17 @@ function EmbedSnippets({ projectUrl }: { projectUrl: string }) {
 
   return (
     <div className="mt-4 pt-4 border-t border-ghost">
-      <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-2">Embed widget</div>
+      <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-2">Embed</div>
       <div className="space-y-2">
         {snippets.map((s) => (
           <div key={s.label}>
             <div className="flex items-center justify-between mb-0.5">
-              <span className="text-[10px] text-on-surface-variant">{s.label}</span>
-              <button
-                onClick={() => copyToClipboard(s.code, s.label)}
-                className="text-[10px] text-primary hover:underline"
-              >
+              <span className="text-[10px] text-on-surface-variant"><strong>{s.label}</strong> <span className="text-outline">{s.desc}</span></span>
+              <button onClick={() => copy(s.code, s.label)} className="text-[10px] text-primary hover:underline">
                 {copied === s.label ? 'Copied' : 'Copy'}
               </button>
             </div>
-            <pre className="text-[10px] font-mono bg-surface-lowest border border-ghost rounded-sm px-2 py-1.5 overflow-x-auto text-on-surface-variant whitespace-pre-wrap break-all">
-              {s.code}
-            </pre>
+            <pre className="text-[10px] font-mono bg-surface-lowest border border-ghost rounded-sm px-2 py-1.5 overflow-x-auto text-on-surface-variant whitespace-pre-wrap break-all">{s.code}</pre>
           </div>
         ))}
       </div>

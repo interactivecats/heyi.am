@@ -711,24 +711,19 @@ program
   .command('embed')
   .description('Generate embeddable widget snippets for your portfolio and projects')
   .option('--project <name>', 'Generate embed for a specific project')
+  .option('--format <type>', 'Output format: widget, iframe, badge, html, or all', '')
   .option('--sections <list>', 'Sections to include (comma-separated: stats,tools,skills,heatmap,recent)', 'stats')
   .option('--theme <theme>', 'Color theme (dark or light)', 'dark')
   .action(async (opts) => {
     const { getAuthToken } = await import('./auth.js');
     const { PUBLIC_URL } = await import('./config.js');
-    const { getUploadedState } = await import('./settings.js');
+    const { getUploadedState, getDataDir } = await import('./settings.js');
     const { displayNameFromDir } = await import('./sync.js');
     const { readdirSync, existsSync } = await import('node:fs');
     const { join } = await import('node:path');
-    const { getDataDir } = await import('./settings.js');
 
     const auth = getAuthToken();
-    if (!auth) {
-      console.log('\n  Not logged in. Run `npx heyiam` and log in first.\n');
-      return;
-    }
-
-    const username = auth.username;
+    const username = auth?.username;
     const sections = opts.sections || 'stats';
     const theme = opts.theme || 'dark';
     const queryParts: string[] = [];
@@ -751,63 +746,161 @@ program
       }
     }
 
+    const isPublished = username && publishedProjects.length > 0;
+    const format = opts.format || (isPublished ? 'all' : 'html');
+
+    // Build local stats for static HTML
+    const db = openDatabase();
+    await syncSessionIndex(db);
+    const { getAllProjectStats } = await import('./db.js');
+    const allStats = getAllProjectStats(db);
+
     if (opts.project) {
-      // Single project embed
       const match = publishedProjects.find(
         (p) => p.slug === opts.project || p.dirName === opts.project || displayNameFromDir(p.dirName) === opts.project,
       );
+      const localMatch = allStats.find(
+        (p) => p.projectName === opts.project || p.projectDir === opts.project || displayNameFromDir(p.projectDir) === opts.project,
+      );
 
-      if (!match) {
-        console.log(`\n  Project "${opts.project}" not found or not published.`);
-        if (publishedProjects.length > 0) {
-          console.log('  Published projects:');
-          for (const p of publishedProjects) console.log(`    ${p.slug}`);
+      if (!match && !localMatch) {
+        console.log(`\n  Project "${opts.project}" not found.`);
+        if (allStats.length > 0) {
+          console.log('  Available projects:');
+          for (const p of allStats) console.log(`    ${p.projectName}`);
         }
         console.log('');
+        db.close();
         return;
       }
 
-      const base = `${PUBLIC_URL}/${username}/${match.slug}`;
-      printProjectSnippets(match.slug, base, query);
-    } else {
-      // Portfolio embed + list all projects
-      const base = `${PUBLIC_URL}/${username}`;
-      console.log('');
-      console.log('  ── Portfolio embed ──────────────────────────────');
-      console.log('');
-      printSnippets(base, query);
+      const base = match && username ? `${PUBLIC_URL}/${username}/${match.slug}` : null;
+      const stats = localMatch || (match ? allStats.find((p) => displayNameFromDir(p.projectDir) === displayNameFromDir(match.dirName)) : null);
+      const title = stats?.projectName || match?.slug || opts.project;
 
-      if (publishedProjects.length > 0) {
+      console.log('');
+      console.log(`  ── ${title} ──────────────────────────────`);
+      printFormats(format, base, query, sections, theme, stats ? {
+        name: stats.projectName,
+        sessions: stats.sessionCount,
+        loc: stats.totalLoc,
+        duration: stats.totalDuration,
+        skills: stats.skills,
+      } : null);
+    } else {
+      // Portfolio level
+      const base = username ? `${PUBLIC_URL}/${username}` : null;
+
+      // Aggregate stats across all projects
+      const totalSessions = allStats.reduce((s, p) => s + p.sessionCount, 0);
+      const totalLoc = allStats.reduce((s, p) => s + p.totalLoc, 0);
+      const totalDuration = allStats.reduce((s, p) => s + p.totalDuration, 0);
+      const allSkills = [...new Set(allStats.flatMap((p) => p.skills))].slice(0, 8);
+
+      console.log('');
+      console.log('  ── Portfolio ──────────────────────────────────');
+      printFormats(format, base, query, sections, theme, {
+        name: username || 'portfolio',
+        sessions: totalSessions,
+        loc: totalLoc,
+        duration: totalDuration,
+        skills: allSkills,
+        projectCount: allStats.length,
+      });
+
+      // Also show each published project
+      if (format !== 'html' && publishedProjects.length > 0) {
         for (const p of publishedProjects) {
           const projBase = `${PUBLIC_URL}/${username}/${p.slug}`;
+          const stats = allStats.find((s) => displayNameFromDir(s.projectDir) === displayNameFromDir(p.dirName));
           console.log(`  ── ${p.slug} ──────────────────────────────`);
-          console.log('');
-          printSnippets(projBase, query);
+          printFormats(format, projBase, query, sections, theme, stats ? {
+            name: stats.projectName,
+            sessions: stats.sessionCount,
+            loc: stats.totalLoc,
+            duration: stats.totalDuration,
+            skills: stats.skills,
+          } : null);
         }
-      } else {
-        console.log('  No published projects yet. Publish from the dashboard first.');
-        console.log('');
       }
     }
+
+    db.close();
   });
 
-function printSnippets(base: string, query: string): void {
-  console.log('  GitHub README (markdown):');
-  console.log(`    [![heyi.am](${base}/embed.svg)](${base})`);
-  console.log('');
-  console.log('  HTML iframe:');
-  console.log(`    <iframe src="${base}/embed${query}" width="480" height="200" frameborder="0"></iframe>`);
-  console.log('');
-  console.log('  SVG image:');
-  console.log(`    <img src="${base}/embed.svg" alt="heyi.am stats" />`);
-  console.log('');
+interface EmbedStats {
+  name: string;
+  sessions: number;
+  loc: number;
+  duration: number;
+  skills: string[];
+  projectCount?: number;
 }
 
-function printProjectSnippets(slug: string, base: string, query: string): void {
-  console.log('');
-  console.log(`  ── ${slug} embed snippets ──────────────────────`);
-  console.log('');
-  printSnippets(base, query);
+function printFormats(
+  format: string, base: string | null, query: string,
+  _sections: string, _theme: string, stats: EmbedStats | null,
+): void {
+  const showAll = format === 'all';
+
+  if (base && (showAll || format === 'badge')) {
+    console.log('');
+    console.log('  Badge (GitHub README, markdown):');
+    console.log(`    [![heyi.am](${base}/embed.svg)](${base})`);
+    console.log('');
+  }
+
+  if (base && (showAll || format === 'widget')) {
+    const dataAttrs = [`data-username="${base.split('/').slice(-2, -1)[0] || ''}"`,];
+    // If it's a project URL (3+ path segments after domain), add data-project
+    const pathParts = new URL(base).pathname.split('/').filter(Boolean);
+    if (pathParts.length >= 2) dataAttrs.push(`data-project="${pathParts[1]}"`);
+    if (_sections !== 'stats') dataAttrs.push(`data-sections="${_sections}"`);
+    if (_theme !== 'dark') dataAttrs.push(`data-theme="${_theme}"`);
+
+    console.log('  Widget (personal site, blog):');
+    console.log(`    <div class="heyiam-embed" ${dataAttrs.join(' ')}></div>`);
+    console.log(`    <script src="${new URL(base).origin}/embed.js"></script>`);
+    console.log('');
+  }
+
+  if (base && (showAll || format === 'iframe')) {
+    console.log('  iframe:');
+    console.log(`    <iframe src="${base}/embed${query}" width="480" height="200" frameborder="0"></iframe>`);
+    console.log('');
+  }
+
+  if (showAll || format === 'html') {
+    if (stats) {
+      const durationStr = stats.duration >= 60 ? `${Math.round(stats.duration / 60)}h` : `${stats.duration}m`;
+      const locStr = stats.loc >= 1000 ? `${(stats.loc / 1000).toFixed(1)}k` : String(stats.loc);
+      const skillChips = stats.skills.slice(0, 6).map((s) => `<span style="font-size:10px;padding:2px 8px;border-radius:3px;background:#1f2937;color:#9ca3af">${s}</span>`).join(' ');
+      const projectLine = stats.projectCount ? `<span style="font-size:10px;color:#6b7280">${stats.projectCount} projects</span>` : '';
+
+      console.log('  Static HTML (works anywhere, no JS needed):');
+      console.log(`    <div style="font-family:ui-monospace,monospace;background:#0a0a0f;color:#e5e7eb;padding:16px 20px;border-radius:6px">`);
+      console.log(`      <div style="font-size:15px;font-weight:600;color:#f9fafb;margin-bottom:12px">${stats.name} ${projectLine}</div>`);
+      console.log(`      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px">`);
+      console.log(`        <div><div style="font-size:18px;font-weight:700;color:#f9fafb">${stats.sessions}</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em">Sessions</div></div>`);
+      console.log(`        <div><div style="font-size:18px;font-weight:700;color:#f9fafb">${locStr}</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em">Lines Changed</div></div>`);
+      console.log(`        <div><div style="font-size:18px;font-weight:700;color:#f9fafb">${durationStr}</div><div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em">Active Time</div></div>`);
+      console.log(`      </div>`);
+      if (skillChips) {
+        console.log(`      <div style="display:flex;gap:6px;flex-wrap:wrap">${skillChips}</div>`);
+      }
+      console.log(`    </div>`);
+      console.log('');
+    } else {
+      console.log('  Static HTML: No local stats available for this project.');
+      console.log('');
+    }
+  }
+
+  if (!base && format !== 'html') {
+    console.log('  Not published yet. Only static HTML is available.');
+    console.log('  Publish from the dashboard, then run again for badge/widget/iframe.');
+    console.log('');
+  }
 }
 
 // ── Logout command ──────────────────────────────────────────
