@@ -435,14 +435,12 @@ a.session-card:hover, a.featured-card:hover {
   color: var(--fg-muted);
 }
 .screenshot-body {
-  height: 280px;
-  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent-dark);
-  font-family: var(--font-mono);
-  font-size: 14px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.screenshot-body img {
+  width: 100%;
+  display: block;
 }
 
 /* ── Narrative ── */

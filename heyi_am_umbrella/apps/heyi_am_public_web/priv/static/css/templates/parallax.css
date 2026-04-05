@@ -739,7 +739,8 @@
 .stats-bar__item.fly-right {
   transform: translateX(60px);
 }
-.stats-bar__item.fly-visible {
+.stats-bar__item.fly-visible,
+.stats-bar__item.visible {
   opacity: 1;
   transform: translateX(0);
   transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
@@ -831,7 +832,8 @@
   stroke-dashoffset: 1000;
   transition: stroke-dashoffset 2s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.growth-line--visible {
+.growth-line--visible,
+.growth-line.visible {
   stroke-dashoffset: 0;
 }
 .growth-area {
@@ -839,7 +841,8 @@
   opacity: 0;
   transition: opacity 1.5s ease 0.5s;
 }
-.growth-area--visible {
+.growth-area--visible,
+.growth-area.visible {
   opacity: 1;
 }
 .growth-dot {
@@ -848,7 +851,8 @@
   opacity: 0;
   transition: opacity 0.3s;
 }
-.growth-dot--visible {
+.growth-dot--visible,
+.growth-dot.visible {
   opacity: 1;
 }
 .growth-chart__labels {
@@ -885,7 +889,8 @@
 .phase-item:last-child {
   padding-block-end: 0;
 }
-.phase-item.phase-visible {
+.phase-item.phase-visible,
+.phase-item.visible {
   opacity: 1;
   transform: translateX(0);
 }
@@ -1523,7 +1528,8 @@
   transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
               transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.reveal--visible {
+.reveal--visible,
+.reveal.visible {
   opacity: 1;
   transform: translateY(0);
 }
@@ -1641,6 +1647,103 @@
   .growth-dot { opacity: 1 !important; }
   .source-ring__claude { stroke-dashoffset: 74 !important; }
   .source-ring__cursor { stroke-dashoffset: 123 !important; }
+}
+
+/* ══════════════════════════════════════════════════════
+   MOUNTED STATE — when injected into React via innerHTML,
+   CSS animations don't replay. Force all elements visible.
+   Mirrors the prefers-reduced-motion block but preserves
+   parallax/float transforms and bg-shape decorative opacity.
+   ══════════════════════════════════════════════════════ */
+.parallax--mounted *:not(.bg-shape):not([data-parallax]):not([data-float]):not([data-bg-drift]) {
+  transition-duration: 0.01ms !important;
+  animation-duration: 0.01ms !important;
+  animation-delay: 0ms !important;
+  animation-fill-mode: forwards !important;
+}
+.parallax--mounted .photo-fixed {
+  position: static !important;
+  transform: none !important;
+  opacity: 1 !important;
+  width: 280px;
+  mask-image: radial-gradient(ellipse 60% 70% at 55% 35%, black 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 60% 70% at 55% 35%, black 30%, transparent 75%);
+  animation: none !important;
+}
+.parallax--mounted .hero__name,
+.parallax--mounted .hero__location,
+.parallax--mounted .hero__bio,
+.parallax--mounted .hero__contact {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
+}
+.parallax--mounted .stat-card {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
+}
+.parallax--mounted .project-hero__screenshot,
+.parallax--mounted .project-hero__title,
+.parallax--mounted .project-hero__links {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
+}
+.parallax--mounted .stats-bar__item {
+  opacity: 1 !important;
+  transform: none !important;
+}
+.parallax--mounted .phase-item {
+  opacity: 1 !important;
+  transform: none !important;
+}
+.parallax--mounted .session-card {
+  opacity: 1 !important;
+  transform: none !important;
+}
+.parallax--mounted .session-header__breadcrumb,
+.parallax--mounted .session-header__title,
+.parallax--mounted .session-header__meta {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
+}
+.parallax--mounted .beat-item {
+  opacity: 1 !important;
+  transform: none !important;
+}
+.parallax--mounted .qa-card {
+  opacity: 1 !important;
+  transform: none !important;
+}
+.parallax--mounted .reveal {
+  opacity: 1 !important;
+  transform: none !important;
+}
+.parallax--mounted .growth-line {
+  stroke-dashoffset: 0 !important;
+}
+.parallax--mounted .growth-area {
+  opacity: 1 !important;
+}
+.parallax--mounted .growth-dot {
+  opacity: 1 !important;
+}
+.parallax--mounted .source-ring__claude {
+  stroke-dashoffset: 74 !important;
+}
+.parallax--mounted .source-ring__cursor {
+  stroke-dashoffset: 123 !important;
+}
+/* Preserve parallax scroll transforms and bg-shape decorative animations */
+.parallax--mounted [data-parallax],
+.parallax--mounted [data-float],
+.parallax--mounted [data-bg-drift],
+.parallax--mounted .bg-shape {
+  animation-duration: inherit !important;
+  animation-delay: inherit !important;
+  transition-duration: inherit !important;
 }
 
 /* ══════════════════════════════════════════════════════

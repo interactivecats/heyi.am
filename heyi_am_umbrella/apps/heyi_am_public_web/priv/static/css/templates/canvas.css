@@ -478,10 +478,36 @@
 /* ── Screenshot ── */
 .canvas .screenshot {
   margin-block-end: 100px;
+  border: 1px solid #e4e4e7;
+  border-radius: var(--canvas-radius-lg);
+  overflow: hidden;
+  background: #fafafa;
+}
+.canvas .screenshot__bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.625rem 1rem;
+  background: #fafafa;
+  border-block-end: 1px solid #e4e4e7;
+}
+.canvas .screenshot__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d4d4d8;
+}
+.canvas .screenshot__url {
+  margin-inline-start: auto;
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+  font-size: 0.75rem;
+  color: #a1a1aa;
+}
+.canvas .screenshot__viewport {
+  overflow-y: auto;
 }
 .canvas .screenshot__image {
   width: 100%;
-  border-radius: var(--canvas-radius-lg);
   display: block;
 }
 
@@ -1317,9 +1343,8 @@
   .canvas .screenshot {
     margin-inline: -1.5rem;
     margin-block-end: 60px;
-  }
-  .canvas .screenshot__image {
     border-radius: 0;
+    border-inline: none;
   }
   .canvas .narrative {
     padding-block-end: 60px;
