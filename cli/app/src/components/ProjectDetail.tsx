@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom'
 import {
   fetchProjectDetail,
   fetchProjectRender,
+  fetchAuthStatus,
   deleteProjectScreenshot,
   fetchGitRemote,
   saveProjectEnhanceLocally,
@@ -63,6 +64,9 @@ export function ProjectDetail() {
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null)
   const [screenshotCapturing, setScreenshotCapturing] = useState(false)
   const [metadataDirty, setMetadataDirty] = useState(false)
+  const [authUsername, setAuthUsername] = useState<string | null>(null)
+  const [embedOpen, setEmbedOpen] = useState(false)
+  const [embedCopied, setEmbedCopied] = useState<string | null>(null)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const screenshotInputRef = useRef<HTMLInputElement>(null)
 
@@ -114,6 +118,10 @@ export function ProjectDetail() {
 
     fetchGitRemote(dirName).then(({ url }) => {
       if (url) setRepoUrl((prev) => prev || (url.startsWith('http') ? url : `https://${url}`))
+    }).catch(() => {})
+
+    fetchAuthStatus().then((s) => {
+      if (s.username) setAuthUsername(s.username)
     }).catch(() => {})
   }, [dirName, loadRender])
 
@@ -415,6 +423,49 @@ export function ProjectDetail() {
             <div className="text-[9px] font-mono text-outline mt-2">Saving...</div>
           )}
         </div>
+
+        {/* Embed snippets — shown when project is published and user is logged in */}
+        {project.isUploaded && authUsername && (
+          <div className="mt-6 pt-4 border-t border-ghost">
+            <button
+              onClick={() => setEmbedOpen(!embedOpen)}
+              className="flex items-center justify-between w-full text-left"
+            >
+              <span className="font-mono text-[9px] uppercase tracking-wider text-outline">Embed</span>
+              <span className="text-[10px] text-outline">{embedOpen ? '−' : '+'}</span>
+            </button>
+            {embedOpen && (() => {
+              const slug = project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+              const base = `https://heyi.am/${authUsername}/${slug}`
+              const snippets = [
+                { label: 'GitHub README', code: `[![heyi.am](${base}/embed.svg)](${base})` },
+                { label: 'iframe', code: `<iframe src="${base}/embed?sections=stats,skills" width="480" height="200" frameborder="0"></iframe>` },
+                { label: 'SVG', code: `<img src="${base}/embed.svg" alt="heyi.am stats" />` },
+              ]
+              const copy = (code: string, label: string) => {
+                navigator.clipboard.writeText(code).then(() => {
+                  setEmbedCopied(label)
+                  setTimeout(() => setEmbedCopied(null), 2000)
+                })
+              }
+              return (
+                <div className="mt-2 space-y-2">
+                  {snippets.map((s) => (
+                    <div key={s.label}>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-[10px] text-on-surface-variant">{s.label}</span>
+                        <button onClick={() => copy(s.code, s.label)} className="text-[10px] text-primary hover:underline">
+                          {embedCopied === s.label ? 'Copied' : 'Copy'}
+                        </button>
+                      </div>
+                      <pre className="text-[10px] font-mono bg-surface-lowest border border-ghost rounded-sm px-2 py-1.5 overflow-x-auto text-on-surface-variant whitespace-pre-wrap break-all">{s.code}</pre>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
+          </div>
+        )}
       </aside>
 
       {/* Main content — Liquid-rendered template preview */}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { AppShell, Card, Note, SectionHeader } from './shared'
 import { uploadProject, fetchProjectDetail, startLogin, pollDeviceAuth, type UploadEvent } from '../api'
@@ -182,6 +182,7 @@ export function PublishReview() {
                 Open dashboard
               </a>
             </div>
+            <EmbedSnippets projectUrl={state.projectUrl} />
           </Card>
         )}
 
@@ -277,5 +278,61 @@ export function PublishReview() {
         )}
       </div>
     </AppShell>
+  )
+}
+
+function EmbedSnippets({ projectUrl }: { projectUrl: string }) {
+  const [copied, setCopied] = useState<string | null>(null)
+
+  // Parse URL to build embed URLs
+  // projectUrl is like https://heyiam.com/dashboard/projects/... or https://heyi.am/ben/heyi-am
+  // We need the public URL path: /:username/:project
+  const publicUrl = projectUrl.replace(/\/dashboard\/projects\/.*$/, '')
+  const embedBase = publicUrl.endsWith('/') ? publicUrl.slice(0, -1) : publicUrl
+
+  const snippets = [
+    {
+      label: 'GitHub README',
+      code: `[![heyi.am](${embedBase}/embed.svg)](${embedBase})`,
+    },
+    {
+      label: 'HTML iframe',
+      code: `<iframe src="${embedBase}/embed?sections=stats,skills" width="480" height="200" frameborder="0"></iframe>`,
+    },
+    {
+      label: 'SVG image',
+      code: `<img src="${embedBase}/embed.svg" alt="heyi.am stats" />`,
+    },
+  ]
+
+  const copyToClipboard = (code: string, label: string) => {
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(label)
+      setTimeout(() => setCopied(null), 2000)
+    })
+  }
+
+  return (
+    <div className="mt-4 pt-4 border-t border-ghost">
+      <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-2">Embed widget</div>
+      <div className="space-y-2">
+        {snippets.map((s) => (
+          <div key={s.label}>
+            <div className="flex items-center justify-between mb-0.5">
+              <span className="text-[10px] text-on-surface-variant">{s.label}</span>
+              <button
+                onClick={() => copyToClipboard(s.code, s.label)}
+                className="text-[10px] text-primary hover:underline"
+              >
+                {copied === s.label ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+            <pre className="text-[10px] font-mono bg-surface-lowest border border-ghost rounded-sm px-2 py-1.5 overflow-x-auto text-on-surface-variant whitespace-pre-wrap break-all">
+              {s.code}
+            </pre>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
