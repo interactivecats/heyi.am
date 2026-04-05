@@ -162,7 +162,7 @@ export async function discoverCursorWorkspaces(): Promise<CursorWorkspace[]> {
 
 // --- Conversation listing ---
 
-export interface CursorConversation {
+interface CursorConversation {
   composerId: string;
   name?: string;
   createdAt: number;

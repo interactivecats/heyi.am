@@ -1,7 +1,7 @@
 /** Shared active-duration computation used by all parsers. */
 
 /** Max gap between consecutive entries before it's considered a break (5 min). */
-export const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
+const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
 
 export interface DurationResult {
   duration_ms: number;
