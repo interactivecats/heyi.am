@@ -118,17 +118,21 @@ export function ProjectDetail() {
   }, [dirName, loadRender])
 
   // Inject server HTML into container via ref (not dangerouslySetInnerHTML).
-  // This lets us patch the DOM for sidebar edits without React overwriting it.
+  // Content is trusted — rendered by our Liquid engine with outputEscape: 'escape'.
   useEffect(() => {
     const container = liquidRef.current
     if (!renderHtml || !container) return
     container.innerHTML = renderHtml
 
     // Activate template animations (counters, scroll reveals, bar fills).
-    // These were previously inline <script> tags; now handled by @heyiam/ui mount functions.
-    mountCounterAnimations()
-    mountScrollReveals()
-    mountBarAnimations()
+    // Defer to after paint so the browser has computed CSS layout — otherwise
+    // IntersectionObserver sees elements at position 0,0 and scroll reveals
+    // never trigger. This is why templates appeared broken until refresh.
+    requestAnimationFrame(() => {
+      mountCounterAnimations()
+      mountScrollReveals()
+      mountBarAnimations()
+    })
   }, [renderHtml])
 
   // Intercept session card link clicks → open drawer instead of navigating away.
