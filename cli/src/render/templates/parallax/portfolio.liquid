@@ -154,6 +154,19 @@
               <span>{{ p.totalDurationMinutes | formatDuration }}</span>
               <span>{{ p.totalLoc | formatLoc }} LOC</span>
             </div>
+            {% if p.sourceCounts.size > 0 %}
+            {% assign firstSrc = p.sourceCounts | first %}
+            {% assign firstPct = firstSrc.count | times: 100 | divided_by: p.totalSessions %}
+            <div class="source-bar" aria-label="Source mix: {{ firstSrc.tool }} {{ firstPct }}%">
+              <div class="source-bar__fill" style="width: {{ firstPct }}%"></div>
+            </div>
+            <div class="project-card__source">
+              {% for sc in p.sourceCounts %}
+              {% assign pct = sc.count | times: 100 | divided_by: p.totalSessions %}
+              <span>{{ sc.tool }} {{ pct }}%</span>
+              {% endfor %}
+            </div>
+            {% endif %}
           </a>
           {% endfor %}
         </div>
@@ -209,33 +222,32 @@
         </div>
       </section>
 
-      {%- comment -%} Activity Chart {%- endcomment -%}
-      {% if activityByMonth.size > 0 %}
-      <section class="section section--opaque" aria-label="Monthly activity">
-        <h2 class="section__title reveal">Activity</h2>
-        <div class="reveal" data-float="0.05">
-          {% assign maxSessions = 0 %}
-          {% for m in activityByMonth %}
-            {% if m.sessions > maxSessions %}{% assign maxSessions = m.sessions %}{% endif %}
-          {% endfor %}
-          <div style="display: flex; align-items: flex-end; gap: 1rem; height: 160px; padding: 1rem 0;">
-            {% for m in activityByMonth %}
-            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; height: 100%;">
-              {% if maxSessions > 0 %}
-              {% assign barPct = m.sessions | times: 100 | divided_by: maxSessions %}
-              {% else %}
-              {% assign barPct = 0 %}
-              {% endif %}
-              <div style="flex: 1; width: 100%; display: flex; align-items: flex-end;">
-                <div style="width: 100%; height: {{ barPct }}%; background: var(--accent, #6366f1); border-radius: 4px 4px 0 0; opacity: 0.75; min-height: 2px;"></div>
-              </div>
-              <span style="font-size: 0.75rem; color: var(--text-secondary, #64748b); font-family: var(--font-mono, monospace);">{{ m.month }}</span>
-            </div>
-            {% endfor %}
+      <!-- Recent Activity Timeline -->
+      {% assign allSessionEntries = "" %}
+      {% for p in projects %}
+        {% for s in p.sessions %}
+          {% if allSessionEntries != "" %}{% assign allSessionEntries = allSessionEntries | append: "|||" %}{% endif %}
+          {% assign entry = s.date | append: ":::" | append: p.title | append: ":::" | append: s.durationMinutes | append: ":::" | append: s.loc %}
+          {% assign allSessionEntries = allSessionEntries | append: entry %}
+        {% endfor %}
+      {% endfor %}
+      {% assign sessionList = allSessionEntries | split: "|||" | sort | reverse %}
+      {% if sessionList.size > 0 %}
+      <section class="section section--opaque" aria-label="Recent activity">
+        <h2 class="section__title reveal">Recent Activity</h2>
+        <div class="timeline reveal">
+          {% for entry in sessionList limit: 8 %}
+          {% assign parts = entry | split: ":::" %}
+          {% assign entryDate = parts[0] %}
+          {% assign entryProject = parts[1] %}
+          {% assign entryDuration = parts[2] %}
+          {% assign entryLoc = parts[3] %}
+          <div class="timeline__item" data-float="0.0{{ forloop.index | modulo: 4 | plus: 5 }}">
+            <div class="timeline__dot"></div>
+            <div class="timeline__date">{{ entryDate | formatDate }}</div>
+            <div class="timeline__meta">{{ entryProject }} &middot; {{ entryDuration | times: 1 | formatDuration }} &middot; {{ entryLoc }} LOC</div>
           </div>
-          <p style="font-size: 0.75rem; color: var(--text-secondary, #64748b); text-align: center; margin-top: 0.5rem;">
-            {% for m in activityByMonth %}{{ m.month }}: {{ m.sessions }} session{% if m.sessions != 1 %}s{% endif %}{% unless forloop.last %} · {% endunless %}{% endfor %}
-          </p>
+          {% endfor %}
         </div>
       </section>
       {% endif %}

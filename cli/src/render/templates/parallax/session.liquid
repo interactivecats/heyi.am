@@ -147,12 +147,21 @@
         <section class="agent-section" aria-label="Agent summary">
           <h2 class="section-label reveal">Agent Summary</h2>
           {% if session.agentSummary.agents.size > 0 %}
+          <p style="font-family: var(--font-mono); font-size: 0.8125rem; color: var(--px-text-secondary); margin-block-end: 1.5rem;">{{ session.agentSummary.agents.size }} sub-sessions across {{ session.agentSummary.agents.size }} roles</p>
           <div class="agent-bars" data-agent-bars>
             {% for agent in session.agentSummary.agents %}
             <div class="agent-bar reveal">
               <span class="agent-bar__role">{{ agent.role }}</span>
               <div class="agent-bar__track">
-                <div class="agent-bar__fill" data-bar-width="{{ agent.percentage | default: 50 }}" style="width: 0%; background: var(--px-accent-blue);"></div>
+                {% assign role = agent.role | downcase %}
+                {% if role contains "frontend" or role contains "ux" %}{% assign barColor = "var(--clr-frontend)" %}
+                {% elsif role contains "backend" %}{% assign barColor = "var(--clr-backend)" %}
+                {% elsif role contains "qa" or role contains "test" %}{% assign barColor = "var(--clr-qa)" %}
+                {% elsif role contains "security" %}{% assign barColor = "var(--clr-security)" %}
+                {% elsif role contains "review" %}{% assign barColor = "var(--clr-reviewer)" %}
+                {% else %}{% assign barColor = "var(--px-accent-blue)" %}
+                {% endif %}
+                <div class="agent-bar__fill" data-bar-width="{{ agent.percentage | default: 50 }}" style="width: 0%; background: {{ barColor }};"></div>
               </div>
               {% if agent.duration_minutes %}
               <span class="agent-bar__duration">{{ agent.duration_minutes | formatDuration }}</span>
