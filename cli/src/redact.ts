@@ -1,17 +1,14 @@
 // Redact — scans text for secrets, PII, and sensitive file paths before publish.
 //
-// Two layers:
-//   1. secretlint (community-maintained rules for Anthropic, GitHub, Slack, npm, etc.)
-//   2. Custom regex (fills gaps: OpenAI, Stripe, Google, JWT, Bearer, PII, paths)
+// Custom regex patterns for common secret formats (API keys, tokens, PII, paths).
 //
 // Two severity levels:
 //   HIGH   — auto-redacted (known API key prefixes, private keys, connection strings)
 //   MEDIUM — flagged for user review (email addresses)
 //
 // Usage:
-//   const findings = await scanText(text);
-//   const cleaned  = await redactText(text);
-//   const results  = await scanSession(session);
+//   const findings = scanTextSync(text);
+//   const cleaned  = redactText(text);
 
 import { homedir } from "node:os";
 
@@ -28,69 +25,7 @@ export interface Finding {
   index: number;       // character offset in the scanned string
 }
 
-export interface SessionScanResult {
-  findings: Finding[];
-  fieldsWithFindings: string[];
-}
-
-// ── Secretlint integration ─────────────────────────────────────
-
-let _engine: {
-  executeOnContent: (opts: { content: string; filePath: string }) => Promise<{ ok: boolean; output: string }>;
-} | null = null;
-let _engineInitFailed = false;
-
-async function getSecretlintEngine() {
-  if (_engine) return _engine;
-  if (_engineInitFailed) return null;
-
-  try {
-    const { createEngine } = await import("@secretlint/node");
-    _engine = await createEngine({
-      color: false,
-      formatter: "json",
-      maskSecrets: false,
-      configFileJSON: {
-        rules: [{
-          id: "@secretlint/secretlint-rule-preset-recommend",
-        }],
-      },
-    });
-    return _engine;
-  } catch {
-    _engineInitFailed = true;
-    return null;
-  }
-}
-
-async function secretlintScan(text: string): Promise<Finding[]> {
-  const engine = await getSecretlintEngine();
-  if (!engine) return [];
-
-  try {
-    const { ok, output } = await engine.executeOnContent({ content: text, filePath: "/scan.txt" });
-    if (ok) return []; // no findings
-
-    const results = JSON.parse(output) as Array<{ messages: Array<{ ruleId: string; message: string; loc: { start: { offset: number } } }> }>;
-    const findings: Finding[] = [];
-    for (const file of results) {
-      for (const msg of file.messages ?? []) {
-        findings.push({
-          pattern: msg.ruleId.replace("@secretlint/secretlint-rule-", ""),
-          severity: "high",
-          category: "secret",
-          match: msg.message.length > 60 ? msg.message.slice(0, 50) + "..." : msg.message,
-          index: msg.loc?.start?.offset ?? 0,
-        });
-      }
-    }
-    return findings;
-  } catch {
-    return [];
-  }
-}
-
-// ── Custom regex patterns (fills secretlint gaps) ──────────────
+// ── Custom regex patterns ─────────────────────────────────────
 
 interface PatternDef {
   name: string;
@@ -100,7 +35,6 @@ interface PatternDef {
 }
 
 // All regex patterns — used for both scanning AND redaction (find-and-replace).
-// secretlint adds additional detection on top; deduplication prevents double-counting.
 const CUSTOM_SECRET_PATTERNS: PatternDef[] = [
   // ─── AWS ───────────────────────────────────────────────
   {
@@ -266,17 +200,7 @@ function regexScan(text: string): Finding[] {
   return findings;
 }
 
-/** Scan text for secrets and PII using secretlint + custom regex. */
-export async function scanText(text: string): Promise<Finding[]> {
-  const [slFindings, regexFindings] = await Promise.all([
-    secretlintScan(text),
-    Promise.resolve(regexScan(text)),
-  ]);
-
-  return deduplicateFindings([...slFindings, ...regexFindings]);
-}
-
-/** Synchronous scan using only custom regex patterns (no secretlint). */
+/** Scan text for secrets and PII using custom regex patterns. */
 export function scanTextSync(text: string): Finding[] {
   return regexScan(text);
 }
@@ -327,42 +251,6 @@ export function stripHomePathsInText(text: string, cwd?: string): string {
   const homePattern = escapeRegex(HOME).replace(/\\\//g, "[\\\\/]");
   const homeRe = new RegExp(homePattern + "[/\\\\]?", "g");
   return text.replace(homeRe, "~/");
-}
-
-// ── Session-level operations ───────────────────────────────────
-
-/** Scan all string fields in a session object for secrets/PII. */
-export async function scanSession(session: Record<string, unknown>): Promise<SessionScanResult> {
-  // Collect all string values with their paths
-  const strings: Array<{ value: string; path: string }> = [];
-
-  function walk(value: unknown, path: string): void {
-    if (typeof value === "string" && value.length > 0) {
-      strings.push({ value, path });
-    } else if (Array.isArray(value)) {
-      for (let i = 0; i < value.length; i++) walk(value[i], `${path}[${i}]`);
-    } else if (value && typeof value === "object") {
-      for (const [k, v] of Object.entries(value)) walk(v, path ? `${path}.${k}` : k);
-    }
-  }
-
-  walk(session, "");
-
-  // Batch all strings into one scan for secretlint efficiency
-  const allText = strings.map((s) => s.value).join("\n---FIELD_BOUNDARY---\n");
-  const allFindings = await scanText(allText);
-
-  // Map findings back to field paths
-  const fieldsWithFindings: string[] = [];
-  let offset = 0;
-  for (const { value, path } of strings) {
-    const endOffset = offset + value.length;
-    const fieldFindings = allFindings.filter((f) => f.index >= offset && f.index < endOffset);
-    if (fieldFindings.length > 0) fieldsWithFindings.push(path);
-    offset = endOffset + "\n---FIELD_BOUNDARY---\n".length;
-  }
-
-  return { findings: allFindings, fieldsWithFindings };
 }
 
 /** Deep-redact all string fields + strip paths. Returns a new object. */
