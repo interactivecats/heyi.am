@@ -2,6 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/heyiam)](https://www.npmjs.com/package/heyiam)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![heyi.am stats](https://heyi.am/ben/heyi-am/embed.svg)](https://heyi.am/ben/heyi-am)
 
 > **Note:** This project is under active development. Expect breaking changes until v1.0.
 
