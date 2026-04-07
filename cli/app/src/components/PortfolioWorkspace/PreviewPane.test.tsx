@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { render, screen, cleanup, fireEvent, act } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent, act, waitFor } from '@testing-library/react'
 import { PreviewPane } from './PreviewPane'
 import {
   PortfolioStoreProvider,
@@ -9,6 +9,19 @@ import {
 
 vi.mock('../../api', () => ({
   fetchTheme: vi.fn(async () => ({ template: 'editorial' })),
+  saveTheme: vi.fn(async () => undefined),
+  fetchAuthStatus: vi.fn(async () => ({ authenticated: true, username: 'devuser' })),
+}))
+
+// TemplateBrowser is heavy (fetches templates, renders iframes). Stub it
+// out so PreviewPane tests stay focused on the wiring around it.
+vi.mock('../TemplateBrowser', () => ({
+  TemplateBrowser: ({ mode, onClose, onSelectTemplate }: { mode: string; onClose?: () => void; onSelectTemplate?: (n: string) => void }) => (
+    <div data-testid="template-browser-stub" data-mode={mode}>
+      <button data-testid="template-browser-stub-close" onClick={onClose}>close</button>
+      <button data-testid="template-browser-stub-pick" onClick={() => onSelectTemplate?.('blueprint')}>pick blueprint</button>
+    </div>
+  ),
 }))
 
 afterEach(() => {
@@ -79,6 +92,125 @@ describe('PreviewPane', () => {
     expect(getIframe().getAttribute('src')).toBe(
       '/preview/portfolio?view=session&slug=alpha-proj',
     )
+  })
+
+  it('Template pill click opens the TemplateBrowser modal', async () => {
+    render(<PreviewPane />, { wrapper: withProvider() })
+    expect(screen.queryByTestId('template-browser-stub')).toBeNull()
+    fireEvent.click(screen.getByTestId('portfolio-preview-template-pill'))
+    const stub = await screen.findByTestId('template-browser-stub')
+    expect(stub.getAttribute('data-mode')).toBe('modal')
+  })
+
+  it('selecting a template in the modal calls saveTheme, updates the pill, bumps iframe key, and closes the modal', async () => {
+    const api = await import('../../api')
+    render(<PreviewPane />, { wrapper: withProvider() })
+    await act(async () => { await Promise.resolve() })
+    const initialIframe = screen.getByTestId('portfolio-preview-iframe')
+
+    fireEvent.click(screen.getByTestId('portfolio-preview-template-pill'))
+    fireEvent.click(await screen.findByTestId('template-browser-stub-pick'))
+
+    await waitFor(() => {
+      expect(api.saveTheme).toHaveBeenCalledWith('blueprint')
+    })
+    // Modal closed
+    expect(screen.queryByTestId('template-browser-stub')).toBeNull()
+    // Pill updated
+    expect(screen.getByTestId('portfolio-preview-template-pill').textContent).toBe('blueprint')
+    // Iframe element identity changed (key bump)
+    expect(screen.getByTestId('portfolio-preview-iframe')).not.toBe(initialIframe)
+  })
+
+  it('"Open in browser" is disabled when never published', () => {
+    render(<PreviewPane />, { wrapper: withProvider() })
+    const btn = screen.getByTestId('portfolio-preview-open-in-browser') as HTMLButtonElement
+    expect(btn.disabled).toBe(true)
+  })
+
+  it('"Open in browser" opens heyi.am/:username when heyi.am target is published', async () => {
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
+    try {
+      render(<PreviewPane />, {
+        wrapper: withProvider({
+          activeTarget: 'heyi.am',
+          publishState: {
+            targets: {
+              'heyi.am': {
+                lastPublishedAt: '2026-04-01T00:00:00.000Z',
+                lastPublishedProfileHash: 'abc',
+                lastPublishedProfile: {},
+                config: {},
+              },
+            },
+          },
+        }),
+      })
+      // Wait for fetchAuthStatus to resolve and set the username.
+      await act(async () => { await Promise.resolve(); await Promise.resolve() })
+      const btn = screen.getByTestId('portfolio-preview-open-in-browser') as HTMLButtonElement
+      expect(btn.disabled).toBe(false)
+      fireEvent.click(btn)
+      expect(openSpy).toHaveBeenCalledWith(
+        'https://heyi.am/devuser',
+        '_blank',
+        'noopener,noreferrer',
+      )
+    } finally {
+      openSpy.mockRestore()
+    }
+  })
+
+  it('"Open in browser" prefers the published target URL when present', async () => {
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
+    try {
+      render(<PreviewPane />, {
+        wrapper: withProvider({
+          activeTarget: 'heyi.am',
+          publishState: {
+            targets: {
+              'heyi.am': {
+                lastPublishedAt: '2026-04-01T00:00:00.000Z',
+                lastPublishedProfileHash: 'abc',
+                lastPublishedProfile: {},
+                config: {},
+                url: 'https://heyi.am/custom-url',
+              },
+            },
+          },
+        }),
+      })
+      await act(async () => { await Promise.resolve(); await Promise.resolve() })
+      fireEvent.click(screen.getByTestId('portfolio-preview-open-in-browser'))
+      expect(openSpy).toHaveBeenCalledWith(
+        'https://heyi.am/custom-url',
+        '_blank',
+        'noopener,noreferrer',
+      )
+    } finally {
+      openSpy.mockRestore()
+    }
+  })
+
+  it('"Open in browser" is disabled for the export target even when published', async () => {
+    render(<PreviewPane />, {
+      wrapper: withProvider({
+        activeTarget: 'export',
+        publishState: {
+          targets: {
+            export: {
+              lastPublishedAt: '2026-04-01T00:00:00.000Z',
+              lastPublishedProfileHash: 'abc',
+              lastPublishedProfile: {},
+              config: {},
+            },
+          },
+        },
+      }),
+    })
+    await act(async () => { await Promise.resolve() })
+    const btn = screen.getByTestId('portfolio-preview-open-in-browser') as HTMLButtonElement
+    expect(btn.disabled).toBe(true)
   })
 
   it('debounces profile updates: rapid changes result in one iframe reload', () => {

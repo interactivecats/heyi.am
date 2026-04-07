@@ -11,9 +11,10 @@
 // document loads. This works because preview is same-origin; if a future move
 // to a different origin breaks this, fall back to a postMessage scroll bridge.
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePortfolioStore } from '../../hooks/usePortfolioStore'
-import { fetchTheme } from '../../api'
+import { fetchAuthStatus, fetchTheme, saveTheme } from '../../api'
+import { TemplateBrowser } from '../TemplateBrowser'
 
 type PreviewTarget = 'landing' | 'project' | 'session'
 
@@ -40,6 +41,8 @@ export function PreviewPane() {
   const [target, setTarget] = useState<PreviewTarget>('landing')
   const [reloadKey, setReloadKey] = useState(0)
   const [templateName, setTemplateName] = useState<string>('editorial')
+  const [username, setUsername] = useState<string | null>(null)
+  const [templateBrowserOpen, setTemplateBrowserOpen] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const savedScrollRef = useRef<number>(0)
 
@@ -85,6 +88,23 @@ export function PreviewPane() {
     }
   }, [])
 
+  // Fetch the authenticated username so the "Open in browser" button can
+  // resolve heyi.am/:username. Failure is non-fatal — the button just stays
+  // disabled until the user is authenticated.
+  useEffect(() => {
+    let cancelled = false
+    fetchAuthStatus()
+      .then((s) => {
+        if (!cancelled && s.authenticated && s.username) setUsername(s.username)
+      })
+      .catch(() => {
+        /* keep null */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   // Debounced reload on profile change. Captures scroll position before the
   // remount, restores it after the new iframe document fires `load`.
   useEffect(() => {
@@ -114,17 +134,60 @@ export function PreviewPane() {
     }
   }
 
+  // Resolve the "Open in browser" URL based on the active target. Returns
+  // null when there's nothing to open (never published, missing config, or
+  // export target which writes to disk and isn't navigable).
+  const openInBrowserUrl = useMemo<string | null>(() => {
+    if (state.activeTarget === 'heyi.am') {
+      if (!username) return null
+      const targetState = state.publishState?.targets['heyi.am']
+      // Only consider the portfolio "live" once the user has actually
+      // published once — otherwise the URL would 404.
+      if (!targetState?.lastPublishedAt) return null
+      // Prefer the URL the publish endpoint reported back; fall back to the
+      // canonical heyi.am path computed from the username.
+      return targetState.url || `https://heyi.am/${encodeURIComponent(username)}`
+    }
+    if (state.activeTarget === 'github') {
+      const githubTarget = state.publishState?.targets.github
+      return githubTarget?.url ?? null
+    }
+    // 'export' target produces a folder on disk — not navigable.
+    return null
+  }, [state.activeTarget, state.publishState, username])
+
   function handleOpenInBrowser() {
-    // Phase 6 wires this up — the resolved URL depends on activeTarget.
-    // eslint-disable-next-line no-console
-    console.log('open in browser')
+    if (!openInBrowserUrl) return
+    window.open(openInBrowserUrl, '_blank', 'noopener,noreferrer')
   }
 
   function handleOpenTemplateBrowser() {
-    // Phase 6 wires this up.
-    // eslint-disable-next-line no-console
-    console.log('open template browser')
+    setTemplateBrowserOpen(true)
   }
+
+  function handleCloseTemplateBrowser() {
+    setTemplateBrowserOpen(false)
+  }
+
+  // When the user picks a template inside the modal, persist it via
+  // saveTheme, refresh our local copy of the template name, bump the
+  // iframe key so the preview re-renders against the new template, and
+  // close the modal. Errors are swallowed at the UI layer (saveTheme
+  // throws would otherwise crash the modal); a future polish pass can
+  // surface these via the StatusBar's lastPublishError channel.
+  const handleSelectTemplate = useCallback(async (newTemplate: string) => {
+    setTemplateBrowserOpen(false)
+    const previous = templateName
+    setTemplateName(newTemplate)
+    try {
+      await saveTheme(newTemplate)
+      // Force the iframe to re-render with the new template.
+      setReloadKey((k) => k + 1)
+    } catch {
+      // Roll back the optimistic UI change so the pill stays truthful.
+      setTemplateName(previous)
+    }
+  }, [templateName])
 
   return (
     <div className="flex flex-1 flex-col bg-surface-mid" data-testid="portfolio-preview">
@@ -170,8 +233,11 @@ export function PreviewPane() {
         <button
           type="button"
           onClick={handleOpenInBrowser}
-          className="text-xs text-on-surface-variant hover:text-on-surface px-2 py-1"
+          disabled={openInBrowserUrl === null}
+          aria-disabled={openInBrowserUrl === null}
+          className="text-xs text-on-surface-variant hover:text-on-surface px-2 py-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-on-surface-variant"
           data-testid="portfolio-preview-open-in-browser"
+          title={openInBrowserUrl === null ? 'Publish first to open in browser' : openInBrowserUrl}
         >
           Open in browser ↗
         </button>
@@ -187,6 +253,14 @@ export function PreviewPane() {
         className="flex-1 w-full border-0 bg-surface-lowest"
         data-testid="portfolio-preview-iframe"
       />
+
+      {templateBrowserOpen && (
+        <TemplateBrowser
+          mode="modal"
+          onClose={handleCloseTemplateBrowser}
+          onSelectTemplate={handleSelectTemplate}
+        />
+      )}
     </div>
   )
 }
