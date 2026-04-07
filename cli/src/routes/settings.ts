@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, getSettings, setDefaultTemplate, getPortfolioProfile, savePortfolioProfile, type PortfolioProfile } from '../settings.js';
+import { invalidatePortfolioPreviewCache } from './preview.js';
 import { hasApiKey } from '../llm/index.js';
 import { isValidTemplate, DEFAULT_TEMPLATE, BUILT_IN_TEMPLATES } from '../render/templates.js';
 import type { RouteContext } from './context.js';
@@ -58,6 +59,7 @@ export function createSettingsRouter(_ctx: RouteContext): Router {
       return;
     }
     setDefaultTemplate(template);
+    invalidatePortfolioPreviewCache();
     console.log(`[settings] Portfolio theme set to: ${template}`);
     res.json({ ok: true, template });
   });
@@ -129,6 +131,7 @@ export function createSettingsRouter(_ctx: RouteContext): Router {
     }
 
     savePortfolioProfile(cleaned);
+    invalidatePortfolioPreviewCache();
     console.log('[settings] Portfolio profile saved');
     res.json({ ok: true });
   });

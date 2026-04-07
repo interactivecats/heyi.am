@@ -11,6 +11,7 @@ import {
 } from '../settings.js';
 import { requireProject, type RouteContext } from './context.js';
 import { startSSE } from './sse.js';
+import { invalidatePortfolioPreviewCache } from './preview.js';
 
 export function createEnhanceRouter(ctx: RouteContext): Router {
   const router = Router();
@@ -282,6 +283,8 @@ export function createEnhanceRouter(ctx: RouteContext): Router {
       if (!proj) return;
 
       saveProjectEnhanceResult(proj.dirName, selectedSessionIds, result, undefined, { title, repoUrl, projectUrl, screenshotBase64 });
+      // Project title/narrative/skills appear in portfolio listing — bust cache.
+      invalidatePortfolioPreviewCache();
       res.json({ saved: true, enhancedAt: new Date().toISOString() });
     } catch (err) {
       res.status(500).json({ error: { code: 'SAVE_FAILED', message: (err as Error).message } });

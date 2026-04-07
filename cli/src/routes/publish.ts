@@ -25,6 +25,7 @@ import { buildSessionRenderData, buildSessionCard, buildProjectRenderData } from
 import type { SessionCard } from '../render/types.js';
 import type { ProjectEnhanceResult } from '../llm/project-enhance.js';
 import { buildAgentSummary, type RouteContext } from './context.js';
+import { invalidatePortfolioPreviewCache } from './preview.js';
 import { startSSE } from './sse.js';
 import { displayNameFromDir } from '../sync.js';
 import { toSlug } from '../format-utils.js';
@@ -101,6 +102,8 @@ export function createPublishRouter(ctx: RouteContext): Router {
 
       const imageData = readFileSync(screenshotPath);
       const base64 = imageData.toString('base64');
+      // Portfolio listing shows project screenshots — bust the cache.
+      invalidatePortfolioPreviewCache();
       res.json({ ok: true, preview: `data:image/png;base64,${base64}` });
     } catch (err) {
       res.status(500).json({ error: (err as Error).message });
@@ -761,6 +764,10 @@ export function createPublishRouter(ctx: RouteContext): Router {
         lastError: undefined,
         lastErrorAt: undefined,
       });
+
+      // Published version of the portfolio just changed — drop any cached
+      // /preview/portfolio HTML so the next preview reflects reality.
+      invalidatePortfolioPreviewCache();
 
       res.json({
         ok: true,
