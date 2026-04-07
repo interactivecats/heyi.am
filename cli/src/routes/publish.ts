@@ -1,5 +1,7 @@
 import { Router, type Request, type Response } from 'express';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, rmSync, statSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { getAuthToken } from '../auth.js';
 import { API_URL, PUBLIC_URL, warnIfNonDefaultApiUrl } from '../config.js';
@@ -14,9 +16,8 @@ import {
   getPortfolioPublishState,
   DEFAULT_PORTFOLIO_TARGET,
 } from '../settings.js';
-import { generatePortfolioHtmlFragment, generatePortfolioSite, safePortfolioExportPath, type PortfolioSiteProjectInput } from '../export.js';
+import { generatePortfolioHtmlFragment, generatePortfolioSite, createZipBuffer, type PortfolioSiteProjectInput, type HtmlFile } from '../export.js';
 import { buildPortfolioRenderData } from './portfolio-render-data.js';
-import { openInFileManager } from './open-in-file-manager.js';
 import { buildProjectDetail } from './context.js';
 import type { ProjectEnhanceCache } from '../settings.js';
 import { captureScreenshot } from '../screenshot.js';
@@ -718,15 +719,13 @@ export function createPublishRouter(ctx: RouteContext): Router {
     }
   });
 
-  // Export the portfolio as a static site directory.
+  // Export the portfolio as a downloadable .zip file.
   //
-  // Body: { targetPath: string } — absolute folder path chosen by the user
-  // in the frontend (via showDirectoryPicker or text input).
-  //
-  // This is a CLI-local route: the path comes from the local user, not a
-  // hostile attacker, so `safePortfolioExportPath` is used for typo
-  // protection (reject ../, NUL bytes, system dirs), not as a sandbox.
-  router.post('/api/portfolio/export', async (req: Request, res: Response) => {
+  // No path arg from the client. We render the portfolio site into a temp
+  // directory, zip it via createZipBuffer, stream the zip back as an
+  // attachment, then clean up the temp dir. Mirrors the existing
+  // single-project HTML download pattern (cli/src/routes/export.ts).
+  router.post('/api/portfolio/export', async (_req: Request, res: Response) => {
     const auth = getAuthToken();
     if (!auth) {
       res.status(401).json({
@@ -735,28 +734,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
       return;
     }
 
-    const rawTargetPath = (req.body as { targetPath?: unknown } | undefined)?.targetPath;
-    if (typeof rawTargetPath !== 'string' || rawTargetPath.length === 0) {
-      res.status(400).json({
-        error: {
-          code: 'INVALID_TARGET_PATH',
-          message: 'targetPath is required and must be a non-empty string',
-        },
-      });
-      return;
-    }
-
-    let resolvedPath: string;
-    try {
-      resolvedPath = safePortfolioExportPath(rawTargetPath);
-    } catch (err) {
-      const code = (err as Error & { code?: string }).code || 'INVALID_TARGET_PATH';
-      res.status(400).json({
-        error: { code, message: (err as Error).message },
-      });
-      return;
-    }
-
+    let tmpDir: string | null = null;
     try {
       const templateName = getDefaultTemplate() || 'editorial';
       const { renderData } = await buildPortfolioRenderData(ctx, auth);
@@ -799,28 +777,51 @@ export function createPublishRouter(ctx: RouteContext): Router {
         }
       }
 
+      tmpDir = mkdtempSync(path.join(tmpdir(), 'heyiam-portfolio-'));
       const result = await generatePortfolioSite(
         renderData,
         projectInputs,
-        resolvedPath,
+        tmpDir,
         templateName,
       );
 
-      const openedInFileManager = openInFileManager(resolvedPath);
+      // Read every file generated into memory keyed by its path relative
+      // to the temp dir, then zip. Skip non-files defensively (the result
+      // list is files-only, but stat lets us catch directories that snuck
+      // in via a future code path).
+      const entries: HtmlFile[] = [];
+      for (const filePath of result.files) {
+        try {
+          if (!statSync(filePath).isFile()) continue;
+          entries.push({
+            path: path.relative(tmpDir, filePath),
+            content: readFileSync(filePath, 'utf-8'),
+          });
+        } catch (readErr) {
+          console.warn(`[portfolio-export] skipping unreadable file ${filePath}:`, (readErr as Error).message);
+        }
+      }
 
-      res.json({
-        ok: true,
-        path: resolvedPath,
-        fileCount: result.files.length,
-        totalBytes: result.totalBytes,
-        openedInFileManager,
-      });
+      const zipBuffer = createZipBuffer(entries);
+      const datestamp = new Date().toISOString().slice(0, 10);
+      const safeUsername = auth.username.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filename = `portfolio-${safeUsername}-${datestamp}.zip`;
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', zipBuffer.length);
+      res.send(zipBuffer);
     } catch (err) {
       const errMsg = (err as Error).message;
       console.error('[portfolio-export] Error:', errMsg);
-      res.status(500).json({
-        error: { code: 'PORTFOLIO_EXPORT_FAILED', message: errMsg },
-      });
+      if (!res.headersSent) {
+        res.status(500).json({
+          error: { code: 'PORTFOLIO_EXPORT_FAILED', message: errMsg },
+        });
+      }
+    } finally {
+      if (tmpDir) {
+        try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* best effort */ }
+      }
     }
   });
 

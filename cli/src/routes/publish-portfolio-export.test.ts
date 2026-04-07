@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import express from 'express';
 import request from 'supertest';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -21,31 +21,35 @@ vi.mock('../config.js', () => ({
   warnIfNonDefaultApiUrl: vi.fn(),
 }));
 
-const generatePortfolioSiteMock = vi.fn(async (_data: unknown, _projects: unknown, outputDir: string, _template?: string) => ({
-  files: [`${outputDir}/index.html`, `${outputDir}/projects/a/index.html`],
-  totalBytes: 1234,
-  outputPath: outputDir,
-}));
-
-const safePortfolioExportPathMock = vi.fn((p: string) => {
-  if (p.includes('..')) {
-    const err = new Error('Output path must not contain .. segments') as Error & { code: string };
-    err.code = 'PATH_TRAVERSAL';
-    throw err;
-  }
-  if (!p.startsWith('/')) {
-    const err = new Error('Output path must be absolute') as Error & { code: string };
-    err.code = 'NOT_ABSOLUTE';
-    throw err;
-  }
-  return p;
+// Mock generatePortfolioSite to write a couple of real files into the
+// supplied output directory so the route can read them back, zip them,
+// and stream the zip in the response.
+const generatePortfolioSiteMock = vi.fn(async (_data: unknown, _projects: unknown, outputDir: string, _template?: string) => {
+  mkdirSync(outputDir, { recursive: true });
+  mkdirSync(join(outputDir, 'projects', 'a'), { recursive: true });
+  writeFileSync(join(outputDir, 'index.html'), '<html>landing</html>');
+  writeFileSync(join(outputDir, 'projects', 'a', 'index.html'), '<html>project a</html>');
+  return {
+    files: [
+      join(outputDir, 'index.html'),
+      join(outputDir, 'projects', 'a', 'index.html'),
+    ],
+    totalBytes: 1234,
+    outputPath: outputDir,
+  };
 });
 
-vi.mock('../export.js', () => ({
-  generatePortfolioHtmlFragment: vi.fn(() => '<section/>'),
-  generatePortfolioSite: (...args: unknown[]) => generatePortfolioSiteMock(...(args as Parameters<typeof generatePortfolioSiteMock>)),
-  safePortfolioExportPath: (p: string) => safePortfolioExportPathMock(p),
-}));
+// Re-export every other symbol from the real export module so the route
+// keeps using the actual createZipBuffer / generatePortfolioHtmlFragment.
+vi.mock('../export.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../export.js')>();
+  return {
+    ...actual,
+    generatePortfolioHtmlFragment: vi.fn(() => '<section/>'),
+    generatePortfolioSite: (...args: unknown[]) =>
+      generatePortfolioSiteMock(...(args as Parameters<typeof generatePortfolioSiteMock>)),
+  };
+});
 
 vi.mock('../render/index.js', () => ({
   renderProjectHtml: vi.fn(() => '<div/>'),
@@ -82,7 +86,6 @@ vi.mock('../sync.js', () => ({
   displayNameFromDir: (d: string) => d,
 }));
 
-// buildProjectDetail reads the DB; stub it out wholesale.
 vi.mock('./context.js', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./context.js')>();
   return {
@@ -94,12 +97,6 @@ vi.mock('./context.js', async (importOriginal) => {
     })),
   };
 });
-
-// Mock the file-manager opener so tests don't try to spawn `open`.
-const openInFileManagerMock = vi.fn((_p: string) => true);
-vi.mock('./open-in-file-manager.js', () => ({
-  openInFileManager: (p: string) => openInFileManagerMock(p),
-}));
 
 let configDir: string;
 const originalDataDir = process.env.HEYIAM_DATA_DIR;
@@ -138,8 +135,6 @@ describe('POST /api/portfolio/export', () => {
     process.env.HEYIAM_DATA_DIR = configDir;
     process.env.HEYIAM_CONFIG_DIR = configDir;
     generatePortfolioSiteMock.mockClear();
-    safePortfolioExportPathMock.mockClear();
-    openInFileManagerMock.mockClear();
     vi.mocked(getAuthToken).mockReturnValue({ username: 'testuser', token: 'test-token-abc' } as ReturnType<typeof getAuthToken>);
   });
 
@@ -154,71 +149,47 @@ describe('POST /api/portfolio/export', () => {
     vi.mocked(getAuthToken).mockReturnValueOnce(null);
     const res = await request(makeApp())
       .post('/api/portfolio/export')
-      .send({ targetPath: '/tmp/portfolio-out' });
+      .send({});
     expect(res.status).toBe(401);
     expect(res.body.error.code).toBe('UNAUTHENTICATED');
     expect(generatePortfolioSiteMock).not.toHaveBeenCalled();
   });
 
-  it('returns 400 when targetPath is missing', async () => {
-    const res = await request(makeApp()).post('/api/portfolio/export').send({});
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('INVALID_TARGET_PATH');
-    expect(generatePortfolioSiteMock).not.toHaveBeenCalled();
-  });
-
-  it('returns 400 when targetPath is not a string', async () => {
+  it('happy path: returns a zip attachment', async () => {
     const res = await request(makeApp())
       .post('/api/portfolio/export')
-      .send({ targetPath: 42 });
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('INVALID_TARGET_PATH');
-  });
-
-  it('rejects path traversal with 400', async () => {
-    const res = await request(makeApp())
-      .post('/api/portfolio/export')
-      .send({ targetPath: '../../../etc' });
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('PATH_TRAVERSAL');
-    expect(generatePortfolioSiteMock).not.toHaveBeenCalled();
-  });
-
-  it('happy path: generates site, opens file manager, returns 200', async () => {
-    const res = await request(makeApp())
-      .post('/api/portfolio/export')
-      .send({ targetPath: '/tmp/portfolio-out' });
+      .send({})
+      .buffer(true)
+      .parse((response, callback) => {
+        const chunks: Buffer[] = [];
+        response.on('data', (chunk: Buffer) => chunks.push(chunk));
+        response.on('end', () => callback(null, Buffer.concat(chunks)));
+      });
 
     expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(true);
-    expect(res.body.path).toBe('/tmp/portfolio-out');
-    expect(res.body.fileCount).toBe(2);
-    expect(res.body.openedInFileManager).toBe(true);
-
+    expect(res.headers['content-type']).toBe('application/zip');
+    expect(res.headers['content-disposition']).toMatch(
+      /^attachment; filename="portfolio-testuser-\d{4}-\d{2}-\d{2}\.zip"$/,
+    );
+    expect(Buffer.isBuffer(res.body)).toBe(true);
+    // ZIP file magic: "PK\x03\x04"
+    expect((res.body as Buffer).slice(0, 4).toString('hex')).toBe('504b0304');
     expect(generatePortfolioSiteMock).toHaveBeenCalledTimes(1);
-    const [renderData, projects, outDir, template] = generatePortfolioSiteMock.mock.calls[0];
-    expect(outDir).toBe('/tmp/portfolio-out');
-    expect(template).toBeDefined();
-    expect((renderData as { user: { username: string } }).user.username).toBe('testuser');
-    expect(Array.isArray(projects)).toBe(true);
-
-    expect(openInFileManagerMock).toHaveBeenCalledWith('/tmp/portfolio-out');
   });
 
-  it('reports openedInFileManager:false when the opener returns false', async () => {
-    openInFileManagerMock.mockReturnValueOnce(false);
+  it('does not require a body and ignores any provided fields', async () => {
     const res = await request(makeApp())
       .post('/api/portfolio/export')
-      .send({ targetPath: '/tmp/portfolio-out' });
+      .send({ targetPath: '/anywhere' });
+    // The route ignores targetPath now — should still 200.
     expect(res.status).toBe(200);
-    expect(res.body.openedInFileManager).toBe(false);
   });
 
   it('returns 500 when generatePortfolioSite throws', async () => {
     generatePortfolioSiteMock.mockRejectedValueOnce(new Error('disk full'));
     const res = await request(makeApp())
       .post('/api/portfolio/export')
-      .send({ targetPath: '/tmp/portfolio-out' });
+      .send({});
     expect(res.status).toBe(500);
     expect(res.body.error.code).toBe('PORTFOLIO_EXPORT_FAILED');
     expect(res.body.error.message).toBe('disk full');
