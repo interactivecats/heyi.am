@@ -29,19 +29,41 @@ function HydratePortfolioStore() {
       fetchProjects().catch((): Project[] => []),
     ]).then(([profile, publishState, projects]) => {
       if (cancelled) return
-      // Seed from the persisted curated list when present, otherwise default
-      // every project to included in source order. New projects discovered
-      // since the user last saved get appended at the end as included.
+      // Seed from the persisted curated list when present, otherwise
+      // default to the 3 most recently active projects with the rest held
+      // in the store as included=false so the user can flip them on.
+      //
+      // The default-when-empty branch mirrors the backend helper
+      // applyPortfolioProjectFilter in cli/src/routes/portfolio-render-data.ts
+      // (duplicated because the frontend bundler does not reach into
+      // cli/src/). Keep the two in sync.
+      const DEFAULT_LIMIT = 3
       const persisted = profile.projectsOnPortfolio ?? []
-      const persistedById = new Map(persisted.map((e) => [e.projectId, e]))
-      const matched = persisted
-        .filter((e) => projects.some((p) => p.dirName === e.projectId))
-        .map((e) => ({ projectId: e.projectId, included: e.included, order: e.order }))
-      matched.sort((a, b) => a.order - b.order)
-      const newcomers = projects
-        .filter((p) => !persistedById.has(p.dirName))
-        .map((p) => ({ projectId: p.dirName, included: true, order: 0 }))
-      const entries = [...matched, ...newcomers].map((e, i) => ({ ...e, order: i }))
+      let entries: Array<{ projectId: string; included: boolean; order: number }>
+      if (persisted.length === 0) {
+        const ranked = projects.slice().sort((a, b) => {
+          const ra = a.lastSessionDate || ''
+          const rb = b.lastSessionDate || ''
+          if (ra !== rb) return rb.localeCompare(ra) // descending recency
+          return b.dirName.localeCompare(a.dirName) // stable fallback
+        })
+        const topIds = new Set(ranked.slice(0, DEFAULT_LIMIT).map((p) => p.dirName))
+        entries = ranked.map((p, i) => ({
+          projectId: p.dirName,
+          included: topIds.has(p.dirName),
+          order: i,
+        }))
+      } else {
+        const persistedById = new Map(persisted.map((e) => [e.projectId, e]))
+        const matched = persisted
+          .filter((e) => projects.some((p) => p.dirName === e.projectId))
+          .map((e) => ({ projectId: e.projectId, included: e.included, order: e.order }))
+        matched.sort((a, b) => a.order - b.order)
+        const newcomers = projects
+          .filter((p) => !persistedById.has(p.dirName))
+          .map((p) => ({ projectId: p.dirName, included: true, order: 0 }))
+        entries = [...matched, ...newcomers].map((e, i) => ({ ...e, order: i }))
+      }
       dispatch({ type: 'LOAD', profile, publishState, projects: entries })
     })
     return () => {

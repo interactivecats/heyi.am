@@ -22,6 +22,7 @@ afterEach(() => {
 })
 import { MemoryRouter } from 'react-router-dom'
 import { PortfolioWorkspace } from './PortfolioWorkspace'
+import type { Project } from '../types'
 
 describe('PortfolioWorkspace skeleton', () => {
   it('renders the three workspace regions', () => {
@@ -49,6 +50,24 @@ describe('PortfolioWorkspace skeleton', () => {
     await waitFor(() => {
       expect(screen.getByTestId('editrail-project-row-alpha')).toBeTruthy()
       expect(screen.getByTestId('editrail-project-row-beta')).toBeTruthy()
+    })
+  })
+
+  it('defaults a fresh portfolio to the 3 most recent projects when more than 3 exist', async () => {
+    const api = await import('../api')
+    vi.mocked(api.fetchProjects).mockResolvedValueOnce([
+      { name: 'A', dirName: 'a', uuid: 'u', sessionCount: 0, description: '', totalLoc: 0, totalDuration: 0, totalFiles: 0, skills: [], dateRange: '', lastSessionDate: '2026-01-01' },
+      { name: 'B', dirName: 'b', uuid: 'u', sessionCount: 0, description: '', totalLoc: 0, totalDuration: 0, totalFiles: 0, skills: [], dateRange: '', lastSessionDate: '2026-03-15' },
+      { name: 'C', dirName: 'c', uuid: 'u', sessionCount: 0, description: '', totalLoc: 0, totalDuration: 0, totalFiles: 0, skills: [], dateRange: '', lastSessionDate: '2026-02-10' },
+      { name: 'D', dirName: 'd', uuid: 'u', sessionCount: 0, description: '', totalLoc: 0, totalDuration: 0, totalFiles: 0, skills: [], dateRange: '', lastSessionDate: '2026-04-01' },
+    ] as Project[])
+    render(
+      <MemoryRouter initialEntries={['/portfolio']}>
+        <PortfolioWorkspace />
+      </MemoryRouter>,
+    )
+    await waitFor(() => {
+      expect(screen.getByTestId('editrail-section-toggle-projects').textContent).toContain('3 of 4')
     })
   })
 
