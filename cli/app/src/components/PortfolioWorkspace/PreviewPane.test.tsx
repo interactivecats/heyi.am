@@ -204,8 +204,27 @@ describe('PreviewPane', () => {
     expect(btn.disabled).toBe(true)
   })
 
-  it('iframe does NOT reload when only profile changes (no lastSavedAt bump)', () => {
-    function Harness() {
+  describe('live DOM patching', () => {
+    // Install a stub contentDocument on the iframe element so the patch
+    // effect has something to write into. jsdom does not auto-create a
+    // contentDocument for iframes whose src never resolves.
+    function installStubDoc(fields: Array<'displayName' | 'bio' | 'location'>) {
+      const iframe = getIframe()
+      const doc = document.implementation.createHTMLDocument('preview')
+      for (const f of fields) {
+        const el = doc.createElement('span')
+        el.setAttribute('data-portfolio-field', f)
+        el.textContent = `initial-${f}`
+        doc.body.appendChild(el)
+      }
+      Object.defineProperty(iframe, 'contentDocument', {
+        configurable: true,
+        get: () => doc,
+      })
+      return doc
+    }
+
+    function Harness({ field }: { field: 'displayName' | 'bio' | 'location' }) {
       const { dispatch } = usePortfolioStore()
       return (
         <>
@@ -214,8 +233,8 @@ describe('PreviewPane', () => {
             onClick={() =>
               dispatch({
                 type: 'UPDATE_PROFILE_FIELD',
-                field: 'displayName',
-                value: Math.random().toString(),
+                field,
+                value: `next-${field}`,
               })
             }
           />
@@ -223,35 +242,66 @@ describe('PreviewPane', () => {
         </>
       )
     }
-    render(<Harness />, { wrapper: withProvider() })
-    const before = getIframe()
-    for (let i = 0; i < 5; i++) {
-      fireEvent.click(screen.getByTestId('bump-profile'))
-    }
-    const after = getIframe()
-    // Same element identity: no key bump, no remount.
-    expect(after).toBe(before)
-    expect(screen.getAllByTestId('portfolio-preview-iframe').length).toBe(1)
-  })
 
-  it('iframe reloads exactly once when lastSavedAt changes (PROFILE_SAVED dispatched)', () => {
-    function Harness() {
-      const { dispatch } = usePortfolioStore()
-      return (
-        <>
-          <button
-            data-testid="mark-saved"
-            onClick={() => dispatch({ type: 'PROFILE_SAVED' })}
-          />
-          <PreviewPane />
-        </>
+    it('patches displayName in iframe on profile change', () => {
+      render(<Harness field="displayName" />, { wrapper: withProvider() })
+      const doc = installStubDoc(['displayName'])
+      fireEvent.click(screen.getByTestId('bump-profile'))
+      expect(
+        doc.querySelector('[data-portfolio-field="displayName"]')?.textContent,
+      ).toBe('next-displayName')
+    })
+
+    it('patches bio in iframe on profile change', () => {
+      render(<Harness field="bio" />, { wrapper: withProvider() })
+      const doc = installStubDoc(['bio'])
+      fireEvent.click(screen.getByTestId('bump-profile'))
+      expect(doc.querySelector('[data-portfolio-field="bio"]')?.textContent).toBe(
+        'next-bio',
       )
-    }
-    render(<Harness />, { wrapper: withProvider() })
-    const before = getIframe()
-    fireEvent.click(screen.getByTestId('mark-saved'))
-    const after = getIframe()
-    expect(after).not.toBe(before)
-    expect(screen.getAllByTestId('portfolio-preview-iframe').length).toBe(1)
+    })
+
+    it('patches location in iframe on profile change', () => {
+      render(<Harness field="location" />, { wrapper: withProvider() })
+      const doc = installStubDoc(['location'])
+      fireEvent.click(screen.getByTestId('bump-profile'))
+      expect(
+        doc.querySelector('[data-portfolio-field="location"]')?.textContent,
+      ).toBe('next-location')
+    })
+
+    it('silently no-ops when iframe contentDocument is null', () => {
+      render(<Harness field="displayName" />, { wrapper: withProvider() })
+      const iframe = getIframe()
+      Object.defineProperty(iframe, 'contentDocument', {
+        configurable: true,
+        get: () => null,
+      })
+      // Should not throw.
+      expect(() =>
+        fireEvent.click(screen.getByTestId('bump-profile')),
+      ).not.toThrow()
+    })
+
+    it('silently no-ops when data-portfolio-field element is missing', () => {
+      render(<Harness field="displayName" />, { wrapper: withProvider() })
+      // Stub doc but without the displayName element.
+      installStubDoc(['bio'])
+      expect(() =>
+        fireEvent.click(screen.getByTestId('bump-profile')),
+      ).not.toThrow()
+    })
+
+    it('iframe does NOT reload (key does not change) on profile change', () => {
+      render(<Harness field="displayName" />, { wrapper: withProvider() })
+      installStubDoc(['displayName'])
+      const before = getIframe()
+      for (let i = 0; i < 5; i++) {
+        fireEvent.click(screen.getByTestId('bump-profile'))
+      }
+      const after = getIframe()
+      expect(after).toBe(before)
+      expect(screen.getAllByTestId('portfolio-preview-iframe').length).toBe(1)
+    })
   })
 })

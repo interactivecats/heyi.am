@@ -5,11 +5,17 @@
 // a thin header strip with a Landing | Project | Session segmented control,
 // the current template name, and an "Open in browser" stub button.
 //
-// On profile changes (debounced 300ms) the iframe is force-remounted via a
-// `key` bump. Scroll position is preserved by reading
-// iframe.contentWindow.scrollY before remount and restoring it after the new
-// document loads. This works because preview is same-origin; if a future move
-// to a different origin breaks this, fall back to a postMessage scroll bridge.
+// Profile edits do NOT reload the iframe. Instead, on every state.profile
+// change we reach across the same-origin iframe boundary and patch the text
+// nodes that templates have annotated with data-portfolio-field="<field>".
+// This avoids re-running the portfolio's mount animations (counter ticker,
+// intro fades) on every keystroke. The iframe only fully reloads when the
+// template changes (key bump in handleSelectTemplate).
+//
+// Fields covered in v1: displayName, bio, location. Photo, accent color,
+// contact info, and social links still wait for a full reload (not yet on
+// the live-patch path). Templates that don't carry the data-portfolio-field
+// annotation silently no-op for that field.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePortfolioStore } from '../../hooks/usePortfolioStore'
@@ -44,7 +50,6 @@ export function PreviewPane() {
   const [username, setUsername] = useState<string | null>(null)
   const [templateBrowserOpen, setTemplateBrowserOpen] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
-  const savedScrollRef = useRef<number>(0)
 
   const firstIncludedProjectId = useMemo(() => {
     const sorted = state.projects
@@ -105,39 +110,44 @@ export function PreviewPane() {
     }
   }, [])
 
-  // Reload the iframe ONLY when a profile save has actually succeeded at the
-  // backend. `state.lastSavedAt` is bumped by EditRail after savePortfolio()
-  // resolves; this decouples the iframe remount from keystroke-level store
-  // updates and kills the per-keystroke flash. Scroll position is captured
-  // before the remount and restored after the new document fires `load`.
+  // Live-patch the iframe DOM in place on every profile change. Same-origin
+  // access lets us reach into iframe.contentDocument and update textContent
+  // on elements that templates have annotated with data-portfolio-field.
+  // No reload, no remount, no animation re-run. Silent no-op when the
+  // contentDocument isn't ready yet (iframe still loading) or when the
+  // current template doesn't annotate a given field.
   //
-  // Skip the first run: initial mount (with the baseline lastSavedAt seeded
-  // by LOAD on hydration) should not trigger a reload — the iframe is
-  // already mounting fresh.
-  const firstReloadRunRef = useRef(true)
+  // textContent (NOT innerHTML) is XSS-safe by definition: it does not parse
+  // HTML, so user-supplied strings cannot inject markup or scripts.
   useEffect(() => {
-    if (firstReloadRunRef.current) {
-      firstReloadRunRef.current = false
-      return
+    const doc = iframeRef.current?.contentDocument
+    if (!doc) return
+    const fields: Array<['displayName' | 'bio' | 'location', string | undefined]> = [
+      ['displayName', state.profile.displayName],
+      ['bio', state.profile.bio],
+      ['location', state.profile.location],
+    ]
+    for (const [field, value] of fields) {
+      const el = doc.querySelector(`[data-portfolio-field="${field}"]`)
+      if (el) el.textContent = value ?? ''
     }
-    try {
-      const win = iframeRef.current?.contentWindow
-      // Same-origin access: this throws if cross-origin.
-      savedScrollRef.current = win?.scrollY ?? 0
-    } catch {
-      savedScrollRef.current = 0
-    }
-    setReloadKey((k) => k + 1)
-  }, [state.lastSavedAt])
+  }, [state.profile])
 
+  // Re-apply the live patch after the iframe finishes loading (e.g. on
+  // initial mount or after a template-switch reload), so the freshly
+  // rendered HTML reflects the latest store state instead of whatever
+  // settings.json was on disk.
   function handleIframeLoad() {
-    try {
-      const win = iframeRef.current?.contentWindow
-      if (win && savedScrollRef.current > 0) {
-        win.scrollTo(0, savedScrollRef.current)
-      }
-    } catch {
-      /* cross-origin: nothing we can do */
+    const doc = iframeRef.current?.contentDocument
+    if (!doc) return
+    const fields: Array<['displayName' | 'bio' | 'location', string | undefined]> = [
+      ['displayName', state.profile.displayName],
+      ['bio', state.profile.bio],
+      ['location', state.profile.location],
+    ]
+    for (const [field, value] of fields) {
+      const el = doc.querySelector(`[data-portfolio-field="${field}"]`)
+      if (el) el.textContent = value ?? ''
     }
   }
 
