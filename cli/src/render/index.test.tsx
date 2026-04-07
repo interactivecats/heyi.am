@@ -38,6 +38,8 @@ function makeProjectData(overrides?: Partial<ProjectRenderData>): ProjectRenderD
         durationMinutes: 45,
         turns: 12,
         locChanged: 200,
+        linesAdded: 42,
+        linesDeleted: 8,
         filesChanged: 8,
         skills: ['TypeScript'],
         recordedAt: '2026-03-20T14:00:00Z',
