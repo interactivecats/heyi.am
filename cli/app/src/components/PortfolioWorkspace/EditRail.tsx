@@ -205,10 +205,18 @@ function ProfileTextField({
         ...profileRef.current,
         [field]: nextValue,
       }
-      void savePortfolio(nextProfile).catch((err) => {
-        // eslint-disable-next-line no-console
-        console.error('[EditRail] Failed to persist profile field', field, err)
-      })
+      void savePortfolio(nextProfile)
+        .then(() => {
+          // Only bump PreviewPane's iframe reload key after the backend has
+          // actually accepted the write. On failure we deliberately leave
+          // lastSavedAt untouched — the server HTML is unchanged, so the
+          // iframe should not reload.
+          dispatch({ type: 'PROFILE_SAVED' })
+        })
+        .catch((err) => {
+          // eslint-disable-next-line no-console
+          console.error('[EditRail] Failed to persist profile field', field, err)
+        })
     }, PROFILE_SAVE_DEBOUNCE_MS)
   }
 

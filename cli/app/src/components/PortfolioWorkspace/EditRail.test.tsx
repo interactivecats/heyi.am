@@ -176,6 +176,75 @@ describe('EditRail — text fields live update with debounced save', () => {
     }
   })
 
+  it('dispatches PROFILE_SAVED once savePortfolio resolves (bumps lastSavedAt)', async () => {
+    vi.useFakeTimers()
+    let stateRef: { current: PortfolioStoreState | null } = { current: null }
+    function Probe() {
+      const { state } = usePortfolioStore()
+      stateRef.current = state
+      return null
+    }
+    try {
+      vi.mocked(api.savePortfolio).mockResolvedValue(undefined)
+      render(
+        <PortfolioStoreProvider initialState={{ profile: { bio: 'seed' } }}>
+          <EditRail />
+          <Probe />
+        </PortfolioStoreProvider>,
+      )
+      const before = stateRef.current?.lastSavedAt ?? null
+      const input = screen.getByTestId('editrail-field-displayName') as HTMLInputElement
+      fireEvent.change(input, { target: { value: 'Grace' } })
+      await act(async () => {
+        vi.advanceTimersByTime(300)
+      })
+      // Flush the resolved promise microtasks so the .then dispatch runs.
+      await act(async () => {
+        await Promise.resolve()
+        await Promise.resolve()
+      })
+      expect(api.savePortfolio).toHaveBeenCalledTimes(1)
+      expect(stateRef.current?.lastSavedAt).not.toBeNull()
+      expect(stateRef.current?.lastSavedAt).not.toBe(before)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('does NOT dispatch PROFILE_SAVED when savePortfolio rejects', async () => {
+    vi.useFakeTimers()
+    let stateRef: { current: PortfolioStoreState | null } = { current: null }
+    function Probe() {
+      const { state } = usePortfolioStore()
+      stateRef.current = state
+      return null
+    }
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      vi.mocked(api.savePortfolio).mockRejectedValueOnce(new Error('boom'))
+      render(
+        <PortfolioStoreProvider initialState={{ profile: { bio: 'seed' } }}>
+          <EditRail />
+          <Probe />
+        </PortfolioStoreProvider>,
+      )
+      const before = stateRef.current?.lastSavedAt ?? null
+      const input = screen.getByTestId('editrail-field-displayName') as HTMLInputElement
+      fireEvent.change(input, { target: { value: 'Grace' } })
+      await act(async () => {
+        vi.advanceTimersByTime(300)
+      })
+      await act(async () => {
+        await Promise.resolve()
+        await Promise.resolve()
+      })
+      expect(stateRef.current?.lastSavedAt).toBe(before)
+    } finally {
+      errSpy.mockRestore()
+      vi.useRealTimers()
+    }
+  })
+
   it('typing in bio dispatches to the store immediately', () => {
     let stateRef: { current: PortfolioStoreState | null } = { current: null }
     function Probe() {
