@@ -12,8 +12,8 @@ describe('PortfolioWorkspace skeleton', () => {
         <PortfolioWorkspace />
       </MemoryRouter>,
     )
-    expect(screen.getByTestId('portfolio-statusbar-placeholder')).toBeTruthy()
-    expect(screen.getByTestId('portfolio-preview-placeholder')).toBeTruthy()
+    expect(screen.getByTestId('portfolio-statusbar')).toBeTruthy()
+    expect(screen.getByTestId('portfolio-preview')).toBeTruthy()
     expect(screen.getByTestId('portfolio-editrail-placeholder')).toBeTruthy()
   })
 })

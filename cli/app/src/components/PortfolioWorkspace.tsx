@@ -1,28 +1,9 @@
 import { AppShell } from './shared'
 import { PortfolioStoreProvider } from '../hooks/usePortfolioStore'
+import { StatusBar } from './PortfolioWorkspace/StatusBar'
+import { PreviewPane } from './PortfolioWorkspace/PreviewPane'
 
-// Phase 3.0 skeleton. Real StatusBar/PreviewPane/EditRail land in 3.1–3.3.
-function StatusBarPlaceholder() {
-  return (
-    <div
-      data-testid="portfolio-statusbar-placeholder"
-      className="border-b border-ghost bg-surface-lowest px-4 py-2 text-xs text-on-surface-variant"
-    >
-      StatusBar
-    </div>
-  )
-}
-
-function PreviewPanePlaceholder() {
-  return (
-    <div
-      data-testid="portfolio-preview-placeholder"
-      className="flex-1 bg-surface-mid p-6 text-sm text-on-surface-variant"
-    >
-      PreviewPane
-    </div>
-  )
-}
+// Phase 3.0 skeleton. EditRail lands in 3.3.
 
 function EditRailPlaceholder() {
   return (
@@ -40,9 +21,9 @@ export function PortfolioWorkspace() {
     <PortfolioStoreProvider>
       <AppShell>
         <div className="flex flex-col h-full min-h-[calc(100vh-3rem)]">
-          <StatusBarPlaceholder />
+          <StatusBar />
           <div className="flex flex-1 overflow-hidden">
-            <PreviewPanePlaceholder />
+            <PreviewPane />
             <EditRailPlaceholder />
           </div>
         </div>
