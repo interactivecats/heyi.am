@@ -16,6 +16,9 @@ import {
 } from '../settings.js';
 import { generatePortfolioHtmlFragment, generatePortfolioSite, safePortfolioExportPath, type PortfolioSiteProjectInput } from '../export.js';
 import { buildPortfolioRenderData } from './portfolio-render-data.js';
+import { openInFileManager } from './open-in-file-manager.js';
+import { buildProjectDetail } from './context.js';
+import type { ProjectEnhanceCache } from '../settings.js';
 import { captureScreenshot } from '../screenshot.js';
 import { redactSession, redactText, scanTextSync, formatFindings, stripHomePathsInText } from '../redact.js';
 import { renderProjectHtml, renderSessionHtml } from '../render/index.js';
@@ -711,6 +714,112 @@ export function createPublishRouter(ctx: RouteContext): Router {
       } catch { /* don't mask the original error */ }
       res.status(500).json({
         error: { code: 'PORTFOLIO_UPLOAD_FAILED', message: errMsg },
+      });
+    }
+  });
+
+  // Export the portfolio as a static site directory.
+  //
+  // Body: { targetPath: string } — absolute folder path chosen by the user
+  // in the frontend (via showDirectoryPicker or text input).
+  //
+  // This is a CLI-local route: the path comes from the local user, not a
+  // hostile attacker, so `safePortfolioExportPath` is used for typo
+  // protection (reject ../, NUL bytes, system dirs), not as a sandbox.
+  router.post('/api/portfolio/export', async (req: Request, res: Response) => {
+    const auth = getAuthToken();
+    if (!auth) {
+      res.status(401).json({
+        error: { code: 'UNAUTHENTICATED', message: 'Authentication required' },
+      });
+      return;
+    }
+
+    const rawTargetPath = (req.body as { targetPath?: unknown } | undefined)?.targetPath;
+    if (typeof rawTargetPath !== 'string' || rawTargetPath.length === 0) {
+      res.status(400).json({
+        error: {
+          code: 'INVALID_TARGET_PATH',
+          message: 'targetPath is required and must be a non-empty string',
+        },
+      });
+      return;
+    }
+
+    let resolvedPath: string;
+    try {
+      resolvedPath = safePortfolioExportPath(rawTargetPath);
+    } catch (err) {
+      const code = (err as Error & { code?: string }).code || 'INVALID_TARGET_PATH';
+      res.status(400).json({
+        error: { code, message: (err as Error).message },
+      });
+      return;
+    }
+
+    try {
+      const templateName = getDefaultTemplate() || 'editorial';
+      const { renderData } = await buildPortfolioRenderData(ctx, auth);
+
+      // Build per-project inputs for generatePortfolioSite. Each project
+      // needs its full session list + enhance cache — use the same
+      // buildProjectDetail path the single-project HTML export uses so
+      // there's exactly one "load everything about a project" helper.
+      const rawProjects = await ctx.getProjects();
+      const projectInputs: PortfolioSiteProjectInput[] = [];
+      for (const rawProj of rawProjects) {
+        try {
+          const detail = buildProjectDetail(ctx.db, rawProj);
+          const cache = (detail.enhanceCache as ProjectEnhanceCache | null) ?? {
+            fingerprint: 'export',
+            enhancedAt: new Date().toISOString(),
+            selectedSessionIds: detail.sessions.map((s) => s.id),
+            result: {
+              narrative: '',
+              arc: [],
+              skills: [],
+              timeline: [],
+              questions: [],
+            },
+          };
+          const proj = detail.project as Record<string, unknown>;
+          projectInputs.push({
+            dirName: rawProj.dirName,
+            cache,
+            sessions: detail.sessions,
+            opts: {
+              totalFilesChanged: proj.totalFiles as number | undefined,
+              totalAgentDurationMinutes: proj.totalAgentDuration as number | undefined,
+              totalInputTokens: proj.totalInputTokens as number | undefined,
+              totalOutputTokens: proj.totalOutputTokens as number | undefined,
+            },
+          });
+        } catch (projErr) {
+          console.warn(`[portfolio-export] skipping project ${rawProj.dirName}:`, (projErr as Error).message);
+        }
+      }
+
+      const result = await generatePortfolioSite(
+        renderData,
+        projectInputs,
+        resolvedPath,
+        templateName,
+      );
+
+      const openedInFileManager = openInFileManager(resolvedPath);
+
+      res.json({
+        ok: true,
+        path: resolvedPath,
+        fileCount: result.files.length,
+        totalBytes: result.totalBytes,
+        openedInFileManager,
+      });
+    } catch (err) {
+      const errMsg = (err as Error).message;
+      console.error('[portfolio-export] Error:', errMsg);
+      res.status(500).json({
+        error: { code: 'PORTFOLIO_EXPORT_FAILED', message: errMsg },
       });
     }
   });
