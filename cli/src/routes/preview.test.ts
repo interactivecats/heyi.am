@@ -405,3 +405,32 @@ describe('GET /preview/portfolio', () => {
     expect(usedTemplates).toContain('editorial');
   });
 });
+
+describe('GET /preview/template/:name — page allowlist', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    clearPreviewCache();
+  });
+
+  it('rejects path traversal via ?page=', async () => {
+    const app = makeApp();
+    const res = await request(app).get('/preview/template/editorial?page=../../etc/passwd');
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      error: { code: 'INVALID_PAGE', message: expect.any(String) },
+    });
+  });
+
+  it('accepts page=portfolio', async () => {
+    const app = makeApp();
+    const res = await request(app).get('/preview/template/editorial?page=portfolio');
+    expect(res.status).toBe(200);
+  });
+
+  it('rejects empty page', async () => {
+    const app = makeApp();
+    const res = await request(app).get('/preview/template/editorial?page=');
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('INVALID_PAGE');
+  });
+});

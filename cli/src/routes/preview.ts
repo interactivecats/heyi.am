@@ -247,7 +247,24 @@ export function createPreviewRouter(ctx: RouteContext): Router {
       res.status(404).send('Template not found');
       return;
     }
-    const page = (req.query.page as string) || 'project';
+    // Allowlist page to prevent path traversal via ?page=../../etc/passwd
+    // in the path.resolve() call below.
+    const VALID_PREVIEW_PAGES = ['portfolio', 'project', 'session'] as const;
+    type ValidPreviewPage = (typeof VALID_PREVIEW_PAGES)[number];
+    const rawPage = req.query.page === undefined ? 'project' : req.query.page;
+    if (
+      typeof rawPage !== 'string' ||
+      !VALID_PREVIEW_PAGES.includes(rawPage as ValidPreviewPage)
+    ) {
+      res.status(400).json({
+        error: {
+          code: 'INVALID_PAGE',
+          message: 'page must be one of: portfolio, project, session',
+        },
+      });
+      return;
+    }
+    const page: ValidPreviewPage = rawPage as ValidPreviewPage;
 
     // 1. Try static mockup HTML (instant, from docs/mockups/)
     const mockupPath = path.resolve(__dirname, '..', '..', '..', 'docs', 'mockups', name, `${page}.html`);
