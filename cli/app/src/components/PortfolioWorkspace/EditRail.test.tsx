@@ -12,10 +12,40 @@ vi.mock('../../api', async () => {
     ]),
     fetchTheme: vi.fn().mockResolvedValue({ template: 'editorial' }),
     fetchTemplates: vi.fn().mockResolvedValue([]),
+    saveTheme: vi.fn().mockResolvedValue(undefined),
   }
 })
 
+// Mock TemplateBrowser so EditRail tests don't pull in the full template
+// browser surface (and its own data fetching). We expose the callbacks via
+// data-testid buttons so tests can drive selection/close deterministically.
+vi.mock('../TemplateBrowser', () => ({
+  TemplateBrowser: ({
+    mode,
+    onSelectTemplate,
+    onClose,
+  }: {
+    mode?: string
+    onSelectTemplate?: (n: string) => void
+    onClose?: () => void
+  }) => (
+    <div data-testid="template-browser-mock" data-mode={mode}>
+      <button
+        type="button"
+        data-testid="template-browser-mock-pick"
+        onClick={() => onSelectTemplate?.('paper')}
+      >
+        pick paper
+      </button>
+      <button type="button" data-testid="template-browser-mock-close" onClick={() => onClose?.()}>
+        close
+      </button>
+    </div>
+  ),
+}))
+
 import { EditRail } from './EditRail'
+import * as api from '../../api'
 import {
   PortfolioStoreProvider,
   usePortfolioStore,
@@ -268,5 +298,64 @@ describe('EditRail — template + accent stubs', () => {
     fireEvent.click(screen.getByTestId('editrail-section-toggle-accent'))
     expect(screen.getByTestId('editrail-accent-swatch')).toBeTruthy()
     expect(screen.getByTestId('editrail-accent-change')).toBeTruthy()
+  })
+})
+
+describe('EditRail — Change template wiring', () => {
+  it('clicking Change template opens the TemplateBrowser modal', () => {
+    renderWith()
+    fireEvent.click(screen.getByTestId('editrail-section-toggle-template'))
+    expect(screen.queryByTestId('template-browser-mock')).toBeNull()
+    fireEvent.click(screen.getByTestId('editrail-template-change'))
+    const modal = screen.getByTestId('template-browser-mock')
+    expect(modal).toBeTruthy()
+    expect(modal.getAttribute('data-mode')).toBe('modal')
+  })
+
+  it('selecting a template calls saveTheme, closes the modal, and updates the pill', async () => {
+    const saveSpy = vi.mocked(api.saveTheme)
+    renderWith()
+    fireEvent.click(screen.getByTestId('editrail-section-toggle-template'))
+    // Wait for fetchTheme effect to settle so the pill starts at "editorial".
+    await waitFor(() => {
+      expect(screen.getByTestId('editrail-template-pill').textContent).toBe('editorial')
+    })
+    fireEvent.click(screen.getByTestId('editrail-template-change'))
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('template-browser-mock-pick'))
+    })
+    await waitFor(() => {
+      expect(saveSpy).toHaveBeenCalledWith('paper')
+    })
+    expect(screen.queryByTestId('template-browser-mock')).toBeNull()
+    expect(screen.getByTestId('editrail-template-pill').textContent).toBe('paper')
+  })
+
+  it('closing the modal without selecting leaves the pill unchanged', async () => {
+    renderWith()
+    fireEvent.click(screen.getByTestId('editrail-section-toggle-template'))
+    await waitFor(() => {
+      expect(screen.getByTestId('editrail-template-pill').textContent).toBe('editorial')
+    })
+    fireEvent.click(screen.getByTestId('editrail-template-change'))
+    fireEvent.click(screen.getByTestId('template-browser-mock-close'))
+    expect(screen.queryByTestId('template-browser-mock')).toBeNull()
+    expect(screen.getByTestId('editrail-template-pill').textContent).toBe('editorial')
+  })
+
+  it('rolls back the pill when saveTheme rejects', async () => {
+    vi.mocked(api.saveTheme).mockRejectedValueOnce(new Error('boom'))
+    renderWith()
+    fireEvent.click(screen.getByTestId('editrail-section-toggle-template'))
+    await waitFor(() => {
+      expect(screen.getByTestId('editrail-template-pill').textContent).toBe('editorial')
+    })
+    fireEvent.click(screen.getByTestId('editrail-template-change'))
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('template-browser-mock-pick'))
+    })
+    await waitFor(() => {
+      expect(screen.getByTestId('editrail-template-pill').textContent).toBe('editorial')
+    })
   })
 })

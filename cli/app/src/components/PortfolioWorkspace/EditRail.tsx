@@ -40,10 +40,12 @@ import {
   fetchProjects,
   fetchTheme,
   fetchTemplates,
+  saveTheme,
   type PortfolioProfile,
   type Project,
   type TemplateInfo,
 } from '../../api'
+import { TemplateBrowser } from '../TemplateBrowser'
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -485,6 +487,8 @@ function ProjectsSection() {
 
 function TemplateSection() {
   const [name, setName] = useState<string>('editorial')
+  const [open, setOpen] = useState(false)
+
   useEffect(() => {
     fetchTheme()
       .then((t) => setName(t.template))
@@ -492,6 +496,22 @@ function TemplateSection() {
         // keep default
       })
   }, [])
+
+  // Mirrors PreviewPane.handleSelectTemplate: optimistic update, persist via
+  // saveTheme, roll back on failure. Modal close happens unconditionally so
+  // the user is never trapped in a stuck dialog. Errors are swallowed at the
+  // UI layer for now — a future polish pass can route them through StatusBar.
+  const handleSelectTemplate = async (newTemplate: string) => {
+    setOpen(false)
+    const previous = name
+    setName(newTemplate)
+    try {
+      await saveTheme(newTemplate)
+    } catch {
+      setName(previous)
+    }
+  }
+
   return (
     <Section id="template" title="Template">
       <div className="flex items-center gap-3">
@@ -505,15 +525,18 @@ function TemplateSection() {
           type="button"
           data-testid="editrail-template-change"
           className="text-xs font-mono text-primary hover:underline"
-          onClick={() => {
-            // Phase 6 wires this to the TemplateBrowser modal.
-            // eslint-disable-next-line no-console
-            console.log('[EditRail] Change template — Phase 6 wires this')
-          }}
+          onClick={() => setOpen(true)}
         >
           Change template
         </button>
       </div>
+      {open && (
+        <TemplateBrowser
+          mode="modal"
+          onClose={() => setOpen(false)}
+          onSelectTemplate={handleSelectTemplate}
+        />
+      )}
     </Section>
   )
 }
