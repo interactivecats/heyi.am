@@ -13,6 +13,7 @@ vi.mock('../../api', async () => {
     fetchTheme: vi.fn().mockResolvedValue({ template: 'editorial' }),
     fetchTemplates: vi.fn().mockResolvedValue([]),
     saveTheme: vi.fn().mockResolvedValue(undefined),
+    savePortfolio: vi.fn().mockResolvedValue(undefined),
   }
 })
 
@@ -125,6 +126,24 @@ describe('EditRail — text fields commit on blur', () => {
     // Re-read after re-render
     const after = screen.getByTestId('editrail-field-displayName') as HTMLInputElement
     expect(after.value).toBe('Grace Hopper')
+  })
+
+  it('editing displayName + blurring calls savePortfolio with the updated profile', () => {
+    renderWith({ profile: { bio: 'seed bio' } })
+    const input = screen.getByTestId('editrail-field-displayName') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Grace Hopper' } })
+    fireEvent.blur(input)
+    expect(api.savePortfolio).toHaveBeenCalledTimes(1)
+    const arg = (api.savePortfolio as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(arg.displayName).toBe('Grace Hopper')
+    expect(arg.bio).toBe('seed bio')
+  })
+
+  it('blurring without changing the value does not call savePortfolio', () => {
+    renderWith({ profile: { displayName: 'Ada' } })
+    const input = screen.getByTestId('editrail-field-displayName') as HTMLInputElement
+    fireEvent.blur(input)
+    expect(api.savePortfolio).not.toHaveBeenCalled()
   })
 
   it('editing bio + blurring updates the store', () => {

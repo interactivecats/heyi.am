@@ -39,6 +39,7 @@ import { usePortfolioStore } from '../../hooks/usePortfolioStore'
 import {
   fetchProjects,
   fetchTheme,
+  savePortfolio,
   saveTheme,
   type PortfolioProfile,
   type Project,
@@ -161,10 +162,20 @@ function ProfileTextField({
 
   function commit() {
     if (local !== storeValue) {
+      const nextValue = local === '' ? undefined : local
       dispatch({
         type: 'UPDATE_PROFILE_FIELD',
         field,
-        value: local === '' ? undefined : local,
+        value: nextValue,
+      })
+      // Persist to disk so the preview iframe (which reads from
+      // ~/.config/heyiam/settings.json on each reload) picks up the
+      // change. Fire-and-forget: the store is already updated, and the
+      // debounced iframe reload in PreviewPane will refetch after 300ms.
+      const nextProfile: PortfolioProfile = { ...state.profile, [field]: nextValue }
+      void savePortfolio(nextProfile).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('[EditRail] Failed to persist profile field', field, err)
       })
     }
   }
