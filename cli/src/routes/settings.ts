@@ -83,7 +83,7 @@ export function createSettingsRouter(_ctx: RouteContext): Router {
     const ALLOWED_FIELDS: Array<keyof PortfolioProfile> = [
       'displayName', 'bio', 'photoBase64', 'location', 'email', 'phone',
       'linkedinUrl', 'githubUrl', 'twitterHandle', 'websiteUrl',
-      'resumeBase64', 'resumeFilename',
+      'resumeBase64', 'resumeFilename', 'accent',
     ];
 
     const errors: Array<{ field: string; message: string }> = [];
@@ -118,6 +118,9 @@ export function createSettingsRouter(_ctx: RouteContext): Router {
     }
     if (cleaned.websiteUrl && !cleaned.websiteUrl.startsWith('http')) {
       errors.push({ field: 'websiteUrl', message: 'Website URL must start with http' });
+    }
+    if (cleaned.accent && !/^#[0-9a-fA-F]{6}$/.test(cleaned.accent)) {
+      errors.push({ field: 'accent', message: 'Accent must be a 6-digit hex color (e.g. #084471)' });
     }
 
     // File size limits (base64 ~1.37x raw; cap photo at ~5MB, resume at ~10MB)

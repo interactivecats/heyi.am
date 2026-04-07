@@ -293,11 +293,45 @@ describe('EditRail — template + accent stubs', () => {
     expect(screen.getByTestId('editrail-template-change')).toBeTruthy()
   })
 
-  it('renders accent swatch and Change button', () => {
+  it('renders five accent preset swatches', () => {
     renderWith()
     fireEvent.click(screen.getByTestId('editrail-section-toggle-accent'))
-    expect(screen.getByTestId('editrail-accent-swatch')).toBeTruthy()
-    expect(screen.getByTestId('editrail-accent-change')).toBeTruthy()
+    const group = screen.getByTestId('editrail-accent-swatches')
+    const swatches = group.querySelectorAll('button[role="radio"]')
+    expect(swatches.length).toBe(5)
+  })
+
+  it('marks the active preset (defaults to Seal Blue) with aria-checked', () => {
+    renderWith()
+    fireEvent.click(screen.getByTestId('editrail-section-toggle-accent'))
+    const sealBlue = screen.getByTestId('editrail-accent-swatch-084471')
+    expect(sealBlue.getAttribute('aria-checked')).toBe('true')
+    expect(sealBlue.getAttribute('data-active')).toBe('true')
+  })
+
+  it('clicking a different swatch updates profile.accent in the store', () => {
+    let stateRef: { current: PortfolioStoreState | null } = { current: null }
+    function Probe() {
+      const { state } = usePortfolioStore()
+      stateRef.current = state
+      return <span data-testid="probe-accent">{state.profile.accent ?? ''}</span>
+    }
+    render(
+      <PortfolioStoreProvider>
+        <EditRail />
+        <Probe />
+      </PortfolioStoreProvider>,
+    )
+    fireEvent.click(screen.getByTestId('editrail-section-toggle-accent'))
+    fireEvent.click(screen.getByTestId('editrail-accent-swatch-b45309'))
+    expect(stateRef.current?.profile.accent).toBe('#b45309')
+    expect(screen.getByTestId('probe-accent').textContent).toBe('#b45309')
+  })
+
+  it('shows a Custom indicator when the accent is not in the preset list', () => {
+    renderWith({ profile: { accent: '#123456' } })
+    fireEvent.click(screen.getByTestId('editrail-section-toggle-accent'))
+    expect(screen.getByTestId('editrail-accent-custom').textContent).toContain('#123456')
   })
 })
 

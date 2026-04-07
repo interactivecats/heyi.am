@@ -32,6 +32,8 @@ export interface PortfolioProfile {
   /** Base64-encoded resume PDF (data URI). */
   resumeBase64?: string;
   resumeFilename?: string;
+  /** Hex color (e.g. `#084471`) used as the portfolio accent. */
+  accent?: string;
 }
 
 export interface Settings {

@@ -83,7 +83,7 @@ export async function buildPortfolioRenderData(
   const renderData: PortfolioRenderData = {
     user: {
       username: auth.username,
-      accent: '#084471',
+      accent: profile.accent || '#084471',
       displayName: profile.displayName || '',
       bio: profile.bio || '',
       location: profile.location || '',

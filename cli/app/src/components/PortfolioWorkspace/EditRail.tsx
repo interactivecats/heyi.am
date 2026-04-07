@@ -39,11 +39,9 @@ import { usePortfolioStore } from '../../hooks/usePortfolioStore'
 import {
   fetchProjects,
   fetchTheme,
-  fetchTemplates,
   saveTheme,
   type PortfolioProfile,
   type Project,
-  type TemplateInfo,
 } from '../../api'
 import { TemplateBrowser } from '../TemplateBrowser'
 
@@ -54,7 +52,7 @@ const RESUME_MAX_BYTES = 10 * 1024 * 1024
 
 type TextField = Exclude<
   keyof PortfolioProfile,
-  'photoBase64' | 'resumeBase64' | 'resumeFilename'
+  'photoBase64' | 'resumeBase64' | 'resumeFilename' | 'accent'
 >
 
 /** Empty string and undefined are equivalent for dirty comparison. */
@@ -541,39 +539,70 @@ function TemplateSection() {
   )
 }
 
+/**
+ * Five preset accent colors. The product ships with a fixed palette rather
+ * than a freeform color picker — keeps portfolios feeling intentional and
+ * removes one more knob for users to fiddle with. Seal Blue is the canonical
+ * default used elsewhere in the codebase (see portfolio-render-data.ts).
+ */
+export const ACCENT_PRESETS: ReadonlyArray<{ name: string; hex: string }> = [
+  { name: 'Seal Blue', hex: '#084471' },
+  { name: 'Cobalt', hex: '#1e40af' },
+  { name: 'Amber', hex: '#b45309' },
+  { name: 'Sage', hex: '#15803d' },
+  { name: 'Plum', hex: '#7e22ce' },
+]
+
+const DEFAULT_ACCENT = ACCENT_PRESETS[0].hex
+
 function AccentSection() {
-  const [accent, setAccent] = useState<string>('#4f46e5')
-  useEffect(() => {
-    fetchTemplates()
-      .then((list: TemplateInfo[]) => {
-        if (list.length > 0) setAccent(list[0].accent)
-      })
-      .catch(() => {
-        // keep default
-      })
-  }, [])
+  const { state, dispatch } = usePortfolioStore()
+  const current = state.profile.accent ?? DEFAULT_ACCENT
+  const isPreset = ACCENT_PRESETS.some((p) => p.hex.toLowerCase() === current.toLowerCase())
+
+  function handlePick(hex: string) {
+    dispatch({ type: 'UPDATE_PROFILE_FIELD', field: 'accent', value: hex })
+  }
+
   return (
     <Section id="accent" title="Accent color">
-      <div className="flex items-center gap-3">
-        <span
-          data-testid="editrail-accent-swatch"
-          className="w-4 h-4 rounded-full border border-ghost shrink-0"
-          style={{ background: accent }}
-          aria-label={`Accent color ${accent}`}
-        />
-        <span className="font-mono text-xs text-on-surface-variant">{accent}</span>
-        <button
-          type="button"
-          data-testid="editrail-accent-change"
-          className="text-xs font-mono text-primary hover:underline ml-auto"
-          onClick={() => {
-            // eslint-disable-next-line no-console
-            console.log('[EditRail] Change accent — Phase 6 may wire this')
-          }}
-        >
-          Change
-        </button>
+      <div
+        data-testid="editrail-accent-swatches"
+        className="flex items-center gap-2"
+        role="radiogroup"
+        aria-label="Accent color"
+      >
+        {ACCENT_PRESETS.map((preset) => {
+          const active = preset.hex.toLowerCase() === current.toLowerCase()
+          return (
+            <button
+              key={preset.hex}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              aria-label={`${preset.name} (${preset.hex})`}
+              data-testid={`editrail-accent-swatch-${preset.hex.slice(1)}`}
+              data-active={active ? 'true' : 'false'}
+              onClick={() => handlePick(preset.hex)}
+              className={[
+                'w-6 h-6 rounded-full border border-ghost shrink-0 transition-shadow',
+                active ? 'ring-2 ring-offset-2 ring-offset-surface-lowest ring-primary' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              style={{ background: preset.hex }}
+            />
+          )
+        })}
       </div>
+      {!isPreset && (
+        <p
+          data-testid="editrail-accent-custom"
+          className="font-mono text-[11px] text-on-surface-variant mt-2"
+        >
+          Custom: {current}
+        </p>
+      )}
     </Section>
   )
 }

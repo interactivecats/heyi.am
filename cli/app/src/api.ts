@@ -341,6 +341,8 @@ export interface PortfolioProfile {
   websiteUrl?: string
   resumeBase64?: string
   resumeFilename?: string
+  /** Hex color (e.g. `#084471`) used as the portfolio accent. */
+  accent?: string
 }
 
 export async function fetchPortfolio(): Promise<PortfolioProfile> {
