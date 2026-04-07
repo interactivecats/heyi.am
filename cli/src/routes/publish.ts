@@ -699,7 +699,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
 
       res.json({
         ok: true,
-        url: okBody.url ?? `${API_URL}/${auth.username}`,
+        url: publishedUrl ?? `${API_URL}/${auth.username}`,
         publishedAt,
         hash,
       });

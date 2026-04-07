@@ -21,7 +21,7 @@ vi.mock('../config.js', () => ({
   warnIfNonDefaultApiUrl: vi.fn(),
 }));
 
-const generatePortfolioSiteMock = vi.fn(async (_data, _projects, outputDir) => ({
+const generatePortfolioSiteMock = vi.fn(async (_data: unknown, _projects: unknown, outputDir: string, _template?: string) => ({
   files: [`${outputDir}/index.html`, `${outputDir}/projects/a/index.html`],
   totalBytes: 1234,
   outputPath: outputDir,
@@ -96,7 +96,7 @@ vi.mock('./context.js', async (importOriginal) => {
 });
 
 // Mock the file-manager opener so tests don't try to spawn `open`.
-const openInFileManagerMock = vi.fn(() => true);
+const openInFileManagerMock = vi.fn((_p: string) => true);
 vi.mock('./open-in-file-manager.js', () => ({
   openInFileManager: (p: string) => openInFileManagerMock(p),
 }));

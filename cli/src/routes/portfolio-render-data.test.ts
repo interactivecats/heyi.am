@@ -62,7 +62,7 @@ describe('buildPortfolioRenderData', () => {
     expect(p.totalFilesChanged).toBe(4);
     // Only non-subagent session makes it into the activity list.
     expect(p.sessions).toHaveLength(1);
-    expect(p.sessions[0].loc).toBe(12);
+    expect(p.sessions![0].loc).toBe(12);
 
     expect(renderData.totalDurationMinutes).toBe(25);
     expect(renderData.totalLoc).toBe(17);

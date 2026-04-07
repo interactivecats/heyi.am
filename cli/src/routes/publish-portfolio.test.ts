@@ -21,7 +21,7 @@ vi.mock('../config.js', () => ({
   warnIfNonDefaultApiUrl: vi.fn(),
 }));
 
-const generatePortfolioHtmlFragment = vi.fn(() => '<section>portfolio-fragment</section>');
+const generatePortfolioHtmlFragment = vi.fn((..._args: unknown[]) => '<section>portfolio-fragment</section>');
 vi.mock('../export.js', () => ({
   generatePortfolioHtmlFragment: (...args: unknown[]) => generatePortfolioHtmlFragment(...args),
 }));
@@ -68,8 +68,7 @@ const originalDataDir = process.env.HEYIAM_DATA_DIR;
 // ── Test fetch ───────────────────────────────────────────────
 
 const fetchMock = vi.fn();
-// @ts-expect-error override global fetch
-globalThis.fetch = fetchMock;
+globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
 
 import { createPublishRouter } from './publish.js';
 import type { RouteContext } from './context.js';
