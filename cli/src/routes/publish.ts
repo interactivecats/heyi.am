@@ -3,7 +3,20 @@ import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { getAuthToken } from '../auth.js';
 import { API_URL, PUBLIC_URL, warnIfNonDefaultApiUrl } from '../config.js';
-import { loadEnhancedData, saveEnhancedData, saveUploadedState, getDefaultTemplate } from '../settings.js';
+import {
+  loadEnhancedData,
+  saveEnhancedData,
+  saveUploadedState,
+  getDefaultTemplate,
+  getPortfolioProfile,
+  loadProjectEnhanceResult,
+  hashPortfolioProfile,
+  updatePortfolioPublishTarget,
+  DEFAULT_PORTFOLIO_TARGET,
+} from '../settings.js';
+import { generatePortfolioHtmlFragment } from '../export.js';
+import type { PortfolioRenderData, PortfolioProject } from '../render/types.js';
+import { getSessionsByProject } from '../db.js';
 import { captureScreenshot } from '../screenshot.js';
 import { redactSession, redactText, scanTextSync, formatFindings, stripHomePathsInText } from '../redact.js';
 import { renderProjectHtml, renderSessionHtml } from '../render/index.js';
@@ -571,6 +584,175 @@ export function createPublishRouter(ctx: RouteContext): Router {
       console.error('[upload] Error:', (err as Error).message);
       send({ type: 'error', code: 'UPLOAD_FAILED', message: (err as Error).message });
       res.end();
+    }
+  });
+
+  // Publish portfolio landing page to heyi.am
+  // Renders the portfolio HTML fragment locally, POSTs it to Phoenix,
+  // and persists the published snapshot + hash to settings on success.
+  router.post('/api/portfolio/upload', async (req: Request, res: Response) => {
+    const auth = getAuthToken();
+    warnIfNonDefaultApiUrl();
+
+    if (!auth) {
+      res.status(401).json({
+        error: { code: 'UNAUTHENTICATED', message: 'Authentication required' },
+      });
+      return;
+    }
+
+    try {
+      const profile = getPortfolioProfile();
+      const templateName = getDefaultTemplate() || 'editorial';
+
+      // Build PortfolioRenderData from real project data (mirrors preview route).
+      const rawProjects = await ctx.getProjects();
+      const portfolioProjects: PortfolioProject[] = [];
+      let totalDuration = 0;
+      let totalAgentDuration = 0;
+      let totalLoc = 0;
+      let totalSessions = 0;
+
+      for (const rawProj of rawProjects) {
+        try {
+          const proj = await ctx.getProjectWithStats(rawProj) as Record<string, unknown>;
+          const cached = loadProjectEnhanceResult(rawProj.dirName);
+          const projDuration = (proj.totalDuration as number) || 0;
+          const projAgentDuration = (proj.totalAgentDuration as number) || 0;
+          const projLoc = (proj.totalLoc as number) || 0;
+          const projSessions = (proj.sessionCount as number) || 0;
+
+          totalDuration += projDuration;
+          totalAgentDuration += projAgentDuration;
+          totalLoc += projLoc;
+          totalSessions += projSessions;
+
+          const title = (cached as Record<string, unknown> | null)?.title as string | undefined
+            || (proj.name as string) || displayNameFromDir(rawProj.dirName);
+
+          const dbSessions = getSessionsByProject(ctx.db, rawProj.dirName);
+          const sessionActivity = dbSessions
+            .filter((s) => !s.is_subagent)
+            .map((s) => ({
+              date: s.start_time || '',
+              loc: (s.loc_added || 0) + (s.loc_removed || 0),
+              durationMinutes: s.duration_minutes || 0,
+            }));
+
+          portfolioProjects.push({
+            slug: toSlug(title),
+            title,
+            narrative: cached?.result?.narrative || (proj.description as string) || '',
+            totalSessions: projSessions,
+            totalLoc: projLoc,
+            totalDurationMinutes: projDuration,
+            totalAgentDurationMinutes: projAgentDuration,
+            totalFilesChanged: (proj.totalFiles as number) || 0,
+            skills: cached?.result?.skills || (proj.skills as string[]) || [],
+            publishedCount: 0,
+            sessions: sessionActivity,
+          });
+        } catch { /* skip projects that fail */ }
+      }
+
+      const renderData: PortfolioRenderData = {
+        user: {
+          username: auth.username,
+          accent: '#084471',
+          displayName: profile.displayName || '',
+          bio: profile.bio || '',
+          location: profile.location || '',
+          status: 'active',
+          email: profile.email,
+          phone: profile.phone,
+          photoUrl: profile.photoBase64 || undefined,
+          linkedinUrl: profile.linkedinUrl,
+          githubUrl: profile.githubUrl,
+          twitterHandle: profile.twitterHandle,
+          websiteUrl: profile.websiteUrl,
+          resumeUrl: profile.resumeBase64 ? '#' : undefined,
+        },
+        projects: portfolioProjects,
+        totalDurationMinutes: totalDuration,
+        totalAgentDurationMinutes: totalAgentDuration || undefined,
+        totalLoc,
+        totalSessions,
+      };
+
+      const renderedHtml = generatePortfolioHtmlFragment(renderData, templateName);
+
+      // POST to Phoenix endpoint (Track A). Endpoint shape:
+      //   POST {API_URL}/api/portfolio/upload
+      //   { portfolio: { rendered_html, template } }
+      //   -> 200 { ok: true, url }
+      const phoenixRes = await fetch(`${API_URL}/api/portfolio/upload`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${auth.token}`,
+        },
+        body: JSON.stringify({
+          portfolio: {
+            rendered_html: renderedHtml,
+            template: templateName,
+          },
+        }),
+      });
+
+      if (!phoenixRes.ok) {
+        const errBody = await phoenixRes.json().catch(() => null);
+        const rawErr = errBody && typeof errBody === 'object'
+          ? (errBody as { error?: unknown }).error
+          : null;
+        const errMsg = typeof rawErr === 'string'
+          ? rawErr
+          : (rawErr && typeof rawErr === 'object' && 'message' in rawErr)
+            ? (rawErr as { message: string }).message
+            : `HTTP ${phoenixRes.status}`;
+
+        updatePortfolioPublishTarget(DEFAULT_PORTFOLIO_TARGET, {
+          lastError: errMsg,
+          lastErrorAt: new Date().toISOString(),
+        });
+
+        res.status(phoenixRes.status >= 500 ? 502 : phoenixRes.status).json({
+          error: { code: 'PORTFOLIO_UPLOAD_FAILED', message: errMsg },
+        });
+        return;
+      }
+
+      const okBody = await phoenixRes.json().catch(() => ({})) as { url?: string };
+      const publishedAt = new Date().toISOString();
+      const hash = hashPortfolioProfile(profile);
+
+      updatePortfolioPublishTarget(DEFAULT_PORTFOLIO_TARGET, {
+        lastPublishedAt: publishedAt,
+        lastPublishedProfileHash: hash,
+        lastPublishedProfile: profile,
+        config: {},
+        url: okBody.url,
+        lastError: undefined,
+        lastErrorAt: undefined,
+      });
+
+      res.json({
+        ok: true,
+        url: okBody.url ?? `${API_URL}/${auth.username}`,
+        publishedAt,
+        hash,
+      });
+    } catch (err) {
+      const errMsg = (err as Error).message;
+      console.error('[portfolio-upload] Error:', errMsg);
+      try {
+        updatePortfolioPublishTarget(DEFAULT_PORTFOLIO_TARGET, {
+          lastError: errMsg,
+          lastErrorAt: new Date().toISOString(),
+        });
+      } catch { /* don't mask the original error */ }
+      res.status(500).json({
+        error: { code: 'PORTFOLIO_UPLOAD_FAILED', message: errMsg },
+      });
     }
   });
 
