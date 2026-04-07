@@ -1,4 +1,4 @@
-import { getPortfolioProfile, loadProjectEnhanceResult } from '../settings.js';
+import { getPortfolioProfile, loadProjectEnhanceResult, type PortfolioProjectEntry } from '../settings.js';
 import { getSessionsByProject } from '../db.js';
 import { displayNameFromDir } from '../sync.js';
 import { toSlug } from '../format-utils.js';
@@ -28,7 +28,11 @@ export async function buildPortfolioRenderData(
 ): Promise<BuildPortfolioRenderDataResult> {
   const profile = getPortfolioProfile();
 
-  const rawProjects = await ctx.getProjects();
+  const allRawProjects = await ctx.getProjects();
+  const rawProjects = applyPortfolioProjectFilter(
+    allRawProjects,
+    profile.projectsOnPortfolio,
+  );
   const portfolioProjects: PortfolioProject[] = [];
   const projectCaches = new Map<string, { dirName: string; cache: ReturnType<typeof loadProjectEnhanceResult> }>();
   let totalDuration = 0;
@@ -105,4 +109,44 @@ export async function buildPortfolioRenderData(
   };
 
   return { renderData, projectCaches };
+}
+
+/**
+ * Apply the user-curated `projectsOnPortfolio` list to a raw project list.
+ *
+ * Pure function — no I/O. Lives here so it can be unit-tested without
+ * standing up a RouteContext.
+ *
+ * Semantics:
+ *  - Empty/missing list: pass through all projects in their natural order
+ *    (preserves the legacy behavior for users who have never edited the
+ *    list).
+ *  - Non-empty list:
+ *    - Filter out projects whose entry has `included === false`.
+ *    - Sort the remaining matched projects by `order` ascending.
+ *    - Projects present in the source list but missing from the curated
+ *      list (e.g. newly imported since the user last edited) are appended
+ *      at the end in source order, treated as `included: true`.
+ */
+export function applyPortfolioProjectFilter<P extends { dirName: string }>(
+  projects: P[],
+  curated: PortfolioProjectEntry[] | undefined,
+): P[] {
+  if (!curated || curated.length === 0) return projects;
+  const byId = new Map<string, PortfolioProjectEntry>();
+  for (const entry of curated) byId.set(entry.projectId, entry);
+
+  const matched: Array<{ proj: P; order: number }> = [];
+  const unmatched: P[] = [];
+  for (const proj of projects) {
+    const entry = byId.get(proj.dirName);
+    if (!entry) {
+      unmatched.push(proj);
+      continue;
+    }
+    if (entry.included === false) continue;
+    matched.push({ proj, order: entry.order });
+  }
+  matched.sort((a, b) => a.order - b.order);
+  return [...matched.map((m) => m.proj), ...unmatched];
 }

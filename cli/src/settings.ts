@@ -34,6 +34,23 @@ export interface PortfolioProfile {
   resumeFilename?: string;
   /** Hex color (e.g. `#084471`) used as the portfolio accent. */
   accent?: string;
+  /**
+   * User-curated list of projects to include on the portfolio, in display
+   * order. Projects whose `included` flag is `false` are filtered out at
+   * render time. Empty array means "include everything in default order"
+   * (preserves behavior for users who have never edited the list).
+   */
+  projectsOnPortfolio?: PortfolioProjectEntry[];
+}
+
+/** Per-project entry inside `PortfolioProfile.projectsOnPortfolio`. */
+export interface PortfolioProjectEntry {
+  /** Project directory name (matches `Project.dirName`). */
+  projectId: string;
+  /** Whether this project shows up in the rendered portfolio. */
+  included: boolean;
+  /** Display order, ascending. Normalized to 0..n-1 on save. */
+  order: number;
 }
 
 export interface Settings {

@@ -14,7 +14,7 @@ vi.mock('../sync.js', () => ({
   displayNameFromDir: (d: string) => d,
 }));
 
-import { buildPortfolioRenderData } from './portfolio-render-data.js';
+import { buildPortfolioRenderData, applyPortfolioProjectFilter } from './portfolio-render-data.js';
 import type { RouteContext } from './context.js';
 
 let configDir: string;
@@ -69,6 +69,58 @@ describe('buildPortfolioRenderData', () => {
     expect(renderData.totalSessions).toBe(2);
 
     expect(projectCaches.has('proj-a')).toBe(true);
+  });
+
+  describe('applyPortfolioProjectFilter', () => {
+    const a = { dirName: 'a' };
+    const b = { dirName: 'b' };
+    const c = { dirName: 'c' };
+    const d = { dirName: 'd' };
+
+    it('returns projects untouched when curated list is undefined', () => {
+      expect(applyPortfolioProjectFilter([a, b, c], undefined)).toEqual([a, b, c]);
+    });
+
+    it('returns projects untouched when curated list is empty', () => {
+      expect(applyPortfolioProjectFilter([a, b, c], [])).toEqual([a, b, c]);
+    });
+
+    it('drops projects marked included=false', () => {
+      const result = applyPortfolioProjectFilter([a, b, c], [
+        { projectId: 'a', included: true, order: 0 },
+        { projectId: 'b', included: false, order: 1 },
+        { projectId: 'c', included: true, order: 2 },
+      ]);
+      expect(result.map((p) => p.dirName)).toEqual(['a', 'c']);
+    });
+
+    it('respects the curated order field', () => {
+      const result = applyPortfolioProjectFilter([a, b, c], [
+        { projectId: 'a', included: true, order: 2 },
+        { projectId: 'b', included: true, order: 0 },
+        { projectId: 'c', included: true, order: 1 },
+      ]);
+      expect(result.map((p) => p.dirName)).toEqual(['b', 'c', 'a']);
+    });
+
+    it('appends projects missing from the curated list at the end', () => {
+      const result = applyPortfolioProjectFilter([a, b, c, d], [
+        { projectId: 'b', included: true, order: 0 },
+        { projectId: 'a', included: true, order: 1 },
+      ]);
+      // a, b match the curated order; c, d are appended at the end.
+      expect(result.map((p) => p.dirName)).toEqual(['b', 'a', 'c', 'd']);
+    });
+
+    it('applies all three behaviors at once: filter + reorder + append', () => {
+      const result = applyPortfolioProjectFilter([a, b, c, d], [
+        { projectId: 'c', included: true, order: 0 },
+        { projectId: 'a', included: false, order: 1 },
+        { projectId: 'b', included: true, order: 2 },
+      ]);
+      // c first, b second (a excluded), d appended.
+      expect(result.map((p) => p.dirName)).toEqual(['c', 'b', 'd']);
+    });
   });
 
   it('skips projects whose stats call throws', async () => {

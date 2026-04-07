@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { existsSync } from 'node:fs';
-import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, getSettings, setDefaultTemplate, getPortfolioProfile, savePortfolioProfile, type PortfolioProfile } from '../settings.js';
+import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, getSettings, setDefaultTemplate, getPortfolioProfile, savePortfolioProfile, type PortfolioProfile, type PortfolioProjectEntry } from '../settings.js';
 import { invalidatePortfolioPreviewCache } from './preview.js';
 import { hasApiKey } from '../llm/index.js';
 import { isValidTemplate, DEFAULT_TEMPLATE, BUILT_IN_TEMPLATES } from '../render/templates.js';
@@ -129,6 +129,42 @@ export function createSettingsRouter(_ctx: RouteContext): Router {
     }
     if (cleaned.resumeBase64 && cleaned.resumeBase64.length > 14_000_000) {
       errors.push({ field: 'resumeBase64', message: 'Resume must be under 10MB' });
+    }
+
+    // projectsOnPortfolio: array of {projectId, included, order}. Validated
+    // structurally; unknown entries are dropped silently. Empty array allowed
+    // (means "default ordering, include everything" at render time).
+    if (body.projectsOnPortfolio !== undefined) {
+      if (!Array.isArray(body.projectsOnPortfolio)) {
+        errors.push({ field: 'projectsOnPortfolio', message: 'projectsOnPortfolio must be an array' });
+      } else {
+        const cleanedProjects: PortfolioProjectEntry[] = [];
+        for (let i = 0; i < body.projectsOnPortfolio.length; i++) {
+          const raw = body.projectsOnPortfolio[i];
+          if (!raw || typeof raw !== 'object') {
+            errors.push({ field: `projectsOnPortfolio[${i}]`, message: 'must be an object' });
+            continue;
+          }
+          if (typeof raw.projectId !== 'string' || raw.projectId.length === 0) {
+            errors.push({ field: `projectsOnPortfolio[${i}].projectId`, message: 'must be a non-empty string' });
+            continue;
+          }
+          if (typeof raw.included !== 'boolean') {
+            errors.push({ field: `projectsOnPortfolio[${i}].included`, message: 'must be a boolean' });
+            continue;
+          }
+          if (typeof raw.order !== 'number' || !Number.isFinite(raw.order)) {
+            errors.push({ field: `projectsOnPortfolio[${i}].order`, message: 'must be a finite number' });
+            continue;
+          }
+          cleanedProjects.push({
+            projectId: raw.projectId,
+            included: raw.included,
+            order: raw.order,
+          });
+        }
+        cleaned.projectsOnPortfolio = cleanedProjects;
+      }
     }
 
     if (errors.length > 0) {
