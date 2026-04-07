@@ -14,6 +14,8 @@ vi.mock('../api', async (importOriginal) => {
     logout: vi.fn(),
     fetchGithubAccount: vi.fn(),
     disconnectGithub: vi.fn(),
+    fetchArchiveStats: vi.fn(),
+    fetchLocalData: vi.fn(),
   }
 })
 
@@ -34,6 +36,16 @@ describe('Settings — Connected accounts', () => {
   beforeEach(() => {
     vi.mocked(api.fetchApiKeyStatus).mockResolvedValue({ hasKey: false })
     vi.mocked(api.fetchAuthStatus).mockResolvedValue({ authenticated: false })
+    vi.mocked(api.fetchArchiveStats).mockResolvedValue({
+      total: 0,
+      oldest: '',
+      sourcesCount: 0,
+      lastSync: '',
+    })
+    vi.mocked(api.fetchLocalData).mockResolvedValue({
+      dbPath: '/tmp/x.db',
+      daemon: { installed: false, binaryPath: '/tmp/d' },
+    })
   })
 
   it('renders the empty state when no GitHub account is connected', async () => {
@@ -101,5 +113,52 @@ describe('Settings — Connected accounts', () => {
         'keychain locked',
       ),
     )
+  })
+})
+
+describe('Settings — Local data', () => {
+  beforeEach(() => {
+    vi.mocked(api.fetchApiKeyStatus).mockResolvedValue({ hasKey: false })
+    vi.mocked(api.fetchAuthStatus).mockResolvedValue({ authenticated: false })
+    vi.mocked(api.fetchGithubAccount).mockResolvedValue(null)
+  })
+
+  it('renders archive count, daemon status, and DB path', async () => {
+    vi.mocked(api.fetchArchiveStats).mockResolvedValue({
+      total: 42,
+      oldest: '2024-01-01',
+      sourcesCount: 3,
+      lastSync: '2026-04-07T12:00:00Z',
+    })
+    vi.mocked(api.fetchLocalData).mockResolvedValue({
+      dbPath: '/home/u/.local/share/heyiam/sessions.db',
+      daemon: { installed: true, binaryPath: '/home/u/.local/share/heyiam/daemon/heyiam-tray' },
+    })
+
+    renderSettings()
+    await waitFor(() => screen.getByTestId('settings-local-data'))
+    await waitFor(() =>
+      expect(screen.getByTestId('settings-local-data-archive-count').textContent).toBe('42'),
+    )
+    expect(screen.getByTestId('settings-local-data-last-sync').textContent).toContain('2026-04-07')
+    expect(screen.getByTestId('settings-local-data-daemon').textContent).toBe('Installed')
+    expect(screen.getByTestId('settings-local-data-db-path').textContent).toContain('sessions.db')
+  })
+
+  it('renders Not installed daemon and Never last sync when applicable', async () => {
+    vi.mocked(api.fetchArchiveStats).mockResolvedValue({
+      total: 0,
+      oldest: '',
+      sourcesCount: 0,
+      lastSync: '',
+    })
+    vi.mocked(api.fetchLocalData).mockResolvedValue({
+      dbPath: '/tmp/x.db',
+      daemon: { installed: false, binaryPath: '/tmp/d' },
+    })
+    renderSettings()
+    await waitFor(() => screen.getByTestId('settings-local-data'))
+    expect(screen.getByTestId('settings-local-data-daemon').textContent).toBe('Not installed')
+    expect(screen.getByTestId('settings-local-data-last-sync').textContent).toBe('Never')
   })
 })

@@ -8,10 +8,14 @@ import {
   logout,
   fetchGithubAccount,
   disconnectGithub,
+  fetchArchiveStats,
+  fetchLocalData,
   GithubApiError,
   type ApiKeyStatus,
   type AuthStatus,
   type GithubAccount,
+  type ArchiveStats,
+  type LocalDataSummary,
 } from '../api'
 
 export function Settings() {
@@ -35,6 +39,32 @@ export function Settings() {
   const [githubError, setGithubError] = useState<string | null>(null)
   const [githubDisconnecting, setGithubDisconnecting] = useState(false)
   const [githubJustDisconnected, setGithubJustDisconnected] = useState(false)
+
+  // ── Local data (Phase 6) ──────────────────────────────────
+  const [archiveStats, setArchiveStats] = useState<ArchiveStats | null>(null)
+  const [localData, setLocalData] = useState<LocalDataSummary | null>(null)
+  const [localDataError, setLocalDataError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    Promise.all([
+      fetchArchiveStats().catch((err) => {
+        if (!cancelled) setLocalDataError(err instanceof Error ? err.message : 'Failed to load archive stats')
+        return null
+      }),
+      fetchLocalData().catch((err) => {
+        if (!cancelled) setLocalDataError(err instanceof Error ? err.message : 'Failed to load local data')
+        return null
+      }),
+    ]).then(([stats, ld]) => {
+      if (cancelled) return
+      setArchiveStats(stats)
+      setLocalData(ld)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -276,6 +306,67 @@ export function Settings() {
                 className="text-xs text-error mt-2"
               >
                 {githubError}
+              </p>
+            ) : null}
+          </Card>
+        </div>
+
+        {/* Local data (Phase 6) */}
+        <div className="mt-4">
+          <Card>
+            <SectionHeader title="Local data" meta="read-only" />
+            <dl
+              data-testid="settings-local-data"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-[13px]"
+            >
+              <div className="flex justify-between gap-3">
+                <dt className="text-on-surface-variant">Sessions archived</dt>
+                <dd
+                  data-testid="settings-local-data-archive-count"
+                  className="text-on-surface font-mono"
+                >
+                  {archiveStats ? archiveStats.total : '—'}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-on-surface-variant">Last archive sync</dt>
+                <dd
+                  data-testid="settings-local-data-last-sync"
+                  className="text-on-surface font-mono truncate"
+                >
+                  {archiveStats?.lastSync || 'Never'}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-on-surface-variant">Sync daemon</dt>
+                <dd
+                  data-testid="settings-local-data-daemon"
+                  className="text-on-surface font-mono"
+                >
+                  {localData
+                    ? localData.daemon.installed
+                      ? 'Installed'
+                      : 'Not installed'
+                    : '—'}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3 sm:col-span-2">
+                <dt className="text-on-surface-variant shrink-0">Local DB path</dt>
+                <dd
+                  data-testid="settings-local-data-db-path"
+                  className="text-on-surface font-mono text-xs truncate"
+                  title={localData?.dbPath ?? ''}
+                >
+                  {localData?.dbPath ?? '—'}
+                </dd>
+              </div>
+            </dl>
+            {localDataError ? (
+              <p
+                data-testid="settings-local-data-error"
+                className="text-xs text-error mt-2"
+              >
+                {localDataError}
               </p>
             ) : null}
           </Card>

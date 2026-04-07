@@ -177,6 +177,18 @@ export async function fetchArchiveStats(): Promise<ArchiveStats> {
   return get<ArchiveStats>('/archive/stats')
 }
 
+export interface LocalDataSummary {
+  dbPath: string
+  daemon: {
+    installed: boolean
+    binaryPath: string
+  }
+}
+
+export async function fetchLocalData(): Promise<LocalDataSummary> {
+  return get<LocalDataSummary>('/local-data')
+}
+
 export async function syncArchive(): Promise<{ archived: number; alreadyArchived: number }> {
   return post<{ archived: number; alreadyArchived: number }>('/archive/sync')
 }
