@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { AppShell, Card, Note, SectionHeader } from './shared'
 import { uploadProject, fetchProjectDetail, startLogin, pollDeviceAuth, type UploadEvent } from '../api'

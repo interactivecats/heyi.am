@@ -471,15 +471,6 @@ function TranscriptSearch({
 
 // ── Helpers ─────────────────────────────────────────────────
 
-function formatTime(timestamp: string): string {
-  try {
-    const d = new Date(timestamp)
-    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
-  } catch {
-    return timestamp
-  }
-}
-
 function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }

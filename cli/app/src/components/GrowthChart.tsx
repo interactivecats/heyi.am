@@ -23,8 +23,6 @@ interface GrowthChartProps {
 
 const FONT = "'IBM Plex Mono', monospace"
 const PRIMARY = '#084471'
-const GREEN = '#16a34a'
-const RED = '#dc2626'
 const TEXT_MUTED = '#9ca3af'
 const TEXT_SECONDARY = '#6b7280'
 const GRID_COLOR = '#e4e4e7'
@@ -158,10 +156,6 @@ function computeMonthDividers(
     d.setMonth(d.getMonth() + 1)
   }
   return dividers
-}
-
-function truncTitle(t: string, max: number = 14): string {
-  return t.length > max ? t.slice(0, max - 1) + '\u2026' : t
 }
 
 // ── Component ────────────────────────────────────────────────────

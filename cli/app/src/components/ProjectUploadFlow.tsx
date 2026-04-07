@@ -162,7 +162,6 @@ function triageEventsToLines(events: TriageEvent[], spinnerChar: string): Triage
   ];
 
   let loadingTotal = 0;
-  let loadedCount = 0;
   let hardFloorPassed = 0;
   let hardFloorFiltered = 0;
   let showedHardFloorHeader = false;
@@ -177,7 +176,6 @@ function triageEventsToLines(events: TriageEvent[], spinnerChar: string): Triage
         break;
 
       case 'loading_stats':
-        loadedCount = evt.index;
         break;
 
       case 'hard_floor': {
@@ -297,10 +295,8 @@ function triageEventsToLines(events: TriageEvent[], spinnerChar: string): Triage
 /** @internal Exported for testing */
 export function TriageTerminal({
   events,
-  dirName,
 }: {
   events: TriageEvent[];
-  dirName: string;
 }) {
   const spinnerChar = useSpinner();
   const feedRef = useRef<HTMLDivElement>(null);
@@ -339,7 +335,6 @@ export function TriageTerminal({
 // ── Screen 44: Triage Results ────────────────────────────────────
 
 function TriageItem({
-  sessionId,
   title,
   stats,
   reason,
@@ -349,7 +344,6 @@ function TriageItem({
   dimTitle,
   previouslyUploaded,
 }: {
-  sessionId: string;
   title: string;
   stats: string;
   reason: string;
@@ -451,7 +445,6 @@ function TriageResults({
           return (
             <TriageItem
               key={item.sessionId}
-              sessionId={item.sessionId}
               title={s?.title ?? item.sessionId}
               stats={s ? `${formatDuration(s.durationMinutes)} \u00b7 ${formatLoc(s.linesOfCode)} lines \u00b7 ${s.turns} turns` : ''}
               reason={item.reason}
@@ -475,7 +468,6 @@ function TriageResults({
             return (
               <TriageItem
                 key={item.sessionId}
-                sessionId={item.sessionId}
                 title={s?.title ?? item.sessionId}
                 stats={s ? `${formatDuration(s.durationMinutes)} \u00b7 ${formatLoc(s.linesOfCode)} lines \u00b7 ${s.turns} turns` : ''}
                 reason={item.reason}
@@ -1141,8 +1133,6 @@ export function ProjectUploadFlow() {
 
 
   // Derived from enhance result (or refined)
-  const narrative = enhanceResult?.narrative ?? '';
-  const enhanceSkills = enhanceResult?.skills ?? [];
   const enhanceTimeline = enhanceResult?.timeline ?? [];
 
   // Load sessions lazily — only when a step actually needs them
@@ -1298,7 +1288,7 @@ export function ProjectUploadFlow() {
         <div className="dashboard-error">{error}</div>
       ) : step === 'overview' ? (
         triaging ? (
-          <TriageTerminal events={triageEvents} dirName={dirName ?? ''} />
+          <TriageTerminal events={triageEvents} />
         ) : (
           <SessionOverview
             project={project}

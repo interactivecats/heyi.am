@@ -161,10 +161,6 @@ function computeMonthDividers(
   return dividers
 }
 
-function truncTitle(t: string, max: number = 14): string {
-  return t.length > max ? t.slice(0, max - 1) + '\u2026' : t
-}
-
 // ── Component ────────────────────────────────────────────────────
 
 export function GrowthChart({ sessions, totalLoc, totalFiles, keyMoments, onSessionClick, accentColor, isDark, dualPositive = true }: GrowthChartProps) {

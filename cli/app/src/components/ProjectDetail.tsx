@@ -5,7 +5,6 @@ import {
   fetchProjectDetail,
   fetchProjectRender,
   fetchAuthStatus,
-  deleteProjectScreenshot,
   fetchGitRemote,
   saveProjectEnhanceLocally,
   captureScreenshotFromUrl,
@@ -18,10 +17,10 @@ import { WorkTimeline } from './WorkTimeline'
 import { GrowthChart } from './GrowthChart'
 import { SessionDetailOverlay } from './SessionDetailOverlay'
 import { mountCounterAnimations, mountScrollReveals, mountBarAnimations } from '@heyiam/ui'
-import { scopeTemplateCss, REVEAL_SELECTOR } from '../scopeCss'
+import { scopeTemplateCss } from '../scopeCss'
 
 /** Build a link element for DOM patching (safe — no innerHTML). */
-function buildLinkEl(url: string, type: 'repo' | 'project'): HTMLAnchorElement {
+function buildLinkEl(url: string): HTMLAnchorElement {
   const a = document.createElement('a')
   a.href = url
   a.target = '_blank'
@@ -152,6 +151,7 @@ export function ProjectDetail() {
   useEffect(() => {
     const container = liquidRef.current
     if (!container || !detail) return
+    const currentDetail = detail
 
     function handleClick(e: MouseEvent) {
       const anchor = (e.target as HTMLElement).closest('a[href]') as HTMLAnchorElement | null
@@ -164,7 +164,7 @@ export function ProjectDetail() {
 
       e.preventDefault()
       const sessionSlug = decodeURIComponent(match[1]).replace(/\.html$/, '')
-      const session = detail.sessions.find(
+      const session = currentDetail.sessions.find(
         (s) => s.id === sessionSlug || s.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') === sessionSlug,
       )
       if (session) {
@@ -241,8 +241,8 @@ export function ProjectDetail() {
     if (linksEl) {
       linksEl.replaceChildren()
       if (repoUrl || projectUrl) {
-        if (repoUrl) linksEl.appendChild(buildLinkEl(repoUrl, 'repo'))
-        if (projectUrl) linksEl.appendChild(buildLinkEl(projectUrl, 'project'))
+        if (repoUrl) linksEl.appendChild(buildLinkEl(repoUrl))
+        if (projectUrl) linksEl.appendChild(buildLinkEl(projectUrl))
       }
     }
     // Patch screenshot — hide browser chrome when removed

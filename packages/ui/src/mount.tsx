@@ -56,7 +56,7 @@ let showOverlay: ((session: Session) => void) | null = null;
 /**
  * Overlay root — mounted once, controlled via showOverlay callback.
  */
-function OverlayRoot({ sessions }: { sessions: Map<string, Session> }) {
+function OverlayRoot() {
   const [active, setActive] = useState<Session | null>(null);
 
   // Expose the show function globally so click handlers can trigger it
@@ -80,7 +80,7 @@ function OverlayRoot({ sessions }: { sessions: Map<string, Session> }) {
   } else {
     const username = projectEl?.getAttribute('data-username');
     const projectSlug = projectEl?.getAttribute('data-project-slug');
-    const sessionSlug = (active as Record<string, unknown>).slug as string | undefined;
+    const sessionSlug = (active as unknown as { slug?: string }).slug;
     if (username && projectSlug && sessionSlug) {
       sessionPageUrl = `/@${username}/${projectSlug}/${sessionSlug}`;
     }
@@ -166,7 +166,7 @@ export function mountVisualizations(): void {
     overlayEl.id = 'heyiam-overlay-root';
     document.body.appendChild(overlayEl);
     createRoot(overlayEl).render(
-      React.createElement(OverlayRoot, { sessions: allSessions }),
+      React.createElement(OverlayRoot),
     );
   }
 }

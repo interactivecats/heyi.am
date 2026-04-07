@@ -99,7 +99,6 @@ function formatDuration(minutes: number): string {
 const GAP_MS = 3_600_000
 const MIN_W = 160
 const MAX_W = 480
-const MIN_CW = 120
 
 function timeToPx(minutes: number): number {
   return Math.min(Math.max(minutes * 3, MIN_W), MAX_W)
@@ -283,7 +282,7 @@ function aggregateAgents(kids: Child[]): LegendAgent[] {
 
 interface SessionRange { session: Session; xStart: number; xEnd: number }
 
-function buildLegendEntries(segments: Seg[], sessionRanges: SessionRange[]): LegendEntry[] {
+function buildLegendEntries(sessionRanges: SessionRange[]): LegendEntry[] {
   return sessionRanges.map(r => {
     const kids = getChildren(r.session)
     return {
@@ -673,7 +672,7 @@ export function WorkTimeline({ sessions, onSessionClick, maxHeight, accentColor,
   const playRef = useRef<number | null>(null)
   const concurrentLimit = expanded ? 999 : DEFAULT_MAX_CONCURRENT
   const L = useMemo(() => layoutSegments(segments, concurrentLimit, mainColor, textMuted), [segments, concurrentLimit, mainColor, textMuted])
-  const legendEntries = useMemo(() => buildLegendEntries(segments, L.sessionRanges), [segments, L.sessionRanges])
+  const legendEntries = useMemo(() => buildLegendEntries(L.sessionRanges), [L.sessionRanges])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const [hovered, setHovered] = useState<{ tooltip: TooltipData; pos: Pos } | null>(null)

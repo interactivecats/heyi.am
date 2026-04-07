@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { fetchProjectDetail, type ProjectDetail } from '../api'
-import type { Session } from '../types'
 import { Chip } from './shared/Chip'
 import { formatDuration, formatLoc } from '../format'
 

@@ -39,7 +39,6 @@ export function FirstRun() {
   const [usernameError, setUsernameError] = useState('')
   const [claimedUsername, setClaimedUsername] = useState('')
   const [authPolling, setAuthPolling] = useState(false)
-  const [deviceCode, setDeviceCode] = useState('')
   const usernameCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastCheckedUsername = useRef('')
 
@@ -431,7 +430,6 @@ export function FirstRun() {
                         onClick={() => {
                           setAuthPolling(false)
                           setUsernameStatus('idle')
-                          setDeviceCode('')
                         }}
                         className="text-[10px] font-mono px-2.5 py-1 rounded text-white/40 hover:text-white/70 transition-colors"
                       >
@@ -497,7 +495,6 @@ export function FirstRun() {
                               }
 
                               const deviceInfo = await startSignup(usernameInput)
-                              setDeviceCode(deviceInfo.device_code)
                               setAuthPolling(true)
                               setUsernameStatus('available')
                               window.open(deviceInfo.verification_uri, '_blank')
@@ -565,7 +562,6 @@ export function FirstRun() {
                           setUsernameError('')
                           try {
                             const deviceInfo = await startLogin()
-                            setDeviceCode(deviceInfo.device_code)
                             setAuthPolling(true)
                             setUsernameStatus('idle')
                             window.open(deviceInfo.verification_uri, '_blank')

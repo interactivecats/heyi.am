@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { AppShell, Badge, Chip } from './shared'
 import {
   fetchTemplates,
@@ -31,9 +31,6 @@ const SORT_LABELS: Record<SortOption, string> = {
   'a-z': 'A-Z',
   'by-mode': 'By mode',
 }
-
-/** Max iframes loading concurrently */
-const MAX_CONCURRENT_IFRAMES = 6
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -156,7 +153,6 @@ export function TemplateBrowser() {
           <TemplateGrid
             templates={filtered}
             currentTheme={currentTheme}
-            firstProjectDir={firstProjectDir}
             onApply={handleApply}
           />
         )}
@@ -304,12 +300,10 @@ function FilterPill({
 function TemplateGrid({
   templates,
   currentTheme,
-  firstProjectDir,
   onApply,
 }: {
   templates: TemplateInfo[]
   currentTheme: string
-  firstProjectDir: string | null
   onApply: (name: string) => void
 }) {
   return (
@@ -319,7 +313,6 @@ function TemplateGrid({
           key={t.name}
           template={t}
           isActive={currentTheme === t.name}
-          firstProjectDir={firstProjectDir}
           index={index}
           onApply={() => onApply(t.name)}
         />
@@ -333,13 +326,11 @@ function TemplateGrid({
 function TemplateCard({
   template: t,
   isActive,
-  firstProjectDir,
   index,
   onApply,
 }: {
   template: TemplateInfo
   isActive: boolean
-  firstProjectDir: string | null
   index: number
   onApply: () => void
 }) {
@@ -434,116 +425,6 @@ function TemplateCard({
 }
 
 // ── Lazy Iframe Preview ──────────────────────────────────────
-
-/** Tracks how many iframes are currently loading across all cards */
-let loadingCount = 0
-const waitingQueue: Array<() => void> = []
-
-function requestIframeSlot(): Promise<void> {
-  if (loadingCount < MAX_CONCURRENT_IFRAMES) {
-    loadingCount++
-    return Promise.resolve()
-  }
-  return new Promise((resolve) => {
-    waitingQueue.push(() => {
-      loadingCount++
-      resolve()
-    })
-  })
-}
-
-function releaseIframeSlot() {
-  loadingCount--
-  const next = waitingQueue.shift()
-  if (next) next()
-}
-
-function LazyIframePreview({
-  template,
-  firstProjectDir,
-}: {
-  template: TemplateInfo
-  firstProjectDir: string | null
-}) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [shouldLoad, setShouldLoad] = useState(false)
-  const [iframeLoaded, setIframeLoaded] = useState(false)
-  const [hasSlot, setHasSlot] = useState(false)
-
-  // IntersectionObserver to trigger loading when visible
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el || !firstProjectDir) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setShouldLoad(true)
-          observer.disconnect()
-        }
-      },
-      { rootMargin: '200px' },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [firstProjectDir])
-
-  // Request a slot when we should load
-  useEffect(() => {
-    if (!shouldLoad || !firstProjectDir) return
-    let cancelled = false
-    requestIframeSlot().then(() => {
-      if (!cancelled) setHasSlot(true)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [shouldLoad, firstProjectDir])
-
-  const handleLoad = useCallback(() => {
-    setIframeLoaded(true)
-    releaseIframeSlot()
-  }, [])
-
-  const showIframe = shouldLoad && hasSlot && firstProjectDir
-
-  return (
-    <div
-      ref={containerRef}
-      className="relative w-full overflow-hidden bg-surface-low"
-      style={{ height: '240px' }}
-    >
-      {/* Wireframe fallback — shown until iframe loads */}
-      <div
-        className={`absolute inset-0 transition-opacity duration-150 motion-reduce:transition-none ${
-          iframeLoaded ? 'opacity-0 pointer-events-none' : 'opacity-100'
-        }`}
-      >
-        <TemplateWireframe template={template} className="w-full h-full" />
-      </div>
-
-      {/* Iframe preview */}
-      {showIframe && (
-        <iframe
-          src={`/preview/project/${encodeURIComponent(firstProjectDir)}?template=${template.name}`}
-          style={{
-            width: '1200px',
-            height: '900px',
-            transform: 'scale(0.25)',
-            transformOrigin: 'top left',
-            border: 'none',
-            pointerEvents: 'none',
-          }}
-          loading="lazy"
-          tabIndex={-1}
-          aria-hidden="true"
-          title={`${template.label} template preview`}
-          onLoad={handleLoad}
-        />
-      )}
-    </div>
-  )
-}
 
 // ── Wireframe Thumbnail ──────────────────────────────────────
 
