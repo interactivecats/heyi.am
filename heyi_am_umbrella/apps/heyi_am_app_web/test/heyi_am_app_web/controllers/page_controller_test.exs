@@ -3,7 +3,7 @@ defmodule HeyiAmAppWeb.PageControllerTest do
 
   test "GET / renders the landing page for unauthenticated users", %{conn: conn} do
     conn = get(conn, ~p"/")
-    assert html_response(conn, 200) =~ "Archive your coding sessions"
+    assert html_response(conn, 200) =~ "Show your"
   end
 
   test "GET /terms renders the terms page", %{conn: conn} do
