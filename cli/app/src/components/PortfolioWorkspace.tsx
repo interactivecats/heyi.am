@@ -8,9 +8,9 @@ export function PortfolioWorkspace() {
   return (
     <PortfolioStoreProvider>
       <AppShell>
-        <div className="flex flex-col h-full min-h-[calc(100vh-3rem)]">
+        <div className="flex flex-col h-[calc(100vh-3rem)] min-h-0">
           <StatusBar />
-          <div className="flex flex-1 overflow-hidden">
+          <div className="flex flex-1 min-h-0 overflow-hidden">
             <PreviewPane />
             <EditRail />
           </div>

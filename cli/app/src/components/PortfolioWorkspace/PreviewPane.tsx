@@ -185,7 +185,7 @@ export function PreviewPane() {
   }, [templateName])
 
   return (
-    <div className="flex flex-1 flex-col bg-surface-mid" data-testid="portfolio-preview">
+    <div className="flex flex-1 min-w-0 min-h-0 flex-col bg-surface-mid" data-testid="portfolio-preview">
       {/* Header strip */}
       <div className="flex h-9 shrink-0 items-center justify-between border-b border-ghost bg-surface-lowest px-3">
         {/* Segmented control */}
@@ -245,7 +245,7 @@ export function PreviewPane() {
         title="Portfolio preview"
         src={currentSrc}
         onLoad={handleIframeLoad}
-        className="flex-1 w-full border-0 bg-surface-lowest"
+        className="flex-1 w-full min-h-0 border-0 bg-surface-lowest"
         data-testid="portfolio-preview-iframe"
       />
 
