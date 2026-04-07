@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import {
   fetchProjectDetail,
   fetchProjectRender,
@@ -314,6 +314,28 @@ export function ProjectDetail() {
             <Chip variant="green">{project.isUploaded ? 'Uploaded' : 'Local only'}</Chip>
           </div>
         </div>
+
+        {/* Enhance action — first-class entry to the enhance flow without forcing publish */}
+        {(() => {
+          const enhancedCount = detail.enhanceCache?.selectedSessionIds?.length ?? 0
+          const totalCount = sessions.length
+          const fullyEnhanced = !!project.enhancedAt && enhancedCount >= totalCount && totalCount > 0
+          return (
+            <div className="mb-4">
+              <Link
+                to={`/project/${encodeURIComponent(dirName!)}/enhance`}
+                aria-disabled={fullyEnhanced || undefined}
+                onClick={(e) => { if (fullyEnhanced) e.preventDefault() }}
+                className={`block w-full text-center font-mono text-[10px] uppercase tracking-wider px-3 py-2 rounded-sm border ${fullyEnhanced ? 'border-ghost text-outline cursor-not-allowed pointer-events-none' : 'border-primary text-primary hover:bg-primary/10'}`}
+              >
+                {fullyEnhanced ? 'Enhanced \u2713' : 'Enhance with AI'}
+              </Link>
+              {!fullyEnhanced && enhancedCount > 0 && (
+                <div className="text-[9px] font-mono text-outline mt-1">{enhancedCount} of {totalCount} sessions enhanced</div>
+              )}
+            </div>
+          )
+        })()}
 
         <Note>The local project page is the main object. Public pages are just one projection of it.</Note>
 
