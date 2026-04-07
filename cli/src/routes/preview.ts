@@ -41,8 +41,15 @@ export function clearPreviewCache(): void {
  * TTL: 30 seconds. Invalidated explicitly on profile save, portfolio
  * publish, and project mutations via invalidatePortfolioPreviewCache().
  */
-const portfolioPreviewCache = new Map<'portfolio', { html: string; expiresAt: number }>();
+// Cache key is `portfolio:<templateName>` so previewing the user's data
+// through alternate templates (template browser "My data" toggle) does not
+// poison the default-template entry.
+const portfolioPreviewCache = new Map<string, { html: string; expiresAt: number }>();
 const PORTFOLIO_PREVIEW_CACHE_TTL = 30_000;
+
+function portfolioCacheKey(templateName: string): string {
+  return `portfolio:${templateName}`;
+}
 
 /**
  * Invalidate the cached /preview/portfolio HTML. Call this from any route
@@ -50,12 +57,14 @@ const PORTFOLIO_PREVIEW_CACHE_TTL = 30_000;
  * portfolio publish, project enhance-save, screenshot capture/delete, etc.
  */
 export function invalidatePortfolioPreviewCache(): void {
-  portfolioPreviewCache.delete('portfolio');
+  portfolioPreviewCache.clear();
 }
 
 /** Test helper: read current cache entry without mutating. */
-export function _getPortfolioPreviewCacheEntry(): { html: string; expiresAt: number } | undefined {
-  return portfolioPreviewCache.get('portfolio');
+export function _getPortfolioPreviewCacheEntry(
+  templateName = 'editorial',
+): { html: string; expiresAt: number } | undefined {
+  return portfolioPreviewCache.get(portfolioCacheKey(templateName));
 }
 
 /**
@@ -552,8 +561,17 @@ body { overflow: auto !important; min-height: auto !important; }
   // Cached for PORTFOLIO_PREVIEW_CACHE_TTL ms; the React PreviewPane reloads
   // the iframe on every keystroke (post-debounce), and re-rendering every
   // project's Liquid template on each hit is expensive.
-  router.get('/preview/portfolio', async (_req: Request, res: Response) => {
-    const cached = portfolioPreviewCache.get('portfolio');
+  router.get('/preview/portfolio', async (req: Request, res: Response) => {
+    // Optional template override (?template=:name) lets the template browser
+    // preview real user data through any template without changing the saved
+    // default. Falls back to the user's default when missing or invalid.
+    const templateOverride = typeof req.query.template === 'string' ? req.query.template : undefined;
+    const templateName = (templateOverride && isValidTemplate(templateOverride))
+      ? templateOverride
+      : (getDefaultTemplate() || 'editorial');
+
+    const cacheKey = portfolioCacheKey(templateName);
+    const cached = portfolioPreviewCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
       res.type('html').send(cached.html);
       return;
@@ -561,7 +579,6 @@ body { overflow: auto !important; min-height: auto !important; }
     try {
       const profile = getPortfolioProfile();
       const auth = getAuthToken();
-      const templateName = getDefaultTemplate() || 'editorial';
 
       // Build portfolio projects from real project data
       const rawProjects = await ctx.getProjects();
@@ -647,7 +664,7 @@ body { overflow: auto !important; min-height: auto !important; }
         'PREVIEW — this is how your portfolio will appear on heyi.am',
         templateName,
       );
-      portfolioPreviewCache.set('portfolio', {
+      portfolioPreviewCache.set(cacheKey, {
         html: fullHtml,
         expiresAt: Date.now() + PORTFOLIO_PREVIEW_CACHE_TTL,
       });

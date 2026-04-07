@@ -370,4 +370,38 @@ describe('GET /preview/portfolio', () => {
     expect(res.status).toBe(500);
     expect(res.text).toBe('Portfolio preview failed');
   });
+
+  it('honors a valid ?template= override and renders with that template', async () => {
+    vi.mocked(getDefaultTemplate).mockReturnValue('editorial');
+    const app = makeApp();
+    const res = await request(app).get('/preview/portfolio?template=blueprint');
+    expect(res.status).toBe(200);
+    expect(renderPortfolioHtml).toHaveBeenCalledWith(
+      expect.anything(),
+      'blueprint',
+    );
+  });
+
+  it('falls back to user default when ?template= is not a valid template', async () => {
+    vi.mocked(getDefaultTemplate).mockReturnValue('editorial');
+    const app = makeApp();
+    const res = await request(app).get('/preview/portfolio?template=not-a-real-template');
+    expect(res.status).toBe(200);
+    expect(renderPortfolioHtml).toHaveBeenCalledWith(
+      expect.anything(),
+      'editorial',
+    );
+  });
+
+  it('caches per-template — different templates produce independent cache entries', async () => {
+    vi.mocked(getDefaultTemplate).mockReturnValue('editorial');
+    const app = makeApp();
+    await request(app).get('/preview/portfolio?template=blueprint');
+    await request(app).get('/preview/portfolio?template=editorial');
+    // Two distinct render calls — neither cached entry shadowed the other.
+    const calls = vi.mocked(renderPortfolioHtml).mock.calls;
+    const usedTemplates = calls.map((c) => c[1]);
+    expect(usedTemplates).toContain('blueprint');
+    expect(usedTemplates).toContain('editorial');
+  });
 });
