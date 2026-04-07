@@ -294,6 +294,14 @@ defmodule HeyiAm.Accounts do
     |> Repo.update()
   end
 
+  @doc """
+  Updates the user's `rendered_portfolio_html` column. The HTML is sanitized
+  by `HeyiAm.HtmlSanitizer` inside the changeset before the write.
+  """
+  def update_user_rendered_portfolio_html(user, html) when is_binary(html) do
+    update_user_rendered_html(user, %{"rendered_portfolio_html" => html})
+  end
+
   def update_user_time_stats(user, time_stats) do
     user
     |> Ecto.Changeset.change(%{time_stats: time_stats})
