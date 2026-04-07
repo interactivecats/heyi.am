@@ -80,7 +80,8 @@ export function createSettingsRouter(_ctx: RouteContext): Router {
       return;
     }
 
-    const ALLOWED_FIELDS: Array<keyof PortfolioProfile> = [
+    type StringPortfolioField = Exclude<keyof PortfolioProfile, 'projectsOnPortfolio'>;
+    const ALLOWED_FIELDS: StringPortfolioField[] = [
       'displayName', 'bio', 'photoBase64', 'location', 'email', 'phone',
       'linkedinUrl', 'githubUrl', 'twitterHandle', 'websiteUrl',
       'resumeBase64', 'resumeFilename', 'accent',
