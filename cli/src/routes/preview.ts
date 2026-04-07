@@ -29,6 +29,33 @@ const PREVIEW_CACHE_TTL = 30_000;
 /** Clear the preview data cache. Exported for testing. */
 export function clearPreviewCache(): void {
   previewDataCache.clear();
+  portfolioPreviewCache.clear();
+}
+
+/**
+ * In-memory cache for the rendered /preview/portfolio HTML response.
+ * Keyed by the literal string 'portfolio' (CLI is single-user). Cached value
+ * is the full HTML body that the route would otherwise re-render on every
+ * iframe reload from the React PreviewPane.
+ *
+ * TTL: 30 seconds. Invalidated explicitly on profile save, portfolio
+ * publish, and project mutations via invalidatePortfolioPreviewCache().
+ */
+const portfolioPreviewCache = new Map<'portfolio', { html: string; expiresAt: number }>();
+const PORTFOLIO_PREVIEW_CACHE_TTL = 30_000;
+
+/**
+ * Invalidate the cached /preview/portfolio HTML. Call this from any route
+ * that mutates state visible in the portfolio render: profile save,
+ * portfolio publish, project enhance-save, screenshot capture/delete, etc.
+ */
+export function invalidatePortfolioPreviewCache(): void {
+  portfolioPreviewCache.delete('portfolio');
+}
+
+/** Test helper: read current cache entry without mutating. */
+export function _getPortfolioPreviewCacheEntry(): { html: string; expiresAt: number } | undefined {
+  return portfolioPreviewCache.get('portfolio');
 }
 
 /**
@@ -311,6 +338,8 @@ body { overflow: auto !important; min-height: auto !important; }
         const { unlinkSync } = require('node:fs');
         unlinkSync(filePath);
       }
+      // Portfolio listing shows project screenshots — bust the cache.
+      invalidatePortfolioPreviewCache();
       res.json({ ok: true });
     } catch {
       res.status(500).json({ error: 'Failed to delete screenshot' });
@@ -519,8 +548,16 @@ body { overflow: auto !important; min-height: auto !important; }
     }
   });
 
-  // Portfolio preview -- serves full standalone HTML page with real user data
+  // Portfolio preview -- serves full standalone HTML page with real user data.
+  // Cached for PORTFOLIO_PREVIEW_CACHE_TTL ms; the React PreviewPane reloads
+  // the iframe on every keystroke (post-debounce), and re-rendering every
+  // project's Liquid template on each hit is expensive.
   router.get('/preview/portfolio', async (_req: Request, res: Response) => {
+    const cached = portfolioPreviewCache.get('portfolio');
+    if (cached && cached.expiresAt > Date.now()) {
+      res.type('html').send(cached.html);
+      return;
+    }
     try {
       const profile = getPortfolioProfile();
       const auth = getAuthToken();
@@ -604,12 +641,17 @@ body { overflow: auto !important; min-height: auto !important; }
       };
 
       const bodyHtml = renderPortfolioHtml(renderData, templateName);
-      res.type('html').send(ctx.buildPreviewPage(
+      const fullHtml = ctx.buildPreviewPage(
         renderData.user.displayName ? `${renderData.user.displayName}'s Portfolio` : 'Portfolio Preview',
         bodyHtml,
         'PREVIEW — this is how your portfolio will appear on heyi.am',
         templateName,
-      ));
+      );
+      portfolioPreviewCache.set('portfolio', {
+        html: fullHtml,
+        expiresAt: Date.now() + PORTFOLIO_PREVIEW_CACHE_TTL,
+      });
+      res.type('html').send(fullHtml);
     } catch (err) {
       console.error('[portfolio-preview] Error:', (err as Error).message);
       res.status(500).send('Portfolio preview failed');
