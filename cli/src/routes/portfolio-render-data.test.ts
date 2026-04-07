@@ -72,17 +72,30 @@ describe('buildPortfolioRenderData', () => {
   });
 
   describe('applyPortfolioProjectFilter', () => {
-    const a = { dirName: 'a' };
-    const b = { dirName: 'b' };
-    const c = { dirName: 'c' };
-    const d = { dirName: 'd' };
+    // Fixtures include a `lastSessionDate` so the default-when-empty branch
+    // can rank by recency. Timestamps are deliberately out-of-order vs the
+    // source array so we can prove the sort runs.
+    const a = { dirName: 'a', lastSessionDate: '2026-01-01' };
+    const b = { dirName: 'b', lastSessionDate: '2026-03-15' };
+    const c = { dirName: 'c', lastSessionDate: '2026-02-10' };
+    const d = { dirName: 'd', lastSessionDate: '2026-04-01' };
+    const e = { dirName: 'e', lastSessionDate: '2026-03-20' };
+    const getRecency = (p: { lastSessionDate: string }) => p.lastSessionDate;
 
-    it('returns projects untouched when curated list is undefined', () => {
-      expect(applyPortfolioProjectFilter([a, b, c], undefined)).toEqual([a, b, c]);
+    it('returns the last 3 projects by recency when curated list is undefined', () => {
+      const result = applyPortfolioProjectFilter([a, b, c, d, e], undefined, { getRecency });
+      // d (04-01), e (03-20), b (03-15) are the three most recent.
+      expect(result.map((p) => p.dirName)).toEqual(['d', 'e', 'b']);
     });
 
-    it('returns projects untouched when curated list is empty', () => {
-      expect(applyPortfolioProjectFilter([a, b, c], [])).toEqual([a, b, c]);
+    it('returns the last 3 projects by recency when curated list is empty', () => {
+      const result = applyPortfolioProjectFilter([a, b, c, d, e], [], { getRecency });
+      expect(result.map((p) => p.dirName)).toEqual(['d', 'e', 'b']);
+    });
+
+    it('returns all projects when fewer than 3 exist and curated is undefined', () => {
+      const result = applyPortfolioProjectFilter([a, b], undefined, { getRecency });
+      expect(result.map((p) => p.dirName)).toEqual(['a', 'b']);
     });
 
     it('drops projects marked included=false', () => {

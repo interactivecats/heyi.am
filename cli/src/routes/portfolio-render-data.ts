@@ -1,5 +1,5 @@
 import { getPortfolioProfile, loadProjectEnhanceResult, type PortfolioProjectEntry } from '../settings.js';
-import { getSessionsByProject } from '../db.js';
+import { getSessionsByProject, getAllProjectStats } from '../db.js';
 import { displayNameFromDir } from '../sync.js';
 import { toSlug } from '../format-utils.js';
 import type { PortfolioRenderData, PortfolioProject } from '../render/types.js';
@@ -29,9 +29,19 @@ export async function buildPortfolioRenderData(
   const profile = getPortfolioProfile();
 
   const allRawProjects = await ctx.getProjects();
+  // Build a recency map from DB stats so the default-when-empty branch of
+  // applyPortfolioProjectFilter can rank projects by "user's most recent
+  // work" (latest non-subagent session start_time).
+  const recencyByDir = new Map<string, string>();
+  try {
+    for (const s of getAllProjectStats(ctx.db)) {
+      recencyByDir.set(s.projectDir, s.latestDate || '');
+    }
+  } catch { /* DB may be empty on first run; default branch will fall back */ }
   const rawProjects = applyPortfolioProjectFilter(
     allRawProjects,
     profile.projectsOnPortfolio,
+    { getRecency: (p) => recencyByDir.get(p.dirName) },
   );
   const portfolioProjects: PortfolioProject[] = [];
   const projectCaches = new Map<string, { dirName: string; cache: ReturnType<typeof loadProjectEnhanceResult> }>();
@@ -118,21 +128,55 @@ export async function buildPortfolioRenderData(
  * standing up a RouteContext.
  *
  * Semantics:
- *  - Empty/missing list: pass through all projects in their natural order
- *    (preserves the legacy behavior for users who have never edited the
- *    list).
+ *  - Empty/missing list: default to the `defaultLimit` (3) most recently
+ *    active projects, ranked by `getRecency` (descending). If fewer than
+ *    `defaultLimit` projects exist, return all of them. If `getRecency` is
+ *    not provided, falls back to reverse-alphabetic order on `dirName`
+ *    (an unfortunate fallback — callers should provide a real recency
+ *    accessor).
  *  - Non-empty list:
  *    - Filter out projects whose entry has `included === false`.
  *    - Sort the remaining matched projects by `order` ascending.
  *    - Projects present in the source list but missing from the curated
  *      list (e.g. newly imported since the user last edited) are appended
  *      at the end in source order, treated as `included: true`.
+ *
+ * NOTE: The default-when-empty branch is duplicated in
+ * `cli/app/src/components/PortfolioWorkspace.tsx` (HydratePortfolioStore)
+ * because the frontend bundler does not reach into `cli/src/`. Keep the
+ * two implementations in sync.
  */
+export const PORTFOLIO_DEFAULT_PROJECT_LIMIT = 3;
+
+export interface ApplyPortfolioFilterOptions<P> {
+  /** Returns the recency key for a project (e.g. ISO timestamp of the
+   *  user's last session on it). Larger string sorts as "more recent".
+   *  Missing/empty values rank last. */
+  getRecency?: (p: P) => string | undefined;
+  /** Override the default cap (mainly for tests). */
+  defaultLimit?: number;
+}
+
 export function applyPortfolioProjectFilter<P extends { dirName: string }>(
   projects: P[],
   curated: PortfolioProjectEntry[] | undefined,
+  options: ApplyPortfolioFilterOptions<P> = {},
 ): P[] {
-  if (!curated || curated.length === 0) return projects;
+  if (!curated || curated.length === 0) {
+    const limit = options.defaultLimit ?? PORTFOLIO_DEFAULT_PROJECT_LIMIT;
+    if (projects.length <= limit) return projects;
+    const getRecency = options.getRecency;
+    const ranked = projects.slice().sort((a, b) => {
+      if (getRecency) {
+        const ra = getRecency(a) || '';
+        const rb = getRecency(b) || '';
+        if (ra !== rb) return rb.localeCompare(ra); // descending
+      }
+      // Fallback / tiebreaker: reverse-alphabetic on dirName.
+      return b.dirName.localeCompare(a.dirName);
+    });
+    return ranked.slice(0, limit);
+  }
   const byId = new Map<string, PortfolioProjectEntry>();
   for (const entry of curated) byId.set(entry.projectId, entry);
 
