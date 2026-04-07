@@ -53,6 +53,7 @@ import type {
   TriageEvent,
   EnhanceEvent,
   ProjectEnhanceResult,
+  ProjectEnhanceCacheResponse,
   UploadPayload,
   UploadEvent,
   RefineAnswer,

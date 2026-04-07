@@ -340,6 +340,7 @@ export interface DashboardResponse {
     phase: 'discovering' | 'indexing' | 'done'
     current: number
     total: number
+    parentCount: number
     currentProject?: string
   }
   isEmpty: boolean
