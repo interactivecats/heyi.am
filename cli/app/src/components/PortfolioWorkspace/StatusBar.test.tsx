@@ -144,6 +144,20 @@ describe('StatusBar', () => {
     expect(mockedPublish).not.toHaveBeenCalled()
   })
 
+  it('clicking the target pill chevron opens the TargetPickerSheet', () => {
+    renderWith({})
+    expect(screen.queryByTestId('target-picker-sheet')).toBeNull()
+    fireEvent.click(screen.getByTestId('statusbar-target-pill'))
+    expect(screen.getByTestId('target-picker-sheet')).toBeTruthy()
+  })
+
+  it('closing the TargetPickerSheet via × returns focus to the workspace', () => {
+    renderWith({})
+    fireEvent.click(screen.getByTestId('statusbar-target-pill'))
+    fireEvent.click(screen.getByTestId('target-picker-close'))
+    expect(screen.queryByTestId('target-picker-sheet')).toBeNull()
+  })
+
   it('Cmd+Enter is a no-op while publishing (button disabled)', async () => {
     renderWith({ isPublishing: true })
     await act(async () => {

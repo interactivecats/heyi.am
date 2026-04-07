@@ -7,9 +7,10 @@
 //
 // Phase 3.1 only — target picker (chevron) is wired in Phase 4.
 
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { usePortfolioStore } from '../../hooks/usePortfolioStore'
 import { publishPortfolio } from '../../api'
+import { TargetPickerSheet } from './TargetPickerSheet'
 
 type PrimaryActionKind =
   | 'publish'
@@ -93,6 +94,7 @@ function isEditableElement(el: EventTarget | null): boolean {
 export function StatusBar() {
   const { state, dispatch } = usePortfolioStore()
   const { publishState, isPublishing, lastPublishError, isDraft, changeList } = state
+  const [targetPickerOpen, setTargetPickerOpen] = useState(false)
 
   const target = publishState?.targets['heyi.am']
   const visibility = target?.visibility ?? 'public'
@@ -164,11 +166,15 @@ export function StatusBar() {
       data-testid="portfolio-statusbar"
       className="flex items-center justify-between h-11 px-4 border-b border-ghost bg-surface-lowest shrink-0"
     >
+      <TargetPickerSheet
+        open={targetPickerOpen}
+        onClose={() => setTargetPickerOpen(false)}
+      />
       {/* Left: target pill */}
       <button
         type="button"
         data-testid="statusbar-target-pill"
-        onClick={() => console.log('open target picker')}
+        onClick={() => setTargetPickerOpen(true)}
         className="inline-flex items-center gap-1.5 border border-ghost rounded-sm px-2 py-0.5 text-[0.8125rem] text-on-surface hover:border-outline transition-colors"
       >
         <span>heyi.am · {visibilityLabel}</span>
