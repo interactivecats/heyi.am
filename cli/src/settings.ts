@@ -353,7 +353,11 @@ export interface PortfolioPublishTarget {
   lastPublishedProfileHash: string;
   /** Full profile snapshot at publish time — used for field-level diffs. */
   lastPublishedProfile: PortfolioProfile;
-  /** Arbitrary per-target config (e.g. export outputDir in Phase 4). */
+  /**
+   * Arbitrary per-target config. Known shapes:
+   *   - export: `{ outputDir: string }`
+   *   - github: `{ owner: string; repo: string; branch: string }`
+   */
   config: Record<string, unknown>;
   /**
    * Per-target visibility. `public` is discoverable at heyi.am/:username;
