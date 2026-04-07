@@ -455,6 +455,12 @@ function SortableProjectRow({ projectId, title, included }: SortableRowProps) {
   )
 }
 
+// TODO: project toggle and reorder are NOT yet persisted to the backend.
+// The rendered portfolio currently includes all projects on disk regardless
+// of `included` / `order`. PortfolioWorkspace.HydratePortfolioStore seeds
+// this list so the section header reads "N of N" instead of "0 of 0", but
+// changes here only live in client memory. See feature/portfolio-workspace-ux
+// follow-up dispatch for the persistence wiring.
 function ProjectsSection() {
   const { state, dispatch } = usePortfolioStore()
   const [projectMeta, setProjectMeta] = useState<Record<string, string>>({})
