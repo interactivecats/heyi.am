@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { AppShell, Card, Note, SectionHeader } from './shared'
 import { uploadProject, fetchProjectDetail, startLogin, pollDeviceAuth, type UploadEvent } from '../api'
 import type { ProjectDetail } from '../types'
@@ -25,6 +25,7 @@ function slugify(name: string): string {
 
 export function PublishReview() {
   const { dirName = '' } = useParams()
+  const navigate = useNavigate()
   const [state, setState] = useState<UploadState>({ step: 'review' })
   const [detail, setDetail] = useState<ProjectDetail | null>(null)
 
@@ -173,14 +174,29 @@ export function PublishReview() {
               <p className="text-xs text-on-surface-variant">
                 Sessions are unlisted by default. Go to the dashboard to publish them.
               </p>
-              <a
-                href={state.projectUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 font-semibold text-[0.8125rem] px-3.5 py-1.5 rounded-sm bg-primary text-on-primary hover:bg-primary-hover transition-colors mt-1"
-              >
-                Open dashboard
-              </a>
+              <div className="flex items-center gap-2 mt-1">
+                <button
+                  type="button"
+                  data-testid="publish-done-open-portfolio"
+                  onClick={() => {
+                    // Open the published heyi.am URL in a new tab so the user
+                    // can verify, then hand off back to the workspace.
+                    window.open(state.projectUrl, '_blank', 'noopener,noreferrer')
+                    navigate('/portfolio')
+                  }}
+                  className="inline-flex items-center gap-1.5 font-semibold text-[0.8125rem] px-3.5 py-1.5 rounded-sm bg-primary text-on-primary hover:bg-primary-hover transition-colors"
+                >
+                  Open Portfolio
+                </button>
+                <a
+                  href={state.projectUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-on-surface-variant hover:text-on-surface transition-colors"
+                >
+                  View live page →
+                </a>
+              </div>
             </div>
             <EmbedSnippets projectUrl={state.projectUrl} />
           </Card>
