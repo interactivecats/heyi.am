@@ -1,8 +1,11 @@
 import { Router, type Request, type Response } from 'express';
+import { existsSync } from 'node:fs';
 import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, getSettings, setDefaultTemplate, getPortfolioProfile, savePortfolioProfile, type PortfolioProfile } from '../settings.js';
 import { invalidatePortfolioPreviewCache } from './preview.js';
 import { hasApiKey } from '../llm/index.js';
 import { isValidTemplate, DEFAULT_TEMPLATE, BUILT_IN_TEMPLATES } from '../render/templates.js';
+import { getDbPath } from '../db.js';
+import { getDaemonBinaryPath } from '../daemon-install.js';
 import type { RouteContext } from './context.js';
 
 export function createSettingsRouter(_ctx: RouteContext): Router {
@@ -134,6 +137,29 @@ export function createSettingsRouter(_ctx: RouteContext): Router {
     invalidatePortfolioPreviewCache();
     console.log('[settings] Portfolio profile saved');
     res.json({ ok: true });
+  });
+
+  // Local data summary: read-only diagnostic info displayed in Settings
+  // (DB path, daemon install state). Archive count + last sync are served
+  // by /api/archive/stats so the frontend composes both responses.
+  router.get('/api/local-data', (_req: Request, res: Response) => {
+    try {
+      const dbPath = getDbPath();
+      const daemonBinaryPath = getDaemonBinaryPath();
+      const daemonInstalled = existsSync(daemonBinaryPath);
+      res.json({
+        dbPath,
+        daemon: {
+          installed: daemonInstalled,
+          binaryPath: daemonBinaryPath,
+        },
+      });
+    } catch (err) {
+      console.error('[local-data]', (err as Error).message);
+      res.status(500).json({
+        error: { code: 'LOCAL_DATA_FAILED', message: 'Failed to read local data summary' },
+      });
+    }
   });
 
   return router;

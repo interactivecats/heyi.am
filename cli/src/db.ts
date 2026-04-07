@@ -15,7 +15,7 @@ import type { SessionMeta } from './parsers/index.js';
 function getDataDir(): string {
   return process.env.HEYIAM_DATA_DIR || join(homedir(), '.local', 'share', 'heyiam');
 }
-function getDbPath(): string {
+export function getDbPath(): string {
   return join(getDataDir(), 'sessions.db');
 }
 

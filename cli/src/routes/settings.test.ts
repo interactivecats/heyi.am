@@ -31,6 +31,14 @@ vi.mock('../llm/index.js', () => ({
   hasApiKey: vi.fn(() => !!settingsStore.anthropicApiKey),
 }));
 
+vi.mock('../db.js', () => ({
+  getDbPath: vi.fn(() => '/tmp/heyiam-test/sessions.db'),
+}));
+
+vi.mock('../daemon-install.js', () => ({
+  getDaemonBinaryPath: vi.fn(() => '/tmp/heyiam-test/daemon/heyiam-tray'),
+}));
+
 vi.mock('../render/templates.js', () => ({
   isValidTemplate: vi.fn((name: string) => ['editorial', 'minimal', 'brutalist'].includes(name)),
   DEFAULT_TEMPLATE: 'editorial',
@@ -217,6 +225,19 @@ describe('Settings routes', () => {
         .post('/api/settings/theme')
         .send({ template: 'nonexistent' });
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe('GET /api/local-data', () => {
+    it('returns dbPath and daemon install state', async () => {
+      const res = await request(makeApp()).get('/api/local-data');
+      expect(res.status).toBe(200);
+      expect(res.body.dbPath).toBe('/tmp/heyiam-test/sessions.db');
+      expect(res.body.daemon).toBeDefined();
+      expect(typeof res.body.daemon.installed).toBe('boolean');
+      expect(res.body.daemon.binaryPath).toBe('/tmp/heyiam-test/daemon/heyiam-tray');
+      // The mocked binary path does not exist, so installed should be false.
+      expect(res.body.daemon.installed).toBe(false);
     });
   });
 });
