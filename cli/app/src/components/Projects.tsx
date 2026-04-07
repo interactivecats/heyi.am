@@ -58,9 +58,6 @@ export function Projects() {
       chips={[{ label: 'Projects' }]}
       actions={
         <>
-          <a href="/preview/portfolio" target="_blank" rel="noopener noreferrer" className="text-xs text-on-surface-variant hover:text-on-surface transition-colors">
-            My Portfolio
-          </a>
           <Link to="/search" className="text-xs text-on-surface-variant hover:text-on-surface transition-colors">
             Search
           </Link>
