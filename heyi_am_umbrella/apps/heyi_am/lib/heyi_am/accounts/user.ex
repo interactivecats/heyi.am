@@ -190,7 +190,10 @@ defmodule HeyiAm.Accounts.User do
     |> validate_length(:bio, max: 500)
     |> validate_length(:location, max: 100)
     |> validate_length(:status, max: 100)
-    |> validate_inclusion(:portfolio_layout, ~w(editorial terminal minimal brutalist campfire neon-night))
+    |> validate_length(:portfolio_layout, max: 64)
+    |> validate_format(:portfolio_layout, ~r/\A[a-z0-9][a-z0-9-]*\z/,
+      message: "must be lowercase alphanumeric with hyphens"
+    )
     |> validate_url_scheme(:avatar_url)
     |> validate_url_scheme(:github_url)
   end
