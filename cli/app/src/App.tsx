@@ -12,6 +12,7 @@ import { ProjectUploadFlow } from './components/ProjectUploadFlow'
 import { PublishReview } from './components/PublishReview'
 import { Settings } from './components/Settings'
 import { TemplateBrowser } from './components/TemplateBrowser'
+import { PortfolioWorkspace } from './components/PortfolioWorkspace'
 import { Search } from './components/Search'
 import { SessionView } from './components/SessionView'
 import { ProjectSessions } from './components/ProjectSessions'
@@ -125,6 +126,7 @@ export default function App() {
         {/* Workstream C: Publish + Settings */}
         <Route path="/project/:dirName/publish" element={<PublishReview />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/portfolio" element={<PortfolioWorkspace />} />
         <Route path="/templates" element={<TemplateBrowser />} />
       </Routes>
     </BrowserRouter>
