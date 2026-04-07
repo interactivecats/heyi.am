@@ -4,7 +4,7 @@ import { PortfolioStoreProvider, usePortfolioStore } from '../hooks/usePortfolio
 import { StatusBar } from './PortfolioWorkspace/StatusBar'
 import { PreviewPane } from './PortfolioWorkspace/PreviewPane'
 import { EditRail } from './PortfolioWorkspace/EditRail'
-import { fetchPortfolio, fetchPortfolioPublishState, fetchProjects, type Project } from '../api'
+import { fetchPortfolio, fetchPortfolioPublishState, fetchProjects, type PortfolioProfile, type Project } from '../api'
 
 /**
  * Hydrates the portfolio store on mount from the backend. Without this the
@@ -24,16 +24,24 @@ function HydratePortfolioStore() {
   useEffect(() => {
     let cancelled = false
     Promise.all([
-      fetchPortfolio().catch(() => ({})),
+      fetchPortfolio().catch((): PortfolioProfile => ({})),
       fetchPortfolioPublishState().catch(() => ({ targets: {} })),
       fetchProjects().catch((): Project[] => []),
     ]).then(([profile, publishState, projects]) => {
       if (cancelled) return
-      const entries = projects.map((p, i) => ({
-        projectId: p.dirName,
-        included: true,
-        order: i,
-      }))
+      // Seed from the persisted curated list when present, otherwise default
+      // every project to included in source order. New projects discovered
+      // since the user last saved get appended at the end as included.
+      const persisted = profile.projectsOnPortfolio ?? []
+      const persistedById = new Map(persisted.map((e) => [e.projectId, e]))
+      const matched = persisted
+        .filter((e) => projects.some((p) => p.dirName === e.projectId))
+        .map((e) => ({ projectId: e.projectId, included: e.included, order: e.order }))
+      matched.sort((a, b) => a.order - b.order)
+      const newcomers = projects
+        .filter((p) => !persistedById.has(p.dirName))
+        .map((p) => ({ projectId: p.dirName, included: true, order: 0 }))
+      const entries = [...matched, ...newcomers].map((e, i) => ({ ...e, order: i }))
       dispatch({ type: 'LOAD', profile, publishState, projects: entries })
     })
     return () => {

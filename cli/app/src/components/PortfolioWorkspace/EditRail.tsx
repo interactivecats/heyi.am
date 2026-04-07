@@ -408,10 +408,10 @@ interface SortableRowProps {
   projectId: string
   title: string
   included: boolean
+  onToggle: (projectId: string) => void
 }
 
-function SortableProjectRow({ projectId, title, included }: SortableRowProps) {
-  const { dispatch } = usePortfolioStore()
+function SortableProjectRow({ projectId, title, included, onToggle }: SortableRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: projectId,
   })
@@ -443,7 +443,7 @@ function SortableProjectRow({ projectId, title, included }: SortableRowProps) {
         type="checkbox"
         checked={included}
         data-testid={`editrail-project-checkbox-${projectId}`}
-        onChange={() => dispatch({ type: 'TOGGLE_PROJECT_INCLUDED', projectId })}
+        onChange={() => onToggle(projectId)}
         className="shrink-0"
       />
       <span
@@ -455,15 +455,64 @@ function SortableProjectRow({ projectId, title, included }: SortableRowProps) {
   )
 }
 
-// TODO: project toggle and reorder are NOT yet persisted to the backend.
-// The rendered portfolio currently includes all projects on disk regardless
-// of `included` / `order`. PortfolioWorkspace.HydratePortfolioStore seeds
-// this list so the section header reads "N of N" instead of "0 of 0", but
-// changes here only live in client memory. See feature/portfolio-workspace-ux
-// follow-up dispatch for the persistence wiring.
+// Project toggle/reorder persistence:
+//  - Every change dispatches to the local store immediately (cheap, drives
+//    the section header count and drag preview).
+//  - A 300ms debounced savePortfolio() call ships the WHOLE profile +
+//    projectsOnPortfolio array to the backend (full-replace pattern: the
+//    POST route stores exactly what we send, so partial saves would clobber
+//    other fields).
+//  - On successful save, dispatches BUMP_REFRESH so PreviewPane's iframe
+//    re-mounts and re-fetches /preview/portfolio with the new filter
+//    applied. (Live patching can't reach the projects grid — it'd require
+//    rebuilding the list from scratch.)
 function ProjectsSection() {
   const { state, dispatch } = usePortfolioStore()
   const [projectMeta, setProjectMeta] = useState<Record<string, string>>({})
+
+  // Always read the freshest profile + projects via refs inside the
+  // debounced callback so we project over the latest state, not the
+  // snapshot at the time the timer was scheduled.
+  const profileRef = useRef(state.profile)
+  const projectsRef = useRef(state.projects)
+  useEffect(() => {
+    profileRef.current = state.profile
+  }, [state.profile])
+  useEffect(() => {
+    projectsRef.current = state.projects
+  }, [state.projects])
+
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current !== null) {
+        clearTimeout(saveTimerRef.current)
+        saveTimerRef.current = null
+      }
+    }
+  }, [])
+
+  function scheduleProjectsSave() {
+    if (saveTimerRef.current !== null) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = null
+      const payload: PortfolioProfile = {
+        ...profileRef.current,
+        projectsOnPortfolio: projectsRef.current
+          .slice()
+          .sort((a, b) => a.order - b.order)
+          .map((p, i) => ({ projectId: p.projectId, included: p.included, order: i })),
+      }
+      void savePortfolio(payload)
+        .then(() => {
+          dispatch({ type: 'BUMP_REFRESH' })
+        })
+        .catch((err) => {
+          // eslint-disable-next-line no-console
+          console.error('[EditRail] Failed to persist projectsOnPortfolio', err)
+        })
+    }, PROFILE_SAVE_DEBOUNCE_MS)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -507,6 +556,12 @@ function ProjectsSection() {
     // to keep the store as the source of truth.
     void arrayMove
     dispatch({ type: 'REORDER_PROJECT', projectId: String(active.id), newIndex })
+    scheduleProjectsSave()
+  }
+
+  function handleToggle(projectId: string) {
+    dispatch({ type: 'TOGGLE_PROJECT_INCLUDED', projectId })
+    scheduleProjectsSave()
   }
 
   return (
@@ -526,6 +581,7 @@ function ProjectsSection() {
                   projectId={p.projectId}
                   title={projectMeta[p.projectId] ?? p.projectId}
                   included={p.included}
+                  onToggle={handleToggle}
                 />
               ))}
             </div>

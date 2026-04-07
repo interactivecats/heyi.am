@@ -366,6 +366,48 @@ describe('EditRail — projects section', () => {
     expect(header.textContent).toContain('2 of 3')
   })
 
+  it('toggling a project checkbox debounce-saves projectsOnPortfolio and bumps refreshTrigger', async () => {
+    vi.useFakeTimers()
+    let stateRef: { current: PortfolioStoreState | null } = { current: null }
+    function Probe() {
+      const { state } = usePortfolioStore()
+      stateRef.current = state
+      return null
+    }
+    try {
+      vi.mocked(api.savePortfolio).mockResolvedValue(undefined)
+      render(
+        <PortfolioStoreProvider initialState={{ projects: baseProjects }}>
+          <EditRail />
+          <Probe />
+        </PortfolioStoreProvider>,
+      )
+      fireEvent.click(screen.getByTestId('editrail-section-toggle-projects'))
+      const before = stateRef.current?.refreshTrigger ?? 0
+      const cb = screen.getByTestId('editrail-project-checkbox-p2') as HTMLInputElement
+      fireEvent.click(cb)
+      // Not yet — debounced.
+      expect(api.savePortfolio).not.toHaveBeenCalled()
+      await act(async () => {
+        vi.advanceTimersByTime(300)
+      })
+      await act(async () => {
+        await Promise.resolve()
+        await Promise.resolve()
+      })
+      expect(api.savePortfolio).toHaveBeenCalledTimes(1)
+      const arg = (api.savePortfolio as ReturnType<typeof vi.fn>).mock.calls[0][0]
+      expect(arg.projectsOnPortfolio).toEqual([
+        { projectId: 'p1', included: true, order: 0 },
+        { projectId: 'p2', included: true, order: 1 },
+        { projectId: 'p3', included: true, order: 2 },
+      ])
+      expect(stateRef.current?.refreshTrigger).toBe(before + 1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('toggling a project checkbox dispatches TOGGLE_PROJECT_INCLUDED', () => {
     renderWith({ projects: baseProjects })
     fireEvent.click(screen.getByTestId('editrail-section-toggle-projects'))
