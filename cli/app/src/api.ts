@@ -348,6 +348,13 @@ export interface PortfolioProfile {
    * previously persisted value.
    */
   accent?: string
+  /**
+   * User-curated list of projects on the portfolio (toggled visibility +
+   * drag-to-reorder). Persisted server-side; the rendered portfolio uses
+   * this to filter and order the projects list. Empty/missing means
+   * "include all projects in default order".
+   */
+  projectsOnPortfolio?: Array<{ projectId: string; included: boolean; order: number }>
 }
 
 export async function fetchPortfolio(): Promise<PortfolioProfile> {

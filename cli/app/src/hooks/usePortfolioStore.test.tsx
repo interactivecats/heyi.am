@@ -43,6 +43,18 @@ describe('portfolioStoreReducer', () => {
     expect(next.lastSavedAt).toBeGreaterThan(0)
   })
 
+  it('BUMP_REFRESH increments refreshTrigger by one', () => {
+    const start = stateWith({ refreshTrigger: 4 })
+    const next = portfolioStoreReducer(start, { type: 'BUMP_REFRESH' })
+    expect(next.refreshTrigger).toBe(5)
+    const next2 = portfolioStoreReducer(next, { type: 'BUMP_REFRESH' })
+    expect(next2.refreshTrigger).toBe(6)
+  })
+
+  it('initial state has refreshTrigger = 0', () => {
+    expect(initialPortfolioStoreState.refreshTrigger).toBe(0)
+  })
+
   it('PROFILE_SAVED sets lastSavedAt to a monotonic-ish timestamp', () => {
     const before = Date.now()
     const next = portfolioStoreReducer(initialPortfolioStoreState, { type: 'PROFILE_SAVED' })

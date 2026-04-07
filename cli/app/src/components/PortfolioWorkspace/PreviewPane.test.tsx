@@ -441,7 +441,7 @@ describe('PreviewPane', () => {
       fireEvent.click(screen.getByTestId('bump-contact'))
       const img = doc.querySelector('[data-portfolio-field="photoBase64"]') as HTMLImageElement
       expect(img.getAttribute('src')).toBe('data:image/png;base64,NEW')
-      expect(img.style.display).toBe('')
+      expect(img.hasAttribute('data-portfolio-empty')).toBe(false)
     })
 
     it('clearing email hides the element via display:none', () => {
@@ -449,7 +449,7 @@ describe('PreviewPane', () => {
       const doc = installContactDoc()
       fireEvent.click(screen.getByTestId('bump-contact'))
       const a = doc.querySelector('[data-portfolio-field="email"]') as HTMLElement
-      expect(a.style.display).toBe('none')
+      expect(a.getAttribute('data-portfolio-empty')).toBe('true')
     })
 
     it('clearing photoBase64 hides the <img>', () => {
@@ -457,7 +457,7 @@ describe('PreviewPane', () => {
       const doc = installContactDoc()
       fireEvent.click(screen.getByTestId('bump-contact'))
       const img = doc.querySelector('[data-portfolio-field="photoBase64"]') as HTMLElement
-      expect(img.style.display).toBe('none')
+      expect(img.getAttribute('data-portfolio-empty')).toBe('true')
     })
 
     it('iframe does NOT reload (key does not change) on profile change', () => {

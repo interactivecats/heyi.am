@@ -102,9 +102,16 @@ function patchField(doc: Document, field: PatchableField, rawValue: string | und
   const value = rawValue ?? ''
   const isEmpty = value === ''
 
-  // Visibility toggle. Empty -> hide, non-empty -> show. style.display = ''
-  // restores whatever the stylesheet specified.
-  el.style.display = isEmpty ? 'none' : ''
+  // Visibility toggle. Empty -> mark with data-portfolio-empty so the
+  // template stylesheet's [data-portfolio-empty="true"] { display: none }
+  // rule hides it. Non-empty -> remove the attribute so the stylesheet's
+  // default visibility wins. We deliberately do NOT touch style.display so
+  // we don't fight whatever layout the template has on the element.
+  if (isEmpty) {
+    el.setAttribute('data-portfolio-empty', 'true')
+  } else {
+    el.removeAttribute('data-portfolio-empty')
+  }
 
   if (field === 'photoBase64') {
     // <img> src update. setAttribute keeps things consistent with how the
@@ -142,10 +149,9 @@ function applyAllPatches(doc: Document, profile: PortfolioProfile): void {
 }
 
 export function PreviewPane() {
-  const { state } = usePortfolioStore()
+  const { state, dispatch } = usePortfolioStore()
   const [target, setTarget] = useState<PreviewTarget>('landing')
   const [reloadKey, setReloadKey] = useState(0)
-  const [forceReloadCounter, setForceReloadCounter] = useState(0)
   const [refreshDisabled, setRefreshDisabled] = useState(false)
   const [templateName, setTemplateName] = useState<string>('editorial')
   const [username, setUsername] = useState<string | null>(null)
@@ -280,7 +286,10 @@ export function PreviewPane() {
    */
   function handleRefresh() {
     if (refreshDisabled) return
-    setForceReloadCounter((c) => c + 1)
+    // Unified with the auto-refresh path: dispatch BUMP_REFRESH so the
+    // iframe key derived from state.refreshTrigger increments. This is the
+    // same mechanism EditRail uses after a project list save lands.
+    dispatch({ type: 'BUMP_REFRESH' })
     setRefreshDisabled(true)
     setTimeout(() => setRefreshDisabled(false), 500)
   }
@@ -387,7 +396,7 @@ export function PreviewPane() {
 
       {/* Iframe */}
       <iframe
-        key={`${reloadKey}-${forceReloadCounter}`}
+        key={`${reloadKey}-${state.refreshTrigger}`}
         ref={iframeRef}
         title="Portfolio preview"
         src={currentSrc}

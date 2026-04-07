@@ -45,6 +45,15 @@ export interface PortfolioStoreState {
    * no save has completed yet in this session (fresh mount).
    */
   lastSavedAt: number | null
+  /**
+   * Monotonically incrementing counter that PreviewPane includes in the
+   * iframe key. Bumped after server-side state changes the live DOM patcher
+   * cannot reach (project list reorder/toggle, manual Refresh, etc.) so the
+   * iframe re-mounts and re-fetches against the latest server render.
+   * Profile field updates do NOT bump this — they go through the live
+   * patcher instead.
+   */
+  refreshTrigger: number
 }
 
 export const initialPortfolioStoreState: PortfolioStoreState = {
@@ -57,6 +66,7 @@ export const initialPortfolioStoreState: PortfolioStoreState = {
   isPublishing: false,
   lastPublishError: null,
   lastSavedAt: null,
+  refreshTrigger: 0,
 }
 
 // ── Actions ──────────────────────────────────────────────────
@@ -70,6 +80,7 @@ export type PortfolioStoreAction =
     }
   | { type: 'UPDATE_PROFILE_FIELD'; field: keyof PortfolioProfile; value: string | undefined }
   | { type: 'PROFILE_SAVED' }
+  | { type: 'BUMP_REFRESH' }
   | { type: 'TOGGLE_PROJECT_INCLUDED'; projectId: string }
   | { type: 'REORDER_PROJECT'; projectId: string; newIndex: number }
   | { type: 'PUBLISH_START' }
@@ -111,6 +122,9 @@ export function portfolioStoreReducer(
 
     case 'PROFILE_SAVED':
       return { ...state, lastSavedAt: Date.now() }
+
+    case 'BUMP_REFRESH':
+      return { ...state, refreshTrigger: state.refreshTrigger + 1 }
 
     case 'TOGGLE_PROJECT_INCLUDED': {
       const nextProjects = state.projects.map((p) =>
