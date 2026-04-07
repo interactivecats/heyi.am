@@ -185,6 +185,36 @@ describe('POST /api/portfolio/upload', () => {
     expect(target.lastPublishedAt).toBe('');
   });
 
+  it('GET /api/portfolio/state returns empty state by default', async () => {
+    const res = await request(makeApp()).get('/api/portfolio/state');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ targets: {} });
+  });
+
+  it('GET /api/portfolio/state requires auth', async () => {
+    vi.mocked(getAuthToken).mockReturnValueOnce(null);
+    const res = await request(makeApp()).get('/api/portfolio/state');
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe('UNAUTHENTICATED');
+  });
+
+  it('GET /api/portfolio/state returns persisted state after a successful publish', async () => {
+    savePortfolioProfile({ displayName: 'Ada' }, configDir);
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true, username: 'testuser' }),
+    });
+    await request(makeApp()).post('/api/portfolio/upload').send({});
+
+    const res = await request(makeApp()).get('/api/portfolio/state');
+    expect(res.status).toBe(200);
+    const target = res.body.targets[DEFAULT_PORTFOLIO_TARGET];
+    expect(target).toBeDefined();
+    expect(target.lastPublishedProfile.displayName).toBe('Ada');
+    expect(target.visibility).toBe('public');
+  });
+
   it('maps Phoenix 5xx to 502 gateway error', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: false,

@@ -12,6 +12,7 @@ import {
   loadProjectEnhanceResult,
   hashPortfolioProfile,
   updatePortfolioPublishTarget,
+  getPortfolioPublishState,
   DEFAULT_PORTFOLIO_TARGET,
 } from '../settings.js';
 import { generatePortfolioHtmlFragment } from '../export.js';
@@ -584,6 +585,31 @@ export function createPublishRouter(ctx: RouteContext): Router {
       console.error('[upload] Error:', (err as Error).message);
       send({ type: 'error', code: 'UPLOAD_FAILED', message: (err as Error).message });
       res.end();
+    }
+  });
+
+  // Read the current portfolio publish state (per-target snapshots, hashes,
+  // last errors, visibility). Authenticated via the same Bearer pattern as
+  // the upload route — the state file lives in the user's local config dir
+  // but it still references the signed-in identity, so don't leak it to
+  // unauthenticated callers.
+  router.get('/api/portfolio/state', async (_req: Request, res: Response) => {
+    const auth = getAuthToken();
+    if (!auth) {
+      res.status(401).json({
+        error: { code: 'UNAUTHENTICATED', message: 'Authentication required' },
+      });
+      return;
+    }
+    try {
+      const state = getPortfolioPublishState();
+      res.json(state);
+    } catch (err) {
+      const message = (err as Error).message;
+      console.error('[portfolio-state] Error:', message);
+      res.status(500).json({
+        error: { code: 'PORTFOLIO_STATE_READ_FAILED', message },
+      });
     }
   });
 

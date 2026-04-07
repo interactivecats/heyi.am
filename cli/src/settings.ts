@@ -344,6 +344,8 @@ export function getUploadedState(projectDirName: string, configDir?: string): Up
 // UI to detect drift between the current local profile and what was last
 // published, without re-running the renderer.
 
+export type PortfolioTargetVisibility = 'public' | 'unlisted';
+
 export interface PortfolioPublishTarget {
   /** ISO timestamp of the last successful publish to this target. */
   lastPublishedAt: string;
@@ -353,6 +355,11 @@ export interface PortfolioPublishTarget {
   lastPublishedProfile: PortfolioProfile;
   /** Arbitrary per-target config (e.g. export outputDir in Phase 4). */
   config: Record<string, unknown>;
+  /**
+   * Per-target visibility. `public` is discoverable at heyi.am/:username;
+   * `unlisted` is reachable by URL but not indexed. Defaults to `public`.
+   */
+  visibility?: PortfolioTargetVisibility;
   /** Public URL of the last published portfolio, if known. */
   url?: string;
   /** Last error message from a failed publish attempt, cleared on success. */
@@ -420,6 +427,7 @@ export function updatePortfolioPublishTarget(
     lastPublishedProfileHash: '',
     lastPublishedProfile: {},
     config: {},
+    visibility: target === DEFAULT_PORTFOLIO_TARGET ? 'public' : undefined,
   };
   state.targets[target] = { ...base, ...patch };
   savePortfolioPublishState(state, configDir);
