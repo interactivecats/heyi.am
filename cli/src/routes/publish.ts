@@ -681,10 +681,12 @@ export function createPublishRouter(ctx: RouteContext): Router {
 
       const renderedHtml = generatePortfolioHtmlFragment(renderData, templateName);
 
-      // POST to Phoenix endpoint (Track A). Endpoint shape:
+      // POST to Phoenix endpoint (PortfolioApiController.upload). Shape:
       //   POST {API_URL}/api/portfolio/upload
-      //   { portfolio: { rendered_html, template } }
-      //   -> 200 { ok: true, url }
+      //   { html: "<body data-template=...>...</body>", profile?: {...} }
+      //   -> 200 { ok: true, username }
+      // Phoenix sanitizes the HTML, persists to users.rendered_portfolio_html,
+      // and applies the optional profile snapshot via Accounts.update_user_profile.
       const phoenixRes = await fetch(`${API_URL}/api/portfolio/upload`, {
         method: 'POST',
         headers: {
@@ -692,10 +694,8 @@ export function createPublishRouter(ctx: RouteContext): Router {
           Authorization: `Bearer ${auth.token}`,
         },
         body: JSON.stringify({
-          portfolio: {
-            rendered_html: renderedHtml,
-            template: templateName,
-          },
+          html: renderedHtml,
+          profile,
         }),
       });
 
@@ -721,7 +721,8 @@ export function createPublishRouter(ctx: RouteContext): Router {
         return;
       }
 
-      const okBody = await phoenixRes.json().catch(() => ({})) as { url?: string };
+      const okBody = await phoenixRes.json().catch(() => ({})) as { username?: string };
+      const publishedUrl = okBody.username ? `${API_URL}/${okBody.username}` : undefined;
       const publishedAt = new Date().toISOString();
       const hash = hashPortfolioProfile(profile);
 
@@ -730,7 +731,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
         lastPublishedProfileHash: hash,
         lastPublishedProfile: profile,
         config: {},
-        url: okBody.url,
+        url: publishedUrl,
         lastError: undefined,
         lastErrorAt: undefined,
       });
