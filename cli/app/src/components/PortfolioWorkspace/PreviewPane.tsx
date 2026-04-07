@@ -284,6 +284,18 @@ export function PreviewPane() {
    * picks up the freshest server render. Disables itself for ~500ms after
    * each click to prevent accidental spam.
    */
+  // Track the refresh-disable timer so we can clear it on unmount and avoid
+  // a state setter firing on an unmounted component.
+  const refreshDisableTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    return () => {
+      if (refreshDisableTimerRef.current !== null) {
+        clearTimeout(refreshDisableTimerRef.current)
+        refreshDisableTimerRef.current = null
+      }
+    }
+  }, [])
+
   function handleRefresh() {
     if (refreshDisabled) return
     // Unified with the auto-refresh path: dispatch BUMP_REFRESH so the
@@ -291,7 +303,13 @@ export function PreviewPane() {
     // same mechanism EditRail uses after a project list save lands.
     dispatch({ type: 'BUMP_REFRESH' })
     setRefreshDisabled(true)
-    setTimeout(() => setRefreshDisabled(false), 500)
+    if (refreshDisableTimerRef.current !== null) {
+      clearTimeout(refreshDisableTimerRef.current)
+    }
+    refreshDisableTimerRef.current = setTimeout(() => {
+      refreshDisableTimerRef.current = null
+      setRefreshDisabled(false)
+    }, 500)
   }
 
   function handleOpenInBrowser() {
