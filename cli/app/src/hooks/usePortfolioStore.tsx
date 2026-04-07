@@ -38,6 +38,8 @@ export interface PortfolioStoreState {
   changeList: string[]
   isPublishing: boolean
   lastPublishError: string | null
+  /** User-chosen absolute folder path for the "export" target. Null until picked. */
+  exportTargetPath: string | null
 }
 
 export const initialPortfolioStoreState: PortfolioStoreState = {
@@ -49,6 +51,7 @@ export const initialPortfolioStoreState: PortfolioStoreState = {
   changeList: [],
   isPublishing: false,
   lastPublishError: null,
+  exportTargetPath: null,
 }
 
 // ── Actions ──────────────────────────────────────────────────
@@ -73,6 +76,7 @@ export type PortfolioStoreAction =
       target: PortfolioTargetId
       visibility: PortfolioTargetVisibility
     }
+  | { type: 'SET_EXPORT_TARGET_PATH'; path: string | null }
 
 // ── Reducer ──────────────────────────────────────────────────
 
@@ -155,6 +159,9 @@ export function portfolioStoreReducer(
         },
       }
     }
+
+    case 'SET_EXPORT_TARGET_PATH':
+      return { ...state, exportTargetPath: action.path }
 
     default:
       return state
