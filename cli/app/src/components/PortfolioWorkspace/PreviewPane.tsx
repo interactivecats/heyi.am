@@ -105,23 +105,30 @@ export function PreviewPane() {
     }
   }, [])
 
-  // Debounced reload on profile change. Captures scroll position before the
-  // remount, restores it after the new iframe document fires `load`.
+  // Reload the iframe ONLY when a profile save has actually succeeded at the
+  // backend. `state.lastSavedAt` is bumped by EditRail after savePortfolio()
+  // resolves; this decouples the iframe remount from keystroke-level store
+  // updates and kills the per-keystroke flash. Scroll position is captured
+  // before the remount and restored after the new document fires `load`.
+  //
+  // Skip the first run: initial mount (with the baseline lastSavedAt seeded
+  // by LOAD on hydration) should not trigger a reload — the iframe is
+  // already mounting fresh.
+  const firstReloadRunRef = useRef(true)
   useEffect(() => {
-    const timer = setTimeout(() => {
-      try {
-        const win = iframeRef.current?.contentWindow
-        // Same-origin access: this throws if cross-origin.
-        savedScrollRef.current = win?.scrollY ?? 0
-      } catch {
-        savedScrollRef.current = 0
-      }
-      setReloadKey((k) => k + 1)
-    }, 300)
-    return () => clearTimeout(timer)
-    // We intentionally only depend on `profile` — segmented-control changes
-    // already swap the iframe via the `src` prop.
-  }, [state.profile])
+    if (firstReloadRunRef.current) {
+      firstReloadRunRef.current = false
+      return
+    }
+    try {
+      const win = iframeRef.current?.contentWindow
+      // Same-origin access: this throws if cross-origin.
+      savedScrollRef.current = win?.scrollY ?? 0
+    } catch {
+      savedScrollRef.current = 0
+    }
+    setReloadKey((k) => k + 1)
+  }, [state.lastSavedAt])
 
   function handleIframeLoad() {
     try {

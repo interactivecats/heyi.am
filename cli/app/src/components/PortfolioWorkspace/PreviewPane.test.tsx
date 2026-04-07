@@ -204,53 +204,54 @@ describe('PreviewPane', () => {
     expect(btn.disabled).toBe(true)
   })
 
-  it('debounces profile updates: rapid changes result in one iframe reload', () => {
-    vi.useFakeTimers()
-    try {
-      // Wrapper that exposes dispatch via a button.
-      function Harness() {
-        const { dispatch } = usePortfolioStore()
-        return (
-          <>
-            <button
-              data-testid="bump"
-              onClick={() =>
-                dispatch({
-                  type: 'UPDATE_PROFILE_FIELD',
-                  field: 'displayName',
-                  value: Math.random().toString(),
-                })
-              }
-            />
-            <PreviewPane />
-          </>
-        )
-      }
-      render(<Harness />, { wrapper: withProvider() })
-      const initialKey = getIframe().getAttribute('data-reactroot')
-      // Use the iframe element identity (key changes => new element).
-      const before = getIframe()
-
-      // Five rapid keystrokes within the debounce window
-      for (let i = 0; i < 5; i++) {
-        fireEvent.click(screen.getByTestId('bump'))
-        act(() => {
-          vi.advanceTimersByTime(50)
-        })
-      }
-      // None should have reloaded yet (cumulative 250ms < 300ms)
-      // After total elapsed >= 300ms from the LAST click, exactly one reload.
-      act(() => {
-        vi.advanceTimersByTime(300)
-      })
-      const after = getIframe()
-      // The element identity must have changed exactly once compared to before.
-      expect(after).not.toBe(before)
-      // And there is only one iframe rendered.
-      expect(screen.getAllByTestId('portfolio-preview-iframe').length).toBe(1)
-      void initialKey
-    } finally {
-      vi.useRealTimers()
+  it('iframe does NOT reload when only profile changes (no lastSavedAt bump)', () => {
+    function Harness() {
+      const { dispatch } = usePortfolioStore()
+      return (
+        <>
+          <button
+            data-testid="bump-profile"
+            onClick={() =>
+              dispatch({
+                type: 'UPDATE_PROFILE_FIELD',
+                field: 'displayName',
+                value: Math.random().toString(),
+              })
+            }
+          />
+          <PreviewPane />
+        </>
+      )
     }
+    render(<Harness />, { wrapper: withProvider() })
+    const before = getIframe()
+    for (let i = 0; i < 5; i++) {
+      fireEvent.click(screen.getByTestId('bump-profile'))
+    }
+    const after = getIframe()
+    // Same element identity: no key bump, no remount.
+    expect(after).toBe(before)
+    expect(screen.getAllByTestId('portfolio-preview-iframe').length).toBe(1)
+  })
+
+  it('iframe reloads exactly once when lastSavedAt changes (PROFILE_SAVED dispatched)', () => {
+    function Harness() {
+      const { dispatch } = usePortfolioStore()
+      return (
+        <>
+          <button
+            data-testid="mark-saved"
+            onClick={() => dispatch({ type: 'PROFILE_SAVED' })}
+          />
+          <PreviewPane />
+        </>
+      )
+    }
+    render(<Harness />, { wrapper: withProvider() })
+    const before = getIframe()
+    fireEvent.click(screen.getByTestId('mark-saved'))
+    const after = getIframe()
+    expect(after).not.toBe(before)
+    expect(screen.getAllByTestId('portfolio-preview-iframe').length).toBe(1)
   })
 })
