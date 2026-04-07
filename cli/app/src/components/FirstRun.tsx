@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, type KeyboardEvent, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AppShell, Chip, Card, SectionHeader, StatCard, Note } from './shared'
 import { WorkTimeline } from './WorkTimeline'
 import { GrowthChart } from './GrowthChart'
@@ -23,6 +23,7 @@ type OnboardingStep =
 const PREVIEW_STEPS: OnboardingStep[] = ['preview_project', 'preview_enhanced', 'prompt_enhance']
 
 export function FirstRun() {
+  const navigate = useNavigate()
   const [step, setStep] = useState<OnboardingStep>('loading')
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null)
   const [syncProgress, setSyncProgress] = useState<SyncProgressEvent | null>(null)
@@ -45,7 +46,11 @@ export function FirstRun() {
   const skipToDashboard = useCallback(() => {
     apiCompleteOnboarding().catch(() => {})
     setStep('dashboard')
-  }, [])
+    // Founder IA correction: users land on Dashboard at "/" after onboarding,
+    // not "/portfolio". FirstRun is mounted at "/", so this is a no-op for
+    // the URL but keeps the contract explicit and testable.
+    navigate('/')
+  }, [navigate])
 
   // ── Initial load + sync subscription ──────────────────────
   useEffect(() => {
@@ -1271,7 +1276,7 @@ function Dashboard({
           <div className="grid grid-cols-4 gap-4">
             <StatBox label="Sessions indexed" value={stats.sessionCount} to="/archive" color="var(--primary)" />
             <StatBox label="Projects" value={stats.projectCount} to="/projects" />
-            <StatBox label="Enhanced" value={enhancedCount} to="/projects" color={enhancedCount > 0 ? '#34d399' : undefined} />
+            <StatBox label="Enhanced" value={enhancedCount} to="/projects?filter=unenhanced" color={enhancedCount > 0 ? '#34d399' : undefined} />
             <StatBox label="Sources" value={stats.sourceCount} to="/sources" />
           </div>
         </>
@@ -1288,6 +1293,9 @@ function Dashboard({
         </Link>
         <Link to="/search" className="inline-flex items-center gap-1.5 font-semibold text-[0.8125rem] px-4 py-2 rounded-sm text-primary border border-ghost hover:border-outline transition-colors">
           Search sessions
+        </Link>
+        <Link to="/portfolio" className="inline-flex items-center gap-1.5 font-semibold text-[0.8125rem] px-4 py-2 rounded-sm text-primary border border-ghost hover:border-outline transition-colors">
+          Open Portfolio
         </Link>
 
         {dashboard?.sync.status === 'syncing' && (
@@ -1319,7 +1327,7 @@ function Dashboard({
         <FeatureCard to="/archive" label="Archive" title="Back up sessions" desc="Import from local AI tools before they expire. Everything stays on your machine." />
         <FeatureCard to="/projects" label="Build" title="AI case studies" desc="AI reads your sessions, extracts skills, and drafts a narrative for each project." />
         <FeatureCard to="/search" label="Search" title="Find past work" desc="Full-text search across all sessions. Filter by tool, project, or skill." />
-        <FeatureCard to="/projects" label="Export" title="HTML, markdown, or publish" desc="Save locally, export markdown, or publish a public portfolio on heyi.am." />
+        <FeatureCard to="/portfolio" label="Export" title="HTML, markdown, or publish" desc="Export your full portfolio as a static site, publish to heyi.am, or push to GitHub Pages." />
       </div>
 
       <div className="h-8" />
