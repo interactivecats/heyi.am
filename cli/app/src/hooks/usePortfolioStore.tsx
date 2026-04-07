@@ -20,7 +20,7 @@ import {
   type PortfolioTargetVisibility,
 } from '../api'
 
-export type PortfolioTargetId = 'heyi.am' | 'export' | 'github'
+export type PortfolioTargetId = 'heyi.am' | 'github'
 
 /** Project entry on the portfolio. Order is user-curated (drag-to-reorder). */
 export interface PortfolioProjectEntry {

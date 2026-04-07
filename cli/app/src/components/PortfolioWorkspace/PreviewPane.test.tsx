@@ -192,20 +192,11 @@ describe('PreviewPane', () => {
     }
   })
 
-  it('"Open in browser" is disabled for the export target even when published', async () => {
+  it('"Open in browser" is disabled for the github target when no URL is published', async () => {
     render(<PreviewPane />, {
       wrapper: withProvider({
-        activeTarget: 'export',
-        publishState: {
-          targets: {
-            export: {
-              lastPublishedAt: '2026-04-01T00:00:00.000Z',
-              lastPublishedProfileHash: 'abc',
-              lastPublishedProfile: {},
-              config: {},
-            },
-          },
-        },
+        activeTarget: 'github',
+        publishState: { targets: {} },
       }),
     })
     await act(async () => { await Promise.resolve() })

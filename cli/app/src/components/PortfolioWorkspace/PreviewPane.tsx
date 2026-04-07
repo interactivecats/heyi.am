@@ -135,8 +135,7 @@ export function PreviewPane() {
   }
 
   // Resolve the "Open in browser" URL based on the active target. Returns
-  // null when there's nothing to open (never published, missing config, or
-  // export target which writes to disk and isn't navigable).
+  // null when there's nothing to open (never published or missing config).
   const openInBrowserUrl = useMemo<string | null>(() => {
     if (state.activeTarget === 'heyi.am') {
       if (!username) return null
@@ -148,12 +147,8 @@ export function PreviewPane() {
       // canonical heyi.am path computed from the username.
       return targetState.url || `https://heyi.am/${encodeURIComponent(username)}`
     }
-    if (state.activeTarget === 'github') {
-      const githubTarget = state.publishState?.targets.github
-      return githubTarget?.url ?? null
-    }
-    // 'export' target produces a folder on disk — not navigable.
-    return null
+    const githubTarget = state.publishState?.targets.github
+    return githubTarget?.url ?? null
   }, [state.activeTarget, state.publishState, username])
 
   function handleOpenInBrowser() {

@@ -156,9 +156,9 @@ describe('portfolioStoreReducer', () => {
   it('SET_ACTIVE_TARGET switches active target', () => {
     const next = portfolioStoreReducer(initialPortfolioStoreState, {
       type: 'SET_ACTIVE_TARGET',
-      target: 'export',
+      target: 'github',
     })
-    expect(next.activeTarget).toBe('export')
+    expect(next.activeTarget).toBe('github')
   })
 
   it('SET_VISIBILITY patches visibility on the named target, creating the target entry if missing', () => {
