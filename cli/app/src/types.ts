@@ -94,6 +94,7 @@ export interface Project {
   uploadedSessionCount?: number
   uploadedSessions?: string[]
   enhancedAt?: string | null
+  enhancedSessionCount?: number
   totalAgentDuration?: number
   totalInputTokens?: number
   totalOutputTokens?: number
