@@ -661,7 +661,7 @@ body { overflow: auto !important; min-height: auto !important; }
       const fullHtml = ctx.buildPreviewPage(
         renderData.user.displayName ? `${renderData.user.displayName}'s Portfolio` : 'Portfolio Preview',
         bodyHtml,
-        'PREVIEW — this is how your portfolio will appear on heyi.am',
+        undefined,
         templateName,
       );
       portfolioPreviewCache.set(cacheKey, {
