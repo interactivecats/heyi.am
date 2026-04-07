@@ -657,11 +657,17 @@ function TemplateSection() {
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
+    let cancelled = false
     fetchTheme()
-      .then((t) => setName(t.template))
+      .then((t) => {
+        if (!cancelled) setName(t.template)
+      })
       .catch(() => {
         // keep default
       })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // Mirrors PreviewPane.handleSelectTemplate: optimistic update, persist via
