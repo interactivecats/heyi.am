@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { fetchProjects, type Project } from '../api'
 import { AppShell, Card, Badge, SectionHeader, StatCard } from './shared'
 import { Chip } from './shared/Chip'
@@ -30,10 +30,26 @@ function projectBadges(p: Project) {
   return badges
 }
 
+/**
+ * Enhancement status label for a project card.
+ * - Fully enhanced: "Enhanced ✓"
+ * - Partially enhanced: "N of M enhanced"
+ * - Not enhanced: null (omit — keep the card quiet)
+ */
+export function enhancementStatusLabel(p: Project): string | null {
+  const enhanced = p.enhancedSessionCount ?? 0
+  const total = p.sessionCount
+  if (enhanced === 0) return null
+  if (enhanced >= total && p.enhancedAt) return 'Enhanced \u2713'
+  return `${enhanced} of ${total} enhanced`
+}
+
 export function Projects() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('')
+  const [searchParams] = useSearchParams()
+  const urlFilter = searchParams.get('filter') // e.g. "unenhanced"
 
   useEffect(() => {
     fetchProjects()
@@ -42,8 +58,16 @@ export function Projects() {
       .finally(() => setLoading(false))
   }, [])
 
+  // URL filter (?filter=unenhanced) narrows the data set first; the
+  // text filter applies on top of that.
+  // "unenhanced" means no sessions in the project have been enhanced yet.
+  // Falls back to enhancedAt for backends that don't yet send enhancedSessionCount.
+  const urlFiltered = urlFilter === 'unenhanced'
+    ? projects.filter((p) => (p.enhancedSessionCount ?? 0) === 0 && !p.enhancedAt)
+    : projects
+
   const filtered = filter
-    ? projects.filter((p) => {
+    ? urlFiltered.filter((p) => {
         const q = filter.toLowerCase()
         return (
           p.name.toLowerCase().includes(q) ||
@@ -51,7 +75,7 @@ export function Projects() {
           p.skills.some((s) => s.toLowerCase().includes(q))
         )
       })
-    : projects
+    : urlFiltered
 
   return (
     <AppShell
@@ -112,6 +136,14 @@ export function Projects() {
                         ))}
                       </div>
                       <p className="text-on-surface-variant text-sm mt-1">{p.description}</p>
+                      {enhancementStatusLabel(p) && (
+                        <div
+                          data-testid="enhancement-status"
+                          className="font-mono text-[10px] text-on-surface-variant mt-1"
+                        >
+                          {enhancementStatusLabel(p)}
+                        </div>
+                      )}
                     </div>
                   </div>
 
