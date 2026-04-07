@@ -171,27 +171,6 @@ describe('portfolioStoreReducer', () => {
     expect(next.publishState?.targets['heyi.am']?.visibility).toBe('unlisted')
   })
 
-  it('SET_EXPORT_TARGET_PATH stores the picked folder path', () => {
-    const next = portfolioStoreReducer(initialPortfolioStoreState, {
-      type: 'SET_EXPORT_TARGET_PATH',
-      path: '/Users/ada/portfolio-export',
-    })
-    expect(next.exportTargetPath).toBe('/Users/ada/portfolio-export')
-  })
-
-  it('SET_EXPORT_TARGET_PATH accepts null to clear the path', () => {
-    const start = stateWith({ exportTargetPath: '/tmp/prev' })
-    const next = portfolioStoreReducer(start, {
-      type: 'SET_EXPORT_TARGET_PATH',
-      path: null,
-    })
-    expect(next.exportTargetPath).toBeNull()
-  })
-
-  it('exportTargetPath defaults to null', () => {
-    expect(initialPortfolioStoreState.exportTargetPath).toBeNull()
-  })
-
   it('SET_VISIBILITY is a no-op when publishState is null', () => {
     const next = portfolioStoreReducer(initialPortfolioStoreState, {
       type: 'SET_VISIBILITY',

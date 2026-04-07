@@ -389,6 +389,149 @@ export async function publishPortfolio(targetId: string): Promise<PortfolioPubli
   return post<PortfolioPublishResult>('/portfolio/upload')
 }
 
+// ── Portfolio export (zip download) ──────────────────────────
+
+/**
+ * POST /api/portfolio/export, receive a zip blob, and trigger a browser
+ * download. Mirrors the existing exportArchive() pattern. Returns the
+ * filename used so callers can show a confirmation.
+ */
+export async function downloadPortfolioZip(): Promise<{ ok: true; filename: string }> {
+  const res = await fetch(`${API_BASE}/portfolio/export`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  })
+  if (!res.ok) {
+    let message = `Portfolio export failed: ${res.status}`
+    try {
+      const body = (await res.json()) as { error?: { message?: string } }
+      if (body?.error?.message) message = body.error.message
+    } catch { /* non-JSON */ }
+    throw new Error(message)
+  }
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const filename =
+    res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] ??
+    'portfolio.zip'
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+  return { ok: true, filename }
+}
+
+// ── GitHub Pages publish target ──────────────────────────────
+
+export interface GithubAccount {
+  login: string
+  name: string | null
+  avatarUrl: string
+}
+
+export interface GithubDeviceCode {
+  device_code: string
+  user_code: string
+  verification_uri: string
+  expires_in: number
+  interval: number
+}
+
+export interface GithubRepo {
+  id: number
+  name: string
+  full_name: string
+  owner: { login: string }
+  default_branch: string
+  private: boolean
+  html_url: string
+}
+
+export interface GithubPollResponse {
+  ok: true
+  account: GithubAccount
+}
+
+export interface GithubPublishResponse {
+  ok: true
+  url: string
+  publishedAt?: string
+  hash?: string
+}
+
+export class GithubApiError extends Error {
+  code: string
+  status: number
+  constructor(code: string, message: string, status: number) {
+    super(message)
+    this.code = code
+    this.status = status
+  }
+}
+
+async function githubFetch<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { 'Content-Type': 'application/json' },
+    ...init,
+  })
+  if (!res.ok) {
+    let code = `HTTP_${res.status}`
+    let message = `${path} failed: ${res.status}`
+    try {
+      const body = (await res.json()) as { error?: { code?: string; message?: string } }
+      if (body?.error?.code) code = body.error.code
+      if (body?.error?.message) message = body.error.message
+    } catch { /* non-JSON */ }
+    throw new GithubApiError(code, message, res.status)
+  }
+  return (await res.json()) as T
+}
+
+export async function requestGithubDeviceCode(): Promise<GithubDeviceCode> {
+  return githubFetch<GithubDeviceCode>('/github/device-code', { method: 'POST' })
+}
+
+export async function pollGithubToken(args: {
+  device_code: string
+  interval: number
+}): Promise<GithubPollResponse> {
+  return githubFetch<GithubPollResponse>('/github/poll-token', {
+    method: 'POST',
+    body: JSON.stringify(args),
+  })
+}
+
+export async function fetchGithubAccount(): Promise<GithubAccount | null> {
+  const res = await githubFetch<{ account: GithubAccount | null }>('/github/account')
+  return res.account
+}
+
+export async function disconnectGithub(): Promise<void> {
+  await githubFetch<{ ok: true }>('/github/account', { method: 'DELETE' })
+}
+
+export async function fetchGithubRepos(): Promise<GithubRepo[]> {
+  const res = await githubFetch<{ repos: GithubRepo[] }>('/github/repos')
+  return res.repos
+}
+
+export async function publishToGithub(args: {
+  owner: string
+  repo: string
+  branch?: string
+}): Promise<GithubPublishResponse> {
+  return githubFetch<GithubPublishResponse>('/github/publish', {
+    method: 'POST',
+    body: JSON.stringify(args),
+  })
+}
+
 export async function deleteProjectScreenshot(dirName: string): Promise<void> {
   await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/screenshot`, { method: 'DELETE' })
 }
