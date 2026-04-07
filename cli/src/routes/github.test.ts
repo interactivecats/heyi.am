@@ -133,6 +133,16 @@ describe('POST /api/github/device-code', () => {
     expect(res.body.verification_uri).toBe('https://github.com/login/device');
   });
 
+  it('requests only the public_repo scope (phishing blast-radius guard)', async () => {
+    requestDeviceCode.mockResolvedValueOnce({
+      device_code: 'DEV', user_code: 'ABCD-1234',
+      verification_uri: 'https://github.com/login/device',
+      expires_in: 900, interval: 5,
+    });
+    await request(makeApp()).post('/api/github/device-code').send({});
+    expect(requestDeviceCode).toHaveBeenCalledWith(['public_repo']);
+  });
+
   it('surfaces GitHubError with structured code', async () => {
     requestDeviceCode.mockRejectedValueOnce(new GitHubError('DEVICE_CODE_FAILED', 'nope', 500));
     const res = await request(makeApp()).post('/api/github/device-code').send({});

@@ -70,7 +70,13 @@ export function createGithubRouter(ctx: RouteContext): Router {
   router.post('/api/github/device-code', async (_req: Request, res: Response) => {
     if (!getAuthToken()) { authError(res); return; }
     try {
-      const body = await requestDeviceCode(['repo']);
+      // Scope rationale: public_repo is the minimum needed to push portfolio
+      // sites to user-owned public repos and enable Pages on them. We do NOT
+      // request the broader 'repo' scope — portfolios are inherently public,
+      // and narrowing the scope shrinks the blast radius if a user is ever
+      // phished using this app's client_id (RFC 8628 client_ids are public).
+      // If users ever request private-repo support, expand to ['repo'] then.
+      const body = await requestDeviceCode(['public_repo']);
       res.json({
         device_code: body.device_code,
         user_code: body.user_code,
