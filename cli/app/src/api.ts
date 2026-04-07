@@ -342,6 +342,52 @@ export async function savePortfolio(data: PortfolioProfile): Promise<void> {
   await post('/portfolio', data)
 }
 
+// ── Portfolio publish state ──────────────────────────────────
+
+export type PortfolioTargetVisibility = 'public' | 'unlisted'
+
+export interface PortfolioPublishTarget {
+  lastPublishedAt: string
+  lastPublishedProfileHash: string
+  lastPublishedProfile: PortfolioProfile
+  config: Record<string, unknown>
+  visibility?: PortfolioTargetVisibility
+  url?: string
+  lastError?: string
+  lastErrorAt?: string
+}
+
+export interface PortfolioPublishState {
+  targets: Record<string, PortfolioPublishTarget>
+}
+
+export interface PortfolioPublishResult {
+  ok: boolean
+  url: string
+  publishedAt?: string
+  hash?: string
+}
+
+export async function fetchPortfolioPublishState(): Promise<PortfolioPublishState> {
+  try {
+    return await get<PortfolioPublishState>('/portfolio/state')
+  } catch {
+    return { targets: {} }
+  }
+}
+
+/**
+ * Publish the portfolio to the given target. Phase 3 only supports the
+ * `heyi.am` target — `targetId` is plumbed through now so Phase 4 (export)
+ * and Phase 5 (github) can add branches without a breaking API change.
+ */
+export async function publishPortfolio(targetId: string): Promise<PortfolioPublishResult> {
+  if (targetId !== 'heyi.am') {
+    throw new Error(`Unsupported publish target: ${targetId}`)
+  }
+  return post<PortfolioPublishResult>('/portfolio/upload')
+}
+
 export async function deleteProjectScreenshot(dirName: string): Promise<void> {
   await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/screenshot`, { method: 'DELETE' })
 }
