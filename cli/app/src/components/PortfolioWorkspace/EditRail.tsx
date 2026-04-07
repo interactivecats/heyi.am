@@ -1,0 +1,647 @@
+// EditRail — right column of the portfolio workspace.
+//
+// Six collapsible sections, fixed-width 360px, scrollable. Form fields are
+// copied faithfully from Settings.tsx (Phase 3.5 deletes the source). Text
+// fields commit on blur via UPDATE_PROFILE_FIELD; selects/checkboxes/file
+// uploads commit on change. There is no save button — publishing persists.
+//
+// Dirty markers: any field whose current value differs from
+// publishState.targets['heyi.am'].lastPublishedProfile[field] gets an amber
+// left border (border-l-2 border-amber-500).
+//
+// Projects section uses @dnd-kit/sortable for user-curated drag-to-reorder.
+
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from 'react'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { usePortfolioStore } from '../../hooks/usePortfolioStore'
+import {
+  fetchProjects,
+  fetchTheme,
+  fetchTemplates,
+  type PortfolioProfile,
+  type Project,
+  type TemplateInfo,
+} from '../../api'
+
+// ── Helpers ──────────────────────────────────────────────────
+
+const PHOTO_MAX_BYTES = 5 * 1024 * 1024
+const RESUME_MAX_BYTES = 10 * 1024 * 1024
+
+type TextField = Exclude<
+  keyof PortfolioProfile,
+  'photoBase64' | 'resumeBase64' | 'resumeFilename'
+>
+
+/** Empty string and undefined are equivalent for dirty comparison. */
+function valuesDiffer(a: string | undefined, b: string | undefined): boolean {
+  return (a ?? '') !== (b ?? '')
+}
+
+const inputBase =
+  'w-full bg-surface-low border border-ghost rounded-md px-3 py-1.5 text-sm text-on-surface placeholder:text-outline'
+
+function fieldClass(dirty: boolean, extra = ''): string {
+  return [inputBase, dirty ? 'border-l-2 border-amber-500' : '', extra]
+    .filter(Boolean)
+    .join(' ')
+}
+
+// ── Section disclosure shell ─────────────────────────────────
+
+interface SectionProps {
+  id: string
+  title: string
+  meta?: string
+  defaultOpen?: boolean
+  children: ReactNode
+}
+
+function Section({ id, title, meta, defaultOpen = false, children }: SectionProps) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <section data-testid={`editrail-section-${id}`} className="border-b border-ghost">
+      <button
+        type="button"
+        data-testid={`editrail-section-toggle-${id}`}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-surface-low transition-colors"
+      >
+        <span className="font-mono text-[11px] uppercase tracking-wider text-on-surface-variant">
+          {title}
+          {meta ? <span className="ml-2 text-outline normal-case">{meta}</span> : null}
+        </span>
+        <span className="text-on-surface-variant text-xs" aria-hidden="true">
+          {open ? '−' : '+'}
+        </span>
+      </button>
+      {open ? (
+        <div
+          data-testid={`editrail-section-body-${id}`}
+          className="pl-3 ml-4 mr-4 mb-3 border-l border-ghost space-y-3"
+        >
+          <div className="pl-3">{children}</div>
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
+function Label({ htmlFor, children }: { htmlFor?: string; children: ReactNode }) {
+  return (
+    <label
+      htmlFor={htmlFor}
+      className="font-mono text-[11px] uppercase tracking-wider text-on-surface-variant block mb-1"
+    >
+      {children}
+    </label>
+  )
+}
+
+// ── Local-state text field with commit-on-blur ───────────────
+
+interface TextFieldProps {
+  id: string
+  field: TextField
+  label: string
+  type?: string
+  placeholder?: string
+  maxLength?: number
+  multiline?: boolean
+  rows?: number
+}
+
+function ProfileTextField({
+  id,
+  field,
+  label,
+  type = 'text',
+  placeholder,
+  maxLength,
+  multiline = false,
+  rows = 3,
+}: TextFieldProps) {
+  const { state, dispatch } = usePortfolioStore()
+  const storeValue = (state.profile[field] as string | undefined) ?? ''
+  const published =
+    (state.publishState?.targets['heyi.am']?.lastPublishedProfile[field] as
+      | string
+      | undefined) ?? undefined
+  const [local, setLocal] = useState(storeValue)
+
+  // If the store value changes from underneath us (e.g. LOAD), reseed.
+  useEffect(() => {
+    setLocal(storeValue)
+  }, [storeValue])
+
+  const dirty = valuesDiffer(local, published)
+
+  function commit() {
+    if (local !== storeValue) {
+      dispatch({
+        type: 'UPDATE_PROFILE_FIELD',
+        field,
+        value: local === '' ? undefined : local,
+      })
+    }
+  }
+
+  if (multiline) {
+    return (
+      <div>
+        <Label htmlFor={id}>{label}</Label>
+        <textarea
+          id={id}
+          data-testid={`editrail-field-${field}`}
+          value={local}
+          onChange={(e) => setLocal(e.target.value)}
+          onBlur={commit}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          rows={rows}
+          className={fieldClass(dirty, 'resize-y')}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <Label htmlFor={id}>{label}</Label>
+      <input
+        id={id}
+        type={type}
+        data-testid={`editrail-field-${field}`}
+        value={local}
+        onChange={(e) => setLocal(e.target.value)}
+        onBlur={commit}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        className={fieldClass(dirty)}
+      />
+    </div>
+  )
+}
+
+// ── Photo + resume uploaders (handlers copied from Settings.tsx) ──
+
+function PhotoField() {
+  const { state, dispatch } = usePortfolioStore()
+  const photo = state.profile.photoBase64
+  const published = state.publishState?.targets['heyi.am']?.lastPublishedProfile.photoBase64
+  const dirty = valuesDiffer(photo, published)
+
+  function handleChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > PHOTO_MAX_BYTES) {
+      // eslint-disable-next-line no-alert
+      alert('Photo must be under 5MB')
+      e.target.value = ''
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      dispatch({
+        type: 'UPDATE_PROFILE_FIELD',
+        field: 'photoBase64',
+        value: reader.result as string,
+      })
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  return (
+    <div>
+      <Label>Profile photo</Label>
+      <div
+        className={
+          dirty ? 'border-l-2 border-amber-500 pl-2 flex items-center gap-3' : 'flex items-center gap-3'
+        }
+      >
+        {photo ? (
+          <div className="relative w-14 h-14 rounded-full overflow-hidden border border-ghost shrink-0">
+            <img src={photo} alt="Profile" className="w-full h-full object-cover" />
+          </div>
+        ) : (
+          <div className="w-14 h-14 rounded-full bg-surface-low border border-ghost shrink-0 flex items-center justify-center">
+            <span className="text-on-surface-variant text-[10px]">No photo</span>
+          </div>
+        )}
+        <label className="text-xs font-mono text-primary hover:underline cursor-pointer">
+          {photo ? 'Change photo' : 'Upload photo'}
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="hidden"
+            data-testid="editrail-field-photoBase64"
+            onChange={handleChange}
+          />
+        </label>
+        {photo ? (
+          <button
+            type="button"
+            onClick={() =>
+              dispatch({ type: 'UPDATE_PROFILE_FIELD', field: 'photoBase64', value: undefined })
+            }
+            className="text-xs text-on-surface-variant hover:text-on-surface transition-colors"
+          >
+            Remove
+          </button>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+function ResumeField() {
+  const { state, dispatch } = usePortfolioStore()
+  const resume = state.profile.resumeBase64
+  const filename = state.profile.resumeFilename
+  const published = state.publishState?.targets['heyi.am']?.lastPublishedProfile.resumeBase64
+  const dirty = valuesDiffer(resume, published)
+
+  function handleChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > RESUME_MAX_BYTES) {
+      // eslint-disable-next-line no-alert
+      alert('Resume must be under 10MB')
+      e.target.value = ''
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      dispatch({
+        type: 'UPDATE_PROFILE_FIELD',
+        field: 'resumeBase64',
+        value: reader.result as string,
+      })
+      dispatch({
+        type: 'UPDATE_PROFILE_FIELD',
+        field: 'resumeFilename',
+        value: file.name,
+      })
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  return (
+    <div>
+      <Label>Resume (PDF)</Label>
+      <div
+        className={
+          dirty ? 'border-l-2 border-amber-500 pl-2 flex items-center gap-3' : 'flex items-center gap-3'
+        }
+      >
+        {resume ? (
+          <span className="font-mono text-xs text-on-surface truncate max-w-[180px]">
+            {filename ?? 'resume.pdf'}
+          </span>
+        ) : (
+          <span className="text-xs text-on-surface-variant">No resume</span>
+        )}
+        <label className="text-xs font-mono text-primary hover:underline cursor-pointer">
+          {resume ? 'Replace' : 'Upload PDF'}
+          <input
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            data-testid="editrail-field-resumeBase64"
+            onChange={handleChange}
+          />
+        </label>
+        {resume ? (
+          <button
+            type="button"
+            onClick={() => {
+              dispatch({ type: 'UPDATE_PROFILE_FIELD', field: 'resumeBase64', value: undefined })
+              dispatch({ type: 'UPDATE_PROFILE_FIELD', field: 'resumeFilename', value: undefined })
+            }}
+            className="text-xs text-on-surface-variant hover:text-on-surface transition-colors"
+          >
+            Remove
+          </button>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+// ── Projects section (sortable) ──────────────────────────────
+
+interface SortableRowProps {
+  projectId: string
+  title: string
+  included: boolean
+}
+
+function SortableProjectRow({ projectId, title, included }: SortableRowProps) {
+  const { dispatch } = usePortfolioStore()
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: projectId,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      data-testid={`editrail-project-row-${projectId}`}
+      className="group flex items-center gap-2 py-1.5 px-1 hover:bg-surface-low rounded-sm"
+    >
+      <button
+        type="button"
+        aria-label={`Drag ${title}`}
+        data-testid={`editrail-project-handle-${projectId}`}
+        className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab text-on-surface-variant text-xs font-mono px-1"
+        {...attributes}
+        {...listeners}
+      >
+        ::
+      </button>
+      <input
+        type="checkbox"
+        checked={included}
+        data-testid={`editrail-project-checkbox-${projectId}`}
+        onChange={() => dispatch({ type: 'TOGGLE_PROJECT_INCLUDED', projectId })}
+        className="shrink-0"
+      />
+      <span
+        className={`text-sm truncate ${included ? 'text-on-surface' : 'text-on-surface-variant'}`}
+      >
+        {title}
+      </span>
+    </div>
+  )
+}
+
+function ProjectsSection() {
+  const { state, dispatch } = usePortfolioStore()
+  const [projectMeta, setProjectMeta] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    let cancelled = false
+    fetchProjects()
+      .then((projects: Project[]) => {
+        if (cancelled) return
+        const map: Record<string, string> = {}
+        for (const p of projects) {
+          map[p.dirName] = p.name
+        }
+        setProjectMeta(map)
+      })
+      .catch(() => {
+        // Non-fatal: titles fall back to projectId.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const sorted = useMemo(
+    () => state.projects.slice().sort((a, b) => a.order - b.order),
+    [state.projects],
+  )
+  const includedCount = sorted.filter((p) => p.included).length
+  const meta = `${includedCount} of ${sorted.length}`
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const ids = sorted.map((p) => p.projectId)
+    const oldIndex = ids.indexOf(String(active.id))
+    const newIndex = ids.indexOf(String(over.id))
+    if (oldIndex < 0 || newIndex < 0) return
+    // arrayMove is the canonical helper here; we still call REORDER_PROJECT
+    // to keep the store as the source of truth.
+    void arrayMove
+    dispatch({ type: 'REORDER_PROJECT', projectId: String(active.id), newIndex })
+  }
+
+  return (
+    <Section id="projects" title="Projects on portfolio" meta={`· ${meta}`}>
+      {sorted.length === 0 ? (
+        <p className="text-xs text-on-surface-variant">No projects yet.</p>
+      ) : (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext
+            items={sorted.map((p) => p.projectId)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div data-testid="editrail-projects-list">
+              {sorted.map((p) => (
+                <SortableProjectRow
+                  key={p.projectId}
+                  projectId={p.projectId}
+                  title={projectMeta[p.projectId] ?? p.projectId}
+                  included={p.included}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
+    </Section>
+  )
+}
+
+// ── Template + Accent stub sections ──────────────────────────
+
+function TemplateSection() {
+  const [name, setName] = useState<string>('editorial')
+  useEffect(() => {
+    fetchTheme()
+      .then((t) => setName(t.template))
+      .catch(() => {
+        // keep default
+      })
+  }, [])
+  return (
+    <Section id="template" title="Template">
+      <div className="flex items-center gap-3">
+        <span
+          data-testid="editrail-template-pill"
+          className="font-mono text-xs px-2 py-1 rounded-sm bg-surface-low border border-ghost text-on-surface"
+        >
+          {name}
+        </span>
+        <button
+          type="button"
+          data-testid="editrail-template-change"
+          className="text-xs font-mono text-primary hover:underline"
+          onClick={() => {
+            // Phase 6 wires this to the TemplateBrowser modal.
+            // eslint-disable-next-line no-console
+            console.log('[EditRail] Change template — Phase 6 wires this')
+          }}
+        >
+          Change template
+        </button>
+      </div>
+    </Section>
+  )
+}
+
+function AccentSection() {
+  const [accent, setAccent] = useState<string>('#4f46e5')
+  useEffect(() => {
+    fetchTemplates()
+      .then((list: TemplateInfo[]) => {
+        if (list.length > 0) setAccent(list[0].accent)
+      })
+      .catch(() => {
+        // keep default
+      })
+  }, [])
+  return (
+    <Section id="accent" title="Accent color">
+      <div className="flex items-center gap-3">
+        <span
+          data-testid="editrail-accent-swatch"
+          className="w-4 h-4 rounded-full border border-ghost shrink-0"
+          style={{ background: accent }}
+          aria-label={`Accent color ${accent}`}
+        />
+        <span className="font-mono text-xs text-on-surface-variant">{accent}</span>
+        <button
+          type="button"
+          data-testid="editrail-accent-change"
+          className="text-xs font-mono text-primary hover:underline ml-auto"
+          onClick={() => {
+            // eslint-disable-next-line no-console
+            console.log('[EditRail] Change accent — Phase 6 may wire this')
+          }}
+        >
+          Change
+        </button>
+      </div>
+    </Section>
+  )
+}
+
+// ── Top-level EditRail ───────────────────────────────────────
+
+export function EditRail() {
+  return (
+    <aside
+      data-testid="portfolio-editrail"
+      className="w-[360px] shrink-0 border-l border-ghost bg-surface-lowest overflow-y-auto"
+    >
+      <Section id="identity" title="Identity" defaultOpen>
+        <ProfileTextField
+          id="editrail-displayName"
+          field="displayName"
+          label="Display name"
+          placeholder="Jane Smith"
+          maxLength={200}
+        />
+        <ProfileTextField
+          id="editrail-bio"
+          field="bio"
+          label="Bio / About"
+          placeholder="A short bio for your portfolio..."
+          maxLength={2000}
+          multiline
+          rows={3}
+        />
+        <ProfileTextField
+          id="editrail-location"
+          field="location"
+          label="Location"
+          placeholder="San Francisco, CA"
+        />
+      </Section>
+
+      <Section id="contact" title="Contact">
+        <ProfileTextField
+          id="editrail-email"
+          field="email"
+          label="Email"
+          type="email"
+          placeholder="jane@example.com"
+        />
+        <ProfileTextField
+          id="editrail-phone"
+          field="phone"
+          label="Phone"
+          type="tel"
+          placeholder="+1 (555) 123-4567"
+        />
+        <ProfileTextField
+          id="editrail-linkedin"
+          field="linkedinUrl"
+          label="LinkedIn URL"
+          type="url"
+          placeholder="https://linkedin.com/in/janesmith"
+        />
+        <ProfileTextField
+          id="editrail-github"
+          field="githubUrl"
+          label="GitHub URL"
+          type="url"
+          placeholder="https://github.com/janesmith"
+        />
+        <ProfileTextField
+          id="editrail-twitter"
+          field="twitterHandle"
+          label="Twitter / X"
+          placeholder="@janesmith"
+        />
+        <ProfileTextField
+          id="editrail-website"
+          field="websiteUrl"
+          label="Personal website"
+          type="url"
+          placeholder="https://janesmith.dev"
+        />
+      </Section>
+
+      <Section id="photo-resume" title="Photo & resume">
+        <PhotoField />
+        <ResumeField />
+      </Section>
+
+      <ProjectsSection />
+
+      <TemplateSection />
+
+      <AccentSection />
+    </aside>
+  )
+}

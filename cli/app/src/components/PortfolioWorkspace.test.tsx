@@ -6,7 +6,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { PortfolioWorkspace } from './PortfolioWorkspace'
 
 describe('PortfolioWorkspace skeleton', () => {
-  it('renders the three placeholder regions', () => {
+  it('renders the three workspace regions', () => {
     render(
       <MemoryRouter initialEntries={['/portfolio']}>
         <PortfolioWorkspace />
@@ -14,6 +14,6 @@ describe('PortfolioWorkspace skeleton', () => {
     )
     expect(screen.getByTestId('portfolio-statusbar')).toBeTruthy()
     expect(screen.getByTestId('portfolio-preview')).toBeTruthy()
-    expect(screen.getByTestId('portfolio-editrail-placeholder')).toBeTruthy()
+    expect(screen.getByTestId('portfolio-editrail')).toBeTruthy()
   })
 })
