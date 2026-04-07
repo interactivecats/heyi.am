@@ -287,6 +287,8 @@ Everything deliberately not in v1, with one-line justification.
 
 **Multi-portfolio support, team accounts, SSO, SAML, ATS integrations.** Team / Enterprise tiers, post-v1.
 
+**Future work · git integration.** Deferred to a separate branch after the portfolio workspace ships, but worth naming the angles so the data model door stays open. Six possible angles, none scoped here: (1) **verification** — cross-reference session timestamps against real commits to prove the work actually landed; (2) **richer stats** — wall-clock-vs-commit-frequency, time-to-first-commit-after-session, churn per session; (3) **cross-referencing** — link sessions to the specific commits they produced; (4) **project boundaries** — use git remote + repo root as a stronger project identifier than working-directory heuristics; (5) **authorship** — distinguish the developer's commits from other contributors when computing per-project stats; (6) **diff visualization** — render the diff a session produced as part of the case study, not just LOC counts. SQLite may eventually need a `git_commits` table joinable to sessions on timestamp (and optionally on working directory). `git remote get-url origin` may become the canonical project identifier in v2, replacing the current path-based grouping. None of this is gated on portfolio work; it is listed here only so the data model choices we make now don't paint us into a corner.
+
 ---
 
 ## 10. Monetization Model
