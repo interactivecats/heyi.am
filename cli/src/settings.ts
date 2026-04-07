@@ -340,9 +340,9 @@ export function getUploadedState(projectDirName: string, configDir?: string): Up
 // ── Portfolio publish state ─────────────────────────────────
 //
 // Tracks the last-published snapshot of the user's portfolio per target
-// (only `heyi.am` for now; Phase 4/5 will add export targets). Used by the
-// UI to detect drift between the current local profile and what was last
-// published, without re-running the renderer.
+// (`heyi.am` and `github`). Used by the UI to detect drift between the
+// current local profile and what was last published, without re-running
+// the renderer.
 
 export type PortfolioTargetVisibility = 'public' | 'unlisted';
 
@@ -355,8 +355,8 @@ export interface PortfolioPublishTarget {
   lastPublishedProfile: PortfolioProfile;
   /**
    * Arbitrary per-target config. Known shapes:
-   *   - export: `{ outputDir: string }`
-   *   - github: `{ owner: string; repo: string; branch: string }`
+   *   - heyi.am: `{}` (visibility lives on the parent target)
+   *   - github:  `{ owner: string; repo: string; branch: string }`
    */
   config: Record<string, unknown>;
   /**
