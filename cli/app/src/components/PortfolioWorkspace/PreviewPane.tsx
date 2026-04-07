@@ -19,7 +19,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePortfolioStore } from '../../hooks/usePortfolioStore'
-import { fetchAuthStatus, fetchTheme, saveTheme } from '../../api'
+import { fetchAuthStatus, fetchTheme, saveTheme, type PortfolioProfile } from '../../api'
 import { TemplateBrowser } from '../TemplateBrowser'
 
 type PreviewTarget = 'landing' | 'project' | 'session'
@@ -40,6 +40,105 @@ function buildSources(firstIncludedProjectId: string | null): ResolvedSrc {
     ? `/preview/portfolio?view=session&slug=${encodeURIComponent(firstIncludedProjectId)}`
     : null
   return { landing: LANDING_SRC, project, session }
+}
+
+// ── Live DOM patcher helpers ─────────────────────────────────
+//
+// Each annotated field maps to a patch descriptor describing how to mutate
+// the matching element. Text fields update an inner [data-portfolio-text]
+// child (or fall back to the element itself); link fields additionally
+// rewrite the <a> href via a per-field URL transform; the photo field
+// updates the <img> src.
+
+type PatchableField =
+  | 'displayName'
+  | 'bio'
+  | 'location'
+  | 'email'
+  | 'phone'
+  | 'linkedinUrl'
+  | 'githubUrl'
+  | 'twitterHandle'
+  | 'websiteUrl'
+  | 'photoBase64'
+
+const PATCHABLE_FIELDS: PatchableField[] = [
+  'displayName',
+  'bio',
+  'location',
+  'email',
+  'phone',
+  'linkedinUrl',
+  'githubUrl',
+  'twitterHandle',
+  'websiteUrl',
+  'photoBase64',
+]
+
+/**
+ * Map a contact field to the URL it should produce in the <a href>.
+ * Returns null if the field has no href transform (text-only field).
+ */
+function fieldToHref(field: PatchableField, value: string): string | null {
+  switch (field) {
+    case 'email':
+      return `mailto:${value}`
+    case 'phone':
+      return `tel:${value}`
+    case 'linkedinUrl':
+    case 'githubUrl':
+    case 'websiteUrl':
+      return value
+    case 'twitterHandle':
+      return `https://x.com/${value.replace(/^@/, '')}`
+    default:
+      return null
+  }
+}
+
+function patchField(doc: Document, field: PatchableField, rawValue: string | undefined): void {
+  const el = doc.querySelector(`[data-portfolio-field="${field}"]`) as HTMLElement | null
+  if (!el) return
+  const value = rawValue ?? ''
+  const isEmpty = value === ''
+
+  // Visibility toggle. Empty -> hide, non-empty -> show. style.display = ''
+  // restores whatever the stylesheet specified.
+  el.style.display = isEmpty ? 'none' : ''
+
+  if (field === 'photoBase64') {
+    // <img> src update. setAttribute keeps things consistent with how the
+    // template renders the value at SSR time.
+    if (!isEmpty) el.setAttribute('src', value)
+    return
+  }
+
+  // Text update: prefer the inner [data-portfolio-text] child so we don't
+  // clobber the inline SVG icon that lives next to the text in most
+  // contact-row templates. Fall back to the element itself when no inner
+  // wrapper is present (e.g. hero displayName/bio).
+  const textHost = el.querySelector('[data-portfolio-text]') as HTMLElement | null
+  if (textHost) {
+    // For twitterHandle the template prefixes "@" — re-apply that here so
+    // the displayed value matches the static render.
+    textHost.textContent = field === 'twitterHandle' ? `@${value.replace(/^@/, '')}` : value
+  } else if (field === 'displayName' || field === 'bio' || field === 'location') {
+    el.textContent = value
+  }
+
+  // href update for <a> tags. Skip when the element isn't an anchor (e.g.
+  // blueprint's phone is a <span>) — fieldToHref still returns a value
+  // but there's no href to write.
+  const href = fieldToHref(field, value)
+  if (href !== null && el.tagName === 'A' && !isEmpty) {
+    el.setAttribute('href', href)
+  }
+}
+
+function applyAllPatches(doc: Document, profile: PortfolioProfile): void {
+  for (const field of PATCHABLE_FIELDS) {
+    patchField(doc, field, profile[field] as string | undefined)
+  }
 }
 
 export function PreviewPane() {
@@ -111,26 +210,36 @@ export function PreviewPane() {
   }, [])
 
   // Live-patch the iframe DOM in place on every profile change. Same-origin
-  // access lets us reach into iframe.contentDocument and update textContent
-  // on elements that templates have annotated with data-portfolio-field.
-  // No reload, no remount, no animation re-run. Silent no-op when the
-  // contentDocument isn't ready yet (iframe still loading) or when the
-  // current template doesn't annotate a given field.
+  // access lets us reach into iframe.contentDocument and update text /
+  // href / src on elements that templates have annotated with
+  // data-portfolio-field. No reload, no remount, no animation re-run.
   //
-  // textContent (NOT innerHTML) is XSS-safe by definition: it does not parse
-  // HTML, so user-supplied strings cannot inject markup or scripts.
+  // Per-field semantics handled by patchField():
+  //  - text fields (displayName, bio, location): set textContent on the
+  //    annotated element, OR on its inner [data-portfolio-text] child if
+  //    one exists (so the inline SVG icon next to the text is preserved).
+  //  - link fields (email, phone, linkedinUrl, githubUrl, twitterHandle,
+  //    websiteUrl): update the inner [data-portfolio-text] (if present),
+  //    AND rewrite the href via a field-specific URL transform when the
+  //    annotated element is an <a>. LinkedIn/GitHub render fixed link
+  //    text ("LinkedIn"/"GitHub") so the text update is a no-op there.
+  //  - photoBase64: setAttribute('src', value) on the annotated <img>.
+  //  - empty value on a non-image: hide via inline display:none.
+  //  - empty value on an image: hide via inline display:none.
+  //
+  // textContent + setAttribute (NOT innerHTML) — XSS-safe by definition.
+  // The patcher silently no-ops when the iframe contentDocument is not yet
+  // ready, when the current template doesn't carry an annotation for a
+  // given field, or when the field was {% if %}-omitted at render time.
+  //
+  // Empty-then-restore caveat: if a field was empty at render time the
+  // template `{% if %}` left no element in the DOM, so this patcher has
+  // nothing to find when the user types into it. The Refresh button is
+  // the escape hatch — see handleRefresh below.
   useEffect(() => {
     const doc = iframeRef.current?.contentDocument
     if (!doc) return
-    const fields: Array<['displayName' | 'bio' | 'location', string | undefined]> = [
-      ['displayName', state.profile.displayName],
-      ['bio', state.profile.bio],
-      ['location', state.profile.location],
-    ]
-    for (const [field, value] of fields) {
-      const el = doc.querySelector(`[data-portfolio-field="${field}"]`)
-      if (el) el.textContent = value ?? ''
-    }
+    applyAllPatches(doc, state.profile)
   }, [state.profile])
 
   // Re-apply the live patch after the iframe finishes loading (e.g. on
@@ -140,15 +249,7 @@ export function PreviewPane() {
   function handleIframeLoad() {
     const doc = iframeRef.current?.contentDocument
     if (!doc) return
-    const fields: Array<['displayName' | 'bio' | 'location', string | undefined]> = [
-      ['displayName', state.profile.displayName],
-      ['bio', state.profile.bio],
-      ['location', state.profile.location],
-    ]
-    for (const [field, value] of fields) {
-      const el = doc.querySelector(`[data-portfolio-field="${field}"]`)
-      if (el) el.textContent = value ?? ''
-    }
+    applyAllPatches(doc, state.profile)
   }
 
   // Resolve the "Open in browser" URL based on the active target. Returns

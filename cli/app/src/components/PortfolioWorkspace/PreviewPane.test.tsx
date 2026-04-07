@@ -292,6 +292,148 @@ describe('PreviewPane', () => {
       ).not.toThrow()
     })
 
+    // ── Contact + photo + visibility patching ───────────────
+
+    function installContactDoc(): Document {
+      const iframe = getIframe()
+      const doc = document.implementation.createHTMLDocument('preview')
+      // email <a> with inner text wrapper
+      const email = doc.createElement('a')
+      email.setAttribute('data-portfolio-field', 'email')
+      email.setAttribute('href', 'mailto:old@example.com')
+      const emailText = doc.createElement('span')
+      emailText.setAttribute('data-portfolio-text', '')
+      emailText.textContent = 'old@example.com'
+      email.appendChild(emailText)
+      doc.body.appendChild(email)
+      // phone <span> (blueprint pattern: no href)
+      const phone = doc.createElement('span')
+      phone.setAttribute('data-portfolio-field', 'phone')
+      const phoneText = doc.createElement('span')
+      phoneText.setAttribute('data-portfolio-text', '')
+      phoneText.textContent = '555-old'
+      phone.appendChild(phoneText)
+      doc.body.appendChild(phone)
+      // linkedin <a> with no inner text (fixed "LinkedIn" label)
+      const li = doc.createElement('a')
+      li.setAttribute('data-portfolio-field', 'linkedinUrl')
+      li.setAttribute('href', 'https://linkedin.com/in/old')
+      li.textContent = 'LinkedIn'
+      doc.body.appendChild(li)
+      // twitter <a> with inner text
+      const tw = doc.createElement('a')
+      tw.setAttribute('data-portfolio-field', 'twitterHandle')
+      tw.setAttribute('href', 'https://x.com/old')
+      const twText = doc.createElement('span')
+      twText.setAttribute('data-portfolio-text', '')
+      twText.textContent = '@old'
+      tw.appendChild(twText)
+      doc.body.appendChild(tw)
+      // photo <img>
+      const img = doc.createElement('img')
+      img.setAttribute('data-portfolio-field', 'photoBase64')
+      img.setAttribute('src', 'data:image/png;base64,OLD')
+      doc.body.appendChild(img)
+      Object.defineProperty(iframe, 'contentDocument', {
+        configurable: true,
+        get: () => doc,
+      })
+      return doc
+    }
+
+    function ContactHarness({
+      field,
+      value,
+    }: {
+      field:
+        | 'email'
+        | 'phone'
+        | 'linkedinUrl'
+        | 'githubUrl'
+        | 'twitterHandle'
+        | 'websiteUrl'
+        | 'photoBase64'
+      value: string | undefined
+    }) {
+      const { dispatch } = usePortfolioStore()
+      return (
+        <>
+          <button
+            data-testid="bump-contact"
+            onClick={() => dispatch({ type: 'UPDATE_PROFILE_FIELD', field, value })}
+          />
+          <PreviewPane />
+        </>
+      )
+    }
+
+    it('patches email text + mailto href', () => {
+      render(<ContactHarness field="email" value="new@example.com" />, { wrapper: withProvider() })
+      const doc = installContactDoc()
+      fireEvent.click(screen.getByTestId('bump-contact'))
+      const a = doc.querySelector('[data-portfolio-field="email"]') as HTMLAnchorElement
+      expect(a.querySelector('[data-portfolio-text]')?.textContent).toBe('new@example.com')
+      expect(a.getAttribute('href')).toBe('mailto:new@example.com')
+    })
+
+    it('patches phone text without touching href on a non-anchor', () => {
+      render(<ContactHarness field="phone" value="555-NEW" />, { wrapper: withProvider() })
+      const doc = installContactDoc()
+      fireEvent.click(screen.getByTestId('bump-contact'))
+      const span = doc.querySelector('[data-portfolio-field="phone"]') as HTMLElement
+      expect(span.querySelector('[data-portfolio-text]')?.textContent).toBe('555-NEW')
+      expect(span.tagName).toBe('SPAN')
+    })
+
+    it('patches linkedinUrl href but leaves the fixed "LinkedIn" text alone', () => {
+      render(
+        <ContactHarness field="linkedinUrl" value="https://linkedin.com/in/new" />,
+        { wrapper: withProvider() },
+      )
+      const doc = installContactDoc()
+      fireEvent.click(screen.getByTestId('bump-contact'))
+      const a = doc.querySelector('[data-portfolio-field="linkedinUrl"]') as HTMLAnchorElement
+      expect(a.getAttribute('href')).toBe('https://linkedin.com/in/new')
+      expect(a.textContent).toBe('LinkedIn')
+    })
+
+    it('patches twitterHandle: builds x.com href, prefixes @ in display text', () => {
+      render(<ContactHarness field="twitterHandle" value="newhandle" />, { wrapper: withProvider() })
+      const doc = installContactDoc()
+      fireEvent.click(screen.getByTestId('bump-contact'))
+      const a = doc.querySelector('[data-portfolio-field="twitterHandle"]') as HTMLAnchorElement
+      expect(a.getAttribute('href')).toBe('https://x.com/newhandle')
+      expect(a.querySelector('[data-portfolio-text]')?.textContent).toBe('@newhandle')
+    })
+
+    it('patches photoBase64 by updating <img> src', () => {
+      render(
+        <ContactHarness field="photoBase64" value="data:image/png;base64,NEW" />,
+        { wrapper: withProvider() },
+      )
+      const doc = installContactDoc()
+      fireEvent.click(screen.getByTestId('bump-contact'))
+      const img = doc.querySelector('[data-portfolio-field="photoBase64"]') as HTMLImageElement
+      expect(img.getAttribute('src')).toBe('data:image/png;base64,NEW')
+      expect(img.style.display).toBe('')
+    })
+
+    it('clearing email hides the element via display:none', () => {
+      render(<ContactHarness field="email" value={undefined} />, { wrapper: withProvider() })
+      const doc = installContactDoc()
+      fireEvent.click(screen.getByTestId('bump-contact'))
+      const a = doc.querySelector('[data-portfolio-field="email"]') as HTMLElement
+      expect(a.style.display).toBe('none')
+    })
+
+    it('clearing photoBase64 hides the <img>', () => {
+      render(<ContactHarness field="photoBase64" value={undefined} />, { wrapper: withProvider() })
+      const doc = installContactDoc()
+      fireEvent.click(screen.getByTestId('bump-contact'))
+      const img = doc.querySelector('[data-portfolio-field="photoBase64"]') as HTMLElement
+      expect(img.style.display).toBe('none')
+    })
+
     it('iframe does NOT reload (key does not change) on profile change', () => {
       render(<Harness field="displayName" />, { wrapper: withProvider() })
       installStubDoc(['displayName'])
