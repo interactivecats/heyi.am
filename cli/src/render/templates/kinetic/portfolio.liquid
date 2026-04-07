@@ -12,13 +12,13 @@
         {% endif %}
         <div>
           {% if user.displayName != blank %}
-          <h1>{{ user.displayName }}</h1>
+          <h1 data-portfolio-field="displayName">{{ user.displayName }}</h1>
           {% endif %}
           {% if user.bio %}
-          <p class="hero-bio">{{ user.bio }}</p>
+          <p class="hero-bio" data-portfolio-field="bio">{{ user.bio }}</p>
           {% endif %}
           {% if user.location %}
-          <span class="hero-location">{{ user.location }}</span>
+          <span class="hero-location" data-portfolio-field="location">{{ user.location }}</span>
           {% endif %}
           <div class="contact-row">
             {% if user.email %}

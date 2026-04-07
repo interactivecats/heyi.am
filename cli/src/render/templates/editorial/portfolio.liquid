@@ -10,13 +10,13 @@
         {% endif %}
         <div class="ed-hero-info">
           {% if user.displayName != blank %}
-          <h1 class="ed-hero-name">{{ user.displayName }}</h1>
+          <h1 class="ed-hero-name" data-portfolio-field="displayName">{{ user.displayName }}</h1>
           {% endif %}
           {% if user.bio %}
-          <p class="ed-hero-bio">{{ user.bio }}</p>
+          <p class="ed-hero-bio" data-portfolio-field="bio">{{ user.bio }}</p>
           {% endif %}
           {% if user.location %}
-          <span class="ed-hero-location"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> {{ user.location }}</span>
+          <span class="ed-hero-location"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> <span data-portfolio-field="location">{{ user.location }}</span></span>
           {% endif %}
         </div>
       </div>

@@ -22,13 +22,13 @@
       {% endif %}
       <div>
         {% if user.displayName != blank %}
-        <h1>{{ user.displayName }}</h1>
+        <h1 data-portfolio-field="displayName">{{ user.displayName }}</h1>
         {% endif %}
         {% if user.bio != blank %}
-          <p class="bp-hero-bio">{{ user.bio }}</p>
+          <p class="bp-hero-bio" data-portfolio-field="bio">{{ user.bio }}</p>
         {% endif %}
         {% if user.location != blank %}
-          <p class="bp-hero-location">{{ user.location }}</p>
+          <p class="bp-hero-location" data-portfolio-field="location">{{ user.location }}</p>
         {% endif %}
       </div>
     </div>
