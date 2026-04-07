@@ -336,3 +336,94 @@ export function getUploadedState(projectDirName: string, configDir?: string): Up
     return null;
   }
 }
+
+// ── Portfolio publish state ─────────────────────────────────
+//
+// Tracks the last-published snapshot of the user's portfolio per target
+// (only `heyi.am` for now; Phase 4/5 will add export targets). Used by the
+// UI to detect drift between the current local profile and what was last
+// published, without re-running the renderer.
+
+export interface PortfolioPublishTarget {
+  /** ISO timestamp of the last successful publish to this target. */
+  lastPublishedAt: string;
+  /** Stable hash of the profile snapshot that was published. */
+  lastPublishedProfileHash: string;
+  /** Full profile snapshot at publish time — used for field-level diffs. */
+  lastPublishedProfile: PortfolioProfile;
+  /** Arbitrary per-target config (e.g. export outputDir in Phase 4). */
+  config: Record<string, unknown>;
+  /** Public URL of the last published portfolio, if known. */
+  url?: string;
+  /** Last error message from a failed publish attempt, cleared on success. */
+  lastError?: string;
+  /** ISO timestamp of the last failed publish attempt. */
+  lastErrorAt?: string;
+}
+
+export interface PortfolioPublishState {
+  targets: Record<string, PortfolioPublishTarget>;
+}
+
+const PORTFOLIO_PUBLISH_FILE = 'portfolio-publish.json';
+const DEFAULT_PORTFOLIO_TARGET = 'heyi.am';
+
+function portfolioPublishPath(configDir: string = getDataDir()): string {
+  return join(configDir, PORTFOLIO_PUBLISH_FILE);
+}
+
+/**
+ * Compute a stable hash of a portfolio profile snapshot. Keys are sorted
+ * recursively so logically-equal profiles always produce the same hash.
+ * Used for draft detection — no cryptographic guarantees required.
+ */
+export function hashPortfolioProfile(profile: PortfolioProfile): string {
+  const canonical = canonicalStringify(profile);
+  return createHash('sha256').update(canonical).digest('hex').slice(0, 16);
+}
+
+function canonicalStringify(value: unknown): string {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalStringify).join(',')}]`;
+  const obj = value as Record<string, unknown>;
+  const keys = Object.keys(obj).filter((k) => obj[k] !== undefined).sort();
+  return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalStringify(obj[k])}`).join(',')}}`;
+}
+
+export function getPortfolioPublishState(configDir?: string): PortfolioPublishState {
+  const path = portfolioPublishPath(configDir);
+  if (!existsSync(path)) return { targets: {} };
+  try {
+    const parsed = JSON.parse(readFileSync(path, 'utf-8')) as PortfolioPublishState;
+    return parsed && typeof parsed === 'object' && parsed.targets ? parsed : { targets: {} };
+  } catch {
+    return { targets: {} };
+  }
+}
+
+export function savePortfolioPublishState(state: PortfolioPublishState, configDir?: string): void {
+  const dir = configDir ?? getDataDir();
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(portfolioPublishPath(configDir), JSON.stringify(state, null, 2), { mode: 0o600 });
+}
+
+/** Update (or create) a single target entry in the publish state. */
+export function updatePortfolioPublishTarget(
+  target: string,
+  patch: Partial<PortfolioPublishTarget>,
+  configDir?: string,
+): PortfolioPublishState {
+  const state = getPortfolioPublishState(configDir);
+  const existing = state.targets[target];
+  const base: PortfolioPublishTarget = existing ?? {
+    lastPublishedAt: '',
+    lastPublishedProfileHash: '',
+    lastPublishedProfile: {},
+    config: {},
+  };
+  state.targets[target] = { ...base, ...patch };
+  savePortfolioPublishState(state, configDir);
+  return state;
+}
+
+export { DEFAULT_PORTFOLIO_TARGET };
