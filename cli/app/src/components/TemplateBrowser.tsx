@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AppShell, Badge, Chip } from './shared'
 import {
@@ -32,6 +32,13 @@ const SORT_LABELS: Record<SortOption, string> = {
   'by-mode': 'By mode',
 }
 
+export type DataMode = 'mock' | 'mine'
+
+const DATA_MODE_LABELS: Record<DataMode, string> = {
+  mock: 'Mock data',
+  mine: 'My data',
+}
+
 // ── Helpers ──────────────────────────────────────────────────
 
 function previewBgForTemplate(t: TemplateInfo): string {
@@ -57,15 +64,49 @@ function sortTemplates(templates: TemplateInfo[], sort: SortOption): TemplateInf
   return templates
 }
 
+/**
+ * Resolve the iframe src for a template card based on the active data mode.
+ *
+ * - mock: serves the curated static mockup HTML for the template (fast,
+ *   shared across users, never touches DB).
+ * - mine: renders the user's real portfolio data through the chosen
+ *   template via /preview/portfolio?template=:name. Backend validates the
+ *   template name and falls back to the user default if it's invalid.
+ */
+export function resolveTemplateIframeSrc(templateName: string, dataMode: DataMode): string {
+  if (dataMode === 'mine') {
+    return `/preview/portfolio?template=${encodeURIComponent(templateName)}`
+  }
+  return `/preview/template/${templateName}?page=portfolio`
+}
+
 // ── Main Component ───────────────────────────────────────────
 
-export function TemplateBrowser() {
+export interface TemplateBrowserProps {
+  /**
+   * Where the browser is being rendered.
+   * - 'route' (default): full-page surface at /templates.
+   * - 'modal': sheet overlay launched from PreviewPane / EditRail.
+   */
+  mode?: 'route' | 'modal'
+  /**
+   * In modal mode, called when the user picks a template via the
+   * "Use this template" button. The host is responsible for persisting
+   * the choice (saveTheme) and dismissing the modal.
+   */
+  onSelectTemplate?: (templateName: string) => void
+  /** Modal-mode close handler. Wired to the close button, Escape, and overlay click. */
+  onClose?: () => void
+}
+
+export function TemplateBrowser({ mode = 'route', onSelectTemplate, onClose }: TemplateBrowserProps = {}) {
   const [searchParams, setSearchParams] = useSearchParams()
   const [templates, setTemplates] = useState<TemplateInfo[]>([])
   const [currentTheme, setCurrentTheme] = useState('editorial')
   const [firstProjectDir, setFirstProjectDir] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [dataMode, setDataMode] = useState<DataMode>('mock')
 
   const activeCategory = (searchParams.get('category') as Category) || 'all'
   const activeSort = (searchParams.get('sort') as SortOption) || 'default'
@@ -97,6 +138,13 @@ export function TemplateBrowser() {
   }
 
   async function handleApply(templateName: string) {
+    // In modal mode, the host owns persistence + dismissal — we just
+    // forward the choice and stop. This keeps the modal a controlled
+    // picker rather than a divergent code path.
+    if (mode === 'modal') {
+      onSelectTemplate?.(templateName)
+      return
+    }
     const prev = currentTheme
     setCurrentTheme(templateName)
     try {
@@ -118,6 +166,63 @@ export function TemplateBrowser() {
 
   const activeTemplate = templates.find((t) => t.name === currentTheme) ?? templates[0]
 
+  // ── Modal mode ─────────────────────────────────────────────
+  if (mode === 'modal') {
+    return (
+      <TemplateBrowserModal onClose={onClose}>
+        <div className="px-5 pt-4 pb-3 border-b border-ghost flex items-center justify-between">
+          <div>
+            <h2 className="font-display text-lg font-bold text-on-surface">Choose a template</h2>
+            <p className="text-xs text-on-surface-variant mt-0.5">
+              {templates.length} template{templates.length !== 1 ? 's' : ''} — preview with mock data or your own
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close template browser"
+            data-testid="template-browser-close"
+            className="text-on-surface-variant hover:text-on-surface text-xl leading-none px-2 py-1 rounded-sm focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="px-5 pt-3">
+          <DataModeToggle value={dataMode} onChange={setDataMode} />
+        </div>
+
+        <div className="px-5 pt-3 pb-2">
+          <TemplateFiltersInline
+            activeCategory={activeCategory}
+            activeSort={activeSort}
+            onCategoryChange={(c) => setFilter('category', c)}
+            onSortChange={(s) => setFilter('sort', s)}
+          />
+        </div>
+
+        <div className="overflow-y-auto px-5 pb-5 flex-1" data-testid="template-browser-modal-body">
+          {loading ? (
+            <div className="py-12 text-center">
+              <span className="text-sm text-on-surface-variant">Loading templates...</span>
+            </div>
+          ) : filtered.length === 0 ? (
+            <TemplateEmptyState onClear={() => setFilter('category', 'all')} />
+          ) : (
+            <TemplateGrid
+              templates={filtered}
+              currentTheme={currentTheme}
+              dataMode={dataMode}
+              variant="modal"
+              onApply={handleApply}
+            />
+          )}
+        </div>
+      </TemplateBrowserModal>
+    )
+  }
+
+  // ── Route mode (existing /templates page) ──────────────────
   if (loading) {
     return (
       <AppShell back={{ label: 'Settings', to: '/settings' }} chips={[{ label: 'Templates' }]}>
@@ -141,8 +246,10 @@ export function TemplateBrowser() {
       <TemplateFilters
         activeCategory={activeCategory}
         activeSort={activeSort}
+        dataMode={dataMode}
         onCategoryChange={(c) => setFilter('category', c)}
         onSortChange={(s) => setFilter('sort', s)}
+        onDataModeChange={setDataMode}
       />
 
       {/* Template grid */}
@@ -153,6 +260,8 @@ export function TemplateBrowser() {
           <TemplateGrid
             templates={filtered}
             currentTheme={currentTheme}
+            dataMode={dataMode}
+            variant="route"
             onApply={handleApply}
           />
         )}
@@ -161,6 +270,86 @@ export function TemplateBrowser() {
       {/* Toast */}
       {toastMessage && <TemplateSaveToast message={toastMessage} />}
     </AppShell>
+  )
+}
+
+// ── Modal shell ──────────────────────────────────────────────
+
+function TemplateBrowserModal({
+  children,
+  onClose,
+}: {
+  children: React.ReactNode
+  onClose?: () => void
+}) {
+  // Escape key + click-outside dismissal. The overlay catches clicks; the
+  // sheet stops propagation so clicking inside doesn't close.
+  useEffect(() => {
+    if (!onClose) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose?.()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center pt-12 px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Template browser"
+      data-testid="template-browser-modal-overlay"
+      onClick={onClose}
+    >
+      <div
+        className="bg-surface-lowest border border-ghost rounded-md shadow-xl w-full max-w-[720px] max-h-[80vh] flex flex-col"
+        data-testid="template-browser-modal-sheet"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
+// ── Data mode toggle ─────────────────────────────────────────
+
+function DataModeToggle({
+  value,
+  onChange,
+}: {
+  value: DataMode
+  onChange: (v: DataMode) => void
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Preview data source"
+      className="inline-flex items-center rounded-sm border border-ghost"
+      data-testid="template-browser-data-mode"
+    >
+      {(['mock', 'mine'] as const).map((m) => {
+        const active = value === m
+        return (
+          <button
+            key={m}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            data-testid={`template-browser-data-mode-${m}`}
+            onClick={() => onChange(m)}
+            className={`text-xs font-mono px-3 py-1 first:rounded-l-sm last:rounded-r-sm transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 ${
+              active
+                ? 'bg-primary/10 text-primary'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            {DATA_MODE_LABELS[m]}
+          </button>
+        )
+      })}
+    </div>
   )
 }
 
@@ -228,13 +417,17 @@ function TemplateHero({
 function TemplateFilters({
   activeCategory,
   activeSort,
+  dataMode,
   onCategoryChange,
   onSortChange,
+  onDataModeChange,
 }: {
   activeCategory: Category
   activeSort: SortOption
+  dataMode: DataMode
   onCategoryChange: (c: Category) => void
   onSortChange: (s: SortOption) => void
+  onDataModeChange: (m: DataMode) => void
 }) {
   return (
     <div className="sticky top-12 z-40 bg-surface-lowest border-b border-ghost">
@@ -263,7 +456,49 @@ function TemplateFilters({
               />
             ))}
           </div>
+
+          <div className="border-l border-ghost mx-3 h-4 shrink-0" aria-hidden="true" />
+
+          <DataModeToggle value={dataMode} onChange={onDataModeChange} />
         </div>
+      </div>
+    </div>
+  )
+}
+
+function TemplateFiltersInline({
+  activeCategory,
+  activeSort,
+  onCategoryChange,
+  onSortChange,
+}: {
+  activeCategory: Category
+  activeSort: SortOption
+  onCategoryChange: (c: Category) => void
+  onSortChange: (s: SortOption) => void
+}) {
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <div role="radiogroup" aria-label="Filter by category" className="flex items-center gap-1.5">
+        {CATEGORIES.map((cat) => (
+          <FilterPill
+            key={cat}
+            label={CATEGORY_LABELS[cat]}
+            active={activeCategory === cat}
+            onClick={() => onCategoryChange(cat)}
+          />
+        ))}
+      </div>
+      <div className="border-l border-ghost mx-2 h-4 shrink-0" aria-hidden="true" />
+      <div role="radiogroup" aria-label="Sort templates" className="flex items-center gap-1.5">
+        {SORT_OPTIONS.map((s) => (
+          <FilterPill
+            key={s}
+            label={SORT_LABELS[s]}
+            active={activeSort === s}
+            onClick={() => onSortChange(s)}
+          />
+        ))}
       </div>
     </div>
   )
@@ -300,20 +535,41 @@ function FilterPill({
 function TemplateGrid({
   templates,
   currentTheme,
+  dataMode,
+  variant,
   onApply,
 }: {
   templates: TemplateInfo[]
   currentTheme: string
+  dataMode: DataMode
+  variant: 'route' | 'modal'
   onApply: (name: string) => void
 }) {
+  // Modal mode renders only one iframe at a time (the focused card) to keep
+  // memory and bandwidth reasonable when "My data" is active and each iframe
+  // is a real Liquid render. Route mode keeps the existing eager-load grid
+  // because users on /templates expect to scan all options at once.
+  const [focusedName, setFocusedName] = useState<string | null>(null)
+  const focusCard = useCallback((name: string | null) => setFocusedName(name), [])
+
+  const cols =
+    variant === 'modal'
+      ? 'grid-cols-1 sm:grid-cols-2 gap-4'
+      : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5'
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div className={`grid ${cols}`}>
       {templates.map((t, index) => (
         <TemplateCard
           key={t.name}
           template={t}
           isActive={currentTheme === t.name}
           index={index}
+          dataMode={dataMode}
+          variant={variant}
+          singleIframeMode={variant === 'modal'}
+          isFocused={focusedName === t.name}
+          onFocus={() => focusCard(t.name)}
           onApply={() => onApply(t.name)}
         />
       ))}
@@ -327,13 +583,30 @@ function TemplateCard({
   template: t,
   isActive,
   index,
+  dataMode,
+  variant,
+  singleIframeMode,
+  isFocused,
+  onFocus,
   onApply,
 }: {
   template: TemplateInfo
   isActive: boolean
   index: number
+  dataMode: DataMode
+  variant: 'route' | 'modal'
+  singleIframeMode: boolean
+  isFocused: boolean
+  onFocus: () => void
   onApply: () => void
 }) {
+  // In modal mode we only mount the iframe for the focused card (or the
+  // active template by default) to avoid spinning up N renders of real
+  // portfolio data at once. The wireframe stays visible behind it as a
+  // placeholder.
+  const shouldMountIframe = !singleIframeMode || isFocused || isActive
+  const iframeSrc = resolveTemplateIframeSrc(t.name, dataMode)
+
   return (
     <article
       className={`group bg-surface-lowest rounded-md overflow-hidden transition-all duration-150 motion-reduce:transition-none ${
@@ -343,31 +616,36 @@ function TemplateCard({
       }`}
       aria-label={`${t.label} template`}
       aria-current={isActive ? 'true' : undefined}
+      onMouseEnter={singleIframeMode ? onFocus : undefined}
+      onFocus={singleIframeMode ? onFocus : undefined}
       style={{
         animationDelay: `${index * 30}ms`,
       }}
     >
-      {/* Preview area — loads static mockup HTML (instant, mock data) */}
+      {/* Preview area — wireframe placeholder + iframe overlay */}
       <div className="border-b border-ghost relative overflow-hidden" style={{ height: '220px' }}>
         <TemplateWireframe template={t} className="absolute inset-0 w-full h-full" />
-        <iframe
-          src={`/preview/template/${t.name}?page=portfolio`}
-          style={{
-            width: '1200px',
-            height: '900px',
-            transform: 'scale(0.2)',
-            transformOrigin: 'top left',
-            border: 'none',
-            pointerEvents: 'none',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-          }}
-          loading="lazy"
-          tabIndex={-1}
-          aria-hidden="true"
-          title={`${t.label} preview`}
-        />
+        {shouldMountIframe && (
+          <iframe
+            src={iframeSrc}
+            data-testid={`template-card-iframe-${t.name}`}
+            style={{
+              width: '1200px',
+              height: '900px',
+              transform: 'scale(0.2)',
+              transformOrigin: 'top left',
+              border: 'none',
+              pointerEvents: 'none',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+            }}
+            loading="lazy"
+            tabIndex={-1}
+            aria-hidden="true"
+            title={`${t.label} preview`}
+          />
+        )}
       </div>
 
       {/* Info area */}
@@ -405,26 +683,37 @@ function TemplateCard({
         </div>
 
         {/* Row 4: Actions */}
-        <div className={`flex items-center gap-3 mt-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-150 motion-reduce:transition-none ${isActive ? 'sm:opacity-100' : ''}`}>
-          {!isActive && (
+        <div className={`flex items-center gap-3 mt-1 ${variant === 'modal' ? '' : 'sm:opacity-0 sm:group-hover:opacity-100'} transition-opacity duration-150 motion-reduce:transition-none ${isActive ? 'sm:opacity-100' : ''}`}>
+          {variant === 'modal' ? (
             <button
               type="button"
               onClick={onApply}
+              data-testid={`template-card-use-${t.name}`}
               className="text-xs font-medium px-2.5 py-1 rounded-md bg-primary text-on-primary hover:bg-primary-hover transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
-              Apply
+              {isActive ? 'Current' : 'Use this template'}
             </button>
+          ) : (
+            <>
+              {!isActive && (
+                <button
+                  type="button"
+                  onClick={onApply}
+                  className="text-xs font-medium px-2.5 py-1 rounded-md bg-primary text-on-primary hover:bg-primary-hover transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                >
+                  Apply
+                </button>
+              )}
+              <a href={`/preview/template/${t.name}?page=portfolio`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-on-surface-variant hover:text-primary transition-colors font-medium">Portfolio</a>
+              <a href={`/preview/template/${t.name}?page=project`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-on-surface-variant hover:text-primary transition-colors font-medium">Project</a>
+              <a href={`/preview/template/${t.name}?page=session`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-on-surface-variant hover:text-primary transition-colors font-medium">Session</a>
+            </>
           )}
-          <a href={`/preview/template/${t.name}?page=portfolio`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-on-surface-variant hover:text-primary transition-colors font-medium">Portfolio</a>
-          <a href={`/preview/template/${t.name}?page=project`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-on-surface-variant hover:text-primary transition-colors font-medium">Project</a>
-          <a href={`/preview/template/${t.name}?page=session`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-on-surface-variant hover:text-primary transition-colors font-medium">Session</a>
         </div>
       </div>
     </article>
   )
 }
-
-// ── Lazy Iframe Preview ──────────────────────────────────────
 
 // ── Wireframe Thumbnail ──────────────────────────────────────
 
