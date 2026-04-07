@@ -89,14 +89,14 @@ const livePublishState = {
 }
 
 describe('EditRail — sections', () => {
-  it('renders all six section headers', () => {
+  it('renders all five section headers', () => {
     renderWith()
     expect(screen.getByTestId('editrail-section-identity')).toBeTruthy()
     expect(screen.getByTestId('editrail-section-contact')).toBeTruthy()
     expect(screen.getByTestId('editrail-section-photo-resume')).toBeTruthy()
     expect(screen.getByTestId('editrail-section-projects')).toBeTruthy()
     expect(screen.getByTestId('editrail-section-template')).toBeTruthy()
-    expect(screen.getByTestId('editrail-section-accent')).toBeTruthy()
+    expect(screen.queryByTestId('editrail-section-accent')).toBeNull()
   })
 
   it('Identity section is open by default and Contact is collapsed', () => {
@@ -413,52 +413,16 @@ describe('EditRail — projects section', () => {
   })
 })
 
-describe('EditRail — template + accent stubs', () => {
+describe('EditRail — template stub', () => {
   it('renders template pill and Change template button', () => {
     renderWith()
     fireEvent.click(screen.getByTestId('editrail-section-toggle-template'))
     expect(screen.getByTestId('editrail-template-change')).toBeTruthy()
   })
 
-  it('renders five accent preset swatches', () => {
+  it('does not render an Accent section (removed)', () => {
     renderWith()
-    fireEvent.click(screen.getByTestId('editrail-section-toggle-accent'))
-    const group = screen.getByTestId('editrail-accent-swatches')
-    const swatches = group.querySelectorAll('button[role="radio"]')
-    expect(swatches.length).toBe(5)
-  })
-
-  it('marks the active preset (defaults to Seal Blue) with aria-checked', () => {
-    renderWith()
-    fireEvent.click(screen.getByTestId('editrail-section-toggle-accent'))
-    const sealBlue = screen.getByTestId('editrail-accent-swatch-084471')
-    expect(sealBlue.getAttribute('aria-checked')).toBe('true')
-    expect(sealBlue.getAttribute('data-active')).toBe('true')
-  })
-
-  it('clicking a different swatch updates profile.accent in the store', () => {
-    let stateRef: { current: PortfolioStoreState | null } = { current: null }
-    function Probe() {
-      const { state } = usePortfolioStore()
-      stateRef.current = state
-      return <span data-testid="probe-accent">{state.profile.accent ?? ''}</span>
-    }
-    render(
-      <PortfolioStoreProvider>
-        <EditRail />
-        <Probe />
-      </PortfolioStoreProvider>,
-    )
-    fireEvent.click(screen.getByTestId('editrail-section-toggle-accent'))
-    fireEvent.click(screen.getByTestId('editrail-accent-swatch-b45309'))
-    expect(stateRef.current?.profile.accent).toBe('#b45309')
-    expect(screen.getByTestId('probe-accent').textContent).toBe('#b45309')
-  })
-
-  it('shows a Custom indicator when the accent is not in the preset list', () => {
-    renderWith({ profile: { accent: '#123456' } })
-    fireEvent.click(screen.getByTestId('editrail-section-toggle-accent'))
-    expect(screen.getByTestId('editrail-accent-custom').textContent).toContain('#123456')
+    expect(screen.queryByTestId('editrail-section-accent')).toBeNull()
   })
 })
 

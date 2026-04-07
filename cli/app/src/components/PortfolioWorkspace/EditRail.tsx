@@ -594,73 +594,11 @@ function TemplateSection() {
   )
 }
 
-/**
- * Five preset accent colors. The product ships with a fixed palette rather
- * than a freeform color picker — keeps portfolios feeling intentional and
- * removes one more knob for users to fiddle with. Seal Blue is the canonical
- * default used elsewhere in the codebase (see portfolio-render-data.ts).
- */
-export const ACCENT_PRESETS: ReadonlyArray<{ name: string; hex: string }> = [
-  { name: 'Seal Blue', hex: '#084471' },
-  { name: 'Cobalt', hex: '#1e40af' },
-  { name: 'Amber', hex: '#b45309' },
-  { name: 'Sage', hex: '#15803d' },
-  { name: 'Plum', hex: '#7e22ce' },
-]
-
-const DEFAULT_ACCENT = ACCENT_PRESETS[0].hex
-
-function AccentSection() {
-  const { state, dispatch } = usePortfolioStore()
-  const current = state.profile.accent ?? DEFAULT_ACCENT
-  const isPreset = ACCENT_PRESETS.some((p) => p.hex.toLowerCase() === current.toLowerCase())
-
-  function handlePick(hex: string) {
-    dispatch({ type: 'UPDATE_PROFILE_FIELD', field: 'accent', value: hex })
-  }
-
-  return (
-    <Section id="accent" title="Accent color">
-      <div
-        data-testid="editrail-accent-swatches"
-        className="flex items-center gap-2"
-        role="radiogroup"
-        aria-label="Accent color"
-      >
-        {ACCENT_PRESETS.map((preset) => {
-          const active = preset.hex.toLowerCase() === current.toLowerCase()
-          return (
-            <button
-              key={preset.hex}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              aria-label={`${preset.name} (${preset.hex})`}
-              data-testid={`editrail-accent-swatch-${preset.hex.slice(1)}`}
-              data-active={active ? 'true' : 'false'}
-              onClick={() => handlePick(preset.hex)}
-              className={[
-                'w-6 h-6 rounded-full border border-ghost shrink-0 transition-shadow',
-                active ? 'ring-2 ring-offset-2 ring-offset-surface-lowest ring-primary' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              style={{ background: preset.hex }}
-            />
-          )
-        })}
-      </div>
-      {!isPreset && (
-        <p
-          data-testid="editrail-accent-custom"
-          className="font-mono text-[11px] text-on-surface-variant mt-2"
-        >
-          Custom: {current}
-        </p>
-      )}
-    </Section>
-  )
-}
+// AccentSection removed by user request — the picker UI is gone, but the
+// `accent` field on PortfolioProfile is intentionally retained as reserved
+// state. portfolio-render-data.ts still reads `profile.accent || #084471`
+// so any user with a previously persisted accent keeps it; new users get
+// the default. A future custom-accent feature can re-introduce a UI.
 
 // ── Top-level EditRail ───────────────────────────────────────
 
@@ -747,8 +685,6 @@ export function EditRail() {
       <ProjectsSection />
 
       <TemplateSection />
-
-      <AccentSection />
     </aside>
   )
 }

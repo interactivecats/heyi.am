@@ -341,7 +341,12 @@ export interface PortfolioProfile {
   websiteUrl?: string
   resumeBase64?: string
   resumeFilename?: string
-  /** Hex color (e.g. `#084471`) used as the portfolio accent. */
+  /**
+   * Hex color (e.g. `#084471`) used as the portfolio accent. Reserved for
+   * a future custom-accent feature — the EditRail picker was removed in
+   * favor of the default. portfolio-render-data.ts still honors any
+   * previously persisted value.
+   */
   accent?: string
 }
 
