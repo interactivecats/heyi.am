@@ -27,12 +27,6 @@ export function Settings() {
   const [loggingOut, setLoggingOut] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  const [privacyDefaults, setPrivacyDefaults] = useState({
-    localOnly: true,
-    requireReview: true,
-    excludeOpenClaw: false,
-  })
-
   // ── Connected accounts (Phase 5) ──────────────────────────
   const [githubAccount, setGithubAccount] = useState<GithubAccount | null>(null)
   const [githubLoading, setGithubLoading] = useState(true)
@@ -150,10 +144,6 @@ export function Settings() {
     }
   }
 
-  function togglePrivacy(key: keyof typeof privacyDefaults) {
-    setPrivacyDefaults((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
-
   if (loading || !apiKey || !auth) {
     return (
       <AppShell back={{ label: 'Projects', to: '/projects' }} chips={[{ label: 'Settings' }]}>
@@ -172,8 +162,8 @@ export function Settings() {
       <div className="max-w-3xl mx-auto p-6">
         <h2 className="font-display text-2xl font-bold text-on-surface">Settings</h2>
 
-        {/* API configuration + Privacy defaults */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+        {/* API configuration */}
+        <div className="mt-4">
           <Card>
             <SectionHeader title="API configuration" meta="local only" />
             <label className="font-mono text-[11px] uppercase tracking-wider text-on-surface-variant block mb-1.5">
@@ -227,27 +217,6 @@ export function Settings() {
                   {saving ? 'Saving...' : 'Save key'}
                 </button>
               ) : null}
-            </div>
-          </Card>
-
-          <Card>
-            <SectionHeader title="Privacy defaults" meta="recommended" />
-            <div className="space-y-3">
-              <ToggleRow
-                label="Mark new projects local only by default"
-                checked={privacyDefaults.localOnly}
-                onChange={() => togglePrivacy('localOnly')}
-              />
-              <ToggleRow
-                label="Require review before publish"
-                checked={privacyDefaults.requireReview}
-                onChange={() => togglePrivacy('requireReview')}
-              />
-              <ToggleRow
-                label="Exclude personal OpenClaw sessions by default"
-                checked={privacyDefaults.excludeOpenClaw}
-                onChange={() => togglePrivacy('excludeOpenClaw')}
-              />
             </div>
           </Card>
         </div>
@@ -411,34 +380,3 @@ export function Settings() {
   )
 }
 
-// ── Sub-components ─────────────────────────────────────────────
-
-function ToggleRow({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string
-  checked: boolean
-  onChange: () => void
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-on-surface">{label}</span>
-      <button
-        role="switch"
-        aria-checked={checked}
-        onClick={onChange}
-        className={`relative w-[40px] h-[22px] rounded-full transition-colors ${
-          checked ? 'bg-green' : 'bg-surface-high'
-        }`}
-      >
-        <span
-          className={`absolute top-[3px] w-4 h-4 rounded-full bg-surface-lowest shadow-sm transition-transform ${
-            checked ? 'left-[21px]' : 'left-[3px]'
-          }`}
-        />
-      </button>
-    </div>
-  )
-}
