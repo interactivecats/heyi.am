@@ -8,6 +8,16 @@
 
 import type { AgentSummary } from '../routes/context.js';
 
+/**
+ * Output target for the render pipeline.
+ *
+ * - `'fragment'`: body HTML only, no `<html>`/`<head>` shell. Used when Phoenix
+ *   wraps the output for hosted serving.
+ * - `'static'`: full standalone pages wired together as a self-contained
+ *   static site directory that opens without a server (file://).
+ */
+export type RenderTarget = 'fragment' | 'static';
+
 export interface UserInfo {
   username: string;
   accent: string;

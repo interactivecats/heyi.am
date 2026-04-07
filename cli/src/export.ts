@@ -12,7 +12,8 @@ import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ProjectEnhanceCache, EnhancedData } from './settings.js';
 import { loadEnhancedData, getDefaultTemplate } from './settings.js';
-import { renderProjectHtml, renderSessionHtml } from './render/index.js';
+import { renderProjectHtml, renderSessionHtml, renderPortfolioHtml } from './render/index.js';
+import type { PortfolioRenderData } from './render/types.js';
 import { resolveTemplate, getTemplateCss } from './render/templates.js';
 import { escapeHtml, displayNameFromDir, toSlug } from './format-utils.js';
 import {
@@ -691,4 +692,199 @@ function buildStandalonePage(title: string, bodyHtml: string, opts?: StandaloneP
   ${scriptTag}
 </body>
 </html>`;
+}
+
+// ── Portfolio site export (Phase 1) ────────────────────────────
+
+/**
+ * Validate a user-supplied directory path for portfolio static export.
+ *
+ * Unlike `safeExportPath` (which restricts writes to `EXPORTS_BASE`),
+ * portfolio exports target arbitrary user-chosen directories (e.g.
+ * `~/sites/portfolio`). This validator rejects:
+ *  - relative paths (must be absolute)
+ *  - path-traversal segments (`..`)
+ *  - NUL bytes
+ *  - a small allowlist-style set of known-dangerous system directories
+ *
+ * It does NOT verify writability or that the path exists — the caller is
+ * expected to `mkdirSync({ recursive: true })` and surface any errors.
+ *
+ * @throws Error with a machine-readable `code` property on invalid input.
+ */
+export function safePortfolioExportPath(outputPath: string): string {
+  if (typeof outputPath !== 'string' || outputPath.length === 0) {
+    const err = new Error('Output path must be a non-empty string');
+    (err as Error & { code: string }).code = 'INVALID_PATH';
+    throw err;
+  }
+  if (outputPath.includes('\0')) {
+    const err = new Error('Output path contains NUL byte');
+    (err as Error & { code: string }).code = 'INVALID_PATH';
+    throw err;
+  }
+
+  // Expand leading ~ before resolution so that "~/sites/x" is treated as
+  // absolute under the user's home directory.
+  let expanded = outputPath;
+  if (expanded === '~' || expanded.startsWith('~/')) {
+    const home = process.env.HOME || process.env.USERPROFILE;
+    if (!home) {
+      const err = new Error('Cannot resolve ~: HOME is not set');
+      (err as Error & { code: string }).code = 'INVALID_PATH';
+      throw err;
+    }
+    expanded = expanded === '~' ? home : join(home, expanded.slice(2));
+  }
+
+  // Reject relative paths and traversal segments in the raw input.
+  if (expanded.split(/[\\/]/).includes('..')) {
+    const err = new Error('Output path must not contain .. segments');
+    (err as Error & { code: string }).code = 'PATH_TRAVERSAL';
+    throw err;
+  }
+
+  const resolved = resolve(expanded);
+  if (resolved !== expanded && !expanded.startsWith('/')) {
+    const err = new Error('Output path must be absolute');
+    (err as Error & { code: string }).code = 'NOT_ABSOLUTE';
+    throw err;
+  }
+
+  // Refuse to write into a handful of system directories that would be
+  // catastrophic to overwrite. This is not a complete sandbox — it is a
+  // last-line guardrail against obvious mistakes.
+  const FORBIDDEN = ['/', '/bin', '/boot', '/dev', '/etc', '/proc', '/sbin', '/sys', '/usr', '/var'];
+  for (const forbidden of FORBIDDEN) {
+    if (resolved === forbidden) {
+      const err = new Error(`Refusing to write to system directory: ${resolved}`);
+      (err as Error & { code: string }).code = 'FORBIDDEN_PATH';
+      throw err;
+    }
+  }
+
+  return resolved;
+}
+
+/**
+ * Render a portfolio landing page to a body HTML fragment (no `<html>` shell).
+ *
+ * Used by the upload path (Phase 2) to store pre-rendered HTML in
+ * `users.rendered_portfolio_html` for Phoenix to serve.
+ */
+export function generatePortfolioHtmlFragment(
+  data: PortfolioRenderData,
+  templateName?: string,
+): string {
+  const template = templateName ?? resolveTemplate(undefined, getDefaultTemplate());
+  return renderPortfolioHtml(data, template);
+}
+
+/**
+ * Rewrite hardcoded `/{username}/{slug}` absolute project links produced by
+ * the current portfolio Liquid templates into relative links that resolve
+ * against `projects/{slug}/index.html` when opened from disk.
+ *
+ * AUDIT FINDING (Phase 1): all 29 portfolio.liquid templates (editorial,
+ * blueprint, kinetic, and 26 others) hardcode `/{{ user.username }}/{{ p.slug }}`.
+ * Introducing a per-context base URL variable would require changes to
+ * `render/liquid.ts` and every template — out of scope for this phase, which
+ * only permits editing export.ts, types.ts, and three template files. We
+ * rewrite the URLs at the generator boundary instead. Hosted Phoenix serving
+ * is unaffected: the render output still contains absolute paths when routed
+ * through `renderPortfolioHtml` directly.
+ */
+function rewritePortfolioProjectLinks(html: string, username: string): string {
+  // Escape regex metacharacters in username before embedding.
+  const safeUser = username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // Matches href="/{username}/{slug}" and href="/{username}/{slug}/{session}"
+  const projectOnly = new RegExp(
+    `href="/${safeUser}/([a-z0-9][a-z0-9-]*)"`,
+    'g',
+  );
+  const projectSession = new RegExp(
+    `href="/${safeUser}/([a-z0-9][a-z0-9-]*)/([a-z0-9][a-z0-9-]*)"`,
+    'g',
+  );
+  return html
+    .replace(projectSession, 'href="projects/$1/sessions/$2.html"')
+    .replace(projectOnly, 'href="projects/$1/index.html"');
+}
+
+export interface PortfolioSiteProjectInput {
+  dirName: string;
+  cache: ProjectEnhanceCache;
+  sessions: Session[];
+  opts?: ExportOpts;
+}
+
+/**
+ * Generate a complete static portfolio site as a directory tree.
+ *
+ * Output structure:
+ * ```
+ * {outputDir}/
+ *   index.html                          — portfolio landing page
+ *   projects/{slug}/index.html          — per-project detail page
+ *   projects/{slug}/sessions/{slug}.html — per-session pages (featured)
+ * ```
+ *
+ * All internal links are relative; the resulting directory can be opened
+ * directly via `file://` without a server. Font loading remains CDN-linked.
+ *
+ * @param portfolioData  Render data for the landing page.
+ * @param projects       Per-project inputs. Each must have a unique dirName.
+ * @param outputDir      Absolute output directory. Caller should pre-validate
+ *                       with `safePortfolioExportPath`.
+ * @param templateName   Optional template override (defaults to user setting).
+ */
+export async function generatePortfolioSite(
+  portfolioData: PortfolioRenderData,
+  projects: PortfolioSiteProjectInput[],
+  outputDir: string,
+  templateName?: string,
+): Promise<ExportResult> {
+  const files: string[] = [];
+  let totalBytes = 0;
+
+  mkdirSync(outputDir, { recursive: true });
+
+  const template = templateName ?? resolveTemplate(undefined, getDefaultTemplate());
+  const username = portfolioData.user.username;
+
+  // ── Landing page ────────────────────────────────────────────
+  const portfolioBody = rewritePortfolioProjectLinks(
+    renderPortfolioHtml(portfolioData, template),
+    username,
+  );
+  const portfolioHtml = buildStandalonePage(
+    portfolioData.user.displayName || username,
+    portfolioBody,
+    {
+      description: portfolioData.user.bio?.slice(0, 200) || undefined,
+      templateName: template,
+    },
+  );
+  totalBytes += writeAndTrack(join(outputDir, 'index.html'), portfolioHtml, files);
+
+  // ── Per-project sub-sites ───────────────────────────────────
+  const projectsRoot = join(outputDir, 'projects');
+  mkdirSync(projectsRoot, { recursive: true });
+
+  for (const p of projects) {
+    const projectSlug = slugify(p.dirName);
+    const projectDir = join(projectsRoot, projectSlug);
+    const result = await exportHtml(
+      p.dirName,
+      p.cache,
+      p.sessions,
+      projectDir,
+      username,
+      p.opts,
+    );
+    files.push(...result.files);
+    totalBytes += result.totalBytes;
+  }
+
+  return { files, totalBytes, outputPath: outputDir };
 }
