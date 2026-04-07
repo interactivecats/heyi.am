@@ -145,6 +145,8 @@ export function PreviewPane() {
   const { state } = usePortfolioStore()
   const [target, setTarget] = useState<PreviewTarget>('landing')
   const [reloadKey, setReloadKey] = useState(0)
+  const [forceReloadCounter, setForceReloadCounter] = useState(0)
+  const [refreshDisabled, setRefreshDisabled] = useState(false)
   const [templateName, setTemplateName] = useState<string>('editorial')
   const [username, setUsername] = useState<string | null>(null)
   const [templateBrowserOpen, setTemplateBrowserOpen] = useState(false)
@@ -269,6 +271,20 @@ export function PreviewPane() {
     return githubTarget?.url ?? null
   }, [state.activeTarget, state.publishState, username])
 
+  /**
+   * Manual escape hatch — fully reload the iframe so any state the live
+   * patcher cannot reach (template-conditional contact rows that were
+   * `{% if %}`-omitted at SSR time, project list reorder/toggle, etc.)
+   * picks up the freshest server render. Disables itself for ~500ms after
+   * each click to prevent accidental spam.
+   */
+  function handleRefresh() {
+    if (refreshDisabled) return
+    setForceReloadCounter((c) => c + 1)
+    setRefreshDisabled(true)
+    setTimeout(() => setRefreshDisabled(false), 500)
+  }
+
   function handleOpenInBrowser() {
     if (!openInBrowserUrl) return
     window.open(openInBrowserUrl, '_blank', 'noopener,noreferrer')
@@ -342,6 +358,19 @@ export function PreviewPane() {
           {templateName}
         </button>
 
+        {/* Refresh preview */}
+        <button
+          type="button"
+          onClick={handleRefresh}
+          disabled={refreshDisabled}
+          aria-disabled={refreshDisabled}
+          className="text-xs text-on-surface-variant hover:text-on-surface px-2 py-1 disabled:opacity-40 disabled:cursor-not-allowed"
+          data-testid="portfolio-preview-refresh"
+          title="Force a fresh preview render."
+        >
+          Refresh ⟳
+        </button>
+
         {/* Open in browser */}
         <button
           type="button"
@@ -358,7 +387,7 @@ export function PreviewPane() {
 
       {/* Iframe */}
       <iframe
-        key={reloadKey}
+        key={`${reloadKey}-${forceReloadCounter}`}
         ref={iframeRef}
         title="Portfolio preview"
         src={currentSrc}

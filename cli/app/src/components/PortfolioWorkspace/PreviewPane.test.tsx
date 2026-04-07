@@ -122,6 +122,32 @@ describe('PreviewPane', () => {
     expect(screen.getByTestId('portfolio-preview-iframe')).not.toBe(initialIframe)
   })
 
+  it('Refresh button bumps the iframe key (forces reload)', () => {
+    render(<PreviewPane />, { wrapper: withProvider() })
+    const before = getIframe()
+    fireEvent.click(screen.getByTestId('portfolio-preview-refresh'))
+    const after = getIframe()
+    expect(after).not.toBe(before)
+  })
+
+  it('Refresh button disables itself for ~500ms after click', () => {
+    vi.useFakeTimers()
+    try {
+      render(<PreviewPane />, { wrapper: withProvider() })
+      const btn = screen.getByTestId('portfolio-preview-refresh') as HTMLButtonElement
+      fireEvent.click(btn)
+      expect(btn.disabled).toBe(true)
+      act(() => {
+        vi.advanceTimersByTime(500)
+      })
+      expect(
+        (screen.getByTestId('portfolio-preview-refresh') as HTMLButtonElement).disabled,
+      ).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('"Open in browser" is disabled when never published', () => {
     render(<PreviewPane />, { wrapper: withProvider() })
     const btn = screen.getByTestId('portfolio-preview-open-in-browser') as HTMLButtonElement
