@@ -37,7 +37,6 @@ import {
 } from '@dnd-kit/core'
 import {
   SortableContext,
-  arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -610,9 +609,8 @@ function ProjectsSection() {
     const oldIndex = ids.indexOf(String(active.id))
     const newIndex = ids.indexOf(String(over.id))
     if (oldIndex < 0 || newIndex < 0) return
-    // arrayMove is the canonical helper here; we still call REORDER_PROJECT
-    // to keep the store as the source of truth.
-    void arrayMove
+    // REORDER_PROJECT keeps the store as the source of truth; the reducer
+    // applies the array move.
     dispatch({ type: 'REORDER_PROJECT', projectId: String(active.id), newIndex })
     scheduleProjectsSave()
   }
