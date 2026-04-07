@@ -263,6 +263,28 @@ function PhotoField() {
   const published = state.publishState?.targets['heyi.am']?.lastPublishedProfile.photoBase64
   const dirty = valuesDiffer(photo, published)
 
+  // Read latest profile inside async callbacks so we don't save a stale
+  // snapshot from the moment the FileReader started reading.
+  const profileRef = useRef(state.profile)
+  useEffect(() => {
+    profileRef.current = state.profile
+  }, [state.profile])
+
+  // Photo uploads are intentional one-shot actions (not keystroke spam), so
+  // we persist immediately rather than going through the debounced save path
+  // used by ProfileTextField. Without this, a user who uploads a photo and
+  // closes the tab without touching a text field would lose the photo.
+  function persistProfile(next: PortfolioProfile) {
+    void savePortfolio(next)
+      .then(() => {
+        dispatch({ type: 'PROFILE_SAVED' })
+      })
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('[EditRail] Failed to persist photo', err)
+      })
+  }
+
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -274,14 +296,21 @@ function PhotoField() {
     }
     const reader = new FileReader()
     reader.onload = () => {
+      const nextValue = reader.result as string
       dispatch({
         type: 'UPDATE_PROFILE_FIELD',
         field: 'photoBase64',
-        value: reader.result as string,
+        value: nextValue,
       })
+      persistProfile({ ...profileRef.current, photoBase64: nextValue })
     }
     reader.readAsDataURL(file)
     e.target.value = ''
+  }
+
+  function handleRemove() {
+    dispatch({ type: 'UPDATE_PROFILE_FIELD', field: 'photoBase64', value: undefined })
+    persistProfile({ ...profileRef.current, photoBase64: undefined })
   }
 
   return (
@@ -314,9 +343,7 @@ function PhotoField() {
         {photo ? (
           <button
             type="button"
-            onClick={() =>
-              dispatch({ type: 'UPDATE_PROFILE_FIELD', field: 'photoBase64', value: undefined })
-            }
+            onClick={handleRemove}
             className="text-xs text-on-surface-variant hover:text-on-surface transition-colors"
           >
             Remove
@@ -334,6 +361,24 @@ function ResumeField() {
   const published = state.publishState?.targets['heyi.am']?.lastPublishedProfile.resumeBase64
   const dirty = valuesDiffer(resume, published)
 
+  const profileRef = useRef(state.profile)
+  useEffect(() => {
+    profileRef.current = state.profile
+  }, [state.profile])
+
+  // Same rationale as PhotoField.persistProfile: resume uploads are
+  // intentional, so skip the debounce and persist immediately.
+  function persistProfile(next: PortfolioProfile) {
+    void savePortfolio(next)
+      .then(() => {
+        dispatch({ type: 'PROFILE_SAVED' })
+      })
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('[EditRail] Failed to persist resume', err)
+      })
+  }
+
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -345,19 +390,35 @@ function ResumeField() {
     }
     const reader = new FileReader()
     reader.onload = () => {
+      const nextValue = reader.result as string
       dispatch({
         type: 'UPDATE_PROFILE_FIELD',
         field: 'resumeBase64',
-        value: reader.result as string,
+        value: nextValue,
       })
       dispatch({
         type: 'UPDATE_PROFILE_FIELD',
         field: 'resumeFilename',
         value: file.name,
       })
+      persistProfile({
+        ...profileRef.current,
+        resumeBase64: nextValue,
+        resumeFilename: file.name,
+      })
     }
     reader.readAsDataURL(file)
     e.target.value = ''
+  }
+
+  function handleRemove() {
+    dispatch({ type: 'UPDATE_PROFILE_FIELD', field: 'resumeBase64', value: undefined })
+    dispatch({ type: 'UPDATE_PROFILE_FIELD', field: 'resumeFilename', value: undefined })
+    persistProfile({
+      ...profileRef.current,
+      resumeBase64: undefined,
+      resumeFilename: undefined,
+    })
   }
 
   return (
@@ -388,10 +449,7 @@ function ResumeField() {
         {resume ? (
           <button
             type="button"
-            onClick={() => {
-              dispatch({ type: 'UPDATE_PROFILE_FIELD', field: 'resumeBase64', value: undefined })
-              dispatch({ type: 'UPDATE_PROFILE_FIELD', field: 'resumeFilename', value: undefined })
-            }}
+            onClick={handleRemove}
             className="text-xs text-on-surface-variant hover:text-on-surface transition-colors"
           >
             Remove

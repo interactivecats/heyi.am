@@ -304,6 +304,22 @@ describe('EditRail — photo upload', () => {
     })
   })
 
+  it('calls savePortfolio with the new photoBase64 (persist on upload)', async () => {
+    renderWith()
+    fireEvent.click(screen.getByTestId('editrail-section-toggle-photo-resume'))
+    const input = screen.getByTestId('editrail-field-photoBase64') as HTMLInputElement
+    const file = makeFile(1024)
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } })
+    })
+    await waitFor(() => {
+      expect(vi.mocked(api.savePortfolio)).toHaveBeenCalled()
+    })
+    const call = vi.mocked(api.savePortfolio).mock.calls.at(-1)
+    expect(call).toBeTruthy()
+    expect(call![0].photoBase64).toMatch(/^data:/)
+  })
+
   it('rejects oversize photo (>5MB)', () => {
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {})
     renderWith()
