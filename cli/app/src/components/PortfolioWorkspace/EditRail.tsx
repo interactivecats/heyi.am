@@ -14,10 +14,18 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ChangeEvent,
   type ReactNode,
 } from 'react'
+
+/**
+ * How long to wait after the last keystroke before persisting the profile
+ * to disk. Short enough to feel near-live in the iframe, long enough to
+ * coalesce rapid typing into a single write.
+ */
+const PROFILE_SAVE_DEBOUNCE_MS = 300
 import {
   DndContext,
   closestCenter,
@@ -151,33 +159,57 @@ function ProfileTextField({
     (state.publishState?.targets['heyi.am']?.lastPublishedProfile[field] as
       | string
       | undefined) ?? undefined
-  const [local, setLocal] = useState(storeValue)
 
-  // If the store value changes from underneath us (e.g. LOAD), reseed.
+  // Latest profile snapshot — read via ref inside the debounced save so the
+  // save always projects over the freshest store state, not the state at
+  // the time the timer was scheduled.
+  const profileRef = useRef(state.profile)
   useEffect(() => {
-    setLocal(storeValue)
-  }, [storeValue])
+    profileRef.current = state.profile
+  }, [state.profile])
 
-  const dirty = valuesDiffer(local, published)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  function commit() {
-    if (local !== storeValue) {
-      const nextValue = local === '' ? undefined : local
-      dispatch({
-        type: 'UPDATE_PROFILE_FIELD',
-        field,
-        value: nextValue,
-      })
-      // Persist to disk so the preview iframe (which reads from
-      // ~/.config/heyiam/settings.json on each reload) picks up the
-      // change. Fire-and-forget: the store is already updated, and the
-      // debounced iframe reload in PreviewPane will refetch after 300ms.
-      const nextProfile: PortfolioProfile = { ...state.profile, [field]: nextValue }
+  // Cancel any pending save on unmount so a stale write doesn't land after
+  // the component is gone.
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current !== null) {
+        clearTimeout(saveTimerRef.current)
+        saveTimerRef.current = null
+      }
+    }
+  }, [])
+
+  const dirty = valuesDiffer(storeValue, published)
+
+  /**
+   * Every keystroke:
+   *  1. Dispatch to the store immediately (cheap, unblocks iframe reload).
+   *  2. Re-schedule the debounced backend save.
+   *
+   * The store dispatch is NOT debounced — PreviewPane keys off store profile
+   * changes and has its own 300ms debounce for the iframe reload, so the two
+   * debounces naturally line up.
+   */
+  function handleChange(nextRaw: string) {
+    const nextValue = nextRaw === '' ? undefined : nextRaw
+    dispatch({ type: 'UPDATE_PROFILE_FIELD', field, value: nextValue })
+
+    if (saveTimerRef.current !== null) {
+      clearTimeout(saveTimerRef.current)
+    }
+    saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = null
+      const nextProfile: PortfolioProfile = {
+        ...profileRef.current,
+        [field]: nextValue,
+      }
       void savePortfolio(nextProfile).catch((err) => {
         // eslint-disable-next-line no-console
         console.error('[EditRail] Failed to persist profile field', field, err)
       })
-    }
+    }, PROFILE_SAVE_DEBOUNCE_MS)
   }
 
   if (multiline) {
@@ -187,9 +219,8 @@ function ProfileTextField({
         <textarea
           id={id}
           data-testid={`editrail-field-${field}`}
-          value={local}
-          onChange={(e) => setLocal(e.target.value)}
-          onBlur={commit}
+          value={storeValue}
+          onChange={(e) => handleChange(e.target.value)}
           placeholder={placeholder}
           maxLength={maxLength}
           rows={rows}
@@ -206,9 +237,8 @@ function ProfileTextField({
         id={id}
         type={type}
         data-testid={`editrail-field-${field}`}
-        value={local}
-        onChange={(e) => setLocal(e.target.value)}
-        onBlur={commit}
+        value={storeValue}
+        onChange={(e) => handleChange(e.target.value)}
         placeholder={placeholder}
         maxLength={maxLength}
         className={fieldClass(dirty)}

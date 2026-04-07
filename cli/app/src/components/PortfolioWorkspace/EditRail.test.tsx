@@ -115,44 +115,83 @@ describe('EditRail — sections', () => {
   })
 })
 
-describe('EditRail — text fields commit on blur', () => {
-  it('editing displayName + blurring updates the store', () => {
-    renderWith()
+describe('EditRail — text fields live update with debounced save', () => {
+  it('typing in displayName dispatches to the store on every keystroke', () => {
+    let stateRef: { current: PortfolioStoreState | null } = { current: null }
+    function Probe() {
+      const { state } = usePortfolioStore()
+      stateRef.current = state
+      return null
+    }
+    render(
+      <PortfolioStoreProvider>
+        <EditRail />
+        <Probe />
+      </PortfolioStoreProvider>,
+    )
     const input = screen.getByTestId('editrail-field-displayName') as HTMLInputElement
-    fireEvent.change(input, { target: { value: 'Grace Hopper' } })
-    // Before blur, store is untouched but local state is updated.
-    expect(input.value).toBe('Grace Hopper')
-    fireEvent.blur(input)
-    // Re-read after re-render
-    const after = screen.getByTestId('editrail-field-displayName') as HTMLInputElement
-    expect(after.value).toBe('Grace Hopper')
+    fireEvent.change(input, { target: { value: 'G' } })
+    expect(stateRef.current?.profile.displayName).toBe('G')
+    fireEvent.change(input, { target: { value: 'Gr' } })
+    expect(stateRef.current?.profile.displayName).toBe('Gr')
+    fireEvent.change(input, { target: { value: 'Grace' } })
+    expect(stateRef.current?.profile.displayName).toBe('Grace')
   })
 
-  it('editing displayName + blurring calls savePortfolio with the updated profile', () => {
-    renderWith({ profile: { bio: 'seed bio' } })
-    const input = screen.getByTestId('editrail-field-displayName') as HTMLInputElement
-    fireEvent.change(input, { target: { value: 'Grace Hopper' } })
-    fireEvent.blur(input)
-    expect(api.savePortfolio).toHaveBeenCalledTimes(1)
-    const arg = (api.savePortfolio as ReturnType<typeof vi.fn>).mock.calls[0][0]
-    expect(arg.displayName).toBe('Grace Hopper')
-    expect(arg.bio).toBe('seed bio')
+  it('savePortfolio is NOT called during the debounce window', () => {
+    vi.useFakeTimers()
+    try {
+      renderWith({ profile: { bio: 'seed bio' } })
+      const input = screen.getByTestId('editrail-field-displayName') as HTMLInputElement
+      fireEvent.change(input, { target: { value: 'G' } })
+      fireEvent.change(input, { target: { value: 'Gr' } })
+      fireEvent.change(input, { target: { value: 'Grace' } })
+      // Advance almost-but-not-quite past the debounce window.
+      act(() => {
+        vi.advanceTimersByTime(299)
+      })
+      expect(api.savePortfolio).not.toHaveBeenCalled()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
-  it('blurring without changing the value does not call savePortfolio', () => {
-    renderWith({ profile: { displayName: 'Ada' } })
-    const input = screen.getByTestId('editrail-field-displayName') as HTMLInputElement
-    fireEvent.blur(input)
-    expect(api.savePortfolio).not.toHaveBeenCalled()
+  it('savePortfolio is called exactly once after the debounce window elapses', () => {
+    vi.useFakeTimers()
+    try {
+      renderWith({ profile: { bio: 'seed bio' } })
+      const input = screen.getByTestId('editrail-field-displayName') as HTMLInputElement
+      fireEvent.change(input, { target: { value: 'G' } })
+      fireEvent.change(input, { target: { value: 'Gr' } })
+      fireEvent.change(input, { target: { value: 'Grace' } })
+      act(() => {
+        vi.advanceTimersByTime(300)
+      })
+      expect(api.savePortfolio).toHaveBeenCalledTimes(1)
+      const arg = (api.savePortfolio as ReturnType<typeof vi.fn>).mock.calls[0][0]
+      expect(arg.displayName).toBe('Grace')
+      expect(arg.bio).toBe('seed bio')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
-  it('editing bio + blurring updates the store', () => {
-    renderWith()
+  it('typing in bio dispatches to the store immediately', () => {
+    let stateRef: { current: PortfolioStoreState | null } = { current: null }
+    function Probe() {
+      const { state } = usePortfolioStore()
+      stateRef.current = state
+      return null
+    }
+    render(
+      <PortfolioStoreProvider>
+        <EditRail />
+        <Probe />
+      </PortfolioStoreProvider>,
+    )
     const ta = screen.getByTestId('editrail-field-bio') as HTMLTextAreaElement
     fireEvent.change(ta, { target: { value: 'New bio text' } })
-    fireEvent.blur(ta)
-    const after = screen.getByTestId('editrail-field-bio') as HTMLTextAreaElement
-    expect(after.value).toBe('New bio text')
+    expect(stateRef.current?.profile.bio).toBe('New bio text')
   })
 
   it('dirty bio shows the amber border when value differs from lastPublishedProfile', () => {
