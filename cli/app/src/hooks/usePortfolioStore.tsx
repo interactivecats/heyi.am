@@ -38,6 +38,13 @@ export interface PortfolioStoreState {
   changeList: string[]
   isPublishing: boolean
   lastPublishError: string | null
+  /**
+   * Timestamp (ms) of the last successful profile save. PreviewPane keys its
+   * iframe reload off this value so the iframe only remounts when the backend
+   * actually has fresh HTML to serve — not on every keystroke. `null` means
+   * no save has completed yet in this session (fresh mount).
+   */
+  lastSavedAt: number | null
 }
 
 export const initialPortfolioStoreState: PortfolioStoreState = {
@@ -49,6 +56,7 @@ export const initialPortfolioStoreState: PortfolioStoreState = {
   changeList: [],
   isPublishing: false,
   lastPublishError: null,
+  lastSavedAt: null,
 }
 
 // ── Actions ──────────────────────────────────────────────────
@@ -61,6 +69,7 @@ export type PortfolioStoreAction =
       projects: PortfolioProjectEntry[]
     }
   | { type: 'UPDATE_PROFILE_FIELD'; field: keyof PortfolioProfile; value: string | undefined }
+  | { type: 'PROFILE_SAVED' }
   | { type: 'TOGGLE_PROJECT_INCLUDED'; projectId: string }
   | { type: 'REORDER_PROJECT'; projectId: string; newIndex: number }
   | { type: 'PUBLISH_START' }
@@ -89,12 +98,19 @@ export function portfolioStoreReducer(
         projects: normalizeOrder(action.projects),
         isPublishing: false,
         lastPublishError: null,
+        // Seed lastSavedAt at hydration time so PreviewPane's first-render
+        // iframe mount is the baseline — we don't want a spurious reload when
+        // null→number transitions after the first real save.
+        lastSavedAt: Date.now(),
       }
 
     case 'UPDATE_PROFILE_FIELD': {
       const nextProfile = { ...state.profile, [action.field]: action.value }
       return { ...state, profile: nextProfile }
     }
+
+    case 'PROFILE_SAVED':
+      return { ...state, lastSavedAt: Date.now() }
 
     case 'TOGGLE_PROJECT_INCLUDED': {
       const nextProjects = state.projects.map((p) =>

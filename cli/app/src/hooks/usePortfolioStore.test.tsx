@@ -32,6 +32,24 @@ describe('portfolioStoreReducer', () => {
     expect(next.lastPublishError).toBeNull()
   })
 
+  it('LOAD seeds lastSavedAt so PreviewPane does not spuriously reload on hydration', () => {
+    const next = portfolioStoreReducer(initialPortfolioStoreState, {
+      type: 'LOAD',
+      profile: {},
+      publishState: { targets: {} },
+      projects: [],
+    })
+    expect(typeof next.lastSavedAt).toBe('number')
+    expect(next.lastSavedAt).toBeGreaterThan(0)
+  })
+
+  it('PROFILE_SAVED sets lastSavedAt to a monotonic-ish timestamp', () => {
+    const before = Date.now()
+    const next = portfolioStoreReducer(initialPortfolioStoreState, { type: 'PROFILE_SAVED' })
+    expect(next.lastSavedAt).not.toBeNull()
+    expect(next.lastSavedAt!).toBeGreaterThanOrEqual(before)
+  })
+
   it('UPDATE_PROFILE_FIELD patches a single field without touching others', () => {
     const start = stateWith({ profile: { displayName: 'Ada', bio: 'old' } })
     const next = portfolioStoreReducer(start, {
