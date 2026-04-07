@@ -22,6 +22,7 @@ import {
   createPreviewRouter,
   createDashboardRouter,
   createGithubRouter,
+  createDialogRouter,
 } from './routes/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -123,6 +124,7 @@ export function createApp(sessionsBasePath?: string, dbPath?: string) {
   app.use(createPreviewRouter(ctx));
   app.use(createDashboardRouter(ctx));
   app.use(createGithubRouter(ctx));
+  app.use(createDialogRouter(ctx));
 
   // ── Version endpoint (used by `heyiam open` to detect stale instances) ──
   app.get('/api/version', (_req: Request, res: Response) => {

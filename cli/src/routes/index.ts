@@ -11,3 +11,4 @@ export { createExportRouter } from './export.js';
 export { createPreviewRouter } from './preview.js';
 export { createDashboardRouter } from './dashboard.js';
 export { createGithubRouter } from './github.js';
+export { createDialogRouter } from './dialog.js';
