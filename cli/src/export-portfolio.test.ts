@@ -2,7 +2,6 @@
  * Tests for Phase 1 portfolio-site renderer additions to `export.ts`:
  *  - `generatePortfolioSite`
  *  - `generatePortfolioHtmlFragment`
- *  - `safePortfolioExportPath`
  *  - `RenderTarget` type
  *
  * These tests exercise the real render pipeline (no module mocks), which is
@@ -17,7 +16,6 @@ import { tmpdir } from 'node:os';
 import {
   generatePortfolioSite,
   generatePortfolioHtmlFragment,
-  safePortfolioExportPath,
   type PortfolioSiteProjectInput,
 } from './export.js';
 import type { RenderTarget } from './render/types.js';
@@ -122,41 +120,6 @@ describe('RenderTarget', () => {
   it('is a string-literal union with fragment and static variants', () => {
     expect(TARGETS).toContain('fragment');
     expect(TARGETS).toContain('static');
-  });
-});
-
-describe('safePortfolioExportPath', () => {
-  it('accepts an absolute path and returns it resolved', () => {
-    const out = safePortfolioExportPath('/tmp/heyiam-portfolio');
-    expect(out).toBe('/tmp/heyiam-portfolio');
-  });
-
-  it('expands ~ to HOME', () => {
-    const home = process.env.HOME!;
-    const out = safePortfolioExportPath('~/sites/portfolio');
-    expect(out).toBe(join(home, 'sites/portfolio'));
-  });
-
-  it('rejects paths containing .. segments (traversal)', () => {
-    expect(() => safePortfolioExportPath('/tmp/foo/../etc/passwd')).toThrow(/\.\./);
-  });
-
-  it('rejects empty string', () => {
-    expect(() => safePortfolioExportPath('')).toThrow();
-  });
-
-  it('rejects NUL bytes', () => {
-    expect(() => safePortfolioExportPath('/tmp/foo\0bar')).toThrow(/NUL/);
-  });
-
-  it('rejects relative paths', () => {
-    expect(() => safePortfolioExportPath('relative/path')).toThrow();
-  });
-
-  it('rejects known system directories', () => {
-    expect(() => safePortfolioExportPath('/etc')).toThrow(/system directory/);
-    expect(() => safePortfolioExportPath('/')).toThrow(/system directory/);
-    expect(() => safePortfolioExportPath('/usr')).toThrow(/system directory/);
   });
 });
 

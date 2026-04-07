@@ -697,76 +697,6 @@ function buildStandalonePage(title: string, bodyHtml: string, opts?: StandaloneP
 // ── Portfolio site export (Phase 1) ────────────────────────────
 
 /**
- * Validate a user-supplied directory path for portfolio static export.
- *
- * Unlike `safeExportPath` (which restricts writes to `EXPORTS_BASE`),
- * portfolio exports target arbitrary user-chosen directories (e.g.
- * `~/sites/portfolio`). This validator rejects:
- *  - relative paths (must be absolute)
- *  - path-traversal segments (`..`)
- *  - NUL bytes
- *  - a small allowlist-style set of known-dangerous system directories
- *
- * It does NOT verify writability or that the path exists — the caller is
- * expected to `mkdirSync({ recursive: true })` and surface any errors.
- *
- * @throws Error with a machine-readable `code` property on invalid input.
- */
-export function safePortfolioExportPath(outputPath: string): string {
-  if (typeof outputPath !== 'string' || outputPath.length === 0) {
-    const err = new Error('Output path must be a non-empty string');
-    (err as Error & { code: string }).code = 'INVALID_PATH';
-    throw err;
-  }
-  if (outputPath.includes('\0')) {
-    const err = new Error('Output path contains NUL byte');
-    (err as Error & { code: string }).code = 'INVALID_PATH';
-    throw err;
-  }
-
-  // Expand leading ~ before resolution so that "~/sites/x" is treated as
-  // absolute under the user's home directory.
-  let expanded = outputPath;
-  if (expanded === '~' || expanded.startsWith('~/')) {
-    const home = process.env.HOME || process.env.USERPROFILE;
-    if (!home) {
-      const err = new Error('Cannot resolve ~: HOME is not set');
-      (err as Error & { code: string }).code = 'INVALID_PATH';
-      throw err;
-    }
-    expanded = expanded === '~' ? home : join(home, expanded.slice(2));
-  }
-
-  // Reject relative paths and traversal segments in the raw input.
-  if (expanded.split(/[\\/]/).includes('..')) {
-    const err = new Error('Output path must not contain .. segments');
-    (err as Error & { code: string }).code = 'PATH_TRAVERSAL';
-    throw err;
-  }
-
-  const resolved = resolve(expanded);
-  if (resolved !== expanded && !expanded.startsWith('/')) {
-    const err = new Error('Output path must be absolute');
-    (err as Error & { code: string }).code = 'NOT_ABSOLUTE';
-    throw err;
-  }
-
-  // Refuse to write into a handful of system directories that would be
-  // catastrophic to overwrite. This is not a complete sandbox — it is a
-  // last-line guardrail against obvious mistakes.
-  const FORBIDDEN = ['/', '/bin', '/boot', '/dev', '/etc', '/proc', '/sbin', '/sys', '/usr', '/var'];
-  for (const forbidden of FORBIDDEN) {
-    if (resolved === forbidden) {
-      const err = new Error(`Refusing to write to system directory: ${resolved}`);
-      (err as Error & { code: string }).code = 'FORBIDDEN_PATH';
-      throw err;
-    }
-  }
-
-  return resolved;
-}
-
-/**
  * Render a portfolio landing page to a body HTML fragment (no `<html>` shell).
  *
  * Used by the upload path (Phase 2) to store pre-rendered HTML in
@@ -834,8 +764,8 @@ export interface PortfolioSiteProjectInput {
  *
  * @param portfolioData  Render data for the landing page.
  * @param projects       Per-project inputs. Each must have a unique dirName.
- * @param outputDir      Absolute output directory. Caller should pre-validate
- *                       with `safePortfolioExportPath`.
+ * @param outputDir      Absolute output directory. Caller is responsible for
+ *                       validating the path before calling.
  * @param templateName   Optional template override (defaults to user setting).
  */
 export async function generatePortfolioSite(
