@@ -88,6 +88,7 @@ defmodule HeyiAmAppWeb.Router do
     post "/sessions", ShareApiController, :create
     post "/time-stats", TimeStatsApiController, :upload
     patch "/profile", ProfileApiController, :update
+    post "/portfolio/upload", PortfolioApiController, :upload
   end
 
   scope "/api", HeyiAmAppWeb do
