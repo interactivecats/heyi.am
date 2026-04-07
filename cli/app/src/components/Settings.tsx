@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { AppShell, Card, SectionHeader } from './shared'
 import {
   fetchApiKeyStatus,
   saveApiKey,
   fetchAuthStatus,
   logout,
+  fetchGithubAccount,
+  disconnectGithub,
+  GithubApiError,
   type ApiKeyStatus,
   type AuthStatus,
+  type GithubAccount,
 } from '../api'
 
 export function Settings() {
@@ -23,6 +28,53 @@ export function Settings() {
     requireReview: true,
     excludeOpenClaw: false,
   })
+
+  // ── Connected accounts (Phase 5) ──────────────────────────
+  const [githubAccount, setGithubAccount] = useState<GithubAccount | null>(null)
+  const [githubLoading, setGithubLoading] = useState(true)
+  const [githubError, setGithubError] = useState<string | null>(null)
+  const [githubDisconnecting, setGithubDisconnecting] = useState(false)
+  const [githubJustDisconnected, setGithubJustDisconnected] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setGithubLoading(true)
+    fetchGithubAccount()
+      .then((account) => {
+        if (cancelled) return
+        setGithubAccount(account)
+        setGithubError(null)
+      })
+      .catch((err) => {
+        if (cancelled) return
+        // 401 just means "not connected" — not an error to surface.
+        if (err instanceof GithubApiError && err.status === 401) {
+          setGithubAccount(null)
+        } else {
+          setGithubError(err instanceof Error ? err.message : 'Failed to load GitHub account')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setGithubLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  async function handleDisconnectGithub() {
+    setGithubDisconnecting(true)
+    setGithubError(null)
+    try {
+      await disconnectGithub()
+      setGithubAccount(null)
+      setGithubJustDisconnected(true)
+    } catch (err) {
+      setGithubError(err instanceof Error ? err.message : 'Disconnect failed')
+    } finally {
+      setGithubDisconnecting(false)
+    }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -167,6 +219,65 @@ export function Settings() {
                 onChange={() => togglePrivacy('excludeOpenClaw')}
               />
             </div>
+          </Card>
+        </div>
+
+        {/* Connected accounts (Phase 5) */}
+        <div className="mt-4">
+          <Card>
+            <SectionHeader title="Connected accounts" meta="optional" />
+            {githubLoading ? (
+              <span className="text-[13px] text-on-surface-variant">Loading…</span>
+            ) : githubAccount ? (
+              <div
+                data-testid="settings-github-row"
+                className="flex items-center gap-3"
+              >
+                <img
+                  src={githubAccount.avatarUrl}
+                  alt=""
+                  className="w-7 h-7 rounded-full border border-ghost"
+                />
+                <div className="flex flex-col">
+                  <span className="text-[13px] text-on-surface">
+                    GitHub · <strong>{githubAccount.login}</strong>
+                  </span>
+                  {githubAccount.name ? (
+                    <span className="text-xs text-on-surface-variant">
+                      {githubAccount.name}
+                    </span>
+                  ) : null}
+                </div>
+                <button
+                  data-testid="settings-github-disconnect"
+                  className="ml-auto text-xs font-medium px-2.5 py-1 rounded-md text-on-surface-variant hover:text-on-surface transition-colors"
+                  onClick={handleDisconnectGithub}
+                  disabled={githubDisconnecting}
+                >
+                  {githubDisconnecting ? 'Disconnecting…' : 'Disconnect'}
+                </button>
+              </div>
+            ) : (
+              <div data-testid="settings-github-empty" className="flex items-center gap-2">
+                <span className="text-[13px] text-on-surface-variant">
+                  {githubJustDisconnected ? 'Disconnected.' : 'No accounts connected.'}
+                </span>
+                <Link
+                  to="/portfolio"
+                  className="text-xs font-medium px-2.5 py-1 rounded-md border border-ghost hover:border-outline text-on-surface"
+                >
+                  Connect from Portfolio →
+                </Link>
+              </div>
+            )}
+            {githubError ? (
+              <p
+                data-testid="settings-github-error"
+                className="text-xs text-error mt-2"
+              >
+                {githubError}
+              </p>
+            ) : null}
           </Card>
         </div>
 
