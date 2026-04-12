@@ -8,7 +8,7 @@ import { ArchiveView } from './components/ArchiveView'
 import { Projects } from './components/Projects'
 import { ProjectDetail } from './components/ProjectDetail'
 import { Boundaries } from './components/Boundaries'
-import { ProjectUploadFlow } from './components/ProjectUploadFlow'
+import { ProjectEnhanceFlow } from './components/ProjectEnhanceFlow'
 import { PublishReview } from './components/PublishReview'
 import { Settings } from './components/Settings'
 import { TemplateBrowser } from './components/TemplateBrowser'
@@ -117,7 +117,7 @@ export default function App() {
         <Route path="/project/:dirName" element={<ProjectDetailWrapper />} />
         <Route path="/project/:dirName/sessions" element={<ProjectSessions />} />
         <Route path="/project/:dirName/boundaries" element={<Boundaries />} />
-        <Route path="/project/:dirName/enhance" element={<ProjectUploadFlow />} />
+        <Route path="/project/:dirName/enhance" element={<ProjectEnhanceFlow />} />
 
         {/* Workstream D: Search + Session view */}
         <Route path="/search" element={<Search />} />

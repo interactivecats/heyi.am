@@ -1101,7 +1101,7 @@ const PLACEHOLDER_TIMELINE: TimelinePeriod[] = [
 
 // ── Main flow component ──────────────────────────────────────────
 
-export function ProjectUploadFlow() {
+export function ProjectEnhanceFlow() {
   const { dirName } = useParams<{ dirName: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();

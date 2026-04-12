@@ -263,7 +263,7 @@ The "My data" toggle sends the user's real data to the template preview. If the 
 
 **Project workspace redesign.** `ProjectDetail.tsx` and `ProjectDetailWrapper` in `App.tsx` are untouched. Sessions remain accessible inside project detail.
 
-**The Enhance/Triage/Questions wizard.** `ProjectUploadFlow.tsx` and `PublishReview.tsx` are untouched. First-time users still walk through the 7-step wizard.
+**The Enhance/Triage/Questions wizard.** `ProjectEnhanceFlow.tsx` and `PublishReview.tsx` are untouched. First-time users still walk through the 7-step wizard.
 
 **Onboarding restructure.** `FirstRun.tsx` gets one line change (navigation destination at end). The 8-step onboarding flow itself is not restructured.
 
