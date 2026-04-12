@@ -9,8 +9,15 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { usePortfolioStore } from '../../hooks/usePortfolioStore'
-import { publishPortfolio } from '../../api'
+import { publishPortfolio, startLogin, pollDeviceAuth } from '../../api'
 import { TargetPickerSheet } from './TargetPickerSheet'
+
+type AuthState =
+  | null
+  | { step: 'opening' }
+  | { step: 'waiting'; deviceCode: string; verificationUri: string }
+  | { step: 'done' }
+  | { step: 'error'; error: string }
 
 type PrimaryActionKind =
   | 'publish'
@@ -95,13 +102,14 @@ export function StatusBar() {
   const { state, dispatch } = usePortfolioStore()
   const { publishState, isPublishing, lastPublishError, isDraft, changeList } = state
   const [targetPickerOpen, setTargetPickerOpen] = useState(false)
+  const [authState, setAuthState] = useState<AuthState>(null)
 
   const target = publishState?.targets['heyi.am']
   const visibility = target?.visibility ?? 'public'
   const visibilityLabel = visibility === 'unlisted' ? 'Unlisted' : 'Public'
 
   const primary = derivePrimaryAction({
-    isPublishing,
+    isPublishing: isPublishing || authState?.step === 'opening' || authState?.step === 'waiting',
     lastPublishError,
     publishStateExists: Boolean(publishState && target),
     isDraft,
@@ -109,19 +117,13 @@ export function StatusBar() {
 
   const phrase = deriveStatePhrase({
     publishStateExists: Boolean(publishState && target),
-    isPublishing,
+    isPublishing: isPublishing || authState?.step === 'opening' || authState?.step === 'waiting',
     lastPublishError,
     isDraft,
     changeCount: changeList.length,
   })
 
-  const runPrimary = useCallback(async () => {
-    if (primary.disabled) return
-    if (primary.kind === 'viewLive') {
-      const url = target?.url
-      if (url) window.open(url, '_blank', 'noopener,noreferrer')
-      return
-    }
+  const doPublish = useCallback(async () => {
     dispatch({ type: 'PUBLISH_START' })
     try {
       const result = await publishPortfolio('heyi.am')
@@ -143,9 +145,56 @@ export function StatusBar() {
       })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error'
-      dispatch({ type: 'PUBLISH_FAIL', error: message })
+      if (message === 'Authentication required') {
+        dispatch({ type: 'PUBLISH_FAIL', error: '' })
+        startDeviceLogin()
+      } else {
+        dispatch({ type: 'PUBLISH_FAIL', error: message })
+      }
     }
-  }, [primary.disabled, primary.kind, target, publishState, dispatch, state.profile])
+  }, [publishState, dispatch, state.profile, target])
+
+  const startDeviceLogin = useCallback(async () => {
+    setAuthState({ step: 'opening' })
+    try {
+      const deviceInfo = await startLogin()
+      window.open(deviceInfo.verification_uri, '_blank')
+      setAuthState({ step: 'waiting', deviceCode: deviceInfo.device_code, verificationUri: deviceInfo.verification_uri })
+
+      const startTime = Date.now()
+      const poll = async () => {
+        try {
+          const status = await pollDeviceAuth(deviceInfo.device_code)
+          if (status.authenticated) {
+            setAuthState({ step: 'done' })
+            setTimeout(() => {
+              setAuthState(null)
+              doPublish()
+            }, 500)
+            return
+          }
+        } catch { /* authorization_pending */ }
+        if (Date.now() - startTime < 300_000) {
+          setTimeout(poll, 5000)
+        } else {
+          setAuthState({ step: 'error', error: 'Timed out. Try again.' })
+        }
+      }
+      setTimeout(poll, 5000)
+    } catch {
+      setAuthState({ step: 'error', error: 'Could not connect. Try again later.' })
+    }
+  }, [doPublish])
+
+  const runPrimary = useCallback(async () => {
+    if (primary.disabled) return
+    if (primary.kind === 'viewLive') {
+      const url = target?.url
+      if (url) window.open(url, '_blank', 'noopener,noreferrer')
+      return
+    }
+    await doPublish()
+  }, [primary.disabled, primary.kind, target, doPublish])
 
   // ⌘↵ / Ctrl+↵ shortcut
   useEffect(() => {
@@ -183,14 +232,42 @@ export function StatusBar() {
 
       {/* Middle: state dot + phrase */}
       <div
-        data-testid={phrase.testId}
+        data-testid={authState ? 'status-auth' : phrase.testId}
         className="flex items-center gap-2 text-[0.8125rem] text-on-surface-variant"
       >
-        <span
-          aria-hidden="true"
-          className={`inline-block w-2 h-2 rounded-full ${phrase.dotClass}`}
-        />
-        <span>{phrase.phrase}</span>
+        {authState?.step === 'opening' && (
+          <>
+            <span aria-hidden="true" className="inline-block w-2 h-2 rounded-full bg-amber animate-pulse" />
+            <span>Starting login...</span>
+          </>
+        )}
+        {authState?.step === 'waiting' && (
+          <>
+            <span aria-hidden="true" className="inline-block w-2 h-2 rounded-full bg-amber animate-pulse" />
+            <span>Waiting for login in browser...</span>
+          </>
+        )}
+        {authState?.step === 'done' && (
+          <>
+            <span aria-hidden="true" className="inline-block w-2 h-2 rounded-full bg-green" />
+            <span>Authenticated — publishing...</span>
+          </>
+        )}
+        {authState?.step === 'error' && (
+          <>
+            <span aria-hidden="true" className="inline-block w-2 h-2 rounded-full bg-error" />
+            <span>{authState.error}</span>
+          </>
+        )}
+        {!authState && (
+          <>
+            <span
+              aria-hidden="true"
+              className={`inline-block w-2 h-2 rounded-full ${phrase.dotClass}`}
+            />
+            <span>{phrase.phrase}</span>
+          </>
+        )}
       </div>
 
       {/* Right: primary action */}

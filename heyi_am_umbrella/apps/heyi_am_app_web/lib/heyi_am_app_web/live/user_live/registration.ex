@@ -133,7 +133,11 @@ defmodule HeyiAmAppWeb.UserLive.Registration do
     username_availability =
       if preferred_username && String.length(preferred_username) >= 3 do
         check = Accounts.change_user_username(%User{}, %{username: preferred_username})
-        if check.valid?, do: :available, else: :taken
+        cond do
+          check.valid? -> :available
+          has_uniqueness_error?(check, :username) -> :taken
+          true -> nil
+        end
       end
 
     {:ok,
@@ -165,7 +169,11 @@ defmodule HeyiAmAppWeb.UserLive.Registration do
     username_availability =
       if socket.assigns.show_username && String.length(username) >= 3 do
         username_changeset = Accounts.change_user_username(%User{}, %{username: username})
-        if username_changeset.valid?, do: :available, else: :taken
+        cond do
+          username_changeset.valid? -> :available
+          has_uniqueness_error?(username_changeset, :username) -> :taken
+          true -> nil
+        end
       end
 
     {:noreply,
@@ -178,6 +186,12 @@ defmodule HeyiAmAppWeb.UserLive.Registration do
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
     form = to_form(changeset, as: "user")
     assign(socket, form: form)
+  end
+
+  defp has_uniqueness_error?(changeset, field) do
+    Enum.any?(Keyword.get_values(changeset.errors, field), fn {_msg, opts} ->
+      opts[:validation] == :unsafe_unique
+    end)
   end
 
   defp registration_params(assigns) do

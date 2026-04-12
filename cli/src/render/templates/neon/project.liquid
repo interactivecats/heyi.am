@@ -87,7 +87,7 @@
         <div class="neon-leverage__context">{{ project.totalDurationMinutes | formatDuration }} you &middot; <span>{{ project.totalAgentDurationMinutes | formatDuration }} agents</span></div>
         {% assign totalCombined = project.totalDurationMinutes | plus: project.totalAgentDurationMinutes %}
         {% if totalCombined > 0 %}
-        {% assign humanPct = project.totalDurationMinutes | times: 100 | divided_by: totalCombined %}
+        {% assign humanPct = project.totalDurationMinutes | times: 100 | divided_by: totalCombined | round %}
         {% assign agentPct = 100 | minus: humanPct %}
         <div class="neon-leverage__bar"><div class="neon-leverage__human" style="width:{{ humanPct }}%"></div><div class="neon-leverage__agent" style="width:{{ agentPct }}%"></div></div>
         {% endif %}

@@ -67,7 +67,7 @@
         <circle cx="48" cy="48" r="40" fill="none" stroke="rgba(14,165,233,0.12)" stroke-width="7"/>
         {% assign totalCombined = totalDurationMinutes | plus: totalAgentDurationMinutes %}
         {% if totalCombined > 0 %}
-        {% assign humanPct = totalDurationMinutes | times: 251 | divided_by: totalCombined %}
+        {% assign humanPct = totalDurationMinutes | times: 251 | divided_by: totalCombined | round %}
         {% else %}
         {% assign humanPct = 125 %}
         {% endif %}

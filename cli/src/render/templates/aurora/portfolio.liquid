@@ -77,7 +77,7 @@
     <div class="aurora-leverage-section__context">{{ totalDurationMinutes | formatDuration }} you &middot; <strong>{{ totalAgentDurationMinutes | formatDuration }}</strong> agents</div>
     {% assign totalCombined = totalDurationMinutes | plus: totalAgentDurationMinutes %}
     {% if totalCombined > 0 %}
-    {% assign humanPct = totalDurationMinutes | times: 100 | divided_by: totalCombined %}
+    {% assign humanPct = totalDurationMinutes | times: 100 | divided_by: totalCombined | round %}
     {% assign agentPct = 100 | minus: humanPct %}
     <div class="aurora-leverage-section__bar"><div class="aurora-leverage-section__bar-human" style="width:{{ humanPct }}%"></div><div class="aurora-leverage-section__bar-agent" style="width:{{ agentPct }}%"></div></div>
     {% endif %}

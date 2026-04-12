@@ -82,7 +82,7 @@
           <div class="vd-stat-card">
             {% assign totalCombined = totalDurationMinutes | plus: totalAgentDurationMinutes %}
             {% if totalCombined > 0 %}
-            {% assign humanPct = totalDurationMinutes | times: 100 | divided_by: totalCombined %}
+            {% assign humanPct = totalDurationMinutes | times: 100 | divided_by: totalCombined | round %}
             {% assign agentPct = 100 | minus: humanPct %}
             <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px;">
               <div style="flex: {{ humanPct }}; height: 6px; border-radius: 3px; background: rgba(0,0,0,0.12);"></div>

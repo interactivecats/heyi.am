@@ -3,13 +3,17 @@ import { getSessionsByProject, getAllProjectStats } from '../db.js';
 import { displayNameFromDir } from '../sync.js';
 import { toSlug } from '../format-utils.js';
 import type { PortfolioRenderData, PortfolioProject } from '../render/types.js';
-import type { RouteContext } from './context.js';
+import type { RouteContext, ProjectInfo } from './context.js';
 
 export interface BuildPortfolioRenderDataResult {
   renderData: PortfolioRenderData;
   /** Per-project enhance caches, keyed by `dirName`. Used by the static
    *  export route to feed `generatePortfolioSite`. */
   projectCaches: Map<string, { dirName: string; cache: ReturnType<typeof loadProjectEnhanceResult> }>;
+  /** The filtered list of projects included in this portfolio (after
+   *  applying the user's curation list). Used by the upload route to
+   *  publish individual project pages alongside the landing page. */
+  filteredProjects: ProjectInfo[];
 }
 
 /**
@@ -118,7 +122,7 @@ export async function buildPortfolioRenderData(
     totalSessions,
   };
 
-  return { renderData, projectCaches };
+  return { renderData, projectCaches, filteredProjects: rawProjects };
 }
 
 /**

@@ -84,7 +84,7 @@
       </div>
       {% assign totalCombined = project.totalDurationMinutes | plus: project.totalAgentDurationMinutes %}
       {% if totalCombined > 0 %}
-      {% assign agentPct = project.totalAgentDurationMinutes | times: 100 | divided_by: totalCombined %}
+      {% assign agentPct = project.totalAgentDurationMinutes | times: 100 | divided_by: totalCombined | round %}
       <div class="ember-leverage__bar"><div class="ember-leverage__fill" style="width:{{ agentPct }}%"></div></div>
       {% endif %}
     </div>

@@ -83,7 +83,7 @@
       {% if efficiencyMultiplier %}
       {% assign totalCombined = project.totalDurationMinutes | plus: project.totalAgentDurationMinutes %}
       {% if totalCombined > 0 %}
-      {% assign humanPct = project.totalDurationMinutes | times: 100 | divided_by: totalCombined %}
+      {% assign humanPct = project.totalDurationMinutes | times: 100 | divided_by: totalCombined | round %}
       {% assign agentPct = 100 | minus: humanPct %}
       <div class="gl-leverage frost" role="figure" aria-label="Leverage: {{ efficiencyMultiplier }} multiplier">
         <svg width="64" height="64" viewBox="0 0 64 64">

@@ -61,7 +61,7 @@
         </div>
         {% assign totalCombined = totalDurationMinutes | plus: totalAgentDurationMinutes %}
         {% if totalCombined > 0 %}
-        {% assign humanPct = totalDurationMinutes | times: 100 | divided_by: totalCombined %}
+        {% assign humanPct = totalDurationMinutes | times: 100 | divided_by: totalCombined | round %}
         {% assign agentPct = 100 | minus: humanPct %}
         <div class="ed-leverage-bar">
           <div class="ed-leverage-bar__human" style="width: {{ humanPct }}%;"></div>

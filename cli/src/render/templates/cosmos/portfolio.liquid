@@ -86,7 +86,7 @@
           <div class="cos-leverage__ring">
             {% assign totalCombined = totalDurationMinutes | plus: totalAgentDurationMinutes %}
             {% if totalCombined > 0 %}
-            {% assign agentPct = totalAgentDurationMinutes | times: 163 | divided_by: totalCombined %}
+            {% assign agentPct = totalAgentDurationMinutes | times: 163 | divided_by: totalCombined | round %}
             {% assign humanPct = 163 | minus: agentPct %}
             {% endif %}
             <svg width="64" height="64" viewBox="0 0 64 64">

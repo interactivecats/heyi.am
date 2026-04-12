@@ -16,7 +16,7 @@ import {
   getPortfolioPublishState,
   DEFAULT_PORTFOLIO_TARGET,
 } from '../settings.js';
-import { generatePortfolioHtmlFragment, generatePortfolioSite, createZipBuffer, type PortfolioSiteProjectInput, type HtmlFile } from '../export.js';
+import { generatePortfolioHtmlFragment, generateProjectHtmlFragment, generatePortfolioSite, createZipBuffer, type PortfolioSiteProjectInput, type HtmlFile } from '../export.js';
 import { buildPortfolioRenderData } from './portfolio-render-data.js';
 import { buildProjectDetail } from './context.js';
 import type { ProjectEnhanceCache } from '../settings.js';
@@ -522,9 +522,16 @@ export function createPublishRouter(ctx: RouteContext): Router {
             ? `${PUBLIC_URL}/_img/${uploadedImageKey.replace(IMAGE_KEY_PREFIX, '')}`
             : undefined;
 
+          const detailProj = detail.project as Record<string, unknown>;
           const projectHtml = generateProjectHtmlFragment(
             String(project), enrichedCache, detail.sessions,
-            auth.username, { totalFilesChanged: totalFiles, title, screenshotUrl },
+            auth.username, {
+              totalFilesChanged: totalFiles,
+              title,
+              screenshotUrl,
+              totalInputTokens: detailProj.totalInputTokens as number | undefined,
+              totalOutputTokens: detailProj.totalOutputTokens as number | undefined,
+            },
           );
 
           const renderRes = await fetch(`${API_URL}/api/projects`, {
@@ -636,13 +643,62 @@ export function createPublishRouter(ctx: RouteContext): Router {
       const profile = getPortfolioProfile();
       const templateName = getDefaultTemplate() || 'editorial';
 
-      const { renderData } = await buildPortfolioRenderData(ctx, auth);
+      const { renderData, filteredProjects } = await buildPortfolioRenderData(ctx, auth);
       const renderedHtml = generatePortfolioHtmlFragment(renderData, templateName);
 
-      // POST to Phoenix endpoint (PortfolioApiController.upload). Shape:
-      //   POST {API_URL}/api/portfolio/upload
-      //   { html: "<body data-template=...>...</body>", profile?: {...} }
-      //   -> 200 { ok: true, username }
+      // Upload individual project pages for every project included in the
+      // portfolio. This ensures project detail pages exist on heyi.am even
+      // if the user never published them individually.
+      for (const rawProj of filteredProjects) {
+        try {
+          const detail = buildProjectDetail(ctx.db, rawProj);
+          const proj = detail.project as Record<string, unknown>;
+          const cache = (detail.enhanceCache as ProjectEnhanceCache | null)
+            ?? { fingerprint: 'portfolio-upload', enhancedAt: new Date().toISOString(), selectedSessionIds: detail.sessions.map((s) => s.id), result: { narrative: '', arc: [], skills: [], timeline: [], questions: [] } };
+          const title = cache.title
+            || (proj.name as string) || displayNameFromDir(rawProj.dirName);
+          const slug = toSlug(title);
+          const clientProjectId = getProjectUuid(ctx.db, rawProj.dirName);
+
+          const projectHtml = generateProjectHtmlFragment(
+            rawProj.dirName, cache, detail.sessions,
+            auth.username, {
+              totalFilesChanged: proj.totalFiles as number | undefined,
+              totalAgentDurationMinutes: proj.totalAgentDuration as number | undefined,
+              totalInputTokens: proj.totalInputTokens as number | undefined,
+              totalOutputTokens: proj.totalOutputTokens as number | undefined,
+            },
+          );
+
+          await fetch(`${API_URL}/api/projects`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${auth.token}`,
+            },
+            body: JSON.stringify({
+              project: {
+                client_project_id: clientProjectId,
+                title, slug,
+                narrative: cache.result?.narrative ?? '',
+                skills: cache.result?.skills ?? [],
+                total_sessions: proj.sessionCount as number,
+                total_loc: proj.totalLoc as number,
+                total_duration_minutes: proj.totalDuration as number,
+                total_agent_duration_minutes: proj.totalAgentDuration || null,
+                total_files_changed: proj.totalFiles as number,
+                total_input_tokens: proj.totalInputTokens as number | null,
+                total_output_tokens: proj.totalOutputTokens as number | null,
+                rendered_html: projectHtml,
+              },
+            }),
+          });
+        } catch (projErr) {
+          console.warn(`[portfolio-upload] skipping project ${rawProj.dirName}:`, (projErr as Error).message);
+        }
+      }
+
+      // POST portfolio landing page to Phoenix.
       // Phoenix sanitizes the HTML, persists to users.rendered_portfolio_html,
       // and applies the optional profile snapshot via Accounts.update_user_profile.
       const phoenixRes = await fetch(`${API_URL}/api/portfolio/upload`, {

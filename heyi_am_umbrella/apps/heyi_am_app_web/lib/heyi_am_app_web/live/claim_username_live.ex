@@ -41,7 +41,8 @@ defmodule HeyiAmAppWeb.ClaimUsernameLive do
       cond do
         String.length(username) < 3 -> nil
         changeset.valid? -> :available
-        true -> :taken
+        has_uniqueness_error?(changeset, :username) -> :taken
+        true -> nil
       end
 
     {:noreply,
@@ -62,6 +63,12 @@ defmodule HeyiAmAppWeb.ClaimUsernameLive do
 
   defp assign_form(socket, changeset) do
     assign(socket, :form, to_form(changeset, as: "user"))
+  end
+
+  defp has_uniqueness_error?(changeset, field) do
+    Enum.any?(Keyword.get_values(changeset.errors, field), fn {_msg, opts} ->
+      opts[:validation] == :unsafe_unique
+    end)
   end
 
   @impl true
