@@ -24,7 +24,7 @@
       alt=""
       width="420"
       height="420"
-    >
+     data-portfolio-field="photoBase64"{% unless user.photoUrl %} data-portfolio-empty="true"{% endunless %}>
   </div>
   {% endif %}
   {% endif %}
@@ -41,22 +41,20 @@
         {% endif %}
 
         {% if user.displayName != blank %}
-        <h1 class="hero__name">{{ user.displayName }}</h1>
+        <h1 class="hero__name" data-portfolio-field="displayName">{{ user.displayName }}</h1>
         {% endif %}
 
         {% if user.location != blank %}
-        <p class="hero__location">{{ user.location }}</p>
+        <p class="hero__location" data-portfolio-field="location">{{ user.location }}</p>
         {% endif %}
 
         {% if user.bio != blank %}
-        <p class="hero__bio">{{ user.bio }}</p>
+        <p class="hero__bio" data-portfolio-field="bio">{{ user.bio }}</p>
         {% endif %}
 
         {% if user.email != blank or user.linkedinUrl != blank or user.githubUrl != blank or user.websiteUrl != blank or user.twitterHandle != blank %}
         <div class="hero__contact">
-          {% if user.email != blank %}
-          <a href="mailto:{{ user.email }}" class="hero__contact-link">{{ user.email }}</a>
-          {% endif %}
+          <a href="{% if user.email %}mailto:{{ user.email }}{% endif %}" class="hero__contact-link" data-portfolio-field="email"{% unless user.email %} data-portfolio-empty="true"{% endunless %}>{{ user.email }}</a>
           {% if user.linkedinUrl != blank %}
           {% if user.email != blank %}<span class="hero__contact-sep" aria-hidden="true">&middot;</span>{% endif %}
           <a href="{{ user.linkedinUrl }}" class="hero__contact-link" rel="noopener noreferrer" target="_blank">LinkedIn</a>
@@ -261,18 +259,10 @@
             {% if user.email != blank %}
             <a href="mailto:{{ user.email }}" class="about-card__link">{{ user.email }}</a>
             {% endif %}
-            {% if user.linkedinUrl != blank %}
-            <a href="{{ user.linkedinUrl }}" class="about-card__link" rel="noopener noreferrer" target="_blank">{{ user.linkedinUrl | stripProtocol }}</a>
-            {% endif %}
-            {% if user.githubUrl != blank %}
-            <a href="{{ user.githubUrl }}" class="about-card__link" rel="noopener noreferrer" target="_blank">{{ user.githubUrl | stripProtocol }}</a>
-            {% endif %}
-            {% if user.websiteUrl != blank %}
-            <a href="{{ user.websiteUrl }}" class="about-card__link" rel="noopener noreferrer" target="_blank">{{ user.websiteUrl | stripProtocol }}</a>
-            {% endif %}
-            {% if user.twitterHandle != blank %}
-            <a href="https://x.com/{{ user.twitterHandle }}" class="about-card__link" rel="noopener noreferrer" target="_blank">@{{ user.twitterHandle }}</a>
-            {% endif %}
+            <a href="{% if user.linkedinUrl %}{{ user.linkedinUrl }}{% endif %}" class="about-card__link" rel="noopener noreferrer" target="_blank" data-portfolio-field="linkedinUrl"{% unless user.linkedinUrl %} data-portfolio-empty="true"{% endunless %}>{{ user.linkedinUrl | stripProtocol }}</a>
+            <a href="{% if user.githubUrl %}{{ user.githubUrl }}{% endif %}" class="about-card__link" rel="noopener noreferrer" target="_blank" data-portfolio-field="githubUrl"{% unless user.githubUrl %} data-portfolio-empty="true"{% endunless %}>{{ user.githubUrl | stripProtocol }}</a>
+            <a href="{% if user.websiteUrl %}{{ user.websiteUrl }}{% endif %}" class="about-card__link" rel="noopener noreferrer" target="_blank" data-portfolio-field="websiteUrl"{% unless user.websiteUrl %} data-portfolio-empty="true"{% endunless %}>{{ user.websiteUrl | stripProtocol }}</a>
+            <a href="{% if user.twitterHandle %}https://x.com/{{ user.twitterHandle }}{% endif %}" class="about-card__link" rel="noopener noreferrer" target="_blank" data-portfolio-field="twitterHandle"{% unless user.twitterHandle %} data-portfolio-empty="true"{% endunless %}>@{{ user.twitterHandle }}</a>
           </div>
           {% if user.resumeUrl != blank %}
           <div class="about-card reveal" data-float="0.09">

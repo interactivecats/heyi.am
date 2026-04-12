@@ -11,55 +11,39 @@
     {% if user.photoUrl != blank %}
     <div class="term-photo">
       <div class="term-photo__border">
-        <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="term-photo__img portfolio-photo" loading="lazy" />
+        <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="term-photo__img portfolio-photo" loading="lazy" / data-portfolio-field="photoBase64"{% unless user.photoUrl %} data-portfolio-empty="true"{% endunless %}>
       </div>
     </div>
     {% endif %}
     <div class="term-identity">
       {% if user.displayName != blank %}
-      <h1 class="term-heading"># {{ user.displayName }}</h1>
+      <h1 class="term-heading" data-portfolio-field="displayName"># {{ user.displayName }}</h1>
       {% endif %}
       {% if user.status != blank %}
       <div class="term-status">[ {{ user.status }} ]</div>
       {% endif %}
       {% if user.bio != blank %}
-      <blockquote class="term-blockquote">&gt; {{ user.bio }}</blockquote>
+      <blockquote class="term-blockquote" data-portfolio-field="bio">&gt; {{ user.bio }}</blockquote>
       {% endif %}
     </div>
   </div>
 
   {%- comment -%} Contact as key=value pairs {%- endcomment -%}
-  {% if user.location != blank or user.email != blank or user.phone != blank or user.githubUrl != blank or user.linkedinUrl != blank or user.twitterHandle != blank or user.websiteUrl != blank or user.resumeUrl != blank %}
   <div class="term-section">
     <div class="term-comment"># contact</div>
     <table class="term-table term-table--contact">
-      {% if user.location != blank %}
-      <tr><td class="term-table__key">location</td><td class="term-table__eq">=</td><td class="term-table__val">{{ user.location }}</td></tr>
-      {% endif %}
-      {% if user.email != blank %}
-      <tr><td class="term-table__key">email</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="mailto:{{ user.email }}">{{ user.email }}</a></td></tr>
-      {% endif %}
-      {% if user.phone != blank %}
-      <tr><td class="term-table__key">phone</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="tel:{{ user.phone }}">{{ user.phone }}</a></td></tr>
-      {% endif %}
-      {% if user.githubUrl != blank %}
-      <tr><td class="term-table__key">github</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="{{ user.githubUrl }}" target="_blank" rel="noopener">{{ user.githubUrl | stripProtocol }}</a></td></tr>
-      {% endif %}
-      {% if user.linkedinUrl != blank %}
-      <tr><td class="term-table__key">linkedin</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="{{ user.linkedinUrl }}" target="_blank" rel="noopener">{{ user.linkedinUrl | stripProtocol }}</a></td></tr>
-      {% endif %}
-      {% if user.twitterHandle != blank %}
-      <tr><td class="term-table__key">twitter</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="https://twitter.com/{{ user.twitterHandle }}" target="_blank" rel="noopener">@{{ user.twitterHandle }}</a></td></tr>
-      {% endif %}
-      {% if user.websiteUrl != blank %}
-      <tr><td class="term-table__key">web</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="{{ user.websiteUrl }}" target="_blank" rel="noopener">{{ user.websiteUrl | stripProtocol }}</a></td></tr>
-      {% endif %}
+      <tr data-portfolio-field="location"{% unless user.location %} data-portfolio-empty="true"{% endunless %}><td class="term-table__key">location</td><td class="term-table__eq">=</td><td class="term-table__val">{{ user.location }}</td></tr>
+      <tr data-portfolio-field="email"{% unless user.email %} data-portfolio-empty="true"{% endunless %}><td class="term-table__key">email</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="{% if user.email %}mailto:{{ user.email }}{% endif %}"><span data-portfolio-text>{{ user.email }}</span></a></td></tr>
+      <tr data-portfolio-field="phone"{% unless user.phone %} data-portfolio-empty="true"{% endunless %}><td class="term-table__key">phone</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="{% if user.phone %}tel:{{ user.phone }}{% endif %}"><span data-portfolio-text>{{ user.phone }}</span></a></td></tr>
+      <tr data-portfolio-field="githubUrl"{% unless user.githubUrl %} data-portfolio-empty="true"{% endunless %}><td class="term-table__key">github</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="{% if user.githubUrl %}{{ user.githubUrl }}{% endif %}" target="_blank" rel="noopener">{{ user.githubUrl | stripProtocol }}</a></td></tr>
+      <tr data-portfolio-field="linkedinUrl"{% unless user.linkedinUrl %} data-portfolio-empty="true"{% endunless %}><td class="term-table__key">linkedin</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="{% if user.linkedinUrl %}{{ user.linkedinUrl }}{% endif %}" target="_blank" rel="noopener">LinkedIn</a></td></tr>
+      <tr data-portfolio-field="twitterHandle"{% unless user.twitterHandle %} data-portfolio-empty="true"{% endunless %}><td class="term-table__key">twitter</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="{% if user.twitterHandle %}https://x.com/{{ user.twitterHandle }}{% endif %}" target="_blank" rel="noopener"><span data-portfolio-text>{% if user.twitterHandle %}@{{ user.twitterHandle }}{% endif %}</span></a></td></tr>
+      <tr data-portfolio-field="websiteUrl"{% unless user.websiteUrl %} data-portfolio-empty="true"{% endunless %}><td class="term-table__key">web</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="{% if user.websiteUrl %}{{ user.websiteUrl }}{% endif %}" target="_blank" rel="noopener"><span data-portfolio-text>{{ user.websiteUrl | stripProtocol }}</span></a></td></tr>
       {% if user.resumeUrl != blank %}
       <tr><td class="term-table__key">resume</td><td class="term-table__eq">=</td><td class="term-table__val"><a href="{{ user.resumeUrl }}" target="_blank" rel="noopener" download>Resume (PDF)</a></td></tr>
       {% endif %}
     </table>
   </div>
-  {% endif %}
   {% endif %}
 
   {%- comment -%} Stats as tabular output {%- endcomment -%}

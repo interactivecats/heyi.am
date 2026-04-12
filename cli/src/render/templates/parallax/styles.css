@@ -1874,3 +1874,7 @@ a.project-card:visited,
 a.session-card:visited {
   color: inherit;
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }

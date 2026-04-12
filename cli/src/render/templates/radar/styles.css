@@ -1049,3 +1049,7 @@ body { background: var(--surface); color: var(--on-surface); }
 @media (max-width: 480px) {
   .radar .agent-bar-row__label { width: 70px; }
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }

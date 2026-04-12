@@ -491,3 +491,7 @@ body { background: var(--term-bg); color: var(--term-text); }
     flex-wrap: wrap;
   }
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }
