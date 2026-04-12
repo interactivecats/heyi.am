@@ -28,6 +28,7 @@ import {
   type GithubAccount,
   type GithubRepo,
   type GithubDeviceCode,
+  type GithubPollResponse,
 } from '../../api'
 
 interface TargetPickerSheetProps {
@@ -176,7 +177,8 @@ export function TargetPickerSheet({ open, onClose }: TargetPickerSheetProps) {
   }, [githubFlow.kind])
 
   // Polling effect: when in awaiting state, poll for token at the device
-  // flow's specified interval. Stops on success/error/timeout/unmount.
+  // flow's specified interval. Each tick is a single non-blocking request.
+  // Stops on success/error/timeout/unmount.
   useEffect(() => {
     if (githubFlow.kind !== 'awaiting') return
     const { deviceCode } = githubFlow
@@ -191,23 +193,28 @@ export function TargetPickerSheet({ open, onClose }: TargetPickerSheetProps) {
         return
       }
       try {
-        const result = await pollGithubToken({
+        const result: GithubPollResponse = await pollGithubToken({
           device_code: deviceCode.device_code,
-          interval: deviceCode.interval,
         })
         if (cancelled) return
-        setGithubFlow({ kind: 'connected', account: result.account })
+        switch (result.status) {
+          case 'success':
+            setGithubFlow({ kind: 'connected', account: result.account })
+            break
+          case 'pending':
+            // Keep polling — next tick will fire on the interval.
+            break
+          case 'expired':
+            setGithubFlow({ kind: 'timeout' })
+            break
+          case 'denied':
+            setGithubFlow({ kind: 'error', message: 'Authorization denied by user' })
+            break
+        }
       } catch (err) {
         if (cancelled) return
-        // authorization_pending = keep polling. The backend currently
-        // returns success only on completion, so any error here is
-        // fatal in the visible flow.
         const message = err instanceof Error ? err.message : 'Authorization failed'
-        if (/expired/i.test(message)) {
-          setGithubFlow({ kind: 'timeout' })
-        } else {
-          setGithubFlow({ kind: 'error', message })
-        }
+        setGithubFlow({ kind: 'error', message })
       }
     }
 

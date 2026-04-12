@@ -476,10 +476,11 @@ export interface GithubRepo {
   html_url: string
 }
 
-export interface GithubPollResponse {
-  ok: true
-  account: GithubAccount
-}
+export type GithubPollResponse =
+  | { status: 'success'; account: GithubAccount }
+  | { status: 'pending' }
+  | { status: 'expired' }
+  | { status: 'denied' }
 
 export interface GithubPublishResponse {
   ok: true
@@ -525,7 +526,6 @@ export async function requestGithubDeviceCode(): Promise<GithubDeviceCode> {
 
 export async function pollGithubToken(args: {
   device_code: string
-  interval: number
 }): Promise<GithubPollResponse> {
   return githubFetch<GithubPollResponse>('/github/poll-token', {
     method: 'POST',

@@ -214,7 +214,7 @@ describe('TargetPickerSheet — GitHub Pages flow', () => {
       interval: 1,
     })
     vi.mocked(api.pollGithubToken).mockResolvedValue({
-      ok: true,
+      status: 'success',
       account: { login: 'ada', name: 'Ada', avatarUrl: 'https://x/y.png' },
     })
     vi.mocked(api.fetchGithubRepos).mockResolvedValue([
@@ -252,6 +252,97 @@ describe('TargetPickerSheet — GitHub Pages flow', () => {
     vi.useRealTimers()
     await waitFor(() => screen.getByTestId('github-connected'))
     expect(screen.getByText(/Connected as/i)).toBeTruthy()
+  })
+
+  it('polls pending twice then transitions to connected on success', async () => {
+    vi.useFakeTimers()
+    vi.mocked(api.fetchGithubAccount).mockResolvedValue(null)
+    vi.mocked(api.requestGithubDeviceCode).mockResolvedValue({
+      device_code: 'devcode',
+      user_code: 'XY-ZZ',
+      verification_uri: 'https://github.com/login/device',
+      expires_in: 900,
+      interval: 1,
+    })
+    // First two polls return pending, third returns success.
+    vi.mocked(api.pollGithubToken)
+      .mockResolvedValueOnce({ status: 'pending' })
+      .mockResolvedValueOnce({ status: 'pending' })
+      .mockResolvedValueOnce({
+        status: 'success',
+        account: { login: 'ada', name: 'Ada', avatarUrl: 'https://x/y.png' },
+      })
+    vi.mocked(api.fetchGithubRepos).mockResolvedValue([])
+    renderSheet()
+    await act(async () => { await Promise.resolve() })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('github-connect'))
+    })
+    await act(async () => { await Promise.resolve() })
+    // First tick — pending
+    await act(async () => { vi.advanceTimersByTime(1100) })
+    await act(async () => { await Promise.resolve(); await Promise.resolve() })
+    expect(api.pollGithubToken).toHaveBeenCalledTimes(1)
+    // Still in awaiting state
+    expect(screen.getByTestId('github-awaiting')).toBeTruthy()
+    // Second tick — pending
+    await act(async () => { vi.advanceTimersByTime(1000) })
+    await act(async () => { await Promise.resolve(); await Promise.resolve() })
+    expect(api.pollGithubToken).toHaveBeenCalledTimes(2)
+    expect(screen.getByTestId('github-awaiting')).toBeTruthy()
+    // Third tick — success
+    await act(async () => { vi.advanceTimersByTime(1000) })
+    await act(async () => { await Promise.resolve(); await Promise.resolve() })
+    expect(api.pollGithubToken).toHaveBeenCalledTimes(3)
+    vi.useRealTimers()
+    await waitFor(() => screen.getByTestId('github-connected'))
+  })
+
+  it('transitions to timeout when poll returns expired', async () => {
+    vi.useFakeTimers()
+    vi.mocked(api.fetchGithubAccount).mockResolvedValue(null)
+    vi.mocked(api.requestGithubDeviceCode).mockResolvedValue({
+      device_code: 'devcode',
+      user_code: 'EX-PI',
+      verification_uri: 'https://github.com/login/device',
+      expires_in: 900,
+      interval: 1,
+    })
+    vi.mocked(api.pollGithubToken).mockResolvedValue({ status: 'expired' })
+    renderSheet()
+    await act(async () => { await Promise.resolve() })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('github-connect'))
+    })
+    await act(async () => { await Promise.resolve() })
+    await act(async () => { vi.advanceTimersByTime(1100) })
+    await act(async () => { await Promise.resolve(); await Promise.resolve() })
+    vi.useRealTimers()
+    await waitFor(() => screen.getByTestId('github-timeout'))
+  })
+
+  it('transitions to error when poll returns denied', async () => {
+    vi.useFakeTimers()
+    vi.mocked(api.fetchGithubAccount).mockResolvedValue(null)
+    vi.mocked(api.requestGithubDeviceCode).mockResolvedValue({
+      device_code: 'devcode',
+      user_code: 'DN-IE',
+      verification_uri: 'https://github.com/login/device',
+      expires_in: 900,
+      interval: 1,
+    })
+    vi.mocked(api.pollGithubToken).mockResolvedValue({ status: 'denied' })
+    renderSheet()
+    await act(async () => { await Promise.resolve() })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('github-connect'))
+    })
+    await act(async () => { await Promise.resolve() })
+    await act(async () => { vi.advanceTimersByTime(1100) })
+    await act(async () => { await Promise.resolve(); await Promise.resolve() })
+    vi.useRealTimers()
+    await waitFor(() => screen.getByTestId('github-error'))
+    expect(screen.getByText(/denied/i)).toBeTruthy()
   })
 
   it('connected state: fetches repos, allows selection, and publishes', async () => {
