@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { exportMarkdown, exportHtml } from './export.js';
+import { inflateRawSync } from 'node:zlib';
+import { exportMarkdown, exportHtml, createZipBuffer } from './export.js';
 import type { ProjectEnhanceCache } from './settings.js';
 import type { Session } from './analyzer.js';
 
@@ -253,5 +254,64 @@ describe('exportHtml', () => {
 
     expect(result.files.length).toBe(1); // just index.html
     expect(existsSync(join(outPath, 'index.html'))).toBe(true);
+  });
+});
+
+// ── createZipBuffer ─────────────────────────────────────────────
+
+/** Parse a ZIP and extract entries as {path, data} for assertion. */
+function extractZipEntries(zip: Buffer): Array<{ path: string; data: Buffer }> {
+  const entries: Array<{ path: string; data: Buffer }> = [];
+  let offset = 0;
+  while (offset + 4 <= zip.length) {
+    const sig = zip.readUInt32LE(offset);
+    if (sig !== 0x04034b50) break; // not a local file header
+    const compressedSize = zip.readUInt32LE(offset + 18);
+    const uncompressedSize = zip.readUInt32LE(offset + 22);
+    const nameLen = zip.readUInt16LE(offset + 26);
+    const extraLen = zip.readUInt16LE(offset + 28);
+    const name = zip.subarray(offset + 30, offset + 30 + nameLen).toString('utf-8');
+    const dataStart = offset + 30 + nameLen + extraLen;
+    const compressed = zip.subarray(dataStart, dataStart + compressedSize);
+    const data = uncompressedSize > 0 ? inflateRawSync(compressed) : Buffer.alloc(0);
+    entries.push({ path: name, data });
+    offset = dataStart + compressedSize;
+  }
+  return entries;
+}
+
+describe('createZipBuffer', () => {
+  it('handles string content with UTF-8 encoding', () => {
+    const zip = createZipBuffer([
+      { path: 'hello.txt', content: 'Hello, world!' },
+    ]);
+    const entries = extractZipEntries(zip);
+    expect(entries).toHaveLength(1);
+    expect(entries[0].path).toBe('hello.txt');
+    expect(entries[0].data.toString('utf-8')).toBe('Hello, world!');
+  });
+
+  it('handles Buffer content without re-encoding', () => {
+    // Create binary content that is NOT valid UTF-8
+    const binaryContent = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0xff, 0xfe, 0xfd]);
+    const zip = createZipBuffer([
+      { path: 'image.png', content: binaryContent },
+    ]);
+    const entries = extractZipEntries(zip);
+    expect(entries).toHaveLength(1);
+    expect(entries[0].path).toBe('image.png');
+    expect(Buffer.compare(entries[0].data, binaryContent)).toBe(0);
+  });
+
+  it('mixes string and Buffer entries in the same zip', () => {
+    const binary = Buffer.from([0x00, 0x01, 0x02, 0x03, 0xff]);
+    const zip = createZipBuffer([
+      { path: 'index.html', content: '<html></html>' },
+      { path: 'favicon.ico', content: binary },
+    ]);
+    const entries = extractZipEntries(zip);
+    expect(entries).toHaveLength(2);
+    expect(entries[0].data.toString('utf-8')).toBe('<html></html>');
+    expect(Buffer.compare(entries[1].data, binary)).toBe(0);
   });
 });

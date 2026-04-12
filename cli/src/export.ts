@@ -397,7 +397,7 @@ function getInlineCss(): string {
 
 export interface HtmlFile {
   path: string;
-  content: string;
+  content: string | Buffer;
 }
 
 /**
@@ -559,7 +559,9 @@ export function createZipBuffer(entries: HtmlFile[]): Buffer {
 
   for (const entry of entries) {
     const nameBytes = Buffer.from(entry.path, 'utf-8');
-    const raw = Buffer.from(entry.content, 'utf-8');
+    const raw = Buffer.isBuffer(entry.content)
+      ? entry.content
+      : Buffer.from(entry.content, 'utf-8');
     const compressed = deflateRawSync(raw);
     const crc = crc32(raw);
 
