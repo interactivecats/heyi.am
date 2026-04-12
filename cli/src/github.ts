@@ -186,6 +186,9 @@ export async function requestDeviceCode(scopes: string[]): Promise<DeviceCodeRes
   };
 }
 
+const defaultSleep = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
+
 // ── Single-poll result type ───────────────────────────────────────────
 
 export type PollTokenResult =
