@@ -523,3 +523,7 @@
 .mn-footer a:hover {
   color: var(--mn-fg-2);
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }

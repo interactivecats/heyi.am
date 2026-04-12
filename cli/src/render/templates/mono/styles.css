@@ -1016,3 +1016,7 @@ body { background: var(--mono-bg, #0a0a0a); color: var(--mono-text, #e0e0e0); }
     transition: none;
   }
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }

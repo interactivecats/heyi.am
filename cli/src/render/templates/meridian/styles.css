@@ -1369,3 +1369,7 @@ body { background: var(--mer-bg); color: var(--mer-text); }
   .meridian .session-header__meta { gap: 0.75rem; }
   .meridian .sidebar { grid-template-columns: 1fr; }
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }

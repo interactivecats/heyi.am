@@ -10,20 +10,20 @@
       class="noir-hero__photo"
       width="400"
       height="500"
-    >
+     data-portfolio-field="photoBase64"{% unless user.photoUrl %} data-portfolio-empty="true"{% endunless %}>
     {% endif %}
     <div class="noir-hero__content">
       {% if user.displayName != blank %}
-      <h1 class="noir-hero__name">{{ user.displayName }}</h1>
+      <h1 class="noir-hero__name" data-portfolio-field="displayName">{{ user.displayName }}</h1>
       {% endif %}
       {% if user.bio != blank %}
-      <p class="noir-hero__bio">{{ user.bio }}</p>
+      <p class="noir-hero__bio" data-portfolio-field="bio">{{ user.bio }}</p>
       {% endif %}
       {% if user.location != blank %}
-      <p class="noir-hero__location">{{ user.location }}</p>
+      <p class="noir-hero__location" data-portfolio-field="location">{{ user.location }}</p>
       {% endif %}
       <p class="noir-hero__contact">
-        {% if user.email != blank %}<a href="mailto:{{ user.email }}">{{ user.email }}</a>{% endif %}{% if user.linkedinUrl != blank %}{% if user.email != blank %}<span class="noir-middot">&middot;</span>{% endif %}<a href="{{ user.linkedinUrl }}">LinkedIn</a>{% endif %}{% if user.githubUrl != blank %}{% if user.email != blank or user.linkedinUrl != blank %}<span class="noir-middot">&middot;</span>{% endif %}<a href="{{ user.githubUrl }}">GitHub</a>{% endif %}{% if user.twitterHandle != blank %}{% if user.email != blank or user.linkedinUrl != blank or user.githubUrl != blank %}<span class="noir-middot">&middot;</span>{% endif %}<a href="https://twitter.com/{{ user.twitterHandle }}">@{{ user.twitterHandle }}</a>{% endif %}{% if user.websiteUrl != blank %}{% if user.email != blank or user.linkedinUrl != blank or user.githubUrl != blank or user.twitterHandle != blank %}<span class="noir-middot">&middot;</span>{% endif %}<a href="{{ user.websiteUrl }}">{{ user.websiteUrl | stripProtocol }}</a>{% endif %}
+        <a href="{% if user.email %}mailto:{{ user.email }}{% endif %}" data-portfolio-field="email"{% unless user.email %} data-portfolio-empty="true"{% endunless %}><span data-portfolio-text>{{ user.email }}</span></a><span class="noir-middot" data-portfolio-field="linkedinUrl"{% unless user.linkedinUrl %} data-portfolio-empty="true"{% endunless %}>&middot;</span><a href="{% if user.linkedinUrl %}{{ user.linkedinUrl }}{% endif %}" data-portfolio-field="linkedinUrl"{% unless user.linkedinUrl %} data-portfolio-empty="true"{% endunless %}>LinkedIn</a><span class="noir-middot" data-portfolio-field="githubUrl"{% unless user.githubUrl %} data-portfolio-empty="true"{% endunless %}>&middot;</span><a href="{% if user.githubUrl %}{{ user.githubUrl }}{% endif %}" data-portfolio-field="githubUrl"{% unless user.githubUrl %} data-portfolio-empty="true"{% endunless %}>GitHub</a><span class="noir-middot" data-portfolio-field="twitterHandle"{% unless user.twitterHandle %} data-portfolio-empty="true"{% endunless %}>&middot;</span><a href="{% if user.twitterHandle %}https://x.com/{{ user.twitterHandle }}{% endif %}" data-portfolio-field="twitterHandle"{% unless user.twitterHandle %} data-portfolio-empty="true"{% endunless %}><span data-portfolio-text>{% if user.twitterHandle %}@{{ user.twitterHandle }}{% endif %}</span></a><span class="noir-middot" data-portfolio-field="websiteUrl"{% unless user.websiteUrl %} data-portfolio-empty="true"{% endunless %}>&middot;</span><a href="{% if user.websiteUrl %}{{ user.websiteUrl }}{% endif %}" data-portfolio-field="websiteUrl"{% unless user.websiteUrl %} data-portfolio-empty="true"{% endunless %}><span data-portfolio-text>{{ user.websiteUrl | stripProtocol }}</span></a>
       </p>
       {% if user.resumeUrl != blank %}
       <a href="{{ user.resumeUrl }}" class="noir-hero__resume">

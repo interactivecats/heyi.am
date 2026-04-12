@@ -6,29 +6,29 @@
     {%- comment -%} Optional photo {%- endcomment -%}
     {% if user.photoUrl %}
     <div class="mn-photo-wrap">
-      <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="mn-photo portfolio-photo" width="96" height="96">
+      <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="mn-photo portfolio-photo" width="96" height="96" data-portfolio-field="photoBase64"{% unless user.photoUrl %} data-portfolio-empty="true"{% endunless %}>
     </div>
     {% endif %}
 
     {%- comment -%} Big serif heading {%- endcomment -%}
     {% if user.displayName != blank %}
-    <h1 class="mn-heading">{{ user.displayName }}</h1>
+    <h1 class="mn-heading" data-portfolio-field="displayName">{{ user.displayName }}</h1>
     {% endif %}
 
     {% if user.bio != blank %}
-    <p class="mn-bio">{{ user.bio }}</p>
+    <p class="mn-bio" data-portfolio-field="bio">{{ user.bio }}</p>
     {% endif %}
 
     {%- comment -%} Contact / links as middot-separated inline text {%- endcomment -%}
     {% if user.location != blank or user.email != blank or user.phone != blank or user.githubUrl != blank or user.linkedinUrl != blank or user.twitterHandle != blank or user.websiteUrl != blank or user.resumeUrl != blank %}
     <div class="mn-contact">
-      {% if user.location != blank %}<span>{{ user.location }}</span>{% endif %}
-      {% if user.email != blank %}<span><a href="mailto:{{ user.email }}">{{ user.email }}</a></span>{% endif %}
-      {% if user.phone != blank %}<span><a href="tel:{{ user.phone }}">{{ user.phone }}</a></span>{% endif %}
-      {% if user.githubUrl != blank %}<span><a href="{{ user.githubUrl }}" target="_blank" rel="noopener">GitHub</a></span>{% endif %}
-      {% if user.linkedinUrl != blank %}<span><a href="{{ user.linkedinUrl }}" target="_blank" rel="noopener">LinkedIn</a></span>{% endif %}
-      {% if user.twitterHandle != blank %}<span><a href="https://twitter.com/{{ user.twitterHandle }}" target="_blank" rel="noopener">@{{ user.twitterHandle }}</a></span>{% endif %}
-      {% if user.websiteUrl != blank %}<span><a href="{{ user.websiteUrl }}" target="_blank" rel="noopener">{{ user.websiteUrl | stripProtocol }}</a></span>{% endif %}
+      <span data-portfolio-field="location"{% unless user.location %} data-portfolio-empty="true"{% endunless %}>{{ user.location }}</span>
+      <span data-portfolio-field="email"{% unless user.email %} data-portfolio-empty="true"{% endunless %}><a href="{% if user.email %}mailto:{{ user.email }}{% endif %}">{{ user.email }}</a></span>
+      <span data-portfolio-field="phone"{% unless user.phone %} data-portfolio-empty="true"{% endunless %}><a href="{% if user.phone %}tel:{{ user.phone }}{% endif %}">{{ user.phone }}</a></span>
+      <span data-portfolio-field="githubUrl"{% unless user.githubUrl %} data-portfolio-empty="true"{% endunless %}><a href="{% if user.githubUrl %}{{ user.githubUrl }}{% endif %}" target="_blank" rel="noopener">GitHub</a></span>
+      <span data-portfolio-field="linkedinUrl"{% unless user.linkedinUrl %} data-portfolio-empty="true"{% endunless %}><a href="{% if user.linkedinUrl %}{{ user.linkedinUrl }}{% endif %}" target="_blank" rel="noopener">LinkedIn</a></span>
+      <span data-portfolio-field="twitterHandle"{% unless user.twitterHandle %} data-portfolio-empty="true"{% endunless %}><a href="{% if user.twitterHandle %}https://x.com/{{ user.twitterHandle }}{% endif %}" target="_blank" rel="noopener"><span data-portfolio-text>{% if user.twitterHandle %}@{{ user.twitterHandle }}{% endif %}</span></a></span>
+      <span data-portfolio-field="websiteUrl"{% unless user.websiteUrl %} data-portfolio-empty="true"{% endunless %}><a href="{% if user.websiteUrl %}{{ user.websiteUrl }}{% endif %}" target="_blank" rel="noopener">{{ user.websiteUrl | stripProtocol }}</a></span>
       {% if user.resumeUrl != blank %}<span><a href="{{ user.resumeUrl }}" download>Resume (PDF)</a></span>{% endif %}
     </div>
     {% endif %}
