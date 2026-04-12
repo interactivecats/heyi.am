@@ -1,8 +1,9 @@
 import { Router, type Request, type Response } from 'express';
 import { statSync } from 'node:fs';
 import { type AgentChild } from '../bridge.js';
-import { loadProjectEnhanceResult, getUploadedState } from '../settings.js';
+import { loadProjectEnhanceResult, saveProjectEnhanceResult, getUploadedState } from '../settings.js';
 import { RouteContext, requireProject, buildSessionList, buildProjectDetail } from './context.js';
+import { invalidatePortfolioPreviewCache } from './preview.js';
 
 export function createProjectsRouter(ctx: RouteContext): Router {
   const router = Router();
@@ -188,13 +189,66 @@ export function createProjectsRouter(ctx: RouteContext): Router {
     }
   });
 
-  // ── Boundaries ────────────────────────────────────────────────
-  router.get('/api/projects/:project/boundaries', (_req: Request, res: Response) => {
-    res.json({ selectedSessionIds: [], skippedSessions: [] });
+  // ── Boundaries — manage which sessions belong to a project ───
+  router.get('/api/projects/:project/boundaries', async (req: Request, res: Response) => {
+    try {
+      const project = String(req.params.project);
+      const proj = await requireProject(ctx, project, res);
+      if (!proj) return;
+
+      const cache = loadProjectEnhanceResult(proj.dirName);
+      const allSessionIds = proj.sessions
+        .filter((s) => !s.isSubagent)
+        .map((s) => s.sessionId);
+
+      res.json({
+        selectedSessionIds: cache?.selectedSessionIds ?? [],
+        allSessionIds,
+      });
+    } catch (err) {
+      res.status(500).json({ error: { code: 'BOUNDARIES_FAILED', message: (err as Error).message } });
+    }
   });
 
-  router.put('/api/projects/:project/boundaries', (_req: Request, res: Response) => {
-    res.json({ ok: true });
+  router.put('/api/projects/:project/boundaries', async (req: Request, res: Response) => {
+    try {
+      const project = String(req.params.project);
+      const proj = await requireProject(ctx, project, res);
+      if (!proj) return;
+
+      const { selectedSessionIds } = req.body as { selectedSessionIds: string[] };
+
+      if (!Array.isArray(selectedSessionIds) || selectedSessionIds.length === 0) {
+        res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'selectedSessionIds must be a non-empty array' } });
+        return;
+      }
+
+      const allIds = new Set(proj.sessions.map((s) => s.sessionId));
+      const invalid = selectedSessionIds.filter((id) => !allIds.has(id));
+      if (invalid.length > 0) {
+        res.status(400).json({ error: { code: 'INVALID_SESSION_IDS', message: `Unknown session IDs: ${invalid.join(', ')}` } });
+        return;
+      }
+
+      const cache = loadProjectEnhanceResult(proj.dirName);
+      if (!cache) {
+        res.status(400).json({ error: { code: 'NO_CACHE', message: 'Project must be enhanced before managing sessions' } });
+        return;
+      }
+
+      saveProjectEnhanceResult(
+        proj.dirName,
+        selectedSessionIds,
+        cache.result,
+        undefined,
+        { title: cache.title, repoUrl: cache.repoUrl, projectUrl: cache.projectUrl, screenshotBase64: cache.screenshotBase64 },
+      );
+      invalidatePortfolioPreviewCache();
+
+      res.json({ ok: true, selectedSessionIds });
+    } catch (err) {
+      res.status(500).json({ error: { code: 'BOUNDARIES_FAILED', message: (err as Error).message } });
+    }
   });
 
   return router;

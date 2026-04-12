@@ -98,6 +98,55 @@ export function createEnhanceRouter(ctx: RouteContext): Router {
     }
   });
 
+  // Update locally-saved enhanced data (partial merge)
+  router.patch('/api/sessions/:id/enhanced', (req: Request, res: Response) => {
+    const { id } = req.params;
+    const existing = loadEnhancedData(id as string);
+    if (!existing) {
+      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'No enhanced data for this session' } });
+      return;
+    }
+
+    const { title, developerTake, skills, qaPairs, executionSteps } = req.body as {
+      title?: string;
+      developerTake?: string;
+      skills?: string[];
+      qaPairs?: Array<{ question: string; answer: string }>;
+      executionSteps?: Array<{ stepNumber: number; title: string; body: string }>;
+    };
+
+    if (title !== undefined && (typeof title !== 'string' || title.length === 0 || title.length > 200)) {
+      res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'title must be 1-200 characters' } });
+      return;
+    }
+    if (developerTake !== undefined && (typeof developerTake !== 'string' || developerTake.length > 2000)) {
+      res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'developerTake must be under 2000 characters' } });
+      return;
+    }
+    if (skills !== undefined && (!Array.isArray(skills) || !skills.every((s) => typeof s === 'string'))) {
+      res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'skills must be an array of strings' } });
+      return;
+    }
+
+    const merged = {
+      ...existing,
+      ...(title !== undefined ? { title } : {}),
+      ...(developerTake !== undefined ? { developerTake } : {}),
+      ...(skills !== undefined ? { skills } : {}),
+      ...(qaPairs !== undefined ? { qaPairs } : {}),
+      ...(executionSteps !== undefined ? { executionSteps } : {}),
+    };
+
+    // Strip runtime-only fields before saving — saveEnhancedData re-adds enhancedAt
+    const { enhancedAt: _ea, quickEnhanced: qe, ...rest } = merged;
+    saveEnhancedData(id as string, { ...rest, quickEnhanced: qe });
+    invalidatePortfolioPreviewCache();
+    console.log(`[enhance] Updated enhanced data for ${id}`);
+
+    const updated = loadEnhancedData(id as string);
+    res.json({ ok: true, enhancedAt: updated?.enhancedAt });
+  });
+
   // Delete locally-saved enhanced data
   router.delete('/api/sessions/:id/enhanced', (_req: Request, res: Response) => {
     const { id } = _req.params;

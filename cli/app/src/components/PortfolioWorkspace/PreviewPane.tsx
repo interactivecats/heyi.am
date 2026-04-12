@@ -17,7 +17,7 @@
 // the live-patch path). Templates that don't carry the data-portfolio-field
 // annotation silently no-op for that field.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { usePortfolioStore } from '../../hooks/usePortfolioStore'
 import { fetchAuthStatus, fetchTheme, saveTheme, type PortfolioProfile } from '../../api'
 import { TemplateBrowser } from '../TemplateBrowser'
@@ -412,15 +412,12 @@ export function PreviewPane() {
         </button>
       </div>
 
-      {/* Iframe */}
-      <iframe
+      {/* Scaled iframe — renders at IFRAME_WIDTH and scales to fit the pane */}
+      <ScaledIframe
         key={`${reloadKey}-${state.refreshTrigger}`}
-        ref={iframeRef}
-        title="Portfolio preview"
+        iframeRef={iframeRef}
         src={currentSrc}
         onLoad={handleIframeLoad}
-        className="flex-1 w-full min-h-0 border-0 bg-surface-lowest"
-        data-testid="portfolio-preview-iframe"
       />
 
       {templateBrowserOpen && (
@@ -430,6 +427,59 @@ export function PreviewPane() {
           onSelectTemplate={handleSelectTemplate}
         />
       )}
+    </div>
+  )
+}
+
+// ── Scaled iframe ────────────────────────────────────────────
+//
+// Renders the iframe at a fixed wide viewport (IFRAME_WIDTH) and CSS-scales
+// it to fit the available container width. This prevents templates from
+// being clipped on smaller monitors where the preview pane is ~900px.
+
+const IFRAME_WIDTH = 1280
+
+function ScaledIframe({
+  iframeRef,
+  src,
+  onLoad,
+}: {
+  iframeRef: React.RefObject<HTMLIFrameElement | null>
+  src: string
+  onLoad: () => void
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
+
+  useLayoutEffect(() => {
+    function measure() {
+      const el = containerRef.current
+      if (!el) return
+      const available = el.clientWidth
+      setScale(Math.min(1, available / IFRAME_WIDTH))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    if (containerRef.current) observer.observe(containerRef.current)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div ref={containerRef} className="flex-1 min-h-0 overflow-hidden relative bg-surface-lowest">
+      <iframe
+        ref={iframeRef}
+        title="Portfolio preview"
+        src={src}
+        onLoad={onLoad}
+        data-testid="portfolio-preview-iframe"
+        className="border-0 absolute top-0 left-0"
+        style={{
+          width: `${IFRAME_WIDTH}px`,
+          height: `${100 / scale}%`,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+        }}
+      />
     </div>
   )
 }

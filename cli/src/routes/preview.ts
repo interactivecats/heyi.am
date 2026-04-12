@@ -13,7 +13,8 @@ import type { SessionCard, ProjectRenderData, PortfolioRenderData, PortfolioProj
 import { buildAgentSummary, type RouteContext } from './context.js';
 import { displayNameFromDir } from '../sync.js';
 import { toSlug } from '../format-utils.js';
-import { getSessionsByProject, type SessionRow } from '../db.js';
+import { getSessionsByProject, getAllProjectStats, type SessionRow } from '../db.js';
+import { applyPortfolioProjectFilter } from './portfolio-render-data.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -597,8 +598,19 @@ body { overflow: auto !important; min-height: auto !important; }
       const profile = getPortfolioProfile();
       const auth = getAuthToken();
 
-      // Build portfolio projects from real project data
-      const rawProjects = await ctx.getProjects();
+      // Build portfolio projects from real project data, filtered by user curation
+      const allRawProjects = await ctx.getProjects();
+      const recencyByDir = new Map<string, string>();
+      try {
+        for (const s of getAllProjectStats(ctx.db)) {
+          recencyByDir.set(s.projectDir, s.latestDate || '');
+        }
+      } catch { /* DB may be empty on first run */ }
+      const rawProjects = applyPortfolioProjectFilter(
+        allRawProjects,
+        profile.projectsOnPortfolio,
+        { getRecency: (p) => recencyByDir.get(p.dirName) },
+      );
       const portfolioProjects: PortfolioProject[] = [];
       let totalDuration = 0;
       let totalAgentDuration = 0;

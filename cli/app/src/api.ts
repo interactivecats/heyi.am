@@ -90,6 +90,32 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
   return res.json()
 }
 
+async function put<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: { message: `PUT ${path} failed` } }))
+    throw new Error(err.error?.message ?? `PUT ${path} failed: ${res.status}`)
+  }
+  return res.json()
+}
+
+async function patch<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: { message: `PATCH ${path} failed` } }))
+    throw new Error(err.error?.message ?? `PATCH ${path} failed: ${res.status}`)
+  }
+  return res.json()
+}
+
 function streamSSE<E>(
   path: string,
   body: unknown,
@@ -229,8 +255,28 @@ export async function fetchBoundaries(dirName: string): Promise<BoundaryConfig> 
   return get<BoundaryConfig>(`/projects/${enc(dirName)}/boundaries`)
 }
 
-export async function saveBoundaries(dirName: string, data: BoundaryConfig): Promise<void> {
-  await post(`/projects/${enc(dirName)}/boundaries`, data)
+export async function saveBoundaries(dirName: string, data: { selectedSessionIds: string[] }): Promise<{ ok: boolean; selectedSessionIds: string[] }> {
+  return put(`/projects/${enc(dirName)}/boundaries`, data)
+}
+
+export async function patchSessionEnhanced(
+  sessionId: string,
+  fields: {
+    title?: string
+    developerTake?: string
+    skills?: string[]
+    qaPairs?: Array<{ question: string; answer: string }>
+    executionSteps?: Array<{ stepNumber: number; title: string; body: string }>
+  },
+): Promise<{ ok: boolean; enhancedAt: string }> {
+  return patch(`/sessions/${enc(sessionId)}/enhanced`, fields)
+}
+
+export async function enhanceSession(
+  dirName: string,
+  sessionId: string,
+): Promise<{ result: { title: string; skills: string[] }; provider: string }> {
+  return post(`/projects/${enc(dirName)}/sessions/${enc(sessionId)}/enhance`)
 }
 
 export function triageProject(

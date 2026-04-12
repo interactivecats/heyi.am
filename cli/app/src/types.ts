@@ -282,7 +282,8 @@ export interface AuthStatus {
 
 export interface BoundaryConfig {
   selectedSessionIds: string[]
-  skippedSessions: Array<{ sessionId: string; reason: string }>
+  allSessionIds?: string[]
+  skippedSessions?: Array<{ sessionId: string; reason: string }>
 }
 
 // ── Search ──────────────────────────────────────────────────

@@ -7,10 +7,12 @@ import {
   fetchAuthStatus,
   fetchGitRemote,
   saveProjectEnhanceLocally,
+  saveBoundaries,
   captureScreenshotFromUrl,
   type ProjectDetail as ProjectDetailType,
   type Session,
 } from '../api'
+import { SessionManageModal } from './SessionManageModal'
 import { Note } from './shared'
 import { Chip } from './shared/Chip'
 import { WorkTimeline } from './WorkTimeline'
@@ -64,8 +66,10 @@ export function ProjectDetail() {
   const [screenshotCapturing, setScreenshotCapturing] = useState(false)
   const [metadataDirty, setMetadataDirty] = useState(false)
   const [authUsername, setAuthUsername] = useState<string | null>(null)
+  const [narrative, setNarrative] = useState('')
   const [embedOpen, setEmbedOpen] = useState(false)
   const [embedCopied, setEmbedCopied] = useState<string | null>(null)
+  const [sessionModalOpen, setSessionModalOpen] = useState(false)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const screenshotInputRef = useRef<HTMLInputElement>(null)
 
@@ -109,6 +113,7 @@ export function ProjectDetail() {
         if (d.enhanceCache?.repoUrl) setRepoUrl(d.enhanceCache.repoUrl)
         if (d.enhanceCache?.projectUrl) setProjectUrl(d.enhanceCache.projectUrl)
         if (d.enhanceCache?.screenshotBase64) setScreenshotPreview(d.enhanceCache.screenshotBase64)
+        if (d.enhanceCache?.result?.narrative) setNarrative(d.enhanceCache.result.narrative)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -254,19 +259,25 @@ export function ProjectDetail() {
         (screenshotEl as HTMLElement).style.display = ''
       }
     }
-  }, [projectTitle, repoUrl, projectUrl, screenshotPreview, renderHtml])
+    // Patch narrative text
+    const narrativeEl = container.querySelector('[data-editable="narrative"]')
+    if (narrativeEl && narrative) narrativeEl.textContent = narrative
+  }, [projectTitle, repoUrl, projectUrl, screenshotPreview, narrative, renderHtml])
 
   // Save metadata to disk (debounced) — no re-render needed, DOM patches are authoritative
   const saveMetadata = useCallback(() => {
     if (!dirName || !detail) return
     const cache = detail.enhanceCache
+    const result = cache?.result ?? { narrative: '', arc: [], skills: [], timeline: [], questions: [] }
+    // Merge narrative edits into the result
+    const updatedResult = narrative !== result.narrative ? { ...result, narrative } : result
     saveProjectEnhanceLocally(
       dirName,
       cache?.selectedSessionIds ?? [],
-      cache?.result ?? { narrative: '', arc: [], skills: [], timeline: [], questions: [] },
+      updatedResult,
       { title: projectTitle || undefined, repoUrl: repoUrl || undefined, projectUrl: projectUrl || undefined, screenshotBase64: screenshotPreview ?? undefined },
     ).then(() => setMetadataDirty(false)).catch(() => {})
-  }, [dirName, detail, projectTitle, repoUrl, projectUrl, screenshotPreview])
+  }, [dirName, detail, projectTitle, repoUrl, projectUrl, screenshotPreview, narrative])
 
   useEffect(() => {
     if (!metadataDirty) return
@@ -297,7 +308,7 @@ export function ProjectDetail() {
   return (
     <div className={`grid grid-cols-[240px_1fr] min-h-[calc(100vh-48px)]${templateMode === 'dark' ? ' bg-black' : ''}`}>
       {/* Sidebar — editing controls */}
-      <aside className="border-r border-ghost bg-surface-low p-4">
+      <aside className="border-r border-ghost bg-surface-low p-4 overflow-y-auto">
         <div className="mb-4">
           <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-1.5">Source mix</div>
           <div className="flex flex-wrap gap-1 mt-1.5">
@@ -314,6 +325,25 @@ export function ProjectDetail() {
             <Chip variant="green">{project.isUploaded ? 'Uploaded' : 'Local only'}</Chip>
           </div>
         </div>
+
+        {/* Sessions — manage which sessions are in this project */}
+        {detail.enhanceCache && (
+          <div className="mb-4">
+            <div className="font-mono text-[9px] uppercase tracking-wider text-outline mb-1.5">Sessions</div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-on-surface-variant">
+                {detail.enhanceCache.selectedSessionIds.length} of {sessions.filter((s) => !s.parentSessionId).length} included
+              </span>
+              <button
+                type="button"
+                onClick={() => setSessionModalOpen(true)}
+                className="text-[10px] font-mono text-primary hover:underline"
+              >
+                Manage
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Enhance action — first-class entry to the enhance flow without forcing publish */}
         {(() => {
@@ -353,6 +383,19 @@ export function ProjectDetail() {
               className="w-full text-xs font-mono px-2 py-1.5 rounded-sm border border-ghost bg-surface-lowest text-on-surface placeholder:text-outline"
             />
           </label>
+
+          {detail.enhanceCache?.result?.narrative !== undefined && (
+            <label className="block mb-3">
+              <span className="text-[0.75rem] font-medium text-on-surface-variant block mb-1">Narrative</span>
+              <textarea
+                value={narrative}
+                onChange={(e) => { setNarrative(e.target.value); setMetadataDirty(true) }}
+                rows={4}
+                placeholder="Project narrative..."
+                className="w-full text-xs font-mono px-2 py-1.5 rounded-sm border border-ghost bg-surface-lowest text-on-surface placeholder:text-outline resize-y leading-relaxed"
+              />
+            </label>
+          )}
 
           <label className="block mb-3">
             <span className="text-[0.75rem] font-medium text-on-surface-variant block mb-1">Repo URL</span>
@@ -537,9 +580,29 @@ export function ProjectDetail() {
             projectDirName={dirName}
             onClose={() => setSelectedSession(null)}
             isDark={templateMode === 'dark'}
+            onSessionUpdated={() => loadRender()}
           />
         )}
       </div>
+
+      {/* Session management modal */}
+      {sessionModalOpen && (
+        <SessionManageModal
+          sessions={sessions}
+          initialSelection={new Set(detail.enhanceCache?.selectedSessionIds ?? [])}
+          projectDirName={dirName!}
+          onClose={() => setSessionModalOpen(false)}
+          onSave={async (selected) => {
+            await saveBoundaries(dirName!, { selectedSessionIds: [...selected] })
+            setSessionModalOpen(false)
+            // Refresh after modal is unmounted to avoid race condition
+            const d = await fetchProjectDetail(dirName!)
+            setDetail(d)
+            if (d.enhanceCache?.result?.narrative) setNarrative(d.enhanceCache.result.narrative)
+            loadRender()
+          }}
+        />
+      )}
     </div>
   )
 }
