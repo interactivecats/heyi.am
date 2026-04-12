@@ -1309,3 +1309,7 @@ a.dl-project-card, a.dl-session-card {
   .dl-session-header { padding-block: 1rem 1.5rem; }
   .dl-sidebar { order: -1; }
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }

@@ -1155,3 +1155,7 @@ a.project-card:hover, a.session-card:hover {
     gap: 12px;
   }
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }

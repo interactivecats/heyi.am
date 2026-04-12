@@ -1151,3 +1151,7 @@ body { background: var(--cos-bg); color: var(--cos-text); }
 
   .cosmos .cos-footer { margin-block-start: 2rem; }
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }

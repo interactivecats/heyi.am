@@ -1403,3 +1403,7 @@ body { background: var(--bg); color: var(--fg); }
   .circuit .hero-meta { flex-direction: column; gap: 4px; }
   .circuit.heyiam-session .stat-chip { flex: 1 1 calc(50% - 8px); }
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }

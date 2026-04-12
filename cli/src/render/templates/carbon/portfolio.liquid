@@ -4,33 +4,23 @@
   {% if hasProfile %}
   <header class="profile fade-in" aria-label="Profile">
     {% if user.photoUrl %}
-    <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="profile__photo" width="120" height="120">
+    <img src="{{ user.photoUrl }}" alt="{{ user.displayName }}" class="profile__photo" width="120" height="120" data-portfolio-field="photoBase64"{% unless user.photoUrl %} data-portfolio-empty="true"{% endunless %}>
     {% endif %}
     {% if user.displayName != blank %}
-    <h1 class="profile__name">{{ user.displayName }}</h1>
+    <h1 class="profile__name" data-portfolio-field="displayName">{{ user.displayName }}</h1>
     {% endif %}
     {% if user.bio != blank %}
-    <p class="profile__bio">{{ user.bio }}</p>
+    <p class="profile__bio" data-portfolio-field="bio">{{ user.bio }}</p>
     {% endif %}
     {% if user.location != blank %}
-    <p class="profile__location">{{ user.location }}</p>
+    <p class="profile__location" data-portfolio-field="location">{{ user.location }}</p>
     {% endif %}
     <div class="profile__links">
-      {% if user.email != blank %}
-      <a href="mailto:{{ user.email }}">{{ user.email }}</a>
-      {% endif %}
-      {% if user.linkedinUrl != blank %}
-      <a href="{{ user.linkedinUrl }}" target="_blank" rel="noopener">LinkedIn</a>
-      {% endif %}
-      {% if user.githubUrl != blank %}
-      <a href="{{ user.githubUrl }}" target="_blank" rel="noopener">GitHub</a>
-      {% endif %}
-      {% if user.twitterHandle != blank %}
-      <a href="https://x.com/{{ user.twitterHandle }}" target="_blank" rel="noopener">@{{ user.twitterHandle }}</a>
-      {% endif %}
-      {% if user.websiteUrl != blank %}
-      <a href="{{ user.websiteUrl }}" target="_blank" rel="noopener">{{ user.websiteUrl | stripProtocol }}</a>
-      {% endif %}
+      <a href="{% if user.email %}mailto:{{ user.email }}{% endif %}" data-portfolio-field="email"{% unless user.email %} data-portfolio-empty="true"{% endunless %}>{{ user.email }}</a>
+      <a href="{% if user.linkedinUrl %}{{ user.linkedinUrl }}{% endif %}" target="_blank" rel="noopener" data-portfolio-field="linkedinUrl"{% unless user.linkedinUrl %} data-portfolio-empty="true"{% endunless %}>LinkedIn</a>
+      <a href="{% if user.githubUrl %}{{ user.githubUrl }}{% endif %}" target="_blank" rel="noopener" data-portfolio-field="githubUrl"{% unless user.githubUrl %} data-portfolio-empty="true"{% endunless %}>GitHub</a>
+      <a href="{% if user.twitterHandle %}https://x.com/{{ user.twitterHandle }}{% endif %}" target="_blank" rel="noopener" data-portfolio-field="twitterHandle"{% unless user.twitterHandle %} data-portfolio-empty="true"{% endunless %}>@{{ user.twitterHandle }}</a>
+      <a href="{% if user.websiteUrl %}{{ user.websiteUrl }}{% endif %}" target="_blank" rel="noopener" data-portfolio-field="websiteUrl"{% unless user.websiteUrl %} data-portfolio-empty="true"{% endunless %}>{{ user.websiteUrl | stripProtocol }}</a>
       {% if user.resumeUrl != blank %}
       <a href="{{ user.resumeUrl }}" class="profile__link--resume" download>Resume (PDF)</a>
       {% endif %}
