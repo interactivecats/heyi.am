@@ -17,7 +17,7 @@ vi.mock('../auth.js', async (importOriginal) => {
 
 // Capture per-fn so we can override behavior per test.
 const requestDeviceCode = vi.fn();
-const pollForToken = vi.fn();
+const pollForTokenOnce = vi.fn();
 const storeToken = vi.fn();
 const loadToken = vi.fn();
 const deleteToken = vi.fn();
@@ -32,7 +32,7 @@ vi.mock('../github.js', async () => {
   return {
     ...actual,
     requestDeviceCode: (...a: unknown[]) => requestDeviceCode(...a),
-    pollForToken: (...a: unknown[]) => pollForToken(...a),
+    pollForTokenOnce: (...a: unknown[]) => pollForTokenOnce(...a),
     storeToken: (...a: unknown[]) => storeToken(...a),
     loadToken: (...a: unknown[]) => loadToken(...a),
     deleteToken: (...a: unknown[]) => deleteToken(...a),
@@ -88,7 +88,7 @@ beforeEach(() => {
   process.env.HEYIAM_CONFIG_DIR = configDir;
 
   requestDeviceCode.mockReset();
-  pollForToken.mockReset();
+  pollForTokenOnce.mockReset();
   storeToken.mockReset();
   loadToken.mockReset();
   deleteToken.mockReset();
@@ -160,39 +160,67 @@ describe('POST /api/github/poll-token', () => {
     expect(res.body.error.code).toBe('INVALID_DEVICE_CODE');
   });
 
-  it('stores token and returns account on success', async () => {
-    pollForToken.mockResolvedValueOnce({ access_token: 'gho_TOKEN' });
+  it('stores token and returns { status: "success", account } on success', async () => {
+    pollForTokenOnce.mockResolvedValueOnce({ status: 'success', access_token: 'gho_TOKEN' });
     storeToken.mockResolvedValueOnce(undefined);
     getAuthenticatedUser.mockResolvedValueOnce({
       login: 'ben', name: 'Ben', avatar_url: 'https://x/y.png',
     });
     const res = await request(makeApp())
       .post('/api/github/poll-token')
-      .send({ device_code: 'DEV', interval: 1 });
+      .send({ device_code: 'DEV' });
     expect(res.status).toBe(200);
+    expect(res.body.status).toBe('success');
     expect(res.body.account).toEqual({ login: 'ben', name: 'Ben', avatarUrl: 'https://x/y.png' });
     // Token itself must NEVER appear in the response.
     expect(JSON.stringify(res.body)).not.toContain('gho_TOKEN');
     expect(storeToken).toHaveBeenCalledWith('gho_TOKEN');
   });
 
+  it('returns { status: "pending" } when GitHub says authorization_pending', async () => {
+    pollForTokenOnce.mockResolvedValueOnce({ status: 'pending' });
+    const res = await request(makeApp())
+      .post('/api/github/poll-token')
+      .send({ device_code: 'DEV' });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ status: 'pending' });
+  });
+
+  it('returns { status: "expired" } when device code has expired', async () => {
+    pollForTokenOnce.mockResolvedValueOnce({ status: 'expired' });
+    const res = await request(makeApp())
+      .post('/api/github/poll-token')
+      .send({ device_code: 'DEV' });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ status: 'expired' });
+  });
+
+  it('returns { status: "denied" } when user denies authorization', async () => {
+    pollForTokenOnce.mockResolvedValueOnce({ status: 'denied' });
+    const res = await request(makeApp())
+      .post('/api/github/poll-token')
+      .send({ device_code: 'DEV' });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ status: 'denied' });
+  });
+
   it('maps KEYCHAIN_UNAVAILABLE to 503', async () => {
-    pollForToken.mockResolvedValueOnce({ access_token: 'gho_X' });
+    pollForTokenOnce.mockResolvedValueOnce({ status: 'success', access_token: 'gho_X' });
     storeToken.mockRejectedValueOnce(new GitHubError('KEYCHAIN_UNAVAILABLE', 'no keychain'));
     const res = await request(makeApp())
       .post('/api/github/poll-token')
-      .send({ device_code: 'DEV', interval: 1 });
+      .send({ device_code: 'DEV' });
     expect(res.status).toBe(503);
     expect(res.body.error.code).toBe('KEYCHAIN_UNAVAILABLE');
   });
 
-  it('surfaces access_denied as TOKEN_POLL_DENIED', async () => {
-    pollForToken.mockRejectedValueOnce(new GitHubError('TOKEN_POLL_DENIED', 'denied'));
+  it('surfaces TOKEN_POLL_FAILED on unexpected GitHub error', async () => {
+    pollForTokenOnce.mockRejectedValueOnce(new GitHubError('TOKEN_POLL_FAILED', 'oops'));
     const res = await request(makeApp())
       .post('/api/github/poll-token')
       .send({ device_code: 'DEV' });
     expect(res.status).toBe(500);
-    expect(res.body.error.code).toBe('TOKEN_POLL_DENIED');
+    expect(res.body.error.code).toBe('TOKEN_POLL_FAILED');
   });
 });
 

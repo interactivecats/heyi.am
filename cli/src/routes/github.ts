@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { getAuthToken } from '../auth.js';
 import {
   requestDeviceCode,
-  pollForToken,
+  pollForTokenOnce,
   storeToken,
   loadToken,
   deleteToken,
@@ -89,12 +89,13 @@ export function createGithubRouter(ctx: RouteContext): Router {
     }
   });
 
-  // ── Device-flow completion + keychain write ───────────────────────
+  // ── Device-flow single-poll + keychain write ─────────────────────
+  // Returns immediately in ALL cases — no blocking loop.
+  // The frontend is responsible for calling this on an interval.
   router.post('/api/github/poll-token', async (req: Request, res: Response) => {
     if (!getAuthToken()) { authError(res); return; }
-    const { device_code: deviceCode, interval } = (req.body ?? {}) as {
+    const { device_code: deviceCode } = (req.body ?? {}) as {
       device_code?: unknown;
-      interval?: unknown;
     };
     if (typeof deviceCode !== 'string' || deviceCode.length === 0) {
       res.status(400).json({
@@ -102,15 +103,19 @@ export function createGithubRouter(ctx: RouteContext): Router {
       } satisfies ErrorResponse);
       return;
     }
-    const intervalSeconds = typeof interval === 'number' && interval > 0 ? interval : 5;
     try {
-      const { access_token } = await pollForToken(deviceCode, intervalSeconds);
-      await storeToken(access_token);
-      const user = await getAuthenticatedUser(access_token);
-      res.json({
-        ok: true,
-        account: { login: user.login, name: user.name, avatarUrl: user.avatar_url },
-      });
+      const result = await pollForTokenOnce(deviceCode);
+      if (result.status === 'success') {
+        await storeToken(result.access_token);
+        const user = await getAuthenticatedUser(result.access_token);
+        res.json({
+          status: 'success',
+          account: { login: user.login, name: user.name, avatarUrl: user.avatar_url },
+        });
+        return;
+      }
+      // pending / expired / denied — return status directly, no token in response.
+      res.json({ status: result.status });
     } catch (err) {
       handleGitHubError(res, err, 'TOKEN_POLL_FAILED');
     }
