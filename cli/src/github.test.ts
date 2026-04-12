@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   requestDeviceCode,
-  pollForToken,
+  pollForTokenOnce,
   storeToken,
   loadToken,
   deleteToken,
@@ -71,61 +71,56 @@ describe('requestDeviceCode', () => {
   });
 });
 
-// ── Poll for token ────────────────────────────────────────────────────
+// ── pollForTokenOnce (single-poll, non-blocking) ────────────────────
 
-describe('pollForToken', () => {
-  const noSleep = vi.fn(async () => {});
-
-  it('returns access_token on success', async () => {
+describe('pollForTokenOnce', () => {
+  it('returns { status: "success", access_token } when GitHub grants a token', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ access_token: 'gho_TOKEN' }));
-    const result = await pollForToken('DEV', 1, { sleep: noSleep });
-    expect(result.access_token).toBe('gho_TOKEN');
-    expect(noSleep).toHaveBeenCalledWith(1000);
+    const result = await pollForTokenOnce('DEV');
+    expect(result).toEqual({ status: 'success', access_token: 'gho_TOKEN' });
+    // Verify it made exactly one fetch — no loop.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('retries on authorization_pending then succeeds', async () => {
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({ error: 'authorization_pending' }))
-      .mockResolvedValueOnce(jsonResponse({ error: 'authorization_pending' }))
-      .mockResolvedValueOnce(jsonResponse({ access_token: 'gho_OK' }));
-    const result = await pollForToken('DEV', 1, { sleep: noSleep });
-    expect(result.access_token).toBe('gho_OK');
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+  it('returns { status: "pending" } on authorization_pending', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'authorization_pending' }));
+    const result = await pollForTokenOnce('DEV');
+    expect(result).toEqual({ status: 'pending' });
   });
 
-  it('bumps interval on slow_down', async () => {
-    const sleep = vi.fn(async () => {});
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({ error: 'slow_down' }))
-      .mockResolvedValueOnce(jsonResponse({ access_token: 'gho_OK' }));
-    await pollForToken('DEV', 1, { sleep });
-    expect(sleep).toHaveBeenNthCalledWith(1, 1000);
-    expect(sleep).toHaveBeenNthCalledWith(2, 6000);
+  it('returns { status: "pending" } on slow_down', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'slow_down' }));
+    const result = await pollForTokenOnce('DEV');
+    expect(result).toEqual({ status: 'pending' });
   });
 
-  it('throws on access_denied', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'access_denied' }));
-    await expect(pollForToken('DEV', 1, { sleep: noSleep })).rejects.toMatchObject({
-      code: 'TOKEN_POLL_DENIED',
-    });
-  });
-
-  it('throws on expired_token', async () => {
+  it('returns { status: "expired" } on expired_token', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'expired_token' }));
-    await expect(pollForToken('DEV', 1, { sleep: noSleep })).rejects.toMatchObject({
-      code: 'TOKEN_POLL_TIMEOUT',
+    const result = await pollForTokenOnce('DEV');
+    expect(result).toEqual({ status: 'expired' });
+  });
+
+  it('returns { status: "denied" } on access_denied', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'access_denied' }));
+    const result = await pollForTokenOnce('DEV');
+    expect(result).toEqual({ status: 'denied' });
+  });
+
+  it('throws TOKEN_POLL_FAILED on unexpected error', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'server_error', error_description: 'oops' }));
+    await expect(pollForTokenOnce('DEV')).rejects.toMatchObject({
+      code: 'TOKEN_POLL_FAILED',
+      message: 'oops',
     });
   });
 
-  it('times out when deadline passes', async () => {
-    // Advance virtual clock past the timeoutMs so the while loop never enters.
-    let current = 1_000_000;
-    const now = () => current;
-    const sleep = vi.fn(async () => { current += 1000; });
-    fetchMock.mockResolvedValue(jsonResponse({ error: 'authorization_pending' }));
-    await expect(
-      pollForToken('DEV', 1, { sleep, now, timeoutMs: 500 }),
-    ).rejects.toMatchObject({ code: 'TOKEN_POLL_TIMEOUT' });
+  it('returns immediately without sleeping (non-blocking)', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'authorization_pending' }));
+    const start = Date.now();
+    await pollForTokenOnce('DEV');
+    const elapsed = Date.now() - start;
+    // Should complete in well under 100ms — certainly not waiting seconds.
+    expect(elapsed).toBeLessThan(100);
   });
 });
 

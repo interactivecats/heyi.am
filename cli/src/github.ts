@@ -186,74 +186,58 @@ export async function requestDeviceCode(scopes: string[]): Promise<DeviceCodeRes
   };
 }
 
-export interface PollForTokenOptions {
-  /** Injectable sleep for tests (fake timers). Defaults to setTimeout. */
-  sleep?: (ms: number) => Promise<void>;
-  /** Override timeout window. Defaults to 15 minutes. */
-  timeoutMs?: number;
-  /** Provide a clock for tests. */
-  now?: () => number;
-}
+// ── Single-poll result type ───────────────────────────────────────────
 
-const defaultSleep = (ms: number) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms));
+export type PollTokenResult =
+  | { status: 'success'; access_token: string }
+  | { status: 'pending' }
+  | { status: 'expired' }
+  | { status: 'denied' };
 
-export async function pollForToken(
-  deviceCode: string,
-  intervalSeconds: number,
-  opts: PollForTokenOptions = {},
-): Promise<{ access_token: string }> {
-  const sleep = opts.sleep ?? defaultSleep;
-  const now = opts.now ?? Date.now;
-  const timeoutMs = opts.timeoutMs ?? 15 * 60 * 1000;
-  const startedAt = now();
-
-  let currentIntervalMs = Math.max(1, intervalSeconds) * 1000;
-
-  // GitHub docs: slow_down bumps interval by 5s.
-  while (now() - startedAt < timeoutMs) {
-    await sleep(currentIntervalMs);
-
-    const res = await fetch(GITHUB_TOKEN_URL, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'User-Agent': 'heyiam-cli',
-      },
-      body: JSON.stringify({
-        client_id: GITHUB_OAUTH_CLIENT_ID,
-        device_code: deviceCode,
-        grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
-      }),
-    });
-    // GitHub returns 200 with error field until granted.
-    const body = await res.json().catch(() => ({})) as {
-      access_token?: string;
-      error?: string;
-      error_description?: string;
-    };
-    if (body.access_token) {
-      return { access_token: body.access_token };
-    }
-    switch (body.error) {
-      case 'authorization_pending':
-        continue;
-      case 'slow_down':
-        currentIntervalMs += 5_000;
-        continue;
-      case 'expired_token':
-        throw new GitHubError('TOKEN_POLL_TIMEOUT', 'Device code expired');
-      case 'access_denied':
-        throw new GitHubError('TOKEN_POLL_DENIED', 'Authorization denied by user');
-      default:
-        throw new GitHubError(
-          'TOKEN_POLL_FAILED',
-          body.error_description || body.error || `HTTP ${res.status}`,
-        );
-    }
+/**
+ * Make a single poll attempt against GitHub's device-flow token endpoint.
+ *
+ * Returns immediately — no sleep, no loop. The caller (frontend) is
+ * responsible for retry scheduling so the Express worker is never blocked.
+ */
+export async function pollForTokenOnce(deviceCode: string): Promise<PollTokenResult> {
+  const res = await fetch(GITHUB_TOKEN_URL, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'User-Agent': 'heyiam-cli',
+    },
+    body: JSON.stringify({
+      client_id: GITHUB_OAUTH_CLIENT_ID,
+      device_code: deviceCode,
+      grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+    }),
+  });
+  const body = await res.json().catch(() => ({})) as {
+    access_token?: string;
+    error?: string;
+    error_description?: string;
+  };
+  if (body.access_token) {
+    return { status: 'success', access_token: body.access_token };
   }
-  throw new GitHubError('TOKEN_POLL_TIMEOUT', 'Timed out waiting for device authorization');
+  switch (body.error) {
+    case 'authorization_pending':
+    case 'slow_down':
+      return { status: 'pending' };
+    case 'expired_token':
+      return { status: 'expired' };
+    case 'access_denied':
+      return { status: 'denied' };
+    default:
+      // Unexpected error from GitHub — surface as a thrown error so the
+      // route handler maps it to a 500 via handleGitHubError.
+      throw new GitHubError(
+        'TOKEN_POLL_FAILED',
+        body.error_description || body.error || `HTTP ${res.status}`,
+      );
+  }
 }
 
 // ── Token storage (keychain) ──────────────────────────────────────────
