@@ -5,7 +5,7 @@ import { Dashboard } from './Dashboard'
 import { WorkTimeline } from './WorkTimeline'
 import { GrowthChart } from './GrowthChart'
 import { fetchDashboard, subscribeSyncProgress, completeOnboarding as apiCompleteOnboarding, saveApiKey, checkUsername, startSignup, startLogin, pollDeviceAuth } from '../api'
-import type { DashboardResponse, DashboardProject, SyncProgressEvent, Session } from '../types'
+import type { DashboardResponse, SyncProgressEvent, Session } from '../types'
 import { formatDuration, formatLoc } from '../format'
 
 // ── State machine ───────────────────────────────────────────
