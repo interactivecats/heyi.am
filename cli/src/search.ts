@@ -38,6 +38,12 @@ export interface SearchResult {
  * e.g. "-Users-test-Dev-myapp" → "Users/test/Dev/myapp"
  */
 export function decodeProjectName(projectDir: string): string {
+  // Windows: "C-Users-ben-Dev-myapp" → "C:/Users/ben/Dev/myapp"
+  const winMatch = projectDir.match(/^([A-Z])-(.+)$/);
+  if (winMatch) {
+    return `${winMatch[1]}:/${winMatch[2].replace(/-/g, "/")}`;
+  }
+  // Unix: "-Users-ben-Dev-myapp" → "Users/ben/Dev/myapp"
   return projectDir.replace(/^-/, '').replace(/-/g, '/');
 }
 

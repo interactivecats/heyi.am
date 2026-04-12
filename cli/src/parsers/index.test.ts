@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { encodeDirPath, mergeSubdirectoryProjects, type SessionMeta } from "./index.js";
+import { encodeDirPath, decodeDirPath, mergeSubdirectoryProjects, type SessionMeta } from "./index.js";
 import type { SessionAnalysis } from "./types.js";
 
 function makeMeta(overrides: Partial<SessionMeta> & { projectDir: string }): SessionMeta {
@@ -45,6 +45,34 @@ describe("encodeDirPath", () => {
 
   it("handles multiple dots and slashes", () => {
     expect(encodeDirPath("/Users/ben/my.app/src/v2.0")).toBe("-Users-ben-my-app-src-v2-0");
+  });
+
+  it("handles Windows backslash paths", () => {
+    expect(encodeDirPath("C:\\Users\\ben\\Dev\\myapp")).toBe("C-Users-ben-Dev-myapp");
+  });
+
+  it("handles Windows paths with dots", () => {
+    expect(encodeDirPath("C:\\Users\\ben\\Dev\\heyi.am")).toBe("C-Users-ben-Dev-heyi-am");
+  });
+
+  it("handles Windows drive colon", () => {
+    expect(encodeDirPath("D:\\Projects\\app")).toBe("D-Projects-app");
+  });
+});
+
+// ── decodeDirPath ─────────────────────────────────────────────────
+
+describe("decodeDirPath", () => {
+  it("decodes Unix-style encoded paths", () => {
+    expect(decodeDirPath("-Users-ben-Dev-myapp")).toBe("/Users/ben/Dev/myapp");
+  });
+
+  it("decodes Windows-style encoded paths", () => {
+    expect(decodeDirPath("C-Users-ben-Dev-myapp")).toBe("C:/Users/ben/Dev/myapp");
+  });
+
+  it("returns null for unrecognizable format", () => {
+    expect(decodeDirPath("")).toBe(null);
   });
 });
 

@@ -30,7 +30,22 @@ export interface SessionMeta {
 }
 
 export function encodeDirPath(absolutePath: string): string {
-  return absolutePath.replace(/[/.]/g, "-");
+  return absolutePath.replace(/[/\\.:]/g, "-").replace(/-+/g, "-");
+}
+
+/**
+ * Best-effort decode of an encoded project directory back to an absolute path.
+ * Returns null when the format is unrecognizable (the encoding is lossy).
+ */
+export function decodeDirPath(encoded: string): string | null {
+  const winMatch = encoded.match(/^([A-Z])-(.+)$/);
+  if (winMatch) {
+    return `${winMatch[1]}:/${winMatch[2].replace(/-/g, "/")}`;
+  }
+  if (encoded.startsWith("-")) {
+    return encoded.replace(/^-/, "/").replace(/-/g, "/");
+  }
+  return null;
 }
 
 /**
@@ -75,8 +90,8 @@ export async function listSessions(): Promise<SessionMeta[]> {
     }
   } catch {}
   for (const s of claudeSessions) {
-    const decoded = s.projectDir.replace(/^-/, "/").replace(/-/g, "/");
-    if (decoded.startsWith("/")) knownDirs.push(decoded);
+    const decoded = decodeDirPath(s.projectDir);
+    if (decoded) knownDirs.push(decoded);
   }
 
   try {

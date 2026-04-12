@@ -50,7 +50,27 @@ export interface SessionMeta {
  * vs `/`.
  */
 export function encodeDirPath(absolutePath: string): string {
-  return absolutePath.replace(/[/.]/g, "-");
+  return absolutePath.replace(/[/\\.:]/g, "-").replace(/-+/g, "-");
+}
+
+/**
+ * Best-effort decode of an encoded project directory back to an absolute path.
+ * Returns null when the format is unrecognizable (the encoding is lossy).
+ *
+ * Unix:    "-Users-ben-Dev-myapp"  → "/Users/ben/Dev/myapp"
+ * Windows: "C-Users-ben-Dev-myapp" → "C:/Users/ben/Dev/myapp"
+ */
+export function decodeDirPath(encoded: string): string | null {
+  // Windows: starts with a single uppercase letter then "-"
+  const winMatch = encoded.match(/^([A-Z])-(.+)$/);
+  if (winMatch) {
+    return `${winMatch[1]}:/${winMatch[2].replace(/-/g, "/")}`;
+  }
+  // Unix: starts with "-"
+  if (encoded.startsWith("-")) {
+    return encoded.replace(/^-/, "/").replace(/-/g, "/");
+  }
+  return null;
 }
 
 /**
@@ -108,8 +128,8 @@ export async function listSessions(basePath?: string): Promise<SessionMeta[]> {
   for (const s of claudeSessions) {
     // Claude projectDir is encoded like "-Users-ben-Dev-myapp";
     // attempt to reverse to "/Users/ben/Dev/myapp"
-    const decoded = s.projectDir.replace(/^-/, "/").replace(/-/g, "/");
-    if (decoded.startsWith("/")) knownDirs.push(decoded);
+    const decoded = decodeDirPath(s.projectDir);
+    if (decoded) knownDirs.push(decoded);
   }
 
   // 4. Gemini sessions — resolve SHA-256 hashes to real project paths

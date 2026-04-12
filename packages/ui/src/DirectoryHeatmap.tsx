@@ -13,7 +13,11 @@ function stripProjectRoot(filePath: string, projectDirName: string, cwd?: string
     const relative = filePath.slice(cwd.length).replace(/^\//, '');
     return relative || filePath;
   }
-  const root = projectDirName.replace(/^-/, '/').replace(/-/g, '/');
+  // Decode encoded project dir: Unix "-Users-..." or Windows "C-Users-..."
+  const winMatch = projectDirName.match(/^([A-Z])-(.+)$/);
+  const root = winMatch
+    ? `${winMatch[1]}:/${winMatch[2].replace(/-/g, "/")}`
+    : projectDirName.replace(/^-/, '/').replace(/-/g, '/');
   if (filePath.startsWith(root)) {
     const relative = filePath.slice(root.length).replace(/^\//, '');
     return relative || filePath;
