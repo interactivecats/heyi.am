@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
-import { render, screen, cleanup, waitFor } from '@testing-library/react'
+import { render, screen, cleanup, waitFor, fireEvent, within } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { ProjectDetail } from './ProjectDetail'
 import * as api from '../api'
@@ -14,6 +14,7 @@ vi.mock('../api', async (importOriginal) => {
     fetchGitRemote: vi.fn(),
     saveProjectEnhanceLocally: vi.fn(),
     captureScreenshotFromUrl: vi.fn(),
+    deleteProjectRemote: vi.fn(),
   }
 })
 
@@ -115,5 +116,69 @@ describe('ProjectDetail — Enhance button', () => {
     const link = screen.getByText('Enhanced \u2713').closest('a') as HTMLAnchorElement
     expect(link.className).toContain('cursor-not-allowed')
     expect(link.getAttribute('aria-disabled')).toBe('true')
+  })
+})
+
+describe('ProjectDetail — Remove from heyi.am', () => {
+  beforeEach(() => {
+    vi.mocked(api.deleteProjectRemote).mockResolvedValue({ ok: true })
+  })
+
+  it('shows the "Remove from heyi.am" button only when the project is uploaded', async () => {
+    renderDetail({ project: baseProject({ isUploaded: true } as never) })
+    await waitFor(() => expect(screen.getByText('Remove from heyi.am')).toBeTruthy())
+  })
+
+  it('does not show the button when the project is local-only', async () => {
+    renderDetail({ project: baseProject({ isUploaded: false } as never) })
+    await waitFor(() => expect(screen.getByText('Enhance with AI')).toBeTruthy())
+    expect(screen.queryByText('Remove from heyi.am')).toBeNull()
+  })
+
+  it('opens confirm modal, calls deleteProjectRemote on confirm, refetches on success', async () => {
+    renderDetail({ project: baseProject({ isUploaded: true } as never) })
+    await waitFor(() => expect(screen.getByText('Remove from heyi.am')).toBeTruthy())
+
+    fireEvent.click(screen.getByText('Remove from heyi.am'))
+    const dialog = screen.getByRole('dialog')
+    expect(within(dialog).getByText(/Delete this project and all its sessions/)).toBeTruthy()
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+    await waitFor(() => {
+      expect(api.deleteProjectRemote).toHaveBeenCalledWith('demo')
+    })
+    // Refetch of project detail happens on success.
+    await waitFor(() => {
+      expect(vi.mocked(api.fetchProjectDetail).mock.calls.length).toBeGreaterThanOrEqual(2)
+    })
+  })
+
+  it('surfaces an error and leaves the dialog open on API failure', async () => {
+    vi.mocked(api.deleteProjectRemote).mockRejectedValueOnce(new Error('Remote delete failed (HTTP 502)'))
+    renderDetail({ project: baseProject({ isUploaded: true } as never) })
+    await waitFor(() => expect(screen.getByText('Remove from heyi.am')).toBeTruthy())
+
+    fireEvent.click(screen.getByText('Remove from heyi.am'))
+    const dialog = screen.getByRole('dialog')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+    await waitFor(() => {
+      const alert = screen.getByRole('alert')
+      expect(alert.textContent).toContain('Remote delete failed')
+    })
+    // Dialog still open.
+    expect(screen.queryByRole('dialog')).not.toBeNull()
+  })
+
+  it('cancel closes the dialog without calling the API', async () => {
+    renderDetail({ project: baseProject({ isUploaded: true } as never) })
+    await waitFor(() => expect(screen.getByText('Remove from heyi.am')).toBeTruthy())
+
+    fireEvent.click(screen.getByText('Remove from heyi.am'))
+    const dialog = screen.getByRole('dialog')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(api.deleteProjectRemote).not.toHaveBeenCalled()
   })
 })

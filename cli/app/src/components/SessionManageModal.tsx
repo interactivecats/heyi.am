@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo } from 'react'
-import { enhanceSession } from '../api'
+import { enhanceSession, deleteSessionRemote } from '../api'
 import type { Session } from '../types'
 import { formatDuration, formatLoc } from '../format'
+import { ConfirmModal } from './shared/ConfirmModal'
 
 interface SessionManageModalProps {
   sessions: Session[]
@@ -9,6 +10,13 @@ interface SessionManageModalProps {
   projectDirName: string
   onClose: () => void
   onSave: (selected: Set<string>) => Promise<void>
+  /**
+   * Called after a session is deleted from heyi.am so the parent can
+   * refetch its local detail + re-render the project preview. Optional —
+   * SessionManageModal hides the deleted session from its local list
+   * regardless.
+   */
+  onSessionDeleted?: (sessionId: string) => void
 }
 
 type EnhanceStatus = 'idle' | 'enhancing' | 'done' | 'failed'
@@ -19,7 +27,7 @@ function formatDate(iso: string): string {
   } catch { return '' }
 }
 
-export function SessionManageModal({ sessions, initialSelection, projectDirName, onClose, onSave }: SessionManageModalProps) {
+export function SessionManageModal({ sessions, initialSelection, projectDirName, onClose, onSave, onSessionDeleted }: SessionManageModalProps) {
   const [selection, setSelection] = useState<Set<string>>(() => new Set(initialSelection))
   const [filter, setFilter] = useState('')
   const [saving, setSaving] = useState(false)
@@ -30,10 +38,61 @@ export function SessionManageModal({ sessions, initialSelection, projectDirName,
   const [enhanceStatuses, setEnhanceStatuses] = useState<Record<string, EnhanceStatus>>({})
   const [enhancedTitles, setEnhancedTitles] = useState<Record<string, string>>({})
 
+  // Deletion state — hidden rows + per-session inflight + last error
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(() => new Set())
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [deleteBusy, setDeleteBusy] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
   const parentSessions = useMemo(() =>
-    sessions.filter((s) => !s.parentSessionId),
-    [sessions],
+    sessions.filter((s) => !s.parentSessionId && !deletedIds.has(s.id)),
+    [sessions, deletedIds],
   )
+
+  const pendingDeleteSession = useMemo(
+    () => (pendingDeleteId ? sessions.find((s) => s.id === pendingDeleteId) ?? null : null),
+    [pendingDeleteId, sessions],
+  )
+
+  const requestDelete = useCallback((id: string) => {
+    setDeleteError(null)
+    setPendingDeleteId(id)
+  }, [])
+
+  const cancelDelete = useCallback(() => {
+    if (deleteBusy) return
+    setPendingDeleteId(null)
+    setDeleteError(null)
+  }, [deleteBusy])
+
+  const confirmDelete = useCallback(async () => {
+    if (!pendingDeleteId) return
+    const id = pendingDeleteId
+    setDeleteBusy(true)
+    setDeleteError(null)
+    try {
+      await deleteSessionRemote(projectDirName, id)
+      // Hide locally + strip from selection set in one commit so the row
+      // disappears synchronously.
+      setDeletedIds((prev) => {
+        const next = new Set(prev)
+        next.add(id)
+        return next
+      })
+      setSelection((prev) => {
+        if (!prev.has(id)) return prev
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+      setPendingDeleteId(null)
+      onSessionDeleted?.(id)
+    } catch (err) {
+      setDeleteError((err as Error).message)
+    } finally {
+      setDeleteBusy(false)
+    }
+  }, [pendingDeleteId, projectDirName, onSessionDeleted])
 
   // Categorize sessions into tiers
   const { included, enhanced, draft } = useMemo(() => {
@@ -176,6 +235,7 @@ export function SessionManageModal({ sessions, initialSelection, projectDirName,
                 borderColor="border-primary"
                 checked={true}
                 onToggle={() => toggleSelection(s.id)}
+                onDelete={s.status === 'uploaded' ? () => requestDelete(s.id) : undefined}
               />
             ))}
           </TierGroup>
@@ -197,6 +257,7 @@ export function SessionManageModal({ sessions, initialSelection, projectDirName,
                   borderColor="border-green"
                   checked={false}
                   onToggle={() => toggleSelection(s.id)}
+                  onDelete={s.status === 'uploaded' ? () => requestDelete(s.id) : undefined}
                 />
               ))}
             </TierGroup>
@@ -267,6 +328,20 @@ export function SessionManageModal({ sessions, initialSelection, projectDirName,
           </div>
         </div>
       </div>
+
+      {pendingDeleteId && pendingDeleteSession && (
+        <ConfirmModal
+          title="Delete session"
+          message="Delete this session? This removes it from heyi.am permanently."
+          details={pendingDeleteSession.title || pendingDeleteSession.id}
+          confirmLabel="Delete"
+          destructive
+          busy={deleteBusy}
+          error={deleteError}
+          onConfirm={confirmDelete}
+          onCancel={cancelDelete}
+        />
+      )}
     </div>
   )
 }
@@ -319,26 +394,43 @@ function SessionRow({
   borderColor,
   checked,
   onToggle,
+  onDelete,
 }: {
   session: Session
   displayTitle?: string
   borderColor: string
   checked: boolean
   onToggle: () => void
+  onDelete?: () => void
 }) {
   return (
-    <label className={`flex items-center gap-3 px-4 py-2 hover:bg-surface-low cursor-pointer border-l-2 ${borderColor}`}>
-      <input type="checkbox" checked={checked} onChange={onToggle} className="accent-primary flex-shrink-0" />
-      <div className="flex-1 min-w-0">
-        <div className="text-sm text-on-surface truncate">{displayTitle || s.title || `Session ${s.id.slice(0, 8)}`}</div>
-        <div className="font-mono text-[10px] text-on-surface-variant">
-          {s.date ? formatDate(s.date) : ''}
-          {s.durationMinutes > 0 && ` · ${formatDuration(s.durationMinutes)}`}
-          {s.linesOfCode > 0 && ` · ${formatLoc(s.linesOfCode)}`}
-          {s.source && <span className="ml-1.5 text-outline">{s.source}</span>}
+    <div className={`flex items-center gap-2 px-4 py-2 hover:bg-surface-low border-l-2 ${borderColor}`}>
+      <label className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
+        <input type="checkbox" checked={checked} onChange={onToggle} className="accent-primary flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="text-sm text-on-surface truncate">{displayTitle || s.title || `Session ${s.id.slice(0, 8)}`}</div>
+          <div className="font-mono text-[10px] text-on-surface-variant">
+            {s.date ? formatDate(s.date) : ''}
+            {s.durationMinutes > 0 && ` · ${formatDuration(s.durationMinutes)}`}
+            {s.linesOfCode > 0 && ` · ${formatLoc(s.linesOfCode)}`}
+            {s.source && <span className="ml-1.5 text-outline">{s.source}</span>}
+          </div>
         </div>
-      </div>
-    </label>
+      </label>
+      {onDelete && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onDelete() }}
+          aria-label={`Remove "${displayTitle || s.title || s.id}" from heyi.am`}
+          title="Remove from heyi.am"
+          className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-sm text-on-surface-variant hover:text-error hover:bg-surface-lowest"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14" />
+          </svg>
+        </button>
+      )}
+    </div>
   )
 }
 

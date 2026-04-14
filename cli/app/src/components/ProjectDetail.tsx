@@ -9,12 +9,14 @@ import {
   saveProjectEnhanceLocally,
   saveBoundaries,
   captureScreenshotFromUrl,
+  deleteProjectRemote,
   type ProjectDetail as ProjectDetailType,
   type Session,
 } from '../api'
 import { SessionManageModal } from './SessionManageModal'
 import { Note } from './shared'
 import { Chip } from './shared/Chip'
+import { ConfirmModal } from './shared/ConfirmModal'
 import { WorkTimeline } from './WorkTimeline'
 import { GrowthChart } from './GrowthChart'
 import { SessionDetailOverlay } from './SessionDetailOverlay'
@@ -70,6 +72,9 @@ export function ProjectDetail() {
   const [embedOpen, setEmbedOpen] = useState(false)
   const [embedCopied, setEmbedCopied] = useState<string | null>(null)
   const [sessionModalOpen, setSessionModalOpen] = useState(false)
+  const [deleteProjectOpen, setDeleteProjectOpen] = useState(false)
+  const [deleteProjectBusy, setDeleteProjectBusy] = useState(false)
+  const [deleteProjectError, setDeleteProjectError] = useState<string | null>(null)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const screenshotInputRef = useRef<HTMLInputElement>(null)
 
@@ -324,6 +329,15 @@ export function ProjectDetail() {
             <Chip variant="primary">{project.enhancedAt ? 'Refined' : 'Unrefined'}</Chip>
             <Chip variant="green">{project.isUploaded ? 'Uploaded' : 'Local only'}</Chip>
           </div>
+          {project.isUploaded && (
+            <button
+              type="button"
+              onClick={() => { setDeleteProjectError(null); setDeleteProjectOpen(true) }}
+              className="mt-2 font-mono text-[10px] text-error hover:underline"
+            >
+              Remove from heyi.am
+            </button>
+          )}
         </div>
 
         {/* Sessions — manage which sessions are in this project */}
@@ -600,6 +614,44 @@ export function ProjectDetail() {
             setDetail(d)
             if (d.enhanceCache?.result?.narrative) setNarrative(d.enhanceCache.result.narrative)
             loadRender()
+          }}
+          onSessionDeleted={async () => {
+            // Refresh local detail so status badges + counts reflect the
+            // removed session. Failures are non-fatal — the modal already
+            // hides the row optimistically.
+            try {
+              const d = await fetchProjectDetail(dirName!)
+              setDetail(d)
+              loadRender()
+            } catch { /* non-fatal */ }
+          }}
+        />
+      )}
+
+      {deleteProjectOpen && (
+        <ConfirmModal
+          title="Remove from heyi.am"
+          message="Delete this project and all its sessions from heyi.am? This can't be undone."
+          details="Your local archived sessions stay on disk — only the remote copy is removed."
+          confirmLabel="Remove"
+          destructive
+          busy={deleteProjectBusy}
+          error={deleteProjectError}
+          onCancel={() => { if (!deleteProjectBusy) { setDeleteProjectOpen(false); setDeleteProjectError(null) } }}
+          onConfirm={async () => {
+            setDeleteProjectBusy(true)
+            setDeleteProjectError(null)
+            try {
+              await deleteProjectRemote(dirName!)
+              setDeleteProjectOpen(false)
+              const d = await fetchProjectDetail(dirName!)
+              setDetail(d)
+              loadRender()
+            } catch (err) {
+              setDeleteProjectError((err as Error).message)
+            } finally {
+              setDeleteProjectBusy(false)
+            }
           }}
         />
       )}

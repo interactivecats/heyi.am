@@ -116,6 +116,15 @@ async function patch<T>(path: string, body?: unknown): Promise<T> {
   return res.json()
 }
 
+async function del<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { method: 'DELETE' })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: { message: `DELETE ${path} failed` } }))
+    throw new Error(err.error?.message ?? `DELETE ${path} failed: ${res.status}`)
+  }
+  return res.json()
+}
+
 function streamSSE<E>(
   path: string,
   body: unknown,
@@ -606,6 +615,22 @@ export async function publishToGithub(args: {
 
 export async function deleteProjectScreenshot(dirName: string): Promise<void> {
   await fetch(`${API_BASE}/projects/${encodeURIComponent(dirName)}/screenshot`, { method: 'DELETE' })
+}
+
+/**
+ * Remove a published project (and all its sessions) from heyi.am.
+ * Local archived session data is preserved — only the remote copy is deleted.
+ */
+export async function deleteProjectRemote(dirName: string): Promise<{ ok: true }> {
+  return del<{ ok: true }>(`/projects/${enc(dirName)}/remote`)
+}
+
+/**
+ * Remove a single published session from heyi.am. Local archived session
+ * data is preserved — only the remote copy is deleted.
+ */
+export async function deleteSessionRemote(dirName: string, sessionId: string): Promise<{ ok: true }> {
+  return del<{ ok: true }>(`/projects/${enc(dirName)}/sessions/${enc(sessionId)}/remote`)
 }
 
 export interface RenderResult {
