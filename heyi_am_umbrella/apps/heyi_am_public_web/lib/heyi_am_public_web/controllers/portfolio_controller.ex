@@ -14,6 +14,12 @@ defmodule HeyiAmPublicWeb.PortfolioController do
   defp extract_template(_), do: "editorial"
 
   def show(conn, %{"username" => username}) do
+    with :ok <- maybe_redirect_username(conn, username, fn u -> "/#{u}" end) do
+      do_show(conn, String.downcase(username))
+    end
+  end
+
+  defp do_show(conn, username) do
     case Accounts.get_user_by_username(username) do
       nil ->
         conn
@@ -66,6 +72,12 @@ defmodule HeyiAmPublicWeb.PortfolioController do
   end
 
   def project(conn, %{"username" => username, "project" => slug}) do
+    with :ok <- maybe_redirect_username(conn, username, fn u -> "/#{u}/#{slug}" end) do
+      do_project(conn, String.downcase(username), slug)
+    end
+  end
+
+  defp do_project(conn, username, slug) do
     case Accounts.get_user_by_username(username) do
       nil ->
         conn
@@ -208,6 +220,12 @@ defmodule HeyiAmPublicWeb.PortfolioController do
   end
 
   def time(conn, %{"username" => username}) do
+    with :ok <- maybe_redirect_username(conn, username, fn u -> "/#{u}/time" end) do
+      do_time(conn, String.downcase(username))
+    end
+  end
+
+  defp do_time(conn, username) do
     case Accounts.get_user_by_username(username) do
       nil ->
         conn
@@ -279,6 +297,31 @@ defmodule HeyiAmPublicWeb.PortfolioController do
   end
 
   # -- Private helpers --
+
+  @doc false
+  # If `username` contains uppercase characters, 301-redirects the connection
+  # to the same path with the username lowercased (query string preserved).
+  # The `path_builder` fn receives the normalized lowercase username and
+  # returns the destination path. Returns :ok when no redirect is needed,
+  # otherwise returns the halted %Plug.Conn{} from the redirect.
+  defp maybe_redirect_username(conn, username, path_builder) do
+    downcased = String.downcase(username)
+
+    if username == downcased do
+      :ok
+    else
+      target =
+        case conn.query_string do
+          "" -> path_builder.(downcased)
+          qs -> path_builder.(downcased) <> "?" <> qs
+        end
+
+      conn
+      |> Plug.Conn.put_status(:moved_permanently)
+      |> Phoenix.Controller.redirect(to: target)
+      |> Plug.Conn.halt()
+    end
+  end
 
   defp build_time_stats(projects) do
     projects

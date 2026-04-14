@@ -11,6 +11,25 @@ defmodule HeyiAmPublicWeb.ShareController do
         "project" => project_slug,
         "session" => session_slug
       }) do
+    downcased = String.downcase(username)
+
+    if username != downcased do
+      target =
+        case conn.query_string do
+          "" -> "/#{downcased}/#{project_slug}/#{session_slug}"
+          qs -> "/#{downcased}/#{project_slug}/#{session_slug}?" <> qs
+        end
+
+      conn
+      |> put_status(:moved_permanently)
+      |> redirect(to: target)
+      |> halt()
+    else
+      do_show_in_project(conn, downcased, project_slug, session_slug)
+    end
+  end
+
+  defp do_show_in_project(conn, username, project_slug, session_slug) do
     with %{} = user <- Accounts.get_user_by_username(username),
          %{} = share <- load_share_by_slug_or_token(user.id, project_slug, session_slug),
          html when is_binary(html) and html != "" <- share.rendered_html do

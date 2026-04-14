@@ -169,6 +169,51 @@ defmodule HeyiAmPublicWeb.PortfolioControllerTest do
     end
   end
 
+  describe "username case-insensitive redirects" do
+    test "GET /:Username 301-redirects to lowercase portfolio", %{conn: conn} do
+      _user = user_fixture(%{username: "benc"})
+
+      conn = get(conn, "/Benc")
+      assert redirected_to(conn, 301) == "/benc"
+    end
+
+    test "GET /:Username/:project 301-redirects to lowercase username, slug preserved", %{conn: conn} do
+      _user = user_fixture(%{username: "casey"})
+
+      conn = get(conn, "/CASEY/my-project")
+      assert redirected_to(conn, 301) == "/casey/my-project"
+    end
+
+    test "GET /:Username/time 301-redirects to lowercase username", %{conn: conn} do
+      _user = user_fixture(%{username: "devin"})
+
+      conn = get(conn, "/Devin/time")
+      assert redirected_to(conn, 301) == "/devin/time"
+    end
+
+    test "301 redirect preserves query string", %{conn: conn} do
+      _user = user_fixture(%{username: "quinn"})
+
+      conn = get(conn, "/Quinn?utm_source=twitter")
+      assert redirected_to(conn, 301) == "/quinn?utm_source=twitter"
+    end
+
+    test "does not redirect when username is already lowercase", %{conn: conn} do
+      _user = user_fixture(%{username: "alreadylower"})
+      conn = get(conn, "/alreadylower")
+      # 200 (empty portfolio page) — not a redirect
+      assert html_response(conn, 200)
+    end
+
+    test "redirect happens before DB lookup (uppercase username that exists only lowercase)", %{conn: conn} do
+      _user = user_fixture(%{username: "exists"})
+
+      conn = get(conn, "/EXISTS")
+      # 301 before any 404 — normalization precedes lookup
+      assert redirected_to(conn, 301) == "/exists"
+    end
+  end
+
   # Helper to set rendered portfolio HTML on a user
   defp set_rendered_portfolio(user, html) do
     {:ok, user} =
