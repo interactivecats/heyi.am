@@ -2,6 +2,7 @@ export { createRouteContext, type RouteContext } from './context.js';
 export { createProjectsRouter } from './projects.js';
 export { createEnhanceRouter } from './enhance.js';
 export { createPublishRouter } from './publish.js';
+export { createDeleteRouter } from './delete.js';
 export { createSearchRouter } from './search.js';
 export { createSessionsRouter } from './sessions.js';
 export { createArchiveRouter } from './archive.js';

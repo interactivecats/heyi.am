@@ -356,6 +356,17 @@ export function getUploadedState(projectDirName: string, configDir?: string): Up
   }
 }
 
+/**
+ * Remove the local uploaded-state record for a project. Used when the
+ * remote copy is deleted from heyi.am — clears the "Uploaded" badge and
+ * per-session `uploaded: true` flags so the UI reflects reality without
+ * requiring a new publish round-trip.
+ */
+export function clearUploadedState(projectDirName: string, configDir?: string): void {
+  const path = uploadedPath(projectDirName, configDir);
+  if (existsSync(path)) unlinkSync(path);
+}
+
 // ── Portfolio publish state ─────────────────────────────────
 //
 // Tracks the last-published snapshot of the user's portfolio per target

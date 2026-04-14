@@ -13,6 +13,7 @@ import {
   createProjectsRouter,
   createEnhanceRouter,
   createPublishRouter,
+  createDeleteRouter,
   createSearchRouter,
   createSessionsRouter,
   createArchiveRouter,
@@ -114,6 +115,7 @@ export function createApp(sessionsBasePath?: string, dbPath?: string) {
   app.use(createProjectsRouter(ctx));
   app.use(createEnhanceRouter(ctx));
   app.use(createPublishRouter(ctx));
+  app.use(createDeleteRouter(ctx));
   app.use(createSearchRouter(ctx));
   app.use(createSessionsRouter(ctx));
   app.use(createArchiveRouter(ctx));
