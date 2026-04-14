@@ -10,6 +10,7 @@ import {
   saveAuthToken,
   checkAuthStatus,
   deviceAuthFlow,
+  normalizeUsername,
 } from './auth.js';
 
 describe('auth', () => {
@@ -74,6 +75,101 @@ describe('auth', () => {
       saveAuthToken('new_token', 'ben', tmpDir);
       const auth = getAuthToken(tmpDir);
       expect(auth!.token).toBe('new_token');
+    });
+  });
+
+  describe('normalizeUsername', () => {
+    it('lowercases mixed-case input', () => {
+      expect(normalizeUsername('Ben')).toBe('ben');
+      expect(normalizeUsername('BEN')).toBe('ben');
+      expect(normalizeUsername('bEn')).toBe('ben');
+    });
+
+    it('trims whitespace', () => {
+      expect(normalizeUsername('  ben  ')).toBe('ben');
+      expect(normalizeUsername('\tBen\n')).toBe('ben');
+    });
+
+    it('is idempotent on already-lowercase input', () => {
+      expect(normalizeUsername('ben-cates')).toBe('ben-cates');
+      expect(normalizeUsername('user-42')).toBe('user-42');
+    });
+  });
+
+  describe('username normalization on save', () => {
+    it('stores lowercase when Phoenix returns mixed-case "Ben"', () => {
+      saveAuthToken('tok', 'Ben', tmpDir);
+      const auth = getAuthToken(tmpDir);
+      expect(auth!.username).toBe('ben');
+    });
+
+    it('stores lowercase for uppercase username', () => {
+      saveAuthToken('tok', 'BEN', tmpDir);
+      const auth = getAuthToken(tmpDir);
+      expect(auth!.username).toBe('ben');
+    });
+
+    it('preserves already-lowercase usernames unchanged', () => {
+      saveAuthToken('tok', 'ben-cates', tmpDir);
+      const auth = getAuthToken(tmpDir);
+      expect(auth!.username).toBe('ben-cates');
+    });
+
+    it('normalizes legacy mixed-case auth.json on read', () => {
+      // Simulate a config written before normalization was added.
+      writeConfig(
+        'auth.json',
+        { token: 'tok', username: 'Ben', savedAt: new Date().toISOString() },
+        tmpDir,
+      );
+      const auth = getAuthToken(tmpDir);
+      expect(auth!.username).toBe('ben');
+    });
+  });
+
+  describe('checkAuthStatus normalizes server responses', () => {
+    it('lowercases username returned by /api/auth/status', async () => {
+      saveAuthToken('valid_token', 'ben', tmpDir);
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ username: 'Ben' }),
+      });
+
+      const result = await checkAuthStatus('http://localhost:4000', tmpDir, mockFetch);
+      expect(result).toEqual({ authenticated: true, username: 'ben' });
+    });
+  });
+
+  describe('deviceAuthFlow normalizes Phoenix response', () => {
+    it('persists lowercase username when Phoenix returns mixed-case', async () => {
+      const mockFetch = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+        if (url.endsWith('/api/device/code') && init?.method === 'POST') {
+          return {
+            ok: true,
+            json: async () => ({
+              device_code: 'dev_123',
+              user_code: 'ABCD-1234',
+              verification_uri: 'http://localhost:4000/device',
+              expires_in: 300,
+              interval: 1,
+            }),
+          };
+        }
+        if (url.endsWith('/api/device/token') && init?.method === 'POST') {
+          return {
+            ok: true,
+            json: async () => ({ access_token: 'tok_granted', username: 'Ben' }),
+          };
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+      });
+
+      const result = await deviceAuthFlow('http://localhost:4000', tmpDir, {
+        fetchFn: mockFetch,
+        pollIntervalMs: 10,
+      });
+      expect(result.username).toBe('ben');
+      expect(getAuthToken(tmpDir)!.username).toBe('ben');
     });
   });
 
