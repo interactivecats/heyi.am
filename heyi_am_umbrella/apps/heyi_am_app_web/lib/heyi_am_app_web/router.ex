@@ -83,6 +83,7 @@ defmodule HeyiAmAppWeb.Router do
     pipe_through [:api, :api_auth, :require_api_auth, :rate_limit_api_session]
 
     post "/projects", ProjectApiController, :create
+    delete "/projects/:slug", ProjectApiController, :delete
     post "/projects/:slug/screenshot-url", ProjectApiController, :screenshot_url
     patch "/projects/:slug/screenshot-key", ProjectApiController, :update_screenshot_key
     post "/sessions", ShareApiController, :create

@@ -226,6 +226,58 @@ defmodule HeyiAm.ProjectsContextTest do
       user = make_user()
       assert {:error, :not_found} = Projects.delete_project(user.id, "ghost-project")
     end
+
+    test "cascades delete to all shares attached to the project" do
+      user = make_user()
+      {:ok, project} = Projects.create_project(%{slug: "cascade-me", title: "Cascade", user_id: user.id})
+
+      {:ok, s1} =
+        Shares.create_share(%{
+          user_id: user.id,
+          project_id: project.id,
+          token: "cascade-tok-1",
+          title: "One"
+        })
+
+      {:ok, s2} =
+        Shares.create_share(%{
+          user_id: user.id,
+          project_id: project.id,
+          token: "cascade-tok-2",
+          title: "Two"
+        })
+
+      assert {:ok, _} = Projects.delete_project(user.id, "cascade-me")
+
+      assert Shares.get_share_by_token(s1.token) == nil
+      assert Shares.get_share_by_token(s2.token) == nil
+    end
+
+    test "does not delete shares belonging to other projects" do
+      user = make_user()
+      {:ok, target} = Projects.create_project(%{slug: "target", title: "Target", user_id: user.id})
+      {:ok, bystander} = Projects.create_project(%{slug: "bystander", title: "Bystander", user_id: user.id})
+
+      {:ok, _} =
+        Shares.create_share(%{
+          user_id: user.id,
+          project_id: target.id,
+          token: "target-share",
+          title: "Target Session"
+        })
+
+      {:ok, untouched} =
+        Shares.create_share(%{
+          user_id: user.id,
+          project_id: bystander.id,
+          token: "bystander-share",
+          title: "Bystander Session"
+        })
+
+      assert {:ok, _} = Projects.delete_project(user.id, "target")
+      assert Shares.get_share_by_token(untouched.token) != nil
+      assert Projects.get_user_project_by_slug(user.id, "bystander") != nil
+    end
   end
 
   describe "get_project_by_unlisted_token/1" do
