@@ -50,4 +50,75 @@ defmodule HeyiAmAppWeb.ShareApiControllerTest do
     end
   end
 
+  describe "DELETE /api/sessions/:id" do
+    test "deletes a session owned by the authenticated user", %{conn: _conn} do
+      {conn, user} = api_conn_with_auth()
+
+      {:ok, share} =
+        HeyiAm.Shares.create_share(%{
+          user_id: user.id,
+          token: "del-test-tok",
+          title: "Doomed",
+          raw_storage_key: "sessions/del-test-tok/raw.jsonl",
+          log_storage_key: "sessions/del-test-tok/log.json",
+          session_storage_key: "sessions/del-test-tok/session.json"
+        })
+
+      conn = delete(conn, ~p"/api/sessions/#{share.id}")
+      assert response(conn, 204) == ""
+      assert HeyiAm.Shares.get_share_by_token("del-test-tok") == nil
+    end
+
+    test "returns 404 when share does not exist", %{conn: _conn} do
+      {conn, _user} = api_conn_with_auth()
+      conn = delete(conn, ~p"/api/sessions/999999999")
+      assert %{"error" => %{"code" => "NOT_FOUND"}} = json_response(conn, 404)
+    end
+
+    test "returns 404 when share is owned by a different user (BOLA)", %{conn: _conn} do
+      {_conn1, owner} = api_conn_with_auth()
+      {conn2, _attacker} = api_conn_with_auth()
+
+      {:ok, share} =
+        HeyiAm.Shares.create_share(%{
+          user_id: owner.id,
+          token: "victim-tok",
+          title: "Victim"
+        })
+
+      conn = delete(conn2, ~p"/api/sessions/#{share.id}")
+      assert %{"error" => %{"code" => "NOT_FOUND"}} = json_response(conn, 404)
+      # Owner's share still exists
+      assert HeyiAm.Shares.get_share_by_token("victim-tok") != nil
+    end
+
+    test "returns 404 for non-integer id", %{conn: _conn} do
+      {conn, _user} = api_conn_with_auth()
+      conn = delete(conn, ~p"/api/sessions/not-an-id")
+      assert %{"error" => %{"code" => "NOT_FOUND"}} = json_response(conn, 404)
+    end
+
+    test "returns 401 without auth", %{conn: conn} do
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> delete(~p"/api/sessions/1")
+
+      assert json_response(conn, 401)
+    end
+
+    test "succeeds even when S3 artifacts have no storage keys", %{conn: _conn} do
+      {conn, user} = api_conn_with_auth()
+
+      {:ok, share} =
+        HeyiAm.Shares.create_share(%{
+          user_id: user.id,
+          token: "no-keys-tok",
+          title: "No keys"
+        })
+
+      conn = delete(conn, ~p"/api/sessions/#{share.id}")
+      assert response(conn, 204) == ""
+    end
+  end
 end
