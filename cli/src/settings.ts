@@ -63,6 +63,14 @@ export interface Settings {
   defaultTemplate?: string;
   /** Portfolio profile data (bio, contact, social links). */
   portfolio?: PortfolioProfile;
+  /**
+   * Per-session transcript-include flags. Default is `true` (include).
+   * When set to `false`, the publish flow omits the S3 uploads that carry
+   * transcript data (raw, log, session-data) and strips transcript-derived
+   * fields from the uploaded payload. Server never sees a
+   * transcript_visible flag — this is entirely a publish-time CLI filter.
+   */
+  transcriptIncluded?: Record<string, boolean>;
 }
 
 const SESSIONS_DIR = 'sessions';
@@ -115,6 +123,36 @@ export function completeOnboarding(configDir?: string): void {
 export function resetOnboarding(configDir?: string): void {
   const settings = getSettings(configDir);
   delete settings.onboardingCompletedAt;
+  writeConfig(SETTINGS_FILE, settings, configDir);
+}
+
+// ── Per-session transcript visibility ────────────────────────
+
+/**
+ * Return whether the session transcript should be included at publish time.
+ * Default is `true` — users must opt out explicitly.
+ */
+export function isTranscriptIncluded(sessionId: string, configDir?: string): boolean {
+  const map = getSettings(configDir).transcriptIncluded ?? {};
+  const flag = map[sessionId];
+  return flag !== false;
+}
+
+/**
+ * Set the include-transcript flag for a single session. Persisted to the
+ * settings file alongside other user preferences.
+ */
+export function setTranscriptIncluded(sessionId: string, included: boolean, configDir?: string): void {
+  const settings = getSettings(configDir);
+  const map = { ...(settings.transcriptIncluded ?? {}) };
+  if (included) {
+    // Default is `true`, so a `true` value is the same as absent — keep
+    // the map clean by deleting rather than writing redundant entries.
+    delete map[sessionId];
+  } else {
+    map[sessionId] = false;
+  }
+  settings.transcriptIncluded = map;
   writeConfig(SETTINGS_FILE, settings, configDir);
 }
 

@@ -633,6 +633,22 @@ export async function deleteSessionRemote(dirName: string, sessionId: string): P
   return del<{ ok: true }>(`/projects/${enc(dirName)}/sessions/${enc(sessionId)}/remote`)
 }
 
+// ── Per-session transcript-include flag (publish-time, CLI-only) ───
+
+export async function fetchTranscriptSetting(sessionId: string): Promise<{ included: boolean }> {
+  return get<{ sessionId: string; included: boolean }>(`/sessions/${enc(sessionId)}/transcript-setting`)
+}
+
+export async function saveTranscriptSetting(
+  sessionId: string,
+  included: boolean,
+): Promise<{ ok: true; included: boolean }> {
+  return put<{ ok: true; sessionId: string; included: boolean }>(
+    `/sessions/${enc(sessionId)}/transcript-setting`,
+    { included },
+  )
+}
+
 export interface RenderResult {
   html: string
   css: string

@@ -10,6 +10,8 @@ vi.mock('../api', async (importOriginal) => {
     ...actual,
     enhanceSession: vi.fn(),
     deleteSessionRemote: vi.fn(),
+    fetchTranscriptSetting: vi.fn(async (id: string) => ({ sessionId: id, included: true })),
+    saveTranscriptSetting: vi.fn(async (id: string, included: boolean) => ({ ok: true, sessionId: id, included })),
   }
 })
 
@@ -159,5 +161,63 @@ describe('SessionManageModal — delete action', () => {
     expect(screen.getAllByText('Stay put').length).toBeGreaterThanOrEqual(1)
     // Confirm API was called once and we surfaced the error.
     expect(api.deleteSessionRemote).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('SessionManageModal — transcript toggle', () => {
+  it('renders an "Include transcript" checkbox on every session row', async () => {
+    const s = baseSession({ id: 'sess-1', title: 'Has transcript' })
+    render(
+      <SessionManageModal
+        sessions={[s]}
+        initialSelection={new Set(['sess-1'])}
+        projectDirName="demo"
+        onClose={() => {}}
+        onSave={async () => {}}
+      />,
+    )
+
+    const cb = await screen.findByRole('checkbox', { name: /Include transcript for "Has transcript"/ })
+    expect((cb as HTMLInputElement).checked).toBe(true)
+  })
+
+  it('reflects persisted included=false on mount (async hydration)', async () => {
+    vi.mocked(api.fetchTranscriptSetting).mockResolvedValueOnce({ sessionId: 'sess-off', included: false })
+    const s = baseSession({ id: 'sess-off', title: 'Transcript off' })
+    render(
+      <SessionManageModal
+        sessions={[s]}
+        initialSelection={new Set(['sess-off'])}
+        projectDirName="demo"
+        onClose={() => {}}
+        onSave={async () => {}}
+      />,
+    )
+
+    await waitFor(() => {
+      const cb = screen.getByRole('checkbox', { name: /Include transcript for "Transcript off"/ })
+      expect((cb as HTMLInputElement).checked).toBe(false)
+    })
+  })
+
+  it('toggling the checkbox calls saveTranscriptSetting with the new value', async () => {
+    const s = baseSession({ id: 'sess-toggle', title: 'Toggle me' })
+    render(
+      <SessionManageModal
+        sessions={[s]}
+        initialSelection={new Set(['sess-toggle'])}
+        projectDirName="demo"
+        onClose={() => {}}
+        onSave={async () => {}}
+      />,
+    )
+
+    const cb = await screen.findByRole('checkbox', { name: /Include transcript for "Toggle me"/ })
+    fireEvent.click(cb)
+
+    await waitFor(() => {
+      expect(api.saveTranscriptSetting).toHaveBeenCalledWith('sess-toggle', false)
+    })
+    expect((cb as HTMLInputElement).checked).toBe(false)
   })
 })

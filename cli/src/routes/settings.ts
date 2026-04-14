@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { existsSync } from 'node:fs';
-import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, getSettings, setDefaultTemplate, getPortfolioProfile, savePortfolioProfile, type PortfolioProfile, type PortfolioProjectEntry } from '../settings.js';
+import { saveAnthropicApiKey, clearAnthropicApiKey, getAnthropicApiKey, getSettings, setDefaultTemplate, getPortfolioProfile, savePortfolioProfile, isTranscriptIncluded, setTranscriptIncluded, type PortfolioProfile, type PortfolioProjectEntry } from '../settings.js';
 import { invalidatePortfolioPreviewCache } from './preview.js';
 import { hasApiKey } from '../llm/index.js';
 import { isValidTemplate, DEFAULT_TEMPLATE, BUILT_IN_TEMPLATES } from '../render/templates.js';
@@ -65,6 +65,40 @@ export function createSettingsRouter(_ctx: RouteContext): Router {
     invalidatePortfolioPreviewCache();
     console.log(`[settings] Portfolio theme set to: ${template}`);
     res.json({ ok: true, template });
+  });
+
+  // ── Per-session transcript toggle (publish-time, CLI-only) ───
+  //
+  // GET /api/sessions/:sessionId/transcript-setting — returns whether the
+  // session transcript will be included in the next publish. Defaults to
+  // true.
+  //
+  // PUT /api/sessions/:sessionId/transcript-setting { included: boolean }
+  // — flips the flag. When `false`, publish.ts skips all S3 transcript
+  // uploads and strips transcript-derived fields from the uploaded
+  // session JSON.
+  router.get('/api/sessions/:sessionId/transcript-setting', (req: Request, res: Response) => {
+    const sessionId = typeof req.params.sessionId === 'string' ? req.params.sessionId.trim() : '';
+    if (!sessionId || sessionId.length > 200) {
+      res.status(400).json({ error: { code: 'INVALID_PARAM', message: 'sessionId is required' } });
+      return;
+    }
+    res.json({ sessionId, included: isTranscriptIncluded(sessionId) });
+  });
+
+  router.put('/api/sessions/:sessionId/transcript-setting', (req: Request, res: Response) => {
+    const sessionId = typeof req.params.sessionId === 'string' ? req.params.sessionId.trim() : '';
+    if (!sessionId || sessionId.length > 200) {
+      res.status(400).json({ error: { code: 'INVALID_PARAM', message: 'sessionId is required' } });
+      return;
+    }
+    const body = req.body as { included?: unknown };
+    if (typeof body?.included !== 'boolean') {
+      res.status(400).json({ error: { code: 'INVALID_BODY', message: 'included must be a boolean' } });
+      return;
+    }
+    setTranscriptIncluded(sessionId, body.included);
+    res.json({ ok: true, sessionId, included: body.included });
   });
 
   // Get portfolio profile data

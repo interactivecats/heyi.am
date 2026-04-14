@@ -1,5 +1,5 @@
-import { useState, useCallback, useMemo } from 'react'
-import { enhanceSession, deleteSessionRemote } from '../api'
+import { useState, useCallback, useMemo, useEffect } from 'react'
+import { enhanceSession, deleteSessionRemote, fetchTranscriptSetting, saveTranscriptSetting } from '../api'
 import type { Session } from '../types'
 import { formatDuration, formatLoc } from '../format'
 import { ConfirmModal } from './shared/ConfirmModal'
@@ -44,10 +44,54 @@ export function SessionManageModal({ sessions, initialSelection, projectDirName,
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
+  // Per-session transcript-include flag. `undefined` means "not yet
+  // fetched" — treat as default (true). Fetched lazily on mount for every
+  // session currently shown so the checkbox reflects persisted state.
+  const [transcriptIncluded, setTranscriptIncluded] = useState<Record<string, boolean>>({})
+
+  const toggleTranscript = useCallback((sessionId: string, next: boolean) => {
+    // Optimistic update — the server call is async but we want the
+    // checkbox to feel snappy. On failure we revert.
+    setTranscriptIncluded((prev) => ({ ...prev, [sessionId]: next }))
+    saveTranscriptSetting(sessionId, next).catch(() => {
+      setTranscriptIncluded((prev) => ({ ...prev, [sessionId]: !next }))
+    })
+  }, [])
+
   const parentSessions = useMemo(() =>
     sessions.filter((s) => !s.parentSessionId && !deletedIds.has(s.id)),
     [sessions, deletedIds],
   )
+
+  // Fetch transcript-include flags for every parent session shown. This
+  // runs once on mount + whenever the underlying session list changes.
+  // Failures are silent — the UI just uses the default (true).
+  useEffect(() => {
+    let cancelled = false
+    const ids = parentSessions.map((s) => s.id)
+    Promise.all(
+      ids.map((id) =>
+        fetchTranscriptSetting(id)
+          .then((r) => [id, r.included] as const)
+          .catch(() => [id, true] as const),
+      ),
+    ).then((pairs) => {
+      if (cancelled) return
+      setTranscriptIncluded((prev) => {
+        const next = { ...prev }
+        for (const [id, included] of pairs) {
+          // Don't clobber a fresher local toggle made while the fetch
+          // was in flight.
+          if (next[id] === undefined) next[id] = included
+        }
+        return next
+      })
+    })
+    return () => { cancelled = true }
+    // parentSessions is a derived array — re-fetch only when the ID set
+    // actually changes, not on identity churn.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parentSessions.map((s) => s.id).join(',')])
 
   const pendingDeleteSession = useMemo(
     () => (pendingDeleteId ? sessions.find((s) => s.id === pendingDeleteId) ?? null : null),
@@ -236,6 +280,8 @@ export function SessionManageModal({ sessions, initialSelection, projectDirName,
                 checked={true}
                 onToggle={() => toggleSelection(s.id)}
                 onDelete={s.status === 'uploaded' ? () => requestDelete(s.id) : undefined}
+                transcriptIncluded={transcriptIncluded[s.id] ?? true}
+                onToggleTranscript={(next) => toggleTranscript(s.id, next)}
               />
             ))}
           </TierGroup>
@@ -258,6 +304,8 @@ export function SessionManageModal({ sessions, initialSelection, projectDirName,
                   checked={false}
                   onToggle={() => toggleSelection(s.id)}
                   onDelete={s.status === 'uploaded' ? () => requestDelete(s.id) : undefined}
+                  transcriptIncluded={transcriptIncluded[s.id] ?? true}
+                  onToggleTranscript={(next) => toggleTranscript(s.id, next)}
                 />
               ))}
             </TierGroup>
@@ -395,6 +443,8 @@ function SessionRow({
   checked,
   onToggle,
   onDelete,
+  transcriptIncluded,
+  onToggleTranscript,
 }: {
   session: Session
   displayTitle?: string
@@ -402,33 +452,50 @@ function SessionRow({
   checked: boolean
   onToggle: () => void
   onDelete?: () => void
+  transcriptIncluded?: boolean
+  onToggleTranscript?: (next: boolean) => void
 }) {
+  const rowTitle = displayTitle || s.title || `Session ${s.id.slice(0, 8)}`
   return (
-    <div className={`flex items-center gap-2 px-4 py-2 hover:bg-surface-low border-l-2 ${borderColor}`}>
-      <label className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
-        <input type="checkbox" checked={checked} onChange={onToggle} className="accent-primary flex-shrink-0" />
-        <div className="flex-1 min-w-0">
-          <div className="text-sm text-on-surface truncate">{displayTitle || s.title || `Session ${s.id.slice(0, 8)}`}</div>
-          <div className="font-mono text-[10px] text-on-surface-variant">
-            {s.date ? formatDate(s.date) : ''}
-            {s.durationMinutes > 0 && ` · ${formatDuration(s.durationMinutes)}`}
-            {s.linesOfCode > 0 && ` · ${formatLoc(s.linesOfCode)}`}
-            {s.source && <span className="ml-1.5 text-outline">{s.source}</span>}
+    <div className={`flex flex-col px-4 py-2 hover:bg-surface-low border-l-2 ${borderColor}`}>
+      <div className="flex items-center gap-2">
+        <label className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
+          <input type="checkbox" checked={checked} onChange={onToggle} className="accent-primary flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-sm text-on-surface truncate">{rowTitle}</div>
+            <div className="font-mono text-[10px] text-on-surface-variant">
+              {s.date ? formatDate(s.date) : ''}
+              {s.durationMinutes > 0 && ` · ${formatDuration(s.durationMinutes)}`}
+              {s.linesOfCode > 0 && ` · ${formatLoc(s.linesOfCode)}`}
+              {s.source && <span className="ml-1.5 text-outline">{s.source}</span>}
+            </div>
           </div>
-        </div>
-      </label>
-      {onDelete && (
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onDelete() }}
-          aria-label={`Remove "${displayTitle || s.title || s.id}" from heyi.am`}
-          title="Remove from heyi.am"
-          className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-sm text-on-surface-variant hover:text-error hover:bg-surface-lowest"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14" />
-          </svg>
-        </button>
+        </label>
+        {onDelete && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onDelete() }}
+            aria-label={`Remove "${rowTitle}" from heyi.am`}
+            title="Remove from heyi.am"
+            className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-sm text-on-surface-variant hover:text-error hover:bg-surface-lowest"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14" />
+            </svg>
+          </button>
+        )}
+      </div>
+      {onToggleTranscript && (
+        <label className="mt-1 ml-7 flex items-center gap-2 font-mono text-[10px] text-on-surface-variant cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={transcriptIncluded ?? true}
+            onChange={(e) => onToggleTranscript(e.target.checked)}
+            className="accent-primary"
+            aria-label={`Include transcript for "${rowTitle}"`}
+          />
+          <span>Include transcript</span>
+        </label>
       )}
     </div>
   )

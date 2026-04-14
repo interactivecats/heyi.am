@@ -14,6 +14,7 @@ import {
   hashPortfolioProfile,
   updatePortfolioPublishTarget,
   getPortfolioPublishState,
+  isTranscriptIncluded,
   DEFAULT_PORTFOLIO_TARGET,
 } from '../settings.js';
 import { generatePortfolioHtmlFragment, generateProjectHtmlFragment, generatePortfolioSite, createZipBuffer, type PortfolioSiteProjectInput, type HtmlFile } from '../export.js';
@@ -297,6 +298,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
             const session = await ctx.loadSession(meta.path, proj.name, sessionId);
             const enhanced = loadEnhancedData(sessionId);
             const sessionSlug = toSlug(enhanced?.title ?? session.title ?? sessionId, 80);
+            const includeTranscript = isTranscriptIncluded(sessionId);
 
             const agentSummary = await buildAgentSummary(
               meta.children ?? [],
@@ -366,6 +368,23 @@ export function createPublishRouter(ctx: RouteContext): Router {
               },
             };
 
+            // Transcript-derived fields. When the user has toggled the
+            // transcript OFF for this session we omit them from the
+            // uploaded JSON entirely — see the spread below. The
+            // session's main payload (dev take, skills, Q&A, etc.) is
+            // unaffected.
+            const turnTimeline = (session.turnTimeline ?? []).map((t) => ({
+              timestamp: t.timestamp,
+              type: t.type,
+              content: (t.content ?? '').slice(0, 200),
+              tools: (t as { tools?: string[] }).tools ?? [],
+            }));
+            const transcriptExcerpt = (session.rawLog ?? []).slice(0, 10).map((line, i) => {
+              const role = line.startsWith('> ') ? 'dev' : 'ai';
+              const text = role === 'dev' ? line.slice(2) : line;
+              return { role, id: `Turn ${i + 1}`, text, timestamp: null };
+            });
+
             const sessionData = {
               version: 1,
               id: sessionId,
@@ -402,17 +421,8 @@ export function createPublishRouter(ctx: RouteContext): Router {
               highlights: [],
               tool_breakdown: (session.toolBreakdown ?? []).map((t) => ({ tool: t.tool, count: t.count })),
               top_files: (session.filesChanged ?? []).slice(0, 20).map((f) => (typeof f === 'string' ? { path: f, additions: 0, deletions: 0 } : f)),
-              turn_timeline: (session.turnTimeline ?? []).map((t) => ({
-                timestamp: t.timestamp,
-                type: t.type,
-                content: (t.content ?? '').slice(0, 200),
-                tools: (t as { tools?: string[] }).tools ?? [],
-              })),
-              transcript_excerpt: (session.rawLog ?? []).slice(0, 10).map((line, i) => {
-                const role = line.startsWith('> ') ? 'dev' : 'ai';
-                const text = role === 'dev' ? line.slice(2) : line;
-                return { role, id: `Turn ${i + 1}`, text, timestamp: null };
-              }),
+              ...(includeTranscript ? { turn_timeline: turnTimeline } : {}),
+              ...(includeTranscript ? { transcript_excerpt: transcriptExcerpt } : {}),
               agent_summary: agentSummary,
               children: agentSummary?.agents?.map((a: { role: string; duration_minutes: number; loc_changed: number }) => ({
                 sessionId: a.role,
@@ -446,7 +456,12 @@ export function createPublishRouter(ctx: RouteContext): Router {
 
               try {
                 const sesData = await sessionRes.json() as { upload_urls?: { raw?: string; log?: string; session?: string } };
-                if (sesData.upload_urls) {
+                if (sesData.upload_urls && includeTranscript) {
+                  // Transcript-bearing S3 uploads. Skipped entirely when
+                  // the user has toggled the transcript OFF for this
+                  // session — the server never sees raw_log, turn
+                  // timeline, or the bundled session-data JSON in that
+                  // case.
                   const { raw: rawUrl, log: logUrl } = sesData.upload_urls;
                   if (rawUrl && meta.path && !meta.path.startsWith('cursor://')) {
                     try {

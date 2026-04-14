@@ -25,6 +25,16 @@ vi.mock('../settings.js', () => ({
   savePortfolioProfile: vi.fn((data: Record<string, unknown>) => {
     settingsStore.portfolio = data;
   }),
+  isTranscriptIncluded: vi.fn((sessionId: string) => {
+    const map = (settingsStore.transcriptIncluded ?? {}) as Record<string, boolean>;
+    return map[sessionId] !== false;
+  }),
+  setTranscriptIncluded: vi.fn((sessionId: string, included: boolean) => {
+    const map = { ...((settingsStore.transcriptIncluded ?? {}) as Record<string, boolean>) };
+    if (included) delete map[sessionId];
+    else map[sessionId] = false;
+    settingsStore.transcriptIncluded = map;
+  }),
 }));
 
 vi.mock('../llm/index.js', () => ({
@@ -225,6 +235,49 @@ describe('Settings routes', () => {
         .post('/api/settings/theme')
         .send({ template: 'nonexistent' });
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe('Transcript toggle routes', () => {
+    it('GET returns default true when no setting has been stored', async () => {
+      settingsStore = {};
+      const res = await request(makeApp())
+        .get('/api/sessions/sess-new/transcript-setting');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ sessionId: 'sess-new', included: true });
+    });
+
+    it('PUT then GET round-trips the included=false setting', async () => {
+      settingsStore = {};
+      const putRes = await request(makeApp())
+        .put('/api/sessions/sess-1/transcript-setting')
+        .send({ included: false });
+      expect(putRes.status).toBe(200);
+      expect(putRes.body.ok).toBe(true);
+      expect(putRes.body.included).toBe(false);
+
+      const getRes = await request(makeApp())
+        .get('/api/sessions/sess-1/transcript-setting');
+      expect(getRes.status).toBe(200);
+      expect(getRes.body.included).toBe(false);
+    });
+
+    it('PUT rejects non-boolean included with 400', async () => {
+      const res = await request(makeApp())
+        .put('/api/sessions/sess-1/transcript-setting')
+        .send({ included: 'yes' });
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('INVALID_BODY');
+    });
+
+    it('PUT with included=true clears the flag', async () => {
+      settingsStore = { transcriptIncluded: { 'sess-back-on': false } };
+      const res = await request(makeApp())
+        .put('/api/sessions/sess-back-on/transcript-setting')
+        .send({ included: true });
+      expect(res.status).toBe(200);
+      // The helper deletes the false flag when flipping back to true.
+      expect((settingsStore.transcriptIncluded as Record<string, boolean>)['sess-back-on']).toBeUndefined();
     });
   });
 

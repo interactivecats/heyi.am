@@ -18,6 +18,9 @@ import {
   buildProjectFingerprint,
   saveUploadedState,
   getUploadedState,
+  clearUploadedState,
+  isTranscriptIncluded,
+  setTranscriptIncluded,
 } from './settings.js';
 
 describe('settings', () => {
@@ -270,6 +273,55 @@ describe('settings', () => {
         uploadedSessions: [],
       }, tmpDir);
       expect(existsSync(join(tmpDir, 'published', 'my-project.json'))).toBe(true);
+    });
+
+    it('clearUploadedState removes the file', () => {
+      saveUploadedState('my-project', {
+        slug: 'my-project',
+        projectId: 1,
+        uploadedSessions: [],
+      }, tmpDir);
+      expect(getUploadedState('my-project', tmpDir)).not.toBeNull();
+      clearUploadedState('my-project', tmpDir);
+      expect(getUploadedState('my-project', tmpDir)).toBeNull();
+    });
+
+    it('clearUploadedState is a no-op when no file exists', () => {
+      expect(() => clearUploadedState('never-saved', tmpDir)).not.toThrow();
+    });
+  });
+
+  describe('transcript toggle (per-session)', () => {
+    beforeEach(() => {
+      process.env.HEYIAM_CONFIG_DIR = tmpDir;
+    });
+
+    afterEach(() => {
+      delete process.env.HEYIAM_CONFIG_DIR;
+    });
+
+    it('returns true by default for any session', () => {
+      expect(isTranscriptIncluded('sess-unknown', tmpDir)).toBe(true);
+    });
+
+    it('round-trips included=false', () => {
+      setTranscriptIncluded('sess-a', false, tmpDir);
+      expect(isTranscriptIncluded('sess-a', tmpDir)).toBe(false);
+    });
+
+    it('flipping back to true clears the flag (keeps settings file small)', () => {
+      setTranscriptIncluded('sess-a', false, tmpDir);
+      setTranscriptIncluded('sess-a', true, tmpDir);
+      expect(isTranscriptIncluded('sess-a', tmpDir)).toBe(true);
+      // Raw settings shouldn't contain a `sess-a: true` record.
+      const raw = JSON.parse(readFileSync(join(tmpDir, 'settings.json'), 'utf-8'));
+      expect(raw.transcriptIncluded?.['sess-a']).toBeUndefined();
+    });
+
+    it('isolates per-session flags', () => {
+      setTranscriptIncluded('sess-a', false, tmpDir);
+      expect(isTranscriptIncluded('sess-a', tmpDir)).toBe(false);
+      expect(isTranscriptIncluded('sess-b', tmpDir)).toBe(true);
     });
   });
 });
