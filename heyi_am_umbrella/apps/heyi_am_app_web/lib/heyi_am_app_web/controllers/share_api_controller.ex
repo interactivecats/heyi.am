@@ -120,6 +120,69 @@ defmodule HeyiAmAppWeb.ShareApiController do
     |> json(%{error: %{code: "MISSING_SESSION", message: "Missing 'session' parameter"}})
   end
 
+  @doc """
+  DELETE /api/sessions/:id — hard-delete a share owned by the authenticated user.
+
+  Returns opaque 404 if the share does not exist OR is not owned by the caller
+  (BOLA protection — do not leak existence). On success, deletes S3 artifacts
+  referenced by the share's storage keys on a best-effort basis (logged but
+  not fatal) and returns 204 No Content.
+  """
+  def delete(conn, %{"id" => id}) do
+    user_id = conn.assigns[:current_user_id]
+
+    with {:user, uid} when not is_nil(uid) <- {:user, user_id},
+         {:id, {parsed_id, ""}} <- {:id, Integer.parse(to_string(id))},
+         {:share, %Share{} = share} <- {:share, Shares.get_user_share(uid, parsed_id)} do
+      delete_s3_artifacts(share)
+
+      case Shares.delete_share(share) do
+        {:ok, _} ->
+          send_resp(conn, 204, "")
+
+        {:error, reason} ->
+          Logger.error("Failed to delete share #{share.id}: #{inspect(reason)}")
+
+          conn
+          |> put_status(:internal_server_error)
+          |> json(%{error: %{code: "DELETE_FAILED"}})
+      end
+    else
+      {:user, nil} ->
+        conn
+        |> put_status(:unauthorized)
+        |> json(%{error: "Authentication required. Run: heyiam login"})
+
+      {:id, _} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: %{code: "NOT_FOUND"}})
+
+      {:share, nil} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: %{code: "NOT_FOUND"}})
+    end
+  end
+
+  defp delete_s3_artifacts(%Share{} = share) do
+    for key <- [share.raw_storage_key, share.log_storage_key, share.session_storage_key],
+        is_binary(key) and key != "" do
+      try do
+        case HeyiAm.ObjectStorage.delete_object(key) do
+          :ok -> :ok
+          {:error, reason} ->
+            Logger.warning("Best-effort S3 delete failed for key #{key}: #{inspect(reason)}")
+        end
+      rescue
+        e ->
+          Logger.warning("Best-effort S3 delete raised for key #{key}: #{Exception.message(e)}")
+      end
+    end
+
+    :ok
+  end
+
   defp build_upload_urls(raw_key, log_key, session_key) do
     with {:ok, raw_url} <- HeyiAm.ObjectStorage.presign_put(raw_key),
          {:ok, log_url} <- HeyiAm.ObjectStorage.presign_put(log_key),

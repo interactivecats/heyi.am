@@ -38,6 +38,42 @@ defmodule HeyiAmAppWeb.ProjectApiController do
     |> json(%{error: %{code: "MISSING_PROJECT", message: "Missing 'project' parameter"}})
   end
 
+  @doc """
+  DELETE /api/projects/:slug — hard-delete a project and all of its shares
+  owned by the authenticated user.
+
+  Returns an opaque 404 if the project does not exist OR is not owned by the
+  caller (BOLA protection — do not leak existence). On success, deletes all
+  S3 artifacts (project screenshot + each share's raw/log/session objects)
+  on a best-effort basis and returns 204 No Content.
+  """
+  def delete(conn, %{"slug" => slug}) do
+    user_id = conn.assigns[:current_user_id]
+
+    if is_nil(user_id) do
+      conn
+      |> put_status(:unauthorized)
+      |> json(%{error: "Authentication required. Run: heyiam login"})
+    else
+      case Projects.delete_project(user_id, slug) do
+        {:ok, _deleted} ->
+          send_resp(conn, 204, "")
+
+        {:error, :not_found} ->
+          conn
+          |> put_status(:not_found)
+          |> json(%{error: %{code: "NOT_FOUND"}})
+
+        {:error, reason} ->
+          Logger.error("Failed to delete project slug=#{slug} user_id=#{user_id}: #{inspect(reason)}")
+
+          conn
+          |> put_status(:internal_server_error)
+          |> json(%{error: %{code: "DELETE_FAILED"}})
+      end
+    end
+  end
+
   def screenshot_url(conn, %{"slug" => slug, "key" => key}) do
     user_id = conn.assigns[:current_user_id]
 

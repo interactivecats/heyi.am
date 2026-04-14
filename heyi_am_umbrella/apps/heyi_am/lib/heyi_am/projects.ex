@@ -158,9 +158,15 @@ defmodule HeyiAm.Projects do
   end
 
   @doc """
-  Deletes a project owned by `user_id`. Returns `{:error, :not_found}` if the
-  project doesn't exist or doesn't belong to the user (BOLA protection).
-  Cleans up S3 screenshot after successful DB delete.
+  Deletes a project owned by `user_id` and all of its shares in a single
+  transaction. Returns `{:error, :not_found}` if the project does not exist
+  or does not belong to the user (BOLA protection — identical response for
+  both cases).
+
+  On success, best-effort deletes S3 artifacts referenced by the project
+  screenshot and by each share's raw/log/session storage keys. S3 failures
+  are logged but do not fail the DB delete (the DB is the source of truth
+  for what exists).
   """
   def delete_project(user_id, slug) when is_integer(user_id) and is_binary(slug) do
     case get_user_project_by_slug(user_id, slug) do
@@ -168,22 +174,59 @@ defmodule HeyiAm.Projects do
         {:error, :not_found}
 
       project ->
-        case Repo.delete(project) do
-          {:ok, deleted} ->
-            # Clean up S3 screenshot after successful DB delete
-            if deleted.screenshot_key && deleted.screenshot_key != "" do
-              case HeyiAm.ObjectStorage.delete_object(deleted.screenshot_key) do
-                :ok -> :ok
-                {:error, reason} ->
-                  Logger.warning("Orphaned S3 key #{deleted.screenshot_key}: #{inspect(reason)}")
-              end
-            end
+        shares = Repo.all(from s in Share, where: s.project_id == ^project.id)
 
-            {:ok, deleted}
+        multi =
+          Ecto.Multi.new()
+          |> Ecto.Multi.delete_all(
+            :delete_shares,
+            from(s in Share, where: s.project_id == ^project.id)
+          )
+          |> Ecto.Multi.delete(:delete_project, project)
 
-          error ->
-            error
+        case Repo.transaction(multi) do
+          {:ok, %{delete_project: deleted_project}} ->
+            best_effort_delete_share_artifacts(shares)
+            best_effort_delete_screenshot(deleted_project)
+            {:ok, deleted_project}
+
+          {:error, _step, reason, _changes} ->
+            {:error, reason}
         end
+    end
+  end
+
+  defp best_effort_delete_share_artifacts(shares) do
+    for share <- shares,
+        key <- [share.raw_storage_key, share.log_storage_key, share.session_storage_key],
+        is_binary(key) and key != "" do
+      best_effort_delete_object(key)
+    end
+
+    :ok
+  end
+
+  defp best_effort_delete_screenshot(%Project{screenshot_key: key})
+       when is_binary(key) and key != "" do
+    best_effort_delete_object(key)
+  end
+
+  defp best_effort_delete_screenshot(_), do: :ok
+
+  defp best_effort_delete_object(key) do
+    try do
+      case HeyiAm.ObjectStorage.delete_object(key) do
+        :ok ->
+          :ok
+
+        {:error, reason} ->
+          Logger.warning("Orphaned S3 key #{key}: #{inspect(reason)}")
+          :ok
+      end
+    rescue
+      e ->
+        Logger.warning("Best-effort S3 delete raised for key #{key}: #{Exception.message(e)}")
+        :ok
     end
   end
 end
