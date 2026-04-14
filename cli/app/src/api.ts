@@ -632,9 +632,22 @@ export function fetchSessionRender(sessionId: string) {
   return fetchRender<RenderResult>(`/sessions/${encodeURIComponent(sessionId)}/render`)
 }
 
+/**
+ * Normalize a username to the canonical lowercase form Phoenix uses.
+ * Applied at the API boundary so every display site — PreviewPane,
+ * ProjectDetail, Settings, embed snippets — renders consistently without
+ * each call site having to remember to `.toLowerCase()`.
+ */
+function normalizeAuthStatusUsername(status: AuthStatus): AuthStatus {
+  if (!status.username) return status
+  const lower = status.username.toLowerCase()
+  return lower === status.username ? status : { ...status, username: lower }
+}
+
 export async function fetchAuthStatus(): Promise<AuthStatus> {
   try {
-    return await get<AuthStatus>('/auth/status')
+    const status = await get<AuthStatus>('/auth/status')
+    return normalizeAuthStatusUsername(status)
   } catch {
     return { authenticated: false }
   }
@@ -733,7 +746,8 @@ export interface DeviceCodeInfo {
 }
 
 export async function pollDeviceAuth(deviceCode: string): Promise<AuthStatus> {
-  return post<AuthStatus>('/auth/poll', { device_code: deviceCode })
+  const status = await post<AuthStatus>('/auth/poll', { device_code: deviceCode })
+  return normalizeAuthStatusUsername(status)
 }
 
 export async function checkUsername(username: string): Promise<{ available: boolean; reason?: string }> {
