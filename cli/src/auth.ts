@@ -37,7 +37,15 @@ export function writeConfig(filename: string, data: unknown, configDir: string =
 }
 
 export function getAuthToken(configDir: string = getConfigDir()): AuthConfig | null {
-  return readConfig<AuthConfig>(AUTH_FILE, configDir);
+  const raw = readConfig<AuthConfig>(AUTH_FILE, configDir);
+  if (!raw) return null;
+  // Legacy configs may contain mixed-case usernames (prior to the
+  // normalize-on-write change). Always project to the canonical form so
+  // callers — URL construction, display, server requests — stay consistent.
+  if (raw.username && raw.username !== raw.username.toLowerCase()) {
+    return { ...raw, username: normalizeUsername(raw.username) };
+  }
+  return raw;
 }
 
 export function deleteAuthToken(configDir: string = getConfigDir()): void {
@@ -47,8 +55,23 @@ export function deleteAuthToken(configDir: string = getConfigDir()): void {
   }
 }
 
+/**
+ * Normalize a username to the canonical form used everywhere in the CLI:
+ * lowercase, whitespace trimmed. Mirrors Phoenix's DB validation regex
+ * `^[a-z0-9-]+$`. Guards against Phoenix responses or legacy configs that
+ * contain mixed-case usernames (e.g. "Ben" -> "ben") so URL construction
+ * and display are consistent.
+ */
+export function normalizeUsername(username: string): string {
+  return username.trim().toLowerCase();
+}
+
 export function saveAuthToken(token: string, username: string, configDir: string = getConfigDir()): void {
-  const config: AuthConfig = { token, username, savedAt: new Date().toISOString() };
+  const config: AuthConfig = {
+    token,
+    username: normalizeUsername(username),
+    savedAt: new Date().toISOString(),
+  };
   writeConfig(AUTH_FILE, config, configDir);
 }
 
@@ -67,7 +90,10 @@ export async function checkAuthStatus(
   if (!res.ok) return { authenticated: false };
 
   const body = (await res.json()) as { username?: string };
-  return { authenticated: true, username: body.username };
+  return {
+    authenticated: true,
+    username: body.username ? normalizeUsername(body.username) : body.username,
+  };
 }
 
 export async function deviceAuthFlow(

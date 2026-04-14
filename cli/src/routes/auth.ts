@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express';
-import { checkAuthStatus, saveAuthToken, deleteAuthToken } from '../auth.js';
+import { checkAuthStatus, saveAuthToken, deleteAuthToken, normalizeUsername } from '../auth.js';
 import { API_URL } from '../config.js';
 import type { RouteContext } from './context.js';
 
@@ -108,8 +108,12 @@ export function createAuthRouter(_ctx: RouteContext): Router {
       const data = await response.json() as Record<string, unknown>;
 
       if (response.ok && data.access_token) {
-        saveAuthToken(data.access_token as string, data.username as string);
-        res.json({ authenticated: true, username: data.username });
+        // Always persist and echo the lowercase form so downstream URL
+        // construction and UI display stay consistent with Phoenix's
+        // lowercase-only DB constraint.
+        const username = normalizeUsername(String(data.username ?? ''));
+        saveAuthToken(data.access_token as string, username);
+        res.json({ authenticated: true, username });
       } else {
         res.status(response.status).json(data);
       }
