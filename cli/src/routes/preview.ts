@@ -219,6 +219,7 @@ async function buildProjectPreviewData(
     sessionCards,
     allSessionCards,
     sessionBaseUrl: `/preview/project/${encodeURIComponent(projectParam)}/session`,
+    sessionSuffix: '.html',
   });
 
   const result = { renderData, enhanceResult, projName: projAny.name as string };

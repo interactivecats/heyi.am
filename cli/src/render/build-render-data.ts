@@ -125,6 +125,7 @@ interface BuildProjectRenderOpts {
   sessionCards: SessionCard[];
   allSessionCards?: SessionCard[];
   sessionBaseUrl?: string;
+  sessionSuffix?: string;
 }
 
 /**
@@ -153,5 +154,6 @@ export function buildProjectRenderData(opts: BuildProjectRenderOpts): ProjectRen
     sessions: opts.sessionCards,
     allSessions: opts.allSessionCards,
     sessionBaseUrl: opts.sessionBaseUrl,
+    sessionSuffix: opts.sessionSuffix,
   };
 }

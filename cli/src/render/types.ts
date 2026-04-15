@@ -115,8 +115,10 @@ export interface ProjectRenderData {
   sessions: SessionCard[];
   /** All sessions for work timeline and growth chart (falls back to sessions if not set) */
   allSessions?: SessionCard[];
-  /** Base URL for session links. Defaults to /:username/:project */
+  /** Base URL prefix for session links (e.g. "/ben/my-project" or "./sessions"). */
   sessionBaseUrl?: string;
+  /** Suffix appended to session links (e.g. ".html" for static export). */
+  sessionSuffix?: string;
 }
 
 export interface Beat {

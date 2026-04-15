@@ -223,7 +223,7 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
     return true;
   }).slice(0, 6);
 
-  const sessionSuffix = data.sessionBaseUrl ? '.html' : '';
+  const sessionSuffix = data.sessionSuffix ?? '';
 
   const html = engine.renderFileSync(`${template}/project`, {
     ...data,

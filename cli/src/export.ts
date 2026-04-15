@@ -338,6 +338,7 @@ export async function exportHtml(
     totalTokens,
     sessionCards,
     sessionBaseUrl: './sessions',
+    sessionSuffix: '.html',
   });
 
   const templateName = resolveTemplate(undefined, getDefaultTemplate());
@@ -473,6 +474,8 @@ export function generateProjectHtmlFragment(
     totalSessions: sessions.length,
     totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged, totalTokens,
     sessionCards,
+    sessionBaseUrl: `/${username}/${slug}`,
+    sessionSuffix: '',
   });
 
   const templateName = resolveTemplate(undefined, getDefaultTemplate());
@@ -508,6 +511,7 @@ export function generateHtmlFiles(
     totalLoc, totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged, totalTokens,
     sessionCards,
     sessionBaseUrl: './sessions',
+    sessionSuffix: '.html',
   });
 
   const projectBody = renderProjectHtml(projectRenderData, {

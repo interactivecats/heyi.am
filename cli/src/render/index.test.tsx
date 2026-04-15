@@ -149,6 +149,25 @@ describe('renderProjectHtml', () => {
     (bad.project as any).slug = '';
     expect(() => renderProjectHtml(bad)).toThrow(RenderError);
   });
+
+  it('emits Phoenix-style hrefs when sessionBaseUrl is /user/project and suffix is empty', () => {
+    const data = makeProjectData({
+      sessionBaseUrl: '/testuser/my-project',
+      sessionSuffix: '',
+    });
+    const html = renderProjectHtml(data);
+    expect(html).toContain('href="/testuser/my-project/first-session"');
+    expect(html).not.toContain('/first-session.html');
+  });
+
+  it('emits static-export hrefs when sessionBaseUrl is ./sessions and suffix is .html', () => {
+    const data = makeProjectData({
+      sessionBaseUrl: './sessions',
+      sessionSuffix: '.html',
+    });
+    const html = renderProjectHtml(data);
+    expect(html).toContain('href="./sessions/first-session.html"');
+  });
 });
 
 // ---------------------------------------------------------------------------
