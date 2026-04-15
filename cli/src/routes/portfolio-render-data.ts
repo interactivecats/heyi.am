@@ -29,6 +29,7 @@ export interface BuildPortfolioRenderDataResult {
 export async function buildPortfolioRenderData(
   ctx: RouteContext,
   auth: { username: string },
+  opts: { photoUrlOverride?: string } = {},
 ): Promise<BuildPortfolioRenderDataResult> {
   const profile = getPortfolioProfile();
 
@@ -108,7 +109,7 @@ export async function buildPortfolioRenderData(
       status: 'active',
       email: profile.email,
       phone: profile.phone,
-      photoUrl: profile.photoBase64 || undefined,
+      photoUrl: opts.photoUrlOverride || profile.photoBase64 || undefined,
       linkedinUrl: profile.linkedinUrl,
       githubUrl: profile.githubUrl,
       twitterHandle: profile.twitterHandle,

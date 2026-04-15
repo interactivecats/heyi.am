@@ -65,6 +65,74 @@ defmodule HeyiAmAppWeb.PortfolioApiController do
     end
   end
 
+  @photo_key_pattern ~r/\Aimages\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|jpeg|webp)\z/
+
+  def profile_photo_upload_url(conn, %{"key" => key}) when is_binary(key) do
+    case conn.assigns[:current_user_id] do
+      nil -> unauthorized(conn)
+      _user_id ->
+        if Regex.match?(@photo_key_pattern, key) do
+          case HeyiAm.ObjectStorage.presign_put(key) do
+            {:ok, url} -> json(conn, %{upload_url: url, key: key})
+            {:error, _} ->
+              conn
+              |> put_status(:internal_server_error)
+              |> json(%{error: %{code: "PRESIGN_FAILED"}})
+          end
+        else
+          conn
+          |> put_status(:bad_request)
+          |> json(%{error: %{code: "INVALID_KEY", message: "Invalid image key format"}})
+        end
+    end
+  end
+
+  def profile_photo_upload_url(conn, _), do: bad_request(conn, "Missing 'key' parameter")
+
+  def update_profile_photo_key(conn, %{"key" => key}) when is_binary(key) do
+    case conn.assigns[:current_user_id] do
+      nil -> unauthorized(conn)
+      user_id ->
+        user = Accounts.get_user!(user_id)
+
+        case Accounts.update_user_profile_photo_key(user, key) do
+          {:ok, _user} -> json(conn, %{ok: true})
+          {:error, changeset} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{error: %{code: "VALIDATION_FAILED", details: format_errors(changeset)}})
+        end
+    end
+  end
+
+  def update_profile_photo_key(conn, _), do: bad_request(conn, "Missing 'key' parameter")
+
+  def delete_profile_photo(conn, _params) do
+    case conn.assigns[:current_user_id] do
+      nil -> unauthorized(conn)
+      user_id ->
+        user = Accounts.get_user!(user_id)
+
+        case Accounts.update_user_profile_photo_key(user, nil) do
+          {:ok, _user} -> json(conn, %{ok: true})
+          {:error, _changeset} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{error: %{code: "DELETE_FAILED"}})
+        end
+    end
+  end
+
+  defp bad_request(conn, msg) do
+    case conn.assigns[:current_user_id] do
+      nil -> unauthorized(conn)
+      _ ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: %{code: "BAD_REQUEST", message: msg}})
+    end
+  end
+
   defp maybe_update_profile(user, nil), do: {:ok, user}
   defp maybe_update_profile(user, profile) when is_map(profile) do
     Accounts.update_user_profile(user, profile)

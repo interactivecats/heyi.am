@@ -302,6 +302,28 @@ defmodule HeyiAm.Accounts do
     update_user_rendered_html(user, %{"rendered_portfolio_html" => html})
   end
 
+  @doc """
+  Sets the user's `profile_photo_key`, deleting the previous S3 object
+  (best-effort) after the DB write succeeds. Pass `nil` or `""` to clear.
+  """
+  def update_user_profile_photo_key(user, key) do
+    old_key = user.profile_photo_key
+
+    changeset = User.profile_photo_key_changeset(user, %{"profile_photo_key" => key})
+
+    case Repo.update(changeset) do
+      {:ok, updated} ->
+        if is_binary(old_key) and old_key != "" and old_key != key do
+          HeyiAm.ObjectStorage.delete_object(old_key)
+        end
+
+        {:ok, updated}
+
+      error ->
+        error
+    end
+  end
+
   def update_user_time_stats(user, time_stats) do
     user
     |> Ecto.Changeset.change(%{time_stats: time_stats})

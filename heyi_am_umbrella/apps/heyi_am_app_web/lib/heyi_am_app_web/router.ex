@@ -92,6 +92,9 @@ defmodule HeyiAmAppWeb.Router do
     post "/time-stats", TimeStatsApiController, :upload
     patch "/profile", ProfileApiController, :update
     post "/portfolio/upload", PortfolioApiController, :upload
+    post "/portfolio/profile-photo-url", PortfolioApiController, :profile_photo_upload_url
+    patch "/portfolio/profile-photo-key", PortfolioApiController, :update_profile_photo_key
+    delete "/portfolio/profile-photo", PortfolioApiController, :delete_profile_photo
   end
 
   scope "/api", HeyiAmAppWeb do

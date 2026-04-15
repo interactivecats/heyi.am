@@ -13,6 +13,15 @@ defmodule HeyiAmPublicWeb.PortfolioController do
   end
   defp extract_template(_), do: "editorial"
 
+  # Builds the og:image URL for a user. Prefers the uploaded profile photo
+  # (served via /_img/:uuid on the public origin), falls back to the GitHub
+  # avatar, and ultimately to the default (handled by the layout).
+  defp user_og_image(%{profile_photo_key: "images/" <> filename}) when filename != "" do
+    HeyiAmPublicWeb.Endpoint.url() <> "/_img/" <> filename
+  end
+  defp user_og_image(%{avatar_url: url}) when is_binary(url) and url != "", do: url
+  defp user_og_image(_), do: nil
+
   def show(conn, %{"username" => username}) do
     with :ok <- maybe_redirect_username(conn, username, fn u -> "/#{u}" end) do
       do_show(conn, String.downcase(username))
@@ -35,6 +44,8 @@ defmodule HeyiAmPublicWeb.PortfolioController do
             do: user.bio,
             else: "AI-assisted development portfolio on heyi.am"
 
+        og_image = user_og_image(user)
+
         case user.rendered_portfolio_html do
           html when is_binary(html) and html != "" ->
             render(conn, :rendered,
@@ -45,7 +56,8 @@ defmodule HeyiAmPublicWeb.PortfolioController do
               og_title: "#{display_name} — heyi.am",
               og_description: og_description,
               og_url: HeyiAmPublicWeb.Endpoint.url() <> "/#{user.username}",
-              og_type: "profile"
+              og_type: "profile",
+              og_image: og_image
             )
 
           _ ->
@@ -65,7 +77,8 @@ defmodule HeyiAmPublicWeb.PortfolioController do
               og_title: "#{display_name} — heyi.am",
               og_description: og_description,
               og_url: HeyiAmPublicWeb.Endpoint.url() <> "/#{user.username}",
-              og_type: "profile"
+              og_type: "profile",
+              og_image: og_image
             )
         end
     end
@@ -118,7 +131,8 @@ defmodule HeyiAmPublicWeb.PortfolioController do
                   og_description: og_description,
                   og_url:
                     HeyiAmPublicWeb.Endpoint.url() <>
-                      "/#{user.username}/#{project.slug}"
+                      "/#{user.username}/#{project.slug}",
+                  og_image: project_og_image(user, project)
                 )
 
               _ ->
@@ -130,6 +144,14 @@ defmodule HeyiAmPublicWeb.PortfolioController do
         end
     end
   end
+
+  # Project pages prefer the project screenshot, then fall back to the user's
+  # profile photo so every page has *some* preview in WhatsApp/Slack/etc.
+  defp project_og_image(_user, %{screenshot_key: "images/" <> filename})
+       when is_binary(filename) and filename != "" do
+    HeyiAmPublicWeb.Endpoint.url() <> "/_img/" <> filename
+  end
+  defp project_og_image(user, _project), do: user_og_image(user)
 
   def unlisted_project(conn, %{"token" => token}) do
     case Projects.get_project_by_unlisted_token(token) do
@@ -163,7 +185,8 @@ defmodule HeyiAmPublicWeb.PortfolioController do
               page_title: "#{project.title} — #{display_name}",
               og_title: og_title,
               og_description: og_description,
-              og_url: HeyiAmPublicWeb.Endpoint.url() <> "/p/#{token}"
+              og_url: HeyiAmPublicWeb.Endpoint.url() <> "/p/#{token}",
+              og_image: project_og_image(user, project)
             )
 
           _ ->

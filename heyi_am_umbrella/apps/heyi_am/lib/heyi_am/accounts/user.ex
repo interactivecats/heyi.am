@@ -25,6 +25,7 @@ defmodule HeyiAm.Accounts.User do
     field :portfolio_accent, :string
     field :time_stats, :map
     field :rendered_portfolio_html, :string
+    field :profile_photo_key, :string
 
     timestamps(type: :utc_datetime)
   end
@@ -225,6 +226,25 @@ defmodule HeyiAm.Accounts.User do
     Map.put(attrs, :rendered_portfolio_html, HeyiAm.HtmlSanitizer.sanitize(html))
   end
   defp sanitize_portfolio_html(attrs), do: attrs
+
+  @doc """
+  A changeset for updating the S3 key of the user's uploaded profile photo.
+  Accepts `nil`/blank to clear. Separate from profile_changeset so the
+  profile API (web form) cannot set raw storage keys.
+  """
+  @photo_key_pattern ~r/\Aimages\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|jpeg|webp)\z/
+
+  def profile_photo_key_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:profile_photo_key])
+    |> validate_change(:profile_photo_key, fn :profile_photo_key, value ->
+      cond do
+        value in [nil, ""] -> []
+        Regex.match?(@photo_key_pattern, value) -> []
+        true -> [profile_photo_key: "invalid key format"]
+      end
+    end)
+  end
 
   @doc """
   A changeset for setting or updating the username.
