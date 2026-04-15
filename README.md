@@ -141,7 +141,7 @@ An entertaining CLI personality breakdown from your AI coding sessions. 100% loc
 ## Development
 
 ```bash
-# Install dependencies
+# Install dependencies (also wires the git pre-commit hook)
 npm install              # root workspaces (packages/*, phoenix/assets)
 cd cli/app && npm install && cd ../..  # dashboard (separate to avoid React conflicts)
 

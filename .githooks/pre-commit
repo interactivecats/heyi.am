@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# When a CLI template CSS file is staged, re-sync Phoenix static assets
+# so the committed Phoenix copy can't drift from the CLI source of truth.
+# Blocks the commit on sync failure — fix the cause rather than bypass
+# (use `git commit --no-verify` only for genuine emergencies).
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+changed=$(git diff --cached --name-only --diff-filter=ACMR \
+  | grep -E '^cli/src/render/templates/([^/]+/)?styles\.css$' || true)
+
+if [ -z "$changed" ]; then
+  exit 0
+fi
+
+echo "Template CSS staged — syncing Phoenix static assets..."
+"$REPO_ROOT/scripts/sync-phoenix-assets.sh" > /dev/null
+
+git add \
+  "$REPO_ROOT/heyi_am_umbrella/apps/heyi_am_public_web/priv/static/css/templates/" \
+  "$REPO_ROOT/heyi_am_umbrella/apps/heyi_am_public_web/priv/static/js/mount.js"
+
+echo "Phoenix assets re-staged with commit."

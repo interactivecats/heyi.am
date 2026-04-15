@@ -3,5 +3,8 @@
   "workspaces": [
     "packages/*",
     "phoenix/assets"
-  ]
+  ],
+  "scripts": {
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
+  }
 }
