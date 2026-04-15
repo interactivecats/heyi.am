@@ -1283,3 +1283,7 @@ a.bp-session-card:hover {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Live-patcher empty-state hide marker. Set by the EditRail preview
+   patcher when a contact field clears, removed when it gets a value. */
+[data-portfolio-empty="true"] { display: none !important; }

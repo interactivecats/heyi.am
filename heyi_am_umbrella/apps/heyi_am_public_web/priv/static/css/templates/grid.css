@@ -1439,3 +1439,7 @@
     padding: 6px 10px;
   }
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }

@@ -1401,3 +1401,7 @@ body { background: var(--obs-bg); color: var(--obs-text); }
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }

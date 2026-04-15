@@ -1395,3 +1395,7 @@ a.session-card:hover {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }

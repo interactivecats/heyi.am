@@ -1348,3 +1348,7 @@ a:focus-visible {
     transition: none !important;
   }
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }

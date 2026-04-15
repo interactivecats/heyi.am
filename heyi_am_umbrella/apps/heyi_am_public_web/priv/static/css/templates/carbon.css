@@ -1091,3 +1091,7 @@ body { background: var(--carbon-bg); color: var(--carbon-text); }
   .carbon .stats-bar--project { grid-template-columns: repeat(2, 1fr); }
   .carbon .project-header__title { font-size: 1.25rem; }
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }

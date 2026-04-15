@@ -1255,3 +1255,7 @@
   .verdant .vd-nav__links { gap: 1rem; }
   .verdant .vd-footer { flex-direction: column; gap: 0.5rem; text-align: center; }
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }

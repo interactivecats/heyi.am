@@ -1178,3 +1178,7 @@ body { background: var(--aurora-bg); color: var(--aurora-text); }
   }
   .aurora .aurora-chart-value { text-align: start; }
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }

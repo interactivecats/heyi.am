@@ -1265,3 +1265,7 @@ body { background: var(--neon-bg); color: var(--neon-text); }
   }
   .neon .contrib-chart { padding: 1rem; }
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }

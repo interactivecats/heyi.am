@@ -1223,3 +1223,7 @@ body { background: var(--noir-bg); color: var(--noir-text); }
   outline: 2px solid var(--noir-white);
   outline-offset: 2px;
 }
+
+
+/* Live-edit empty field hiding */
+[data-portfolio-empty="true"] { display: none; }
