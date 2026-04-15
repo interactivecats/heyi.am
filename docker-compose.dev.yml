@@ -56,7 +56,7 @@ services:
         required: false
     command: >
       sh -c "
-      apk add --no-cache git build-base inotify-tools nodejs npm librsvg &&
+      apk add --no-cache git build-base inotify-tools nodejs npm librsvg vips-dev pkgconfig &&
       mix local.hex --force &&
       mix local.rebar --force &&
       mix deps.get &&
