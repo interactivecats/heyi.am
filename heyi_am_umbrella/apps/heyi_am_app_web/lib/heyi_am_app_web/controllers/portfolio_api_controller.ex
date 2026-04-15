@@ -181,7 +181,7 @@ defmodule HeyiAmAppWeb.PortfolioApiController do
     scale = min(max_dim / longest, 1.0)
 
     with {:ok, resized} <- maybe_resize(image, scale),
-         {:ok, jpeg} <- Image.write(resized, :memory, suffix: ".jpg", Q: quality) do
+         {:ok, jpeg} <- Image.write(resized, :memory, suffix: ".jpg", quality: quality) do
       {:ok, jpeg}
     end
   end
