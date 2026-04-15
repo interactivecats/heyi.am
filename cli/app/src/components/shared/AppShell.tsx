@@ -12,9 +12,9 @@ interface AppShellProps {
 
 const SIDEBAR_DESTINATIONS: { label: string; to: string; match: (path: string) => boolean }[] = [
   { label: 'Dashboard', to: '/', match: (p) => p === '/' },
-  { label: 'Projects', to: '/projects', match: (p) => p === '/projects' || p.startsWith('/project/') },
   { label: 'Portfolio', to: '/portfolio', match: (p) => p.startsWith('/portfolio') },
-  { label: 'Sessions', to: '/search', match: (p) => p === '/search' || p.startsWith('/session/') },
+  { label: 'Projects', to: '/projects', match: (p) => p === '/projects' || p.startsWith('/project/') },
+  { label: 'Search sessions', to: '/search', match: (p) => p === '/search' || p.startsWith('/session/') },
   { label: 'Settings', to: '/settings', match: (p) => p.startsWith('/settings') },
 ]
 

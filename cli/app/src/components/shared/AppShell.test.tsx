@@ -22,9 +22,9 @@ describe('AppShell sidebar', () => {
     const links = within(nav).getAllByRole('link')
     expect(links.map((a) => a.textContent)).toEqual([
       'Dashboard',
-      'Projects',
       'Portfolio',
-      'Sessions',
+      'Projects',
+      'Search sessions',
       'Settings',
     ])
   })
