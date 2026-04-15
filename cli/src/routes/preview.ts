@@ -461,13 +461,27 @@ body { overflow: auto !important; min-height: auto !important; }
   router.get('/preview/project/:project/session/:sessionId', async (req: Request, res: Response) => {
     try {
       const projectParam = String(req.params.project);
-      const sessionId = String(req.params.sessionId);
+      // Anchor hrefs in the project preview are built from the session slug
+      // (title-derived) with a ".html" suffix, but the CLI session files are
+      // keyed by Claude UUID. Strip the suffix and match by either.
+      const rawParam = String(req.params.sessionId).replace(/\.html$/, '');
       const rawProjects = await ctx.getProjects();
       const rawProj = rawProjects.find((p) => p.name === projectParam || p.dirName === projectParam);
       if (!rawProj) { res.status(404).send('Project not found'); return; }
 
-      const meta = rawProj.sessions.find((s) => s.sessionId === sessionId);
+      // The project preview's anchor hrefs use the title-derived slug produced
+      // by rowToCard() above, not the Claude UUID. Resolve either form here.
+      const rows = getSessionsByProject(ctx.db, rawProj.dirName);
+      const rowById = new Map(rows.map((r) => [r.id, r]));
+      const meta = rawProj.sessions.find((s) => {
+        if (s.sessionId === rawParam) return true;
+        const row = rowById.get(s.sessionId);
+        const enh = loadEnhancedData(s.sessionId);
+        const title = enh?.title ?? row?.title ?? s.sessionId;
+        return toSlug(title, 80) === rawParam;
+      });
       if (!meta) { res.status(404).send('Session not found'); return; }
+      const sessionId = meta.sessionId;
 
       const auth = getAuthToken();
       const session = await ctx.loadSession(meta.path, rawProj.name, sessionId);
