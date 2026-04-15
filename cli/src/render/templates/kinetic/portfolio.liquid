@@ -81,7 +81,7 @@
   {% if projects.size > 0 %}
   <section class="section" aria-label="Projects">
     <div class="section-tag">Projects</div>
-    <h2 class="section-title">{{ projects.size }} project{{ projects.size | minus: 1 | at_least: 1 | times: 0 | plus: projects.size | minus: 1 }}{% if projects.size != 1 %}s{% endif %} built with AI</h2>
+    <h2 class="section-title">{{ projects.size }} project{% if projects.size != 1 %}s{% endif %} built with AI</h2>
     <p class="section-desc">Each project is a case study with real sessions, real decisions, and real stats.</p>
 
     <div class="projects-grid">
