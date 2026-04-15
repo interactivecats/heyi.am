@@ -450,6 +450,13 @@ export interface PortfolioPublishResult {
   hash?: string
 }
 
+export type PortfolioPublishEvent =
+  | { type: 'progress'; message: string }
+  | { type: 'project'; project: string; index: number; total: number; status: string }
+  | { type: 'session'; sessionId: string; status: string; project?: string }
+  | { type: 'done'; ok: boolean; url: string; publishedAt?: string; hash?: string }
+  | { type: 'error'; message: string; code?: string }
+
 export async function fetchPortfolioPublishState(): Promise<PortfolioPublishState> {
   try {
     return await get<PortfolioPublishState>('/portfolio/state')
@@ -459,15 +466,17 @@ export async function fetchPortfolioPublishState(): Promise<PortfolioPublishStat
 }
 
 /**
- * Publish the portfolio to the given target. Phase 3 only supports the
- * `heyi.am` target — `targetId` is plumbed through now so Phase 4 (export)
- * and Phase 5 (github) can add branches without a breaking API change.
+ * Publish the portfolio via SSE. Returns an AbortController so the caller
+ * can cancel. The `onEvent` callback fires for each progress/done/error event.
  */
-export async function publishPortfolio(targetId: string): Promise<PortfolioPublishResult> {
+export function publishPortfolio(
+  targetId: string,
+  onEvent?: (event: PortfolioPublishEvent) => void,
+): AbortController {
   if (targetId !== 'heyi.am') {
     throw new Error(`Unsupported publish target: ${targetId}`)
   }
-  return post<PortfolioPublishResult>('/portfolio/upload')
+  return streamSSE<PortfolioPublishEvent>('/portfolio/upload', {}, onEvent ?? (() => {}))
 }
 
 // ── Portfolio export (zip download) ──────────────────────────

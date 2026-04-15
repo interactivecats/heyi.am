@@ -13,7 +13,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { usePortfolioStore } from '../../hooks/usePortfolioStore'
-import { publishPortfolio, startLogin, pollDeviceAuth } from '../../api'
+import { publishPortfolio, startLogin, pollDeviceAuth, type PortfolioPublishEvent } from '../../api'
 import { TargetPickerSheet } from './TargetPickerSheet'
 
 type AuthState =
@@ -62,11 +62,12 @@ function deriveStatePhrase(opts: {
   lastPublishError: string | null
   isDraft: boolean
   changeCount: number
+  latestProgress?: string
 }): StatePhrase {
   if (opts.isPublishing) {
     return {
       dotClass: 'bg-amber animate-pulse',
-      phrase: 'Publishing…',
+      phrase: opts.latestProgress || 'Publishing…',
       testId: 'status-publishing',
     }
   }
@@ -105,7 +106,7 @@ function isEditableElement(el: EventTarget | null): boolean {
 
 export function StatusBar() {
   const { state, dispatch } = usePortfolioStore()
-  const { publishState, isPublishing, lastPublishError, isDraft, changeList } = state
+  const { publishState, isPublishing, lastPublishError, isDraft, changeList, publishProgress } = state
   const [targetPickerOpen, setTargetPickerOpen] = useState(false)
   const [authState, setAuthState] = useState<AuthState>(null)
 
@@ -120,43 +121,63 @@ export function StatusBar() {
     isDraft,
   })
 
+  const latestProgress = publishProgress.length > 0 ? publishProgress[publishProgress.length - 1] : undefined
   const phrase = deriveStatePhrase({
     publishStateExists: Boolean(publishState && target),
     isPublishing: isPublishing || authState?.step === 'opening' || authState?.step === 'waiting',
     lastPublishError,
     isDraft,
     changeCount: changeList.length,
+    latestProgress,
   })
 
-  const doPublish = useCallback(async () => {
+  const doPublish = useCallback(() => {
     dispatch({ type: 'PUBLISH_START' })
-    try {
-      const result = await publishPortfolio('heyi.am')
-      dispatch({
-        type: 'PUBLISH_SUCCESS',
-        publishState: {
-          targets: {
-            ...(publishState?.targets ?? {}),
-            'heyi.am': {
-              lastPublishedAt: result.publishedAt ?? new Date().toISOString(),
-              lastPublishedProfileHash: result.hash ?? '',
-              lastPublishedProfile: state.profile,
-              config: target?.config ?? {},
-              visibility: target?.visibility,
-              url: result.url,
+    publishPortfolio('heyi.am', (event: PortfolioPublishEvent) => {
+      switch (event.type) {
+        case 'progress':
+          dispatch({ type: 'PUBLISH_PROGRESS', message: event.message })
+          break
+        case 'project':
+          dispatch({
+            type: 'PUBLISH_PROGRESS',
+            message: `${event.project}: ${event.status} (${event.index}/${event.total})`,
+          })
+          break
+        case 'session':
+          dispatch({
+            type: 'PUBLISH_PROGRESS',
+            message: `${event.project ? event.project + ': ' : ''}session ${event.status}`,
+          })
+          break
+        case 'done':
+          dispatch({
+            type: 'PUBLISH_SUCCESS',
+            publishState: {
+              targets: {
+                ...(publishState?.targets ?? {}),
+                'heyi.am': {
+                  lastPublishedAt: event.publishedAt ?? new Date().toISOString(),
+                  lastPublishedProfileHash: event.hash ?? '',
+                  lastPublishedProfile: state.profile,
+                  config: target?.config ?? {},
+                  visibility: target?.visibility,
+                  url: event.url,
+                },
+              },
             },
-          },
-        },
-      })
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error'
-      if (message === 'Authentication required') {
-        dispatch({ type: 'PUBLISH_FAIL', error: '' })
-        startDeviceLogin()
-      } else {
-        dispatch({ type: 'PUBLISH_FAIL', error: message })
+          })
+          break
+        case 'error':
+          if (event.message === 'AUTH_REQUIRED' || event.message === 'Authentication required') {
+            dispatch({ type: 'PUBLISH_FAIL', error: '' })
+            startDeviceLogin()
+          } else {
+            dispatch({ type: 'PUBLISH_FAIL', error: event.message })
+          }
+          break
       }
-    }
+    })
   }, [publishState, dispatch, state.profile, target])
 
   const startDeviceLogin = useCallback(async () => {
@@ -191,9 +212,9 @@ export function StatusBar() {
     }
   }, [doPublish])
 
-  const runPrimary = useCallback(async () => {
+  const runPrimary = useCallback(() => {
     if (primary.disabled) return
-    await doPublish()
+    doPublish()
   }, [primary.disabled, doPublish])
 
   // ⌘↵ / Ctrl+↵ shortcut

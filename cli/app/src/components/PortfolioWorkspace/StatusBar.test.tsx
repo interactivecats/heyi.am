@@ -9,7 +9,7 @@ vi.mock('../../api', async () => {
   }
 })
 
-import { publishPortfolio } from '../../api'
+import { publishPortfolio, type PortfolioPublishEvent } from '../../api'
 import { StatusBar } from './StatusBar'
 import {
   PortfolioStoreProvider,
@@ -25,6 +25,9 @@ afterEach(() => {
 
 beforeEach(() => {
   mockedPublish.mockReset()
+  mockedPublish.mockImplementation((_targetId: string, _onEvent?: (event: PortfolioPublishEvent) => void) => {
+    return new AbortController()
+  })
 })
 
 function renderWith(initial: Partial<PortfolioStoreState>) {
@@ -105,16 +108,14 @@ describe('StatusBar', () => {
   })
 
   it('clicking Publish in never-published state calls publishPortfolio', async () => {
-    mockedPublish.mockResolvedValue({ ok: true, url: 'https://heyi.am/ada' })
     renderWith({})
     await act(async () => {
       fireEvent.click(screen.getByTestId('statusbar-primary-action'))
     })
-    expect(mockedPublish).toHaveBeenCalledWith('heyi.am')
+    expect(mockedPublish).toHaveBeenCalledWith('heyi.am', expect.any(Function))
   })
 
   it('Cmd+Enter triggers primary action when no input focused', async () => {
-    mockedPublish.mockResolvedValue({ ok: true, url: 'https://heyi.am/ada' })
     renderWith({})
     await act(async () => {
       fireEvent.keyDown(window, { key: 'Enter', metaKey: true })
@@ -123,7 +124,6 @@ describe('StatusBar', () => {
   })
 
   it('Ctrl+Enter also triggers primary action', async () => {
-    mockedPublish.mockResolvedValue({ ok: true, url: 'https://heyi.am/ada' })
     renderWith({})
     await act(async () => {
       fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true })
@@ -132,7 +132,6 @@ describe('StatusBar', () => {
   })
 
   it('Cmd+Enter does NOT fire when an input is focused', async () => {
-    mockedPublish.mockResolvedValue({ ok: true, url: 'https://heyi.am/ada' })
     render(
       <PortfolioStoreProvider>
         <input data-testid="some-input" />

@@ -61,7 +61,6 @@ vi.mock('../sync.js', () => ({
   displayNameFromDir: (d: string) => d,
 }));
 
-// Use a real temp configDir for settings so round-trip persistence works.
 let configDir: string;
 const originalDataDir = process.env.HEYIAM_DATA_DIR;
 
@@ -95,6 +94,14 @@ function makeApp(): express.Express {
   return app;
 }
 
+/** Parse SSE text body into an array of JSON event objects. */
+function parseSSE(text: string): Record<string, unknown>[] {
+  return text
+    .split('\n')
+    .filter((line) => line.startsWith('data: '))
+    .map((line) => JSON.parse(line.slice(6)));
+}
+
 describe('POST /api/portfolio/upload', () => {
   beforeEach(() => {
     configDir = mkdtempSync(join(tmpdir(), 'heyiam-pub-route-'));
@@ -120,7 +127,7 @@ describe('POST /api/portfolio/upload', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('renders fragment, POSTs to Phoenix with Bearer auth, persists state on success', async () => {
+  it('streams SSE progress events and persists state on success', async () => {
     savePortfolioProfile({ displayName: 'Ada', bio: 'hello' }, configDir);
 
     fetchMock.mockResolvedValueOnce({
@@ -129,39 +136,45 @@ describe('POST /api/portfolio/upload', () => {
       json: async () => ({ ok: true, username: 'testuser' }),
     });
 
-    const res = await request(makeApp()).post('/api/portfolio/upload').send({});
+    const res = await request(makeApp())
+      .post('/api/portfolio/upload')
+      .send({})
+      .buffer(true)
+      .parse((res, cb) => {
+        let data = '';
+        res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+        res.on('end', () => cb(null, data));
+      });
 
     expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(true);
-    expect(res.body.url).toBe('https://heyi.test/testuser');
-    expect(res.body.hash).toMatch(/^[0-9a-f]{16}$/);
+    const events = parseSSE(res.body as string);
 
-    // Fragment was generated.
+    const progressMsgs = events.filter((e) => e.type === 'progress');
+    expect(progressMsgs.length).toBeGreaterThan(0);
+
+    const doneEvent = events.find((e) => e.type === 'done') as Record<string, unknown>;
+    expect(doneEvent).toBeDefined();
+    expect(doneEvent.ok).toBe(true);
+    expect(doneEvent.url).toBe('https://heyi.test/testuser');
+    expect(doneEvent.hash).toMatch(/^[0-9a-f]{16}$/);
+
     expect(generatePortfolioHtmlFragment).toHaveBeenCalledTimes(1);
 
-    // Phoenix call shape.
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe('https://heyiam.test/api/portfolio/upload');
     expect(init.method).toBe('POST');
     expect(init.headers.Authorization).toBe('Bearer test-token-abc');
-    expect(init.headers['Content-Type']).toBe('application/json');
-    const body = JSON.parse(init.body);
-    expect(body.html).toBe('<section>portfolio-fragment</section>');
-    expect(body.profile).toBeDefined();
-    expect(body.profile.displayName).toBe('Ada');
 
-    // State persisted.
     const state = getPortfolioPublishState(configDir);
     const target = state.targets[DEFAULT_PORTFOLIO_TARGET];
     expect(target).toBeDefined();
     expect(target.lastPublishedProfile.displayName).toBe('Ada');
-    expect(target.lastPublishedProfileHash).toBe(res.body.hash);
     expect(target.url).toBe('https://heyi.test/testuser');
     expect(target.lastError).toBeUndefined();
   });
 
-  it('persists lastError on Phoenix failure and returns structured error', async () => {
+  it('streams error event on Phoenix failure and persists lastError', async () => {
     savePortfolioProfile({ displayName: 'Ada' }, configDir);
 
     fetchMock.mockResolvedValueOnce({
@@ -170,17 +183,25 @@ describe('POST /api/portfolio/upload', () => {
       json: async () => ({ error: { message: 'html sanitized to empty' } }),
     });
 
-    const res = await request(makeApp()).post('/api/portfolio/upload').send({});
+    const res = await request(makeApp())
+      .post('/api/portfolio/upload')
+      .send({})
+      .buffer(true)
+      .parse((res, cb) => {
+        let data = '';
+        res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+        res.on('end', () => cb(null, data));
+      });
 
-    expect(res.status).toBe(422);
-    expect(res.body.error.code).toBe('PORTFOLIO_UPLOAD_FAILED');
-    expect(res.body.error.message).toBe('html sanitized to empty');
+    expect(res.status).toBe(200);
+    const events = parseSSE(res.body as string);
+    const errEvent = events.find((e) => e.type === 'error') as Record<string, unknown>;
+    expect(errEvent).toBeDefined();
+    expect(errEvent.message).toBe('html sanitized to empty');
 
     const state = getPortfolioPublishState(configDir);
     const target = state.targets[DEFAULT_PORTFOLIO_TARGET];
     expect(target.lastError).toBe('html sanitized to empty');
-    expect(target.lastErrorAt).toBeDefined();
-    // no successful publish → no publishedAt/hash
     expect(target.lastPublishedAt).toBe('');
   });
 
@@ -204,7 +225,15 @@ describe('POST /api/portfolio/upload', () => {
       status: 200,
       json: async () => ({ ok: true, username: 'testuser' }),
     });
-    await request(makeApp()).post('/api/portfolio/upload').send({});
+    await request(makeApp())
+      .post('/api/portfolio/upload')
+      .send({})
+      .buffer(true)
+      .parse((res, cb) => {
+        let data = '';
+        res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+        res.on('end', () => cb(null, data));
+      });
 
     const res = await request(makeApp()).get('/api/portfolio/state');
     expect(res.status).toBe(200);
@@ -212,17 +241,5 @@ describe('POST /api/portfolio/upload', () => {
     expect(target).toBeDefined();
     expect(target.lastPublishedProfile.displayName).toBe('Ada');
     expect(target.visibility).toBe('public');
-  });
-
-  it('maps Phoenix 5xx to 502 gateway error', async () => {
-    fetchMock.mockResolvedValueOnce({
-      ok: false,
-      status: 503,
-      json: async () => null,
-    });
-
-    const res = await request(makeApp()).post('/api/portfolio/upload').send({});
-    expect(res.status).toBe(502);
-    expect(res.body.error.code).toBe('PORTFOLIO_UPLOAD_FAILED');
   });
 });

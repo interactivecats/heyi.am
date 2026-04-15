@@ -38,6 +38,8 @@ export interface PortfolioStoreState {
   changeList: string[]
   isPublishing: boolean
   lastPublishError: string | null
+  /** Progress messages streamed during publish (SSE events). */
+  publishProgress: string[]
   /**
    * Timestamp (ms) of the last successful profile save. PreviewPane keys its
    * iframe reload off this value so the iframe only remounts when the backend
@@ -65,6 +67,7 @@ export const initialPortfolioStoreState: PortfolioStoreState = {
   changeList: [],
   isPublishing: false,
   lastPublishError: null,
+  publishProgress: [],
   lastSavedAt: null,
   refreshTrigger: 0,
 }
@@ -84,6 +87,7 @@ export type PortfolioStoreAction =
   | { type: 'TOGGLE_PROJECT_INCLUDED'; projectId: string }
   | { type: 'REORDER_PROJECT'; projectId: string; newIndex: number }
   | { type: 'PUBLISH_START' }
+  | { type: 'PUBLISH_PROGRESS'; message: string }
   | { type: 'PUBLISH_SUCCESS'; publishState: PortfolioPublishState }
   | { type: 'PUBLISH_FAIL'; error: string }
   | { type: 'RECOMPUTE_DRAFT'; isDraft: boolean; changeList: string[] }
@@ -144,20 +148,24 @@ export function portfolioStoreReducer(
     }
 
     case 'PUBLISH_START':
-      return { ...state, isPublishing: true, lastPublishError: null }
+      return { ...state, isPublishing: true, lastPublishError: null, publishProgress: [] }
+
+    case 'PUBLISH_PROGRESS':
+      return { ...state, publishProgress: [...state.publishProgress, action.message] }
 
     case 'PUBLISH_SUCCESS':
       return {
         ...state,
         isPublishing: false,
         lastPublishError: null,
+        publishProgress: [],
         publishState: action.publishState,
         isDraft: false,
         changeList: [],
       }
 
     case 'PUBLISH_FAIL':
-      return { ...state, isPublishing: false, lastPublishError: action.error }
+      return { ...state, isPublishing: false, lastPublishError: action.error, publishProgress: [] }
 
     case 'RECOMPUTE_DRAFT':
       return { ...state, isDraft: action.isDraft, changeList: action.changeList }
