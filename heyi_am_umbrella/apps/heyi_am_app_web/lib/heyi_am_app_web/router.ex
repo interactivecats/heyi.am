@@ -88,6 +88,7 @@ defmodule HeyiAmAppWeb.Router do
     patch "/projects/:slug/screenshot-key", ProjectApiController, :update_screenshot_key
     post "/sessions", ShareApiController, :create
     delete "/sessions/:id", ShareApiController, :delete
+    patch "/sessions/bulk-status", ShareApiController, :bulk_update_status
     post "/time-stats", TimeStatsApiController, :upload
     patch "/profile", ProfileApiController, :update
     post "/portfolio/upload", PortfolioApiController, :upload

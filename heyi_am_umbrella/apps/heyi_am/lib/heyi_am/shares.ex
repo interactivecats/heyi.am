@@ -119,6 +119,19 @@ defmodule HeyiAm.Shares do
     |> Repo.all()
   end
 
+  @doc """
+  Bulk-update the status of all non-archived shares belonging to a project.
+  Used by portfolio publish to promote sessions to listed or demote to unlisted.
+  """
+  def update_project_shares_status(project_id, status) when status in ~w(listed unlisted) do
+    {count, _} =
+      Share
+      |> where([s], s.project_id == ^project_id and s.status in ["listed", "unlisted"])
+      |> Repo.update_all(set: [status: status])
+
+    {:ok, count}
+  end
+
   def generate_token do
     :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
   end

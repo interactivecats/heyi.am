@@ -165,6 +165,35 @@ defmodule HeyiAmAppWeb.ShareApiController do
     end
   end
 
+  @doc """
+  PATCH /api/sessions/bulk-status — update status of all shares for a given project.
+  Accepts `{"project_id": <int>, "status": "listed"|"unlisted"}`.
+  Only affects shares owned by the authenticated user.
+  """
+  def bulk_update_status(conn, %{"project_id" => project_id, "status" => status})
+      when status in ~w(listed unlisted) do
+    user_id = conn.assigns[:current_user_id]
+
+    if is_nil(user_id) do
+      conn |> put_status(:unauthorized) |> json(%{error: "Authentication required"})
+    else
+      case Projects.get_user_project(user_id, project_id) do
+        nil ->
+          conn |> put_status(:not_found) |> json(%{error: %{code: "PROJECT_NOT_FOUND"}})
+
+        _project ->
+          {:ok, count} = Shares.update_project_shares_status(project_id, status)
+          json(conn, %{updated: count})
+      end
+    end
+  end
+
+  def bulk_update_status(conn, _params) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{error: %{code: "INVALID_PARAMS", message: "Requires project_id and status (listed|unlisted)"}})
+  end
+
   defp delete_s3_artifacts(%Share{} = share) do
     for key <- [share.raw_storage_key, share.log_storage_key, share.session_storage_key],
         is_binary(key) and key != "" do

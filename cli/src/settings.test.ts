@@ -19,6 +19,7 @@ import {
   saveUploadedState,
   getUploadedState,
   clearUploadedState,
+  listUploadedProjects,
   isTranscriptIncluded,
   setTranscriptIncluded,
 } from './settings.js';
@@ -288,6 +289,31 @@ describe('settings', () => {
 
     it('clearUploadedState is a no-op when no file exists', () => {
       expect(() => clearUploadedState('never-saved', tmpDir)).not.toThrow();
+    });
+
+    it('listUploadedProjects returns empty when no uploads exist', () => {
+      expect(listUploadedProjects(tmpDir)).toEqual([]);
+    });
+
+    it('listUploadedProjects returns all saved projects', () => {
+      saveUploadedState('proj-alpha', { slug: 'proj-alpha', projectId: 1, uploadedSessions: ['s1'] }, tmpDir);
+      saveUploadedState('proj-beta', { slug: 'proj-beta', projectId: 2, uploadedSessions: [] }, tmpDir);
+
+      const result = listUploadedProjects(tmpDir);
+      expect(result).toHaveLength(2);
+      const dirNames = result.map((r) => r.dirName).sort();
+      expect(dirNames).toEqual(['proj-alpha', 'proj-beta']);
+      expect(result.find((r) => r.dirName === 'proj-alpha')!.state.projectId).toBe(1);
+    });
+
+    it('listUploadedProjects excludes cleared projects', () => {
+      saveUploadedState('proj-alpha', { slug: 'proj-alpha', projectId: 1, uploadedSessions: [] }, tmpDir);
+      saveUploadedState('proj-beta', { slug: 'proj-beta', projectId: 2, uploadedSessions: [] }, tmpDir);
+      clearUploadedState('proj-alpha', tmpDir);
+
+      const result = listUploadedProjects(tmpDir);
+      expect(result).toHaveLength(1);
+      expect(result[0].dirName).toBe('proj-beta');
     });
   });
 

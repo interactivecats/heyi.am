@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { createHash } from 'node:crypto';
@@ -403,6 +403,19 @@ export function getUploadedState(projectDirName: string, configDir?: string): Up
 export function clearUploadedState(projectDirName: string, configDir?: string): void {
   const path = uploadedPath(projectDirName, configDir);
   if (existsSync(path)) unlinkSync(path);
+}
+
+export function listUploadedProjects(configDir?: string): Array<{ dirName: string; state: UploadedState }> {
+  const dir = uploadedDir(configDir);
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => {
+      const dirName = f.replace(/\.json$/, '');
+      const state = getUploadedState(dirName, configDir);
+      return state ? { dirName, state } : null;
+    })
+    .filter((x): x is { dirName: string; state: UploadedState } => x !== null);
 }
 
 // ── Portfolio publish state ─────────────────────────────────

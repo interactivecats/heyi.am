@@ -7,14 +7,13 @@ import { getAuthToken } from '../auth.js';
 import { API_URL, PUBLIC_URL, warnIfNonDefaultApiUrl } from '../config.js';
 import {
   loadEnhancedData,
-  saveEnhancedData,
   saveUploadedState,
   getDefaultTemplate,
   getPortfolioProfile,
   hashPortfolioProfile,
   updatePortfolioPublishTarget,
   getPortfolioPublishState,
-  isTranscriptIncluded,
+  listUploadedProjects,
   DEFAULT_PORTFOLIO_TARGET,
 } from '../settings.js';
 import { generatePortfolioHtmlFragment, generateProjectHtmlFragment, generatePortfolioSite, createZipBuffer, type PortfolioSiteProjectInput, type HtmlFile } from '../export.js';
@@ -22,17 +21,17 @@ import { buildPortfolioRenderData } from './portfolio-render-data.js';
 import { buildProjectDetail } from './context.js';
 import type { ProjectEnhanceCache } from '../settings.js';
 import { captureScreenshot } from '../screenshot.js';
-import { redactSession, redactText, scanTextSync, formatFindings, stripHomePathsInText } from '../redact.js';
-import { renderProjectHtml, renderSessionHtml } from '../render/index.js';
-import { buildSessionRenderData, buildSessionCard, buildProjectRenderData } from '../render/build-render-data.js';
+import { renderProjectHtml } from '../render/index.js';
+import { buildProjectRenderData } from '../render/build-render-data.js';
 import type { SessionCard } from '../render/types.js';
 import type { ProjectEnhanceResult } from '../llm/project-enhance.js';
-import { buildAgentSummary, type RouteContext } from './context.js';
+import { type RouteContext } from './context.js';
+import { uploadSelectedSessions } from './project-session-upload.js';
 import { invalidatePortfolioPreviewCache } from './preview.js';
 import { startSSE } from './sse.js';
 import { displayNameFromDir } from '../sync.js';
 import { toSlug } from '../format-utils.js';
-import { getProjectUuid, getFileCountWithChildren } from '../db.js';
+import { getProjectUuid } from '../db.js';
 
 const IMAGE_KEY_PREFIX = 'images/';
 
@@ -284,234 +283,18 @@ export function createPublishRouter(ctx: RouteContext): Router {
       const proj = projects.find((p) => p.dirName === project);
       let uploadedCount = 0;
       const failedSessions: Array<{ sessionId: string; error: string }> = [];
-      const uploadedSessionCards: SessionCard[] = [];
+      let uploadedSessionCards: SessionCard[] = [];
 
       if (proj) {
-        const selectedTemplate = getDefaultTemplate() || 'editorial';
-        for (const sessionId of selectedSessionIds) {
-          const meta = proj.sessions.find((s) => s.sessionId === sessionId);
-          if (!meta) continue;
-
-          send({ type: 'session', sessionId, status: 'uploading' });
-
-          try {
-            const session = await ctx.loadSession(meta.path, proj.name, sessionId);
-            const enhanced = loadEnhancedData(sessionId);
-            const sessionSlug = toSlug(enhanced?.title ?? session.title ?? sessionId, 80);
-            const includeTranscript = isTranscriptIncluded(sessionId);
-
-            const agentSummary = await buildAgentSummary(
-              meta.children ?? [],
-              (c) => ctx.getSessionStats(c, proj.name),
-              { deduplicate: true },
-            );
-
-            const devTake = (enhanced?.developerTake ?? session.developerTake ?? '').slice(0, 2000);
-            const sessionNarrative = (enhanced as { narrative?: string })?.narrative ?? '';
-            const sessionTitle = enhanced?.title ?? session.title;
-            const sessionSkills = enhanced?.skills ?? session.skills ?? [];
-            const sessionSourceTool = session.source ?? meta.source ?? 'claude';
-            const sessionRecordedAt = session.date ? new Date(session.date).toISOString() : new Date().toISOString();
-            const renderOpts = {
-              sessionId,
-              session,
-              enhanced,
-              username: auth.username,
-              projectSlug: projectData.slug,
-              sessionSlug,
-              sourceTool: sessionSourceTool,
-              agentSummary,
-              template: selectedTemplate,
-            };
-
-            let sessionRenderedHtml: string | null = null;
-            try {
-              const sessionRenderData = buildSessionRenderData(renderOpts);
-              sessionRenderedHtml = renderSessionHtml(sessionRenderData, selectedTemplate);
-            } catch (renderErr) {
-              console.error(`[upload] Session render failed for ${sessionId}:`, (renderErr as Error).message);
-            }
-
-            uploadedSessionCards.push(buildSessionCard(renderOpts));
-
-            const childLoc = agentSummary?.agents?.reduce(
-              (s: number, a: { loc_changed?: number }) => s + (a.loc_changed ?? 0), 0,
-            ) ?? 0;
-            const totalLocChanged = (session.linesOfCode ?? 0) + childLoc;
-            const totalFilesChanged = getFileCountWithChildren(ctx.db, sessionId) || session.filesChanged?.length || 0;
-
-            const sessionPayload = {
-              session: {
-                title: sessionTitle,
-                dev_take: devTake,
-                context: enhanced?.context ?? '',
-                duration_minutes: session.durationMinutes ?? 0,
-                turns: session.turns ?? 0,
-                files_changed: totalFilesChanged,
-                loc_changed: totalLocChanged,
-                recorded_at: sessionRecordedAt,
-                end_time: session.endTime ? new Date(session.endTime).toISOString() : null,
-                cwd: session.cwd ?? null,
-                wall_clock_minutes: session.wallClockMinutes ?? null,
-                template: selectedTemplate,
-                language: null,
-                tools: session.toolBreakdown?.map((t) => t.tool) ?? [],
-                skills: sessionSkills,
-                narrative: sessionNarrative,
-                project_name: proj.name,
-                project_id: projectData.project_id,
-                slug: sessionSlug,
-                status: 'unlisted',
-                source_tool: sessionSourceTool,
-                agent_summary: agentSummary,
-                rendered_html: sessionRenderedHtml,
-              },
-            };
-
-            // Transcript-derived fields. When the user has toggled the
-            // transcript OFF for this session we omit them from the
-            // uploaded JSON entirely — see the spread below. The
-            // session's main payload (dev take, skills, Q&A, etc.) is
-            // unaffected.
-            const turnTimeline = (session.turnTimeline ?? []).map((t) => ({
-              timestamp: t.timestamp,
-              type: t.type,
-              content: (t.content ?? '').slice(0, 200),
-              tools: (t as { tools?: string[] }).tools ?? [],
-            }));
-            const transcriptExcerpt = (session.rawLog ?? []).slice(0, 10).map((line, i) => {
-              const role = line.startsWith('> ') ? 'dev' : 'ai';
-              const text = role === 'dev' ? line.slice(2) : line;
-              return { role, id: `Turn ${i + 1}`, text, timestamp: null };
-            });
-
-            const sessionData = {
-              version: 1,
-              id: sessionId,
-              title: sessionTitle,
-              dev_take: devTake,
-              context: enhanced?.context ?? '',
-              duration_minutes: session.durationMinutes ?? 0,
-              turns: session.turns ?? 0,
-              files_changed: (session.filesChanged ?? []).slice(0, 20).map((f) => (typeof f === 'string' ? { path: f, additions: 0, deletions: 0 } : f)),
-              loc_changed: totalLocChanged,
-              date: sessionRecordedAt,
-              end_time: (() => {
-                if (!session.endTime || !session.date) return null;
-                const wallMs = new Date(session.endTime).getTime() - new Date(session.date).getTime();
-                const activeMs = (session.durationMinutes ?? 0) * 60_000;
-                return wallMs <= activeMs * 3 ? new Date(session.endTime).toISOString() : null;
-              })(),
-              cwd: session.cwd ?? null,
-              wall_clock_minutes: session.wallClockMinutes ?? null,
-              template: selectedTemplate,
-              skills: sessionSkills,
-              tools: session.toolBreakdown?.map((t) => t.tool) ?? [],
-              source: sessionSourceTool,
-              slug: sessionSlug,
-              project_name: proj.name,
-              narrative: sessionNarrative,
-              status: 'unlisted' as const,
-              raw_log: [] as string[],
-              execution_path: (enhanced?.executionSteps ?? session.executionPath ?? []).map((s, i) => ({
-                label: s.title ?? `Step ${i + 1}`,
-                description: (s as { description?: string }).description ?? (s as { body?: string }).body ?? '',
-              })),
-              qa_pairs: enhanced?.qaPairs ?? session.qaPairs ?? [],
-              highlights: [],
-              tool_breakdown: (session.toolBreakdown ?? []).map((t) => ({ tool: t.tool, count: t.count })),
-              top_files: (session.filesChanged ?? []).slice(0, 20).map((f) => (typeof f === 'string' ? { path: f, additions: 0, deletions: 0 } : f)),
-              ...(includeTranscript ? { turn_timeline: turnTimeline } : {}),
-              ...(includeTranscript ? { transcript_excerpt: transcriptExcerpt } : {}),
-              agent_summary: agentSummary,
-              children: agentSummary?.agents?.map((a: { role: string; duration_minutes: number; loc_changed: number }) => ({
-                sessionId: a.role,
-                role: a.role,
-                durationMinutes: a.duration_minutes,
-                linesOfCode: a.loc_changed,
-              })) ?? [],
-            };
-
-            const sessionCwd = session.cwd ?? undefined;
-            const redactedPayload = redactSession(sessionPayload, 'high', sessionCwd);
-            const redactedData = redactSession(sessionData as Record<string, unknown>, 'high', sessionCwd);
-
-            const payloadFindings = scanTextSync(JSON.stringify(sessionPayload));
-            if (payloadFindings.length > 0) {
-              const summary = formatFindings(payloadFindings);
-              send({ type: 'redaction', sessionId, message: summary });
-            }
-
-            const sessionRes = await fetch(`${API_URL}/api/sessions`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${auth.token}`,
-              },
-              body: JSON.stringify(redactedPayload),
-            });
-
-            if (sessionRes.ok) {
-              uploadedCount++;
-
-              try {
-                const sesData = await sessionRes.json() as { upload_urls?: { raw?: string; log?: string; session?: string } };
-                if (sesData.upload_urls && includeTranscript) {
-                  // Transcript-bearing S3 uploads. Skipped entirely when
-                  // the user has toggled the transcript OFF for this
-                  // session — the server never sees raw_log, turn
-                  // timeline, or the bundled session-data JSON in that
-                  // case.
-                  const { raw: rawUrl, log: logUrl } = sesData.upload_urls;
-                  if (rawUrl && meta.path && !meta.path.startsWith('cursor://')) {
-                    try {
-                      const rawText = readFileSync(meta.path, 'utf-8');
-                      let redactedRaw = redactText(rawText);
-                      redactedRaw = stripHomePathsInText(redactedRaw, sessionCwd);
-                      await fetch(rawUrl, { method: 'PUT', body: Buffer.from(redactedRaw, 'utf-8'), headers: { 'Content-Type': 'application/octet-stream' } });
-                    } catch { /* S3 upload is best-effort */ }
-                  }
-                  if (logUrl && session.rawLog && session.rawLog.length > 0) {
-                    try {
-                      const redactedLog = session.rawLog.map((line: string) => {
-                        let cleaned = redactText(line);
-                        cleaned = stripHomePathsInText(cleaned, sessionCwd);
-                        return cleaned;
-                      });
-                      await fetch(logUrl, { method: 'PUT', body: JSON.stringify(redactedLog), headers: { 'Content-Type': 'application/json' } });
-                    } catch { /* S3 upload is best-effort */ }
-                  }
-                  if (sesData.upload_urls.session) {
-                    try {
-                      await fetch(sesData.upload_urls.session, {
-                        method: 'PUT',
-                        body: JSON.stringify(redactedData),
-                        headers: { 'Content-Type': 'application/json' },
-                      });
-                    } catch { /* S3 upload is best-effort */ }
-                  }
-                }
-              } catch { /* Response already consumed or no upload_urls -- not fatal */ }
-
-              if (enhanced) {
-                saveEnhancedData(sessionId, { ...enhanced, uploaded: true });
-              }
-              send({ type: 'session', sessionId, status: 'uploaded' });
-            } else {
-              const sesErrBody = await sessionRes.json().catch(() => null);
-              const rawSesErr = sesErrBody && typeof sesErrBody === 'object' ? (sesErrBody as { error?: unknown }).error : null;
-              const errMsg = typeof rawSesErr === 'string' ? rawSesErr
-                : (rawSesErr && typeof rawSesErr === 'object' && 'message' in rawSesErr) ? (rawSesErr as { message: string }).message
-                : `HTTP ${sessionRes.status}`;
-              failedSessions.push({ sessionId, error: errMsg });
-              send({ type: 'session', sessionId, status: 'failed', error: errMsg });
-            }
-          } catch (err) {
-            const errMsg = (err as Error).message;
-            failedSessions.push({ sessionId, error: errMsg });
-            send({ type: 'session', sessionId, status: 'failed', error: errMsg });
-          }
-        }
+        const sessionResult = await uploadSelectedSessions(ctx, auth, {
+          proj,
+          projectData,
+          selectedSessionIds,
+          send,
+        });
+        uploadedCount = sessionResult.uploadedCount;
+        failedSessions.push(...sessionResult.failedSessions);
+        uploadedSessionCards = sessionResult.uploadedSessionCards;
       }
 
       // Step 3: Render project HTML using the same path as HTML export
@@ -654,68 +437,259 @@ export function createPublishRouter(ctx: RouteContext): Router {
       return;
     }
 
+    const send = startSSE(res);
+
     try {
+      send({ type: 'progress', message: 'Preparing portfolio…' });
       const profile = getPortfolioProfile();
       const templateName = getDefaultTemplate() || 'editorial';
 
       const { renderData, filteredProjects } = await buildPortfolioRenderData(ctx, auth);
+      send({ type: 'progress', message: 'Rendering portfolio HTML…' });
       const renderedHtml = generatePortfolioHtmlFragment(renderData, templateName);
 
       // Upload individual project pages for every project included in the
       // portfolio. This ensures project detail pages exist on heyi.am even
       // if the user never published them individually.
+      const MAX_SLUG_RETRIES = 10;
+      const slugMap = new Map<string, string>();
+
+      send({ type: 'progress', message: `Publishing ${filteredProjects.length} project${filteredProjects.length === 1 ? '' : 's'}…` });
+
+      let projectIndex = 0;
       for (const rawProj of filteredProjects) {
+        projectIndex++;
         try {
+          const allProjectsList = await ctx.getProjects();
+          const projInfo = allProjectsList.find((p) => p.dirName === rawProj.dirName);
+          if (!projInfo) {
+            console.warn(`[portfolio-upload] project not found: ${rawProj.dirName}`);
+            continue;
+          }
+
           const detail = buildProjectDetail(ctx.db, rawProj);
-          const proj = detail.project as Record<string, unknown>;
-          const cache = (detail.enhanceCache as ProjectEnhanceCache | null)
-            ?? { fingerprint: 'portfolio-upload', enhancedAt: new Date().toISOString(), selectedSessionIds: detail.sessions.map((s) => s.id), result: { narrative: '', arc: [], skills: [], timeline: [], questions: [] } };
+          const enhance = detail.enhanceCache as ProjectEnhanceCache | null;
+          const cache = enhance ?? {
+            fingerprint: 'portfolio-upload',
+            enhancedAt: new Date().toISOString(),
+            selectedSessionIds: detail.sessions.map((s) => s.id),
+            result: { narrative: '', arc: [], skills: [], timeline: [], questions: [] },
+          };
+          const selectedSessionIds = enhance !== null && enhance.selectedSessionIds !== undefined
+            ? enhance.selectedSessionIds
+            : detail.sessions.map((s) => s.id);
+
+          const projRecord = detail.project as Record<string, unknown>;
           const title = cache.title
-            || (proj.name as string) || displayNameFromDir(rawProj.dirName);
-          const slug = toSlug(title);
+            || (projRecord.name as string) || displayNameFromDir(rawProj.dirName);
+          const baseSlug = toSlug(title);
           const clientProjectId = getProjectUuid(ctx.db, rawProj.dirName);
 
-          const projectHtml = generateProjectHtmlFragment(
+          send({ type: 'project', project: title, index: projectIndex, total: filteredProjects.length, status: 'creating' });
+
+          const projectHtmlPreview = generateProjectHtmlFragment(
             rawProj.dirName, cache, detail.sessions,
             auth.username, {
-              totalFilesChanged: proj.totalFiles as number | undefined,
-              totalAgentDurationMinutes: proj.totalAgentDuration as number | undefined,
-              totalInputTokens: proj.totalInputTokens as number | undefined,
-              totalOutputTokens: proj.totalOutputTokens as number | undefined,
+              totalFilesChanged: projRecord.totalFiles as number | undefined,
+              totalAgentDurationMinutes: projRecord.totalAgentDuration as number | undefined,
+              totalInputTokens: projRecord.totalInputTokens as number | undefined,
+              totalOutputTokens: projRecord.totalOutputTokens as number | undefined,
             },
           );
 
-          await fetch(`${API_URL}/api/projects`, {
-            method: 'POST',
+          const projectBodyBase = {
+            client_project_id: clientProjectId,
+            title,
+            narrative: cache.result?.narrative ?? '',
+            repo_url: cache.repoUrl || null,
+            project_url: cache.projectUrl || null,
+            timeline: cache.result?.timeline ?? [],
+            skills: cache.result?.skills ?? [],
+            total_sessions: projRecord.sessionCount as number,
+            total_loc: projRecord.totalLoc as number,
+            total_duration_minutes: projRecord.totalDuration as number,
+            total_agent_duration_minutes: projRecord.totalAgentDuration || null,
+            total_files_changed: projRecord.totalFiles as number,
+            total_input_tokens: projRecord.totalInputTokens as number | null,
+            total_output_tokens: projRecord.totalOutputTokens as number | null,
+            skipped_sessions: [] as Array<{ title: string; duration: number; loc: number; reason: string }>,
+          };
+
+          let slug = baseSlug;
+          let projectRes: globalThis.Response | null = null;
+
+          if (selectedSessionIds.length === 0) {
+            for (let attempt = 0; attempt <= MAX_SLUG_RETRIES; attempt++) {
+              projectRes = await fetch(`${API_URL}/api/projects`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${auth.token}`,
+                },
+                body: JSON.stringify({
+                  project: {
+                    ...projectBodyBase,
+                    slug,
+                    rendered_html: projectHtmlPreview,
+                  },
+                }),
+              });
+              if (projectRes.status === 409) {
+                slug = `${baseSlug}-${attempt + 1}`;
+                continue;
+              }
+              break;
+            }
+            if (projectRes?.ok) {
+              const data = await projectRes.json().catch(() => null) as { slug?: string } | null;
+              if (data?.slug && data.slug !== baseSlug) {
+                slugMap.set(baseSlug, data.slug);
+              }
+            } else {
+              const errText = await projectRes?.text().catch(() => '');
+              console.warn(`[portfolio-upload] project ${rawProj.dirName} create failed:`, projectRes?.status, errText);
+            }
+            continue;
+          }
+
+          for (let attempt = 0; attempt <= MAX_SLUG_RETRIES; attempt++) {
+            projectRes = await fetch(`${API_URL}/api/projects`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${auth.token}`,
+              },
+              body: JSON.stringify({
+                project: {
+                  ...projectBodyBase,
+                  slug,
+                },
+              }),
+            });
+            if (projectRes.status === 409) {
+              slug = `${baseSlug}-${attempt + 1}`;
+              continue;
+            }
+            break;
+          }
+
+          if (!projectRes || !projectRes.ok) {
+            const errText = await projectRes?.text().catch(() => '') ?? '';
+            console.warn(`[portfolio-upload] project ${rawProj.dirName} create failed:`, projectRes?.status, errText);
+            continue;
+          }
+
+          const projectData = await projectRes.json() as { project_id: number; slug: string };
+          if (projectData.slug !== baseSlug) {
+            slugMap.set(baseSlug, projectData.slug);
+          }
+          send({ type: 'project', project: title, index: projectIndex, total: filteredProjects.length, status: 'created' });
+
+          send({ type: 'progress', message: `Uploading ${selectedSessionIds.length} session${selectedSessionIds.length === 1 ? '' : 's'} for ${title}…` });
+          const { uploadedSessionCards } = await uploadSelectedSessions(ctx, auth, {
+            proj: projInfo,
+            projectData,
+            selectedSessionIds,
+            sessionStatus: 'listed',
+            send: (evt) => send({ ...evt, project: title }),
+          });
+
+          // Ensure all existing sessions for this project are listed
+          await fetch(`${API_URL}/api/sessions/bulk-status`, {
+            method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${auth.token}`,
             },
-            body: JSON.stringify({
-              project: {
-                client_project_id: clientProjectId,
-                title, slug,
-                narrative: cache.result?.narrative ?? '',
-                skills: cache.result?.skills ?? [],
-                total_sessions: proj.sessionCount as number,
-                total_loc: proj.totalLoc as number,
-                total_duration_minutes: proj.totalDuration as number,
-                total_agent_duration_minutes: proj.totalAgentDuration || null,
-                total_files_changed: proj.totalFiles as number,
-                total_input_tokens: proj.totalInputTokens as number | null,
-                total_output_tokens: proj.totalOutputTokens as number | null,
-                rendered_html: projectHtml,
+            body: JSON.stringify({ project_id: projectData.project_id, status: 'listed' }),
+          }).catch((e) => console.warn(`[portfolio-upload] bulk-status failed for ${title}:`, (e as Error).message));
+
+          if (uploadedSessionCards.length === 0) {
+            continue;
+          }
+
+          try {
+            const detailAfter = buildProjectDetail(ctx.db, rawProj);
+            const cacheAfter = (detailAfter.enhanceCache as ProjectEnhanceCache | null) ?? cache;
+            const totalFiles = (detailAfter.project as Record<string, unknown>).totalFiles as number;
+            const projectHtmlFinal = generateProjectHtmlFragment(
+              rawProj.dirName, cacheAfter, detailAfter.sessions,
+              auth.username, {
+                totalFilesChanged: totalFiles,
+                totalInputTokens: (detailAfter.project as Record<string, unknown>).totalInputTokens as number | undefined,
+                totalOutputTokens: (detailAfter.project as Record<string, unknown>).totalOutputTokens as number | undefined,
               },
-            }),
+            );
+
+            const renderRes = await fetch(`${API_URL}/api/projects`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${auth.token}`,
+              },
+              body: JSON.stringify({
+                project: {
+                  ...projectBodyBase,
+                  slug: projectData.slug,
+                  rendered_html: projectHtmlFinal,
+                },
+              }),
+            });
+            if (!renderRes.ok) {
+              console.warn(`[portfolio-upload] project ${rawProj.dirName} rendered_html update failed:`, renderRes.status);
+            }
+          } catch (renderErr) {
+            console.warn(`[portfolio-upload] project render update ${rawProj.dirName}:`, (renderErr as Error).message);
+          }
+
+          const uploadedSessionIds = selectedSessionIds.filter((sid: string) => {
+            const enhanced = loadEnhancedData(sid);
+            return enhanced?.uploaded;
+          });
+          saveUploadedState(rawProj.dirName, {
+            slug: projectData.slug,
+            projectId: projectData.project_id,
+            uploadedSessions: uploadedSessionIds,
           });
         } catch (projErr) {
           console.warn(`[portfolio-upload] skipping project ${rawProj.dirName}:`, (projErr as Error).message);
         }
       }
 
-      // POST portfolio landing page to Phoenix.
-      // Phoenix sanitizes the HTML, persists to users.rendered_portfolio_html,
-      // and applies the optional profile snapshot via Accounts.update_user_profile.
+      // Demote sessions on projects that were previously published but are
+      // no longer included in the portfolio.
+      const includedDirNames = new Set(filteredProjects.map((p) => p.dirName));
+      const previouslyUploaded = listUploadedProjects();
+      for (const { dirName, state } of previouslyUploaded) {
+        if (includedDirNames.has(dirName)) continue;
+        try {
+          send({ type: 'progress', message: `Demoting sessions for removed project "${dirName}"…` });
+          await fetch(`${API_URL}/api/sessions/bulk-status`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${auth.token}`,
+            },
+            body: JSON.stringify({ project_id: state.projectId, status: 'unlisted' }),
+          });
+        } catch (demoteErr) {
+          console.warn(`[portfolio-upload] failed to demote sessions for ${dirName}:`, (demoteErr as Error).message);
+        }
+      }
+
+      // Rewrite project links in the portfolio HTML to match the actual
+      // Phoenix-assigned slugs (which may differ due to conflict retries).
+      let finalHtml = renderedHtml;
+      for (const [originalSlug, actualSlug] of slugMap) {
+        const pattern = `/${auth.username}/${originalSlug}"`;
+        const replacement = `/${auth.username}/${actualSlug}"`;
+        while (finalHtml.includes(pattern)) {
+          finalHtml = finalHtml.replace(pattern, replacement);
+        }
+      }
+
+      send({ type: 'progress', message: 'Publishing landing page…' });
+
       const phoenixRes = await fetch(`${API_URL}/api/portfolio/upload`, {
         method: 'POST',
         headers: {
@@ -723,7 +697,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
           Authorization: `Bearer ${auth.token}`,
         },
         body: JSON.stringify({
-          html: renderedHtml,
+          html: finalHtml,
           profile,
         }),
       });
@@ -744,9 +718,8 @@ export function createPublishRouter(ctx: RouteContext): Router {
           lastErrorAt: new Date().toISOString(),
         });
 
-        res.status(phoenixRes.status >= 500 ? 502 : phoenixRes.status).json({
-          error: { code: 'PORTFOLIO_UPLOAD_FAILED', message: errMsg },
-        });
+        send({ type: 'error', code: 'PORTFOLIO_UPLOAD_FAILED', message: errMsg });
+        res.end();
         return;
       }
 
@@ -765,16 +738,16 @@ export function createPublishRouter(ctx: RouteContext): Router {
         lastErrorAt: undefined,
       });
 
-      // Published version of the portfolio just changed — drop any cached
-      // /preview/portfolio HTML so the next preview reflects reality.
       invalidatePortfolioPreviewCache();
 
-      res.json({
+      send({
+        type: 'done',
         ok: true,
         url: publishedUrl ?? `${PUBLIC_URL}/${auth.username}`,
         publishedAt,
         hash,
       });
+      res.end();
     } catch (err) {
       const errMsg = (err as Error).message;
       console.error('[portfolio-upload] Error:', errMsg);
@@ -784,9 +757,8 @@ export function createPublishRouter(ctx: RouteContext): Router {
           lastErrorAt: new Date().toISOString(),
         });
       } catch { /* don't mask the original error */ }
-      res.status(500).json({
-        error: { code: 'PORTFOLIO_UPLOAD_FAILED', message: errMsg },
-      });
+      send({ type: 'error', code: 'PORTFOLIO_UPLOAD_FAILED', message: errMsg });
+      res.end();
     }
   });
 

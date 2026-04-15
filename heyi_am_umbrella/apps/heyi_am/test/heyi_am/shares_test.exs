@@ -267,6 +267,39 @@ defmodule HeyiAm.SharesTest do
     end
   end
 
+  describe "update_project_shares_status/2" do
+    test "updates unlisted shares to listed for a project" do
+      user = user_fixture()
+      {:ok, project} = HeyiAm.Projects.create_project(%{slug: "status-proj", title: "Status", user_id: user.id})
+
+      share_fixture(%{project_id: project.id, user_id: user.id, status: "unlisted"})
+      share_fixture(%{project_id: project.id, user_id: user.id, status: "unlisted"})
+
+      {:ok, count} = Shares.update_project_shares_status(project.id, "listed")
+      assert count == 2
+
+      shares = Shares.list_shares_for_project(project.id)
+      assert Enum.all?(shares, &(&1.status == "listed"))
+    end
+
+    test "skips archived shares" do
+      user = user_fixture()
+      {:ok, project} = HeyiAm.Projects.create_project(%{slug: "skip-arch", title: "Skip", user_id: user.id})
+
+      s1 = share_fixture(%{project_id: project.id, user_id: user.id, status: "unlisted"})
+      {:ok, _} = Shares.update_share(s1, %{status: "archived"})
+      share_fixture(%{project_id: project.id, user_id: user.id, status: "listed"})
+
+      {:ok, count} = Shares.update_project_shares_status(project.id, "unlisted")
+      assert count == 1
+    end
+
+    test "returns 0 when no matching shares exist" do
+      {:ok, count} = Shares.update_project_shares_status(-1, "listed")
+      assert count == 0
+    end
+  end
+
   describe "generate_token/0" do
     test "returns a URL-safe string" do
       token = Shares.generate_token()

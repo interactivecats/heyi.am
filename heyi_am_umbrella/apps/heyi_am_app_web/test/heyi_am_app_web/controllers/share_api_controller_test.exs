@@ -121,4 +121,73 @@ defmodule HeyiAmAppWeb.ShareApiControllerTest do
       assert response(conn, 204) == ""
     end
   end
+
+  describe "PATCH /api/sessions/bulk-status" do
+    test "promotes all project sessions to listed", %{conn: _conn} do
+      {conn, user} = api_conn_with_auth()
+      {:ok, project} = HeyiAm.Projects.create_project(%{slug: "bulk-proj", title: "Bulk", user_id: user.id})
+
+      {:ok, _s1} = HeyiAm.Shares.create_share(%{user_id: user.id, token: "bulk-1", title: "S1", project_id: project.id, status: "unlisted"})
+      {:ok, _s2} = HeyiAm.Shares.create_share(%{user_id: user.id, token: "bulk-2", title: "S2", project_id: project.id, status: "unlisted"})
+
+      conn = patch(conn, ~p"/api/sessions/bulk-status", %{project_id: project.id, status: "listed"})
+      resp = json_response(conn, 200)
+      assert resp["updated"] == 2
+
+      shares = HeyiAm.Shares.list_shares_for_project(project.id)
+      assert Enum.all?(shares, &(&1.status == "listed"))
+    end
+
+    test "demotes all project sessions to unlisted", %{conn: _conn} do
+      {conn, user} = api_conn_with_auth()
+      {:ok, project} = HeyiAm.Projects.create_project(%{slug: "demote-proj", title: "Demote", user_id: user.id})
+
+      {:ok, _} = HeyiAm.Shares.create_share(%{user_id: user.id, token: "dem-1", title: "S1", project_id: project.id, status: "listed"})
+      {:ok, _} = HeyiAm.Shares.create_share(%{user_id: user.id, token: "dem-2", title: "S2", project_id: project.id, status: "listed"})
+
+      conn = patch(conn, ~p"/api/sessions/bulk-status", %{project_id: project.id, status: "unlisted"})
+      resp = json_response(conn, 200)
+      assert resp["updated"] == 2
+
+      shares = HeyiAm.Shares.list_shares_for_project(project.id)
+      assert Enum.all?(shares, &(&1.status == "unlisted"))
+    end
+
+    test "does not affect archived sessions", %{conn: _conn} do
+      {conn, user} = api_conn_with_auth()
+      {:ok, project} = HeyiAm.Projects.create_project(%{slug: "arch-proj", title: "Arch", user_id: user.id})
+
+      {:ok, _s1} = HeyiAm.Shares.create_share(%{user_id: user.id, token: "arch-1", title: "S1", project_id: project.id, status: "unlisted"})
+      HeyiAm.Shares.archive_project_sessions(project.id)
+      {:ok, _} = HeyiAm.Shares.create_share(%{user_id: user.id, token: "arch-2", title: "S2", project_id: project.id, status: "listed"})
+
+      conn = patch(conn, ~p"/api/sessions/bulk-status", %{project_id: project.id, status: "unlisted"})
+      resp = json_response(conn, 200)
+      assert resp["updated"] == 1
+    end
+
+    test "returns 404 for project not owned by user", %{conn: _conn} do
+      {_conn1, owner} = api_conn_with_auth()
+      {conn2, _attacker} = api_conn_with_auth()
+      {:ok, project} = HeyiAm.Projects.create_project(%{slug: "other-proj", title: "Other", user_id: owner.id})
+
+      conn = patch(conn2, ~p"/api/sessions/bulk-status", %{project_id: project.id, status: "listed"})
+      assert %{"error" => %{"code" => "PROJECT_NOT_FOUND"}} = json_response(conn, 404)
+    end
+
+    test "returns 400 with invalid params", %{conn: _conn} do
+      {conn, _user} = api_conn_with_auth()
+      conn = patch(conn, ~p"/api/sessions/bulk-status", %{})
+      assert %{"error" => %{"code" => "INVALID_PARAMS"}} = json_response(conn, 400)
+    end
+
+    test "returns 401 without auth", %{conn: conn} do
+      conn =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> patch(~p"/api/sessions/bulk-status", %{project_id: 1, status: "listed"})
+
+      assert json_response(conn, 401)
+    end
+  end
 end
