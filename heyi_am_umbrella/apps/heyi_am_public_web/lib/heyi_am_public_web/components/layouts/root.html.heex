@@ -43,7 +43,10 @@
     <% end %>
     <%= if assigns[:template_name] do %>
       <link rel="stylesheet" href={~p"/css/templates/base.css"} />
-      <link rel="stylesheet" href={"/css/templates/#{assigns[:template_name]}.css"} />
+      <link
+        rel="stylesheet"
+        href={HeyiAmPublicWeb.Endpoint.static_path("/css/templates/#{assigns[:template_name]}.css")}
+      />
     <% end %>
     <%!-- NO LiveView JS — this endpoint has no LiveView --%>
     <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
