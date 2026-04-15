@@ -169,6 +169,19 @@ describe('renderProjectHtml', () => {
     expect(html).toContain('href="./sessions/first-session.html"');
   });
 
+  it('emits data-session-suffix on the project wrapper so the overlay matches anchor URLs', () => {
+    const phx = renderProjectHtml(makeProjectData({
+      sessionBaseUrl: '/testuser/my-project',
+      sessionSuffix: '',
+    }));
+    expect(phx).toContain('data-session-suffix=""');
+    const stat = renderProjectHtml(makeProjectData({
+      sessionBaseUrl: './sessions',
+      sessionSuffix: '.html',
+    }));
+    expect(stat).toContain('data-session-suffix=".html"');
+  });
+
   it('merges slug into chart-session JSON when fullSessions lacks it', () => {
     // Raw analyzer Session has no `slug` field; SessionCard does. The chart
     // overlay depends on session.slug to build "View full session" URLs.

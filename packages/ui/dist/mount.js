@@ -23141,10 +23141,12 @@
     if (!active) return null;
     const projectEl = document.querySelector(".heyiam-project");
     const baseUrl = projectEl?.getAttribute("data-session-base-url");
+    const suffix = projectEl?.getAttribute("data-session-suffix") ?? "";
     let sessionPageUrl;
     if (baseUrl) {
-      const slug = active.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "untitled";
-      sessionPageUrl = `${baseUrl}/${slug}.html`;
+      const fromTitle = active.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "untitled";
+      const sessionSlug = active.slug ?? fromTitle;
+      sessionPageUrl = `${baseUrl}/${sessionSlug}${suffix}`;
     } else {
       const username = projectEl?.getAttribute("data-username");
       const projectSlug = projectEl?.getAttribute("data-project-slug");

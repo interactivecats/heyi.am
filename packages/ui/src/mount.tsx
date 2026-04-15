@@ -64,21 +64,23 @@ function OverlayRoot() {
 
   if (!active) return null;
 
-  // Build session page URL based on context:
-  // - Local HTML export: data-session-base-url → ./sessions/{slug}.html
-  // - Phoenix-served: data-username + data-project-slug → /user/project/session-slug
-  // Non-featured/local-only sessions have no slug in the embedded JSON; we leave
-  // sessionPageUrl undefined so the overlay hides the "View full session" link.
+  // Build the session page URL the same way the project template's anchor
+  // hrefs do: baseUrl + slug + suffix. Static export uses "./sessions" + ".html",
+  // Phoenix publish uses "/user/project" + "". Non-featured/local-only sessions
+  // have no slug in the embedded JSON; sessionPageUrl stays undefined so the
+  // overlay hides the "View full session" link.
   const projectEl = document.querySelector('.heyiam-project');
   const baseUrl = projectEl?.getAttribute('data-session-base-url');
+  const suffix = projectEl?.getAttribute('data-session-suffix') ?? '';
   let sessionPageUrl: string | undefined;
   if (baseUrl) {
-    const slug = active.title
+    const fromTitle = active.title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
       .slice(0, 80) || 'untitled';
-    sessionPageUrl = `${baseUrl}/${slug}.html`;
+    const sessionSlug = (active as unknown as { slug?: string }).slug ?? fromTitle;
+    sessionPageUrl = `${baseUrl}/${sessionSlug}${suffix}`;
   } else {
     const username = projectEl?.getAttribute('data-username');
     const projectSlug = projectEl?.getAttribute('data-project-slug');
