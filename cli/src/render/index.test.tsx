@@ -168,6 +168,23 @@ describe('renderProjectHtml', () => {
     const html = renderProjectHtml(data);
     expect(html).toContain('href="./sessions/first-session.html"');
   });
+
+  it('merges slug into chart-session JSON when fullSessions lacks it', () => {
+    // Raw analyzer Session has no `slug` field; SessionCard does. The chart
+    // overlay depends on session.slug to build "View full session" URLs.
+    const fullSessions = [{
+      id: 'abc123',
+      title: 'First Session',
+      date: '2026-03-20T14:00:00Z',
+      durationMinutes: 45,
+      turns: 12,
+      linesOfCode: 200,
+      status: 'enhanced',
+      rawLog: [],
+    }];
+    const html = renderProjectHtml(makeProjectData(), { fullSessions });
+    expect(html).toContain('"slug":"first-session"');
+  });
 });
 
 // ---------------------------------------------------------------------------

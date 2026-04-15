@@ -114,6 +114,10 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
 
   // Use full session data when available (charts need complete Session objects).
   // Strip rawLog and turnTimeline — huge, unused by charts, and could break HTML attributes.
+  // Raw Session (from the analyzer) has no `slug` field; SessionCard does. Merge
+  // slug by token so the overlay can build a valid "View full session" URL.
+  const slugByToken = new Map<string, string>();
+  for (const s of allSessions) slugByToken.set(s.token, s.slug);
   const chartSessions = (extras?.fullSessions ?? allSessions.map((s) => ({
     id: s.token, slug: s.slug, title: s.title, date: s.recordedAt,
     durationMinutes: s.durationMinutes, turns: s.turns,
@@ -124,7 +128,12 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
     filesChanged: s.filesChanged,
   }))).map((s: Record<string, unknown>) => {
     const { rawLog, turnTimeline, ...rest } = s;
-    return { ...rest, rawLog: [] };
+    const id = String((rest as { id?: unknown }).id ?? '');
+    const existingSlug = (rest as { slug?: unknown }).slug;
+    const slug = typeof existingSlug === 'string' && existingSlug !== ''
+      ? existingSlug
+      : (slugByToken.get(id) ?? '');
+    return { ...rest, slug, rawLog: [] };
   });
 
   // Encode JSON safe for single-quoted HTML attributes

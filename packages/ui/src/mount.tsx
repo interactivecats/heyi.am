@@ -66,7 +66,9 @@ function OverlayRoot() {
 
   // Build session page URL based on context:
   // - Local HTML export: data-session-base-url → ./sessions/{slug}.html
-  // - Phoenix-served: data-username + data-project-slug → /@user/project/session-slug
+  // - Phoenix-served: data-username + data-project-slug → /user/project/session-slug
+  // Non-featured/local-only sessions have no slug in the embedded JSON; we leave
+  // sessionPageUrl undefined so the overlay hides the "View full session" link.
   const projectEl = document.querySelector('.heyiam-project');
   const baseUrl = projectEl?.getAttribute('data-session-base-url');
   let sessionPageUrl: string | undefined;
@@ -82,7 +84,7 @@ function OverlayRoot() {
     const projectSlug = projectEl?.getAttribute('data-project-slug');
     const sessionSlug = (active as unknown as { slug?: string }).slug;
     if (username && projectSlug && sessionSlug) {
-      sessionPageUrl = `/@${username}/${projectSlug}/${sessionSlug}`;
+      sessionPageUrl = `/${username}/${projectSlug}/${sessionSlug}`;
     }
   }
 
