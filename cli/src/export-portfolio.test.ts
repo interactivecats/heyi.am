@@ -142,9 +142,11 @@ describe('generatePortfolioSite', () => {
     projects: PortfolioSiteProjectInput[];
   } {
     const data = makePortfolioData(username, ['proj-alpha', 'proj-beta']);
+    // dirName mirrors Claude Code's encoded format (`-Users-ben-Dev-name`) so
+    // displayNameFromDir() picks the friendly tail.
     const projects: PortfolioSiteProjectInput[] = [
       {
-        dirName: 'proj-alpha',
+        dirName: '-Users-ben-Dev-proj-alpha',
         cache: makeCache('s1', 'First session alpha'),
         sessions: [
           makeSession('s1', 'First session alpha'),
@@ -153,7 +155,7 @@ describe('generatePortfolioSite', () => {
         ],
       },
       {
-        dirName: 'proj-beta',
+        dirName: '-Users-ben-Dev-proj-beta',
         cache: makeCache('s4', 'First session beta'),
         sessions: [
           makeSession('s4', 'First session beta'),

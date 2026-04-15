@@ -61,8 +61,10 @@ function resolveScreenshotDataUri(dirName: string, cache: ProjectEnhanceCache): 
     return `data:image/png;base64,${b64}`;
   }
 
-  // Try local screenshot file
-  const slug = toSlug(dirName);
+  // Try local screenshot file. Screenshots are keyed by the clean slug that
+  // the publish flow uses (toSlug(displayNameFromDir(dirName))), not the raw
+  // encoded path.
+  const slug = toSlug(displayNameFromDir(dirName));
   const screenshotPath = join(SCREENSHOTS_DIR, `${slug}.png`);
   if (existsSync(screenshotPath)) {
     const buf = readFileSync(screenshotPath);
@@ -282,8 +284,12 @@ export async function exportHtml(
   mkdirSync(outputPath, { recursive: true });
 
   const { result } = cache;
-  const slug = slugify(dirName);
+  // dirName is Claude Code's encoded full path (e.g. `-Users-ben-Dev-agent-sync`).
+  // The Phoenix-side slug comes from `toSlug(displayNameFromDir(dirName))`, so
+  // match that here — otherwise anchor hrefs and zip folder names keep the
+  // entire encoded path.
   const title = opts?.title ?? cache.title ?? displayNameFromDir(dirName);
+  const slug = slugify(displayNameFromDir(dirName));
 
   // Use ALL sessions (same as dashboard), build cards for each
   const sessionCards = sessions.map((session) => {
@@ -416,8 +422,12 @@ function buildProjectRenderInputs(
   opts?: ExportOpts,
 ) {
   const { result } = cache;
-  const slug = slugify(dirName);
+  // dirName is Claude Code's encoded full path (e.g. `-Users-ben-Dev-agent-sync`).
+  // The Phoenix-side slug comes from `toSlug(displayNameFromDir(dirName))`, so
+  // match that here — otherwise anchor hrefs and zip folder names keep the
+  // entire encoded path.
   const title = opts?.title ?? cache.title ?? displayNameFromDir(dirName);
+  const slug = slugify(displayNameFromDir(dirName));
 
   const sessionCards = sessions.map((session) => buildSessionCard({
     sessionId: session.id,
@@ -837,7 +847,7 @@ export async function generatePortfolioSite(
   mkdirSync(projectsRoot, { recursive: true });
 
   for (const p of projects) {
-    const projectSlug = slugify(p.dirName);
+    const projectSlug = slugify(displayNameFromDir(p.dirName));
     const projectDir = join(projectsRoot, projectSlug);
     const result = await exportHtml(
       p.dirName,

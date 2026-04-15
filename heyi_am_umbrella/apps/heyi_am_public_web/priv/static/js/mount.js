@@ -21961,7 +21961,7 @@
       count
     }));
   }
-  function buildLegendEntries(segments, sessionRanges) {
+  function buildLegendEntries(sessionRanges) {
     return sessionRanges.map((r) => {
       const kids = getChildren(r.session);
       return {
@@ -22297,7 +22297,7 @@
     const concurrentLimit = expanded ? 999 : DEFAULT_MAX_CONCURRENT;
     const themeColors = (0, import_react.useMemo)(() => ({ main: mainColor, muted: textMuted }), [mainColor, textMuted]);
     const L = (0, import_react.useMemo)(() => layoutSegments(segments, concurrentLimit, themeColors), [segments, concurrentLimit, themeColors]);
-    const legendEntries = (0, import_react.useMemo)(() => buildLegendEntries(segments, L.sessionRanges), [segments, L.sessionRanges]);
+    const legendEntries = (0, import_react.useMemo)(() => buildLegendEntries(L.sessionRanges), [L.sessionRanges]);
     const scrollRef = (0, import_react.useRef)(null);
     const [hovered, setHovered] = (0, import_react.useState)(null);
     const [focusedEntry, setFocusedEntry] = (0, import_react.useState)(null);
@@ -23135,22 +23135,24 @@
   }
   var allSessions = /* @__PURE__ */ new Map();
   var showOverlay = null;
-  function OverlayRoot({ sessions }) {
+  function OverlayRoot() {
     const [active, setActive] = (0, import_react3.useState)(null);
     showOverlay = (session) => setActive(session);
     if (!active) return null;
     const projectEl = document.querySelector(".heyiam-project");
     const baseUrl = projectEl?.getAttribute("data-session-base-url");
+    const suffix = projectEl?.getAttribute("data-session-suffix") ?? "";
     let sessionPageUrl;
     if (baseUrl) {
-      const slug = active.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "untitled";
-      sessionPageUrl = `${baseUrl}/${slug}.html`;
+      const fromTitle = active.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "untitled";
+      const sessionSlug = active.slug ?? fromTitle;
+      sessionPageUrl = `${baseUrl}/${sessionSlug}${suffix}`;
     } else {
       const username = projectEl?.getAttribute("data-username");
       const projectSlug = projectEl?.getAttribute("data-project-slug");
       const sessionSlug = active.slug;
       if (username && projectSlug && sessionSlug) {
-        sessionPageUrl = `/@${username}/${projectSlug}/${sessionSlug}`;
+        sessionPageUrl = `/${username}/${projectSlug}/${sessionSlug}`;
       }
     }
     return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
@@ -23219,7 +23221,7 @@
       overlayEl.id = "heyiam-overlay-root";
       document.body.appendChild(overlayEl);
       (0, import_client.createRoot)(overlayEl).render(
-        import_react3.default.createElement(OverlayRoot, { sessions: allSessions })
+        import_react3.default.createElement(OverlayRoot)
       );
     }
   }
