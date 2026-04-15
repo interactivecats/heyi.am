@@ -751,7 +751,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
       }
 
       const okBody = await phoenixRes.json().catch(() => ({})) as { username?: string };
-      const publishedUrl = okBody.username ? `${API_URL}/${okBody.username}` : undefined;
+      const publishedUrl = okBody.username ? `${PUBLIC_URL}/${okBody.username}` : undefined;
       const publishedAt = new Date().toISOString();
       const hash = hashPortfolioProfile(profile);
 
@@ -771,7 +771,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
 
       res.json({
         ok: true,
-        url: publishedUrl ?? `${API_URL}/${auth.username}`,
+        url: publishedUrl ?? `${PUBLIC_URL}/${auth.username}`,
         publishedAt,
         hash,
       });

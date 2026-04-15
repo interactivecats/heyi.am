@@ -133,7 +133,7 @@ describe('POST /api/portfolio/upload', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.ok).toBe(true);
-    expect(res.body.url).toBe('https://heyiam.test/testuser');
+    expect(res.body.url).toBe('https://heyi.test/testuser');
     expect(res.body.hash).toMatch(/^[0-9a-f]{16}$/);
 
     // Fragment was generated.
@@ -157,7 +157,7 @@ describe('POST /api/portfolio/upload', () => {
     expect(target).toBeDefined();
     expect(target.lastPublishedProfile.displayName).toBe('Ada');
     expect(target.lastPublishedProfileHash).toBe(res.body.hash);
-    expect(target.url).toBe('https://heyiam.test/testuser');
+    expect(target.url).toBe('https://heyi.test/testuser');
     expect(target.lastError).toBeUndefined();
   });
 
