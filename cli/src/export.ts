@@ -514,7 +514,7 @@ export function generateHtmlFiles(
     arc: result.arc,
     fullSessions: sessions as unknown as Array<Record<string, unknown>>,
   }, templateName);
-  files.push({ path: 'index.html', content: buildStandalonePage(title, projectBody, {
+  files.push({ path: 'index.html', content: buildStandalonePage(title, rewriteZipLinks(projectBody, username, slug, 'project'), {
     description: result.narrative?.slice(0, 200) || undefined,
     templateName,
   }) });
@@ -534,11 +534,40 @@ export function generateHtmlFiles(
     const sessionDesc = (enhanced?.developerTake ?? session.developerTake ?? '').slice(0, 200) || undefined;
     files.push({
       path: `sessions/${sessionSlug}.html`,
-      content: buildStandalonePage(session.title, sessionBody, { description: sessionDesc, templateName }),
+      content: buildStandalonePage(session.title, rewriteZipLinks(sessionBody, username, slug, 'session'), { description: sessionDesc, templateName }),
     });
   }
 
   return files;
+}
+
+/**
+ * Rewrite absolute hrefs in rendered HTML so the zip works when opened locally.
+ *
+ * Templates emit absolute paths (e.g. `/{username}/{projectSlug}`) assuming a
+ * heyi.am deploy. In a downloaded zip those 404. This strips anchor wrappers
+ * around the username breadcrumb (no portfolio page in the zip) and, for
+ * session pages, rewrites the project breadcrumb to point at `../index.html`.
+ */
+export function rewriteZipLinks(
+  html: string,
+  username: string,
+  projectSlug: string,
+  pageType: 'project' | 'session',
+): string {
+  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const userHref = `/${esc(username)}`;
+  const projectHref = `/${esc(username)}/${esc(projectSlug)}`;
+
+  let out = html;
+  if (pageType === 'session') {
+    out = out.replace(new RegExp(`href="${projectHref}"`, 'g'), 'href="../index.html"');
+  }
+  out = out.replace(
+    new RegExp(`<a[^>]*\\shref="${userHref}"[^>]*>([\\s\\S]*?)</a>`, 'g'),
+    '<span>$1</span>',
+  );
+  return out;
 }
 
 // ── Minimal ZIP builder (zero dependencies) ──────────────────

@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { inflateRawSync } from 'node:zlib';
-import { exportMarkdown, exportHtml, createZipBuffer } from './export.js';
+import { exportMarkdown, exportHtml, createZipBuffer, rewriteZipLinks } from './export.js';
 import type { ProjectEnhanceCache } from './settings.js';
 import type { Session } from './analyzer.js';
 
@@ -313,5 +313,43 @@ describe('createZipBuffer', () => {
     expect(entries).toHaveLength(2);
     expect(entries[0].data.toString('utf-8')).toBe('<html></html>');
     expect(Buffer.compare(entries[1].data, binary)).toBe(0);
+  });
+});
+
+describe('rewriteZipLinks', () => {
+  it('strips username anchor on project page (no portfolio in zip)', () => {
+    const html = '<a href="/ben">ben</a> / <span>my-project</span>';
+    const out = rewriteZipLinks(html, 'ben', 'my-project', 'project');
+    expect(out).toBe('<span>ben</span> / <span>my-project</span>');
+  });
+
+  it('rewrites project href to ../index.html on session page', () => {
+    const html = '<a href="/ben">ben</a> / <a href="/ben/my-project">my-project</a> / <span>a session</span>';
+    const out = rewriteZipLinks(html, 'ben', 'my-project', 'session');
+    expect(out).toContain('<span>ben</span>');
+    expect(out).toContain('href="../index.html"');
+    expect(out).not.toContain('href="/ben/my-project"');
+  });
+
+  it('handles anchors with extra attributes around the username link', () => {
+    const html = '<a class="crumb" href="/ben" aria-label="home">ben</a>';
+    const out = rewriteZipLinks(html, 'ben', 'proj', 'project');
+    expect(out).toBe('<span>ben</span>');
+  });
+
+  it('leaves unrelated links alone', () => {
+    const html = '<a href="/other-user">other</a><a href="./sessions/foo.html">foo</a>';
+    const out = rewriteZipLinks(html, 'ben', 'proj', 'session');
+    expect(out).toBe(html);
+  });
+
+  it('escapes regex metacharacters in usernames/slugs', () => {
+    const html = '<a href="/a.b">a.b</a>';
+    // "a.b" is unlikely as a real username, but guards against regex injection
+    const out = rewriteZipLinks(html, 'a.b', 'proj', 'project');
+    expect(out).toBe('<span>a.b</span>');
+    // Confirms escape worked — "axb" must NOT match
+    const sneaky = rewriteZipLinks('<a href="/axb">axb</a>', 'a.b', 'proj', 'project');
+    expect(sneaky).toBe('<a href="/axb">axb</a>');
   });
 });
