@@ -7,10 +7,26 @@ import {
   type PortfolioStoreState,
 } from '../../hooks/usePortfolioStore'
 
+// jsdom ships without ResizeObserver. ScaledIframe inside PreviewPane needs
+// one at mount time — install a no-op shim so the test harness doesn't
+// crash before any assertion can run.
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  class ResizeObserverStub {
+    observe() { /* no-op */ }
+    unobserve() { /* no-op */ }
+    disconnect() { /* no-op */ }
+  }
+  ;(globalThis as unknown as { ResizeObserver: typeof ResizeObserverStub }).ResizeObserver = ResizeObserverStub
+}
+
 vi.mock('../../api', () => ({
   fetchTheme: vi.fn(async () => ({ template: 'editorial' })),
   saveTheme: vi.fn(async () => undefined),
-  fetchAuthStatus: vi.fn(async () => ({ authenticated: true, username: 'devuser' })),
+  fetchAuthStatus: vi.fn(async () => ({
+    authenticated: true,
+    username: 'devuser',
+    publicBaseUrl: 'https://heyi.am',
+  })),
 }))
 
 // TemplateBrowser is heavy (fetches templates, renders iframes). Stub it
@@ -62,36 +78,14 @@ describe('PreviewPane', () => {
     expect(screen.getByTestId('portfolio-preview-template-pill').textContent).toBe('editorial')
   })
 
-  it('Project button disabled when no included projects', () => {
+  it('does not render project-page / case-study preview tabs (landing only)', () => {
     render(<PreviewPane />, { wrapper: withProvider() })
-    const projectBtn = screen.getByRole('tab', { name: 'Project' }) as HTMLButtonElement
-    expect(projectBtn.disabled).toBe(true)
-  })
-
-  it('clicking Project segment changes iframe src to project view', () => {
-    render(<PreviewPane />, {
-      wrapper: withProvider({
-        projects: [{ projectId: 'alpha-proj', included: true, order: 0 }],
-      }),
-    })
-    const projectBtn = screen.getByRole('tab', { name: 'Project' })
-    fireEvent.click(projectBtn)
-    expect(getIframe().getAttribute('src')).toBe(
-      '/preview/portfolio?view=project&slug=alpha-proj',
-    )
-  })
-
-  it('clicking Session segment changes iframe src to session view', () => {
-    render(<PreviewPane />, {
-      wrapper: withProvider({
-        projects: [{ projectId: 'alpha-proj', included: true, order: 0 }],
-      }),
-    })
-    const sessionBtn = screen.getByRole('tab', { name: 'Session' })
-    fireEvent.click(sessionBtn)
-    expect(getIframe().getAttribute('src')).toBe(
-      '/preview/portfolio?view=session&slug=alpha-proj',
-    )
+    expect(screen.queryByRole('tab', { name: 'Home' })).toBeNull()
+    expect(screen.queryByRole('tab', { name: 'Project page' })).toBeNull()
+    expect(screen.queryByRole('tab', { name: 'Case study' })).toBeNull()
+    // Iframe always on the landing preview regardless of whether a project
+    // is included.
+    expect(getIframe().getAttribute('src')).toBe('/preview/portfolio')
   })
 
   it('Template pill click opens the TemplateBrowser modal', async () => {
@@ -187,7 +181,11 @@ describe('PreviewPane', () => {
     }
   })
 
-  it('"Open in browser" prefers the published target URL when present', async () => {
+  it('"Open in browser" ignores a stale target.url and uses publicBaseUrl + username', async () => {
+    // Real-world bug: the publish response sometimes records a URL built
+    // against the API host (localhost:4001) instead of the public host.
+    // Open in browser must always rebuild from the server-reported
+    // publicBaseUrl so that never leaks into the user's click.
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
     try {
       render(<PreviewPane />, {
@@ -200,7 +198,8 @@ describe('PreviewPane', () => {
                 lastPublishedProfileHash: 'abc',
                 lastPublishedProfile: {},
                 config: {},
-                url: 'https://heyi.am/custom-url',
+                // Stale/bogus URL recorded from a misconfigured publish.
+                url: 'http://localhost:4001/devuser',
               },
             },
           },
@@ -209,7 +208,7 @@ describe('PreviewPane', () => {
       await act(async () => { await Promise.resolve(); await Promise.resolve() })
       fireEvent.click(screen.getByTestId('portfolio-preview-open-in-browser'))
       expect(openSpy).toHaveBeenCalledWith(
-        'https://heyi.am/custom-url',
+        'https://heyi.am/devuser',
         '_blank',
         'noopener,noreferrer',
       )

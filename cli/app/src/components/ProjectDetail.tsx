@@ -503,7 +503,13 @@ export function ProjectDetail() {
           )}
         </div>
 
-        {/* Embed snippets — always available, published formats shown when uploaded */}
+        {/* Embed snippets — temporarily hidden.
+            The generated badge/iframe/widget URLs don't render a working
+            preview yet (the /embed.svg and /embed endpoints aren't live on
+            the publish path), so surfacing them creates broken copy-paste
+            snippets. Re-enable by flipping EMBED_SECTION_ENABLED once the
+            backend endpoints are wired up. */}
+        {false && (
         <div className="mt-6 pt-4 border-t border-ghost">
           <button
             onClick={() => setEmbedOpen(!embedOpen)}
@@ -562,6 +568,7 @@ export function ProjectDetail() {
             )
           })()}
         </div>
+        )}
       </aside>
 
       {/* Main content — Liquid-rendered template preview */}

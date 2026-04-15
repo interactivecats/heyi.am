@@ -136,17 +136,15 @@ describe('TargetPickerSheet — visibility radio', () => {
   })
 })
 
-describe('TargetPickerSheet — active target heyi.am', () => {
+describe('TargetPickerSheet — heyi.am card', () => {
   beforeEach(() => {
     vi.mocked(api.fetchGithubAccount).mockResolvedValue(null)
   })
 
-  it('clicking "Set as active target" on heyi.am switches activeTarget', () => {
+  it('does NOT render a "Set as active target" setter or ACTIVE badge on heyi.am (it\'s the default target; the top-bar pill already shows it)', () => {
     renderSheet()
-    fireEvent.click(screen.getByTestId('target-heyiam-set-active'))
-    const btn = screen.getByTestId('target-heyiam-set-active') as HTMLButtonElement
-    expect(btn.disabled).toBe(true)
-    expect(screen.getByTestId('target-heyiam-active-badge')).toBeTruthy()
+    expect(screen.queryByTestId('target-heyiam-set-active')).toBeNull()
+    expect(screen.queryByTestId('target-heyiam-active-badge')).toBeNull()
   })
 })
 

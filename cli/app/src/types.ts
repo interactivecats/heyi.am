@@ -276,6 +276,9 @@ export interface ApiKeyStatus {
 export interface AuthStatus {
   authenticated: boolean
   username?: string
+  /** Public portfolio base URL (e.g. https://heyi.am) reported by the backend
+   *  so the frontend can build "Open in browser" links without guessing. */
+  publicBaseUrl?: string
 }
 
 // ── Boundary config (API shape, kept for backward compat) ────

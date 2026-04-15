@@ -13,10 +13,7 @@
 // The sheet closes on Escape, click outside its body, or the ✕ button.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  usePortfolioStore,
-  type PortfolioTargetId,
-} from '../../hooks/usePortfolioStore'
+import { usePortfolioStore } from '../../hooks/usePortfolioStore'
 import {
   downloadPortfolioZip,
   requestGithubDeviceCode,
@@ -77,13 +74,6 @@ export function TargetPickerSheet({ open, onClose }: TargetPickerSheetProps) {
       }
     },
     [onClose],
-  )
-
-  const setActiveTarget = useCallback(
-    (target: PortfolioTargetId) => {
-      dispatch({ type: 'SET_ACTIVE_TARGET', target })
-    },
-    [dispatch],
   )
 
   const setHeyiamVisibility = useCallback(
@@ -351,21 +341,11 @@ export function TargetPickerSheet({ open, onClose }: TargetPickerSheetProps) {
             data-testid="target-card-heyiam"
             className="border border-ghost rounded-sm p-4 bg-surface-lowest"
           >
-            <div className="flex items-start justify-between gap-3 mb-2">
-              <div>
-                <h3 className="text-[0.875rem] font-semibold text-on-surface">heyi.am</h3>
-                <p className="text-[0.75rem] text-on-surface-variant mt-0.5">
-                  Hosted at heyi.am/your-handle. No DNS, no config.
-                </p>
-              </div>
-              {activeTarget === 'heyi.am' ? (
-                <span
-                  data-testid="target-heyiam-active-badge"
-                  className="text-[0.6875rem] uppercase tracking-wide text-primary border border-primary rounded-sm px-1.5 py-0.5 shrink-0"
-                >
-                  Active
-                </span>
-              ) : null}
+            <div className="mb-2">
+              <h3 className="text-[0.875rem] font-semibold text-on-surface">heyi.am</h3>
+              <p className="text-[0.75rem] text-on-surface-variant mt-0.5">
+                Hosted at heyi.am/your-handle. No DNS, no config.
+              </p>
             </div>
 
             <fieldset className="mt-3 flex items-center gap-4">
@@ -394,17 +374,10 @@ export function TargetPickerSheet({ open, onClose }: TargetPickerSheetProps) {
               </label>
             </fieldset>
 
-            <div className="mt-4">
-              <button
-                type="button"
-                data-testid="target-heyiam-set-active"
-                onClick={() => setActiveTarget('heyi.am')}
-                disabled={activeTarget === 'heyi.am'}
-                className="text-[0.8125rem] px-3 py-1 rounded-sm bg-primary text-on-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {activeTarget === 'heyi.am' ? 'Active target' : 'Set as active target'}
-              </button>
-            </div>
+            {/* heyi.am is the default target — no "Set as active" needed
+                here. If the GitHub flow flips active to github, the user
+                can flip it back by publishing to heyi.am again. The ACTIVE
+                badge above does the talking. */}
           </section>
 
           {/* ── GitHub Pages ──────────────────────────────────────── */}

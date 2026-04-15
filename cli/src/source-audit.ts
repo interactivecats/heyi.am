@@ -1,11 +1,7 @@
 // Source Audit — cross-references live sessions with the archive to
 // produce per-source scan results and archive health metrics.
 
-import { readdir, stat } from "node:fs/promises";
-import { join } from "node:path";
-import type { SessionMeta } from "./parsers/index.js";
 import { SOURCE_DISPLAY_NAMES, type SessionSource } from "./parsers/types.js";
-import { getArchiveDir } from "./settings.js";
 import { getDatabase, getSessionCount } from "./db.js";
 
 // ── Types (match frontend types.ts) ──────────────────────────
@@ -117,68 +113,56 @@ export async function getSourceAudit(configDir?: string): Promise<SourceAuditRes
 }
 
 /**
- * Return archive-level statistics: total archived, oldest session date,
- * source count, last sync time, and disk usage.
+ * Return archive-level statistics: total preserved sessions, oldest session
+ * date, source count, last sync time.
+ *
+ * Reads from the SQLite `sessions` table rather than walking the filesystem
+ * archive dir. The DB is authoritative for "what's been preserved" — the
+ * filesystem archive is a secondary copy, and the previous version reported
+ * `total: 0` whenever the archive dir was empty even though the sessions
+ * table held hundreds of indexed sessions. That made the top card diverge
+ * from the "By source" table directly beneath it, which was the bug the
+ * user called out.
  */
-export async function getArchiveStats(configDir?: string): Promise<ArchiveStats> {
-  const archiveDir = getArchiveDir(configDir);
-
+export async function getArchiveStats(_configDir?: string): Promise<ArchiveStats> {
   let total = 0;
-  let oldestMs = Infinity;
+  let oldestIso: string | null = null;
+  let lastSyncMs = 0;
   const sourcesFound = new Set<string>();
-  let newestMs = 0;
 
-  try {
-    const projectDirs = await readdir(archiveDir, { withFileTypes: true });
-
-    for (const projectEntry of projectDirs) {
-      if (!projectEntry.isDirectory()) continue;
-      const projectPath = join(archiveDir, projectEntry.name);
-
-      const files = await readdir(projectPath, { withFileTypes: true }).catch(() => []);
-      for (const file of files) {
-        if (!file.name.endsWith(".jsonl") || file.isDirectory()) continue;
-        total++;
-
-        const filePath = join(projectPath, file.name);
-        try {
-          const fileStat = await stat(filePath);
-          const mtimeMs = fileStat.mtimeMs;
-          if (mtimeMs < oldestMs) oldestMs = mtimeMs;
-          if (mtimeMs > newestMs) newestMs = mtimeMs;
-        } catch {
-          // stat failed — skip
-        }
-
-        // Detect source from file content (first line) would be expensive;
-        // instead use the parser detection on the archive path.
-        // For now, we count by project dir presence — the main signal.
-      }
-    }
-  } catch {
-    // Archive directory doesn't exist yet
-  }
-
-  // Count distinct sources from SQLite (fast)
   try {
     const db = getDatabase();
-    const rows = db.prepare(
+
+    const totalRow = db.prepare(
+      'SELECT COUNT(*) as c, MIN(start_time) as earliest FROM sessions WHERE is_subagent = 0',
+    ).get() as { c: number; earliest: string | null };
+    total = totalRow.c;
+    oldestIso = totalRow.earliest;
+
+    const sourceRows = db.prepare(
       'SELECT DISTINCT source FROM sessions WHERE is_subagent = 0',
     ).all() as Array<{ source: string }>;
-    for (const row of rows) {
-      sourcesFound.add(row.source);
+    for (const row of sourceRows) sourcesFound.add(row.source);
+
+    // Last sync = newest indexed_at (the clock set when sync wrote the row).
+    const syncRow = db.prepare(
+      'SELECT MAX(indexed_at) as latest FROM sessions WHERE is_subagent = 0',
+    ).get() as { latest: string | null };
+    if (syncRow.latest) {
+      const ms = Date.parse(syncRow.latest);
+      if (!Number.isNaN(ms)) lastSyncMs = ms;
     }
   } catch {
-    // DB not ready
+    // DB not ready — return empty state.
   }
 
-  const oldest = oldestMs === Infinity
-    ? "none"
-    : formatMonthYear(new Date(oldestMs));
+  const oldest = oldestIso
+    ? formatMonthYear(new Date(oldestIso))
+    : "none";
 
-  const lastSync = newestMs === 0
+  const lastSync = lastSyncMs === 0
     ? "never"
-    : formatRelativeTime(newestMs);
+    : formatRelativeTime(lastSyncMs);
 
   return {
     total,

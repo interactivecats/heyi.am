@@ -3,9 +3,13 @@
 // Three regions:
 //   left   target pill (heyi.am · Public/Unlisted) with stub chevron
 //   middle state dot + phrase (never-published / publishing / error / draft / live)
-//   right  primary action button (Publish / Re-publish / Retry / View live)
+//   right  primary action button (Publish / Re-publish / Retry)
 //
-// Phase 3.1 only — target picker (chevron) is wired in Phase 4.
+// "View live" intentionally isn't a primary action here — it duplicated the
+// PreviewPane's "Open in browser ↗" link and tended to point at a stale URL
+// whenever the publish response had been recorded against the wrong env.
+// Once the portfolio is live the primary action stays on Re-publish so the
+// user always has an obvious way to push the latest edits.
 
 import { useCallback, useEffect, useState } from 'react'
 import { usePortfolioStore } from '../../hooks/usePortfolioStore'
@@ -24,7 +28,6 @@ type PrimaryActionKind =
   | 'republish'
   | 'publishing'
   | 'retry'
-  | 'viewLive'
 
 interface PrimaryAction {
   kind: PrimaryActionKind
@@ -41,8 +44,10 @@ function derivePrimaryAction(opts: {
   if (opts.isPublishing) return { kind: 'publishing', label: 'Publishing…', disabled: true }
   if (opts.lastPublishError) return { kind: 'retry', label: 'Retry publish', disabled: false }
   if (!opts.publishStateExists) return { kind: 'publish', label: 'Publish to heyi.am', disabled: false }
-  if (opts.isDraft) return { kind: 'republish', label: 'Re-publish', disabled: false }
-  return { kind: 'viewLive', label: 'View live ↗', disabled: false }
+  // Already published. Show Re-publish unconditionally (even when there are
+  // no pending changes) so the user always has a one-click way to push.
+  // Viewing the live site lives on the PreviewPane's "Open in browser ↗".
+  return { kind: 'republish', label: 'Re-publish', disabled: false }
 }
 
 interface StatePhrase {
@@ -188,13 +193,8 @@ export function StatusBar() {
 
   const runPrimary = useCallback(async () => {
     if (primary.disabled) return
-    if (primary.kind === 'viewLive') {
-      const url = target?.url
-      if (url) window.open(url, '_blank', 'noopener,noreferrer')
-      return
-    }
     await doPublish()
-  }, [primary.disabled, primary.kind, target, doPublish])
+  }, [primary.disabled, doPublish])
 
   // ⌘↵ / Ctrl+↵ shortcut
   useEffect(() => {

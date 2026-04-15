@@ -17,30 +17,16 @@
 // the live-patch path). Templates that don't carry the data-portfolio-field
 // annotation silently no-op for that field.
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { usePortfolioStore } from '../../hooks/usePortfolioStore'
 import { fetchAuthStatus, fetchTheme, saveTheme, type PortfolioProfile } from '../../api'
 import { TemplateBrowser } from '../TemplateBrowser'
 
-type PreviewTarget = 'landing' | 'project' | 'session'
-
+// PreviewPane always renders the portfolio landing page. Project-page and
+// case-study previews used to live here as a segment toggle, but they
+// duplicated paths that are reachable from the left nav (Projects / Sessions)
+// and made the portfolio workspace feel like it owned project editing.
 const LANDING_SRC = '/preview/portfolio'
-
-interface ResolvedSrc {
-  landing: string
-  project: string | null
-  session: string | null
-}
-
-function buildSources(firstIncludedProjectId: string | null): ResolvedSrc {
-  const project = firstIncludedProjectId
-    ? `/preview/portfolio?view=project&slug=${encodeURIComponent(firstIncludedProjectId)}`
-    : null
-  const session = firstIncludedProjectId
-    ? `/preview/portfolio?view=session&slug=${encodeURIComponent(firstIncludedProjectId)}`
-    : null
-  return { landing: LANDING_SRC, project, session }
-}
 
 // ── Live DOM patcher helpers ─────────────────────────────────
 //
@@ -150,39 +136,15 @@ function applyAllPatches(doc: Document, profile: PortfolioProfile): void {
 
 export function PreviewPane() {
   const { state, dispatch } = usePortfolioStore()
-  const [target, setTarget] = useState<PreviewTarget>('landing')
   const [reloadKey, setReloadKey] = useState(0)
   const [refreshDisabled, setRefreshDisabled] = useState(false)
   const [templateName, setTemplateName] = useState<string>('editorial')
   const [username, setUsername] = useState<string | null>(null)
+  const [publicBaseUrl, setPublicBaseUrl] = useState<string | null>(null)
   const [templateBrowserOpen, setTemplateBrowserOpen] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
 
-  const firstIncludedProjectId = useMemo(() => {
-    const sorted = state.projects
-      .filter((p) => p.included)
-      .sort((a, b) => a.order - b.order)
-    return sorted[0]?.projectId ?? null
-  }, [state.projects])
-
-  const sources = useMemo(() => buildSources(firstIncludedProjectId), [firstIncludedProjectId])
-
-  // Effective target: fall back to landing when chosen target has no source.
-  const effectiveTarget: PreviewTarget =
-    target === 'landing'
-      ? 'landing'
-      : target === 'project' && sources.project
-        ? 'project'
-        : target === 'session' && sources.session
-          ? 'session'
-          : 'landing'
-
-  const currentSrc =
-    effectiveTarget === 'project'
-      ? (sources.project as string)
-      : effectiveTarget === 'session'
-        ? (sources.session as string)
-        : sources.landing
+  const currentSrc = LANDING_SRC
 
   // Fetch the current template name once on mount. Failure is non-fatal —
   // we just leave the default ("editorial").
@@ -200,14 +162,16 @@ export function PreviewPane() {
     }
   }, [])
 
-  // Fetch the authenticated username so the "Open in browser" button can
-  // resolve heyi.am/:username. Failure is non-fatal — the button just stays
-  // disabled until the user is authenticated.
+  // Fetch the authenticated username + public base URL so the "Open in
+  // browser" button can resolve `${publicBaseUrl}/:username`. Failure is
+  // non-fatal — the button just stays disabled until both are known.
   useEffect(() => {
     let cancelled = false
     fetchAuthStatus()
       .then((s) => {
-        if (!cancelled && s.authenticated && s.username) setUsername(s.username)
+        if (cancelled) return
+        if (s.authenticated && s.username) setUsername(s.username)
+        if (s.publicBaseUrl) setPublicBaseUrl(s.publicBaseUrl.replace(/\/$/, ''))
       })
       .catch(() => {
         /* keep null */
@@ -260,22 +224,24 @@ export function PreviewPane() {
     applyAllPatches(doc, state.profile)
   }
 
-  // Resolve the "Open in browser" URL based on the active target. Returns
-  // null when there's nothing to open (never published or missing config).
-  const openInBrowserUrl = useMemo<string | null>(() => {
-    if (state.activeTarget === 'heyi.am') {
-      if (!username) return null
-      const targetState = state.publishState?.targets['heyi.am']
-      // Only consider the portfolio "live" once the user has actually
-      // published once — otherwise the URL would 404.
-      if (!targetState?.lastPublishedAt) return null
-      // Prefer the URL the publish endpoint reported back; fall back to the
-      // canonical heyi.am path computed from the username.
-      return targetState.url || `https://heyi.am/${encodeURIComponent(username)}`
-    }
-    const githubTarget = state.publishState?.targets.github
-    return githubTarget?.url ?? null
-  }, [state.activeTarget, state.publishState, username])
+  // Resolve the "Open in browser" URL for the current publish target. Null
+  // when there's nothing to open (never published, no username yet, or no
+  // resolved public base).
+  //
+  // We deliberately ignore `target.url` from the publish response — it can
+  // be stale or point at the API host if the CLI was ever run with
+  // HEYIAM_PUBLIC_URL pointing at the wrong port. The authoritative source
+  // is the server-reported `publicBaseUrl` + live username.
+  let openInBrowserUrl: string | null
+  if (state.activeTarget === 'heyi.am') {
+    const targetState = state.publishState?.targets['heyi.am']
+    openInBrowserUrl =
+      username && publicBaseUrl && targetState?.lastPublishedAt
+        ? `${publicBaseUrl}/${encodeURIComponent(username)}`
+        : null
+  } else {
+    openInBrowserUrl = state.publishState?.targets.github?.url ?? null
+  }
 
   /**
    * Manual escape hatch — fully reload the iframe so any state the live
@@ -348,33 +314,7 @@ export function PreviewPane() {
   return (
     <div className="flex flex-1 min-w-0 min-h-0 flex-col bg-surface-mid" data-testid="portfolio-preview">
       {/* Header strip */}
-      <div className="flex h-9 shrink-0 items-center justify-between border-b border-ghost bg-surface-lowest px-3">
-        {/* Segmented control */}
-        <div
-          role="tablist"
-          aria-label="Preview target"
-          className="inline-flex items-center rounded-sm border border-ghost"
-        >
-          <SegmentButton
-            label="Landing"
-            active={effectiveTarget === 'landing'}
-            disabled={false}
-            onClick={() => setTarget('landing')}
-          />
-          <SegmentButton
-            label="Project"
-            active={effectiveTarget === 'project'}
-            disabled={sources.project === null}
-            onClick={() => setTarget('project')}
-          />
-          <SegmentButton
-            label="Session"
-            active={effectiveTarget === 'session'}
-            disabled={sources.session === null}
-            onClick={() => setTarget('session')}
-          />
-        </div>
-
+      <div className="flex h-9 shrink-0 items-center justify-end gap-3 border-b border-ghost bg-surface-lowest px-3">
         {/* Template pill */}
         <button
           type="button"
@@ -484,34 +424,3 @@ function ScaledIframe({
   )
 }
 
-function SegmentButton({
-  label,
-  active,
-  disabled,
-  onClick,
-}: {
-  label: string
-  active: boolean
-  disabled: boolean
-  onClick: () => void
-}) {
-  const base =
-    'text-xs px-3 py-1 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 first:rounded-l-sm last:rounded-r-sm'
-  const stateClass = disabled
-    ? 'text-on-surface-variant/40 cursor-not-allowed'
-    : active
-      ? 'bg-surface-low text-primary'
-      : 'text-on-surface-variant hover:text-on-surface'
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      disabled={disabled}
-      onClick={onClick}
-      className={`${base} ${stateClass}`}
-    >
-      {label}
-    </button>
-  )
-}

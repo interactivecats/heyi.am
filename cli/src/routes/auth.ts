@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { checkAuthStatus, saveAuthToken, deleteAuthToken, normalizeUsername } from '../auth.js';
-import { API_URL } from '../config.js';
+import { API_URL, PUBLIC_URL } from '../config.js';
 import type { RouteContext } from './context.js';
 
 export function createAuthRouter(_ctx: RouteContext): Router {
@@ -9,9 +9,9 @@ export function createAuthRouter(_ctx: RouteContext): Router {
   router.get('/api/auth/status', async (_req: Request, res: Response) => {
     try {
       const status = await checkAuthStatus(API_URL);
-      res.json(status);
+      res.json({ ...status, publicBaseUrl: PUBLIC_URL });
     } catch {
-      res.json({ authenticated: false });
+      res.json({ authenticated: false, publicBaseUrl: PUBLIC_URL });
     }
   });
 

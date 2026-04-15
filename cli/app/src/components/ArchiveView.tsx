@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AppShell, Card, Chip, StatCard, SectionHeader, Note } from './shared'
-import { fetchArchiveStats, fetchSourceAudit, syncArchive, verifyArchive, exportArchive, type ArchiveStats, type SourceAuditResult, type VerifyArchiveResult } from '../api'
+import { fetchArchiveStats, fetchSourceAudit, syncArchive, exportArchive, type ArchiveStats, type SourceAuditResult } from '../api'
 
 interface ArchiveRow {
   source: string
@@ -30,8 +30,6 @@ export function ArchiveView() {
   const [error, setError] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [syncMessage, setSyncMessage] = useState<string | null>(null)
-  const [verifying, setVerifying] = useState(false)
-  const [verifyResult, setVerifyResult] = useState<VerifyArchiveResult | null>(null)
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
 
@@ -75,19 +73,6 @@ export function ArchiveView() {
       setSyncMessage('Sync failed. Check the console for details.')
     } finally {
       setSyncing(false)
-    }
-  }
-
-  async function handleVerify() {
-    setVerifying(true)
-    setVerifyResult(null)
-    try {
-      const result = await verifyArchive()
-      setVerifyResult(result)
-    } catch {
-      setVerifyResult({ total: 0, verified: 0, missing: 0, errors: ['Verification failed. Check the console for details.'] })
-    } finally {
-      setVerifying(false)
     }
   }
 
@@ -250,35 +235,7 @@ export function ArchiveView() {
               >
                 Go to projects
               </Link>
-              <button
-                onClick={handleVerify}
-                disabled={verifying}
-                className="inline-flex items-center gap-1.5 font-semibold text-[0.8125rem] px-3.5 py-1.5 rounded-sm text-primary border border-ghost hover:border-outline transition-colors bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {verifying ? 'Verifying…' : 'Verify integrity'}
-              </button>
             </div>
-            {verifyResult && (
-              <>
-                <div className="h-3" />
-                {verifyResult.missing === 0 && verifyResult.errors.length === 0 ? (
-                  <Note>
-                    All {verifyResult.verified} archived file{verifyResult.verified !== 1 ? 's' : ''} verified.
-                  </Note>
-                ) : (
-                  <div className="flex flex-col gap-1.5">
-                    <Note>
-                      Verified {verifyResult.verified}/{verifyResult.total} — {verifyResult.missing} missing.
-                    </Note>
-                    {verifyResult.errors.map((err, i) => (
-                      <span key={i} className="text-xs text-on-surface-variant font-mono break-all">
-                        {err}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
           </Card>
         </div>
       </div>

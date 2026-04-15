@@ -79,10 +79,13 @@ describe('StatusBar', () => {
     expect(screen.getByTestId('statusbar-primary-action').textContent).toContain('Retry publish')
   })
 
-  it('renders live state with View live button', () => {
+  it('renders live state with Re-publish button (View live lives in the preview pane)', () => {
     renderWith({ publishState: livePublishState })
     expect(screen.getByTestId('status-live').textContent).toContain('Live')
-    expect(screen.getByTestId('statusbar-primary-action').textContent).toContain('View live')
+    const btn = screen.getByTestId('statusbar-primary-action')
+    expect(btn.textContent).toContain('Re-publish')
+    expect(btn.getAttribute('data-action-kind')).toBe('republish')
+    expect(btn.textContent).not.toContain('View live')
   })
 
   it('shows Unlisted in target pill when visibility is unlisted', () => {

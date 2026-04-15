@@ -208,18 +208,23 @@ describe("getArchiveStats", () => {
     await rm(emptyTmp, { recursive: true, force: true });
   });
 
-  it("counts total archived files across project dirs", async () => {
+  it("counts total preserved sessions from the SQLite DB (filesystem is ignored)", async () => {
+    // The stats now read from the sessions table, not the filesystem archive
+    // dir. This keeps the top "ARCHIVED SESSIONS" card in sync with the
+    // per-source row counts below it — both now measure the same thing.
     const statsTmp = join(tmpdir(), `archive-stats-count-${Date.now()}`);
     const statsArchive = join(statsTmp, "sessions");
     const projectPath = join(statsArchive, "-Users-test-Dev-myproject");
     await mkdir(projectPath, { recursive: true });
+    // Write two files on disk but seed only one DB row — the stats should
+    // reflect the DB (1), not the filesystem (2).
     await writeFile(join(projectPath, "s1.jsonl"), JSONL_LINE);
     await writeFile(join(projectPath, "s2.jsonl"), JSONL_LINE);
 
     seedDb([{ source: "claude", id: "c1" }]);
 
     const stats = await getArchiveStats(statsTmp);
-    expect(stats.total).toBe(2);
+    expect(stats.total).toBe(1);
 
     await rm(statsTmp, { recursive: true, force: true });
   });
