@@ -373,9 +373,11 @@ export function PreviewPane() {
 
 // ── Scaled iframe ────────────────────────────────────────────
 //
-// Renders the iframe at a fixed wide viewport (IFRAME_WIDTH) and CSS-scales
-// it to fit the available container width. This prevents templates from
-// being clipped on smaller monitors where the preview pane is ~900px.
+// Renders the iframe at a fixed viewport (IFRAME_WIDTH) and CSS-scales it to
+// match the available container width in both directions — down on narrow
+// monitors so templates don't clip, up on wide monitors so the preview fills
+// the space between the left nav and the right edit rail instead of leaving
+// a dead band.
 
 const IFRAME_WIDTH = 1280
 
@@ -395,8 +397,7 @@ function ScaledIframe({
     function measure() {
       const el = containerRef.current
       if (!el) return
-      const available = el.clientWidth
-      setScale(Math.min(1, available / IFRAME_WIDTH))
+      setScale(el.clientWidth / IFRAME_WIDTH)
     }
     measure()
     const observer = new ResizeObserver(measure)
