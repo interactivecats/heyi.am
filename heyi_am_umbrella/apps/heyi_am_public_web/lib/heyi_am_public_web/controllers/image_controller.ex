@@ -26,7 +26,7 @@ defmodule HeyiAmPublicWeb.ImageController do
       Regex.match?(~r/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|jpeg|webp)\z/, joined) ->
         {:ok, "images/#{joined}"}
 
-      Regex.match?(~r/\Ausers\/\d+\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|jpeg|webp)\z/, joined) ->
+      Regex.match?(~r/\Ausers\/[a-z0-9][a-z0-9-]{0,38}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|jpeg|webp)\z/, joined) ->
         {:ok, "images/#{joined}"}
 
       true ->

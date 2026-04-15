@@ -233,7 +233,9 @@ defmodule HeyiAm.Accounts.User do
   Accepts `nil`/blank in either key to clear. Separate from profile_changeset
   so the profile API (web form) cannot set raw storage keys.
   """
-  @photo_key_pattern ~r/\Aimages\/users\/\d+\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|jpeg|webp)\z/
+  # Username segment must match the username format (lowercase alphanumeric
+  # + hyphens, 1-39 chars — matches the username_changeset validation).
+  @photo_key_pattern ~r/\Aimages\/users\/[a-z0-9][a-z0-9-]{0,38}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|jpeg|webp)\z/
 
   def profile_photo_key_changeset(user, attrs) do
     user

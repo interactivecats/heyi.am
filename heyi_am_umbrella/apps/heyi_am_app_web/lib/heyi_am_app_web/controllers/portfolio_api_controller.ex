@@ -97,14 +97,15 @@ defmodule HeyiAmAppWeb.PortfolioApiController do
     case conn.assigns[:current_user_id] do
       nil -> unauthorized(conn)
       user_id ->
+        user = Accounts.get_user!(user_id)
+
         with {:ok, bytes} <- decode_data_url(data_url),
              :ok <- check_size(bytes),
              {:ok, full_bytes, small_bytes} <- resize_variants(bytes),
-             full_key = build_key(user_id, "jpg"),
-             small_key = build_key(user_id, "jpg"),
+             full_key = build_key(user.username, "jpg"),
+             small_key = build_key(user.username, "jpg"),
              :ok <- upload_bytes(full_key, full_bytes, "image/jpeg"),
              :ok <- upload_bytes(small_key, small_bytes, "image/jpeg"),
-             user <- Accounts.get_user!(user_id),
              {:ok, _user} <- Accounts.update_user_profile_photo_keys(user, full_key, small_key) do
           json(conn, %{
             full_key: full_key,
@@ -189,8 +190,8 @@ defmodule HeyiAmAppWeb.PortfolioApiController do
   defp maybe_resize(image, scale) when scale >= 1.0, do: {:ok, image}
   defp maybe_resize(image, scale), do: Image.resize(image, scale)
 
-  defp build_key(user_id, ext) do
-    "images/users/#{user_id}/#{Ecto.UUID.generate()}.#{ext}"
+  defp build_key(username, ext) when is_binary(username) do
+    "images/users/#{username}/#{Ecto.UUID.generate()}.#{ext}"
   end
 
   defp upload_bytes(key, bytes, content_type) do
