@@ -18,7 +18,9 @@
   --font-display: 'Space Grotesk', sans-serif;
   --font-body: 'Inter', -apple-system, sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
-  --content-max: 1280px;
+  /* Scale up on wide monitors (wall-mounted 2k+) instead of leaving a dead
+     band on each side, but keep a ceiling so line length doesn't go wild. */
+  --content-max: min(2000px, calc(100vw - 4rem));
 }
 
 body {
