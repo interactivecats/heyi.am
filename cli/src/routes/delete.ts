@@ -25,23 +25,26 @@ function sendError(res: Response, status: number, error: RouteError): void {
 }
 
 /**
- * Validate a path segment at the HTTP boundary. Slugs + session IDs are
- * bounded-length strings; tighter format enforcement belongs on the
- * server. We just reject obviously malformed input so bogus requests
- * don't hit Phoenix.
+ * Validate a path segment at the HTTP boundary. Express 5 types
+ * req.params.<name> as string | string[]; this narrows to string and
+ * rejects obviously malformed input so bogus requests don't hit Phoenix.
  */
-function validatePathParam(value: unknown, field: string): RouteError | null {
+type ValidationResult =
+  | { ok: true; value: string }
+  | { ok: false; error: RouteError };
+
+function validatePathParam(value: unknown, field: string): ValidationResult {
   if (typeof value !== 'string') {
-    return { code: 'INVALID_PARAM', message: `${field} is required` };
+    return { ok: false, error: { code: 'INVALID_PARAM', message: `${field} is required` } };
   }
   const trimmed = value.trim();
   if (trimmed.length === 0) {
-    return { code: 'INVALID_PARAM', message: `${field} is required` };
+    return { ok: false, error: { code: 'INVALID_PARAM', message: `${field} is required` } };
   }
   if (trimmed.length > 200) {
-    return { code: 'INVALID_PARAM', message: `${field} exceeds 200 characters` };
+    return { ok: false, error: { code: 'INVALID_PARAM', message: `${field} exceeds 200 characters` } };
   }
-  return null;
+  return { ok: true, value };
 }
 
 export function createDeleteRouter(_ctx: RouteContext): Router {
@@ -60,12 +63,12 @@ export function createDeleteRouter(_ctx: RouteContext): Router {
    * never published from this machine we have no slug to delete against.
    */
   router.delete('/api/projects/:project/remote', async (req: Request, res: Response) => {
-    const project = req.params.project;
-    const validationError = validatePathParam(project, 'project');
-    if (validationError) {
-      sendError(res, 400, validationError);
+    const projectResult = validatePathParam(req.params.project, 'project');
+    if (!projectResult.ok) {
+      sendError(res, 400, projectResult.error);
       return;
     }
+    const project = projectResult.value;
 
     const auth = getAuthToken();
     warnIfNonDefaultApiUrl();
@@ -152,13 +155,12 @@ export function createDeleteRouter(_ctx: RouteContext): Router {
   router.delete(
     '/api/projects/:project/sessions/:sessionId/remote',
     async (req: Request, res: Response) => {
-      const project = req.params.project;
-      const sessionId = req.params.sessionId;
-
-      const projectErr = validatePathParam(project, 'project');
-      if (projectErr) { sendError(res, 400, projectErr); return; }
-      const sessionErr = validatePathParam(sessionId, 'sessionId');
-      if (sessionErr) { sendError(res, 400, sessionErr); return; }
+      const projectResult = validatePathParam(req.params.project, 'project');
+      if (!projectResult.ok) { sendError(res, 400, projectResult.error); return; }
+      const sessionResult = validatePathParam(req.params.sessionId, 'sessionId');
+      if (!sessionResult.ok) { sendError(res, 400, sessionResult.error); return; }
+      const project = projectResult.value;
+      const sessionId = sessionResult.value;
 
       const auth = getAuthToken();
       warnIfNonDefaultApiUrl();
