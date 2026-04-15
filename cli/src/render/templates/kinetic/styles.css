@@ -18,6 +18,7 @@
   --font-display: 'Space Grotesk', sans-serif;
   --font-body: 'Inter', -apple-system, sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
+  --content-max: 1280px;
 }
 
 body {
@@ -66,6 +67,9 @@ body {
 .kinetic .hero-content {
   position: relative;
   z-index: 1;
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
 }
 .kinetic .eyebrow {
   display: inline-flex; align-items: center; gap: 0.75rem;
@@ -167,11 +171,11 @@ body {
 .kinetic .stats-row {
   display: flex;
   gap: 2.5rem;
-  padding: 2rem 0;
+  padding: 2rem 2.5rem;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   margin: 0 auto;
-  max-width: 900px;
+  max-width: var(--content-max);
 }
 .kinetic .stat-item {
   display: flex;
@@ -251,7 +255,7 @@ body {
 /* ── Sections ── */
 .kinetic .section {
   padding: 6rem 2.5rem;
-  max-width: 1100px;
+  max-width: var(--content-max);
   margin: 0 auto;
 }
 .kinetic .section--flush { padding-top: 0; }
@@ -507,7 +511,7 @@ body {
 /* ── Project hero (project page) ── */
 .kinetic .hero--project {
   min-height: 60vh;
-  max-width: 1100px;
+  max-width: var(--content-max);
   margin: 0 auto;
 }
 .kinetic .hero--project h1 {
@@ -527,7 +531,7 @@ body {
   padding: 2rem 2.5rem;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
-  max-width: 1100px;
+  max-width: var(--content-max);
   margin: 0 auto;
 }
 
@@ -674,7 +678,7 @@ body {
   padding: 8rem 2.5rem 3rem;
   position: relative;
   overflow: hidden;
-  max-width: 1100px;
+  max-width: var(--content-max);
   margin: 0 auto;
 }
 .kinetic .hero--session h1 {
@@ -704,7 +708,7 @@ body {
 
 /* ── Dev take section ── */
 .kinetic .dev-take-section {
-  max-width: 1100px;
+  max-width: var(--content-max);
   margin: 0 auto;
   padding: 0 2.5rem 3rem;
 }
@@ -714,7 +718,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 320px;
   gap: 2.5rem;
-  max-width: 1100px;
+  max-width: var(--content-max);
   margin: 0 auto;
   padding: 0 2.5rem 6rem;
 }
@@ -900,7 +904,7 @@ body {
   border-top: 1px solid var(--border);
   display: flex; justify-content: space-between;
   font-size: 0.75rem; color: var(--text-3);
-  max-width: 1100px; margin: 0 auto;
+  max-width: var(--content-max); margin: 0 auto;
 }
 .kinetic .footer a { color: var(--text-3); }
 .kinetic .footer a:hover { color: var(--orange); }
