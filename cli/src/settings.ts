@@ -20,7 +20,8 @@ const SETTINGS_FILE = 'settings.json';
 export interface PortfolioProfile {
   displayName?: string;
   bio?: string;
-  /** Base64-encoded profile photo (data URI). */
+  /** Base64-encoded profile photo (data URI). Uploaded to R2 on publish;
+   *  Phoenix resizes into a full and small variant server-side. */
   photoBase64?: string;
   location?: string;
   email?: string;

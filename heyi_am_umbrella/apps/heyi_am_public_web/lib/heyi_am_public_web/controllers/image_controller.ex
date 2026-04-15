@@ -7,26 +7,34 @@ defmodule HeyiAmPublicWeb.ImageController do
   @doc """
   Serves images by UUID key. The UUID makes the URL unguessable,
   so no auth check is needed — knowing the URL IS the authorization.
+
+  Accepts two shapes:
+    /_img/<uuid>.ext                      (flat — project screenshots)
+    /_img/users/<user_id>/<uuid>.ext      (user-scoped — profile photos)
   """
-  def show(conn, %{"uuid" => uuid}) do
-    # Validate UUID format + allowed extensions
-    case parse_image_key(uuid) do
-      {:ok, key} ->
-        serve_from_storage(conn, key)
-
-      :error ->
-        conn |> put_status(:not_found) |> text("")
+  def show(conn, %{"path" => path}) do
+    case parse_image_key(path) do
+      {:ok, key} -> serve_from_storage(conn, key)
+      :error -> conn |> put_status(:not_found) |> text("")
     end
   end
 
-  defp parse_image_key(uuid) do
-    # Accept "uuid" or "uuid.ext" — map to S3 key "images/uuid.ext"
-    if Regex.match?(~r/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|jpeg|webp)\z/, uuid) do
-      {:ok, "images/#{uuid}"}
-    else
-      :error
+  defp parse_image_key(path) when is_list(path) do
+    joined = Enum.join(path, "/")
+
+    cond do
+      Regex.match?(~r/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|jpeg|webp)\z/, joined) ->
+        {:ok, "images/#{joined}"}
+
+      Regex.match?(~r/\Ausers\/\d+\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|jpeg|webp)\z/, joined) ->
+        {:ok, "images/#{joined}"}
+
+      true ->
+        :error
     end
   end
+
+  defp parse_image_key(_), do: :error
 
   defp serve_from_storage(conn, key) do
     case HeyiAm.ObjectStorage.presign_get(key) do

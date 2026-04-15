@@ -5,7 +5,7 @@ ARG RUNNER_IMAGE="docker.io/debian:bookworm-20250407-slim"
 FROM ${BUILDER_IMAGE} AS builder
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends build-essential git nodejs npm \
+  && apt-get install -y --no-install-recommends build-essential git nodejs npm libvips-dev pkg-config \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -52,7 +52,7 @@ RUN mix release heyi_am
 FROM ${RUNNER_IMAGE} AS final
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates curl librsvg2-bin fonts-jetbrains-mono \
+  && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates curl librsvg2-bin fonts-jetbrains-mono libvips42 \
   && rm -rf /var/lib/apt/lists/* \
   && fc-cache -f
 

@@ -55,11 +55,13 @@ defmodule HeyiAmPublicWeb.Router do
     get "/*path", PageController, :redirect_vibes
   end
 
-  # UUID-keyed images — unguessable, no auth needed
+  # UUID-keyed images — unguessable, no auth needed.
+  # Accepts both the flat `:uuid.ext` layout used for project screenshots and
+  # the nested `users/:user_id/:uuid.ext` layout for per-user profile photos.
   scope "/_img", HeyiAmPublicWeb do
     pipe_through :browser
 
-    get "/:uuid", ImageController, :show
+    get "/*path", ImageController, :show
   end
 
   # Unlisted project pages

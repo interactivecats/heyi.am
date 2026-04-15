@@ -41,48 +41,28 @@ const IMAGE_KEY_PREFIX = 'images/';
  * Returns the public `/_img/:uuid` URL suitable for og:image / <img src>,
  * or `null` if the upload failed (publish still proceeds without a photo).
  */
+/**
+ * POSTs the user's base64 profile photo to Phoenix, which resizes it into
+ * a full (max 1200px) and small (max 600px) variant, uploads both to R2,
+ * and persists the two keys on the user record. Returns the full-size
+ * URL (for inline <img src>) or `null` on any failure.
+ */
 async function uploadProfilePhoto(
   photoBase64: string,
   auth: { token: string },
 ): Promise<string | null> {
   try {
-    const match = photoBase64.match(/^data:image\/(png|jpe?g|webp);base64,(.+)$/i);
-    if (!match) return null;
-    const mimeExt = match[1].toLowerCase() === 'jpeg' ? 'jpg' : match[1].toLowerCase();
-    const buffer = Buffer.from(match[2], 'base64');
-    // Hard-cap at 10 MB (same limit the `/_img/:uuid` route enforces when serving).
-    if (buffer.length > 10_000_000) return null;
-
-    const key = `${IMAGE_KEY_PREFIX}${randomUUID()}.${mimeExt}`;
-    const presignRes = await fetch(`${API_URL}/api/portfolio/profile-photo-url`, {
+    const res = await fetch(`${API_URL}/api/portfolio/profile-photo`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${auth.token}`,
       },
-      body: JSON.stringify({ key }),
+      body: JSON.stringify({ photo: photoBase64 }),
     });
-    if (!presignRes.ok) return null;
-    const { upload_url } = await presignRes.json() as { upload_url: string; key: string };
-
-    const putRes = await fetch(upload_url, {
-      method: 'PUT',
-      body: new Uint8Array(buffer),
-      headers: { 'Content-Type': `image/${mimeExt === 'jpg' ? 'jpeg' : mimeExt}` },
-    });
-    if (!putRes.ok) return null;
-
-    const patchRes = await fetch(`${API_URL}/api/portfolio/profile-photo-key`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${auth.token}`,
-      },
-      body: JSON.stringify({ key }),
-    });
-    if (!patchRes.ok) return null;
-
-    return `${PUBLIC_URL}/_img/${key.replace(IMAGE_KEY_PREFIX, '')}`;
+    if (!res.ok) return null;
+    const { full_url } = await res.json() as { full_url: string; small_url: string };
+    return full_url ?? null;
   } catch {
     return null;
   }
@@ -497,20 +477,16 @@ export function createPublishRouter(ctx: RouteContext): Router {
       const profile = getPortfolioProfile();
       const templateName = getDefaultTemplate() || 'editorial';
 
-      // Upload profile photo to S3 (if present) so og:image has a fetchable
-      // URL. Failure is non-fatal — publish still proceeds with no photo.
+      // If the user has a profile photo, upload it to Phoenix first so the
+      // rendered HTML can reference the hosted URL instead of inlining 1.5MB
+      // of base64. Phoenix resizes into a full + small variant and stores
+      // both in R2. Removals are handled by the upload endpoint below based
+      // on the `has_photo` signal — no explicit DELETE needed.
       let photoUrlOverride: string | undefined;
       if (profile.photoBase64) {
         send({ type: 'progress', message: 'Uploading profile photo…' });
         const uploadedUrl = await uploadProfilePhoto(profile.photoBase64, auth);
         if (uploadedUrl) photoUrlOverride = uploadedUrl;
-      } else {
-        // No photo in current profile — clear any prior uploaded photo on
-        // the server so deleted photos actually disappear.
-        await fetch(`${API_URL}/api/portfolio/profile-photo`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${auth.token}` },
-        }).catch(() => {});
       }
 
       const { renderData, filteredProjects } = await buildPortfolioRenderData(ctx, auth, { photoUrlOverride });
@@ -768,6 +744,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
         body: JSON.stringify({
           html: finalHtml,
           profile,
+          has_photo: Boolean(profile.photoBase64),
         }),
       });
 

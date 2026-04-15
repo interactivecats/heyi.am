@@ -26,6 +26,7 @@ defmodule HeyiAm.Accounts.User do
     field :time_stats, :map
     field :rendered_portfolio_html, :string
     field :profile_photo_key, :string
+    field :profile_photo_small_key, :string
 
     timestamps(type: :utc_datetime)
   end
@@ -228,22 +229,25 @@ defmodule HeyiAm.Accounts.User do
   defp sanitize_portfolio_html(attrs), do: attrs
 
   @doc """
-  A changeset for updating the S3 key of the user's uploaded profile photo.
-  Accepts `nil`/blank to clear. Separate from profile_changeset so the
-  profile API (web form) cannot set raw storage keys.
+  A changeset for updating the S3 keys of the user's uploaded profile photo.
+  Accepts `nil`/blank in either key to clear. Separate from profile_changeset
+  so the profile API (web form) cannot set raw storage keys.
   """
-  @photo_key_pattern ~r/\Aimages\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|jpeg|webp)\z/
+  @photo_key_pattern ~r/\Aimages\/users\/\d+\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|jpeg|webp)\z/
 
   def profile_photo_key_changeset(user, attrs) do
     user
-    |> cast(attrs, [:profile_photo_key])
-    |> validate_change(:profile_photo_key, fn :profile_photo_key, value ->
-      cond do
-        value in [nil, ""] -> []
-        Regex.match?(@photo_key_pattern, value) -> []
-        true -> [profile_photo_key: "invalid key format"]
-      end
-    end)
+    |> cast(attrs, [:profile_photo_key, :profile_photo_small_key])
+    |> validate_change(:profile_photo_key, &validate_photo_key/2)
+    |> validate_change(:profile_photo_small_key, &validate_photo_key/2)
+  end
+
+  defp validate_photo_key(field, value) do
+    cond do
+      value in [nil, ""] -> []
+      Regex.match?(@photo_key_pattern, value) -> []
+      true -> [{field, "invalid key format"}]
+    end
   end
 
   @doc """

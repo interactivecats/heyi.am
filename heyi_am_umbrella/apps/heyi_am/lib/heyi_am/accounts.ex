@@ -303,24 +303,34 @@ defmodule HeyiAm.Accounts do
   end
 
   @doc """
-  Sets the user's `profile_photo_key`, deleting the previous S3 object
-  (best-effort) after the DB write succeeds. Pass `nil` or `""` to clear.
+  Sets the user's profile photo keys (full + small thumbnail), deleting the
+  previous S3 objects (best-effort) after the DB write succeeds. Pass `nil`
+  or `""` in either key to clear.
   """
-  def update_user_profile_photo_key(user, key) do
-    old_key = user.profile_photo_key
+  def update_user_profile_photo_keys(user, full_key, small_key) do
+    old_full = user.profile_photo_key
+    old_small = user.profile_photo_small_key
 
-    changeset = User.profile_photo_key_changeset(user, %{"profile_photo_key" => key})
+    changeset =
+      User.profile_photo_key_changeset(user, %{
+        "profile_photo_key" => full_key,
+        "profile_photo_small_key" => small_key
+      })
 
     case Repo.update(changeset) do
       {:ok, updated} ->
-        if is_binary(old_key) and old_key != "" and old_key != key do
-          HeyiAm.ObjectStorage.delete_object(old_key)
-        end
-
+        maybe_delete_old(old_full, full_key)
+        maybe_delete_old(old_small, small_key)
         {:ok, updated}
 
       error ->
         error
+    end
+  end
+
+  defp maybe_delete_old(old_key, new_key) do
+    if is_binary(old_key) and old_key != "" and old_key != new_key do
+      HeyiAm.ObjectStorage.delete_object(old_key)
     end
   end
 

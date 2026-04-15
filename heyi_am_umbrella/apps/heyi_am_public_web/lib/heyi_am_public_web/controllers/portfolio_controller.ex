@@ -13,9 +13,12 @@ defmodule HeyiAmPublicWeb.PortfolioController do
   end
   defp extract_template(_), do: "editorial"
 
-  # Builds the og:image URL for a user. Prefers the uploaded profile photo
-  # (served via /_img/:uuid on the public origin), falls back to the GitHub
-  # avatar, and ultimately to the default (handled by the layout).
+  # Builds the og:image URL for a user. Prefers the small thumbnail variant
+  # (WhatsApp/Facebook reject previews over ~300KB), then the full uploaded
+  # photo, then the GitHub avatar, then the default (handled by the layout).
+  defp user_og_image(%{profile_photo_small_key: "images/" <> filename}) when filename != "" do
+    HeyiAmPublicWeb.Endpoint.url() <> "/_img/" <> filename
+  end
   defp user_og_image(%{profile_photo_key: "images/" <> filename}) when filename != "" do
     HeyiAmPublicWeb.Endpoint.url() <> "/_img/" <> filename
   end

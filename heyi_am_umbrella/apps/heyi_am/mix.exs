@@ -54,7 +54,8 @@ defmodule HeyiAm.MixProject do
       {:opentelemetry_exporter, "~> 1.10"},
       {:opentelemetry_ecto, "~> 1.2"},
       {:hammer, "~> 6.1"},
-      {:html_sanitize_ex, "~> 1.4"}
+      {:html_sanitize_ex, "~> 1.4"},
+      {:image, "~> 0.60"}
     ]
   end
 
