@@ -90,7 +90,7 @@ defmodule HeyiAmAppWeb.PortfolioApiControllerTest do
     test "rejects html payloads larger than the size cap" do
       {conn, _user} = api_conn_with_auth()
 
-      oversize = String.duplicate("a", 2 * 1024 * 1024 + 1)
+      oversize = String.duplicate("a", 20 * 1024 * 1024 + 1)
       conn = post(conn, ~p"/api/portfolio/upload", %{html: oversize})
 
       assert %{"error" => %{"code" => "HTML_TOO_LARGE"}} = json_response(conn, 413)

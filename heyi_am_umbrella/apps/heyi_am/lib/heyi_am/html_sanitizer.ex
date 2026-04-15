@@ -35,10 +35,10 @@ defmodule HeyiAm.HtmlSanitizer.Scrubber do
                     table thead tbody tfoot tr th td caption colgroup col
                     a img br hr wbr)
 
-  # Safe attributes
-  # NOTE: "style" is intentionally excluded — inline styles enable CSS data
-  # exfiltration via background-image: url() and similar properties.
-  @common_attrs ~w(class id title role
+  # Safe attributes. "style" is allowed because portfolios are served from
+  # heyi.am — a separate, no-auth origin with no cookies or sensitive data —
+  # so CSS exfiltration has nothing to steal.
+  @common_attrs ~w(class id title role style
                     aria-label aria-hidden aria-expanded aria-controls
                     aria-describedby aria-labelledby
                     hidden lang dir tabindex)

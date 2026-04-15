@@ -20,8 +20,8 @@ defmodule HeyiAmAppWeb.PortfolioApiController do
   alias HeyiAm.Accounts
 
   # Keep an upper bound on the HTML payload to stop a runaway client from
-  # DoS'ing the DB column. 2 MiB is generous for a static portfolio fragment.
-  @max_html_bytes 2 * 1024 * 1024
+  # DoS'ing the DB column.
+  @max_html_bytes 20 * 1024 * 1024
 
   def upload(conn, %{"html" => html} = params) when is_binary(html) do
     user_id = conn.assigns[:current_user_id]
