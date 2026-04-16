@@ -10,7 +10,7 @@ feedback. Tracked on branch `template-readability-a11y`.
 | 1 | `/harden` | `8aa177e` | WCAG contrast fixes (neon, noir), gradient-text removal, chip padding |
 | 2 | `/typeset` | `63b4f0f` | Typography floors raised across 25+ templates |
 | 3 | `/normalize` | `3f4e698` | Type scale tokens (`--font-size-xs..3xl`), tokenize shared CSS, lift residual 9–10px labels |
-| 4 | `/adapt` | — | Mobile breakpoints for 6 desktop-only templates |
+| 4 | `/adapt` | `d384f97` | Small-phone (480px) breakpoints for mono/paper/chalk/verdant; glacier/aurora already had two-step coverage |
 | 5 | `/animate` | — | Verify `prefers-reduced-motion` coverage |
 | 6 | `/polish` | — | Final consistency pass |
 
@@ -50,11 +50,8 @@ All 846 CLI render tests pass at each commit.
 
 ## Remaining work — detail
 
-### /adapt
-These templates lack mobile breakpoints or have only a single one, audit surfaced:
-- mono, paper, chalk, glacier, aurora, verdant
-
-Add `@media (max-width: 768px)` that shrinks type, collapses grids, relaxes padding. Cross-check `docs/TEMPLATE_FIX_LEARNINGS.md` for per-template responsive notes.
+### /adapt (done — commit `d384f97`)
+All 6 audit-flagged templates already had a 768px block; the real gap was small-phone coverage. Added `@media (max-width: 480px)` to mono, paper, chalk, verdant. Each new block collapses stat grids to 1-col, shrinks hero h1 to ~1.25–1.5rem, and tightens nav/photo/padding. Glacier and aurora already had two-step coverage (glacier uses `clamp()` on hero, aurora has comprehensive 480 rules including `display: none` on agent-bar-track for narrow widths) — left unchanged.
 
 ### /animate
 These already have `prefers-reduced-motion` blocks (verified during /harden):
