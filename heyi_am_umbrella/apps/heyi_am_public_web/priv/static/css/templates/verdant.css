@@ -1256,6 +1256,21 @@
   .verdant .vd-footer { flex-direction: column; gap: 0.5rem; text-align: center; }
 }
 
+@media (max-width: 480px) {
+  .verdant .vd-page { padding: 1rem 0.75rem 2rem; }
+  .verdant .vd-hero h1 { font-size: 1.375rem; }
+  .verdant .vd-hero__avatar { width: 64px; height: 64px; font-size: 1.375rem; }
+  .verdant .vd-hero__photo { width: 80px; height: 104px; }
+  .verdant .vd-stats,
+  .verdant .vd-stat-grid { grid-template-columns: 1fr; }
+  .verdant .vd-sidebar { grid-template-columns: 1fr; }
+  .verdant .vd-project-header h1 { font-size: 1.375rem; }
+  .verdant .vd-session-header h1 { font-size: 1.25rem; }
+  .verdant .vd-vine-timeline,
+  .verdant .vd-beats { padding-left: 1.25rem; }
+  .verdant .vd-nav__links { flex-wrap: wrap; gap: 0.75rem; }
+}
+
 
 /* Live-edit empty field hiding */
 [data-portfolio-empty="true"] { display: none; }
