@@ -41,7 +41,7 @@ defmodule HeyiAmAppWeb.Router do
   end
 
   pipeline :rate_limit_api_session do
-    plug HeyiAmAppWeb.Plugs.RateLimit, action: "api_session", limit: 30, period: 60_000
+    plug HeyiAmAppWeb.Plugs.RateLimit, action: "api_session", limit: 300, period: 60_000
   end
 
   pipeline :rate_limit_device_poll do
