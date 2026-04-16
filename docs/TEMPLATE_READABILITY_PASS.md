@@ -11,8 +11,8 @@ feedback. Tracked on branch `template-readability-a11y`.
 | 2 | `/typeset` | `63b4f0f` | Typography floors raised across 25+ templates |
 | 3 | `/normalize` | `3f4e698` | Type scale tokens (`--font-size-xs..3xl`), tokenize shared CSS, lift residual 9–10px labels |
 | 4 | `/adapt` | `d384f97` | Small-phone (480px) breakpoints for mono/paper/chalk/verdant; glacier/aurora already had two-step coverage |
-| 5 | `/animate` | _this commit_ | Audit pass — all 30 templates now have `prefers-reduced-motion` coverage; added block for editorial's lone width transition |
-| 6 | `/polish` | — | Final consistency pass |
+| 5 | `/animate` | `36da9a7` | Audit pass — all 30 templates now have `prefers-reduced-motion` coverage; added block for editorial's lone width transition |
+| 6 | `/polish` | _this commit_ | Final consistency pass — radar `.chip` padding re-aligned to the /harden base (0.25rem); three other flagged items investigated and intentionally skipped |
 
 ## Architecture (critical — easy to get wrong)
 
@@ -65,9 +65,14 @@ Everything else was already covered: 14 templates use universal `.{template} * {
 
 No template JS files exist under `cli/src/render/templates/**`, so the JS `window.matchMedia` path noted for parallax/cosmos/kinetic/showcase lives outside the template CSS directories and wasn't re-audited here.
 
-### /polish
-- `exec-path-number` in Phoenix `app.css:982` is 32px — non-interactive (verified), so WCAG 2.5.5 doesn't require 44px. But if visually small, bump to ~2.25rem here.
-- Final consistency sweep once /normalize + /adapt land.
+### /polish (done — this commit)
+Narrow sweep turned up one real bug and three deferred-on-purpose items:
+
+- **Fixed:** `.radar .chip` had stale `padding: 0.125rem 0.5rem`. Base `.chip` was bumped to `0.25rem` in /harden, but the radar override (specificity 0,2,0 vs 0,1,0) silently won — so chips inside radar stayed crushed. Aligned to 0.25rem. No other per-template `.template .chip` overrides exist (verified `^\.[a-z-]+ \.chip \{` grep). Font-size stays at 11px (identity, deliberately below the 12px xs floor for mono chips).
+- **Skipped — exec-path-number (app.css:982):** flagged as possibly small at 32px, but `.exec-path-*` has zero callers in any `.heex` / `.ex` / CLI template / mockup. It's dead CSS from an abandoned case-study pattern. Bumping it moves zero rendered pixels — out of scope for a polish pass; candidate for a later dead-code sweep (also present in `heyi_am_app_web/assets/css/app.css` and both app.css mirrors in priv/static).
+- **Skipped — 0.8125rem → `--font-size-sm` migration:** 235 occurrences, intentionally kept as a literal per /normalize ("between xs and sm, templates keep using the literal for dense meta text"). Reasoning still holds.
+- **Skipped — `!important` relaxation:** /harden added zero `!important`. All existing `!important` in template CSS is legitimate (RM-block overrides that need to win against the animated selector, plus one `[data-portfolio-empty="true"]` force-hide). Nothing to relax.
+- **Skipped — per-template `:root` token migration:** per-template wrapper `font-size` (terminal's 0.875rem, mono/signal/canvas 16px, minimal 15px) is identity, not token-worthy. Bulk migration of 12px (150 uses) / 14px (68 uses) literals elsewhere would be scope creep — /normalize already flagged this for "incremental" adoption.
 
 ## Housekeeping
 
