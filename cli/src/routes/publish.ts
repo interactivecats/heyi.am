@@ -514,11 +514,11 @@ export function createPublishRouter(ctx: RouteContext): Router {
 
           const detail = buildProjectDetail(ctx.db, rawProj);
           const enhance = detail.enhanceCache as ProjectEnhanceCache | null;
-          const cache = enhance ?? {
+          const cache: ProjectEnhanceCache = enhance ?? {
             fingerprint: 'portfolio-upload',
             enhancedAt: new Date().toISOString(),
             selectedSessionIds: detail.sessions.map((s) => s.id),
-            result: { narrative: '', arc: [], skills: [], timeline: [], questions: [] },
+            result: { tagline: '', narrative: '', arc: [], skills: [], timeline: [], questions: [] },
           };
           const selectedSessionIds = enhance !== null && enhance.selectedSessionIds !== undefined
             ? enhance.selectedSessionIds
@@ -837,11 +837,12 @@ export function createPublishRouter(ctx: RouteContext): Router {
       for (const rawProj of rawProjects) {
         try {
           const detail = buildProjectDetail(ctx.db, rawProj);
-          const cache = (detail.enhanceCache as ProjectEnhanceCache | null) ?? {
+          const cache: ProjectEnhanceCache = (detail.enhanceCache as ProjectEnhanceCache | null) ?? {
             fingerprint: 'export',
             enhancedAt: new Date().toISOString(),
             selectedSessionIds: detail.sessions.map((s) => s.id),
             result: {
+              tagline: '',
               narrative: '',
               arc: [],
               skills: [],
