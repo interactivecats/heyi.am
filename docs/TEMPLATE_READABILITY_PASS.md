@@ -11,7 +11,7 @@ feedback. Tracked on branch `template-readability-a11y`.
 | 2 | `/typeset` | `63b4f0f` | Typography floors raised across 25+ templates |
 | 3 | `/normalize` | `3f4e698` | Type scale tokens (`--font-size-xs..3xl`), tokenize shared CSS, lift residual 9–10px labels |
 | 4 | `/adapt` | `d384f97` | Small-phone (480px) breakpoints for mono/paper/chalk/verdant; glacier/aurora already had two-step coverage |
-| 5 | `/animate` | — | Verify `prefers-reduced-motion` coverage |
+| 5 | `/animate` | _this commit_ | Audit pass — all 30 templates now have `prefers-reduced-motion` coverage; added block for editorial's lone width transition |
 | 6 | `/polish` | — | Final consistency pass |
 
 ## Architecture (critical — easy to get wrong)
@@ -53,11 +53,17 @@ All 846 CLI render tests pass at each commit.
 ### /adapt (done — commit `d384f97`)
 All 6 audit-flagged templates already had a 768px block; the real gap was small-phone coverage. Added `@media (max-width: 480px)` to mono, paper, chalk, verdant. Each new block collapses stat grids to 1-col, shrinks hero h1 to ~1.25–1.5rem, and tightens nav/photo/padding. Glacier and aurora already had two-step coverage (glacier uses `clamp()` on hero, aurora has comprehensive 480 rules including `display: none` on agent-bar-track for narrow widths) — left unchanged.
 
-### /animate
-These already have `prefers-reduced-motion` blocks (verified during /harden):
-- parallax (line ~727), cosmos (line ~193), kinetic (line ~477), showcase (line ~695) — all have both CSS `@media` and JS `window.matchMedia` paths.
+### /animate (done — this commit)
+Audited all 30 templates. Matrix of keyframes × animation-property × RM-block counts
+produced only one gap: **editorial** had no `prefers-reduced-motion` block despite
+shipping a 0.6s `width` transition on `.ed-agent-bar-fill` (the attribution bar).
+Added a minimal `@media (prefers-reduced-motion: reduce) { .editorial .ed-agent-bar-fill { transition: none; } }`
+block colocated with the selector it guards — mirrors the canvas / meridian /
+aurora precedent for the same agent-bar motion pattern.
 
-Audit remaining templates with animations (scan for `@keyframes` or `animation:`). Any template that uses an animation but lacks a reduced-motion guard needs one. The pattern from parallax is the best template.
+Everything else was already covered: 14 templates use universal `.{template} * { animation-duration: 0.01ms !important }` blanket disables (blueprint, chalk, kinetic, neon, parallax, signal, etc.), and the rest enumerate their animated selectors explicitly (aurora, bauhaus, mono, strata, etc.). Templates with no motion at all (minimal, terminal) correctly have no RM block.
+
+No template JS files exist under `cli/src/render/templates/**`, so the JS `window.matchMedia` path noted for parallax/cosmos/kinetic/showcase lives outside the template CSS directories and wasn't re-audited here.
 
 ### /polish
 - `exec-path-number` in Phoenix `app.css:982` is 32px — non-interactive (verified), so WCAG 2.5.5 doesn't require 44px. But if visually small, bump to ~2.25rem here.
