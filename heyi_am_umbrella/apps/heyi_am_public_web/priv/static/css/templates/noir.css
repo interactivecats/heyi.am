@@ -10,8 +10,8 @@
   --noir-border:          #2a2a2a;
   --noir-border-strong:   #404040;
   --noir-text:            #e5e5e5;
-  --noir-text-secondary:  #a3a3a3;
-  --noir-text-muted:      #737373;
+  --noir-text-secondary:  #b8b8b8;
+  --noir-text-muted:      #9a9a9a;
   --noir-white:           #ffffff;
   --noir-highlight:       #e5e5e5;
   --noir-rule:            #333333;
@@ -194,7 +194,7 @@ body { background: var(--noir-bg); color: var(--noir-text); }
 
 .noir-stats-row__label {
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--noir-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -345,7 +345,7 @@ body { background: var(--noir-bg); color: var(--noir-text); }
 
 .noir-project__stat-label {
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--noir-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -507,7 +507,7 @@ body { background: var(--noir-bg); color: var(--noir-text); }
 
 .noir-stat-cell__label {
   font-family: var(--font-mono);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   color: var(--noir-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;

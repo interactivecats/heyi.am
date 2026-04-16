@@ -190,7 +190,7 @@ body {
 }
 .kinetic .stat-label {
   font-family: var(--font-mono);
-  font-size: 0.5rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-3);
@@ -222,7 +222,7 @@ body {
 }
 .kinetic .leverage-row .leverage-sub {
   font-family: var(--font-mono);
-  font-size: 0.5rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-3);
@@ -248,7 +248,7 @@ body {
   display: flex;
   justify-content: space-between;
   font-family: var(--font-mono);
-  font-size: 0.5rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-3);
@@ -354,7 +354,7 @@ body {
 }
 .kinetic .project-stat-label {
   font-family: var(--font-mono);
-  font-size: 0.5rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-3);
@@ -497,7 +497,7 @@ body {
 }
 .kinetic .split-stat-label {
   font-family: var(--font-mono);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   color: var(--text-3);
   text-transform: uppercase;
   letter-spacing: 0.08em;

@@ -276,7 +276,7 @@ a:active {
 
 .zen-body {
   font-family: var(--zen-font-body);
-  font-size: 0.9375rem;
+  font-size: 1rem;
   line-height: 1.8;
   color: var(--zen-text-secondary);
 }
@@ -342,7 +342,7 @@ a:active {
 
 .zen-header-bio {
   font-family: var(--zen-font-body);
-  font-size: 0.9375rem;
+  font-size: 1rem;
   line-height: 1.8;
   color: var(--zen-text-secondary);
   margin-block-end: 1rem;
@@ -500,7 +500,7 @@ a:active {
 
 .zen-project-narrative {
   font-family: var(--zen-font-body);
-  font-size: 0.9375rem;
+  font-size: 1rem;
   line-height: 1.8;
   color: var(--zen-text-secondary);
   margin-block-end: 1.25rem;
@@ -591,7 +591,7 @@ a:active {
 /* ── Narrative ── */
 .zen-narrative p {
   font-family: var(--zen-font-body);
-  font-size: 0.9375rem;
+  font-size: 1rem;
   line-height: 1.9;
   color: var(--zen-text-secondary);
   margin-block-end: 1.5rem;
@@ -703,7 +703,7 @@ a:active {
 
 .zen-decision-text {
   font-family: var(--zen-font-body);
-  font-size: 0.9375rem;
+  font-size: 1rem;
   line-height: 1.7;
   color: var(--zen-text-secondary);
 }
@@ -837,7 +837,7 @@ a:active {
 
 .zen-beat-desc {
   font-family: var(--zen-font-body);
-  font-size: 0.9375rem;
+  font-size: 1rem;
   line-height: 1.85;
   color: var(--zen-text-secondary);
 }
@@ -861,7 +861,7 @@ a:active {
 
 .zen-question {
   font-family: var(--zen-font-body);
-  font-size: 0.9375rem;
+  font-size: 1rem;
   font-weight: 500;
   line-height: 1.7;
   color: var(--zen-text);
@@ -870,7 +870,7 @@ a:active {
 
 .zen-answer {
   font-family: var(--zen-font-body);
-  font-size: 0.9375rem;
+  font-size: 1rem;
   line-height: 1.85;
   color: var(--zen-text-secondary);
 }

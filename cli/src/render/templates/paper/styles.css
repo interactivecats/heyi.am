@@ -163,7 +163,7 @@ a:focus-visible {
   padding: 0.75rem 0;
   border-bottom: 1px solid var(--paper-border);
   font-family: var(--paper-font-mono);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -1477,6 +1477,65 @@ a.session-card:hover {
   }
   .screenshot__body {
     height: 180px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-wrapper {
+    padding: 0 0.75rem;
+  }
+  .masthead {
+    padding: 1.5rem 0 1rem;
+  }
+  .masthead__title {
+    font-size: 1.5rem;
+  }
+  .masthead__edition {
+    font-size: 0.75rem;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .byline {
+    padding: 1rem 0;
+  }
+  .article-header__headline,
+  .projects-section__heading {
+    font-size: 1.25rem;
+  }
+  .project-card__headline {
+    font-size: 1.125rem;
+  }
+  .session-meta {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  .stats-table th,
+  .stats-table td {
+    padding: 0.3rem 0.375rem;
+    font-size: 0.75rem;
+  }
+  .stats-table td:last-child {
+    font-size: 0.8125rem;
+  }
+  .timeline-table,
+  .activity-table,
+  .agents-table {
+    font-size: 0.75rem;
+  }
+  .timeline-table th,
+  .timeline-table td,
+  .activity-table th,
+  .activity-table td,
+  .agents-table th,
+  .agents-table td {
+    padding: 0.3rem 0.375rem;
+  }
+  .nav-bar {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .dev-take__text {
+    font-size: 1rem;
   }
 }
 

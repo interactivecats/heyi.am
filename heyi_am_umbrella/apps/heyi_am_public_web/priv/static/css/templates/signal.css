@@ -35,8 +35,8 @@ body { background: var(--bg); color: var(--fg); }
   font-family: var(--font-body);
   color: var(--fg);
   background: var(--bg);
-  line-height: 1.5;
-  font-size: 14px;
+  line-height: 1.6;
+  font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -157,7 +157,7 @@ body { background: var(--bg); color: var(--fg); }
 }
 .signal .stat-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--fg-dim);
@@ -182,7 +182,7 @@ body { background: var(--bg); color: var(--fg); }
   margin-bottom: 2px;
 }
 .signal.heyiam-session .stat-label {
-  font-size: 9px;
+  font-size: 12px;
 }
 
 .signal .stat-cell--leverage-group {
@@ -392,7 +392,7 @@ body { background: var(--bg); color: var(--fg); }
 }
 .signal .nav-links a {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 14px;
   color: var(--fg-muted);
   text-decoration: none;
   padding: 4px 10px;

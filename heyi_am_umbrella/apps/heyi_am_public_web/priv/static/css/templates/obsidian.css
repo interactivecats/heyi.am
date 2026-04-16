@@ -327,7 +327,7 @@ body { background: var(--obs-bg); color: var(--obs-text); }
 }
 .obsidian .stat-label {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--fg-dim);
@@ -340,7 +340,7 @@ body { background: var(--obs-bg); color: var(--obs-text); }
   font-size: clamp(20px, 3vw, 28px);
 }
 .obsidian.heyiam-project .stat-label {
-  font-size: 10px;
+  font-size: 12px;
 }
 .obsidian .stat-card--leverage {
   grid-column: span 2;

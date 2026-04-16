@@ -326,7 +326,7 @@ a:visited { color: inherit; }
 }
 .stat-label {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--fg-muted);
@@ -389,7 +389,7 @@ a:visited { color: inherit; }
 }
 .stat-item-label {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--fg-muted);
@@ -1153,6 +1153,48 @@ a.project-card:hover, a.session-card:hover {
   .nav-inner {
     flex-direction: column;
     gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 24px 0 20px;
+  }
+  .hero h1 {
+    font-size: 1.5rem;
+  }
+  .heyiam-project .hero h1,
+  .heyiam-session .hero h1 {
+    font-size: 1.375rem;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .chalk-card {
+    padding: 16px;
+  }
+  .project-name {
+    font-size: 1.125rem;
+  }
+  .sessions-table {
+    font-size: 11px;
+  }
+  .sessions-table thead th,
+  .sessions-table tbody td {
+    padding: 6px 4px;
+  }
+  .agent-row {
+    grid-template-columns: 80px 1fr 48px;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .hero-meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .profile-links {
+    flex-direction: column;
+    gap: 4px;
   }
 }
 

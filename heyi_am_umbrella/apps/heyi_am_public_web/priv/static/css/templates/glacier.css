@@ -164,7 +164,7 @@
   font-size: 24px;
 }
 .glacier.heyiam-project .stat-label {
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -817,7 +817,7 @@ a.session-card:hover, a.featured-card:hover {
 }
 .session-stat-label {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--fg-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
