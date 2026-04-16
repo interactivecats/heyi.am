@@ -245,7 +245,7 @@ body { background: var(--aurora-bg); color: var(--aurora-text); }
   font-size: 1.375rem;
 }
 .aurora .aurora-stats--project .aurora-stat-label {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   margin-top: 0.125rem;
 }
 .aurora .aurora-stat {
@@ -375,7 +375,7 @@ body { background: var(--aurora-bg); color: var(--aurora-text); }
   color: var(--aurora-text);
 }
 .aurora .aurora-card-narrative {
-  font-size: 0.9375rem;
+  font-size: 1rem;
   color: var(--aurora-text-secondary);
   line-height: 1.65;
   margin-bottom: 1.25rem;
@@ -495,7 +495,7 @@ body { background: var(--aurora-bg); color: var(--aurora-text); }
 
 /* ── Narrative ── */
 .aurora .aurora-narrative p {
-  font-size: 0.9375rem;
+  font-size: 1rem;
   color: var(--aurora-text-secondary);
   line-height: 1.75;
   margin-bottom: 1rem;
@@ -651,7 +651,7 @@ body { background: var(--aurora-bg); color: var(--aurora-text); }
   text-shadow: 0 0 10px rgba(45, 212, 191, 0.3);
 }
 .aurora .aurora-decision-text {
-  font-size: 0.9375rem;
+  font-size: 1rem;
   color: var(--aurora-text-secondary);
   line-height: 1.5;
 }
@@ -815,7 +815,7 @@ body { background: var(--aurora-bg); color: var(--aurora-text); }
   border-inline-start: 3px solid var(--aurora-accent);
   border-radius: var(--aurora-radius);
   padding: 1.25rem 1.5rem;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   color: var(--aurora-text-secondary);
   line-height: 1.7;
   font-style: italic;
@@ -1048,7 +1048,7 @@ body { background: var(--aurora-bg); color: var(--aurora-text); }
   margin-bottom: 2.5rem;
 }
 .aurora .aurora-narrative-section p {
-  font-size: 0.9375rem;
+  font-size: 1rem;
   color: var(--aurora-text-secondary);
   line-height: 1.75;
 }

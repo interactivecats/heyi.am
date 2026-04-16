@@ -318,7 +318,7 @@
 }
 .bp-stat-label {
   font-family: var(--bp-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--bp-fg-muted);

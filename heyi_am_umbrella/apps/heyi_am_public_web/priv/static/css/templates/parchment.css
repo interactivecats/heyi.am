@@ -367,7 +367,7 @@
 }
 .parchment .margin-stat__label {
   font-family: var(--parch-font-mono);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--parch-text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -397,7 +397,7 @@
 }
 .parchment .project-stat__label {
   font-family: var(--parch-font-mono);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   color: var(--parch-text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -427,7 +427,7 @@
 }
 .parchment .session-stats-row__label {
   font-family: var(--parch-font-mono);
-  font-size: 0.5625rem;
+  font-size: 0.75rem;
   color: var(--parch-text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.1em;

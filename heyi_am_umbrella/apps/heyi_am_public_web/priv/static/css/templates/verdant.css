@@ -294,7 +294,7 @@
 /* Project page uses smaller stat cards */
 .verdant.heyiam-project .vd-stat-card { padding: 1rem; }
 .verdant.heyiam-project .vd-stat-value { font-size: 1.5rem; }
-.verdant.heyiam-project .vd-stat-label { font-size: 0.6875rem; }
+.verdant.heyiam-project .vd-stat-label { font-size: 0.75rem; }
 
 /* ── Section Headers ── */
 .verdant .vd-section-header {
@@ -482,7 +482,7 @@
 
 /* ── Narrative ── */
 .verdant .vd-narrative {
-  font-size: 0.9375rem;
+  font-size: 1rem;
   line-height: 1.8;
   color: var(--vd-on-surface-2);
 }

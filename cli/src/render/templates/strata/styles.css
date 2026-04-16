@@ -63,7 +63,7 @@ body {
   font-family: var(--strata-font-body);
   color: var(--strata-text);
   background: var(--strata-bg);
-  line-height: 1.5;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -290,7 +290,7 @@ a:focus-visible {
 }
 .strata-agg-stat__label {
   font-family: var(--strata-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--strata-text-tertiary);
@@ -444,7 +444,7 @@ a:focus-visible {
 }
 .strata-stat__label {
   font-family: var(--strata-font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.08em;

@@ -320,7 +320,7 @@ body { background: var(--mer-bg); color: var(--mer-text); }
 }
 
 .meridian .session-stats .stat-cell__label {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
 }
 
 /* ── Stat Cell (shared) ── */

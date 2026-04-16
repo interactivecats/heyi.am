@@ -246,7 +246,7 @@ body { background: var(--cos-bg); color: var(--cos-text); }
 }
 .cosmos .cos-narrative p {
   color: var(--cos-text-secondary);
-  font-size: 0.9375rem;
+  font-size: 1rem;
   line-height: 1.75;
   margin-block-end: 1rem;
 }
@@ -431,7 +431,7 @@ body { background: var(--cos-bg); color: var(--cos-text); }
 }
 .cosmos .cos-project-card-narrative {
   color: var(--cos-text-secondary);
-  font-size: 0.9375rem;
+  font-size: 1rem;
   line-height: 1.6;
   margin-block-end: 1.25rem;
 }
@@ -710,7 +710,7 @@ body { background: var(--cos-bg); color: var(--cos-text); }
 }
 .cosmos .cos-decision p {
   color: var(--cos-text-secondary);
-  font-size: 0.9375rem;
+  font-size: 1rem;
   line-height: 1.5;
 }
 
@@ -890,7 +890,7 @@ body { background: var(--cos-bg); color: var(--cos-text); }
 }
 .cosmos .cos-dev-take blockquote {
   color: var(--cos-text-secondary);
-  font-size: 0.9375rem;
+  font-size: 1rem;
   line-height: 1.7;
   font-style: italic;
   border: none;

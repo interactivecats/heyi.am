@@ -249,7 +249,7 @@ body { background: var(--surface); color: var(--on-surface); }
 
 .radar .portfolio-stat__label {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--on-surface-variant);
@@ -436,7 +436,7 @@ body { background: var(--surface); color: var(--on-surface); }
 }
 .radar .stat-card__label {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--on-surface-variant);
@@ -730,7 +730,7 @@ body { background: var(--surface); color: var(--on-surface); }
 }
 .radar .stat-card-sm__label {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--on-surface-variant);

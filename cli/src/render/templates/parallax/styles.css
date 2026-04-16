@@ -755,7 +755,7 @@ body { background: var(--px-bg); color: var(--px-text); }
   color: var(--px-accent);
 }
 .stats-bar__label {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--px-text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.08em;
