@@ -30,6 +30,17 @@
   --font-body: 'Inter', sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
 
+  /* Type scale — xs is the WCAG-driven readable floor for labels/meta.
+     Templates may override individual sizes for identity, but should
+     reference these tokens before introducing new literals. */
+  --font-size-xs:   0.75rem;   /* 12px — labels, meta, caption */
+  --font-size-sm:   0.875rem;  /* 14px — small body, dense rows */
+  --font-size-base: 1rem;      /* 16px — body */
+  --font-size-lg:   1.125rem;  /* 18px — subhead */
+  --font-size-xl:   1.25rem;   /* 20px — heading */
+  --font-size-2xl:  1.5rem;    /* 24px — section heading */
+  --font-size-3xl:  2rem;      /* 32px — page title */
+
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
 }
@@ -107,13 +118,13 @@ a:hover { text-decoration: underline; }
 }
 .section-header__title {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: var(--font-size-base);
   font-weight: 600;
   color: var(--on-surface);
 }
 .section-header__meta {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: var(--font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--on-surface-variant);
@@ -145,7 +156,7 @@ a:hover { text-decoration: underline; }
 }
 
 .stat-card__value--sm {
-  font-size: 1.25rem;
+  font-size: var(--font-size-xl);
 }
 
 .stat-grid {
@@ -162,7 +173,7 @@ a:hover { text-decoration: underline; }
 }
 .stat-card__label {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: var(--font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--on-surface-variant);
@@ -170,7 +181,7 @@ a:hover { text-decoration: underline; }
 }
 .stat-card__value {
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: var(--font-size-2xl);
   font-weight: 700;
   color: var(--on-surface);
 }
@@ -210,7 +221,7 @@ a:hover { text-decoration: underline; }
 
 .project-title {
   font-family: var(--font-display);
-  font-size: 1.25rem;
+  font-size: var(--font-size-xl);
   font-weight: 700;
   color: var(--on-surface);
   margin-bottom: 0.25rem;
@@ -224,7 +235,7 @@ a:hover { text-decoration: underline; }
 }
 .project-link {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   color: var(--primary);
   display: flex;
   align-items: center;
@@ -284,7 +295,7 @@ a:hover { text-decoration: underline; }
   text-align: left;
   padding: 0.5rem 0;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: var(--font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--outline);
@@ -335,7 +346,7 @@ a:hover { text-decoration: underline; }
 }
 .session-card__meta {
   color: var(--on-surface-variant);
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
 }
 .session-card__skills { margin-top: 0.5rem; }
 
@@ -348,13 +359,13 @@ a:hover { text-decoration: underline; }
 }
 .note__title {
   font-family: var(--font-body);
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--on-surface);
   margin-bottom: 0.25rem;
 }
 .note__body {
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
   color: var(--on-surface-variant);
   line-height: 1.5;
 }
@@ -395,7 +406,7 @@ a:hover { text-decoration: underline; }
 }
 .phase-timeline__label {
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  font-size: var(--font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--on-surface-variant);
@@ -410,7 +421,7 @@ a:hover { text-decoration: underline; }
 }
 .export-footer__text {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--font-size-xs);
   color: var(--on-surface-variant);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -438,7 +449,7 @@ a:hover { text-decoration: underline; }
 .sidebar-section { margin-bottom: 1.5rem; }
 .sidebar-section__heading {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: var(--font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--outline);
@@ -457,7 +468,7 @@ a:hover { text-decoration: underline; }
 }
 .tool-list__name, .file-list__path {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   color: var(--on-surface);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -465,7 +476,7 @@ a:hover { text-decoration: underline; }
 }
 .tool-list__count {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   color: var(--on-surface-variant);
 }
 .file-list__adds { color: var(--green); font-family: var(--font-mono); font-size: 0.6875rem; }
@@ -476,7 +487,7 @@ a:hover { text-decoration: underline; }
 
 .breadcrumb {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   color: var(--on-surface-variant);
   margin-bottom: 1rem;
 }
@@ -486,7 +497,7 @@ a:hover { text-decoration: underline; }
 .session-header { margin-bottom: 1.5rem; }
 .session-header__title {
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: var(--font-size-2xl);
   font-weight: 700;
   color: var(--on-surface);
   margin-bottom: 0.5rem;
@@ -500,11 +511,11 @@ a:hover { text-decoration: underline; }
 }
 .session-header__date {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
 }
 .session-header__source {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   background: var(--surface-low);
   padding: 0.125rem 0.5rem;
   border-radius: var(--radius-sm);
@@ -521,7 +532,7 @@ a:hover { text-decoration: underline; }
 .session-header__devtake p { margin: 0; }
 .session-header__context {
   color: var(--on-surface-variant);
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
   margin: 0.75rem 0;
 }
 
@@ -537,13 +548,13 @@ a:hover { text-decoration: underline; }
 }
 .stat__value {
   font-family: var(--font-display);
-  font-size: 1.125rem;
+  font-size: var(--font-size-lg);
   font-weight: 700;
   color: var(--on-surface);
 }
 .stat__label {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: var(--font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--on-surface-variant);
@@ -560,7 +571,7 @@ a:hover { text-decoration: underline; }
 }
 .content-section__heading {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: var(--font-size-base);
   font-weight: 600;
   color: var(--on-surface);
   margin-bottom: 0.75rem;
@@ -591,7 +602,7 @@ a:hover { text-decoration: underline; }
 .beat:last-child { border-bottom: none; }
 .beat__number {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   color: var(--primary);
   font-weight: 600;
   min-width: 1.5rem;
@@ -601,7 +612,7 @@ a:hover { text-decoration: underline; }
 .beat__content { flex: 1; min-width: 0; }
 .beat__title {
   font-family: var(--font-display);
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--on-surface);
 }
@@ -627,7 +638,7 @@ a:hover { text-decoration: underline; }
 }
 .qa-pair__answer {
   color: var(--on-surface-variant);
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
   line-height: 1.5;
 }
 
