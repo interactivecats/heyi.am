@@ -9,7 +9,7 @@ feedback. Tracked on branch `template-readability-a11y`.
 |------|---------|--------|---------|
 | 1 | `/harden` | `8aa177e` | WCAG contrast fixes (neon, noir), gradient-text removal, chip padding |
 | 2 | `/typeset` | `63b4f0f` | Typography floors raised across 25+ templates |
-| 3 | `/normalize` | — | Align mockup HTML and scattered literals to design tokens |
+| 3 | `/normalize` | `3f4e698` | Type scale tokens (`--font-size-xs..3xl`), tokenize shared CSS, lift residual 9–10px labels |
 | 4 | `/adapt` | — | Mobile breakpoints for 6 desktop-only templates |
 | 5 | `/animate` | — | Verify `prefers-reduced-motion` coverage |
 | 6 | `/polish` | — | Final consistency pass |
@@ -41,12 +41,14 @@ feedback. Tracked on branch `template-readability-a11y`.
 
 All 846 CLI render tests pass at each commit.
 
+**Step 3 — /normalize (commit `3f4e698`):**
+- Added `--font-size-xs/sm/base/lg/xl/2xl/3xl` (12/14/16/18/20/24/32px) to shared `:root`
+- Raised 6 still-9px labels (`.section-header__meta`, `.stat-card__label`, `.source-table__th`, `.sidebar-section__heading`, `.stat__label`), 10px `.export-footer__text`, and 0.6875rem `.phase-timeline__label` → `var(--font-size-xs)`
+- Tokenized common literals in the shared file's global section (1rem→base, 1.25rem→xl, 1.5rem→2xl, 0.875rem→sm, 0.75rem→xs). Per-template `:root` blocks and the `[data-template="showcase"]` sub-section deliberately keep their identity-bearing literals (e.g. 1.0625rem narrative, 2.25rem hero) — they can adopt the tokens incrementally.
+- 0.8125rem (13px) intentionally NOT in the scale; templates keep using the literal for dense meta text (between xs and sm).
+- All 1957 tests green (1793 CLI + 164 app). Phoenix priv re-synced by pre-commit hook.
+
 ## Remaining work — detail
-
-### /normalize
-Scattered hex/px/rem literals across `cli/src/render/templates/*/styles.css` should reference design tokens where possible. Phoenix `app.css` has a solid `--on-surface`, `--spacing-*`, `--radius-*` system. Each template currently inlines its own `:root` with raw values — fine for per-template color identity, but check for cases where a template uses a raw literal that matches a shared token.
-
-Consider building a font-size scale (`--font-size-xs/sm/base/lg/xl`) in the shared `cli/src/render/templates/styles.css` `:root` so future typography work touches one file.
 
 ### /adapt
 These templates lack mobile breakpoints or have only a single one, audit surfaced:
