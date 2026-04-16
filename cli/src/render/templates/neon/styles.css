@@ -17,8 +17,8 @@ body { background: var(--neon-bg); color: var(--neon-text); }
   --neon-cyan-dim: rgba(34, 211, 238, 0.15);
   --neon-cyan-glow: rgba(34, 211, 238, 0.3);
   --neon-text: #f0e6ff;
-  --neon-text-secondary: #a78bbd;
-  --neon-text-tertiary: #6b5280;
+  --neon-text-secondary: #c4abd9;
+  --neon-text-tertiary: #a894c0;
   --neon-border: rgba(244, 114, 182, 0.2);
   --neon-border-cyan: rgba(34, 211, 238, 0.2);
   --neon-font-display: 'Space Grotesk', system-ui, sans-serif;
@@ -165,10 +165,7 @@ body { background: var(--neon-bg); color: var(--neon-text); }
   font-family: var(--neon-font-display);
   font-size: clamp(2.25rem, 5vw, 3.5rem);
   font-weight: 700;
-  background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--neon-text);
   margin-bottom: 1rem;
   line-height: 1.15;
 }
@@ -577,10 +574,7 @@ body { background: var(--neon-bg); color: var(--neon-text); }
   font-family: var(--neon-font-display);
   font-size: clamp(2rem, 4.5vw, 3rem);
   font-weight: 700;
-  background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--neon-text);
   line-height: 1.15;
   margin-bottom: 0.75rem;
 }
@@ -911,10 +905,7 @@ body { background: var(--neon-bg); color: var(--neon-text); }
   font-family: var(--neon-font-display);
   font-size: clamp(1.5rem, 3.5vw, 2.25rem);
   font-weight: 700;
-  background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--neon-text);
   line-height: 1.2;
   margin-bottom: 1rem;
 }

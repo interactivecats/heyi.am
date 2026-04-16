@@ -184,7 +184,7 @@ a:hover { text-decoration: underline; }
   font-family: var(--font-mono);
   font-size: 11px;
   line-height: 1.2;
-  padding: 0.125rem 0.5rem;
+  padding: 0.25rem 0.5rem;
   border-radius: var(--radius-sm);
   background: var(--surface-low);
   color: var(--on-surface-variant);
