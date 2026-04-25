@@ -52,11 +52,12 @@ vi.mock('../db.js', () => ({
   getFileCountWithChildren: vi.fn().mockReturnValue(0),
 }));
 
-import { createPreviewRouter, clearPreviewCache } from './preview.js';
+import { createPreviewRouter, clearPreviewCache, invalidateProjectPreviewCache } from './preview.js';
 import type { RouteContext } from './context.js';
 import { getDefaultTemplate, loadProjectEnhanceResult, getPortfolioProfile } from '../settings.js';
 import { renderProjectHtml, renderPortfolioHtml } from '../render/index.js';
 import { getTemplateCss } from '../render/templates.js';
+import { buildProjectRenderData } from '../render/build-render-data.js';
 
 function makeCtx(overrides: Partial<RouteContext> = {}): RouteContext {
   return {
@@ -188,6 +189,62 @@ describe('GET /api/projects/:project/render', () => {
     const res = await request(app).get('/api/projects/my-project/render');
     expect(res.status).toBe(500);
     expect(res.body).toEqual({ error: 'Render failed' });
+  });
+
+  it('uses cached screenshotBase64 as the screenshotUrl when present', async () => {
+    vi.mocked(loadProjectEnhanceResult).mockReturnValue({
+      fingerprint: 'abc',
+      enhancedAt: '2026-03-01',
+      selectedSessionIds: [],
+      screenshotBase64: 'data:image/png;base64,AAAA',
+      result: { tagline: '', narrative: 'n', arc: [], skills: [], timeline: [], questions: [] },
+    });
+    const app = makeApp();
+
+    await request(app).get('/api/projects/my-project/render');
+    expect(buildProjectRenderData).toHaveBeenCalledWith(
+      expect.objectContaining({ screenshotUrl: 'data:image/png;base64,AAAA' }),
+    );
+  });
+
+  it('prepends data:image/png;base64 prefix when cached screenshot lacks it', async () => {
+    vi.mocked(loadProjectEnhanceResult).mockReturnValue({
+      fingerprint: 'abc',
+      enhancedAt: '2026-03-01',
+      selectedSessionIds: [],
+      screenshotBase64: 'BBBB',
+      result: { tagline: '', narrative: 'n', arc: [], skills: [], timeline: [], questions: [] },
+    });
+    const app = makeApp();
+
+    await request(app).get('/api/projects/my-project/render');
+    expect(buildProjectRenderData).toHaveBeenCalledWith(
+      expect.objectContaining({ screenshotUrl: 'data:image/png;base64,BBBB' }),
+    );
+  });
+});
+
+describe('invalidateProjectPreviewCache', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    clearPreviewCache();
+  });
+
+  it('drops the per-project cache entry so the next render rebuilds fresh data', async () => {
+    const app = makeApp();
+
+    await request(app).get('/api/projects/my-project/render');
+    const firstCallCount = vi.mocked(buildProjectRenderData).mock.calls.length;
+
+    // Cached path: should not rebuild
+    await request(app).get('/api/projects/my-project/render');
+    expect(vi.mocked(buildProjectRenderData).mock.calls.length).toBe(firstCallCount);
+
+    invalidateProjectPreviewCache('my-project');
+
+    // Cache busted: rebuild runs again
+    await request(app).get('/api/projects/my-project/render');
+    expect(vi.mocked(buildProjectRenderData).mock.calls.length).toBe(firstCallCount + 1);
   });
 });
 

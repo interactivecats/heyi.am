@@ -260,6 +260,11 @@ export function createPublishRouter(ctx: RouteContext): Router {
             send({ type: 'screenshot', status: 'capturing' });
             const raw = screenshotBase64.includes(',') ? screenshotBase64.split(',')[1] : screenshotBase64;
             imageBuffer = Buffer.from(raw, 'base64');
+            // FIXME(security): ext detection only handles png/jpg, so an SVG
+            // (allowed by the file picker's `accept="image/*"`) gets uploaded
+            // to S3 with `Content-Type: image/png` while the bytes are SVG.
+            // CSP on heyi.am mitigates script execution, but reject SVG here
+            // (or convert it) instead of relying on downstream defenses.
             ext = screenshotBase64.startsWith('data:image/jpeg') || screenshotBase64.startsWith('data:image/jpg') ? 'jpg' : 'png';
           } else if (projectUrl) {
             send({ type: 'screenshot', status: 'capturing' });
