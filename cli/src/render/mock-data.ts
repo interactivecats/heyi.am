@@ -29,6 +29,7 @@ export function getMockPortfolioData(): PortfolioRenderData {
       {
         slug: 'budgetwise',
         title: 'BudgetWise',
+        tagline: 'I built a personal finance tracker that categorizes your transactions without the bank-screen-scraping nonsense.',
         narrative: 'A personal finance tracker with AI-powered categorization. Built the Prisma schema, REST API, and React dashboard in a single sprint using Claude as a coding partner.',
         totalSessions: 8,
         totalLoc: 3200,
@@ -36,6 +37,7 @@ export function getMockPortfolioData(): PortfolioRenderData {
         totalAgentDurationMinutes: 2064,
         totalFilesChanged: 45,
         skills: ['TypeScript', 'React', 'Prisma', 'Node.js'],
+        profileSkills: ['TypeScript', 'React', 'Prisma', 'Node.js'],
         sourceCounts: [{ tool: 'claude', count: 5 }, { tool: 'cursor', count: 3 }],
         publishedCount: 6,
         sessions: [
@@ -52,6 +54,7 @@ export function getMockPortfolioData(): PortfolioRenderData {
       {
         slug: 'shellhook',
         title: 'ShellHook',
+        tagline: 'I built a git hooks manager that makes team hooks actually shareable — no more "did you run the setup script?"',
         narrative: 'Git hooks manager that auto-installs and shares hooks across teams. Zero config, works with any shell, supports pre-commit, pre-push, and custom triggers.',
         totalSessions: 5,
         totalLoc: 1800,
@@ -59,6 +62,7 @@ export function getMockPortfolioData(): PortfolioRenderData {
         totalAgentDurationMinutes: 900,
         totalFilesChanged: 22,
         skills: ['Rust', 'Shell', 'Git'],
+        profileSkills: ['Rust', 'Shell', 'Git'],
         sourceCounts: [{ tool: 'claude', count: 3 }, { tool: 'cursor', count: 2 }],
         publishedCount: 4,
         sessions: [
@@ -72,6 +76,7 @@ export function getMockPortfolioData(): PortfolioRenderData {
       {
         slug: 'pixelboard',
         title: 'PixelBoard',
+        tagline: 'I built a collaborative pixel art canvas that stays in sync even when two people draw the same pixel at once.',
         narrative: 'Collaborative pixel art canvas with real-time sync. WebSocket-based with conflict-free replicated data types for seamless multi-user editing.',
         totalSessions: 12,
         totalLoc: 4500,
@@ -79,6 +84,7 @@ export function getMockPortfolioData(): PortfolioRenderData {
         totalAgentDurationMinutes: 2160,
         totalFilesChanged: 60,
         skills: ['TypeScript', 'WebSocket', 'Canvas API', 'Redis'],
+        profileSkills: ['TypeScript', 'WebSocket', 'Canvas API', 'Redis'],
         sourceCounts: [{ tool: 'claude', count: 8 }, { tool: 'cursor', count: 4 }],
         publishedCount: 8,
         sessions: [

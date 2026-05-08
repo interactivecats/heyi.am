@@ -131,7 +131,7 @@
             {% assign labelY = barY | minus: 7 %}
             <rect x="{{ barX }}" y="{{ barY }}" width="{{ barWidth }}" height="{{ barH }}" class="chart-bar" aria-label="{{ s.title }}: {{ s.locChanged }} LOC"/>
             <text x="{{ labelX }}" y="{{ labelY }}" class="chart-value" text-anchor="middle">{{ s.locChanged }}</text>
-            <text x="{{ labelX }}" y="180" class="chart-label" text-anchor="middle">{{ s.recordedAt | formatDateShort }}</text>
+            <text x="{{ labelX }}" y="180" class="chart-label" text-anchor="middle">{% if hideSessionDates %}#{{ forloop.index }}{% else %}{{ s.recordedAt | formatDateShort }}{% endif %}</text>
           {% endfor %}
         </svg>
       </div>
@@ -223,7 +223,7 @@
             <tr>
               <th scope="col">#</th>
               <th scope="col">Title</th>
-              <th scope="col">Date</th>
+              {% unless hideSessionDates %}<th scope="col">Date</th>{% endunless %}
               <th scope="col">Duration</th>
               <th scope="col">LOC</th>
               <th scope="col">Source</th>
@@ -235,7 +235,7 @@
             <tr>
               <td>{{ forloop.index }}</td>
               <td><a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}" class="session-title-link">{{ s.title }}</a></td>
-              <td>{{ s.recordedAt | formatDateShort }}</td>
+              {% unless hideSessionDates %}<td>{{ s.recordedAt | formatDateShort }}</td>{% endunless %}
               <td>{{ s.durationMinutes | formatDuration }}</td>
               <td>{{ s.locChanged | localeNumber }}</td>
               <td>{% if s.sourceTool %}<span class="session-source-badge">{{ s.sourceTool }}</span>{% endif %}</td>

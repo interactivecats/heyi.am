@@ -237,6 +237,7 @@ async function buildProjectPreviewData(
     allSessionCards,
     sessionBaseUrl: `/preview/project/${encodeURIComponent(projectParam)}/session`,
     sessionSuffix: '.html',
+    hideSessionDates: cachedAny?.hideSessionDates as boolean | undefined,
   });
 
   const result = { renderData, enhanceResult, projName: projAny.name as string };

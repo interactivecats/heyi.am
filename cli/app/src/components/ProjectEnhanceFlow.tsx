@@ -647,6 +647,7 @@ function EnhanceStep({
   const handleUploadWithoutNarrative = useCallback(() => {
     // Create a minimal result without narrative
     const minimalResult: ProjectEnhanceResult = {
+      tagline: '',
       narrative: '',
       arc: [],
       skills: progressSkills,

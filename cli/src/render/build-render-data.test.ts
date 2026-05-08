@@ -311,6 +311,16 @@ describe('buildProjectRenderData', () => {
     expect(data.project.repoUrl).toBeUndefined();
     expect(data.project.projectUrl).toBeUndefined();
   });
+
+  it('threads hideSessionDates through when set', () => {
+    const data = buildProjectRenderData({ ...projectOpts, hideSessionDates: true });
+    expect(data.hideSessionDates).toBe(true);
+  });
+
+  it('omits hideSessionDates when false to keep render data minimal', () => {
+    const data = buildProjectRenderData({ ...projectOpts, hideSessionDates: false });
+    expect(data.hideSessionDates).toBeUndefined();
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -100,7 +100,7 @@
             <tr>
               <th scope="col">#</th>
               <th scope="col">Title</th>
-              <th scope="col">Date</th>
+              {% unless hideSessionDates %}<th scope="col">Date</th>{% endunless %}
               <th scope="col" class="text-right">Duration</th>
               <th scope="col" class="text-right">LOC</th>
               <th scope="col">Source</th>
@@ -114,7 +114,7 @@
             <tr>
               <td>{{ forloop.index }}</td>
               <td>{{ s.title }}</td>
-              <td>{{ s.recordedAt | formatDateShort }}</td>
+              {% unless hideSessionDates %}<td>{{ s.recordedAt | formatDateShort }}</td>{% endunless %}
               <td class="text-right">{{ s.durationMinutes | formatDuration }}</td>
               <td class="text-right">{{ s.locChanged | localeNumber }}</td>
               <td>{{ s.sourceTool }}</td>

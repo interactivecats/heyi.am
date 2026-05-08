@@ -82,9 +82,9 @@
         <span class="term-sep">&middot;</span>
         <span>{{ project.totalFilesChanged }} files</span>
       </div>
-      {% if project.skills.size > 0 %}
+      {% if project.profileSkills.size > 0 %}
       <div class="term-project-entry__skills">
-        {% for skill in project.skills %}
+        {% for skill in project.profileSkills %}
         <span class="term-skill-tag">{{ skill }}</span>
         {% endfor %}
       </div>

@@ -79,8 +79,8 @@
         <a class="strata-project-card" href="/{{ user.username }}/{{ p.slug }}" aria-label="{{ p.title }} project">
           <div class="strata-project-card__accent" style="background: var(--strata-accent);"></div>
           <div class="strata-project-card__title">{{ p.title }}</div>
-          {% if p.narrative %}
-          <div class="strata-project-card__desc">{{ p.narrative }}</div>
+          {% if p.tagline != blank %}
+          <div class="strata-project-card__desc">{{ p.tagline }}</div>
           {% endif %}
           <div class="strata-project-card__meta">{{ p.totalSessions }} sessions &middot; {{ p.totalDurationMinutes | formatDuration }} &middot; {{ p.totalLoc | formatLoc }} LOC</div>
           {% if p.sourceCounts.size > 0 %}
@@ -92,9 +92,9 @@
           </div>
           <div class="strata-project-card__source">{% for sc in p.sourceCounts %}{% assign pct = sc.count | times: 100 | divided_by: p.totalSessions %}{{ sc.tool }} {{ pct }}%{% unless forloop.last %} &middot; {% endunless %}{% endfor %}</div>
           {% endif %}
-          {% if p.skills.size > 0 %}
+          {% if p.profileSkills.size > 0 %}
           <div class="strata-project-card__chips">
-            {% for skill in p.skills %}
+            {% for skill in p.profileSkills %}
             <span class="strata-project-card__chip">{{ skill }}</span>
             {% endfor %}
           </div>

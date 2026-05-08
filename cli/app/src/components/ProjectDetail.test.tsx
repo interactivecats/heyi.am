@@ -214,3 +214,36 @@ describe('ProjectDetail — screenshot upload refreshes the rendered preview', (
     }, { timeout: 2000 })
   })
 })
+
+describe('ProjectDetail — Hide dates toggle', () => {
+  beforeEach(() => {
+    vi.mocked(api.saveProjectEnhanceLocally).mockResolvedValue(true)
+  })
+
+  it('reflects existing hideSessionDates from the cache', async () => {
+    renderDetail({
+      enhanceCache: {
+        fingerprint: 'f',
+        enhancedAt: '2026-04-01T00:00:00Z',
+        selectedSessionIds: ['s1'],
+        hideSessionDates: true,
+        result: { tagline: '', narrative: '', arc: [], skills: [], timeline: [], questions: [] },
+        isFresh: true,
+      } as never,
+    })
+    const checkbox = await screen.findByLabelText(/Hide dates in timeline/i) as HTMLInputElement
+    expect(checkbox.checked).toBe(true)
+  })
+
+  it('saves the flag through the debounced metadata save', async () => {
+    renderDetail()
+    const checkbox = await screen.findByLabelText(/Hide dates in timeline/i) as HTMLInputElement
+    expect(checkbox.checked).toBe(false)
+
+    fireEvent.click(checkbox)
+
+    await waitFor(() => expect(api.saveProjectEnhanceLocally).toHaveBeenCalled(), { timeout: 2000 })
+    const callArgs = vi.mocked(api.saveProjectEnhanceLocally).mock.calls[0]
+    expect((callArgs[3] as { hideSessionDates?: boolean } | undefined)?.hideSessionDates).toBe(true)
+  })
+})

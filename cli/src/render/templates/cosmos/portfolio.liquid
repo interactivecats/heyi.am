@@ -119,17 +119,17 @@
             <div class="cos-project-card-header">
               <h3><a href="/{{ user.username }}/{{ p.slug }}">{{ p.title }}</a></h3>
             </div>
-            {% if p.narrative %}
-            <p class="cos-project-card-narrative">{{ p.narrative }}</p>
+            {% if p.tagline != blank %}
+            <p class="cos-project-card-narrative">{{ p.tagline }}</p>
             {% endif %}
             <div class="cos-project-card-meta">
               <span><strong>{{ p.totalSessions }}</strong> sessions</span>
               <span><strong>{{ p.totalDurationMinutes | formatDuration }}</strong></span>
               <span><strong>{{ p.totalLoc | localeNumber }}</strong> LOC</span>
             </div>
-            {% if p.skills.size > 0 %}
+            {% if p.profileSkills.size > 0 %}
             <div class="cos-skill-chips">
-              {% for skill in p.skills %}
+              {% for skill in p.profileSkills %}
               <span class="cos-skill-chip">{{ skill }}</span>
               {% endfor %}
             </div>

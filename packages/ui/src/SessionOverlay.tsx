@@ -12,6 +12,12 @@ interface SessionOverlayProps {
   session: Session
   sessionPageUrl?: string
   onClose: () => void
+  /**
+   * When true, suppress every date/time element rendered in the overlay
+   * (header timestamp, child WorkTimeline labels). The session-detail
+   * stays fully readable; only the temporal info goes away.
+   */
+  hideDates?: boolean
 }
 
 function formatDuration(minutes: number): string {
@@ -29,7 +35,7 @@ function formatDate(iso: string): string {
   } catch { return iso }
 }
 
-export function SessionOverlay({ session, sessionPageUrl, onClose }: SessionOverlayProps) {
+export function SessionOverlay({ session, sessionPageUrl, onClose, hideDates }: SessionOverlayProps) {
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
   }, [onClose])
@@ -76,8 +82,8 @@ export function SessionOverlay({ session, sessionPageUrl, onClose }: SessionOver
             {session.title}
           </h2>
           <div style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--on-surface-variant, #6b7280)', marginBottom: '1rem' }}>
-            {formatDate(session.date)}
-            {session.source && ` · ${session.source}`}
+            {!hideDates && session.date && formatDate(session.date)}
+            {session.source && (hideDates || !session.date ? session.source : ` · ${session.source}`)}
             {session.context && ` · ${session.context}`}
           </div>
 
@@ -115,7 +121,7 @@ export function SessionOverlay({ session, sessionPageUrl, onClose }: SessionOver
           {session.turns >= 50 && (
             <div style={{ marginBottom: '1.25rem' }}>
               <SectionLabel>Session Activity · {session.turns} turns over {formatDuration(session.durationMinutes)}</SectionLabel>
-              <WorkTimeline sessions={[session]} maxHeight={200} />
+              <WorkTimeline sessions={[session]} maxHeight={200} hideDates={hideDates} />
             </div>
           )}
 

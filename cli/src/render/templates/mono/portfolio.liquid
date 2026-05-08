@@ -119,17 +119,17 @@
             <h3 class="project-name">{{ p.title }}</h3>
           </div>
           <div class="project-card-body">
-            {% if p.narrative != blank %}
-            <p class="project-narrative">{{ p.narrative }}</p>
+            {% if p.tagline != blank %}
+            <p class="project-narrative">{{ p.tagline }}</p>
             {% endif %}
             <div class="project-stats-row">
               <span class="project-stat"><strong>{{ p.totalSessions }}</strong> sessions</span>
               <span class="project-stat"><strong>{{ p.totalDurationMinutes | formatDuration }}</strong></span>
               <span class="project-stat"><strong>{{ p.totalLoc | localeNumber }}</strong> LOC</span>
             </div>
-            {% if p.skills.size > 0 %}
+            {% if p.profileSkills.size > 0 %}
             <div class="project-tags">
-              {% for skill in p.skills %}
+              {% for skill in p.profileSkills %}
               <span class="tag">[{{ skill }}]</span>
               {% endfor %}
             </div>

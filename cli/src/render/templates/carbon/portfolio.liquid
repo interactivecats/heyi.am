@@ -76,12 +76,12 @@
           <h3 class="card__title"><a href="/{{ user.username }}/{{ p.slug }}">{{ p.title }}</a></h3>
         </div>
         <div class="card__body">
-          {% if p.narrative != blank %}
-          <p class="card__narrative">{{ p.narrative | truncate: 120 }}</p>
+          {% if p.tagline != blank %}
+          <p class="card__narrative">{{ p.tagline }}</p>
           {% endif %}
-          {% if p.skills.size > 0 %}
+          {% if p.profileSkills.size > 0 %}
           <ul class="skill-list" aria-label="Skills used in {{ p.title }}">
-            {% for skill in p.skills limit: 6 %}
+            {% for skill in p.profileSkills %}
             <li class="skill-chip">{{ skill }}</li>
             {% endfor %}
           </ul>

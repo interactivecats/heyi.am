@@ -94,7 +94,7 @@
       <h3 class="section-header__title">Work timeline</h3>
       <span class="section-header__meta">sessions over time</span>
     </div>
-    <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+    <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'{% if hideSessionDates %} data-hide-dates="1"{% endif %}></div>
   </div>
 
   {%- comment -%} Growth Chart mount point {%- endcomment -%}

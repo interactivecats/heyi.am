@@ -133,7 +133,19 @@ export function renderProject(data: ProjectRenderData, extras?: RenderProjectExt
     const slug = typeof existingSlug === 'string' && existingSlug !== ''
       ? existingSlug
       : (slugByToken.get(id) ?? '');
-    return { ...rest, slug, rawLog: [] };
+    const merged: Record<string, unknown> = { ...rest, slug, rawLog: [] };
+    // When dates are hidden, strip every timestamp from the session so
+    // nothing leaks through the page source. The chart and overlay treat
+    // a missing `date` as "ordinal mode" — no axis labels, no gap markers.
+    if (data.hideSessionDates) {
+      delete merged.date;
+      delete merged.endTime;
+      const children = (merged as { children?: Array<Record<string, unknown>> }).children;
+      if (Array.isArray(children)) {
+        for (const c of children) delete c.date;
+      }
+    }
+    return merged;
   });
 
   // Encode JSON safe for single-quoted HTML attributes

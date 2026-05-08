@@ -107,17 +107,17 @@
           </h2>
           <span class="bp-project-ref">REF-{{ forloop.index | prepend: '00' | slice: -3, 3 }}</span>
         </div>
-        {% if p.narrative != blank %}
-          <p class="bp-project-narrative">{{ p.narrative | truncate: 160 }}</p>
+        {% if p.tagline != blank %}
+          <p class="bp-project-narrative">{{ p.tagline }}</p>
         {% endif %}
         <div class="bp-project-meta" aria-label="Project statistics">
           <span>{{ p.totalSessions }} sessions</span>
           <span>{{ p.totalDurationMinutes | formatDuration }}</span>
           <span>{{ p.totalLoc | localeNumber }} LOC</span>
         </div>
-        {% if p.skills.size > 0 %}
+        {% if p.profileSkills.size > 0 %}
         <ul class="bp-skills-list" aria-label="Skills">
-          {% for skill in p.skills limit: 6 %}
+          {% for skill in p.profileSkills %}
             <li class="bp-skill-chip">{{ skill }}</li>
           {% endfor %}
         </ul>

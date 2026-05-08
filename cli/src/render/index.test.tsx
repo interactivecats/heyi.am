@@ -169,6 +169,57 @@ describe('renderProjectHtml', () => {
     expect(html).toContain('href="./sessions/first-session.html"');
   });
 
+  describe('hideSessionDates flag', () => {
+    for (const tpl of ['paper', 'bauhaus', 'glacier'] as const) {
+      it(`renders the Date column header in ${tpl} when flag is off`, () => {
+        const html = renderProjectHtml(makeProjectData(), undefined, tpl);
+        expect(html).toContain('>Date<');
+      });
+
+      it(`hides the Date column header in ${tpl} when hideSessionDates is true`, () => {
+        const data = makeProjectData({ hideSessionDates: true });
+        const html = renderProjectHtml(data, undefined, tpl);
+        // The "Date" header should not appear in the timeline table.
+        expect(html).not.toContain('>Date<');
+      });
+    }
+
+    it('replaces glacier chart axis label with #N when hideSessionDates is true', () => {
+      const data = makeProjectData({ hideSessionDates: true });
+      const html = renderProjectHtml(data, undefined, 'glacier');
+      // The chart axis tspan would normally show "Mar 20"; with the flag on
+      // it shows the ordinal "#1" instead. Use a tight CSS-class anchor to
+      // avoid matching unrelated `#` characters in the document.
+      expect(html).toMatch(/class="chart-label"[^>]*>#1</);
+    });
+
+    it('strips dates from data-sessions JSON when hideSessionDates is true', () => {
+      const data = makeProjectData({ hideSessionDates: true });
+      const html = renderProjectHtml(data, undefined, 'editorial');
+      // Find the data-sessions attribute payload and confirm no date field
+      // leaks through. The fixture session uses 2026-03-20T14:00:00Z.
+      const match = html.match(/data-sessions='([^']+)'/);
+      expect(match).not.toBeNull();
+      expect(match![1]).not.toContain('2026-03-20');
+      expect(match![1]).not.toContain('"date":');
+      expect(match![1]).not.toContain('"endTime":');
+    });
+
+    it('keeps date in data-sessions JSON when hideSessionDates is off', () => {
+      const data = makeProjectData();
+      const html = renderProjectHtml(data, undefined, 'editorial');
+      const match = html.match(/data-sessions='([^']+)'/);
+      expect(match).not.toBeNull();
+      expect(match![1]).toContain('"date":"2026-03-20T14:00:00');
+    });
+
+    it('emits data-hide-dates="1" on the work-timeline div when flag is on', () => {
+      const data = makeProjectData({ hideSessionDates: true });
+      const html = renderProjectHtml(data, undefined, 'editorial');
+      expect(html).toContain('data-hide-dates="1"');
+    });
+  });
+
   it('emits data-session-suffix on the project wrapper so the overlay matches anchor URLs', () => {
     const phx = renderProjectHtml(makeProjectData({
       sessionBaseUrl: '/testuser/my-project',
@@ -366,23 +417,27 @@ function makePortfolioData(overrides?: Partial<PortfolioRenderData>): PortfolioR
       {
         slug: 'my-project',
         title: 'My Project',
+        tagline: 'I built a thing.',
         narrative: 'A project about building cool things with TypeScript',
         totalSessions: 5,
         totalLoc: 800,
         totalDurationMinutes: 120,
         totalFilesChanged: 30,
         skills: ['TypeScript', 'React'],
+        profileSkills: ['TypeScript', 'React'],
         publishedCount: 3,
       },
       {
         slug: 'second-project',
         title: 'Second Project',
+        tagline: 'I built another thing.',
         narrative: 'Another project',
         totalSessions: 3,
         totalLoc: 400,
         totalDurationMinutes: 60,
         totalFilesChanged: 15,
         skills: ['Elixir'],
+        profileSkills: ['Elixir'],
         publishedCount: 2,
       },
     ],
@@ -516,12 +571,20 @@ describe('renderPortfolioHtml', () => {
     expect(html).toContain('&lt;script&gt;');
   });
 
-  it('renders project narrative on cards', () => {
+  it('renders project tagline on cards when set', () => {
     const data = makePortfolioData();
-    data.projects[0].narrative = 'A'.repeat(200);
+    data.projects[0].tagline = 'I built a thing that does a thing.';
     const html = renderPortfolioHtml(data);
-    // Full text is present in DOM; CSS line-clamp handles visual truncation
+    expect(html).toContain('I built a thing that does a thing.');
     expect(html).toContain('ed-project-card-narrative');
+  });
+
+  it('omits tagline block on cards when tagline is empty', () => {
+    const data = makePortfolioData();
+    data.projects[0].tagline = '';
+    data.projects[1].tagline = '';
+    const html = renderPortfolioHtml(data);
+    expect(html).not.toContain('ed-project-card-narrative');
   });
 
   it('renders resume link when resumeUrl is provided', () => {

@@ -69,7 +69,7 @@
   {% if sessionsJson %}
   <div class="term-section">
     <div class="term-comment"># work timeline</div>
-    <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+    <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'{% if hideSessionDates %} data-hide-dates="1"{% endif %}></div>
   </div>
   {% endif %}
 

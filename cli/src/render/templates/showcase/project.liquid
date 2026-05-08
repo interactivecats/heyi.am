@@ -90,7 +90,7 @@
             <h3>Work Timeline</h3>
             <span class="sc-section-label">sessions over time</span>
           </div>
-          <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+          <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'{% if hideSessionDates %} data-hide-dates="1"{% endif %}></div>
         </div>
       </section>
 

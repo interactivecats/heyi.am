@@ -218,7 +218,7 @@
           <tr>
             <th scope="col">#</th>
             <th scope="col">Session</th>
-            <th scope="col">Date</th>
+            {% unless hideSessionDates %}<th scope="col">Date</th>{% endunless %}
             <th scope="col">Duration</th>
             <th scope="col">LOC</th>
             <th scope="col">Source</th>
@@ -230,7 +230,7 @@
           <tr>
             <td><span class="session-num">{{ forloop.index }}</span></td>
             <td><a href="{{ sessionBaseUrl }}/{{ s.slug }}{{ sessionSuffix }}" class="session-title-link">{{ s.title }}</a></td>
-            <td>{{ s.recordedAt | formatDateShort }}</td>
+            {% unless hideSessionDates %}<td>{{ s.recordedAt | formatDateShort }}</td>{% endunless %}
             <td>{{ s.durationMinutes | formatDuration }}</td>
             <td>{{ s.locChanged | localeNumber }}</td>
             <td>{% if s.sourceTool %}<span class="session-source-badge badge-{{ s.sourceTool | downcase | replace: ' ', '-' }}">{{ s.sourceTool }}</span>{% endif %}</td>

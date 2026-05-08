@@ -231,6 +231,18 @@ describe('settings', () => {
     it('delete is idempotent', () => {
       expect(() => deleteProjectEnhanceResult('nonexistent', tmpDir)).not.toThrow();
     });
+
+    it('persists hideSessionDates flag through cache rewrites', () => {
+      saveProjectEnhanceResult('my-project', ['s1'], sampleResult, tmpDir, { hideSessionDates: true });
+      const loaded = loadProjectEnhanceResult('my-project', tmpDir);
+      expect(loaded?.hideSessionDates).toBe(true);
+    });
+
+    it('omits hideSessionDates when false to keep cache JSON minimal', () => {
+      saveProjectEnhanceResult('my-project', ['s1'], sampleResult, tmpDir, { hideSessionDates: false });
+      const loaded = loadProjectEnhanceResult('my-project', tmpDir);
+      expect(loaded?.hideSessionDates).toBeUndefined();
+    });
   });
 
   describe('uploaded state persistence', () => {

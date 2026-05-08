@@ -90,7 +90,7 @@
   {% if sessionsJson %}
   <section class="ed-card-section" aria-label="Agent work timeline">
     <h2 class="ed-section-title">Work Timeline</h2>
-    <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+    <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'{% if hideSessionDates %} data-hide-dates="1"{% endif %}></div>
   </section>
   {% endif %}
 

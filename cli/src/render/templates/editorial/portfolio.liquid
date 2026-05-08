@@ -86,17 +86,17 @@
       {% for p in projects %}
       <a href="/{{ user.username }}/{{ p.slug }}" class="ed-project-card">
         <h3 class="ed-project-card-title">{{ p.title }}</h3>
-        {% if p.narrative %}
-        <p class="ed-project-card-narrative">{{ p.narrative }}</p>
+        {% if p.tagline != blank %}
+        <p class="ed-project-card-narrative">{{ p.tagline }}</p>
         {% endif %}
         <div class="ed-project-card-stats">
           <span class="ed-project-card-stat"><strong>{{ p.totalSessions }}</strong> sessions</span>
           <span class="ed-project-card-stat"><strong>{{ p.totalLoc | localeNumber }}</strong> LOC</span>
           <span class="ed-project-card-stat"><strong>{{ p.totalDurationMinutes | formatDuration }}</strong></span>
         </div>
-        {% if p.skills.size > 0 %}
+        {% if p.profileSkills.size > 0 %}
         <div class="ed-chip-list">
-          {% for skill in p.skills %}
+          {% for skill in p.profileSkills %}
           <span class="chip chip--violet">{{ skill }}</span>
           {% endfor %}
         </div>

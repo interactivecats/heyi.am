@@ -142,8 +142,8 @@
               <h3>{{ p.title }}</h3>
               <span class="vd-project-card__arrow" aria-hidden="true">&rarr;</span>
             </div>
-            {% if p.narrative != blank %}
-            <p class="vd-project-card__narrative">{{ p.narrative }}</p>
+            {% if p.tagline != blank %}
+            <p class="vd-project-card__narrative">{{ p.tagline }}</p>
             {% endif %}
             <div class="vd-project-card__meta">
               <span>{{ p.totalSessions }} sessions</span>
@@ -152,9 +152,9 @@
               <span>&middot;</span>
               <span>{{ p.totalLoc | formatLoc }} LOC</span>
             </div>
-            {% if p.skills.size > 0 %}
+            {% if p.profileSkills.size > 0 %}
             <div class="vd-skills" aria-label="Skills used">
-              {% for skill in p.skills %}
+              {% for skill in p.profileSkills %}
               <span class="vd-skill-chip">{{ skill }}</span>
               {% endfor %}
             </div>

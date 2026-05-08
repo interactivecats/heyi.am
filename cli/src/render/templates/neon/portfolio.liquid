@@ -85,12 +85,12 @@
     {% for p in projects %}
     <article class="project-card fade-in">
       <a href="/{{ user.username }}/{{ p.slug }}" class="project-title">{{ p.title }}</a>
-      {% if p.narrative != blank %}
-      <p class="project-narrative">{{ p.narrative | truncate: 120 }}</p>
+      {% if p.tagline != blank %}
+      <p class="project-narrative">{{ p.tagline }}</p>
       {% endif %}
-      {% if p.skills.size > 0 %}
+      {% if p.profileSkills.size > 0 %}
       <ul class="skills-list" aria-label="Skills used in {{ p.title }}">
-        {% for skill in p.skills %}
+        {% for skill in p.profileSkills %}
         <li class="skill-chip">{{ skill }}</li>
         {% endfor %}
       </ul>

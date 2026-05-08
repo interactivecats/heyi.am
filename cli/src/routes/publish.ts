@@ -80,6 +80,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
         totalDurationMinutes, totalAgentDurationMinutes, totalFilesChanged,
         totalTokens,
         sessionCards,
+        hideSessionDates,
       } = req.body as {
         username: string;
         slug: string;
@@ -97,6 +98,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
         totalFilesChanged: number;
         totalTokens?: number;
         sessionCards: SessionCard[];
+        hideSessionDates?: boolean;
       };
 
       const renderData = buildProjectRenderData({
@@ -112,6 +114,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
         totalFilesChanged: totalFilesChanged || 0,
         totalTokens,
         sessionCards: sessionCards || [],
+        hideSessionDates,
       });
 
       const templateName = getDefaultTemplate() || 'editorial';

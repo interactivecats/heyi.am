@@ -70,6 +70,7 @@ export function ProjectDetail() {
   const [authUsername, setAuthUsername] = useState<string | null>(null)
   const [tagline, setTagline] = useState('')
   const [narrative, setNarrative] = useState('')
+  const [hideSessionDates, setHideSessionDates] = useState(false)
   const [embedOpen, setEmbedOpen] = useState(false)
   const [embedCopied, setEmbedCopied] = useState<string | null>(null)
   const [sessionModalOpen, setSessionModalOpen] = useState(false)
@@ -121,6 +122,7 @@ export function ProjectDetail() {
         if (d.enhanceCache?.screenshotBase64) setScreenshotPreview(d.enhanceCache.screenshotBase64)
         if (d.enhanceCache?.result?.tagline) setTagline(d.enhanceCache.result.tagline)
         if (d.enhanceCache?.result?.narrative) setNarrative(d.enhanceCache.result.narrative)
+        setHideSessionDates(!!d.enhanceCache?.hideSessionDates)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -284,14 +286,20 @@ export function ProjectDetail() {
       dirName,
       cache?.selectedSessionIds ?? [],
       updatedResult,
-      { title: projectTitle || undefined, repoUrl: repoUrl || undefined, projectUrl: projectUrl || undefined, screenshotBase64: screenshotPreview ?? undefined },
+      {
+        title: projectTitle || undefined,
+        repoUrl: repoUrl || undefined,
+        projectUrl: projectUrl || undefined,
+        screenshotBase64: screenshotPreview ?? undefined,
+        hideSessionDates: hideSessionDates || undefined,
+      },
     ).then(() => {
       setMetadataDirty(false)
       // Screenshot changes are structural (placeholder ↔ browser-chrome), so the
       // DOM patches in the next effect can't fix them — re-fetch the render.
       loadRender()
     }).catch(() => {})
-  }, [dirName, detail, projectTitle, repoUrl, projectUrl, screenshotPreview, tagline, narrative, loadRender])
+  }, [dirName, detail, projectTitle, repoUrl, projectUrl, screenshotPreview, tagline, narrative, hideSessionDates, loadRender])
 
   useEffect(() => {
     if (!metadataDirty) return
@@ -452,6 +460,21 @@ export function ProjectDetail() {
               placeholder="https://example.com"
               className="w-full text-xs font-mono px-2 py-1.5 rounded-sm border border-ghost bg-surface-lowest text-on-surface placeholder:text-outline"
             />
+          </label>
+
+          <label className="flex items-start gap-2 mb-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={hideSessionDates}
+              onChange={(e) => { setHideSessionDates(e.target.checked); setMetadataDirty(true) }}
+              className="mt-0.5"
+            />
+            <span className="text-[0.75rem] text-on-surface-variant leading-tight">
+              Hide dates in timeline
+              <span className="block text-[0.6875rem] text-outline mt-0.5">
+                Replaces session dates with "Session 1, 2, 3…" on the work timeline. Re-publish to apply.
+              </span>
+            </span>
           </label>
 
           <div className="mb-2">
