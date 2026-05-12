@@ -123,47 +123,83 @@ defmodule HeyiAmAppWeb.ShareApiController do
   @doc """
   DELETE /api/sessions/:id — hard-delete a share owned by the authenticated user.
 
-  Returns opaque 404 if the share does not exist OR is not owned by the caller
-  (BOLA protection — do not leak existence). On success, deletes S3 artifacts
-  referenced by the share's storage keys on a best-effort basis (logged but
-  not fatal) and returns 204 No Content.
+  Two identifier shapes are accepted:
+
+    1. Integer share ID in the path (`/api/sessions/42`) — the original
+       contract. Used by anything that already has the DB row id.
+
+    2. Non-integer `:id` (e.g. a client-side UUID) combined with the
+       query params `project_id=<int>` and `slug=<string>` — used by the
+       CLI, which doesn't get a numeric share id back from POST and
+       therefore looks up sessions by (project_id, slug). The path
+       segment is ignored in this case but kept for routing.
+
+  Returns opaque 404 if the share does not exist OR is not owned by the
+  caller (BOLA protection — do not leak existence). On success, deletes
+  S3 artifacts referenced by the share's storage keys on a best-effort
+  basis (logged but not fatal) and returns 204 No Content.
   """
-  def delete(conn, %{"id" => id}) do
+  def delete(conn, %{"id" => id} = params) do
     user_id = conn.assigns[:current_user_id]
 
-    with {:user, uid} when not is_nil(uid) <- {:user, user_id},
-         {:id, {parsed_id, ""}} <- {:id, Integer.parse(to_string(id))},
-         {:share, %Share{} = share} <- {:share, Shares.get_user_share(uid, parsed_id)} do
-      delete_s3_artifacts(share)
-
-      case Shares.delete_share(share) do
-        {:ok, _} ->
-          send_resp(conn, 204, "")
-
-        {:error, reason} ->
-          Logger.error("Failed to delete share #{share.id}: #{inspect(reason)}")
-
-          conn
-          |> put_status(:internal_server_error)
-          |> json(%{error: %{code: "DELETE_FAILED"}})
-      end
+    if is_nil(user_id) do
+      conn
+      |> put_status(:unauthorized)
+      |> json(%{error: "Authentication required. Run: heyiam login"})
     else
-      {:user, nil} ->
-        conn
-        |> put_status(:unauthorized)
-        |> json(%{error: "Authentication required. Run: heyiam login"})
+      case resolve_share_for_delete(user_id, id, params) do
+        %Share{} = share ->
+          delete_s3_artifacts(share)
 
-      {:id, _} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: %{code: "NOT_FOUND"}})
+          case Shares.delete_share(share) do
+            {:ok, _} ->
+              send_resp(conn, 204, "")
 
-      {:share, nil} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: %{code: "NOT_FOUND"}})
+            {:error, reason} ->
+              Logger.error("Failed to delete share #{share.id}: #{inspect(reason)}")
+
+              conn
+              |> put_status(:internal_server_error)
+              |> json(%{error: %{code: "DELETE_FAILED"}})
+          end
+
+        nil ->
+          conn
+          |> put_status(:not_found)
+          |> json(%{error: %{code: "NOT_FOUND"}})
+      end
     end
   end
+
+  # Resolves a share by either integer ID (legacy) or by (project_id, slug)
+  # fallback (used by the CLI, which doesn't get a numeric id back from
+  # POST /api/sessions). Returns nil for any lookup that fails — BOLA
+  # protection is preserved because Projects.get_user_project verifies
+  # ownership before we ever ask Shares.get_share_by_project_slug.
+  defp resolve_share_for_delete(user_id, id, params) do
+    case Integer.parse(to_string(id)) do
+      {parsed_id, ""} ->
+        Shares.get_user_share(user_id, parsed_id)
+
+      _ ->
+        resolve_share_by_project_slug(user_id, params)
+    end
+  end
+
+  defp resolve_share_by_project_slug(user_id, %{"project_id" => pid_param, "slug" => slug})
+       when is_binary(slug) and slug != "" do
+    with {project_id, ""} <- Integer.parse(to_string(pid_param)),
+         project when not is_nil(project) <- Projects.get_user_project(user_id, project_id),
+         %Share{user_id: share_user_id} = share <-
+           Shares.get_share_by_project_slug(project.id, slug),
+         true <- share_user_id == user_id do
+      share
+    else
+      _ -> nil
+    end
+  end
+
+  defp resolve_share_by_project_slug(_user_id, _params), do: nil
 
   @doc """
   PATCH /api/sessions/bulk-status — update status of all shares for a given project.

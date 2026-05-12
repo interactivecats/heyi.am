@@ -88,6 +88,42 @@ function archiveDestination(
 }
 
 /**
+ * Public version of archiveDestination — given an original tool path,
+ * return the deterministic archive location.
+ */
+export function resolveArchivePath(
+  originalPath: string,
+  projectDir: string,
+  configDir?: string,
+): string {
+  const archiveBase = getArchiveDir(configDir);
+  if (originalPath.startsWith(archiveBase + "/")) return originalPath;
+  return archiveDestination(originalPath, archiveBase, projectDir);
+}
+
+/**
+ * Return a readable path for a session — the original if it still exists,
+ * otherwise the archive copy if it exists. Returns null if neither exists.
+ *
+ * Use this when reading session content by stored path: tool dirs (e.g.
+ * Claude Code) garbage-collect their own files, but the archive is under
+ * our control and survives.
+ */
+export async function findReadableSessionPath(
+  originalPath: string,
+  projectDir: string,
+  configDir?: string,
+): Promise<string | null> {
+  if (await stat(originalPath).catch(() => null)) return originalPath;
+
+  const archivePath = resolveArchivePath(originalPath, projectDir, configDir);
+  if (archivePath === originalPath) return null;
+  if (await stat(archivePath).catch(() => null)) return archivePath;
+
+  return null;
+}
+
+/**
  * Archive a Cursor session by exporting its parsed data as JSONL.
  * Cursor stores conversations in its own SQLite DB — we can't hard-link.
  * Instead, we parse the conversation and write it as a JSONL file.

@@ -950,6 +950,21 @@ describe('GET /api/sessions/:id', () => {
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('SESSION_NOT_FOUND');
   });
+
+  it('resolves a title-derived slug with .html suffix to the canonical session', async () => {
+    // The rendered Liquid project page links to sessions by title slug
+    // (e.g. /session/<slug>.html). A direct hit on that URL — from a
+    // refresh, a modifier-click that escaped the SPA interceptor, or a
+    // shared link — must resolve back to the same session as the UUID.
+    const app = createApp(tmpDir);
+    await request(app).get('/api/projects/myapp/sessions');
+
+    // The fixture session at abc-123 has no enhanced title saved, so its
+    // slug falls back to toSlug(row.title || sessionId, 80) === "abc-123".
+    const res = await request(app).get('/api/sessions/abc-123.html');
+    expect(res.status).toBe(200);
+    expect(res.body.session.id).toBe('abc-123');
+  });
 });
 
 describe('GET /api/sessions/:id/context', () => {

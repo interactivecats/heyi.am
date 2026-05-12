@@ -574,6 +574,20 @@ export function deleteSession(db: Database.Database, sessionId: string): void {
   tx();
 }
 
+/**
+ * Update the stored file_path for a session. Used to heal the cache after
+ * we discover the originally-indexed path has been deleted by its source
+ * tool (e.g., Claude Code's 30-day cleanup) and we've fallen back to an
+ * archived copy.
+ */
+export function updateSessionPath(
+  db: Database.Database,
+  sessionId: string,
+  newPath: string,
+): void {
+  db.prepare('UPDATE sessions SET file_path = ? WHERE id = ?').run(newPath, sessionId);
+}
+
 // ── Rebuild Index ────────────────────────────────────────────
 
 export function rebuildIndex(

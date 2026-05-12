@@ -120,6 +120,88 @@ defmodule HeyiAmAppWeb.ShareApiControllerTest do
       conn = delete(conn, ~p"/api/sessions/#{share.id}")
       assert response(conn, 204) == ""
     end
+
+    test "deletes by (project_id, slug) when :id is non-numeric", %{conn: _conn} do
+      # Mirrors what the CLI does: it doesn't get a numeric share id back
+      # from POST /api/sessions, so it sends a Claude UUID in the path and
+      # the real lookup keys in query params.
+      {conn, user} = api_conn_with_auth()
+      {:ok, project} =
+        HeyiAm.Projects.create_project(%{slug: "slug-del-proj", title: "Slug del", user_id: user.id})
+
+      {:ok, _share} =
+        HeyiAm.Shares.create_share(%{
+          user_id: user.id,
+          token: "slug-del-tok",
+          title: "Slug del",
+          project_id: project.id,
+          slug: "my-session-slug"
+        })
+
+      claude_uuid = "eec90201-20c0-48c9-8fa8-59b5172cfdee"
+      conn =
+        delete(
+          conn,
+          ~p"/api/sessions/#{claude_uuid}?project_id=#{project.id}&slug=my-session-slug"
+        )
+
+      assert response(conn, 204) == ""
+      assert HeyiAm.Shares.get_share_by_token("slug-del-tok") == nil
+    end
+
+    test "(project_id, slug) lookup returns 404 when project belongs to another user", %{
+      conn: _conn
+    } do
+      # BOLA protection: a non-owner with valid (project_id, slug) should
+      # not be able to delete the owner's share.
+      {_conn1, owner} = api_conn_with_auth()
+      {conn2, _attacker} = api_conn_with_auth()
+      {:ok, project} =
+        HeyiAm.Projects.create_project(%{slug: "victim-proj", title: "Victim", user_id: owner.id})
+
+      {:ok, _share} =
+        HeyiAm.Shares.create_share(%{
+          user_id: owner.id,
+          token: "victim-slug-tok",
+          title: "Victim",
+          project_id: project.id,
+          slug: "victim-slug"
+        })
+
+      claude_uuid = "deadbeef-1111-2222-3333-444455556666"
+      conn =
+        delete(
+          conn2,
+          ~p"/api/sessions/#{claude_uuid}?project_id=#{project.id}&slug=victim-slug"
+        )
+
+      assert %{"error" => %{"code" => "NOT_FOUND"}} = json_response(conn, 404)
+      assert HeyiAm.Shares.get_share_by_token("victim-slug-tok") != nil
+    end
+
+    test "(project_id, slug) lookup returns 404 when slug does not match", %{conn: _conn} do
+      {conn, user} = api_conn_with_auth()
+      {:ok, project} =
+        HeyiAm.Projects.create_project(%{slug: "miss-proj", title: "Miss", user_id: user.id})
+
+      {:ok, _share} =
+        HeyiAm.Shares.create_share(%{
+          user_id: user.id,
+          token: "miss-tok",
+          title: "Miss",
+          project_id: project.id,
+          slug: "real-slug"
+        })
+
+      conn =
+        delete(
+          conn,
+          ~p"/api/sessions/anything?project_id=#{project.id}&slug=wrong-slug"
+        )
+
+      assert %{"error" => %{"code" => "NOT_FOUND"}} = json_response(conn, 404)
+      assert HeyiAm.Shares.get_share_by_token("miss-tok") != nil
+    end
   end
 
   describe "PATCH /api/sessions/bulk-status" do

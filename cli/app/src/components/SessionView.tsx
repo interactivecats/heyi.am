@@ -61,10 +61,20 @@ export function SessionView() {
     if (!sessionId) return
     setLoading(true)
     fetchSessionById(sessionId)
-      .then(setSession)
+      .then((s) => {
+        setSession(s)
+        // If we arrived here via a slug or a `.html`-suffixed URL (e.g. a hard
+        // navigation from a rendered Liquid card that escaped the click
+        // interceptor), normalize to the canonical UUID URL so refresh,
+        // bookmark, and share all work.
+        if (s.id && s.id !== sessionId) {
+          const qs = searchParams.toString()
+          navigate(`/session/${encodeURIComponent(s.id)}${qs ? `?${qs}` : ''}`, { replace: true })
+        }
+      })
       .catch((err) => setError((err as Error).message))
       .finally(() => setLoading(false))
-  }, [sessionId])
+  }, [sessionId, navigate, searchParams])
 
   // Load transcript eagerly
   useEffect(() => {

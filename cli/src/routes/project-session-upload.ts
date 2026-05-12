@@ -9,6 +9,7 @@ import {
   saveEnhancedData,
   getDefaultTemplate,
   isTranscriptIncluded,
+  getUploadedState,
 } from '../settings.js';
 import { redactSession, redactText, scanTextSync, formatFindings, stripHomePathsInText } from '../redact.js';
 import { renderSessionHtml } from '../render/index.js';
@@ -262,4 +263,83 @@ export async function uploadSelectedSessions(
   }
 
   return { uploadedCount, failedSessions, uploadedSessionCards };
+}
+
+/**
+ * Delete previously-uploaded sessions that are no longer in the user's
+ * selected set. Called before re-uploading so the published portfolio
+ * reflects deselections made through the Manage Sessions modal.
+ *
+ * Identifies each session on the server by (project_id, slug) — the same
+ * fallback contract used by the single-session trash button. Failures
+ * are logged but non-fatal: the upload continues so partial cleanup
+ * doesn't block the user's primary action.
+ */
+export async function demoteRemovedSessions(
+  auth: { token: string; username: string },
+  options: {
+    projectDirName: string;
+    selectedSessionIds: string[];
+    send?: SessionUploadProgress;
+  },
+): Promise<{ demotedCount: number; failed: Array<{ sessionId: string; error: string }> }> {
+  const { projectDirName, selectedSessionIds, send } = options;
+  const notify = send ?? (() => {});
+
+  const uploaded = getUploadedState(projectDirName);
+  if (!uploaded || !uploaded.projectId) {
+    return { demotedCount: 0, failed: [] };
+  }
+
+  const selected = new Set(selectedSessionIds);
+  const removed = (uploaded.uploadedSessions ?? []).filter((id) => !selected.has(id));
+  if (removed.length === 0) {
+    return { demotedCount: 0, failed: [] };
+  }
+
+  let demotedCount = 0;
+  const failed: Array<{ sessionId: string; error: string }> = [];
+
+  for (const sessionId of removed) {
+    const enhanced = loadEnhancedData(sessionId);
+    const slug = toSlug(enhanced?.title ?? sessionId, 80);
+
+    notify({ type: 'session', sessionId, status: 'demoting' });
+
+    try {
+      const query = new URLSearchParams({
+        project_id: String(uploaded.projectId),
+        slug,
+      });
+      const res = await fetch(
+        `${API_URL}/api/sessions/${encodeURIComponent(sessionId)}?${query.toString()}`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${auth.token}` },
+        },
+      );
+
+      if (res.status === 204 || res.status === 404) {
+        // 404 = already gone server-side; either way, the local state
+        // should reflect "not uploaded" so the next re-publish doesn't
+        // try to demote it again.
+        if (enhanced?.uploaded) {
+          saveEnhancedData(sessionId, { ...enhanced, uploaded: false });
+        }
+        demotedCount++;
+        notify({ type: 'session', sessionId, status: 'demoted' });
+      } else {
+        const body = await res.text().catch(() => '');
+        const error = `HTTP ${res.status}: ${body.slice(0, 200)}`;
+        failed.push({ sessionId, error });
+        notify({ type: 'session', sessionId, status: 'demote_failed', error });
+      }
+    } catch (err) {
+      const error = (err as Error).message;
+      failed.push({ sessionId, error });
+      notify({ type: 'session', sessionId, status: 'demote_failed', error });
+    }
+  }
+
+  return { demotedCount, failed };
 }

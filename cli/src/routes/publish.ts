@@ -26,7 +26,7 @@ import { buildProjectRenderData } from '../render/build-render-data.js';
 import type { SessionCard } from '../render/types.js';
 import type { ProjectEnhanceResult } from '../llm/project-enhance.js';
 import { type RouteContext } from './context.js';
-import { uploadSelectedSessions } from './project-session-upload.js';
+import { uploadSelectedSessions, demoteRemovedSessions } from './project-session-upload.js';
 import { invalidatePortfolioPreviewCache } from './preview.js';
 import { startSSE } from './sse.js';
 import { displayNameFromDir } from '../sync.js';
@@ -327,6 +327,18 @@ export function createPublishRouter(ctx: RouteContext): Router {
       let uploadedSessionCards: SessionCard[] = [];
 
       if (proj) {
+        // Honor Manage Sessions deselections: remove server-side sessions
+        // that were previously uploaded but are no longer in the
+        // selection. Failures are non-fatal — proceed with the upload.
+        const demoteResult = await demoteRemovedSessions(auth, {
+          projectDirName: project,
+          selectedSessionIds,
+          send,
+        });
+        if (demoteResult.failed.length > 0) {
+          console.warn(`[upload] ${demoteResult.failed.length} session(s) could not be removed from heyi.am`);
+        }
+
         const sessionResult = await uploadSelectedSessions(ctx, auth, {
           proj,
           projectData,
@@ -637,6 +649,19 @@ export function createPublishRouter(ctx: RouteContext): Router {
             slugMap.set(baseSlug, projectData.slug);
           }
           send({ type: 'project', project: title, index: projectIndex, total: filteredProjects.length, status: 'created' });
+
+          // Honor Manage Sessions deselections before re-uploading: remove
+          // server-side sessions that were previously uploaded but aren't
+          // in the current `selectedSessionIds`. Without this step, the
+          // bulk-status PATCH below silently re-lists everything.
+          const demoteResult = await demoteRemovedSessions(auth, {
+            projectDirName: rawProj.dirName,
+            selectedSessionIds,
+            send: (evt) => send({ ...evt, project: title }),
+          });
+          if (demoteResult.failed.length > 0) {
+            console.warn(`[portfolio-upload] ${title}: ${demoteResult.failed.length} session(s) could not be removed from heyi.am`);
+          }
 
           send({ type: 'progress', message: `Uploading ${selectedSessionIds.length} session${selectedSessionIds.length === 1 ? '' : 's'} for ${title}…` });
           const { uploadedSessionCards } = await uploadSelectedSessions(ctx, auth, {
