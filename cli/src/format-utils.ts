@@ -1,6 +1,27 @@
+import { basename, dirname } from 'node:path';
+
 /** Escape HTML special characters for safe embedding. */
 export function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/**
+ * Derive the project_dir segment from a Claude Code session file path.
+ *
+ * Layouts:
+ *   .../projects/{projectDir}/{sessionId}.jsonl                      — parent session
+ *   .../projects/{projectDir}/{parentSessionId}/subagents/X.jsonl    — subagent
+ *
+ * Claude Code v2.1+ relocates session files when cwd changes mid-session,
+ * so we need to re-derive project_dir from the current file path rather than
+ * trusting a value stored at first-index time.
+ */
+export function projectDirFromPath(filePath: string, isSubagent: boolean): string {
+  if (isSubagent) {
+    const sessionDataDir = dirname(dirname(filePath));
+    return basename(dirname(sessionDataDir));
+  }
+  return basename(dirname(filePath));
 }
 
 /** Format LOC as human-readable (e.g. "2.4k"). */

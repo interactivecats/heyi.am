@@ -9,6 +9,7 @@ import { homedir } from 'node:os';
 import type { SessionAnalysis } from './parsers/types.js';
 import type { ParsedTurn, ParsedFileChange, Session } from './analyzer.js';
 import type { SessionMeta } from './parsers/index.js';
+import { projectDirFromPath } from './format-utils.js';
 
 // ── Constants ────────────────────────────────────────────────
 
@@ -19,7 +20,7 @@ export function getDbPath(): string {
   return join(getDataDir(), 'sessions.db');
 }
 
-const CURRENT_SCHEMA_VERSION = 5;
+const CURRENT_SCHEMA_VERSION = 6;
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -130,6 +131,9 @@ function runMigrations(db: Database.Database): void {
   }
   if (currentVersion < 5) {
     migrateToV5(db);
+  }
+  if (currentVersion < 6) {
+    migrateToV6(db);
   }
 }
 
@@ -259,6 +263,39 @@ function migrateToV4(db: Database.Database): void {
   tx();
 }
 
+/**
+ * One-time repair: backfill rows where project_dir drifted from file_path.
+ *
+ * Claude Code v2.1+ relocates a session to a new project dir when the cwd
+ * changes mid-session. Earlier versions of this CLI healed file_path in
+ * isolation, leaving project_dir pointing at the original directory and
+ * making sessions appear under the wrong project in the UI.
+ */
+function migrateToV6(db: Database.Database): void {
+  const tx = db.transaction(() => {
+    const rows = db.prepare(
+      'SELECT id, file_path, is_subagent, project_dir FROM sessions WHERE file_path IS NOT NULL',
+    ).all() as Array<{ id: string; file_path: string; is_subagent: number; project_dir: string }>;
+
+    const update = db.prepare('UPDATE sessions SET project_dir = ? WHERE id = ?');
+    let healed = 0;
+    for (const r of rows) {
+      if (r.file_path.includes('://')) continue;
+      const derived = projectDirFromPath(r.file_path, r.is_subagent === 1);
+      if (derived && derived !== r.project_dir) {
+        update.run(derived, r.id);
+        healed++;
+      }
+    }
+    if (healed > 0) {
+      console.log('[migrate v6] Repaired project_dir for ' + healed + ' session(s)');
+    }
+
+    db.prepare('UPDATE schema_version SET version = ?').run(6);
+  });
+  tx();
+}
+
 // ── Staleness Check ──────────────────────────────────────────
 
 export function isSessionStale(
@@ -267,13 +304,20 @@ export function isSessionStale(
   filePath: string,
 ): boolean {
   const row = db.prepare(
-    'SELECT file_mtime, file_size FROM sessions WHERE id = ?',
-  ).get(sessionId) as { file_mtime: number | null; file_size: number | null } | undefined;
+    'SELECT file_mtime, file_size, file_path FROM sessions WHERE id = ?',
+  ).get(sessionId) as
+    | { file_mtime: number | null; file_size: number | null; file_path: string | null }
+    | undefined;
 
   if (!row) return true; // Not in DB — needs indexing
 
   // Skip stat for non-filesystem paths (e.g. cursor:// URLs) — F23 fix
   if (filePath.includes('://')) return true;
+
+  // Claude Code v2.1+ renames a session file when cwd changes mid-session.
+  // A rename preserves mtime/size, so without this check the row's stale
+  // project_dir would never get refreshed.
+  if (row.file_path && row.file_path !== filePath) return true;
 
   try {
     const stat = statSync(filePath);
@@ -579,13 +623,24 @@ export function deleteSession(db: Database.Database, sessionId: string): void {
  * we discover the originally-indexed path has been deleted by its source
  * tool (e.g., Claude Code's 30-day cleanup) and we've fallen back to an
  * archived copy.
+ *
+ * Also re-derives project_dir from the new path. Claude Code v2.1+ relocates
+ * sessions when the cwd changes mid-session, and project_dir is a denormalized
+ * cache of dirname(file_path) — they must move together or the UI groups
+ * sessions under their old project.
  */
 export function updateSessionPath(
   db: Database.Database,
   sessionId: string,
   newPath: string,
 ): void {
-  db.prepare('UPDATE sessions SET file_path = ? WHERE id = ?').run(newPath, sessionId);
+  const row = db.prepare('SELECT is_subagent FROM sessions WHERE id = ?').get(sessionId) as
+    | { is_subagent: number }
+    | undefined;
+  if (!row) return;
+  const projectDir = projectDirFromPath(newPath, row.is_subagent === 1);
+  db.prepare('UPDATE sessions SET file_path = ?, project_dir = ? WHERE id = ?')
+    .run(newPath, projectDir, sessionId);
 }
 
 // ── Rebuild Index ────────────────────────────────────────────

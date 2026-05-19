@@ -150,7 +150,7 @@ export function createPublishRouter(ctx: RouteContext): Router {
 
   // Publish project -- SSE stream with per-session progress
   router.post('/api/projects/:project/upload', async (req: Request, res: Response) => {
-    const { project } = req.params;
+    const project = String(req.params.project);
     const auth = getAuthToken();
     warnIfNonDefaultApiUrl();
 
@@ -185,12 +185,12 @@ export function createPublishRouter(ctx: RouteContext): Router {
     };
 
     // Ensure slug is the short project name, not the full encoded directory path
-    const shortName = displayNameFromDir(String(project));
+    const shortName = displayNameFromDir(project);
     const baseSlug = toSlug(shortName);
     const title = rawTitle === rawSlug ? shortName : rawTitle;
 
     // Get stable project UUID from CLI database
-    const clientProjectId = getProjectUuid(ctx.db, String(project));
+    const clientProjectId = getProjectUuid(ctx.db, project);
 
     const send = startSSE(res);
 

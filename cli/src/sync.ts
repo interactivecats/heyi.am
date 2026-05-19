@@ -19,7 +19,7 @@ import {
 } from './db.js';
 import { renderCompact } from './context-export.js';
 import { getArchiveDir } from './settings.js';
-import { displayNameFromDir } from './format-utils.js';
+import { displayNameFromDir, projectDirFromPath } from './format-utils.js';
 export { displayNameFromDir } from './format-utils.js';
 
 // ── Types ────────────────────────────────────────────────────
@@ -305,18 +305,8 @@ async function handleFileChange(db: Database.Database, filePath: string): Promis
   // Detect subagent: path contains /subagents/ directory
   const isSubagent = parentDirName === 'subagents';
 
-  let projectDir: string;
-  let parentSessionId: string | undefined;
-
-  if (isSubagent) {
-    // .../projects/{projectDir}/{parentSessionId}/subagents/{agentId}.jsonl
-    const sessionDataDir = dirname(dirname(filePath)); // up past subagents/
-    parentSessionId = basename(sessionDataDir);
-    projectDir = basename(dirname(sessionDataDir));
-  } else {
-    // .../projects/{projectDir}/{sessionId}.jsonl
-    projectDir = parentDirName;
-  }
+  const projectDir = projectDirFromPath(filePath, isSubagent);
+  const parentSessionId = isSubagent ? basename(dirname(dirname(filePath))) : undefined;
 
   const projectName = displayNameFromDir(projectDir);
 
