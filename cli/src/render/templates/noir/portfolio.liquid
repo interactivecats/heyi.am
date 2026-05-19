@@ -97,12 +97,12 @@
       <a href="/{{ user.username }}/{{ p.slug }}" class="noir-project" aria-label="{{ p.title }} project">
         <div>
           <h3 class="noir-project__title">{{ p.title }}</h3>
-          {% if p.narrative != blank %}
-          <p class="noir-project__narrative">{{ p.narrative }}</p>
+          {% if p.tagline != blank %}
+          <p class="noir-project__narrative">{{ p.tagline }}</p>
           {% endif %}
-          {% if p.skills.size > 0 %}
+          {% if p.profileSkills.size > 0 %}
           <div class="noir-project__skills" aria-label="Skills">
-            {% for skill in p.skills %}
+            {% for skill in p.profileSkills %}
             <span class="noir-chip">{{ skill }}</span>
             {% endfor %}
           </div>

@@ -28,14 +28,14 @@ program
   .description('Turn AI coding sessions into portfolio case studies')
   .version(pkg.version);
 
-program
-  .command('open')
-  .description('Start the local server and open the browser')
-  .option('-p, --port <number>', 'Port to run on', '17845')
-  .option('--no-open', 'Start server without opening browser')
-  .option('--demo', 'Start with fake data for screenshots and recordings')
-  .option('--verbose', 'Show detailed sync and discovery logs')
-  .action(async (opts) => {
+interface OpenOptions {
+  port: string;
+  open: boolean;
+  demo?: boolean;
+  verbose?: boolean;
+}
+
+async function runOpenServer(opts: OpenOptions): Promise<void> {
     if (opts.verbose) process.env.HEYIAM_VERBOSE = '1';
     const port = parseInt(opts.port, 10);
 
@@ -124,6 +124,25 @@ program
     process.on('SIGINT', shutdown);
     process.on('SIGTERM', shutdown);
     setInterval(() => {}, 60_000);
+}
+
+program
+  .command('open')
+  .description('Start the local server and open the browser')
+  .option('-p, --port <number>', 'Port to run on', '17845')
+  .option('--no-open', 'Start server without opening browser')
+  .option('--demo', 'Start with fake data for screenshots and recordings')
+  .option('--verbose', 'Show detailed sync and discovery logs')
+  .action(runOpenServer);
+
+program
+  .command('login')
+  .description('Sign in to heyiam.com (opens the dashboard in your browser)')
+  .option('-p, --port <number>', 'Port to run on', '17845')
+  .option('--verbose', 'Show detailed sync and discovery logs')
+  .action(async (opts: { port: string; verbose?: boolean }) => {
+    console.log('\n  Sign in from the dashboard that opens in your browser.\n');
+    await runOpenServer({ port: opts.port, open: true, verbose: opts.verbose });
   });
 
 program
@@ -938,9 +957,16 @@ const isDirectRun = resolvedArgv.endsWith('/dist/index.js') ||
   resolvedArgv.endsWith('/src/index.ts');
 
 if (isDirectRun) {
+  // Default to `open` when the user runs `heyiam` bare or `heyiam --flag …`,
+  // so `heyiam --port 1234` becomes `heyiam open --port 1234`. We only do
+  // this for *flags* (args starting with `-`) — bare unknown words like
+  // `heyiam blargh` should fall through to Commander so the user sees a
+  // clean "unknown command" error instead of a confusing "too many
+  // arguments for 'open'".
   const args = process.argv.slice(2);
-  const knownCommands = ['open', 'time', 'search', 'context', 'reindex', 'archive', 'sync', 'status', 'daemon', 'logout'];
-  if (args.length === 0 || !knownCommands.includes(args[0])) {
+  const firstArg = args[0];
+  const shouldDefaultToOpen = args.length === 0 || (firstArg !== undefined && firstArg.startsWith('-'));
+  if (shouldDefaultToOpen) {
     process.argv.splice(2, 0, 'open');
   }
   program.parseAsync(process.argv).catch((err) => {

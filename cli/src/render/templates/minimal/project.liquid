@@ -55,7 +55,7 @@
     {% if sessionsJson %}
     <div class="mn-section">
       <h2 class="mn-section-heading">Work Timeline</h2>
-      <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+      <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'{% if hideSessionDates %} data-hide-dates="1"{% endif %}></div>
     </div>
     <hr class="mn-rule" />
     {% endif %}

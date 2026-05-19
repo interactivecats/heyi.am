@@ -116,8 +116,8 @@
           <h3 class="project-card__headline">
             <a href="/{{ user.username }}/{{ p.slug }}">{{ p.title }}</a>
           </h3>
-          {% if p.narrative %}
-          <p class="project-card__narrative">{{ p.narrative | truncate: 120 }}</p>
+          {% if p.tagline != blank %}
+          <p class="project-card__narrative">{{ p.tagline }}</p>
           {% endif %}
           <p class="project-card__meta">
             <span>{{ p.totalSessions }} sessions</span>
@@ -144,9 +144,9 @@
             </p>
             {% endif %}
           {% endif %}
-          {% if p.skills.size > 0 %}
+          {% if p.profileSkills.size > 0 %}
           <div class="project-card__skills" aria-label="Skills used in {{ p.title }}">
-            {% for skill in p.skills %}
+            {% for skill in p.profileSkills %}
             <span class="skill-tag chip">{{ skill }}</span>
             {% endfor %}
           </div>

@@ -68,7 +68,9 @@ export function ProjectDetail() {
   const [screenshotCapturing, setScreenshotCapturing] = useState(false)
   const [metadataDirty, setMetadataDirty] = useState(false)
   const [authUsername, setAuthUsername] = useState<string | null>(null)
+  const [tagline, setTagline] = useState('')
   const [narrative, setNarrative] = useState('')
+  const [hideSessionDates, setHideSessionDates] = useState(false)
   const [embedOpen, setEmbedOpen] = useState(false)
   const [embedCopied, setEmbedCopied] = useState<string | null>(null)
   const [sessionModalOpen, setSessionModalOpen] = useState(false)
@@ -118,7 +120,9 @@ export function ProjectDetail() {
         if (d.enhanceCache?.repoUrl) setRepoUrl(d.enhanceCache.repoUrl)
         if (d.enhanceCache?.projectUrl) setProjectUrl(d.enhanceCache.projectUrl)
         if (d.enhanceCache?.screenshotBase64) setScreenshotPreview(d.enhanceCache.screenshotBase64)
+        if (d.enhanceCache?.result?.tagline) setTagline(d.enhanceCache.result.tagline)
         if (d.enhanceCache?.result?.narrative) setNarrative(d.enhanceCache.result.narrative)
+        setHideSessionDates(!!d.enhanceCache?.hideSessionDates)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -273,16 +277,29 @@ export function ProjectDetail() {
   const saveMetadata = useCallback(() => {
     if (!dirName || !detail) return
     const cache = detail.enhanceCache
-    const result = cache?.result ?? { narrative: '', arc: [], skills: [], timeline: [], questions: [] }
-    // Merge narrative edits into the result
-    const updatedResult = narrative !== result.narrative ? { ...result, narrative } : result
+    const result = cache?.result ?? { tagline: '', narrative: '', arc: [], skills: [], timeline: [], questions: [] }
+    // Merge tagline + narrative edits into the result
+    let updatedResult = result
+    if (tagline !== (result.tagline ?? '')) updatedResult = { ...updatedResult, tagline }
+    if (narrative !== result.narrative) updatedResult = { ...updatedResult, narrative }
     saveProjectEnhanceLocally(
       dirName,
       cache?.selectedSessionIds ?? [],
       updatedResult,
-      { title: projectTitle || undefined, repoUrl: repoUrl || undefined, projectUrl: projectUrl || undefined, screenshotBase64: screenshotPreview ?? undefined },
-    ).then(() => setMetadataDirty(false)).catch(() => {})
-  }, [dirName, detail, projectTitle, repoUrl, projectUrl, screenshotPreview, narrative])
+      {
+        title: projectTitle || undefined,
+        repoUrl: repoUrl || undefined,
+        projectUrl: projectUrl || undefined,
+        screenshotBase64: screenshotPreview ?? undefined,
+        hideSessionDates: hideSessionDates || undefined,
+      },
+    ).then(() => {
+      setMetadataDirty(false)
+      // Screenshot changes are structural (placeholder ↔ browser-chrome), so the
+      // DOM patches in the next effect can't fix them — re-fetch the render.
+      loadRender()
+    }).catch(() => {})
+  }, [dirName, detail, projectTitle, repoUrl, projectUrl, screenshotPreview, tagline, narrative, hideSessionDates, loadRender])
 
   useEffect(() => {
     if (!metadataDirty) return
@@ -398,17 +415,29 @@ export function ProjectDetail() {
             />
           </label>
 
-          {detail.enhanceCache?.result?.narrative !== undefined && (
-            <label className="block mb-3">
-              <span className="text-[0.75rem] font-medium text-on-surface-variant block mb-1">Narrative</span>
-              <textarea
-                value={narrative}
-                onChange={(e) => { setNarrative(e.target.value); setMetadataDirty(true) }}
-                rows={4}
-                placeholder="Project narrative..."
-                className="w-full text-xs font-mono px-2 py-1.5 rounded-sm border border-ghost bg-surface-lowest text-on-surface placeholder:text-outline resize-y leading-relaxed"
-              />
-            </label>
+          {detail.enhanceCache?.result && (
+            <>
+              <label className="block mb-3">
+                <span className="text-[0.75rem] font-medium text-on-surface-variant block mb-1">Tagline <span className="text-outline font-normal">— shown on portfolio cards</span></span>
+                <textarea
+                  value={tagline}
+                  onChange={(e) => { setTagline(e.target.value); setMetadataDirty(true) }}
+                  rows={2}
+                  placeholder="I built a..."
+                  className="w-full text-xs font-mono px-2 py-1.5 rounded-sm border border-ghost bg-surface-lowest text-on-surface placeholder:text-outline resize-y leading-relaxed"
+                />
+              </label>
+              <label className="block mb-3">
+                <span className="text-[0.75rem] font-medium text-on-surface-variant block mb-1">Narrative <span className="text-outline font-normal">— shown on project page</span></span>
+                <textarea
+                  value={narrative}
+                  onChange={(e) => { setNarrative(e.target.value); setMetadataDirty(true) }}
+                  rows={4}
+                  placeholder="Project narrative..."
+                  className="w-full text-xs font-mono px-2 py-1.5 rounded-sm border border-ghost bg-surface-lowest text-on-surface placeholder:text-outline resize-y leading-relaxed"
+                />
+              </label>
+            </>
           )}
 
           <label className="block mb-3">
@@ -431,6 +460,21 @@ export function ProjectDetail() {
               placeholder="https://example.com"
               className="w-full text-xs font-mono px-2 py-1.5 rounded-sm border border-ghost bg-surface-lowest text-on-surface placeholder:text-outline"
             />
+          </label>
+
+          <label className="flex items-start gap-2 mb-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={hideSessionDates}
+              onChange={(e) => { setHideSessionDates(e.target.checked); setMetadataDirty(true) }}
+              className="mt-0.5"
+            />
+            <span className="text-[0.75rem] text-on-surface-variant leading-tight">
+              Hide dates in timeline
+              <span className="block text-[0.6875rem] text-outline mt-0.5">
+                Replaces session dates with "Session 1, 2, 3…" on the work timeline. Re-publish to apply.
+              </span>
+            </span>
           </label>
 
           <div className="mb-2">
@@ -619,6 +663,7 @@ export function ProjectDetail() {
             // Refresh after modal is unmounted to avoid race condition
             const d = await fetchProjectDetail(dirName!)
             setDetail(d)
+            if (d.enhanceCache?.result?.tagline) setTagline(d.enhanceCache.result.tagline)
             if (d.enhanceCache?.result?.narrative) setNarrative(d.enhanceCache.result.narrative)
             loadRender()
           }}

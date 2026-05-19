@@ -202,11 +202,11 @@ export function createGithubRouter(ctx: RouteContext): Router {
       for (const rawProj of rawProjects) {
         try {
           const detail = buildProjectDetail(ctx.db, rawProj);
-          const cache = (detail.enhanceCache as ProjectEnhanceCache | null) ?? {
+          const cache: ProjectEnhanceCache = (detail.enhanceCache as ProjectEnhanceCache | null) ?? {
             fingerprint: 'gh-publish',
             enhancedAt: new Date().toISOString(),
             selectedSessionIds: detail.sessions.map((s) => s.id),
-            result: { narrative: '', arc: [], skills: [], timeline: [], questions: [] },
+            result: { tagline: '', narrative: '', arc: [], skills: [], timeline: [], questions: [] },
           };
           const proj = detail.project as Record<string, unknown>;
           projectInputs.push({

@@ -15,6 +15,7 @@ import { displayNameFromDir } from '../sync.js';
 import { toSlug } from '../format-utils.js';
 import { getSessionsByProject, getAllProjectStats, type SessionRow } from '../db.js';
 import { applyPortfolioProjectFilter } from './portfolio-render-data.js';
+import { selectProfileSkills } from '../render/select-profile-skills.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -59,6 +60,16 @@ function portfolioCacheKey(templateName: string): string {
  */
 export function invalidatePortfolioPreviewCache(): void {
   portfolioPreviewCache.clear();
+}
+
+/**
+ * Drop the per-project render-data cache for `projectParam`. Call after any
+ * mutation that affects the rendered project page (title, URLs, narrative,
+ * screenshot, skills, timeline). Without this, the 30s TTL on
+ * previewDataCache masks the change in the React UI.
+ */
+export function invalidateProjectPreviewCache(projectParam: string): void {
+  previewDataCache.delete(projectParam);
 }
 
 /** Test helper: read current cache entry without mutating. */
@@ -204,6 +215,12 @@ async function buildProjectPreviewData(
     repoUrl: metaRepoUrl,
     projectUrl: metaProjectUrl,
     screenshotUrl: (() => {
+      // Manual uploads land only in the enhance-cache JSON (no disk write),
+      // so check the cache first — mirrors export.ts:resolveScreenshotDataUri.
+      const b64 = cachedAny?.screenshotBase64 as string | undefined;
+      if (b64) {
+        return b64.startsWith('data:') ? b64 : `data:image/png;base64,${b64}`;
+      }
       return existsSync(path.join(SCREENSHOTS_DIR, `${slug}.png`))
         ? `/screenshots/${slug}.png`
         : undefined;
@@ -220,6 +237,7 @@ async function buildProjectPreviewData(
     allSessionCards,
     sessionBaseUrl: `/preview/project/${encodeURIComponent(projectParam)}/session`,
     sessionSuffix: '.html',
+    hideSessionDates: cachedAny?.hideSessionDates as boolean | undefined,
   });
 
   const result = { renderData, enhanceResult, projName: projAny.name as string };
@@ -659,16 +677,25 @@ body { overflow: auto !important; min-height: auto !important; }
               durationMinutes: s.duration_minutes || 0,
             }));
 
+          const projectSkills = cached?.result?.skills || (proj.skills as string[]) || [];
+          const sessionSkills = dbSessions
+            .filter(s => !s.is_subagent && s.skills)
+            .map(s => {
+              try { return JSON.parse(s.skills!) as string[]; } catch { return []; }
+            });
+
           portfolioProjects.push({
             slug: toSlug(title),
             title,
+            tagline: cached?.result?.tagline || '',
             narrative: cached?.result?.narrative || (proj.description as string) || '',
             totalSessions: projSessions,
             totalLoc: projLoc,
             totalDurationMinutes: projDuration,
             totalAgentDurationMinutes: projAgentDuration,
             totalFilesChanged: (proj.totalFiles as number) || 0,
-            skills: cached?.result?.skills || (proj.skills as string[]) || [],
+            skills: projectSkills,
+            profileSkills: selectProfileSkills({ projectSkills, sessionSkills }),
             publishedCount: 0,
             sessions: sessionActivity,
           });

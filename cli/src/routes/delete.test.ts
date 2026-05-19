@@ -225,7 +225,9 @@ describe('DELETE /api/projects/:project/sessions/:sessionId/remote', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe('https://heyiam.test/api/sessions/sess-1');
+    // Path keeps the (opaque) sessionId; lookup keys ride as query params
+    // because Phoenix DELETE /api/sessions/:id keys on (project_id, slug).
+    expect(url).toBe('https://heyiam.test/api/sessions/sess-1?project_id=42&slug=one');
     expect(init.method).toBe('DELETE');
     expect(init.headers.Authorization).toBe('Bearer test-token-abc');
 
@@ -234,6 +236,21 @@ describe('DELETE /api/projects/:project/sessions/:sessionId/remote', () => {
     expect(state).not.toBeNull();
     expect(state!.uploadedSessions).toEqual(['sess-2']);
     expect(loadEnhancedData('sess-1')?.uploaded).toBe(false);
+  });
+
+  it('falls back to sessionId-derived slug when no enhanced title exists', async () => {
+    saveUploadedState('proj-a', {
+      slug: 'proj-a-slug',
+      projectId: 7,
+      uploadedSessions: ['Bare-ID_2'],
+    });
+    fetchMock.mockResolvedValueOnce({ status: 204, ok: true });
+
+    await request(makeApp()).delete('/api/projects/proj-a/sessions/Bare-ID_2/remote');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://heyiam.test/api/sessions/Bare-ID_2?project_id=7&slug=bare-id-2');
   });
 
   it('preserves project shell even when deleting the last session', async () => {

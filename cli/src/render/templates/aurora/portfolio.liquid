@@ -94,17 +94,17 @@
         <div class="aurora-card-header">
           <h3>{{ p.title }}</h3>
         </div>
-        {% if p.narrative %}
-        <p class="aurora-card-narrative">{{ p.narrative | truncate: 120 }}</p>
+        {% if p.tagline != blank %}
+        <p class="aurora-card-narrative">{{ p.tagline }}</p>
         {% endif %}
         <div class="aurora-card-stats">
           <span>{{ p.totalSessions }} sessions</span>
           <span>{{ p.totalDurationMinutes | formatDuration }}</span>
           <span>{{ p.totalLoc | localeNumber }} LOC</span>
         </div>
-        {% if p.skills.size > 0 %}
+        {% if p.profileSkills.size > 0 %}
         <div class="aurora-tags">
-          {% for skill in p.skills %}
+          {% for skill in p.profileSkills %}
           <span class="aurora-tag">{{ skill }}</span>
           {% endfor %}
         </div>

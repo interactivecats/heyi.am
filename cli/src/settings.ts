@@ -245,7 +245,16 @@ export interface ProjectEnhanceCache {
   screenshotBase64?: string;
   /** Template override for this project (uses user default if not set). */
   template?: string;
+  /**
+   * When true, the rendered work-timeline replaces session dates with
+   * ordinal labels ("Session 1, 2, 3…"). The chart, the inline overlay,
+   * and any template tables that show a Date column all honor this.
+   * Standalone session pages are unaffected — they're not part of the
+   * timeline flow.
+   */
+  hideSessionDates?: boolean;
   result: {
+    tagline: string;
     narrative: string;
     arc: Array<{ phase: number; title: string; description: string }>;
     skills: string[];
@@ -299,7 +308,7 @@ export function saveProjectEnhanceResult(
   selectedSessionIds: string[],
   result: ProjectEnhanceCache['result'],
   configDir?: string,
-  extras?: { title?: string; repoUrl?: string; projectUrl?: string; screenshotBase64?: string },
+  extras?: { title?: string; repoUrl?: string; projectUrl?: string; screenshotBase64?: string; template?: string; hideSessionDates?: boolean },
 ): void {
   const dir = projectEnhanceDir(configDir);
   mkdirSync(dir, { recursive: true });
@@ -312,6 +321,8 @@ export function saveProjectEnhanceResult(
     ...(extras?.repoUrl ? { repoUrl: extras.repoUrl } : {}),
     ...(extras?.projectUrl ? { projectUrl: extras.projectUrl } : {}),
     ...(extras?.screenshotBase64 ? { screenshotBase64: extras.screenshotBase64 } : {}),
+    ...(extras?.template ? { template: extras.template } : {}),
+    ...(extras?.hideSessionDates ? { hideSessionDates: true } : {}),
     result,
   };
   writeFileSync(projectEnhancePath(projectDirName, configDir), JSON.stringify(cache, null, 2), { mode: 0o600 });

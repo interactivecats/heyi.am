@@ -96,17 +96,17 @@
         <a href="/{{ user.username }}/{{ p.slug }}" class="sc-project-card sc-stagger" style="display: block; margin-bottom: 0.75rem;">
           <div class="sc-project-card__accent-bar" style="background: var(--accent);"></div>
           <div class="sc-project-card__title">{{ p.title }}</div>
-          {% if p.narrative != blank %}
-          <p class="sc-project-card__narrative">{{ p.narrative }}</p>
+          {% if p.tagline != blank %}
+          <p class="sc-project-card__narrative">{{ p.tagline }}</p>
           {% endif %}
           <div class="sc-project-card__meta">
             <span>{{ p.totalSessions }} sessions</span>
             <span>{{ p.totalDurationMinutes | formatDuration }}</span>
             <span>{{ p.totalLoc | localeNumber }} LOC</span>
           </div>
-          {% if p.skills.size > 0 %}
+          {% if p.profileSkills.size > 0 %}
           <div class="sc-project-card__skills">
-            {% for skill in p.skills limit: 6 %}
+            {% for skill in p.profileSkills %}
             <span class="sc-skill-chip">{{ skill }}</span>
             {% endfor %}
           </div>

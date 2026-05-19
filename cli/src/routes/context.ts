@@ -14,7 +14,7 @@ import {
   getUploadedState,
 } from '../settings.js';
 import { getTemplateCss } from '../render/templates.js';
-import { archiveSessionFiles } from '../archive.js';
+import { archiveSessionFiles, findReadableSessionPath } from '../archive.js';
 import {
   getDatabase, openDatabase,
   getSessionStats as dbGetSessionStats,
@@ -23,6 +23,8 @@ import {
   getAllProjectStats,
   getSessionsByProject,
   getProjectUuid,
+  getSessionRow,
+  updateSessionPath,
 } from '../db.js';
 import { ensureSessionIndexed, displayNameFromDir } from '../sync.js';
 
@@ -415,10 +417,33 @@ export function createRouteContext(sessionsBasePath?: string, dbPath?: string): 
   }
 
   async function loadSession(sessionPath: string, projectName: string, sessionId: string): Promise<Session> {
-    const parsed = await parseSession(sessionPath);
+    const readablePath = await resolveSessionReadPath(sessionPath, sessionId);
+    const parsed = await parseSession(readablePath);
     const analyzerInput = bridgeToAnalyzer(parsed, { sessionId, projectName });
     const session = analyzeSession(analyzerInput);
     return mergeEnhancedData(session);
+  }
+
+  /**
+   * Returns a path to a readable session file. If the originally-indexed
+   * path still exists, returns it unchanged. Otherwise falls back to the
+   * archive copy and heals the DB cache so future reads skip the lookup.
+   *
+   * This compensates for source tools (notably Claude Code's 30-day
+   * cleanup) deleting session files after we've indexed them.
+   */
+  async function resolveSessionReadPath(originalPath: string, sessionId: string): Promise<string> {
+    const row = getSessionRow(db, sessionId);
+    const projectDir = row?.project_dir;
+    if (!projectDir) return originalPath;
+
+    const readable = await findReadableSessionPath(originalPath, projectDir);
+    if (!readable) return originalPath;
+    if (readable !== originalPath) {
+      updateSessionPath(db, sessionId, readable);
+      console.log(`[loadSession] Healed stale path for ${sessionId} → archive copy`);
+    }
+    return readable;
   }
 
   // ── getSessionStats ──────────────────────────────────────

@@ -94,7 +94,7 @@ describe('ProjectDetail — Enhance button', () => {
         fingerprint: 'fp',
         enhancedAt: '2026-04-01',
         selectedSessionIds: ['s1'],
-        result: { narrative: '', arc: [], skills: [], timeline: [], questions: [] },
+        result: { tagline: '', narrative: '', arc: [], skills: [], timeline: [], questions: [] },
         isFresh: true,
       } as never,
     })
@@ -108,7 +108,7 @@ describe('ProjectDetail — Enhance button', () => {
         fingerprint: 'fp',
         enhancedAt: '2026-04-01',
         selectedSessionIds: ['s1', 's2', 's3'],
-        result: { narrative: '', arc: [], skills: [], timeline: [], questions: [] },
+        result: { tagline: '', narrative: '', arc: [], skills: [], timeline: [], questions: [] },
         isFresh: true,
       } as never,
     })
@@ -180,5 +180,70 @@ describe('ProjectDetail — Remove from heyi.am', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(api.deleteProjectRemote).not.toHaveBeenCalled()
+  })
+})
+
+describe('ProjectDetail — screenshot upload refreshes the rendered preview', () => {
+  beforeEach(() => {
+    vi.mocked(api.saveProjectEnhanceLocally).mockResolvedValue(true)
+  })
+
+  it('uploads an image, saves the cache, and re-fetches the rendered HTML', async () => {
+    renderDetail()
+    await waitFor(() => expect(api.fetchProjectRender).toHaveBeenCalledTimes(1))
+    const initialRenderCalls = vi.mocked(api.fetchProjectRender).mock.calls.length
+
+    await screen.findByText('Upload image...')
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+    expect(fileInput).toBeTruthy()
+
+    const file = new File(['fakebytes'], 'shot.png', { type: 'image/png' })
+    fireEvent.change(fileInput, { target: { files: [file] } })
+
+    // saveProjectEnhanceLocally fires after FileReader resolves + 800ms debounce.
+    await waitFor(() => expect(api.saveProjectEnhanceLocally).toHaveBeenCalled(), { timeout: 2000 })
+    const callArgs = vi.mocked(api.saveProjectEnhanceLocally).mock.calls[0]
+    // The fourth arg holds extras including screenshotBase64.
+    expect((callArgs[3] as { screenshotBase64?: string } | undefined)?.screenshotBase64)
+      .toMatch(/^data:image\/png;base64,/)
+
+    // Re-fetch fires after save resolves so the rendered preview structurally
+    // updates from `screenshot-placeholder` to a `browser-chrome` image.
+    await waitFor(() => {
+      expect(vi.mocked(api.fetchProjectRender).mock.calls.length).toBeGreaterThan(initialRenderCalls)
+    }, { timeout: 2000 })
+  })
+})
+
+describe('ProjectDetail — Hide dates toggle', () => {
+  beforeEach(() => {
+    vi.mocked(api.saveProjectEnhanceLocally).mockResolvedValue(true)
+  })
+
+  it('reflects existing hideSessionDates from the cache', async () => {
+    renderDetail({
+      enhanceCache: {
+        fingerprint: 'f',
+        enhancedAt: '2026-04-01T00:00:00Z',
+        selectedSessionIds: ['s1'],
+        hideSessionDates: true,
+        result: { tagline: '', narrative: '', arc: [], skills: [], timeline: [], questions: [] },
+        isFresh: true,
+      } as never,
+    })
+    const checkbox = await screen.findByLabelText(/Hide dates in timeline/i) as HTMLInputElement
+    expect(checkbox.checked).toBe(true)
+  })
+
+  it('saves the flag through the debounced metadata save', async () => {
+    renderDetail()
+    const checkbox = await screen.findByLabelText(/Hide dates in timeline/i) as HTMLInputElement
+    expect(checkbox.checked).toBe(false)
+
+    fireEvent.click(checkbox)
+
+    await waitFor(() => expect(api.saveProjectEnhanceLocally).toHaveBeenCalled(), { timeout: 2000 })
+    const callArgs = vi.mocked(api.saveProjectEnhanceLocally).mock.calls[0]
+    expect((callArgs[3] as { hideSessionDates?: boolean } | undefined)?.hideSessionDates).toBe(true)
   })
 })

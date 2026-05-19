@@ -103,6 +103,7 @@ export interface Project {
 // ── Enhance / Cache ───────────────────────────────────────────
 
 export interface ProjectEnhanceResult {
+  tagline: string
   narrative: string
   arc: Array<{ phase: number; title: string; description: string }>
   skills: string[]
@@ -132,6 +133,7 @@ export interface ProjectEnhanceCacheResponse {
   repoUrl?: string
   projectUrl?: string
   screenshotBase64?: string
+  hideSessionDates?: boolean
   result: ProjectEnhanceResult
   isFresh: boolean
 }

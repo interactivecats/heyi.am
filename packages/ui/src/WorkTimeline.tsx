@@ -7,6 +7,14 @@ export interface WorkTimelineProps {
   maxHeight?: number
   accentColor?: string
   isDark?: boolean
+  /**
+   * When true, the chart switches to ordinal mode: no date/time labels,
+   * no "X days gap" markers, and gap segments are removed. Synthetic
+   * ascending timestamps are injected internally so the layout math
+   * (sorting, lane assignment) keeps working without per-helper rewrites.
+   * Tooltips, axis labels, and the legend swap to "Session N" form.
+   */
+  hideDates?: boolean
 }
 
 // ── Colors ───────────────────────────────────────────────────────
@@ -230,11 +238,11 @@ interface TooltipData {
   session: Session
 }
 
-function buildTooltip(s: Session): TooltipData {
+function buildTooltip(s: Session, ordinalLabel?: string): TooltipData {
   const kids = getChildren(s)
   return {
     title: s.title,
-    timestamp: formatTimestamp(s.date),
+    timestamp: ordinalLabel ?? formatTimestamp(s.date),
     duration: formatDuration(s.wallClockMinutes ?? s.durationMinutes),
     linesOfCode: s.linesOfCode,
     agentCount: kids.length,
@@ -282,12 +290,12 @@ function aggregateAgents(kids: Child[]): LegendAgent[] {
 
 interface SessionRange { session: Session; xStart: number; xEnd: number }
 
-function buildLegendEntries(sessionRanges: SessionRange[]): LegendEntry[] {
-  return sessionRanges.map(r => {
+export function buildLegendEntries(sessionRanges: SessionRange[], hideDates?: boolean): LegendEntry[] {
+  return sessionRanges.map((r, i) => {
     const kids = getChildren(r.session)
     return {
       title: r.session.title,
-      timestamp: formatTimestamp(r.session.date),
+      timestamp: hideDates ? `Session ${i + 1}` : formatTimestamp(r.session.date),
       agents: aggregateAgents(kids),
       totalAgents: kids.length,
       xStart: r.xStart,
@@ -353,7 +361,7 @@ function bezierForkJoin(forkX: number, joinX: number, cY: number, laneY: number)
 
 const DEFAULT_MAX_CONCURRENT = 8
 
-function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CONCURRENT, themeColors?: { main: string; muted: string }): Layout {
+function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CONCURRENT, themeColors?: { main: string; muted: string }, hideDates?: boolean): Layout {
   const _mainColor = themeColors?.main ?? MAIN_COLOR
   const _textMuted = themeColors?.muted ?? TEXT_MUTED
   const nodes: LNode[] = []
@@ -364,6 +372,10 @@ function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CON
   const cY = 0
   let minY = 0, maxY = 0
   const threadStart = cx
+  // Running counter so single + concurrent sessions share the same ordinal
+  // sequence in hide-dates mode. Tooltips and label timestamps both read it.
+  let ordinalIdx = 0
+  const nextOrdinal = () => `Session ${++ordinalIdx}`
 
   const bound = (y: number, h: number) => { if (y < minY) minY = y; if (y + h > maxY) maxY = y + h }
 
@@ -386,8 +398,9 @@ function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CON
         ? Math.min(Math.max(dur * PX_PER_MIN, agentMinW), MAX_CONCURRENT_W)
         : Math.min(Math.max(timeToPx(dur), MIN_W), MAX_W)
       const sub = formatDuration(s.durationMinutes)
-      const tooltip = buildTooltip(s)
-      const ts = formatTimestamp(s.date)
+      const ordinal = hideDates ? nextOrdinal() : undefined
+      const tooltip = buildTooltip(s, ordinal)
+      const ts = ordinal ?? formatTimestamp(s.date)
 
       if (kids.length > 0) {
         const visible = kids.slice(0, MAX_AGENTS)
@@ -478,8 +491,9 @@ function layoutSegments(segments: Seg[], maxConcurrent: number = DEFAULT_MAX_CON
         const lane = laneMap.get(s.id) ?? 0
         const trackY = cY + lane * dynamicTrackGap
         const kids = getChildren(s)
-        const tooltip = buildTooltip(s)
-        const ts = formatTimestamp(s.date)
+        const ordinal = hideDates ? nextOrdinal() : undefined
+        const tooltip = buildTooltip(s, ordinal)
+        const ts = ordinal ?? formatTimestamp(s.date)
         const sub = formatDuration(s.durationMinutes)
 
         const sXStart = timeToX(sessionStart(s), rangeStartMs, rangeEndMs, segXStart, segXEnd)
@@ -661,22 +675,46 @@ function Tooltip({ data, pos }: { data: TooltipData; pos: { x: number; y: number
 
 // ── Main Component ───────────────────────────────────────────────
 
-export function WorkTimeline({ sessions, onSessionClick, maxHeight, accentColor, isDark }: WorkTimelineProps) {
+export function WorkTimeline({ sessions, onSessionClick, maxHeight, accentColor, isDark, hideDates }: WorkTimelineProps) {
   const mainColor = accentColor ?? (isDark ? '#f97316' : MAIN_COLOR)
   const threadColor = isDark ? 'rgba(255,255,255,0.15)' : THREAD_COLOR
   const textSecondary = isDark ? 'rgba(255,255,255,0.65)' : TEXT_SECONDARY
   const textMuted = isDark ? 'rgba(255,255,255,0.4)' : TEXT_MUTED
   const bgSurface = isDark ? '#111' : '#f8f9fb'
 
-  const segments = useMemo(() => computeSegments(sessions), [sessions])
+  // In hide-dates mode, inject synthetic monotonic timestamps so the
+  // existing time-based layout (sortedAll, gap detection, lane assignment)
+  // keeps working without a parallel ordinal-only code path. The synthetic
+  // dates are never displayed — labels and tooltips read ordinal strings
+  // built inside `layoutSegments` and `buildLegendEntries`.
+  const effectiveSessions = useMemo(() => {
+    if (!hideDates) return sessions
+    return sessions.map((s, i) => ({
+      ...s,
+      date: s.date ?? new Date(i * 60 * 60_000).toISOString(),
+      // Drop endTime to prevent any chance the renderer derives a real
+      // wall-clock window from it.
+      endTime: undefined,
+      // Strip date from children too — agent lane math falls back to the
+      // parent start when child dates are absent (already handled).
+      children: s.children?.map(c => ({ ...c, date: undefined })),
+    }))
+  }, [sessions, hideDates])
+
+  const segments = useMemo(() => {
+    const segs = computeSegments(effectiveSessions)
+    // Gap segments would render "X days gap" labels — strip them in
+    // hide-dates mode since the visual gap was the leak.
+    return hideDates ? segs.filter(s => s.type !== 'gap') : segs
+  }, [effectiveSessions, hideDates])
   const [expanded, setExpanded] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
   const [playing, setPlaying] = useState(false)
   const playRef = useRef<number | null>(null)
   const concurrentLimit = expanded ? 999 : DEFAULT_MAX_CONCURRENT
   const themeColors = useMemo(() => ({ main: mainColor, muted: textMuted }), [mainColor, textMuted])
-  const L = useMemo(() => layoutSegments(segments, concurrentLimit, themeColors), [segments, concurrentLimit, themeColors])
-  const legendEntries = useMemo(() => buildLegendEntries(L.sessionRanges), [L.sessionRanges])
+  const L = useMemo(() => layoutSegments(segments, concurrentLimit, themeColors, hideDates), [segments, concurrentLimit, themeColors, hideDates])
+  const legendEntries = useMemo(() => buildLegendEntries(L.sessionRanges, hideDates), [L.sessionRanges, hideDates])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const [hovered, setHovered] = useState<{ tooltip: TooltipData; pos: Pos } | null>(null)

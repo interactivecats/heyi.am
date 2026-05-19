@@ -88,12 +88,12 @@
           <h3 class="project-card-title">{{ p.title }}</h3>
           <span class="project-card-arrow" aria-hidden="true">&rarr;</span>
         </div>
-        {% if p.narrative %}
-        <p class="project-card-narrative">{{ p.narrative }}</p>
+        {% if p.tagline != blank %}
+        <p class="project-card-narrative">{{ p.tagline }}</p>
         {% endif %}
-        {% if p.skills.size > 0 %}
+        {% if p.profileSkills.size > 0 %}
         <div class="project-card-skills">
-          {% for skill in p.skills %}
+          {% for skill in p.profileSkills %}
           <span class="skill-chip">{{ skill }}</span>
           {% endfor %}
         </div>

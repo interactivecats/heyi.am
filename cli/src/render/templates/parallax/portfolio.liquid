@@ -137,12 +137,12 @@
           {% for p in projects %}
           <a href="/{{ user.username }}/{{ p.slug }}" class="project-card reveal" data-float="0.08">
             <h3 class="project-card__name">{{ p.title }}</h3>
-            {% if p.narrative != blank %}
-            <p class="project-card__narrative">{{ p.narrative }}</p>
+            {% if p.tagline != blank %}
+            <p class="project-card__narrative">{{ p.tagline }}</p>
             {% endif %}
-            {% if p.skills.size > 0 %}
+            {% if p.profileSkills.size > 0 %}
             <div class="project-card__skills">
-              {% for skill in p.skills %}
+              {% for skill in p.profileSkills %}
               <span class="skill-chip">{{ skill }}</span>
               {% endfor %}
             </div>

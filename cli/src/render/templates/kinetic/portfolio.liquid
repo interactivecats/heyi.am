@@ -107,12 +107,12 @@
               <span class="project-stat-label">Lines changed</span>
             </div>
           </div>
-          {% if p.narrative %}
-          <div class="narrative-card">{{ p.narrative }}</div>
+          {% if p.tagline != blank %}
+          <div class="narrative-card">{{ p.tagline }}</div>
           {% endif %}
-          {% if p.skills.size > 0 %}
+          {% if p.profileSkills.size > 0 %}
           <div class="chips">
-            {% for skill in p.skills %}
+            {% for skill in p.profileSkills %}
             <span>{{ skill }}</span>
             {% endfor %}
           </div>

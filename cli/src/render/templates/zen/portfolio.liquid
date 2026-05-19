@@ -71,15 +71,15 @@
         <h3 class="zen-project-title">
           <a href="/{{ user.username }}/{{ p.slug }}">{{ p.title }}</a>
         </h3>
-        {% if p.narrative != blank %}
-        <p class="zen-project-narrative">{{ p.narrative }}</p>
+        {% if p.tagline != blank %}
+        <p class="zen-project-narrative">{{ p.tagline }}</p>
         {% endif %}
         <p class="zen-project-meta">
           {{ p.totalSessions }} sessions &middot; {{ p.totalDurationMinutes | formatDuration }} &middot; {{ p.totalLoc | localeNumber }} lines changed
         </p>
-        {% if p.skills.size > 0 %}
+        {% if p.profileSkills.size > 0 %}
         <p class="zen-project-skills">
-          {{ p.skills | join: ", " }}
+          {{ p.profileSkills | join: ", " }}
         </p>
         {% endif %}
         {% if p.sourceCounts.size > 0 %}

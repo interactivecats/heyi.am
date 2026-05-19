@@ -82,13 +82,13 @@
       <a class="portfolio-card" href="/{{ user.username }}/{{ p.slug }}">
         <div class="portfolio-card__bar portfolio-card__bar--cyan"></div>
         <div class="portfolio-card__title">{{ p.title }}</div>
-        {% if p.narrative != blank %}
-        <div class="portfolio-card__desc">{{ p.narrative }}</div>
+        {% if p.tagline != blank %}
+        <div class="portfolio-card__desc">{{ p.tagline }}</div>
         {% endif %}
         <div class="portfolio-card__meta">{{ p.totalSessions }} sessions &middot; {{ p.totalDurationMinutes | formatDuration }} &middot; {{ p.totalLoc | formatLoc }} LOC</div>
-        {% if p.skills.size > 0 %}
+        {% if p.profileSkills.size > 0 %}
         <div class="portfolio-card__skills">
-          {% for skill in p.skills %}
+          {% for skill in p.profileSkills %}
           <span class="chip">{{ skill }}</span>
           {% endfor %}
         </div>

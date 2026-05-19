@@ -92,15 +92,15 @@
           <h3 class="dl-project-title">
             <a href="/{{ user.username }}/{{ p.slug }}">{{ p.title }}</a>
           </h3>
-          {% if p.narrative %}
-          <p class="dl-project-narrative">{{ p.narrative }}</p>
+          {% if p.tagline != blank %}
+          <p class="dl-project-narrative">{{ p.tagline }}</p>
           {% endif %}
           <p class="dl-project-meta">
             {{ p.totalSessions }} session{% if p.totalSessions != 1 %}s{% endif %} &middot; {{ p.totalDurationMinutes | formatDuration }} &middot; {{ p.totalLoc | localeNumber }} LOC
           </p>
-          {% if p.skills.size > 0 %}
+          {% if p.profileSkills.size > 0 %}
           <div class="dl-project-skills">
-            {% for skill in p.skills %}
+            {% for skill in p.profileSkills %}
             <span class="dl-skill-chip">{{ skill }}</span>
             {% endfor %}
           </div>

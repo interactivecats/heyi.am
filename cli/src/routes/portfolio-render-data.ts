@@ -3,6 +3,7 @@ import { getSessionsByProject, getAllProjectStats } from '../db.js';
 import { displayNameFromDir } from '../sync.js';
 import { toSlug } from '../format-utils.js';
 import type { PortfolioRenderData, PortfolioProject } from '../render/types.js';
+import { selectProfileSkills } from '../render/select-profile-skills.js';
 import type { RouteContext, ProjectInfo } from './context.js';
 
 export interface BuildPortfolioRenderDataResult {
@@ -81,16 +82,25 @@ export async function buildPortfolioRenderData(
           durationMinutes: s.duration_minutes || 0,
         }));
 
+      const projectSkills = cached?.result?.skills || (proj.skills as string[]) || [];
+      const sessionSkills = dbSessions
+        .filter((s) => !s.is_subagent && s.skills)
+        .map((s) => {
+          try { return JSON.parse(s.skills!) as string[]; } catch { return []; }
+        });
+
       portfolioProjects.push({
         slug: toSlug(title),
         title,
+        tagline: cached?.result?.tagline || '',
         narrative: cached?.result?.narrative || (proj.description as string) || '',
         totalSessions: projSessions,
         totalLoc: projLoc,
         totalDurationMinutes: projDuration,
         totalAgentDurationMinutes: projAgentDuration,
         totalFilesChanged: (proj.totalFiles as number) || 0,
-        skills: cached?.result?.skills || (proj.skills as string[]) || [],
+        skills: projectSkills,
+        profileSkills: selectProfileSkills({ projectSkills, sessionSkills }),
         publishedCount: 0,
         sessions: sessionActivity,
       });

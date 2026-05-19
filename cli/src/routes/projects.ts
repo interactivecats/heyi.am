@@ -241,7 +241,14 @@ export function createProjectsRouter(ctx: RouteContext): Router {
         selectedSessionIds,
         cache.result,
         undefined,
-        { title: cache.title, repoUrl: cache.repoUrl, projectUrl: cache.projectUrl, screenshotBase64: cache.screenshotBase64 },
+        {
+          title: cache.title,
+          repoUrl: cache.repoUrl,
+          projectUrl: cache.projectUrl,
+          screenshotBase64: cache.screenshotBase64,
+          template: cache.template,
+          hideSessionDates: cache.hideSessionDates,
+        },
       );
       invalidatePortfolioPreviewCache();
 

@@ -345,6 +345,7 @@ export async function exportHtml(
     sessionCards,
     sessionBaseUrl: './sessions',
     sessionSuffix: '.html',
+    hideSessionDates: cache.hideSessionDates,
   });
 
   const templateName = resolveTemplate(undefined, getDefaultTemplate());
@@ -486,6 +487,7 @@ export function generateProjectHtmlFragment(
     sessionCards,
     sessionBaseUrl: `/${username}/${slug}`,
     sessionSuffix: '',
+    hideSessionDates: cache.hideSessionDates,
   });
 
   const templateName = resolveTemplate(undefined, getDefaultTemplate());
@@ -522,6 +524,7 @@ export function generateHtmlFiles(
     sessionCards,
     sessionBaseUrl: './sessions',
     sessionSuffix: '.html',
+    hideSessionDates: cache.hideSessionDates,
   });
 
   const projectBody = renderProjectHtml(projectRenderData, {

@@ -32,6 +32,9 @@ export interface ProjectQuestion {
 }
 
 export interface ProjectEnhanceResult {
+  /** First-person 1-2 sentence "I built X" blurb for the portfolio card. */
+  tagline: string;
+  /** Third-person 2-4 sentence project description for the detail page. */
   narrative: string;
   arc: Array<{
     phase: number;
@@ -62,11 +65,12 @@ interface RefinedNarrative {
 const PROJECT_ENHANCE_SYSTEM = `You are building a project narrative from multiple coding sessions for a developer portfolio on heyi.am.
 
 Your job:
-1. Synthesize a 2-3 sentence project description that captures what was built and why it matters. Write in third person about the project, not the developer. No fluff — every word earns its place.
-2. Identify 4-7 project phases (the "arc") that show how the project evolved. Each phase should have a short title and one-sentence description.
-3. Deduplicate and rank skills across all sessions.
-4. Group sessions into timeline periods (e.g., "Week 1", "Days 1-3") with labels describing what happened in each period. Mark featured sessions (the most interesting ones) vs background sessions.
-5. Generate 2-3 context-aware questions based on patterns you detect in the sessions (see instructions below).
+1. Write a tagline: 1-2 sentences, first-person, starting with "I built". State what the thing IS and the one thing that makes it interesting. Example voice: "I built a better NVR system that's simple and intuitive." / "I built a proof of work for the AI space." Not a pitch, not marketing — how a developer describes what they made when asked at a bar. No fluff words (leverage, robust, comprehensive, cutting-edge, seamless, innovative). If you can't name what it IS in concrete terms, the tagline is wrong.
+2. Synthesize a 2-3 sentence project description that captures what was built and why it matters. Write in third person about the project, not the developer. No fluff — every word earns its place.
+3. Identify 4-7 project phases (the "arc") that show how the project evolved. Each phase should have a short title and one-sentence description.
+4. Deduplicate and rank skills across all sessions.
+5. Group sessions into timeline periods (e.g., "Week 1", "Days 1-3") with labels describing what happened in each period. Mark featured sessions (the most interesting ones) vs background sessions.
+6. Generate 2-3 context-aware questions based on patterns you detect in the sessions (see instructions below).
 
 For questions, look for these signals and generate questions that reference specific data:
 - High correction counts → ask about override strategy, referencing the count
@@ -82,6 +86,7 @@ Each question must have:
 
 Return valid JSON matching this exact structure:
 {
+  "tagline": "I built a ... — 1-2 sentences, first-person, concrete, no fluff",
   "narrative": "2-3 sentence project description",
   "arc": [{ "phase": 1, "title": "...", "description": "..." }],
   "skills": ["skill1", "skill2"],
@@ -252,6 +257,11 @@ export async function enhanceProject(
   // Validate required fields
   if (!result.narrative || !Array.isArray(result.arc) || !Array.isArray(result.skills)) {
     throw new Error('LLM returned incomplete project enhance result');
+  }
+
+  // Tagline is new; tolerate legacy cache entries by defaulting to empty string.
+  if (typeof result.tagline !== 'string') {
+    result.tagline = '';
   }
 
   // Ensure questions have IDs

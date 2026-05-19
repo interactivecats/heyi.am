@@ -103,7 +103,7 @@
   <section class="radar-section" aria-label="Work timeline">
     <div class="radar-label">Work Timeline</div>
     <div class="chart-card">
-      <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+      <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'{% if hideSessionDates %} data-hide-dates="1"{% endif %}></div>
     </div>
   </section>
   {% endif %}

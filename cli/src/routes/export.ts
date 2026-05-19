@@ -57,6 +57,7 @@ function buildFallbackCache(sessions: Session[]): ProjectEnhanceCache {
     enhancedAt: new Date().toISOString(),
     selectedSessionIds: allIds,
     result: {
+      tagline: '',
       narrative: '',
       arc: [],
       skills: allSkills,

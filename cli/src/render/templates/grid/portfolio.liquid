@@ -151,17 +151,17 @@
           <h2 class="project-title">{{ p.title }}</h2>
           <svg class="project-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
         </div>
-        {% if p.narrative %}
-        <p class="project-narrative">{{ p.narrative | truncate: 120 }}</p>
+        {% if p.tagline != blank %}
+        <p class="project-narrative">{{ p.tagline }}</p>
         {% endif %}
         <div class="project-meta">
           <span class="project-meta-item"><strong>{{ p.totalSessions }}</strong> sessions</span>
           <span class="project-meta-item"><strong>{{ p.totalDurationMinutes | formatDuration }}</strong></span>
           <span class="project-meta-item"><strong>{{ p.totalLoc | formatLoc }}</strong> LOC</span>
         </div>
-        {% if p.skills.size > 0 %}
+        {% if p.profileSkills.size > 0 %}
         <div class="project-skills">
-          {% for skill in p.skills %}
+          {% for skill in p.profileSkills %}
           <span class="skill-chip chip">{{ skill }}</span>
           {% endfor %}
         </div>

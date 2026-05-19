@@ -11,7 +11,7 @@ import {
 } from '../settings.js';
 import { requireProject, type RouteContext } from './context.js';
 import { startSSE } from './sse.js';
-import { invalidatePortfolioPreviewCache } from './preview.js';
+import { invalidatePortfolioPreviewCache, invalidateProjectPreviewCache } from './preview.js';
 
 export function createEnhanceRouter(ctx: RouteContext): Router {
   const router = Router();
@@ -308,13 +308,18 @@ export function createEnhanceRouter(ctx: RouteContext): Router {
   // Save project enhance result explicitly
   router.post('/api/projects/:project/enhance-save', async (req: Request, res: Response) => {
     const project = String(req.params.project);
-    const { selectedSessionIds, result, title, repoUrl, projectUrl, screenshotBase64 } = req.body as {
+    // FIXME(security): screenshotBase64 is accepted with no size cap and no
+    // `data:image/(png|jpeg|jpg|webp);base64,...` shape check. Local-only CLI
+    // so not a privilege issue today, but worth a regex + ~4 MB cap for
+    // defense-in-depth and to keep the cache JSON from ballooning.
+    const { selectedSessionIds, result, title, repoUrl, projectUrl, screenshotBase64, hideSessionDates } = req.body as {
       selectedSessionIds: string[];
       result: ProjectEnhanceResult;
       title?: string;
       repoUrl?: string;
       projectUrl?: string;
       screenshotBase64?: string;
+      hideSessionDates?: boolean;
     };
 
     if (!Array.isArray(selectedSessionIds) || !result?.narrative) {
@@ -331,9 +336,12 @@ export function createEnhanceRouter(ctx: RouteContext): Router {
       const proj = await requireProject(ctx, project, res);
       if (!proj) return;
 
-      saveProjectEnhanceResult(proj.dirName, selectedSessionIds, result, undefined, { title, repoUrl, projectUrl, screenshotBase64 });
+      saveProjectEnhanceResult(proj.dirName, selectedSessionIds, result, undefined, { title, repoUrl, projectUrl, screenshotBase64, hideSessionDates });
       // Project title/narrative/skills appear in portfolio listing — bust cache.
       invalidatePortfolioPreviewCache();
+      // Per-project render cache is keyed by the URL param the client passed.
+      invalidateProjectPreviewCache(project);
+      invalidateProjectPreviewCache(proj.dirName);
       res.json({ saved: true, enhancedAt: new Date().toISOString() });
     } catch (err) {
       res.status(500).json({ error: { code: 'SAVE_FAILED', message: (err as Error).message } });

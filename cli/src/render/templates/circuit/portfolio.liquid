@@ -126,17 +126,17 @@
         <div class="project-card-header">
           <h3><a href="/{{ user.username }}/{{ p.slug }}">{{ p.title }}</a></h3>
         </div>
-        {% if p.narrative %}
-        <p class="project-card-narrative">{{ p.narrative }}</p>
+        {% if p.tagline != blank %}
+        <p class="project-card-narrative">{{ p.tagline }}</p>
         {% endif %}
         <div class="project-card-stats">
           <span><span class="val">{{ p.totalSessions }}</span> sessions</span>
           <span><span class="val">{{ p.totalDurationMinutes | formatDuration }}</span></span>
           <span><span class="val">{{ p.totalLoc | formatLoc }}</span> LOC</span>
         </div>
-        {% if p.skills.size > 0 %}
+        {% if p.profileSkills.size > 0 %}
         <div class="skill-pins">
-          {% for skill in p.skills %}
+          {% for skill in p.profileSkills %}
           <span class="skill-pin">{{ skill }}</span>
           {% endfor %}
         </div>

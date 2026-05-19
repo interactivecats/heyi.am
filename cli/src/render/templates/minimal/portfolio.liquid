@@ -52,9 +52,9 @@
         <li class="mn-project-item">
           <a href="/{{ user.username }}/{{ p.slug }}" class="mn-project-link">{{ p.title }}</a>
           <span class="mn-meta">{{ p.totalSessions }} sessions &middot; {{ p.totalDurationMinutes | formatDuration }} &middot; {{ p.totalLoc | formatLoc }} lines</span>
-          {% if p.narrative != blank %}<span class="mn-meta">{{ p.narrative | truncate: 120 }}</span>{% endif %}
-          {% if p.skills.size > 0 %}
-          <span class="mn-meta mn-skill-line">{% for skill in p.skills %}{{ skill }}{% unless forloop.last %}, {% endunless %}{% endfor %}</span>
+          {% if p.tagline != blank %}<span class="mn-meta">{{ p.tagline }}</span>{% endif %}
+          {% if p.profileSkills.size > 0 %}
+          <span class="mn-meta mn-skill-line">{% for skill in p.profileSkills %}{{ skill }}{% unless forloop.last %}, {% endunless %}{% endfor %}</span>
           {% endif %}
         </li>
         {% endfor %}

@@ -8,6 +8,7 @@ import {
   loadEnhancedData,
   saveEnhancedData,
 } from '../settings.js';
+import { toSlug } from '../format-utils.js';
 import type { RouteContext } from './context.js';
 
 /**
@@ -170,8 +171,24 @@ export function createDeleteRouter(_ctx: RouteContext): Router {
       }
 
       try {
+        // Phoenix DELETE /api/sessions/:id expects an integer share ID,
+        // which the CLI never has — POST /api/sessions returns a token,
+        // not the DB row id. So we send the Claude UUID in the path
+        // (Phoenix accepts it as an opaque marker) and the real lookup
+        // key — (project_id, slug) — in query params. The server resolves
+        // by (project_id, slug) when the path :id isn't a valid integer.
+        const uploadedState = getUploadedState(project);
+        const enhanced = loadEnhancedData(sessionId);
+        const slug = toSlug(enhanced?.title ?? sessionId, 80);
+        const serverProjectId = uploadedState?.projectId;
+
+        const query = new URLSearchParams();
+        if (serverProjectId !== undefined) query.set('project_id', String(serverProjectId));
+        if (slug) query.set('slug', slug);
+        const qs = query.toString();
+
         const phoenixRes = await fetch(
-          `${API_URL}/api/sessions/${encodeURIComponent(sessionId)}`,
+          `${API_URL}/api/sessions/${encodeURIComponent(sessionId)}${qs ? `?${qs}` : ''}`,
           {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${auth.token}` },

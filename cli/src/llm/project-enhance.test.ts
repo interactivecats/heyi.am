@@ -44,6 +44,7 @@ function makeSessionSummary(overrides: Partial<SessionSummary> = {}): SessionSum
 }
 
 const VALID_ENHANCE_RESULT: ProjectEnhanceResult = {
+  tagline: 'I built a developer identity platform from scratch so portfolios could show how I actually think.',
   narrative: 'A developer identity platform built from scratch with portfolio rendering.',
   arc: [
     { phase: 1, title: 'Foundation', description: 'CLI parser pipeline' },

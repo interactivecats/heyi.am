@@ -16,6 +16,7 @@ import {
   deleteSession,
   rebuildIndex,
   isSessionStale,
+  updateSessionPath,
   searchFts,
   searchByFile,
   getSessionCount,
@@ -129,7 +130,7 @@ describe('db', () => {
   describe('openDatabase', () => {
     it('creates schema_version table with current version', () => {
       const row = db.prepare('SELECT version FROM schema_version').get() as { version: number };
-      expect(row.version).toBe(5);
+      expect(row.version).toBe(6);
     });
 
     it('creates sessions table', () => {
@@ -156,7 +157,7 @@ describe('db', () => {
     it('is idempotent — opening twice does not error', () => {
       const db2 = openDatabase(join(tmpDir, 'test.db'));
       const row = db2.prepare('SELECT version FROM schema_version').get() as { version: number };
-      expect(row.version).toBe(5);
+      expect(row.version).toBe(6);
       db2.close();
     });
   });
@@ -469,6 +470,87 @@ describe('db', () => {
       }));
 
       expect(isSessionStale(db, 'test-session-1', filePath)).toBe(true);
+    });
+
+    it('returns true when file_path differs (Claude Code relocated the file)', () => {
+      const originalPath = join(tmpDir, 'old.jsonl');
+      const newPath = join(tmpDir, 'new.jsonl');
+      writeFileSync(originalPath, '{"test": true}\n');
+      writeFileSync(newPath, '{"test": true}\n');
+      const { mtimeMs, size } = require('node:fs').statSync(newPath);
+
+      upsertSession(db, makeUpsertInput({
+        meta: makeMeta({ path: originalPath }),
+        fileMtime: mtimeMs,
+        fileSize: size,
+      }));
+
+      // Same mtime/size but the path the watcher saw is different — must re-index.
+      expect(isSessionStale(db, 'test-session-1', newPath)).toBe(true);
+    });
+  });
+
+  describe('updateSessionPath', () => {
+    it('updates file_path and re-derives project_dir from the new path', () => {
+      upsertSession(db, makeUpsertInput({
+        meta: makeMeta({ projectDir: '-Users-me-Dev-experiments' }),
+      }));
+
+      const newPath = '/Users/me/.claude/projects/-Users-me-Dev-experiments-boring-ops/test-session-1.jsonl';
+      updateSessionPath(db, 'test-session-1', newPath);
+
+      const row = getSessionRow(db, 'test-session-1');
+      expect(row!.file_path).toBe(newPath);
+      expect(row!.project_dir).toBe('-Users-me-Dev-experiments-boring-ops');
+    });
+
+    it('re-derives project_dir correctly for subagent paths', () => {
+      // Insert parent first (subagent rows have a FK to it).
+      upsertSession(db, makeUpsertInput({
+        meta: makeMeta({ sessionId: 'parent-id' }),
+        session: makeSession({ id: 'parent-id' }),
+      }));
+      upsertSession(db, makeUpsertInput({
+        meta: makeMeta({
+          sessionId: 'sub-1',
+          projectDir: '-Users-me-Dev-experiments',
+          isSubagent: true,
+          parentSessionId: 'parent-id',
+        }),
+        session: makeSession({ id: 'sub-1' }),
+      }));
+
+      const newPath = '/Users/me/.claude/projects/-Users-me-Dev-experiments-boring-ops/parent-id/subagents/sub-1.jsonl';
+      updateSessionPath(db, 'sub-1', newPath);
+
+      const row = getSessionRow(db, 'sub-1');
+      expect(row!.project_dir).toBe('-Users-me-Dev-experiments-boring-ops');
+    });
+
+    it('is a no-op for unknown sessionId', () => {
+      expect(() => updateSessionPath(db, 'does-not-exist', '/whatever.jsonl')).not.toThrow();
+    });
+  });
+
+  describe('migrateToV6 (project_dir repair)', () => {
+    it('repairs rows where project_dir disagrees with dirname(file_path)', () => {
+      // Insert a row with a deliberately-stale project_dir, then re-open the DB
+      // at a lower schema version to force the v6 migration to run.
+      upsertSession(db, makeUpsertInput({
+        meta: makeMeta({ projectDir: '-Users-me-Dev-experiments' }),
+      }));
+      db.prepare('UPDATE sessions SET file_path = ? WHERE id = ?').run(
+        '/Users/me/.claude/projects/-Users-me-Dev-experiments-boring-ops/test-session-1.jsonl',
+        'test-session-1',
+      );
+      db.prepare('UPDATE schema_version SET version = ?').run(5);
+      db.close();
+
+      // Re-open: v6 migration should heal the row. Reassign `db` so afterEach
+      // closes the right handle.
+      db = openDatabase(join(tmpDir, 'test.db'));
+      const row = getSessionRow(db, 'test-session-1');
+      expect(row!.project_dir).toBe('-Users-me-Dev-experiments-boring-ops');
     });
   });
 

@@ -126,6 +126,7 @@ interface BuildProjectRenderOpts {
   allSessionCards?: SessionCard[];
   sessionBaseUrl?: string;
   sessionSuffix?: string;
+  hideSessionDates?: boolean;
 }
 
 /**
@@ -155,5 +156,6 @@ export function buildProjectRenderData(opts: BuildProjectRenderOpts): ProjectRen
     allSessions: opts.allSessionCards,
     sessionBaseUrl: opts.sessionBaseUrl,
     sessionSuffix: opts.sessionSuffix,
+    ...(opts.hideSessionDates ? { hideSessionDates: true } : {}),
   };
 }

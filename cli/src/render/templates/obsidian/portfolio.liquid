@@ -96,12 +96,12 @@
               <span>{{ p.totalLoc | formatLoc }} LOC</span>
             </div>
           </div>
-          {% if p.narrative != blank %}
-          <p class="project-narrative">{{ p.narrative | truncate: 120 }}</p>
+          {% if p.tagline != blank %}
+          <p class="project-narrative">{{ p.tagline }}</p>
           {% endif %}
-          {% if p.skills.size > 0 %}
+          {% if p.profileSkills.size > 0 %}
           <div class="project-skills">
-            {% for skill in p.skills %}
+            {% for skill in p.profileSkills %}
             <span class="skill-tag chip">{{ skill }}</span>
             {% endfor %}
           </div>

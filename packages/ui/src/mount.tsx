@@ -52,6 +52,10 @@ function detectTheme(): { isDark: boolean; accentColor?: string } {
 // Global session map + overlay state
 let allSessions: Map<string, Session> = new Map();
 let showOverlay: ((session: Session) => void) | null = null;
+// Set when any work-timeline mount is in hide-dates mode. Per-page (and
+// per-project, since pages render one project at a time) so the overlay
+// can match the chart's behavior without re-reading attributes.
+let pageHideDates = false;
 
 /**
  * Overlay root — mounted once, controlled via showOverlay callback.
@@ -94,6 +98,7 @@ function OverlayRoot() {
     <SessionOverlay
       session={active}
       sessionPageUrl={sessionPageUrl}
+      hideDates={pageHideDates}
       onClose={() => setActive(null)}
     />
   );
@@ -109,6 +114,8 @@ export function mountVisualizations(): void {
   document.querySelectorAll<HTMLElement>('[data-work-timeline]').forEach((el) => {
     const sessions = parseSessions(el);
     if (sessions.length === 0) return;
+    const hideDates = el.dataset.hideDates === '1';
+    if (hideDates) pageHideDates = true;
     // Register all sessions
     for (const s of sessions) allSessions.set(s.id, s);
     createRoot(el).render(
@@ -117,6 +124,7 @@ export function mountVisualizations(): void {
         maxHeight: 300,
         isDark,
         accentColor,
+        hideDates,
         onSessionClick: (session: Session) => {
           if (showOverlay) showOverlay(session);
         },

@@ -41,13 +41,19 @@ export interface PortfolioUser extends UserInfo {
 export interface PortfolioProject {
   slug: string;
   title: string;
+  /** First-person "I built X" blurb for portfolio cards. Empty until enhanced. */
+  tagline: string;
+  /** Third-person project description for the detail page. */
   narrative: string;
   totalSessions: number;
   totalLoc: number;
   totalDurationMinutes: number;
   totalAgentDurationMinutes?: number;
   totalFilesChanged: number;
+  /** Full skill list — shown on the project detail page. */
   skills: string[];
+  /** Capped, ranked skills for the portfolio card. See select-profile-skills.ts. */
+  profileSkills: string[];
   sourceCounts?: Array<{ tool: string; count: number }>;
   publishedCount: number;
   /** Lightweight session records for activity charts */
@@ -119,6 +125,13 @@ export interface ProjectRenderData {
   sessionBaseUrl?: string;
   /** Suffix appended to session links (e.g. ".html" for static export). */
   sessionSuffix?: string;
+  /**
+   * When true, the work-timeline chart, the inline session overlay, and any
+   * date columns in template-rendered tables show ordinal labels
+   * ("Session 1, 2, 3…") instead of dates. Driven by per-project
+   * `ProjectEnhanceCache.hideSessionDates`.
+   */
+  hideSessionDates?: boolean;
 }
 
 export interface Beat {

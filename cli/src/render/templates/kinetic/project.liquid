@@ -107,7 +107,7 @@
     <div class="section-tag">Agent work</div>
     <h2 class="section-title">Work timeline</h2>
     <div class="timeline-container">
-      <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'></div>
+      <div data-work-timeline data-sessions='{{ sessionsJson | raw }}'{% if hideSessionDates %} data-hide-dates="1"{% endif %}></div>
     </div>
   </section>
   {% endif %}

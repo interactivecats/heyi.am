@@ -12,7 +12,7 @@ vi.mock("./parsers/index.js", async (importOriginal) => {
   };
 });
 
-import { archiveSessionFiles } from "./archive.js";
+import { archiveSessionFiles, findReadableSessionPath, resolveArchivePath } from "./archive.js";
 import { parseSession } from "./parsers/index.js";
 import type { SessionMeta } from "./parsers/index.js";
 
@@ -287,5 +287,46 @@ describe("archiveSessionFiles", () => {
     const result = await archiveSessionFiles(sessions, configDir);
     expect(result.archived).toBe(0);
     expect(result.alreadyArchived).toBe(0);
+  });
+});
+
+describe("findReadableSessionPath", () => {
+  it("returns the original path when the source file still exists", async () => {
+    const sourcePath = join(sourceDir, "live.jsonl");
+    await writeFile(sourcePath, makeJsonl());
+
+    const sessions: SessionMeta[] = [
+      makeSession({ path: sourcePath, sessionId: "live" }),
+    ];
+    await archiveSessionFiles(sessions, tmpDir);
+
+    const resolved = await findReadableSessionPath(sourcePath, "-Users-test-Dev-myproject", tmpDir);
+    expect(resolved).toBe(sourcePath);
+  });
+
+  it("falls back to the archive copy when the source file is deleted", async () => {
+    // Simulate Claude Code's 30-day cleanup: live path lives under a
+    // project-dir-shaped folder, then we delete the live copy.
+    const claudeLiveDir = join(sourceDir, "-Users-test-Dev-myproject");
+    await mkdir(claudeLiveDir, { recursive: true });
+    const livePath = join(claudeLiveDir, "deleted.jsonl");
+    await writeFile(livePath, makeJsonl());
+
+    const sessions: SessionMeta[] = [
+      makeSession({ path: livePath, sessionId: "deleted" }),
+    ];
+    await archiveSessionFiles(sessions, tmpDir);
+    await rm(livePath);
+
+    const resolved = await findReadableSessionPath(livePath, "-Users-test-Dev-myproject", tmpDir);
+    expect(resolved).toBe(resolveArchivePath(livePath, "-Users-test-Dev-myproject", tmpDir));
+    expect(resolved).not.toBeNull();
+    await stat(resolved!); // archive copy is readable
+  });
+
+  it("returns null when neither the source nor the archive exists", async () => {
+    const phantom = join(sourceDir, "-Users-test-Dev-myproject", "never-existed.jsonl");
+    const resolved = await findReadableSessionPath(phantom, "-Users-test-Dev-myproject", tmpDir);
+    expect(resolved).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeSegments, formatTimestamp, timeToPx, assignLanes, timeToX } from './WorkTimeline';
+import { computeSegments, formatTimestamp, timeToPx, assignLanes, timeToX, buildLegendEntries } from './WorkTimeline';
 import type { Session } from './types';
 
 function makeSession(overrides: Partial<Session> & { id: string; title: string }): Session {
@@ -235,6 +235,30 @@ describe('assignLanes', () => {
     const lanes = assignLanes([s1, s2]);
     expect(lanes.get('early')).toBe(0);
     expect(lanes.get('late')).toBe(0);
+  });
+});
+
+describe('buildLegendEntries hideDates', () => {
+  const baseSession = makeSession({ id: '1', title: 'My Session', date: '2026-03-01T10:00:00Z' });
+  const ranges = [{ session: baseSession, xStart: 0, xEnd: 200 }];
+
+  it('renders date-based timestamp when hideDates is off', () => {
+    const [entry] = buildLegendEntries(ranges);
+    expect(entry.timestamp).toMatch(/Mar 1/);
+  });
+
+  it('replaces timestamp with ordinal label when hideDates is on', () => {
+    const [entry] = buildLegendEntries(ranges, true);
+    expect(entry.timestamp).toBe('Session 1');
+  });
+
+  it('numbers ordinals sequentially when multiple sessions are present', () => {
+    const s2 = makeSession({ id: '2', title: 'Second', date: '2026-03-02T10:00:00Z' });
+    const entries = buildLegendEntries([
+      { session: baseSession, xStart: 0, xEnd: 200 },
+      { session: s2, xStart: 220, xEnd: 420 },
+    ], true);
+    expect(entries.map(e => e.timestamp)).toEqual(['Session 1', 'Session 2']);
   });
 });
 

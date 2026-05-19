@@ -21929,11 +21929,11 @@
     withTime.forEach((c, i) => laneMap.set(c.id, i));
     return { laneMap, laneCount: withTime.length };
   }
-  function buildTooltip(s) {
+  function buildTooltip(s, ordinalLabel) {
     const kids = getChildren(s);
     return {
       title: s.title,
-      timestamp: formatTimestamp(s.date),
+      timestamp: ordinalLabel ?? formatTimestamp(s.date),
       duration: formatDuration(s.wallClockMinutes ?? s.durationMinutes),
       linesOfCode: s.linesOfCode,
       agentCount: kids.length,
@@ -21961,12 +21961,12 @@
       count
     }));
   }
-  function buildLegendEntries(sessionRanges) {
-    return sessionRanges.map((r) => {
+  function buildLegendEntries(sessionRanges, hideDates) {
+    return sessionRanges.map((r, i) => {
       const kids = getChildren(r.session);
       return {
         title: r.session.title,
-        timestamp: formatTimestamp(r.session.date),
+        timestamp: hideDates ? `Session ${i + 1}` : formatTimestamp(r.session.date),
         agents: aggregateAgents(kids),
         totalAgents: kids.length,
         xStart: r.xStart,
@@ -22003,7 +22003,7 @@
     ].join(" ");
   }
   var DEFAULT_MAX_CONCURRENT = 8;
-  function layoutSegments(segments, maxConcurrent = DEFAULT_MAX_CONCURRENT, themeColors) {
+  function layoutSegments(segments, maxConcurrent = DEFAULT_MAX_CONCURRENT, themeColors, hideDates) {
     const _mainColor = themeColors?.main ?? MAIN_COLOR;
     const _textMuted = themeColors?.muted ?? TEXT_MUTED;
     const nodes = [];
@@ -22014,6 +22014,8 @@
     const cY = 0;
     let minY = 0, maxY = 0;
     const threadStart = cx;
+    let ordinalIdx = 0;
+    const nextOrdinal = () => `Session ${++ordinalIdx}`;
     const bound = (y, h) => {
       if (y < minY) minY = y;
       if (y + h > maxY) maxY = y + h;
@@ -22034,8 +22036,9 @@
         const agentMinW = kids.length > 0 ? Math.max(MIN_W, kids.length * 30 + 100) : MIN_W;
         const w = kids.length > 0 ? Math.min(Math.max(dur * PX_PER_MIN, agentMinW), MAX_CONCURRENT_W) : Math.min(Math.max(timeToPx(dur), MIN_W), MAX_W);
         const sub = formatDuration(s.durationMinutes);
-        const tooltip = buildTooltip(s);
-        const ts = formatTimestamp(s.date);
+        const ordinal = hideDates ? nextOrdinal() : void 0;
+        const tooltip = buildTooltip(s, ordinal);
+        const ts = ordinal ?? formatTimestamp(s.date);
         if (kids.length > 0) {
           const visible = kids.slice(0, MAX_AGENTS);
           const parentStartMs = sessionStart(s);
@@ -22108,8 +22111,9 @@
           const lane = laneMap.get(s.id) ?? 0;
           const trackY = cY + lane * dynamicTrackGap;
           const kids = getChildren(s);
-          const tooltip = buildTooltip(s);
-          const ts = formatTimestamp(s.date);
+          const ordinal = hideDates ? nextOrdinal() : void 0;
+          const tooltip = buildTooltip(s, ordinal);
+          const ts = ordinal ?? formatTimestamp(s.date);
           const sub = formatDuration(s.durationMinutes);
           const sXStart = timeToX(sessionStart(s), rangeStartMs, rangeEndMs, segXStart, segXEnd);
           const barW = Math.min(Math.max(s.durationMinutes * PX_PER_MIN, 20), segXEnd - sXStart);
@@ -22283,21 +22287,37 @@
       ] })
     ] });
   }
-  function WorkTimeline({ sessions, onSessionClick, maxHeight, accentColor, isDark }) {
+  function WorkTimeline({ sessions, onSessionClick, maxHeight, accentColor, isDark, hideDates }) {
     const mainColor = accentColor ?? (isDark ? "#f97316" : MAIN_COLOR);
     const threadColor = isDark ? "rgba(255,255,255,0.15)" : THREAD_COLOR;
     const textSecondary = isDark ? "rgba(255,255,255,0.65)" : TEXT_SECONDARY;
     const textMuted = isDark ? "rgba(255,255,255,0.4)" : TEXT_MUTED;
     const bgSurface = isDark ? "#111" : "#f8f9fb";
-    const segments = (0, import_react.useMemo)(() => computeSegments(sessions), [sessions]);
+    const effectiveSessions = (0, import_react.useMemo)(() => {
+      if (!hideDates) return sessions;
+      return sessions.map((s, i) => ({
+        ...s,
+        date: s.date ?? new Date(i * 60 * 6e4).toISOString(),
+        // Drop endTime to prevent any chance the renderer derives a real
+        // wall-clock window from it.
+        endTime: void 0,
+        // Strip date from children too — agent lane math falls back to the
+        // parent start when child dates are absent (already handled).
+        children: s.children?.map((c) => ({ ...c, date: void 0 }))
+      }));
+    }, [sessions, hideDates]);
+    const segments = (0, import_react.useMemo)(() => {
+      const segs = computeSegments(effectiveSessions);
+      return hideDates ? segs.filter((s) => s.type !== "gap") : segs;
+    }, [effectiveSessions, hideDates]);
     const [expanded, setExpanded] = (0, import_react.useState)(false);
     const [fullscreen, setFullscreen] = (0, import_react.useState)(false);
     const [playing, setPlaying] = (0, import_react.useState)(false);
     const playRef = (0, import_react.useRef)(null);
     const concurrentLimit = expanded ? 999 : DEFAULT_MAX_CONCURRENT;
     const themeColors = (0, import_react.useMemo)(() => ({ main: mainColor, muted: textMuted }), [mainColor, textMuted]);
-    const L = (0, import_react.useMemo)(() => layoutSegments(segments, concurrentLimit, themeColors), [segments, concurrentLimit, themeColors]);
-    const legendEntries = (0, import_react.useMemo)(() => buildLegendEntries(L.sessionRanges), [L.sessionRanges]);
+    const L = (0, import_react.useMemo)(() => layoutSegments(segments, concurrentLimit, themeColors, hideDates), [segments, concurrentLimit, themeColors, hideDates]);
+    const legendEntries = (0, import_react.useMemo)(() => buildLegendEntries(L.sessionRanges, hideDates), [L.sessionRanges, hideDates]);
     const scrollRef = (0, import_react.useRef)(null);
     const [hovered, setHovered] = (0, import_react.useState)(null);
     const [focusedEntry, setFocusedEntry] = (0, import_react.useState)(null);
@@ -22998,7 +23018,7 @@
       return iso;
     }
   }
-  function SessionOverlay({ session, sessionPageUrl, onClose }) {
+  function SessionOverlay({ session, sessionPageUrl, onClose, hideDates }) {
     const handleKeyDown = (0, import_react2.useCallback)((e) => {
       if (e.key === "Escape") onClose();
     }, [onClose]);
@@ -23040,8 +23060,8 @@
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("h2", { style: { fontFamily: "var(--font-display, sans-serif)", fontSize: "1.5rem", fontWeight: 700, color: "var(--on-surface, #191c1e)", marginBottom: "0.5rem" }, children: session.title }),
           /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { fontFamily: "var(--font-mono, monospace)", fontSize: "0.6875rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--on-surface-variant, #6b7280)", marginBottom: "1rem" }, children: [
-            formatDate(session.date),
-            session.source && ` \xB7 ${session.source}`,
+            !hideDates && session.date && formatDate(session.date),
+            session.source && (hideDates || !session.date ? session.source : ` \xB7 ${session.source}`),
             session.context && ` \xB7 ${session.context}`
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.75rem", marginBottom: "1.25rem" }, children: [
@@ -23059,7 +23079,7 @@
               " turns over ",
               formatDuration2(session.durationMinutes)
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(WorkTimeline, { sessions: [session], maxHeight: 200 })
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(WorkTimeline, { sessions: [session], maxHeight: 200, hideDates })
           ] }),
           session.executionPath && session.executionPath.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { style: { marginBottom: "1.25rem" }, children: [
             /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(SectionLabel, { children: "Execution Path" }),
@@ -23135,6 +23155,7 @@
   }
   var allSessions = /* @__PURE__ */ new Map();
   var showOverlay = null;
+  var pageHideDates = false;
   function OverlayRoot() {
     const [active, setActive] = (0, import_react3.useState)(null);
     showOverlay = (session) => setActive(session);
@@ -23160,6 +23181,7 @@
       {
         session: active,
         sessionPageUrl,
+        hideDates: pageHideDates,
         onClose: () => setActive(null)
       }
     );
@@ -23169,6 +23191,8 @@
     document.querySelectorAll("[data-work-timeline]").forEach((el) => {
       const sessions = parseSessions(el);
       if (sessions.length === 0) return;
+      const hideDates = el.dataset.hideDates === "1";
+      if (hideDates) pageHideDates = true;
       for (const s of sessions) allSessions.set(s.id, s);
       (0, import_client.createRoot)(el).render(
         import_react3.default.createElement(WorkTimeline, {
@@ -23176,6 +23200,7 @@
           maxHeight: 300,
           isDark,
           accentColor,
+          hideDates,
           onSessionClick: (session) => {
             if (showOverlay) showOverlay(session);
           }
